@@ -1,0 +1,66 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+model Wallet {
+  address String  @id
+  // name      String   @unique
+  // image     String?
+  // lastLogin DateTime @updatedAt
+  nonce   String? @unique
+  role    Role    @default(User)
+}
+
+enum Role {
+  Superadmin
+  Admin
+  User
+}
+
+model Collection {
+  name   String  @id
+  nfts   NFT[]
+  comics Comic[]
+}
+
+model NFT {
+  mint           String      @id
+  name           String      @unique
+  uri            String
+  image          String
+  collection     Collection? @relation(fields: [collectionName], references: [name])
+  collectionName String
+}
+
+model Comic {
+  id             Int         @id @default(autoincrement())
+  title          String
+  flavorText     String?
+  description    String?
+  thumbnail      String
+  issueNumber    Int         @default(1)
+  releaseDate    DateTime
+  collection     Collection? @relation(fields: [collectionName], references: [name])
+  collectionName String
+  soundtrack     String?
+  pages          ComicPage[]
+}
+
+model ComicPage {
+  id            Int     @id @default(autoincrement())
+  isPreviewable Boolean
+  image         String
+  altImage      String?
+  Comic         Comic?  @relation(fields: [comicId], references: [id])
+  comicId       Int
+}

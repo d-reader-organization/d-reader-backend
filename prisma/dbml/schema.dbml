@@ -1,0 +1,59 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Wallet {
+  address String [pk]
+  nonce String [unique]
+  role Role [not null, default: 'User']
+}
+
+Table Collection {
+  name String [pk]
+  nfts NFT [not null]
+  comics Comic [not null]
+}
+
+Table NFT {
+  mint String [pk]
+  name String [unique, not null]
+  uri String [not null]
+  image String [not null]
+  collection Collection
+  collectionName String [not null]
+}
+
+Table Comic {
+  id Int [pk, increment]
+  title String [not null]
+  flavorText String
+  description String
+  thumbnail String [not null]
+  issueNumber Int [not null, default: 1]
+  releaseDate DateTime [not null]
+  collection Collection
+  collectionName String [not null]
+  soundtrack String
+  pages ComicPage [not null]
+}
+
+Table ComicPage {
+  id Int [pk, increment]
+  isPreviewable Boolean [not null]
+  image String [not null]
+  altImage String
+  Comic Comic
+  comicId Int [not null]
+}
+
+Enum Role {
+  Superadmin
+  Admin
+  User
+}
+
+Ref: NFT.collectionName > Collection.name
+
+Ref: Comic.collectionName > Collection.name
+
+Ref: ComicPage.comicId > Comic.id
