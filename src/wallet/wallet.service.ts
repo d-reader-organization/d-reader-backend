@@ -13,7 +13,9 @@ import { Role } from '@prisma/client';
 export class WalletService {
   constructor(private prisma: PrismaService) {}
 
-  async create({ address }: CreateWalletDto) {
+  async create(createWalletDto: CreateWalletDto) {
+    const { address } = createWalletDto;
+
     const existingWallet = await this.prisma.wallet.findUnique({
       where: { address },
     });

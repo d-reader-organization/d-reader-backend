@@ -14,9 +14,9 @@ import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { RolesGuard, Roles } from 'src/guards/roles.guard';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Wallet } from './entities/wallet.entity';
+import { Role } from '@prisma/client';
 
 @ApiTags('Wallet')
 @ApiBearerAuth('JWT-auth')

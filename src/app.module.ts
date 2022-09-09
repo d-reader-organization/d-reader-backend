@@ -11,6 +11,7 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { SecurityConfig } from 'src/configs/config.interface';
+import { ComicModule } from './comic/comic.module';
 import config from './configs/config';
 
 @Module({
@@ -35,6 +36,7 @@ import config from './configs/config';
       },
     }),
     WalletModule,
+    ComicModule,
   ],
   controllers: [AppController],
   providers: [AppService],
