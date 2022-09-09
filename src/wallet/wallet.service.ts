@@ -7,7 +7,6 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { PublicKey } from '@solana/web3.js';
 import { Role } from '@prisma/client';
 
 @Injectable()
@@ -15,12 +14,6 @@ export class WalletService {
   constructor(private prisma: PrismaService) {}
 
   async create({ address }: CreateWalletDto) {
-    try {
-      await PublicKey.isOnCurve(address);
-    } catch (error) {
-      throw new BadRequestException('Invalid ed25519 wallet address');
-    }
-
     const existingWallet = await this.prisma.wallet.findUnique({
       where: { address },
     });

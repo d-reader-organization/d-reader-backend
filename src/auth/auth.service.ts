@@ -13,6 +13,7 @@ import { Authorization, JwtDto, TokenPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
 import { Wallet } from 'src/wallet/entities/wallet.entity';
+import { validateEd25519Address } from 'src/utils/solana';
 
 @Injectable()
 export class AuthService {
@@ -26,15 +27,13 @@ export class AuthService {
   async generateOneTimePassword(address: string): Promise<string> {
     const nonce = uuidv4();
 
-    // Generate new nonce token
-    try {
-      await this.prisma.wallet.update({
-        where: { address },
-        data: { nonce },
-      });
-    } catch (e) {
-      throw new NotFoundException(`No wallet found with address ${address}`);
-    }
+    validateEd25519Address(address);
+
+    await this.prisma.wallet.upsert({
+      where: { address },
+      update: { nonce },
+      create: { address, nonce },
+    });
 
     // TODO: bcrypt.hash ?
     return `${process.env.SIGN_MESSAGE}${nonce}`;

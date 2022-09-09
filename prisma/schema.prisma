@@ -27,8 +27,14 @@ enum Role {
   User
 }
 
+// TODO
+// model Creator {
+//   https://magiceden.io/creators/gorecats_collection
+// }
+
 model Collection {
   name   String  @id
+  slug   String
   nfts   NFT[]
   comics Comic[]
 }

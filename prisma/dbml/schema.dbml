@@ -10,6 +10,7 @@ Table Wallet {
 
 Table Collection {
   name String [pk]
+  slug String [not null]
   nfts NFT [not null]
   comics Comic [not null]
 }

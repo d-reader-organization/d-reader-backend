@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class Wallet {
-  @IsString()
-  @IsNotEmpty()
+  @IsSolanaAddress()
   address: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
   nonce: string | null;
 

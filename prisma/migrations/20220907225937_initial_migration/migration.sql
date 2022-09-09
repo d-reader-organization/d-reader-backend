@@ -13,6 +13,7 @@ CREATE TABLE "Wallet" (
 -- CreateTable
 CREATE TABLE "Collection" (
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
 
     CONSTRAINT "Collection_pkey" PRIMARY KEY ("name")
 );
