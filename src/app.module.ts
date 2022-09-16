@@ -13,6 +13,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
 import { ComicModule } from './comic/comic.module';
 import config from './configs/config';
+import { CollectionModule } from './collection/collection.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import config from './configs/config';
       },
     }),
     WalletModule,
+    CollectionModule,
     ComicModule,
   ],
   controllers: [AppController],

@@ -4,15 +4,19 @@ import { WalletEntity } from '../decorators/wallet.decorator';
 import { RestAuthGuard } from '../guards/rest-auth.guard';
 import { Wallet } from '../wallet/entities/wallet.entity';
 import { AuthService } from './auth.service';
+import { PasswordService } from './password.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private passwordService: PasswordService,
+  ) {}
 
   @Get('request-password/:address')
   async requestPassword(@Param('address') address: string) {
-    return await this.authService.generateOneTimePassword(address);
+    return await this.passwordService.generateOneTimePassword(address);
   }
 
   @Get('connect/:address/:encoding')

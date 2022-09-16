@@ -1,15 +1,34 @@
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, ValidateNested } from 'class-validator';
+import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
 import { Comic } from '../entities/comic.entity';
 
-// TODO: thumbnail and soundtrack should be files
-// TODO: Connect with pages as well
 export class CreateComicDto extends PickType(Comic, [
   'title',
   'flavorText',
   'description',
-  'thumbnail',
   'issueNumber',
   'releaseDate',
   'collectionName',
-  'soundtrack',
-]) {}
+]) {
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
+  cover: Express.Multer.File;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  soundtrack: Express.Multer.File | null;
+
+  @IsArray()
+  @Type(() => CreateComicPageDto)
+  @ApiProperty({ type: [CreateComicPageDto] })
+  @ValidateNested({ each: true })
+  pages: CreateComicPageDto[];
+}
+
+export class CreateComicFilesDto {
+  @ApiProperty({ type: 'string', format: 'binary', required: true })
+  cover: Express.Multer.File;
+
+  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  soundtrack: Express.Multer.File | null;
+}

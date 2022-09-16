@@ -7,6 +7,7 @@ export class Authorization {
   refreshToken: string;
 }
 
+// TODO v1.5: add 'name' and 'avatar'
 export class TokenPayload extends PickType(Wallet, [
   'address',
   'role',

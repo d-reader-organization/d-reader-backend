@@ -7,16 +7,19 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { RolesGuard, Roles } from 'src/guards/roles.guard';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Wallet } from './entities/wallet.entity';
 import { Role } from '@prisma/client';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Wallet')
 @ApiBearerAuth('JWT-auth')
@@ -57,17 +60,20 @@ export class WalletController {
   /* Update specific user */
   @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('avatar'))
   @Patch(':address')
   update(
     @Param('address') address: string,
     @Body() updateWalletDto: UpdateWalletDto,
+    @UploadedFile() avatar: Express.Multer.File,
   ) {
-    return this.walletService.update(address, updateWalletDto);
+    return this.walletService.update(address, { ...updateWalletDto, avatar });
   }
 
   /* Delete specific user */
   @UseGuards(RolesGuard)
-  @Roles(Role.Superadmin)
+  @Roles(Role.Superadmin, Role.Admin)
   @Delete(':address')
   remove(@Param('address') address: string) {
     return this.walletService.remove(address);

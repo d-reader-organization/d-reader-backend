@@ -4,32 +4,48 @@
 
 Table Wallet {
   address String [pk]
-  nonce String [unique]
+  name String [not null, default: '']
+  avatar String
+  createdAt DateTime [default: `now()`, not null]
+  nonce String [unique, not null]
   role Role [not null, default: 'User']
 }
 
 Table Collection {
   name String [pk]
-  slug String [not null]
+  slug String [unique, not null]
+  updatedAt DateTime [not null]
+  verifiedAt DateTime
+  thumbnail String [not null]
+  pfp String [not null]
+  logo String
+  description String [not null, default: '']
+  website String [not null, default: '']
+  twitter String [not null, default: '']
+  discord String [not null, default: '']
+  telegram String [not null, default: '']
+  instagram String [not null, default: '']
+  medium String [not null, default: '']
+  tikTok String [not null, default: '']
+  youTube String [not null, default: '']
+  magicEden String [not null, default: '']
+  openSea String [not null, default: '']
   nfts NFT [not null]
   comics Comic [not null]
 }
 
 Table NFT {
   mint String [pk]
-  name String [unique, not null]
-  uri String [not null]
-  image String [not null]
-  collection Collection
+  collection Collection [not null]
   collectionName String [not null]
 }
 
 Table Comic {
   id Int [pk, increment]
   title String [not null]
-  flavorText String
-  description String
-  thumbnail String [not null]
+  flavorText String [not null, default: '']
+  description String [not null, default: '']
+  cover String [not null]
   issueNumber Int [not null, default: 1]
   releaseDate DateTime [not null]
   collection Collection
@@ -40,11 +56,17 @@ Table Comic {
 
 Table ComicPage {
   id Int [pk, increment]
-  isPreviewable Boolean [not null]
+  pageNumber Int [increment, not null]
+  chapterNumber Int [not null]
+  isPreviewable Boolean [not null, default: false]
   image String [not null]
   altImage String
-  Comic Comic
+  comic Comic [not null]
   comicId Int [not null]
+
+  indexes {
+    (pageNumber, chapterNumber, comicId) [unique]
+  }
 }
 
 Enum Role {

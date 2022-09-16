@@ -7,7 +7,16 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Role } from '@prisma/client';
+import { Wallet, Role } from '@prisma/client';
+import {
+  deleteS3Object,
+  deleteS3Objects,
+  getS3Object,
+  listS3FolderKeys,
+  putS3Object,
+} from 'src/aws/s3client';
+import * as path from 'path';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class WalletService {
@@ -52,14 +61,29 @@ export class WalletService {
     return wallet;
   }
 
-  async update(address: string, { role }: UpdateWalletDto) {
+  async update(address: string, updateWalletDto: UpdateWalletDto) {
     await this.breakIfSuperadmin(address);
 
-    let updatedWallet;
+    const { avatar, ...rest } = updateWalletDto;
+
+    let avatarKey: string;
+    if (avatar) {
+      avatarKey = `wallets/${address}/avatar${path.extname(
+        avatar.originalname,
+      )}`;
+
+      await putS3Object({
+        ContentType: avatar.mimetype,
+        Key: avatarKey,
+        Body: avatar.buffer,
+      });
+    }
+
+    let updatedWallet: Wallet;
     try {
       updatedWallet = await this.prisma.wallet.update({
         where: { address },
-        data: { role },
+        data: { ...rest, avatar: avatarKey },
       });
     } catch {
       throw new NotFoundException(
@@ -72,6 +96,15 @@ export class WalletService {
 
   async remove(address: string) {
     await this.breakIfSuperadmin(address);
+
+    // Remove s3 assets
+    const keys = await listS3FolderKeys({ Prefix: `wallets/${address}` });
+
+    if (!isEmpty(keys)) {
+      await deleteS3Objects({
+        Delete: { Objects: keys.map((Key) => ({ Key })) },
+      });
+    }
 
     try {
       await this.prisma.wallet.delete({ where: { address } });
@@ -88,7 +121,7 @@ export class WalletService {
 
     if (wallet.role === Role.Superadmin) {
       throw new UnauthorizedException(
-        'Cannot mutate a wallet with Superadmin role',
+        'Cannot update a wallet with Superadmin role',
       );
     }
   }

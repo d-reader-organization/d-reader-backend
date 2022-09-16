@@ -1,14 +1,14 @@
+import { Type } from 'class-transformer';
 import {
-  IsDateString,
+  IsArray,
   IsNotEmpty,
-  IsObject,
   IsOptional,
   IsPositive,
   IsString,
-  IsUrl,
+  MaxLength,
 } from 'class-validator';
-import { Collection } from './collection.entity';
-import { ComicPage } from './comic-page';
+import { Collection } from 'src/collection/entities/collection.entity';
+import { ComicPage } from 'src/comic-page/entities/comic-page.entity';
 
 export class Comic {
   @IsPositive()
@@ -16,36 +16,39 @@ export class Comic {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(60)
   title: string;
 
   @IsString()
-  @IsOptional()
-  flavorText: string | null;
+  @MaxLength(128)
+  flavorText: string;
 
   @IsString()
-  @IsOptional()
-  description: string | null;
+  @MaxLength(256)
+  description: string;
 
-  @IsUrl()
-  thumbnail: string;
+  @IsString()
+  cover: string;
 
   @IsPositive()
   issueNumber: number;
 
-  @IsDateString()
-  releaseDate: string;
+  @Type(() => Date)
+  releaseDate: Date;
 
   @IsString()
   @IsNotEmpty()
   collectionName: string;
 
-  @IsUrl()
+  @IsString()
   @IsOptional()
   soundtrack: string | null;
 
-  // TODO: complete this
-  @IsObject()
-  collection: Collection;
+  @IsOptional()
+  @Type(() => Collection)
+  collection: Collection | null;
 
+  @IsArray()
+  @Type(() => ComicPage)
   pages: ComicPage[];
 }

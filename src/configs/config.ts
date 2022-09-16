@@ -10,7 +10,7 @@ const config: Config = {
   swagger: {
     enabled: true,
     title: 'Gorecats Comic Reader API',
-    description: 'API endpoints for comic.gorecats.io app',
+    description: 'API endpoints for dReader.io app',
     version: '0.1.0',
     path: 'api',
     persistAuthorization: true,
@@ -19,6 +19,10 @@ const config: Config = {
     expiresIn: '1d',
     refreshIn: '7d',
     bcryptSaltOrRound: 10,
+  },
+  s3: {
+    bucket: 'gorecats-comic-reader',
+    region: 'us-east-1',
   },
 };
 
