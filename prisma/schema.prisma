@@ -13,12 +13,16 @@ generator dbml {
 }
 
 model Wallet {
-  address   String   @id
-  name      String   @default("")
-  avatar    String?
-  createdAt DateTime @default(now())
-  nonce     String   @unique @default(uuid())
-  role      Role     @default(User)
+  id        Int       @id @default(autoincrement())
+  address   String    @unique
+  label     String    @default("")
+  avatar    String    @default("")
+  createdAt DateTime  @default(now())
+  lastLogin DateTime?
+  nonce     String    @unique @default(uuid())
+  role      Role      @default(User)
+  creator   Creator?
+  // whitelistedComicIssues ComicIssueWhitelist[]
 }
 
 enum Role {
@@ -27,91 +31,159 @@ enum Role {
   User
 }
 
-// TODO v1.1: connect wallets with email addresses
-// model Creator {
-//   address     String   @id
-//   email       String   @unique
-//   name        String
-//   slug        String   @unique
-//   updatedAt   DateTime @updatedAt
-//   verifiedAt  DateTime
-//   // bannerImage
-//   image       String
-//   logo        String
-//   description String
-//   // collections Collection[]
-// }
-
-model Collection {
-  name        String    @id
-  slug        String    @unique
-  updatedAt   DateTime  @updatedAt
-  verifiedAt  DateTime?
-  // creator        Creator? @relation(fields: [creatorAddress], references: [address])
-  // creatorAddress String
-  thumbnail   String
-  pfp         String
-  logo        String?
-  // categories Category[]
-  // collectionFamily String
-  description String    @default("")
-  website     String    @default("")
-  twitter     String    @default("")
-  discord     String    @default("")
-  telegram    String    @default("")
-  instagram   String    @default("")
-  medium      String    @default("")
-  tikTok      String    @default("")
-  youTube     String    @default("")
-  magicEden   String    @default("")
-  openSea     String    @default("")
-  nfts        NFT[]
-  comics      Comic[]
-  // candyMachineIds Int[]
+model Creator {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  password         String
+  name             String    @unique
+  slug             String    @unique
+  thumbnail        String    @default("")
+  avatar           String    @default("")
+  banner           String    @default("")
+  logo             String    @default("")
+  description      String    @default("")
+  flavorText       String    @default("")
+  website          String    @default("")
+  // twitter          String    @default("")
+  // instagram          String    @default("")
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
+  featuredAt       DateTime?
+  verifiedAt       DateTime?
+  popularizedAt    DateTime?
+  emailConfirmedAt DateTime?
+  comics           Comic[]
+  wallet           Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId         Int       @unique
 }
-
-model NFT {
-  mint           String     @id
-  collection     Collection @relation(fields: [collectionName], references: [name])
-  collectionName String
-}
-
-// model WalletComic {
-//   isFavorite Boolean
-//   isWatching Boolean
-//   isWished   Boolean
-//   isLiked    Boolean
-// }
 
 model Comic {
-  id             Int         @id @default(autoincrement())
-  title          String
-  flavorText     String      @default("")
-  description    String      @default("")
-  cover          String
-  // thumbnail      String
-  // categories Category[]
-  issueNumber    Int         @default(1)
-  releaseDate    DateTime
-  // TODO v2: token gate comics by a specific hashlist
-  // e.g. you might wanna limit your comic to a subset of your holders
-  // or get into a collaboration with another collection (hashlist)
-  // TODO v2: also support whitelisting wallet addresses
-  collection     Collection? @relation(fields: [collectionName], references: [name])
-  collectionName String
-  soundtrack     String?
-  pages          ComicPage[]
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
+  slug          String       @unique
+  thumbnail     String       @default("")
+  pfp           String       @default("")
+  logo          String       @default("")
+  description   String       @default("")
+  flavorText    String       @default("")
+  website       String       @default("")
+  twitter       String       @default("")
+  discord       String       @default("")
+  telegram      String       @default("")
+  instagram     String       @default("")
+  medium        String       @default("")
+  tikTok        String       @default("")
+  youTube       String       @default("")
+  magicEden     String       @default("")
+  openSea       String       @default("")
+  updatedAt     DateTime     @updatedAt
+  createdAt     DateTime     @default(now())
+  deletedAt     DateTime?
+  featuredAt    DateTime?
+  verifiedAt    DateTime?
+  publishedAt   DateTime?
+  popularizedAt DateTime?
+  // TODO v1.1: categories    ComicCategory[]
+  // TODO v1.1: nfts          NFT[]
+  // TODO v1.1: whitelist     Wallet[]
+  issues        ComicIssue[]
+  creator       Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId     Int
+}
+
+// model ComicStarRating {
+//   id       Int    @id @default(autoincrement())
+//   comic    Comic  @relation(fields: [comicId], references: [id], onDelete: Cascade)
+//   comicId  Int
+//   wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+//   walletId Int
+//   rating   Int
+
+//   @@unique([comicId, walletId])
+// }
+
+// model ComicIssueStarRating {
+//   id           Int        @id @default(autoincrement())
+//   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+//   comicIssueId Int
+//   wallet       Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
+//   walletId     Int
+//   rating       Int
+
+//   @@unique([comicIssueId, walletId])
+// }
+
+// model WalletComic {
+//   isSubscribed Boolean //   subscribedAt DateTime
+//   isFavourite  Boolean //   favouritedAt DateTime
+//   isWatching   Boolean //   watchedAt    DateTime
+//   isReported   Boolean //   reportedAt   DateTime
+//   isWished     Boolean //   wishedAt     DateTime
+//   isLiked      Boolean //   likedAt      DateTime
+// }
+
+model ComicIssue {
+  id            Int         @id @default(autoincrement())
+  number        Int
+  title         String      @unique
+  slug          String      @unique
+  description   String      @default("")
+  flavorText    String      @default("")
+  cover         String      @default("")
+  soundtrack    String      @default("")
+  magicEden     String      @default("")
+  openSea       String      @default("")
+  releaseDate   DateTime
+  createdAt     DateTime    @default(now())
+  deletedAt     DateTime?
+  featuredAt    DateTime?
+  verifiedAt    DateTime?
+  publishedAt   DateTime?
+  popularizedAt DateTime?
+  comic         Comic       @relation(fields: [comicId], references: [id], onDelete: Cascade)
+  comicId       Int
+  pages         ComicPage[]
+  nfts          NFT[]
+  // whitelist     ComicIssueWhitelist[]
+
+  @@unique([number, comicId])
+}
+
+// model ComicIssueWhitelist {
+//   id           Int        @id @default(autoincrement())
+//   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+//   comicIssueId Int
+//   wallet       Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
+//   walletId     Int
+
+//   @@unique([comicIssueId, walletId])
+// }
+
+model NFT {
+  id           Int        @id @default(autoincrement())
+  mint         String     @unique
+  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssueId Int
 }
 
 model ComicPage {
-  id            Int     @id @default(autoincrement())
-  pageNumber    Int     @default(autoincrement())
-  chapterNumber Int
-  isPreviewable Boolean @default(false)
+  id            Int        @id @default(autoincrement())
+  pageNumber    Int        @default(autoincrement())
+  isPreviewable Boolean    @default(false)
   image         String
-  altImage      String?
-  comic         Comic   @relation(fields: [comicId], references: [id])
-  comicId       Int
+  altImage      String     @default("")
+  comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssueId  Int
 
-  @@unique([pageNumber, chapterNumber, comicId])
+  @@unique([pageNumber, comicIssueId])
 }
+
+// TODO v2
+// - [COMIC] categories ComicCategory[]
+// - [COMIC] family ComicFamily
+// - [COMIC] candyMachineIds Int[]
+// - [COMIC_ISSUE] whitelist additional NFTs
+// - [COMIC_ISSUE] whitelist specific wallets
+// - [COMIC_ISSUE] categories ComicCategory[]
+
+// - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity

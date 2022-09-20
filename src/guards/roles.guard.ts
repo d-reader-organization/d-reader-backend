@@ -8,10 +8,10 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 import { Request as ExpressRequest } from 'express';
-import { TokenPayload } from 'src/auth/dto/authorization.dto';
+import { Wallet } from '@prisma/client';
 
 export interface Request extends ExpressRequest {
-  user?: TokenPayload;
+  user?: Wallet;
 }
 
 export const Roles = (...roles: Role[]): CustomDecorator<string> =>

@@ -25,7 +25,7 @@ export class PasswordService {
       create: { address, nonce },
     });
 
-    // TODO v1.5: bcrypt.hash ?
+    // TODO v1.2: bcrypt.hash ?
     return `${process.env.SIGN_MESSAGE}${nonce}`;
   }
 

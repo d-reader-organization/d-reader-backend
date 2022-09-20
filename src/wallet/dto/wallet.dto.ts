@@ -3,30 +3,36 @@ import { Role } from '@prisma/client';
 import {
   IsEnum,
   IsOptional,
+  IsPositive,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { Exclude, Expose } from 'class-transformer';
 
-export class Wallet {
+@Exclude()
+export class WalletDto {
+  @Expose()
+  @IsPositive()
+  id: number;
+
+  @Expose()
   @IsSolanaAddress()
   address: string;
 
+  @Expose()
   @IsString()
-  name: string;
-
-  @IsString()
-  @IsOptional()
   @MaxLength(24)
-  avatar: string | null;
-
-  // TODO v1.1: We most likely don't want nonce in this class
-  @IsUUID()
   @IsOptional()
-  nonce: string;
+  @ApiProperty({ required: false })
+  label: string;
 
+  @Expose()
+  @IsString()
+  avatar: string;
+
+  @Expose()
   @IsEnum(Role)
-  @ApiProperty({ enum: Role })
+  @ApiProperty({ enum: Role, required: false })
   role: Role;
 }

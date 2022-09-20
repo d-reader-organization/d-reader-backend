@@ -5,6 +5,6 @@ export class UpdateComicPageDto extends PartialType(CreateComicPageDto) {
   @ApiProperty({ type: 'string', format: 'binary', required: true })
   image: Express.Multer.File;
 
-  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  @ApiProperty({ type: 'string', format: 'binary' })
   altImage: Express.Multer.File | null;
 }

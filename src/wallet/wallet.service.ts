@@ -7,16 +7,15 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Wallet, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import {
   deleteS3Object,
   deleteS3Objects,
-  getS3Object,
   listS3FolderKeys,
   putS3Object,
 } from 'src/aws/s3client';
-import * as path from 'path';
 import { isEmpty } from 'lodash';
+import * as path from 'path';
 
 @Injectable()
 export class WalletService {
@@ -64,34 +63,36 @@ export class WalletService {
   async update(address: string, updateWalletDto: UpdateWalletDto) {
     await this.breakIfSuperadmin(address);
 
-    const { avatar, ...rest } = updateWalletDto;
-
-    let avatarKey: string;
-    if (avatar) {
-      avatarKey = `wallets/${address}/avatar${path.extname(
-        avatar.originalname,
-      )}`;
-
-      await putS3Object({
-        ContentType: avatar.mimetype,
-        Key: avatarKey,
-        Body: avatar.buffer,
-      });
-    }
-
-    let updatedWallet: Wallet;
     try {
-      updatedWallet = await this.prisma.wallet.update({
+      const updatedWallet = await this.prisma.wallet.update({
         where: { address },
-        data: { ...rest, avatar: avatarKey },
+        data: updateWalletDto,
       });
+
+      return updatedWallet;
     } catch {
       throw new NotFoundException(
         `Wallet with address ${address} does not exist`,
       );
     }
+  }
 
-    return updatedWallet;
+  async updateFile(address: string, file: Express.Multer.File) {
+    const fileKey = await this.uploadFile(address, file);
+    try {
+      const updatedWallet = await this.prisma.wallet.update({
+        where: { address },
+        data: { [file.fieldname]: fileKey },
+      });
+
+      return updatedWallet;
+    } catch {
+      // Revert file upload
+      await deleteS3Object({ Key: fileKey });
+      throw new NotFoundException(
+        `Wallet with address ${address} does not exist`,
+      );
+    }
   }
 
   async remove(address: string) {
@@ -123,6 +124,24 @@ export class WalletService {
       throw new UnauthorizedException(
         'Cannot update a wallet with Superadmin role',
       );
+    }
+  }
+
+  async uploadFile(address: string, file: Express.Multer.File) {
+    if (file) {
+      const fileKey = `wallets/${address}/${file.fieldname}${path.extname(
+        file.originalname,
+      )}`;
+
+      await putS3Object({
+        ContentType: file.mimetype,
+        Key: fileKey,
+        Body: file.buffer,
+      });
+
+      return fileKey;
+    } else {
+      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
     }
   }
 }

@@ -14,7 +14,7 @@ import {
 import { Upload } from '@aws-sdk/lib-storage';
 import config from '../configs/config';
 
-// TODO: v2 refator this to s3.service.ts ?
+// TODO v2: refator this to s3.service.ts ?
 const REGION = config().s3.region || 'us-east-1';
 
 const s3Client = new S3Client({ region: REGION });

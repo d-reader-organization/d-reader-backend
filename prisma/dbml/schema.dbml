@@ -3,23 +3,50 @@
 //// ------------------------------------------------------
 
 Table Wallet {
-  address String [pk]
-  name String [not null, default: '']
-  avatar String
+  id Int [pk, increment]
+  address String [unique, not null]
+  label String [not null, default: '']
+  avatar String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
+  lastLogin DateTime
   nonce String [unique, not null]
   role Role [not null, default: 'User']
+  creator Creator
 }
 
-Table Collection {
-  name String [pk]
+Table Creator {
+  id Int [pk, increment]
+  email String [unique, not null]
+  password String [not null]
+  name String [unique, not null]
   slug String [unique, not null]
-  updatedAt DateTime [not null]
-  verifiedAt DateTime
-  thumbnail String [not null]
-  pfp String [not null]
-  logo String
+  thumbnail String [not null, default: '']
+  avatar String [not null, default: '']
+  banner String [not null, default: '']
+  logo String [not null, default: '']
   description String [not null, default: '']
+  flavorText String [not null, default: '']
+  website String [not null, default: '']
+  createdAt DateTime [default: `now()`, not null]
+  deletedAt DateTime
+  featuredAt DateTime
+  verifiedAt DateTime
+  popularizedAt DateTime
+  emailConfirmedAt DateTime
+  comics Comic [not null]
+  wallet Wallet [not null]
+  walletId Int [unique, not null]
+}
+
+Table Comic {
+  id Int [pk, increment]
+  name String [unique, not null]
+  slug String [unique, not null]
+  thumbnail String [not null, default: '']
+  pfp String [not null, default: '']
+  logo String [not null, default: '']
+  description String [not null, default: '']
+  flavorText String [not null, default: '']
   website String [not null, default: '']
   twitter String [not null, default: '']
   discord String [not null, default: '']
@@ -30,42 +57,64 @@ Table Collection {
   youTube String [not null, default: '']
   magicEden String [not null, default: '']
   openSea String [not null, default: '']
+  updatedAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  deletedAt DateTime
+  featuredAt DateTime
+  verifiedAt DateTime
+  publishedAt DateTime
+  popularizedAt DateTime
+  issues ComicIssue [not null]
+  creator Creator [not null]
+  creatorId Int [not null]
+}
+
+Table ComicIssue {
+  id Int [pk, increment]
+  number Int [not null]
+  title String [unique, not null]
+  slug String [unique, not null]
+  description String [not null, default: '']
+  flavorText String [not null, default: '']
+  cover String [not null, default: '']
+  soundtrack String [not null, default: '']
+  magicEden String [not null, default: '']
+  openSea String [not null, default: '']
+  releaseDate DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  deletedAt DateTime
+  featuredAt DateTime
+  verifiedAt DateTime
+  publishedAt DateTime
+  popularizedAt DateTime
+  comic Comic [not null]
+  comicId Int [not null]
+  pages ComicPage [not null]
   nfts NFT [not null]
-  comics Comic [not null]
+
+  indexes {
+    (number, comicId) [unique]
+  }
 }
 
 Table NFT {
-  mint String [pk]
-  collection Collection [not null]
-  collectionName String [not null]
-}
-
-Table Comic {
   id Int [pk, increment]
-  title String [not null]
-  flavorText String [not null, default: '']
-  description String [not null, default: '']
-  cover String [not null]
-  issueNumber Int [not null, default: 1]
-  releaseDate DateTime [not null]
-  collection Collection
-  collectionName String [not null]
-  soundtrack String
-  pages ComicPage [not null]
+  mint String [unique, not null]
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
 }
 
 Table ComicPage {
   id Int [pk, increment]
   pageNumber Int [increment, not null]
-  chapterNumber Int [not null]
   isPreviewable Boolean [not null, default: false]
   image String [not null]
-  altImage String
-  comic Comic [not null]
-  comicId Int [not null]
+  altImage String [not null, default: '']
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
 
   indexes {
-    (pageNumber, chapterNumber, comicId) [unique]
+    (pageNumber, comicIssueId) [unique]
   }
 }
 
@@ -75,8 +124,12 @@ Enum Role {
   User
 }
 
-Ref: NFT.collectionName > Collection.name
+Ref: Creator.walletId - Wallet.id [delete: Cascade]
 
-Ref: Comic.collectionName > Collection.name
+Ref: Comic.creatorId > Creator.id [delete: Cascade]
 
-Ref: ComicPage.comicId > Comic.id
+Ref: ComicIssue.comicId > Comic.id [delete: Cascade]
+
+Ref: NFT.comicIssueId > ComicIssue.id [delete: Cascade]
+
+Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]

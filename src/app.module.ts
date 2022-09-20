@@ -3,17 +3,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './wallet/wallet.module';
-import { loggingMiddleware, PrismaModule } from 'nestjs-prisma';
+import { CreatorModule } from './creator/creator.module';
+import { ComicModule } from './comic/comic.module';
+import { ComicIssueModule } from './comic-issue/comic-issue.module';
+import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 
 import { AppService } from './app.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { SecurityConfig } from 'src/configs/config.interface';
-import { ComicModule } from './comic/comic.module';
 import config from './configs/config';
-import { CollectionModule } from './collection/collection.module';
 
 @Module({
   imports: [
@@ -37,8 +38,9 @@ import { CollectionModule } from './collection/collection.module';
       },
     }),
     WalletModule,
-    CollectionModule,
+    CreatorModule,
     ComicModule,
+    ComicIssueModule,
   ],
   controllers: [AppController],
   providers: [AppService],

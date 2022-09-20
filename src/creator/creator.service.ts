@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  CreateComicDto,
-  CreateComicFilesDto,
-} from 'src/comic/dto/create-comic.dto';
-import { UpdateComicDto } from 'src/comic/dto/update-comic.dto';
+  CreateCreatorDto,
+  CreateCreatorFilesDto,
+} from 'src/creator/dto/create-creator.dto';
+import { UpdateCreatorDto } from 'src/creator/dto/update-creator.dto';
 import {
   deleteS3Object,
   deleteS3Objects,
@@ -19,157 +19,140 @@ import { isEmpty } from 'lodash';
 import * as path from 'path';
 
 @Injectable()
-export class ComicService {
+export class CreatorService {
   constructor(private prisma: PrismaService) {}
 
   async create(
-    creatorId: number,
-    createComicDto: CreateComicDto,
-    createComicFilesDto: CreateComicFilesDto,
+    walletId: number,
+    createCreatorDto: CreateCreatorDto,
+    createCreatorFilesDto: CreateCreatorFilesDto,
   ) {
-    const { slug, ...rest } = createComicDto;
-    const { thumbnail, pfp, logo } = createComicFilesDto;
+    const { slug, ...rest } = createCreatorDto;
+    const { thumbnail, avatar, banner, logo } = createCreatorFilesDto;
 
     // Upload files if any
-    let thumbnailKey: string, pfpKey: string, logoKey: string;
+    let thumbnailKey: string,
+      avatarKey: string,
+      bannerKey: string,
+      logoKey: string;
     try {
       if (thumbnail) thumbnailKey = await this.uploadFile(slug, thumbnail);
-      if (pfp) pfpKey = await this.uploadFile(slug, pfp);
+      if (avatar) avatarKey = await this.uploadFile(slug, avatar);
+      if (banner) bannerKey = await this.uploadFile(slug, banner);
       if (logo) logoKey = await this.uploadFile(slug, logo);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
 
     try {
-      const comic = await this.prisma.comic.create({
-        include: { issues: true },
+      const creator = await this.prisma.creator.create({
         data: {
           ...rest,
           slug,
-          creatorId,
+          walletId,
           thumbnail: thumbnailKey,
-          pfp: pfpKey,
+          avatar: avatarKey,
+          banner: bannerKey,
           logo: logoKey,
         },
       });
 
-      return comic;
+      return creator;
     } catch {
       // Revert file upload
       if (thumbnailKey) await deleteS3Object({ Key: thumbnailKey });
-      if (pfpKey) await deleteS3Object({ Key: pfpKey });
+      if (avatarKey) await deleteS3Object({ Key: avatarKey });
+      if (bannerKey) await deleteS3Object({ Key: bannerKey });
       if (logoKey) await deleteS3Object({ Key: logoKey });
-      throw new BadRequestException('Faulty comic data');
+      throw new BadRequestException('Faulty creator data');
     }
   }
 
   async findAll() {
-    const comics = await this.prisma.comic.findMany({
+    const creators = await this.prisma.creator.findMany({
       where: {
         deletedAt: null,
-        publishedAt: { not: null },
+        emailConfirmedAt: { not: null },
         verifiedAt: { not: null },
       },
     });
-    return comics;
+    return creators;
   }
 
   async findOne(slug: string) {
-    const comic = await this.prisma.comic.findUnique({
+    const creator = await this.prisma.creator.findUnique({
       where: { slug },
     });
 
-    if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+    if (!creator) {
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    return comic;
+    return creator;
   }
 
-  async update(slug: string, updateComicDto: UpdateComicDto) {
-    const { ...rest } = updateComicDto;
+  async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
+    const { ...rest } = updateCreatorDto;
 
     // TODO: if name has changed, update folder names in the S3 bucket
-    // if (updateComicDto.name && name !== updateComicDto.name)
+    // if (updateCreatorDto.name && name !== updateCreatorDto.name)
     // copy folder and delete the old one, update keys in the database
     // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/examples-s3-objects.html#copy-object
     // https://www.anycodings.com/1questions/5143423/nodejs-renaming-s3-object-via-aws-sdk-module
 
     try {
-      const updatedComic = await this.prisma.comic.update({
+      const updatedCreator = await this.prisma.creator.update({
         where: { slug },
         data: rest,
       });
 
-      return updatedComic;
+      return updatedCreator;
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
     const fileKey = await this.uploadFile(slug, file);
     try {
-      const updatedComic = await this.prisma.comic.update({
+      const updatedCreator = await this.prisma.creator.update({
         where: { slug },
         data: { [file.fieldname]: fileKey },
       });
 
-      return updatedComic;
+      return updatedCreator;
     } catch {
       // Revert file upload
       await deleteS3Object({ Key: fileKey });
-      throw new NotFoundException(`Comic ${slug} does not exist`);
-    }
-  }
-
-  async publish(slug: string) {
-    try {
-      await this.prisma.comic.update({
-        where: { slug },
-        data: { publishedAt: new Date() },
-      });
-    } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
-    }
-  }
-
-  async unpublish(slug: string) {
-    try {
-      await this.prisma.comic.update({
-        where: { slug },
-        data: { publishedAt: null },
-      });
-    } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
   }
 
   async pseudoDelete(slug: string) {
     try {
-      await this.prisma.comic.update({
+      await this.prisma.creator.update({
         where: { slug },
         data: { deletedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
   }
 
   async pseudoRecover(slug: string) {
     try {
-      await this.prisma.comic.update({
+      await this.prisma.creator.update({
         where: { slug },
         data: { deletedAt: null },
       });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
   }
 
   async remove(slug: string) {
     // Remove s3 assets
-    const keys = await listS3FolderKeys({ Prefix: `comics/${slug}` });
+    const keys = await listS3FolderKeys({ Prefix: `creators/${slug}` });
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({
@@ -178,16 +161,16 @@ export class ComicService {
     }
 
     try {
-      await this.prisma.comic.delete({ where: { slug } });
+      await this.prisma.creator.delete({ where: { slug } });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${slug} does not exist`);
     }
     return;
   }
 
   async uploadFile(slug: string, file: Express.Multer.File) {
     if (file) {
-      const fileKey = `comics/${slug}/${file.fieldname}${path.extname(
+      const fileKey = `creators/${slug}/${file.fieldname}${path.extname(
         file.originalname,
       )}`;
 

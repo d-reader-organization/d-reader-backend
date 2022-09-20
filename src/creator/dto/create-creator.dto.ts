@@ -1,47 +1,48 @@
 import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
-import { Expose, Transform } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { Exclude, Expose, Transform } from 'class-transformer';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { snakeCase } from 'lodash';
 import { IsSnakeCase } from 'src/decorators/IsSnakeCase';
-import { ComicDto } from './comic.dto';
+import { CreatorDto } from './creator.dto';
 
-export class CreateComicDto extends PickType(ComicDto, [
+@Exclude()
+export class CreateCreatorDto extends PickType(CreatorDto, [
   'name',
+  'email',
   'description',
   'flavorText',
   'website',
-  'twitter',
-  'discord',
-  'telegram',
-  'instagram',
-  'medium',
-  'tikTok',
-  'youTube',
-  'magicEden',
-  'openSea',
 ]) {
-  @Expose()
   @IsSnakeCase()
   @Transform(({ obj }) => snakeCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(54)
+  password: string;
 }
 
-export class CreateComicFilesDto {
+export class CreateCreatorFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @IsOptional()
   thumbnail?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @IsOptional()
-  pfp?: Express.Multer.File | null;
+  avatar?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @IsOptional()
+  banner?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @IsOptional()
   logo?: Express.Multer.File | null;
 }
 
-export class CreateComicSwaggerDto extends IntersectionType(
-  CreateComicDto,
-  CreateComicFilesDto,
+export class CreateCreatorSwaggerDto extends IntersectionType(
+  CreateCreatorDto,
+  CreateCreatorFilesDto,
 ) {}

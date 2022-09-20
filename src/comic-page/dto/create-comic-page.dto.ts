@@ -1,15 +1,14 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { ComicPage } from '../entities/comic-page.entity';
+import { ComicPageDto } from '../entities/comic-page.dto';
 
-export class CreateComicPageDto extends PickType(ComicPage, [
+export class CreateComicPageDto extends PickType(ComicPageDto, [
   'pageNumber',
-  'chapterNumber',
   'isPreviewable',
-  'comicId',
+  'comicIssueId',
 ]) {
   @ApiProperty({ type: 'string', format: 'binary', required: true })
   image: Express.Multer.File;
 
-  @ApiProperty({ type: 'string', format: 'binary', required: false })
+  @ApiProperty({ type: 'string', format: 'binary' })
   altImage: Express.Multer.File | null;
 }

@@ -5,25 +5,30 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { Authorization, JwtDto, TokenPayload } from './dto/authorization.dto';
+import { Authorization, JwtDto } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
-import { Wallet } from 'src/wallet/entities/wallet.entity';
 import { PasswordService } from './password.service';
+import { Wallet } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly configService: ConfigService,
-    private jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private passwordService: PasswordService,
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   // TODO v1.2: disconnect function to invalidate a token
+  // TODO v1.2: bcrypt.hash wallet.nonce
 
   async connect(address: string, encoding: string): Promise<Authorization> {
     const wallet = await this.passwordService.validateWallet(address, encoding);
+    await this.prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { lastLogin: new Date() },
+    });
 
     return {
       accessToken: this.generateAccessToken(wallet),
@@ -31,12 +36,12 @@ export class AuthService {
     };
   }
 
-  private generateAccessToken(payload: TokenPayload): string {
+  private generateAccessToken(payload: Wallet): string {
     const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
     return accessToken;
   }
 
-  private generateRefreshToken(payload: TokenPayload): string {
+  private generateRefreshToken(payload: Wallet): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -50,7 +55,7 @@ export class AuthService {
   async refreshAccessToken(wallet: Wallet, token: string) {
     let jwtDto: JwtDto;
     try {
-      this.jwtService.verify<JwtDto>(token, {
+      jwtDto = this.jwtService.verify<JwtDto>(token, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
     } catch (e) {
@@ -65,12 +70,15 @@ export class AuthService {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { iat, exp, ...tokenPayload } = jwtDto;
-    return this.generateAccessToken(tokenPayload);
+    await this.prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { lastLogin: new Date() },
+    });
+
+    return this.generateAccessToken(wallet);
   }
 
-  async validateJwt(jwtDto: JwtDto) {
+  async validateJwt(jwtDto: JwtDto): Promise<Wallet> {
     const wallet = await this.prisma.wallet.findUnique({
       where: { address: jwtDto.address },
     });

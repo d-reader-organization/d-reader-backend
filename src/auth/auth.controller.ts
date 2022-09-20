@@ -1,25 +1,27 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { WalletEntity } from '../decorators/wallet.decorator';
 import { RestAuthGuard } from '../guards/rest-auth.guard';
-import { Wallet } from '../wallet/entities/wallet.entity';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
+import { Wallet } from '@prisma/client';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
-    private passwordService: PasswordService,
+    private readonly authService: AuthService,
+    private readonly passwordService: PasswordService,
   ) {}
 
-  @Get('request-password/:address')
+  /* Request a new one time password for your wallet to sign */
+  @Get('wallet/request-password/:address')
   async requestPassword(@Param('address') address: string) {
     return await this.passwordService.generateOneTimePassword(address);
   }
 
-  @Get('connect/:address/:encoding')
+  /* Connect your wallet with a signed and encoded one time password */
+  @Get('wallet/connect/:address/:encoding')
   async connect(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
@@ -27,8 +29,10 @@ export class AuthController {
     return await this.authService.connect(address, encoding);
   }
 
+  /* Refresh your wallets access token */
   @UseGuards(RestAuthGuard)
-  @Get('refresh-token/:refreshToken')
+  @ApiBearerAuth('JWT-auth')
+  @Get('wallet/refresh-token/:refreshToken')
   async reauthorize(
     @Param('refreshToken') refreshToken: string,
     @WalletEntity()

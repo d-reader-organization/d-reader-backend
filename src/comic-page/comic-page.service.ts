@@ -1,49 +1,53 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
-import {
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  putS3Object,
-} from '../aws/s3client';
+import { deleteS3Objects, putS3Object } from '../aws/s3client';
 import { Prisma } from '@prisma/client';
 import { isEmpty } from 'lodash';
+import * as path from 'path';
 
 export type ComicPageWhereInput = {
-  comicId: Prisma.IntFilter | number;
-  chapterNumber?: Prisma.IntFilter | number;
-  id?: Prisma.IntFilter | number;
+  comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
+  id?: Prisma.ComicPageWhereInput['id'];
 };
 
 @Injectable()
 export class ComicPageService {
   constructor(private prisma: PrismaService) {}
 
-  // TODO v1.2: try catch uploads. What if one upload fails in Promise.all parallel?
-  async createMany(createComicPagesDto: CreateComicPageDto[]) {
-    // TODO v1.2: Promise.allSettled
+  // TODO: try catch uploads. What if one upload fails in Promise.all parallel?
+  async createMany(
+    createComicPagesDto: CreateComicPageDto[],
+    comicIssueSlug: string = 'TODO:_temp-slug',
+  ) {
+    // TODO v2: Promise.allSettled
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
-        const { comicId, image, altImage, pageNumber, chapterNumber, ...rest } =
+        const { comicIssueId, image, altImage, pageNumber, ...rest } =
           createComicPageDto;
 
-        // $transaction API?
-        // try catch file uploads
-        const imageKey = `${comicId}/chapter-${chapterNumber}/page-${pageNumber}.png`;
-        await putS3Object({ Key: imageKey, Body: image.buffer });
-
-        let altImageKey: string;
-        if (altImage) {
-          altImageKey = `${comicId}/chapter-${chapterNumber}/alt-page-${pageNumber}.png`;
-          await putS3Object({ Key: altImageKey, Body: altImage.buffer });
+        // Upload files if any
+        let imageKey: string, altImageKey: string;
+        try {
+          imageKey = await this.uploadFile(comicIssueSlug, pageNumber, image);
+          if (altImage)
+            altImageKey = await this.uploadFile(
+              comicIssueSlug,
+              pageNumber,
+              altImage,
+            );
+        } catch {
+          throw new BadRequestException('Malformed file upload');
         }
 
         const comicPageData: Prisma.ComicPageCreateManyInput = {
           ...rest,
-          comicId,
+          comicIssueId,
           pageNumber,
-          chapterNumber,
           image: imageKey,
           altImage: altImageKey,
         };
@@ -56,6 +60,8 @@ export class ComicPageService {
     //   data: comicPagesData,
     // });
 
+    // TODO: if it fails, undo file upload
+
     // return comicPages;
     return comicPagesData;
   }
@@ -65,7 +71,7 @@ export class ComicPageService {
     where: ComicPageWhereInput,
     createComicPagesDto: CreateComicPageDto[],
   ) {
-    await this.removeComicPages(where);
+    await this.deleteComicPages(where);
     const comicPagesData = await this.createMany(createComicPagesDto);
 
     const comicPages = await this.prisma.comicPage.createMany({
@@ -75,7 +81,7 @@ export class ComicPageService {
     return comicPages;
   }
 
-  async removeComicPages(where: ComicPageWhereInput) {
+  async deleteComicPages(where: ComicPageWhereInput) {
     const pagesToDelete = await this.prisma.comicPage.findMany({ where });
 
     // Remove s3 assets
@@ -94,11 +100,33 @@ export class ComicPageService {
       await this.prisma.comicPage.deleteMany({ where });
     } catch {
       throw new NotFoundException(
-        `Comic pages with comic id ${where.comicId || '--'} and chapter ${
-          where.chapterNumber || '--'
-        } do not exist`,
+        `Comic pages with comic issue ${
+          where.comicIssue.slug || '--'
+        } and/or id ${where.id || '--'} do not exist`,
       );
     }
     return;
+  }
+
+  async uploadFile(
+    comicIssueSlug: string,
+    pageNumber: number,
+    file: Express.Multer.File,
+  ) {
+    if (file) {
+      const fileKey = `comic-issues/${comicIssueSlug}/pages/${
+        file.fieldname
+      }-${pageNumber}${path.extname(file.originalname)}`;
+
+      await putS3Object({
+        ContentType: file.mimetype,
+        Key: fileKey,
+        Body: file.buffer,
+      });
+
+      return fileKey;
+    } else {
+      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
+    }
   }
 }

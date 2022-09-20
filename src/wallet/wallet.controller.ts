@@ -9,6 +9,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
@@ -16,65 +17,80 @@ import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { RolesGuard, Roles } from 'src/guards/roles.guard';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiFile } from 'src/decorators/api-file.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Wallet } from './entities/wallet.entity';
-import { Role } from '@prisma/client';
+import { WalletDto } from './dto/wallet.dto';
+import { Wallet, Role } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { plainToInstance } from 'class-transformer';
 
-@ApiTags('Wallet')
-@ApiBearerAuth('JWT-auth')
 @UseGuards(RestAuthGuard)
+@ApiBearerAuth('JWT-auth')
+@ApiTags('Wallet')
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
-  /* Creates a new user */
+  /* Create a new wallet */
   @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
-  @Post()
-  create(@Body() createWalletDto: CreateWalletDto) {
-    return this.walletService.create(createWalletDto);
+  @Post('create')
+  async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
+    const wallet = await this.walletService.create(createWalletDto);
+    return plainToInstance(WalletDto, wallet);
   }
 
-  /* Get user data from auth token */
-  @Get('me')
-  findMe(
-    @WalletEntity()
-    wallet: Wallet,
-  ): Wallet {
-    return wallet;
+  /* Get all wallets */
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('get')
+  async findAll(): Promise<WalletDto[]> {
+    const wallets = await this.walletService.findAll();
+    return plainToInstance(WalletDto, wallets);
   }
 
-  /* Get all users */
-  @Get()
-  findAll() {
-    return this.walletService.findAll();
+  /* Get wallet data from auth token */
+  @Get('get/me')
+  async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
+    const me = await this.walletService.findOne(wallet.address);
+    return plainToInstance(WalletDto, me);
   }
 
-  /* Get specific user by unique name */
-  @Get(':address')
-  findOne(@Param('address') address: string) {
-    return this.walletService.findOne(address);
+  /* Get specific wallet by unique address */
+  @Get('get/:address')
+  async findOne(@Param('address') address: string): Promise<WalletDto> {
+    const wallet = await this.walletService.findOne(address);
+    return plainToInstance(WalletDto, wallet);
   }
 
-  /* Update specific user */
+  /* Update specific wallet */
   @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('avatar'))
-  @Patch(':address')
-  update(
+  @Patch('update/:address')
+  async update(
     @Param('address') address: string,
     @Body() updateWalletDto: UpdateWalletDto,
-    @UploadedFile() avatar: Express.Multer.File,
-  ) {
-    return this.walletService.update(address, { ...updateWalletDto, avatar });
+  ): Promise<WalletDto> {
+    const wallet = await this.walletService.update(address, updateWalletDto);
+    return plainToInstance(WalletDto, wallet);
   }
 
-  /* Delete specific user */
+  /* Update specific wallets avatar file */
+  @ApiConsumes('multipart/form-data')
+  @ApiFile('avatar')
+  @UseInterceptors(FileInterceptor('avatar'))
+  @Patch('update/:address/avatar')
+  async updateAvatar(
+    @Param('address') address: string,
+    @UploadedFile() avatar: Express.Multer.File,
+  ): Promise<WalletDto> {
+    const updatedWallet = await this.walletService.updateFile(address, avatar);
+    return plainToInstance(WalletDto, updatedWallet);
+  }
+
+  /* Delete specific wallet */
   @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
-  @Delete(':address')
+  @Delete('delete/:address')
   remove(@Param('address') address: string) {
     return this.walletService.remove(address);
   }
