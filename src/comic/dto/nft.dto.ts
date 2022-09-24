@@ -10,7 +10,7 @@ export class NFTDto {
 
   @Expose()
   @IsString()
-  // TODO v1.1: @IsHash()
+  // TODO v1.2: @IsHash()
   @IsNotEmpty()
   mint: string;
 
@@ -19,6 +19,7 @@ export class NFTDto {
   comicIssueId: number;
 
   // @Expose()
+  // @IsArray()
   // @Type(() => ComicIssueDto)
   // comicIssue: ComicIssueDto;
 }

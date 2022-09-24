@@ -49,35 +49,39 @@ export class ComicIssueController {
   @Post('create')
   async create(
     @Body() createComicIssueDto: CreateComicIssueDto,
-    @UploadedFiles() files: CreateComicIssueFilesDto,
+    @UploadedFiles({
+      transform: (val) => plainToInstance(CreateComicIssueFilesDto, val),
+    })
+    files: CreateComicIssueFilesDto,
   ): Promise<ComicIssueDto> {
-    // TODO v1.1: Check if creator.id matches comic.creator.id
+    // TODO!: Check if creator.id matches comicIssue.comic.creator.id
     const comicIssue = await this.comicIssueService.create(
       createComicIssueDto,
       files,
     );
 
-    return plainToInstance(ComicIssueDto, comicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Get all comic issues */
   @Get('get')
   async findAll(): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll();
-    return plainToInstance(ComicIssueDto, comicIssues);
+    const comicIssuesDto = plainToInstance(ComicIssueDto, comicIssues);
+    return ComicIssueDto.presignUrls(comicIssuesDto);
   }
 
   /* Get specific comic issue by unique slug */
   @Get('get/:slug')
   async findOne(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOne(slug);
-    return plainToInstance(ComicIssueDto, comicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Update specific comic issue */
   @Patch('update/:slug')
-  // TODO v1.1: Check if new comicId exists
-  // If yes, check if comic.creator.id === creator.id
   async update(
     @Param('slug') slug: string,
     @Body() updateComicIssueDto: UpdateComicIssueDto,
@@ -86,7 +90,8 @@ export class ComicIssueController {
       slug,
       updateComicIssueDto,
     );
-    return plainToInstance(ComicIssueDto, updatedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Update specific comic issues cover file */
@@ -102,7 +107,8 @@ export class ComicIssueController {
       slug,
       cover,
     );
-    return plainToInstance(ComicIssueDto, updatedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Update specific comic issues soundtrack file */
@@ -118,28 +124,32 @@ export class ComicIssueController {
       slug,
       soundtrack,
     );
-    return plainToInstance(ComicIssueDto, updatedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Publish comic issue */
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(slug);
-    return plainToInstance(ComicIssueDto, publishedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, publishedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Unpublish comic issue */
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const unpublishedComicIssue = await this.comicIssueService.unpublish(slug);
-    return plainToInstance(ComicIssueDto, unpublishedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, unpublishedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Queue comic issue for deletion */
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(slug);
-    return plainToInstance(ComicIssueDto, deletedComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, deletedComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Remove comic issue for deletion queue */
@@ -148,7 +158,8 @@ export class ComicIssueController {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(
       slug,
     );
-    return plainToInstance(ComicIssueDto, recoveredComicIssue);
+    const comicIssueDto = plainToInstance(ComicIssueDto, recoveredComicIssue);
+    return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Completely remove specific comic issue, including files from s3 bucket */

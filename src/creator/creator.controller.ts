@@ -52,28 +52,35 @@ export class CreatorController {
   async create(
     @WalletEntity() wallet: Wallet,
     @Body() createCreatorDto: CreateCreatorDto,
-    @UploadedFiles() files: CreateCreatorFilesDto,
+    @UploadedFiles({
+      // Is this memory consuming?
+      transform: (val) => plainToInstance(CreateCreatorFilesDto, val),
+    })
+    files: CreateCreatorFilesDto,
   ) {
     const creator = await this.creatorService.create(
       wallet.id,
       createCreatorDto,
       files,
     );
-    return plainToInstance(CreatorDto, creator);
+    const creatorDto = plainToInstance(CreatorDto, creator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Get all creators */
   @Get('get')
   async findAll(): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll();
-    return plainToInstance(CreatorDto, creators);
+    const creatorsDto = plainToInstance(CreatorDto, creators);
+    return await CreatorDto.presignUrls(creatorsDto);
   }
 
   /* Get specific creator by unique slug */
   @Get('get/:slug')
   async findOne(@Param('slug') slug: string): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug);
-    return plainToInstance(CreatorDto, creator);
+    const creatorDto = plainToInstance(CreatorDto, creator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creator */
@@ -86,7 +93,8 @@ export class CreatorController {
       slug,
       updateCreatorDto,
     );
-    return plainToInstance(CreatorDto, updatedCreator);
+    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators thumbnail file */
@@ -102,7 +110,8 @@ export class CreatorController {
       slug,
       thumbnail,
     );
-    return plainToInstance(CreatorDto, updatedCreator);
+    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators avatar file */
@@ -115,7 +124,8 @@ export class CreatorController {
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, avatar);
-    return plainToInstance(CreatorDto, updatedCreator);
+    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators banner file */
@@ -128,7 +138,8 @@ export class CreatorController {
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, banner);
-    return plainToInstance(CreatorDto, updatedCreator);
+    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators logo file */
@@ -141,24 +152,27 @@ export class CreatorController {
     @UploadedFile() logo: Express.Multer.File,
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, logo);
-    return plainToInstance(CreatorDto, updatedCreator);
+    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
-  // TODO v1.1: delete only creator if it's creator is the one from the jwt token
+  // TODO!: delete creator only if it's the creator from the jwt token or if SuperAdmin
   // @UseGuards(EntityOwnershipGuard)
   // @EntityType(Creator)
   /* Queue creator for deletion */
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
-    return plainToInstance(CreatorDto, deletedCreator);
+    const creatorDto = plainToInstance(CreatorDto, deletedCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Remove creator for deletion queue */
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
-    return plainToInstance(CreatorDto, recoveredCreator);
+    const creatorDto = plainToInstance(CreatorDto, recoveredCreator);
+    return await CreatorDto.presignUrls(creatorDto);
   }
 
   /* Completely remove specific creator, including files from s3 bucket */

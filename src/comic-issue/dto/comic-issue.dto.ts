@@ -3,6 +3,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
+  IsDateString,
   IsNotEmpty,
   IsOptional,
   IsPositive,
@@ -11,9 +12,9 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
-// import { ComicDto } from 'src/comic/dto/comic.dto';
+import { getReadUrl } from 'src/aws/s3client';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
-import { IsSnakeCase } from 'src/decorators/IsSnakeCase';
+import { IsKebabCase } from 'src/decorators/IsKebabCase';
 
 @Exclude()
 export class ComicIssueDto {
@@ -22,21 +23,22 @@ export class ComicIssueDto {
 
   @Expose()
   @IsPositive()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
   number: number;
 
   @Expose()
-  @IsString()
   @IsNotEmpty()
   @MaxLength(54)
   title: string;
 
   @Expose()
   @IsNotEmpty()
-  @IsSnakeCase()
+  @IsKebabCase()
   slug: string;
 
   @Expose()
-  @IsString()
   @MaxLength(256)
   @IsOptional()
   @ValidateIf((p) => p.description !== '')
@@ -44,7 +46,6 @@ export class ComicIssueDto {
   description: string;
 
   @Expose()
-  @IsString()
   @MaxLength(128)
   @IsOptional()
   @ValidateIf((p) => p.flavorText !== '')
@@ -74,34 +75,17 @@ export class ComicIssueDto {
   openSea: string;
 
   @Expose()
-  @Type(() => Date)
-  releaseDate: Date;
-
-  // @Expose()
-  // @IsOptional()
-  // @ApiProperty({ required: false })
-  // @Type(() => Date)
-  // publishedAt: Date | null;
+  @IsDateString()
+  @Transform(({ value }) => new Date(value).toISOString())
+  releaseDate: string;
 
   @Expose()
   @Transform(({ obj }) => !!obj.publishedAt)
   isPublished: boolean;
 
-  // @Expose()
-  // @IsOptional()
-  // @ApiProperty({ required: false })
-  // @Type(() => Date)
-  // deletedAt: Date | null;
-
   @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
   isDeleted: boolean;
-
-  // @Expose()
-  // @IsOptional()
-  // @ApiProperty({ required: false })
-  // @Type(() => Date)
-  // verifiedAt: Date | null;
 
   @Expose()
   @Transform(({ obj }) => !!obj.verifiedAt)
@@ -109,6 +93,9 @@ export class ComicIssueDto {
 
   @Expose()
   @IsPositive()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
   comicId: number;
 
   // @Expose()
@@ -122,9 +109,44 @@ export class ComicIssueDto {
 
   @Expose()
   @ArrayUnique()
-  @IsString({ each: true })
-  @Transform(({ obj }) => {
-    return obj.nfts.map((nft) => nft.mint);
-  })
+  @Type(() => String)
+  @Transform(({ obj }) => obj.nfts.map((nft) => nft.mint))
   hashlist: string[];
+
+  // presignUrls = async () => {
+  //   // Serial
+  //   // this.cover = await getReadUrl(this.cover);
+  //   // this.soundtrack = await getReadUrl(this.soundtrack);
+
+  //   // Parallel
+  //   await Promise.all([
+  //     async () => (this.cover = await getReadUrl(this.cover)),
+  //     async () => (this.soundtrack = await getReadUrl(this.soundtrack)),
+  //   ]);
+
+  //   return this;
+  // };
+
+  static async presignUrls(input: ComicIssueDto): Promise<ComicIssueDto>;
+  static async presignUrls(input: ComicIssueDto[]): Promise<ComicIssueDto[]>;
+  static async presignUrls(
+    input: ComicIssueDto | ComicIssueDto[],
+  ): Promise<ComicIssueDto | ComicIssueDto[]> {
+    if (Array.isArray(input)) {
+      input = await Promise.all(
+        input.map(async (obj) => {
+          await Promise.all([
+            async () => (obj.cover = await getReadUrl(obj.cover)),
+            async () => (obj.soundtrack = await getReadUrl(obj.soundtrack)),
+          ]);
+          return obj;
+        }),
+      );
+      return input;
+    } else {
+      input.cover = await getReadUrl(input.cover);
+      input.soundtrack = await getReadUrl(input.soundtrack);
+      return input;
+    }
+  }
 }

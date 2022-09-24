@@ -1,8 +1,8 @@
 import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 import { IsOptional } from 'class-validator';
-import { snakeCase } from 'lodash';
-import { IsSnakeCase } from 'src/decorators/IsSnakeCase';
+import { kebabCase } from 'lodash';
+import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicDto } from './comic.dto';
 
 export class CreateComicDto extends PickType(ComicDto, [
@@ -21,22 +21,25 @@ export class CreateComicDto extends PickType(ComicDto, [
   'openSea',
 ]) {
   @Expose()
-  @IsSnakeCase()
-  @Transform(({ obj }) => snakeCase(obj.name))
+  @IsKebabCase()
+  @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 }
 
 export class CreateComicFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   thumbnail?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   pfp?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   logo?: Express.Multer.File | null;
 }

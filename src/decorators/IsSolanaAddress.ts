@@ -10,7 +10,7 @@ export const IS_SOLANA_ADDRESS = 'isSolanaAddress';
 export function isSolanaAddress(value: unknown): boolean {
   try {
     return typeof value === 'string' && PublicKey.isOnCurve(value);
-  } catch (e) {
+  } catch {
     return false;
   }
 }

@@ -1,8 +1,8 @@
 import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
 import { Exclude, Expose, Transform } from 'class-transformer';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
-import { snakeCase } from 'lodash';
-import { IsSnakeCase } from 'src/decorators/IsSnakeCase';
+import { IsOptional, MaxLength, MinLength } from 'class-validator';
+import { kebabCase } from 'lodash';
+import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from './creator.dto';
 
 @Exclude()
@@ -13,12 +13,13 @@ export class CreateCreatorDto extends PickType(CreatorDto, [
   'flavorText',
   'website',
 ]) {
-  @IsSnakeCase()
-  @Transform(({ obj }) => snakeCase(obj.name))
+  @Expose()
+  @IsKebabCase()
+  @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 
-  @IsString()
+  @Expose()
   @MinLength(8)
   @MaxLength(54)
   password: string;
@@ -26,18 +27,22 @@ export class CreateCreatorDto extends PickType(CreatorDto, [
 
 export class CreateCreatorFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   thumbnail?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   avatar?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   banner?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
   @IsOptional()
   logo?: Express.Multer.File | null;
 }

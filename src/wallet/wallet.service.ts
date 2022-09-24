@@ -12,33 +12,24 @@ import {
   deleteS3Object,
   deleteS3Objects,
   listS3FolderKeys,
-  putS3Object,
+  uploadFile,
 } from 'src/aws/s3client';
 import { isEmpty } from 'lodash';
-import * as path from 'path';
 
 @Injectable()
 export class WalletService {
   constructor(private prisma: PrismaService) {}
 
   async create(createWalletDto: CreateWalletDto) {
-    const { address } = createWalletDto;
+    try {
+      const wallet = await this.prisma.wallet.create({
+        data: createWalletDto,
+      });
 
-    const existingWallet = await this.prisma.wallet.findUnique({
-      where: { address },
-    });
-
-    if (existingWallet) {
-      throw new BadRequestException(
-        `Wallet with address ${address} exists in the database`,
-      );
+      return wallet;
+    } catch {
+      throw new BadRequestException('Bad wallet data');
     }
-
-    const wallet = await this.prisma.wallet.create({
-      data: { address },
-    });
-
-    return wallet;
   }
 
   async findAll() {
@@ -78,7 +69,8 @@ export class WalletService {
   }
 
   async updateFile(address: string, file: Express.Multer.File) {
-    const fileKey = await this.uploadFile(address, file);
+    const prefix = await this.getS3FilePrefix(address);
+    const fileKey = await uploadFile(prefix, file);
     try {
       const updatedWallet = await this.prisma.wallet.update({
         where: { address },
@@ -99,7 +91,9 @@ export class WalletService {
     await this.breakIfSuperadmin(address);
 
     // Remove s3 assets
-    const keys = await listS3FolderKeys({ Prefix: `wallets/${address}` });
+    const prefix = await this.getS3FilePrefix(address);
+    // TODO!: might actually have to strip off '/' from prefix
+    const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({
@@ -127,21 +121,13 @@ export class WalletService {
     }
   }
 
-  async uploadFile(address: string, file: Express.Multer.File) {
-    if (file) {
-      const fileKey = `wallets/${address}/${file.fieldname}${path.extname(
-        file.originalname,
-      )}`;
+  async getS3FilePrefix(address: string) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { address },
+      select: { address: true },
+    });
 
-      await putS3Object({
-        ContentType: file.mimetype,
-        Key: fileKey,
-        Body: file.buffer,
-      });
-
-      return fileKey;
-    } else {
-      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-    }
+    const prefix = `wallets/${wallet.address}/`;
+    return prefix;
   }
 }

@@ -13,12 +13,11 @@ import {
   deleteS3Object,
   deleteS3Objects,
   listS3FolderKeys,
-  putS3Object,
+  uploadFile,
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
-import { Prisma, ComicIssue } from '@prisma/client';
-import * as path from 'path';
+import { Prisma, ComicIssue, ComicPage, NFT } from '@prisma/client';
 
 @Injectable()
 export class ComicIssueService {
@@ -32,28 +31,18 @@ export class ComicIssueService {
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
     const { slug, comicId, pages, hashlist, ...rest } = createComicIssueDto;
-    const { cover, soundtrack } = createComicIssueFilesDto;
 
-    // Upload files if any
-    let coverKey: string, soundtrackKey: string;
+    // Create ComicIssue without any files uploaded
+    let comicIssue: ComicIssue & { pages: ComicPage[]; nfts: NFT[] };
+
+    // Upload comic pages and format data for INSERT
+    const pagesData = await this.comicPageService.createMany(pages);
     try {
-      if (cover) coverKey = await this.uploadFile(slug, cover);
-      if (soundtrack) soundtrackKey = await this.uploadFile(slug, soundtrack);
-    } catch {
-      throw new BadRequestException('Malformed file upload');
-    }
-
-    try {
-      // Upload comic pages and format data for INSERT
-      const pagesData = await this.comicPageService.createMany(pages);
-
-      const comicIssue = await this.prisma.comicIssue.create({
+      comicIssue = await this.prisma.comicIssue.create({
         include: { nfts: true, pages: true },
         data: {
           ...rest,
           slug,
-          cover: coverKey,
-          soundtrack: soundtrackKey,
           comic: { connect: { id: comicId } },
           pages: { createMany: { data: pagesData } },
           nfts: {
@@ -63,15 +52,33 @@ export class ComicIssueService {
           },
         },
       });
-
-      return comicIssue;
     } catch {
-      // Revert file upload
-      if (coverKey) await deleteS3Object({ Key: coverKey });
-      if (soundtrackKey) await deleteS3Object({ Key: soundtrackKey });
-      // TODO: delete pagesData images and altImages
-      throw new BadRequestException('Faulty comic issue data');
+      throw new BadRequestException('Bad comic issue data');
     }
+
+    const { cover, soundtrack } = createComicIssueFilesDto;
+
+    // Upload files if any
+    let coverKey: string, soundtrackKey: string;
+    try {
+      const prefix = await this.getS3FilePrefix(slug);
+      if (cover) coverKey = await uploadFile(prefix, cover);
+      if (soundtrack) soundtrackKey = await uploadFile(prefix, soundtrack);
+    } catch {
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    // Update Comic Issue with s3 file keys
+    comicIssue = await this.prisma.comicIssue.update({
+      where: { id: comicIssue.id },
+      include: { nfts: true, pages: true },
+      data: {
+        cover: coverKey,
+        soundtrack: soundtrackKey,
+      },
+    });
+
+    return comicIssue;
   }
 
   async findAll() {
@@ -88,6 +95,7 @@ export class ComicIssueService {
 
   async findOne(slug: string) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
+      include: { nfts: true },
       where: { slug },
     });
 
@@ -100,9 +108,6 @@ export class ComicIssueService {
 
   async update(slug: string, updateComicIssueDto: UpdateComicIssueDto) {
     const { pages, ...rest } = updateComicIssueDto;
-
-    // TODO: if name has changed, update folder names in the S3 bucket
-    // TODO: move page updates to a different endpoint
 
     // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
@@ -120,7 +125,7 @@ export class ComicIssueService {
         include: { pages: true },
         data: {
           ...rest,
-          // TODO: check if pagesData = undefined will destroy all previous relations
+          // TODO!: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
         },
       });
@@ -132,7 +137,8 @@ export class ComicIssueService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
-    const fileKey = await this.uploadFile(slug, file);
+    const prefix = await this.getS3FilePrefix(slug);
+    const fileKey = await uploadFile(prefix, file);
     try {
       const updatedComicIssue = await this.prisma.comicIssue.update({
         where: { slug },
@@ -194,8 +200,9 @@ export class ComicIssueService {
 
   async remove(slug: string) {
     // Remove s3 assets
-    // TODO: change this to /comics/{comicSlug}/issues/{comicIssueSlug}
-    const keys = await listS3FolderKeys({ Prefix: `comic-issues/${slug}` });
+    const prefix = await this.getS3FilePrefix(slug);
+    // TODO!: might actually have to strip off '/' from prefix
+    const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({
@@ -210,21 +217,16 @@ export class ComicIssueService {
     }
   }
 
-  async uploadFile(slug: string, file: Express.Multer.File) {
-    if (file) {
-      const fileKey = `comic-issues/${slug}/${file.fieldname}${path.extname(
-        file.originalname,
-      )}`;
+  async getS3FilePrefix(slug: string) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { slug },
+      select: {
+        slug: true,
+        comic: { select: { slug: true, creator: { select: { slug: true } } } },
+      },
+    });
 
-      await putS3Object({
-        ContentType: file.mimetype,
-        Key: fileKey,
-        Body: file.buffer,
-      });
-
-      return fileKey;
-    } else {
-      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-    }
+    const prefix = `creators/${comicIssue.comic.creator.slug}/comics/${comicIssue.comic.slug}/issues/${comicIssue.slug}/`;
+    return prefix;
   }
 }

@@ -5,10 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
-import { deleteS3Objects, putS3Object } from '../aws/s3client';
+import { deleteS3Objects, uploadFile } from '../aws/s3client';
 import { Prisma } from '@prisma/client';
 import { isEmpty } from 'lodash';
-import * as path from 'path';
 
 export type ComicPageWhereInput = {
   comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
@@ -19,11 +18,7 @@ export type ComicPageWhereInput = {
 export class ComicPageService {
   constructor(private prisma: PrismaService) {}
 
-  // TODO: try catch uploads. What if one upload fails in Promise.all parallel?
-  async createMany(
-    createComicPagesDto: CreateComicPageDto[],
-    comicIssueSlug: string = 'TODO:_temp-slug',
-  ) {
+  async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
     // TODO v2: Promise.allSettled
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
@@ -33,13 +28,9 @@ export class ComicPageService {
         // Upload files if any
         let imageKey: string, altImageKey: string;
         try {
-          imageKey = await this.uploadFile(comicIssueSlug, pageNumber, image);
-          if (altImage)
-            altImageKey = await this.uploadFile(
-              comicIssueSlug,
-              pageNumber,
-              altImage,
-            );
+          const prefix = await this.getS3FilePrefix(pageNumber, comicIssueId);
+          imageKey = await uploadFile(prefix, image);
+          if (altImage) altImageKey = await uploadFile(prefix, altImage);
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
@@ -60,9 +51,8 @@ export class ComicPageService {
     //   data: comicPagesData,
     // });
 
-    // TODO: if it fails, undo file upload
-
     // return comicPages;
+
     return comicPagesData;
   }
 
@@ -108,25 +98,28 @@ export class ComicPageService {
     return;
   }
 
-  async uploadFile(
-    comicIssueSlug: string,
-    pageNumber: number,
-    file: Express.Multer.File,
-  ) {
-    if (file) {
-      const fileKey = `comic-issues/${comicIssueSlug}/pages/${
-        file.fieldname
-      }-${pageNumber}${path.extname(file.originalname)}`;
+  async getS3FilePrefix(pageNumber: number, comicIssueId: number) {
+    const comicPage = await this.prisma.comicPage.findUnique({
+      where: {
+        pageNumber_comicIssueId: {
+          pageNumber,
+          comicIssueId,
+        },
+      },
+      select: {
+        pageNumber: true,
+        comicIssue: {
+          select: {
+            slug: true,
+            comic: {
+              select: { slug: true, creator: { select: { slug: true } } },
+            },
+          },
+        },
+      },
+    });
 
-      await putS3Object({
-        ContentType: file.mimetype,
-        Key: fileKey,
-        Body: file.buffer,
-      });
-
-      return fileKey;
-    } else {
-      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-    }
+    const prefix = `creators/${comicPage.comicIssue.comic.creator.slug}/comics/${comicPage.comicIssue.comic.slug}/issues/${comicPage.comicIssue.slug}/pages/`;
+    return prefix;
   }
 }

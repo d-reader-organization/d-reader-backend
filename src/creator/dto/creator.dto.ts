@@ -1,5 +1,6 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -9,9 +10,10 @@ import {
   MaxLength,
   ValidateIf,
 } from 'class-validator';
-import { IsSnakeCase } from 'src/decorators/IsSnakeCase';
+import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicDto } from 'src/comic/dto/comic.dto';
+import { getReadUrl } from 'src/aws/s3client';
 
 @Exclude()
 export class CreatorDto {
@@ -24,35 +26,22 @@ export class CreatorDto {
   email: string;
 
   @Expose()
-  @IsString()
   @IsNotEmpty()
   @MaxLength(54)
   name: string;
 
   @Expose()
   @IsNotEmpty()
-  @IsSnakeCase()
+  @IsKebabCase()
   slug: string;
-
-  // @Expose()
-  // @IsOptional()
-  // @Type(() => Date)
-  // deletedAt: Date | null;
 
   @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
   isDeleted: boolean;
 
-  // @Expose()
-  // @IsOptional()
-  // @Type(() => Date)
-  // verifiedAt: Date | null;
-
   @Expose()
   @Transform(({ obj }) => !!obj.verifiedAt)
   isVerified: boolean;
-
-  // TODO v1.1: isFeatured, isPopular
 
   @Expose()
   @IsString()
@@ -71,7 +60,6 @@ export class CreatorDto {
   logo: string;
 
   @Expose()
-  @IsString()
   @MaxLength(256)
   @IsOptional()
   @ValidateIf((p) => p.description !== '')
@@ -79,7 +67,6 @@ export class CreatorDto {
   description: string;
 
   @Expose()
-  @IsString()
   @MaxLength(128)
   @IsOptional()
   @ValidateIf((p) => p.flavorText !== '')
@@ -108,10 +95,56 @@ export class CreatorDto {
   // instagram: string;
 
   @Expose()
+  @IsArray()
   @Type(() => ComicDto)
   comics: ComicDto[];
 
   // @Expose()
   // @Type(() => WalletDto)
   // wallet: WalletDto[];
+
+  // presignUrls = async () => {
+  //   // Serial
+  //   // this.thumbnail = await getReadUrl(this.thumbnail);
+  //   // this.avatar = await getReadUrl(this.avatar);
+  //   // this.banner = await getReadUrl(this.banner);
+  //   // this.logo = await getReadUrl(this.logo);
+
+  //   // Parallel
+  //   await Promise.all([
+  //     async () => (this.thumbnail = await getReadUrl(this.thumbnail)),
+  //     async () => (this.avatar = await getReadUrl(this.avatar)),
+  //     async () => (this.banner = await getReadUrl(this.banner)),
+  //     async () => (this.logo = await getReadUrl(this.logo)),
+  //   ]);
+
+  //   return this;
+  // };
+
+  static async presignUrls(input: CreatorDto): Promise<CreatorDto>;
+  static async presignUrls(input: CreatorDto[]): Promise<CreatorDto[]>;
+  static async presignUrls(
+    input: CreatorDto | CreatorDto[],
+  ): Promise<CreatorDto | CreatorDto[]> {
+    if (Array.isArray(input)) {
+      input = await Promise.all(
+        input.map(async (obj) => {
+          await Promise.all([
+            async () => (obj.thumbnail = await getReadUrl(obj.thumbnail)),
+            async () => (obj.avatar = await getReadUrl(obj.avatar)),
+            async () => (obj.banner = await getReadUrl(obj.banner)),
+            async () => (obj.logo = await getReadUrl(obj.logo)),
+          ]);
+          return obj;
+        }),
+      );
+      return input;
+    } else {
+      input.thumbnail = await getReadUrl(input.thumbnail);
+      input.avatar = await getReadUrl(input.avatar);
+      input.banner = await getReadUrl(input.banner);
+      input.logo = await getReadUrl(input.logo);
+      return input;
+    }
+  }
 }

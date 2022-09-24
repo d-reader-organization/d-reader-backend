@@ -1,5 +1,6 @@
 import { Exclude, Expose } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
+import { getReadUrl } from 'src/aws/s3client';
 // import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 
 @Exclude()
@@ -32,4 +33,41 @@ export class ComicPageDto {
   // @Expose()
   // @Type(() => ComicIssueDto)
   // comicIssue: ComicIssueDto;
+
+  // presignUrls = async () => {
+  //   // Serial
+  //   // this.image = await getReadUrl(this.image);
+  //   // this.altImage = await getReadUrl(this.altImage);
+
+  //   // Parallel
+  //   await Promise.all([
+  //     async () => (this.image = await getReadUrl(this.image)),
+  //     async () => (this.altImage = await getReadUrl(this.altImage)),
+  //   ]);
+
+  //   return this;
+  // };
+
+  static async presignUrls(input: ComicPageDto): Promise<ComicPageDto>;
+  static async presignUrls(input: ComicPageDto[]): Promise<ComicPageDto[]>;
+  static async presignUrls(
+    input: ComicPageDto | ComicPageDto[],
+  ): Promise<ComicPageDto | ComicPageDto[]> {
+    if (Array.isArray(input)) {
+      input = await Promise.all(
+        input.map(async (obj) => {
+          await Promise.all([
+            async () => (obj.image = await getReadUrl(obj.image)),
+            async () => (obj.altImage = await getReadUrl(obj.altImage)),
+          ]);
+          return obj;
+        }),
+      );
+      return input;
+    } else {
+      input.image = await getReadUrl(input.image);
+      input.altImage = await getReadUrl(input.altImage);
+      return input;
+    }
+  }
 }

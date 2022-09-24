@@ -25,7 +25,6 @@ export class PasswordService {
       create: { address, nonce },
     });
 
-    // TODO v1.2: bcrypt.hash ?
     return `${process.env.SIGN_MESSAGE}${nonce}`;
   }
 
@@ -50,7 +49,6 @@ export class PasswordService {
 
     // Try to construct a Message and match message bytes with OTP bytes
     try {
-      // TODO v1.2: review this part
       // const message = Message.from(signatureBytes);
       const isVerified = nacl.sign.detached.verify(
         oneTimePasswordBytes,
@@ -91,7 +89,8 @@ export class PasswordService {
         } else return true;
       }
     } catch (e) {
-      // Failed to construct a Message object
+      console.log(e);
+      // Failed to construct a Transaction object
     }
 
     throw new UnauthorizedException('Failed to connect the wallet!');

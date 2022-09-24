@@ -20,9 +20,6 @@ export class AuthService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  // TODO v1.2: disconnect function to invalidate a token
-  // TODO v1.2: bcrypt.hash wallet.nonce
-
   async connect(address: string, encoding: string): Promise<Authorization> {
     const wallet = await this.passwordService.validateWallet(address, encoding);
     await this.prisma.wallet.update({
@@ -58,7 +55,7 @@ export class AuthService {
       jwtDto = this.jwtService.verify<JwtDto>(token, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException(
         'Refresh token invalid or expired, please reconnect',
       );

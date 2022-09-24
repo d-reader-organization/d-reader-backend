@@ -16,4 +16,4 @@ export type JwtDto = Wallet & {
   exp: number;
 };
 
-// TODO v1.2: TokenPayload
+// TokenPayload

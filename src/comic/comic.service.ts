@@ -13,10 +13,10 @@ import {
   deleteS3Object,
   deleteS3Objects,
   listS3FolderKeys,
-  putS3Object,
+  uploadFile,
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
-import * as path from 'path';
+import { Comic, ComicIssue } from '@prisma/client';
 
 @Injectable()
 export class ComicService {
@@ -28,39 +28,44 @@ export class ComicService {
     createComicFilesDto: CreateComicFilesDto,
   ) {
     const { slug, ...rest } = createComicDto;
+
+    // Create Comic without any files uploaded
+    let comic: Comic & { issues: ComicIssue[] };
+    try {
+      comic = await this.prisma.comic.create({
+        include: { issues: true },
+        data: { ...rest, slug, creatorId },
+      });
+    } catch {
+      throw new BadRequestException('Bad comic data');
+    }
+
     const { thumbnail, pfp, logo } = createComicFilesDto;
 
     // Upload files if any
     let thumbnailKey: string, pfpKey: string, logoKey: string;
     try {
-      if (thumbnail) thumbnailKey = await this.uploadFile(slug, thumbnail);
-      if (pfp) pfpKey = await this.uploadFile(slug, pfp);
-      if (logo) logoKey = await this.uploadFile(slug, logo);
+      const prefix = await this.getS3FilePrefix(slug);
+      if (thumbnail) thumbnailKey = await uploadFile(prefix, thumbnail);
+      if (pfp) pfpKey = await uploadFile(prefix, pfp);
+      if (logo) logoKey = await uploadFile(prefix, logo);
     } catch {
+      await this.prisma.comic.delete({ where: { id: comic.id } });
       throw new BadRequestException('Malformed file upload');
     }
 
-    try {
-      const comic = await this.prisma.comic.create({
-        include: { issues: true },
-        data: {
-          ...rest,
-          slug,
-          creatorId,
-          thumbnail: thumbnailKey,
-          pfp: pfpKey,
-          logo: logoKey,
-        },
-      });
+    // Update Comic with s3 file keys
+    comic = await this.prisma.comic.update({
+      where: { id: comic.id },
+      include: { issues: true },
+      data: {
+        thumbnail: thumbnailKey,
+        pfp: pfpKey,
+        logo: logoKey,
+      },
+    });
 
-      return comic;
-    } catch {
-      // Revert file upload
-      if (thumbnailKey) await deleteS3Object({ Key: thumbnailKey });
-      if (pfpKey) await deleteS3Object({ Key: pfpKey });
-      if (logoKey) await deleteS3Object({ Key: logoKey });
-      throw new BadRequestException('Faulty comic data');
-    }
+    return comic;
   }
 
   async findAll() {
@@ -87,18 +92,10 @@ export class ComicService {
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
-    const { ...rest } = updateComicDto;
-
-    // TODO: if name has changed, update folder names in the S3 bucket
-    // if (updateComicDto.name && name !== updateComicDto.name)
-    // copy folder and delete the old one, update keys in the database
-    // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/examples-s3-objects.html#copy-object
-    // https://www.anycodings.com/1questions/5143423/nodejs-renaming-s3-object-via-aws-sdk-module
-
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug },
-        data: rest,
+        data: updateComicDto,
       });
 
       return updatedComic;
@@ -108,7 +105,8 @@ export class ComicService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
-    const fileKey = await this.uploadFile(slug, file);
+    const prefix = await this.getS3FilePrefix(slug);
+    const fileKey = await uploadFile(prefix, file);
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug },
@@ -169,7 +167,9 @@ export class ComicService {
 
   async remove(slug: string) {
     // Remove s3 assets
-    const keys = await listS3FolderKeys({ Prefix: `comics/${slug}` });
+    const prefix = await this.getS3FilePrefix(slug);
+    // TODO!: might actually have to strip off '/' from prefix
+    const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({
@@ -185,21 +185,16 @@ export class ComicService {
     return;
   }
 
-  async uploadFile(slug: string, file: Express.Multer.File) {
-    if (file) {
-      const fileKey = `comics/${slug}/${file.fieldname}${path.extname(
-        file.originalname,
-      )}`;
+  async getS3FilePrefix(slug: string) {
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug },
+      select: {
+        slug: true,
+        creator: { select: { slug: true } },
+      },
+    });
 
-      await putS3Object({
-        ContentType: file.mimetype,
-        Key: fileKey,
-        Body: file.buffer,
-      });
-
-      return fileKey;
-    } else {
-      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-    }
+    const prefix = `creators/${comic.creator.slug}/comics/${comic.slug}/`;
+    return prefix;
   }
 }

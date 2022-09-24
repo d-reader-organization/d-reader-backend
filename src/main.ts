@@ -14,9 +14,6 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // TODO v1.2: API rate limiting: https://docs.nestjs.com/security/rate-limiting
-  // TODO v1.2: config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
-
   // Validation - strip validated object of any properties that do not have any decorators
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 

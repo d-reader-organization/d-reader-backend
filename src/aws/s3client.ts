@@ -12,12 +12,20 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { BadRequestException } from '@nestjs/common';
 import config from '../configs/config';
+import * as path from 'path';
 
-// TODO v2: refator this to s3.service.ts ?
 const REGION = config().s3.region || 'us-east-1';
 
-const s3Client = new S3Client({ region: REGION });
+const s3Client = new S3Client({
+  region: REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 const putS3Object = async (
   putObjectInput: Omit<PutObjectCommandInput, 'Bucket'>,
@@ -39,6 +47,20 @@ const getS3Object = async (
       ...getObjectInput,
     }),
   );
+};
+
+const getReadUrl = async (key: string) => {
+  // If key is an empty string, return it
+  if (!key) return key;
+
+  const getCommand = new GetObjectCommand({
+    Bucket: config().s3.bucket,
+    Key: key,
+  });
+  const signedUrl = await getSignedUrl(s3Client, getCommand, {
+    expiresIn: 3600,
+  });
+  return signedUrl;
 };
 
 const deleteS3Object = async (
@@ -114,12 +136,30 @@ const listS3FolderKeys = async (
   return await crawlS3FolderKeys();
 };
 
+const uploadFile = async (prefix: string, file: Express.Multer.File) => {
+  if (file) {
+    const fileKey = prefix + file.fieldname + path.extname(file.originalname);
+
+    await putS3Object({
+      ContentType: file.mimetype,
+      Key: fileKey,
+      Body: file.buffer,
+    });
+
+    return fileKey;
+  } else {
+    throw new BadRequestException(`No valid ${file.fieldname} file provided`);
+  }
+};
+
 export {
   s3Client,
   putS3Object,
   uploadS3Object,
   getS3Object,
+  getReadUrl,
   deleteS3Object,
   deleteS3Objects,
   listS3FolderKeys,
+  uploadFile,
 };

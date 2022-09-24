@@ -13,10 +13,10 @@ import {
   deleteS3Object,
   deleteS3Objects,
   listS3FolderKeys,
-  putS3Object,
+  uploadFile,
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
-import * as path from 'path';
+import { Creator } from '@prisma/client';
 
 @Injectable()
 export class CreatorService {
@@ -28,6 +28,17 @@ export class CreatorService {
     createCreatorFilesDto: CreateCreatorFilesDto,
   ) {
     const { slug, ...rest } = createCreatorDto;
+
+    // Create Creator without any files uploaded
+    let creator: Creator;
+    try {
+      creator = await this.prisma.creator.create({
+        data: { ...rest, slug, walletId },
+      });
+    } catch {
+      throw new BadRequestException('Bad creator data');
+    }
+
     const { thumbnail, avatar, banner, logo } = createCreatorFilesDto;
 
     // Upload files if any
@@ -36,36 +47,27 @@ export class CreatorService {
       bannerKey: string,
       logoKey: string;
     try {
-      if (thumbnail) thumbnailKey = await this.uploadFile(slug, thumbnail);
-      if (avatar) avatarKey = await this.uploadFile(slug, avatar);
-      if (banner) bannerKey = await this.uploadFile(slug, banner);
-      if (logo) logoKey = await this.uploadFile(slug, logo);
+      const prefix = await this.getS3FilePrefix(slug);
+      if (thumbnail) thumbnailKey = await uploadFile(prefix, thumbnail);
+      if (avatar) avatarKey = await uploadFile(prefix, avatar);
+      if (banner) bannerKey = await uploadFile(prefix, banner);
+      if (logo) logoKey = await uploadFile(prefix, logo);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
 
-    try {
-      const creator = await this.prisma.creator.create({
-        data: {
-          ...rest,
-          slug,
-          walletId,
-          thumbnail: thumbnailKey,
-          avatar: avatarKey,
-          banner: bannerKey,
-          logo: logoKey,
-        },
-      });
+    // Update Creator with s3 file keys
+    creator = await this.prisma.creator.update({
+      where: { id: creator.id },
+      data: {
+        thumbnail: thumbnailKey,
+        avatar: avatarKey,
+        banner: bannerKey,
+        logo: logoKey,
+      },
+    });
 
-      return creator;
-    } catch {
-      // Revert file upload
-      if (thumbnailKey) await deleteS3Object({ Key: thumbnailKey });
-      if (avatarKey) await deleteS3Object({ Key: avatarKey });
-      if (bannerKey) await deleteS3Object({ Key: bannerKey });
-      if (logoKey) await deleteS3Object({ Key: logoKey });
-      throw new BadRequestException('Faulty creator data');
-    }
+    return creator;
   }
 
   async findAll() {
@@ -81,6 +83,7 @@ export class CreatorService {
 
   async findOne(slug: string) {
     const creator = await this.prisma.creator.findUnique({
+      include: { comics: true },
       where: { slug },
     });
 
@@ -92,18 +95,10 @@ export class CreatorService {
   }
 
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
-    const { ...rest } = updateCreatorDto;
-
-    // TODO: if name has changed, update folder names in the S3 bucket
-    // if (updateCreatorDto.name && name !== updateCreatorDto.name)
-    // copy folder and delete the old one, update keys in the database
-    // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/examples-s3-objects.html#copy-object
-    // https://www.anycodings.com/1questions/5143423/nodejs-renaming-s3-object-via-aws-sdk-module
-
     try {
       const updatedCreator = await this.prisma.creator.update({
         where: { slug },
-        data: rest,
+        data: updateCreatorDto,
       });
 
       return updatedCreator;
@@ -113,7 +108,8 @@ export class CreatorService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
-    const fileKey = await this.uploadFile(slug, file);
+    const prefix = await this.getS3FilePrefix(slug);
+    const fileKey = await uploadFile(prefix, file);
     try {
       const updatedCreator = await this.prisma.creator.update({
         where: { slug },
@@ -152,7 +148,9 @@ export class CreatorService {
 
   async remove(slug: string) {
     // Remove s3 assets
-    const keys = await listS3FolderKeys({ Prefix: `creators/${slug}` });
+    const prefix = await this.getS3FilePrefix(slug);
+    // TODO!: might actually have to strip off '/' from prefix
+    const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({
@@ -168,21 +166,14 @@ export class CreatorService {
     return;
   }
 
-  async uploadFile(slug: string, file: Express.Multer.File) {
-    if (file) {
-      const fileKey = `creators/${slug}/${file.fieldname}${path.extname(
-        file.originalname,
-      )}`;
+  async getS3FilePrefix(slug: string) {
+    // const creator = await this.prisma.creator.findUnique({
+    //   where: { slug },
+    //   select: { slug: true },
+    // });
 
-      await putS3Object({
-        ContentType: file.mimetype,
-        Key: fileKey,
-        Body: file.buffer,
-      });
-
-      return fileKey;
-    } else {
-      throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-    }
+    // const prefix = `creators/${creator.slug}/`;
+    const prefix = `creators/${slug}/`;
+    return prefix;
   }
 }

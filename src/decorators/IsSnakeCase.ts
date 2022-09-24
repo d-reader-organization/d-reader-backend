@@ -12,7 +12,7 @@ export function isSnakeCase(value: unknown): boolean {
       const snakeCaseValue = snakeCase(value);
       return value === snakeCaseValue;
     } else return false;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
