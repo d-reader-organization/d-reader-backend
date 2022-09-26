@@ -27,8 +27,14 @@ import {
 import { ComicIssueDto } from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
+import {
+  ComicIssueIdParam,
+  ComicIssueUpdateGuard,
+} from 'src/guards/comic-issue-update.guard';
+import { CreatorEntity } from 'src/decorators/creator.decorator';
+import { Creator } from '@prisma/client';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
@@ -48,14 +54,15 @@ export class ComicIssueController {
   )
   @Post('create')
   async create(
+    @CreatorEntity() creator: Creator,
     @Body() createComicIssueDto: CreateComicIssueDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicIssueFilesDto, val),
     })
     files: CreateComicIssueFilesDto,
   ): Promise<ComicIssueDto> {
-    // TODO!: Check if creator.id matches comicIssue.comic.creator.id
     const comicIssue = await this.comicIssueService.create(
+      creator.id,
       createComicIssueDto,
       files,
     );
@@ -81,6 +88,7 @@ export class ComicIssueController {
   }
 
   /* Update specific comic issue */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -98,6 +106,7 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('cover')
   @UseInterceptors(FileInterceptor('cover'))
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/cover')
   async updateCover(
     @Param('slug') slug: string,
@@ -115,6 +124,7 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('soundtrack')
   @UseInterceptors(FileInterceptor('soundtrack'))
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/soundtrack')
   async updateSoundtrack(
     @Param('slug') slug: string,
@@ -129,6 +139,7 @@ export class ComicIssueController {
   }
 
   /* Publish comic issue */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(slug);
@@ -137,6 +148,7 @@ export class ComicIssueController {
   }
 
   /* Unpublish comic issue */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const unpublishedComicIssue = await this.comicIssueService.unpublish(slug);
@@ -145,6 +157,7 @@ export class ComicIssueController {
   }
 
   /* Queue comic issue for deletion */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(slug);
@@ -153,6 +166,7 @@ export class ComicIssueController {
   }
 
   /* Remove comic issue for deletion queue */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(
@@ -163,6 +177,7 @@ export class ComicIssueController {
   }
 
   /* Completely remove specific comic issue, including files from s3 bucket */
+  @ComicIssueIdParam({ key: 'slug', type: 'string' })
   @Delete('remove/:slug')
   remove(@Param('slug') slug: string) {
     return this.comicIssueService.remove(slug);

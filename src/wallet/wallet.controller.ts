@@ -23,8 +23,12 @@ import { WalletDto } from './dto/wallet.dto';
 import { Wallet, Role } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { plainToInstance } from 'class-transformer';
+import {
+  WalletIdParam,
+  WalletUpdateGuard,
+} from 'src/guards/wallet-update.guard';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, RolesGuard, WalletUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Wallet')
 @Controller('wallet')
@@ -32,7 +36,6 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   /* Create a new wallet */
-  @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
   @Post('create')
   async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
@@ -67,8 +70,8 @@ export class WalletController {
   }
 
   /* Update specific wallet */
-  @UseGuards(RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
+  @WalletIdParam({ key: 'address', type: 'string' })
   @Patch('update/:address')
   async update(
     @Param('address') address: string,
@@ -83,6 +86,7 @@ export class WalletController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
+  @WalletIdParam({ key: 'address', type: 'string' })
   @Patch('update/:address/avatar')
   async updateAvatar(
     @Param('address') address: string,
@@ -94,8 +98,7 @@ export class WalletController {
   }
 
   /* Delete specific wallet */
-  @UseGuards(RolesGuard)
-  @Roles(Role.Superadmin, Role.Admin)
+  @WalletIdParam({ key: 'address', type: 'string' })
   @Delete('delete/:address')
   remove(@Param('address') address: string) {
     return this.walletService.remove(address);

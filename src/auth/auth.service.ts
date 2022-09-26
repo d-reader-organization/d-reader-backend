@@ -9,7 +9,7 @@ import { Authorization, JwtDto } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
 import { PasswordService } from './password.service';
-import { Wallet } from '@prisma/client';
+import { Wallet, Creator } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -75,9 +75,10 @@ export class AuthService {
     return this.generateAccessToken(wallet);
   }
 
-  async validateJwt(jwtDto: JwtDto): Promise<Wallet> {
+  async validateJwt(jwtDto: JwtDto): Promise<Wallet & { creator?: Creator }> {
     const wallet = await this.prisma.wallet.findUnique({
       where: { address: jwtDto.address },
+      include: { creator: true },
     });
 
     if (!wallet || jwtDto.nonce !== wallet.nonce) {

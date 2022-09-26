@@ -1,19 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
   IsDateString,
   IsNotEmpty,
-  IsOptional,
   IsPositive,
   IsString,
-  IsUrl,
   MaxLength,
-  ValidateIf,
 } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
+import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 
 @Exclude()
@@ -23,9 +20,6 @@ export class ComicIssueDto {
 
   @Expose()
   @IsPositive()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
   number: number;
 
   @Expose()
@@ -39,17 +33,11 @@ export class ComicIssueDto {
   slug: string;
 
   @Expose()
-  @MaxLength(256)
-  @IsOptional()
-  @ValidateIf((p) => p.description !== '')
-  @ApiProperty({ required: false })
+  @IsString()
   description: string;
 
   @Expose()
-  @MaxLength(128)
-  @IsOptional()
-  @ValidateIf((p) => p.flavorText !== '')
-  @ApiProperty({ required: false })
+  @IsString()
   flavorText: string;
 
   @Expose()
@@ -61,22 +49,15 @@ export class ComicIssueDto {
   soundtrack: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.magicEden !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   magicEden: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.openSea !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   openSea: string;
 
   @Expose()
   @IsDateString()
-  @Transform(({ value }) => new Date(value).toISOString())
   releaseDate: string;
 
   @Expose()
@@ -93,9 +74,6 @@ export class ComicIssueDto {
 
   @Expose()
   @IsPositive()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
   comicId: number;
 
   // @Expose()

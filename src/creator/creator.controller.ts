@@ -29,8 +29,12 @@ import { plainToInstance } from 'class-transformer';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Wallet } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
+import {
+  CreatorIdParam,
+  CreatorUpdateGuard,
+} from 'src/guards/creator-update.guard';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, CreatorUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Creator')
 @Controller('creator')
@@ -84,6 +88,7 @@ export class CreatorController {
   }
 
   /* Update specific creator */
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -101,6 +106,7 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('thumbnail')
   @UseInterceptors(FileInterceptor('thumbnail'))
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/thumbnail')
   async updateThumbnail(
     @Param('slug') slug: string,
@@ -118,6 +124,7 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/avatar')
   async updateAvatar(
     @Param('slug') slug: string,
@@ -132,6 +139,7 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('banner')
   @UseInterceptors(FileInterceptor('banner'))
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/banner')
   async updateBanner(
     @Param('slug') slug: string,
@@ -146,6 +154,7 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('logo')
   @UseInterceptors(FileInterceptor('logo'))
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/logo')
   async updateLogo(
     @Param('slug') slug: string,
@@ -156,10 +165,8 @@ export class CreatorController {
     return await CreatorDto.presignUrls(creatorDto);
   }
 
-  // TODO!: delete creator only if it's the creator from the jwt token or if SuperAdmin
-  // @UseGuards(EntityOwnershipGuard)
-  // @EntityType(Creator)
   /* Queue creator for deletion */
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
@@ -168,6 +175,7 @@ export class CreatorController {
   }
 
   /* Remove creator for deletion queue */
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
@@ -176,6 +184,7 @@ export class CreatorController {
   }
 
   /* Completely remove specific creator, including files from s3 bucket */
+  @CreatorIdParam({ key: 'slug', type: 'string' })
   @Delete('remove/:slug')
   remove(@Param('slug') slug: string) {
     return this.creatorService.remove(slug);

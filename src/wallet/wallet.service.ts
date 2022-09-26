@@ -2,12 +2,10 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Role } from '@prisma/client';
 import {
   deleteS3Object,
   deleteS3Objects,
@@ -40,6 +38,7 @@ export class WalletService {
   async findOne(address: string) {
     const wallet = await this.prisma.wallet.findUnique({
       where: { address },
+      // include: { creator: true },
     });
 
     if (!wallet) {
@@ -52,8 +51,6 @@ export class WalletService {
   }
 
   async update(address: string, updateWalletDto: UpdateWalletDto) {
-    await this.breakIfSuperadmin(address);
-
     try {
       const updatedWallet = await this.prisma.wallet.update({
         where: { address },
@@ -88,8 +85,6 @@ export class WalletService {
   }
 
   async remove(address: string) {
-    await this.breakIfSuperadmin(address);
-
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(address);
     // TODO!: might actually have to strip off '/' from prefix
@@ -109,16 +104,6 @@ export class WalletService {
       );
     }
     return;
-  }
-
-  async breakIfSuperadmin(address: string) {
-    const wallet = await this.findOne(address);
-
-    if (wallet.role === Role.Superadmin) {
-      throw new UnauthorizedException(
-        'Cannot update a wallet with Superadmin role',
-      );
-    }
   }
 
   async getS3FilePrefix(address: string) {

@@ -1,4 +1,9 @@
-import { PickType } from '@nestjs/swagger';
-import { WalletDto } from './wallet.dto';
+import { Exclude, Expose } from 'class-transformer';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
-export class CreateWalletDto extends PickType(WalletDto, ['address']) {}
+@Exclude()
+export class CreateWalletDto {
+  @Expose()
+  @IsSolanaAddress()
+  address: string;
+}

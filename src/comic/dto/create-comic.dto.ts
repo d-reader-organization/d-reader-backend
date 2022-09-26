@@ -1,30 +1,69 @@
-import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { IsOptional } from 'class-validator';
-import { kebabCase } from 'lodash';
+import { IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { ComicDto } from './comic.dto';
+import { kebabCase } from 'lodash';
 
-export class CreateComicDto extends PickType(ComicDto, [
-  'name',
-  'description',
-  'flavorText',
-  'website',
-  'twitter',
-  'discord',
-  'telegram',
-  'instagram',
-  'medium',
-  'tikTok',
-  'youTube',
-  'magicEden',
-  'openSea',
-]) {
+export class CreateComicDto {
+  @Expose()
+  @IsNotEmpty()
+  @MaxLength(54)
+  name: string;
+
   @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
+
+  @Expose()
+  @MaxLength(256)
+  description?: string;
+
+  @Expose()
+  @MaxLength(128)
+  flavorText?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  website?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  twitter?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  discord?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  telegram?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  instagram?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  medium?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  tikTok?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  youTube?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  magicEden?: string;
+
+  @Expose()
+  @IsOptionalUrl()
+  openSea?: string;
 }
 
 export class CreateComicFilesDto {

@@ -27,8 +27,11 @@ import {
 import { ComicDto } from './dto/comic.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
+import { ComicIdParam, ComicUpdateGuard } from 'src/guards/comic-update.guard';
+import { CreatorEntity } from 'src/decorators/creator.decorator';
+import { Creator } from '@prisma/client';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, ComicUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic')
 @Controller('comic')
@@ -47,16 +50,13 @@ export class ComicController {
   )
   @Post('create')
   async create(
-    // @CreatorEntity()
-    // creator: Creator,
+    @CreatorEntity() creator: Creator,
     @Body() createComicDto: CreateComicDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicFilesDto, val),
     })
     files: CreateComicFilesDto,
   ): Promise<ComicDto> {
-    // placeholder creator
-    const creator = { id: 1 };
     const comic = await this.comicService.create(
       creator.id,
       createComicDto,
@@ -84,6 +84,7 @@ export class ComicController {
   }
 
   /* Update specific comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -98,6 +99,7 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('thumbnail')
   @UseInterceptors(FileInterceptor('thumbnail'))
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/thumbnail')
   async updateThumbnail(
     @Param('slug') slug: string,
@@ -112,6 +114,7 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('pfp')
   @UseInterceptors(FileInterceptor('pfp'))
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/pfp')
   async updatePfp(
     @Param('slug') slug: string,
@@ -126,6 +129,7 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('logo')
   @UseInterceptors(FileInterceptor('logo'))
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/logo')
   async updateLogo(
     @Param('slug') slug: string,
@@ -137,6 +141,7 @@ export class ComicController {
   }
 
   /* Publish comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
@@ -145,6 +150,7 @@ export class ComicController {
   }
 
   /* Unpublish comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
     const unpublishedComic = await this.comicService.unpublish(slug);
@@ -152,10 +158,8 @@ export class ComicController {
     return await ComicDto.presignUrls(comicDto);
   }
 
-  // TODO v1.1: delete only comic if it's creator is the one from the jwt token
-  // @UseGuards(EntityOwnershipGuard)
-  // @EntityType(Comic)
   /* Queue comic for deletion */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
     const deletedComic = await this.comicService.pseudoDelete(slug);
@@ -164,6 +168,7 @@ export class ComicController {
   }
 
   /* Remove comic for deletion queue */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
@@ -172,18 +177,20 @@ export class ComicController {
   }
 
   /* Completely remove specific comic, including files from s3 bucket */
+  @ComicIdParam({ key: 'slug', type: 'string' })
   @Delete('remove/:slug')
   remove(@Param('slug') slug: string) {
     return this.comicService.remove(slug);
   }
 
-  // TODO: only update your own wallet, comic etc. unless superadmin/admin
-  // TODO: comicPages @ApiBody
-  // TODO: when updating comics, handle new hashlists properly?
-  // TODO: creator auth
-  // TODO: updatePages on comic.service
+  // TODO: wallet.comic.id cannot read property from undefined ?
   // TODO: seed
+  // FRONTEND
+
+  // TODO: comicPages @ApiBody
+  // TODO: updatePages on comicIssue.service, comic-page.service.ts
   // TODO: @deprecated slug -> instead use id
+  // TODO: when updating comics, handle new hashlists properly?
 
   /**
    * TODO v1.2:

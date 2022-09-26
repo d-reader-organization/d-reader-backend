@@ -1,7 +1,6 @@
 import { Exclude, Expose } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
-// import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 
 @Exclude()
 export class ComicPageDto {

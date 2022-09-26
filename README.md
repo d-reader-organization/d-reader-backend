@@ -1,1 +1,1 @@
-# gorecats-comic-reader-backend
+# d-reader-backend

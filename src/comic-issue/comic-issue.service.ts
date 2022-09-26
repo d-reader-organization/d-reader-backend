@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ImATeapotException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -27,10 +28,18 @@ export class ComicIssueService {
   ) {}
 
   async create(
+    creatorId: number,
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
     const { slug, comicId, pages, hashlist, ...rest } = createComicIssueDto;
+
+    const parentComic = await this.prisma.comic.findUnique({
+      where: { id: comicId },
+    });
+
+    // Make sure creator of the comic issue owns the parent comic as well
+    if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
     // Create ComicIssue without any files uploaded
     let comicIssue: ComicIssue & { pages: ComicPage[]; nfts: NFT[] };

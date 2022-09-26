@@ -2,17 +2,13 @@ import {
   CanActivate,
   CustomDecorator,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
-import { Request as ExpressRequest } from 'express';
-import { Wallet } from '@prisma/client';
-
-export interface Request extends ExpressRequest {
-  user?: Wallet;
-}
+import { Request } from 'src/types/request';
 
 export const Roles = (...roles: Role[]): CustomDecorator<string> =>
   SetMetadata('roles', roles);
@@ -26,9 +22,12 @@ export class RolesGuard implements CanActivate {
     if (!roles) return true;
 
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user;
-    if (!user) return false;
+    const wallet = request.user;
+    if (!wallet) return false;
 
-    return roles.includes(user.role);
+    if (!!roles.includes(wallet.role)) return true;
+    else {
+      throw new ForbiddenException('You do not have the required role');
+    }
   }
 }

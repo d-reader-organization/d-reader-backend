@@ -1,15 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import {
-  IsEnum,
-  IsOptional,
-  IsPositive,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
 import { getReadUrl } from 'src/aws/s3client';
+import { Role } from '@prisma/client';
 
 @Exclude()
 export class WalletDto {
@@ -23,8 +16,6 @@ export class WalletDto {
 
   @Expose()
   @MaxLength(24)
-  @IsOptional()
-  @ApiProperty({ required: false })
   label: string;
 
   @Expose()
@@ -33,7 +24,6 @@ export class WalletDto {
 
   @Expose()
   @IsEnum(Role)
-  @ApiProperty({ enum: Role, required: false })
   role: Role;
 
   // presignUrls = async () => {

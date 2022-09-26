@@ -1,19 +1,10 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  IsUrl,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsArray, IsPositive, IsString } from 'class-validator';
 import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { ApiProperty } from '@nestjs/swagger';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { getReadUrl } from 'src/aws/s3client';
+import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 
 @Exclude()
 export class ComicDto {
@@ -22,12 +13,10 @@ export class ComicDto {
   id: number;
 
   @Expose()
-  @IsNotEmpty()
-  @MaxLength(54)
+  @IsString()
   name: string;
 
   @Expose()
-  @IsNotEmpty()
   @IsKebabCase()
   slug: string;
 
@@ -56,87 +45,51 @@ export class ComicDto {
   logo: string;
 
   @Expose()
-  @MaxLength(256)
-  @IsOptional()
-  @ValidateIf((p) => p.description !== '')
-  @ApiProperty({ required: false })
+  @IsString()
   description: string;
 
   @Expose()
-  @MaxLength(128)
-  @IsOptional()
-  @ValidateIf((p) => p.flavorText !== '')
-  @ApiProperty({ required: false })
+  @IsString()
   flavorText: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.website !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   website: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.twitter !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   twitter: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.discord !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   discord: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.telegram !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   telegram: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.instagram !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   instagram: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.medium !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   medium: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.tikTok !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   tikTok: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.youTube !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   youTube: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.magicEden !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   magicEden: string;
 
   @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.openSea !== '')
-  @ApiProperty({ required: false })
+  @IsEmptyOrUrl()
   openSea: string;
 
   @Expose()
@@ -145,25 +98,24 @@ export class ComicDto {
   issues: ComicIssueDto[];
 
   @Expose()
-  @IsArray()
   @Type(() => CreatorDto)
   creator: CreatorDto;
 
-  presignUrls = async () => {
-    // Serial
-    // this.thumbnail = await getReadUrl(this.thumbnail);
-    // this.pfp = await getReadUrl(this.pfp);
-    // this.logo = await getReadUrl(this.logo);
+  // presignUrls = async () => {
+  //   // Serial
+  //   // this.thumbnail = await getReadUrl(this.thumbnail);
+  //   // this.pfp = await getReadUrl(this.pfp);
+  //   // this.logo = await getReadUrl(this.logo);
 
-    // Parallel
-    await Promise.all([
-      async () => (this.thumbnail = await getReadUrl(this.thumbnail)),
-      async () => (this.pfp = await getReadUrl(this.pfp)),
-      async () => (this.logo = await getReadUrl(this.logo)),
-    ]);
+  //   // Parallel
+  //   await Promise.all([
+  //     async () => (this.thumbnail = await getReadUrl(this.thumbnail)),
+  //     async () => (this.pfp = await getReadUrl(this.pfp)),
+  //     async () => (this.logo = await getReadUrl(this.logo)),
+  //   ]);
 
-    return this;
-  };
+  //   return this;
+  // };
 
   static async presignUrls(input: ComicDto): Promise<ComicDto>;
   static async presignUrls(input: ComicDto[]): Promise<ComicDto[]>;
