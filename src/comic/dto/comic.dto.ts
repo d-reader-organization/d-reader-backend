@@ -3,11 +3,11 @@ import { IsArray, IsPositive, IsString } from 'class-validator';
 import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
-import { getReadUrl } from 'src/aws/s3client';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
+import { Presignable } from 'src/types/presignable';
 
 @Exclude()
-export class ComicDto {
+export class ComicDto extends Presignable<ComicDto> {
   @Expose()
   @IsPositive()
   id: number;
@@ -101,21 +101,9 @@ export class ComicDto {
   @Type(() => CreatorDto)
   creator: CreatorDto;
 
-  // presignUrls = async () => {
-  //   // Serial
-  //   // this.thumbnail = await getReadUrl(this.thumbnail);
-  //   // this.pfp = await getReadUrl(this.pfp);
-  //   // this.logo = await getReadUrl(this.logo);
-
-  //   // Parallel
-  //   await Promise.all([
-  //     async () => (this.thumbnail = await getReadUrl(this.thumbnail)),
-  //     async () => (this.pfp = await getReadUrl(this.pfp)),
-  //     async () => (this.logo = await getReadUrl(this.logo)),
-  //   ]);
-
-  //   return this;
-  // };
+  protected async presign(): Promise<ComicDto> {
+    return await super.presign(this, ['thumbnail', 'logo', 'pfp']);
+  }
 
   static async presignUrls(input: ComicDto): Promise<ComicDto>;
   static async presignUrls(input: ComicDto[]): Promise<ComicDto[]>;
@@ -123,22 +111,7 @@ export class ComicDto {
     input: ComicDto | ComicDto[],
   ): Promise<ComicDto | ComicDto[]> {
     if (Array.isArray(input)) {
-      input = await Promise.all(
-        input.map(async (obj) => {
-          await Promise.all([
-            async () => (obj.thumbnail = await getReadUrl(obj.thumbnail)),
-            async () => (obj.pfp = await getReadUrl(obj.pfp)),
-            async () => (obj.logo = await getReadUrl(obj.logo)),
-          ]);
-          return obj;
-        }),
-      );
-      return input;
-    } else {
-      input.thumbnail = await getReadUrl(input.thumbnail);
-      input.pfp = await getReadUrl(input.pfp);
-      input.logo = await getReadUrl(input.logo);
-      return input;
-    }
+      return await Promise.all(input.map((obj) => obj.presign()));
+    } else return input.presign();
   }
 }

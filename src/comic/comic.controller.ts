@@ -185,12 +185,12 @@ export class ComicController {
 
   // TODO: wallet.comic.id cannot read property from undefined ?
   // TODO: seed
+  // TODO: when updating comics, handle new hashlists properly?
   // FRONTEND
+  // TODO: @deprecated slug -> instead use id
 
   // TODO: comicPages @ApiBody
   // TODO: updatePages on comicIssue.service, comic-page.service.ts
-  // TODO: @deprecated slug -> instead use id
-  // TODO: when updating comics, handle new hashlists properly?
 
   /**
    * TODO v1.2:

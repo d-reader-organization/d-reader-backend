@@ -8,13 +8,13 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
+import { Presignable } from 'src/types/presignable';
 
 @Exclude()
-export class ComicIssueDto {
+export class ComicIssueDto extends Presignable<ComicIssueDto> {
   @IsPositive()
   id: number;
 
@@ -91,19 +91,9 @@ export class ComicIssueDto {
   @Transform(({ obj }) => obj.nfts.map((nft) => nft.mint))
   hashlist: string[];
 
-  // presignUrls = async () => {
-  //   // Serial
-  //   // this.cover = await getReadUrl(this.cover);
-  //   // this.soundtrack = await getReadUrl(this.soundtrack);
-
-  //   // Parallel
-  //   await Promise.all([
-  //     async () => (this.cover = await getReadUrl(this.cover)),
-  //     async () => (this.soundtrack = await getReadUrl(this.soundtrack)),
-  //   ]);
-
-  //   return this;
-  // };
+  protected async presign(): Promise<ComicIssueDto> {
+    return await super.presign(this, ['cover', 'soundtrack']);
+  }
 
   static async presignUrls(input: ComicIssueDto): Promise<ComicIssueDto>;
   static async presignUrls(input: ComicIssueDto[]): Promise<ComicIssueDto[]>;
@@ -111,20 +101,7 @@ export class ComicIssueDto {
     input: ComicIssueDto | ComicIssueDto[],
   ): Promise<ComicIssueDto | ComicIssueDto[]> {
     if (Array.isArray(input)) {
-      input = await Promise.all(
-        input.map(async (obj) => {
-          await Promise.all([
-            async () => (obj.cover = await getReadUrl(obj.cover)),
-            async () => (obj.soundtrack = await getReadUrl(obj.soundtrack)),
-          ]);
-          return obj;
-        }),
-      );
-      return input;
-    } else {
-      input.cover = await getReadUrl(input.cover);
-      input.soundtrack = await getReadUrl(input.soundtrack);
-      return input;
-    }
+      return await Promise.all(input.map((obj) => obj.presign()));
+    } else return await input.presign();
   }
 }

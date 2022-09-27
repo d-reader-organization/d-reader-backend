@@ -1,11 +1,11 @@
 import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
-import { getReadUrl } from 'src/aws/s3client';
 import { Role } from '@prisma/client';
+import { Presignable } from 'src/types/presignable';
 
 @Exclude()
-export class WalletDto {
+export class WalletDto extends Presignable<WalletDto> {
   @Expose()
   @IsPositive()
   id: number;
@@ -26,10 +26,9 @@ export class WalletDto {
   @IsEnum(Role)
   role: Role;
 
-  // presignUrls = async () => {
-  //   this.avatar = await getReadUrl(this.avatar);
-  //   return this;
-  // };
+  protected async presign(): Promise<WalletDto> {
+    return await super.presign(this, ['avatar']);
+  }
 
   static async presignUrls(input: WalletDto): Promise<WalletDto>;
   static async presignUrls(input: WalletDto[]): Promise<WalletDto[]>;
@@ -37,16 +36,7 @@ export class WalletDto {
     input: WalletDto | WalletDto[],
   ): Promise<WalletDto | WalletDto[]> {
     if (Array.isArray(input)) {
-      input = await Promise.all(
-        input.map(async (obj) => {
-          obj.avatar = await getReadUrl(obj.avatar);
-          return obj;
-        }),
-      );
-      return input;
-    } else {
-      input.avatar = await getReadUrl(input.avatar);
-      return input;
-    }
+      return await Promise.all(input.map((obj) => obj.presign()));
+    } else return await input.presign();
   }
 }

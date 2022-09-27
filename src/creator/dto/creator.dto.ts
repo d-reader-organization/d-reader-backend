@@ -13,10 +13,10 @@ import {
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicDto } from 'src/comic/dto/comic.dto';
-import { getReadUrl } from 'src/aws/s3client';
+import { Presignable } from 'src/types/presignable';
 
 @Exclude()
-export class CreatorDto {
+export class CreatorDto extends Presignable<CreatorDto> {
   @Expose()
   @IsPositive()
   id: number;
@@ -99,27 +99,9 @@ export class CreatorDto {
   @Type(() => ComicDto)
   comics: ComicDto[];
 
-  // @Expose()
-  // @Type(() => WalletDto)
-  // wallet: WalletDto[];
-
-  // presignUrls = async () => {
-  //   // Serial
-  //   // this.thumbnail = await getReadUrl(this.thumbnail);
-  //   // this.avatar = await getReadUrl(this.avatar);
-  //   // this.banner = await getReadUrl(this.banner);
-  //   // this.logo = await getReadUrl(this.logo);
-
-  //   // Parallel
-  //   await Promise.all([
-  //     async () => (this.thumbnail = await getReadUrl(this.thumbnail)),
-  //     async () => (this.avatar = await getReadUrl(this.avatar)),
-  //     async () => (this.banner = await getReadUrl(this.banner)),
-  //     async () => (this.logo = await getReadUrl(this.logo)),
-  //   ]);
-
-  //   return this;
-  // };
+  protected async presign(): Promise<CreatorDto> {
+    return await super.presign(this, ['thumbnail', 'avatar', 'banner', 'logo']);
+  }
 
   static async presignUrls(input: CreatorDto): Promise<CreatorDto>;
   static async presignUrls(input: CreatorDto[]): Promise<CreatorDto[]>;
@@ -127,24 +109,7 @@ export class CreatorDto {
     input: CreatorDto | CreatorDto[],
   ): Promise<CreatorDto | CreatorDto[]> {
     if (Array.isArray(input)) {
-      input = await Promise.all(
-        input.map(async (obj) => {
-          await Promise.all([
-            async () => (obj.thumbnail = await getReadUrl(obj.thumbnail)),
-            async () => (obj.avatar = await getReadUrl(obj.avatar)),
-            async () => (obj.banner = await getReadUrl(obj.banner)),
-            async () => (obj.logo = await getReadUrl(obj.logo)),
-          ]);
-          return obj;
-        }),
-      );
-      return input;
-    } else {
-      input.thumbnail = await getReadUrl(input.thumbnail);
-      input.avatar = await getReadUrl(input.avatar);
-      input.banner = await getReadUrl(input.banner);
-      input.logo = await getReadUrl(input.logo);
-      return input;
-    }
+      return await Promise.all(input.map((obj) => obj.presign()));
+    } else return input.presign();
   }
 }
