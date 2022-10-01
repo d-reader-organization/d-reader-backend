@@ -17,7 +17,6 @@ Table Wallet {
 Table Creator {
   id Int [pk, increment]
   email String [unique, not null]
-  password String [not null]
   name String [unique, not null]
   slug String [unique, not null]
   thumbnail String [not null, default: '']
@@ -42,6 +41,7 @@ Table Comic {
   id Int [pk, increment]
   name String [unique, not null]
   slug String [unique, not null]
+  isOngoing Boolean [not null, default: true]
   thumbnail String [not null, default: '']
   pfp String [not null, default: '']
   logo String [not null, default: '']
@@ -72,8 +72,8 @@ Table Comic {
 Table ComicIssue {
   id Int [pk, increment]
   number Int [not null]
-  title String [unique, not null]
-  slug String [unique, not null]
+  title String [not null]
+  slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
   cover String [not null, default: '']
@@ -94,6 +94,8 @@ Table ComicIssue {
 
   indexes {
     (number, comicId) [unique]
+    (slug, comicId) [unique]
+    (title, comicId) [unique]
   }
 }
 

@@ -19,7 +19,6 @@ CREATE TABLE "Wallet" (
 CREATE TABLE "Creator" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "thumbnail" TEXT NOT NULL DEFAULT '',
@@ -45,6 +44,7 @@ CREATE TABLE "Comic" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
+    "isOngoing" BOOLEAN NOT NULL DEFAULT true,
     "thumbnail" TEXT NOT NULL DEFAULT '',
     "pfp" TEXT NOT NULL DEFAULT '',
     "logo" TEXT NOT NULL DEFAULT '',
@@ -142,13 +142,13 @@ CREATE UNIQUE INDEX "Comic_name_key" ON "Comic"("name");
 CREATE UNIQUE INDEX "Comic_slug_key" ON "Comic"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ComicIssue_title_key" ON "ComicIssue"("title");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ComicIssue_slug_key" ON "ComicIssue"("slug");
-
--- CreateIndex
 CREATE UNIQUE INDEX "ComicIssue_number_comicId_key" ON "ComicIssue"("number", "comicId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ComicIssue_slug_comicId_key" ON "ComicIssue"("slug", "comicId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ComicIssue_title_comicId_key" ON "ComicIssue"("title", "comicId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "NFT_mint_key" ON "NFT"("mint");

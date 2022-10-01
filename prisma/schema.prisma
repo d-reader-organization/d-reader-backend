@@ -34,7 +34,7 @@ enum Role {
 model Creator {
   id               Int       @id @default(autoincrement())
   email            String    @unique
-  password         String
+  // password         String
   name             String    @unique
   slug             String    @unique
   thumbnail        String    @default("")
@@ -61,6 +61,7 @@ model Comic {
   id            Int          @id @default(autoincrement())
   name          String       @unique
   slug          String       @unique
+  isOngoing     Boolean      @default(true)
   thumbnail     String       @default("")
   pfp           String       @default("")
   logo          String       @default("")
@@ -125,8 +126,8 @@ model Comic {
 model ComicIssue {
   id            Int         @id @default(autoincrement())
   number        Int
-  title         String      @unique
-  slug          String      @unique
+  title         String
+  slug          String
   description   String      @default("")
   flavorText    String      @default("")
   cover         String      @default("")
@@ -147,6 +148,8 @@ model ComicIssue {
   // whitelist     ComicIssueWhitelist[]
 
   @@unique([number, comicId])
+  @@unique([slug, comicId])
+  @@unique([title, comicId])
 }
 
 // model ComicIssueWhitelist {

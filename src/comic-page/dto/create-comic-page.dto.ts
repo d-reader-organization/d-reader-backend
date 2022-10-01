@@ -1,7 +1,6 @@
-import { ApiProperty, PickType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 import { IsBoolean, IsPositive } from 'class-validator';
-import { ComicPageDto } from '../entities/comic-page.dto';
 
 export class CreateComicPageDto {
   @Expose()

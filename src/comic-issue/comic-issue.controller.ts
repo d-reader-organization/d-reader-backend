@@ -79,23 +79,23 @@ export class ComicIssueController {
     return ComicIssueDto.presignUrls(comicIssuesDto);
   }
 
-  /* Get specific comic issue by unique slug */
-  @Get('get/:slug')
-  async findOne(@Param('slug') slug: string): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOne(slug);
+  /* Get specific comic issue by unique id */
+  @Get('get/:id')
+  async findOne(@Param('id') id: string): Promise<ComicIssueDto> {
+    const comicIssue = await this.comicIssueService.findOne(+id);
     const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Update specific comic issue */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('update/:slug')
+  @ComicIssueIdParam()
+  @Patch('update/:id')
   async update(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @Body() updateComicIssueDto: UpdateComicIssueDto,
   ): Promise<ComicIssueDto> {
     const updatedComicIssue = await this.comicIssueService.update(
-      slug,
+      +id,
       updateComicIssueDto,
     );
     const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
@@ -106,14 +106,14 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('cover')
   @UseInterceptors(FileInterceptor('cover'))
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('update/:slug/cover')
+  @ComicIssueIdParam()
+  @Patch('update/:id/cover')
   async updateCover(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() cover: Express.Multer.File,
   ): Promise<ComicIssueDto> {
     const updatedComicIssue = await this.comicIssueService.updateFile(
-      slug,
+      +id,
       cover,
     );
     const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
@@ -124,14 +124,14 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('soundtrack')
   @UseInterceptors(FileInterceptor('soundtrack'))
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('update/:slug/soundtrack')
+  @ComicIssueIdParam()
+  @Patch('update/:id/soundtrack')
   async updateSoundtrack(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() soundtrack: Express.Multer.File,
   ): Promise<ComicIssueDto> {
     const updatedComicIssue = await this.comicIssueService.updateFile(
-      slug,
+      +id,
       soundtrack,
     );
     const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
@@ -139,47 +139,45 @@ export class ComicIssueController {
   }
 
   /* Publish comic issue */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('publish/:slug')
-  async publish(@Param('slug') slug: string): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publish(slug);
+  @ComicIssueIdParam()
+  @Patch('publish/:id')
+  async publish(@Param('id') id: string): Promise<ComicIssueDto> {
+    const publishedComicIssue = await this.comicIssueService.publish(+id);
     const comicIssueDto = plainToInstance(ComicIssueDto, publishedComicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Unpublish comic issue */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('unpublish/:slug')
-  async unpublish(@Param('slug') slug: string): Promise<ComicIssueDto> {
-    const unpublishedComicIssue = await this.comicIssueService.unpublish(slug);
+  @ComicIssueIdParam()
+  @Patch('unpublish/:id')
+  async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
+    const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
     const comicIssueDto = plainToInstance(ComicIssueDto, unpublishedComicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Queue comic issue for deletion */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string): Promise<ComicIssueDto> {
-    const deletedComicIssue = await this.comicIssueService.pseudoDelete(slug);
+  @ComicIssueIdParam()
+  @Patch('delete/:id')
+  async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
+    const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
     const comicIssueDto = plainToInstance(ComicIssueDto, deletedComicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Remove comic issue for deletion queue */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string): Promise<ComicIssueDto> {
-    const recoveredComicIssue = await this.comicIssueService.pseudoRecover(
-      slug,
-    );
+  @ComicIssueIdParam()
+  @Patch('recover/:id')
+  async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
+    const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
     const comicIssueDto = plainToInstance(ComicIssueDto, recoveredComicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }
 
   /* Completely remove specific comic issue, including files from s3 bucket */
-  @ComicIssueIdParam({ key: 'slug', type: 'string' })
-  @Delete('remove/:slug')
-  remove(@Param('slug') slug: string) {
-    return this.comicIssueService.remove(slug);
+  @ComicIssueIdParam()
+  @Delete('remove/:id')
+  remove(@Param('id') id: string) {
+    return this.comicIssueService.remove(+id);
   }
 }

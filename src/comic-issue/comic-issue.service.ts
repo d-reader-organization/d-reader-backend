@@ -70,7 +70,7 @@ export class ComicIssueService {
     // Upload files if any
     let coverKey: string, soundtrackKey: string;
     try {
-      const prefix = await this.getS3FilePrefix(slug);
+      const prefix = await this.getS3FilePrefix(comicIssue.id);
       if (cover) coverKey = await uploadFile(prefix, cover);
       if (soundtrack) soundtrackKey = await uploadFile(prefix, soundtrack);
     } catch {
@@ -94,7 +94,7 @@ export class ComicIssueService {
     const comicIssues = await this.prisma.comicIssue.findMany({
       where: {
         deletedAt: null,
-        publishedAt: { not: null },
+        publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
         comic: { deletedAt: null },
       },
@@ -102,26 +102,26 @@ export class ComicIssueService {
     return comicIssues;
   }
 
-  async findOne(slug: string) {
+  async findOne(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       include: { nfts: true },
-      where: { slug },
+      where: { id },
     });
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
     return comicIssue;
   }
 
-  async update(slug: string, updateComicIssueDto: UpdateComicIssueDto) {
+  async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
     const { pages, ...rest } = updateComicIssueDto;
 
     // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
     if (!isEmpty(pages)) {
-      await this.comicPageService.deleteComicPages({ comicIssue: { slug } });
+      await this.comicPageService.deleteComicPages({ comicIssue: { id } });
 
       // Upload new comic pages and format data for nested INSERT
       pagesData = await this.comicPageService.createMany(pages);
@@ -130,7 +130,7 @@ export class ComicIssueService {
     let updatedComicIssue: ComicIssue;
     try {
       updatedComicIssue = await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         include: { pages: true },
         data: {
           ...rest,
@@ -139,18 +139,18 @@ export class ComicIssueService {
         },
       });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
     return updatedComicIssue;
   }
 
-  async updateFile(slug: string, file: Express.Multer.File) {
-    const prefix = await this.getS3FilePrefix(slug);
+  async updateFile(id: number, file: Express.Multer.File) {
+    const prefix = await this.getS3FilePrefix(id);
     const fileKey = await uploadFile(prefix, file);
     try {
       const updatedComicIssue = await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         include: { pages: true },
         data: { [file.fieldname]: fileKey },
       });
@@ -159,57 +159,57 @@ export class ComicIssueService {
     } catch {
       // Revert file upload
       await deleteS3Object({ Key: fileKey });
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async publish(slug: string) {
+  async publish(id: number) {
     try {
       await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         data: { publishedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async unpublish(slug: string) {
+  async unpublish(id: number) {
     try {
       await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         data: { publishedAt: null },
       });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async pseudoDelete(slug: string) {
+  async pseudoDelete(id: number) {
     try {
       await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         data: { deletedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async pseudoRecover(slug: string) {
+  async pseudoRecover(id: number) {
     try {
       await this.prisma.comicIssue.update({
-        where: { slug },
+        where: { id },
         data: { deletedAt: null },
       });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async remove(slug: string) {
+  async remove(id: number) {
     // Remove s3 assets
-    const prefix = await this.getS3FilePrefix(slug);
+    const prefix = await this.getS3FilePrefix(id);
     // TODO!: might actually have to strip off '/' from prefix
     const keys = await listS3FolderKeys({ Prefix: prefix });
 
@@ -220,15 +220,15 @@ export class ComicIssueService {
     }
 
     try {
-      await this.prisma.comicIssue.delete({ where: { slug } });
+      await this.prisma.comicIssue.delete({ where: { id } });
     } catch {
-      throw new NotFoundException(`Comic issue ${slug} does not exist`);
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
   }
 
-  async getS3FilePrefix(slug: string) {
+  async getS3FilePrefix(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { slug },
+      where: { id },
       select: {
         slug: true,
         comic: { select: { slug: true, creator: { select: { slug: true } } } },

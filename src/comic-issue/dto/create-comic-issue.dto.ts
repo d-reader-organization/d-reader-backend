@@ -5,7 +5,6 @@ import {
   IsArray,
   IsDateString,
   IsNotEmpty,
-  IsOptional,
   IsPositive,
   MaxLength,
 } from 'class-validator';

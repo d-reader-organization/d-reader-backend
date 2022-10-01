@@ -6,13 +6,9 @@ export class Authorization {
 }
 
 export type JwtDto = Wallet & {
-  /**
-   * Issued at
-   */
+  /** Issued at */
   iat: number;
-  /**
-   * Expiration time
-   */
+  /** Expiration time */
   exp: number;
 };
 

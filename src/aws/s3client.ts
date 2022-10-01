@@ -57,9 +57,11 @@ const getReadUrl = async (key: string) => {
     Bucket: config().s3.bucket,
     Key: key,
   });
+
   const signedUrl = await getSignedUrl(s3Client, getCommand, {
     expiresIn: 3600,
   });
+
   return signedUrl;
 };
 

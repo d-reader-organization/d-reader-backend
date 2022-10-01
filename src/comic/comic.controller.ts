@@ -184,9 +184,10 @@ export class ComicController {
   }
 
   // TODO: wallet.comic.id cannot read property from undefined ?
-  // TODO: seed
+  // TODO: token gating, metaplex service
   // TODO: when updating comics, handle new hashlists properly?
-  // FRONTEND
+  // TODO: email sending
+  // TODO: cronjob for something?
   // TODO: @deprecated slug -> instead use id
 
   // TODO: comicPages @ApiBody

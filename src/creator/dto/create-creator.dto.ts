@@ -19,10 +19,10 @@ export class CreateCreatorDto extends PickType(CreatorDto, [
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 
-  @Expose()
-  @MinLength(8)
-  @MaxLength(54)
-  password: string;
+  // @Expose()
+  // @MinLength(8)
+  // @MaxLength(54)
+  // password: string;
 }
 
 export class CreateCreatorFilesDto {

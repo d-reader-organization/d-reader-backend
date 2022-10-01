@@ -72,7 +72,7 @@ export class ComicService {
     const comics = await this.prisma.comic.findMany({
       where: {
         deletedAt: null,
-        publishedAt: { not: null },
+        publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
       },
     });

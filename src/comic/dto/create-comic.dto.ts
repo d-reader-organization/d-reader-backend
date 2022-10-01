@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
@@ -16,6 +16,10 @@ export class CreateComicDto {
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
+
+  @Expose()
+  @IsBoolean()
+  isOngoing: boolean;
 
   @Expose()
   @MaxLength(256)
