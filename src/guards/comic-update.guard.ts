@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -47,9 +48,15 @@ export class ComicUpdateGuard implements CanActivate {
       select: { creatorId: true },
     });
 
+    if (!comic) {
+      throw new NotFoundException(
+        `Comic with ${idParam.key} ${id} does not exist`,
+      );
+    }
+
     if (!user) return false;
     else if (user.role === Role.Superadmin) return true;
-    else if (comic.creatorId === user.creator.id) return true;
+    else if (comic.creatorId === user.creator?.id) return true;
     else throw new ForbiddenException("You don't own this comic");
   }
 }

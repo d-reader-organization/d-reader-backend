@@ -150,7 +150,6 @@ export class CreatorService {
   async remove(slug: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(slug);
-    // TODO!: might actually have to strip off '/' from prefix
     const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
@@ -168,12 +167,15 @@ export class CreatorService {
   }
 
   async getS3FilePrefix(slug: string) {
-    // const creator = await this.prisma.creator.findUnique({
-    //   where: { slug },
-    //   select: { slug: true },
-    // });
+    const creator = await this.prisma.creator.findUnique({
+      where: { slug },
+      select: { slug: true },
+    });
 
-    // const prefix = `creators/${creator.slug}/`;
+    if (!creator) {
+      throw new NotFoundException(`Creator ${slug} does not exist`);
+    }
+
     const prefix = `creators/${slug}/`;
     return prefix;
   }

@@ -168,7 +168,6 @@ export class ComicService {
   async remove(slug: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(slug);
-    // TODO!: might actually have to strip off '/' from prefix
     const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
@@ -193,6 +192,10 @@ export class ComicService {
         creator: { select: { slug: true } },
       },
     });
+
+    if (!comic) {
+      throw new NotFoundException(`Comic ${slug} does not exist`);
+    }
 
     const prefix = `creators/${comic.creator.slug}/comics/${comic.slug}/`;
     return prefix;

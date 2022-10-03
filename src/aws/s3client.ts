@@ -127,7 +127,10 @@ const listS3FolderKeys = async (
 
     if (!Contents || Contents.length === 0) return keys;
 
-    const crawledKeys = Contents.map((object) => object.Key);
+    const crawledKeys = Contents.reduce<string[]>((acc, object) => {
+      if (object.Key) return [...acc, object.Key];
+      else return acc;
+    }, []);
     const accumulatedKeys = keys.concat(crawledKeys);
 
     if (response.IsTruncated) {
@@ -149,9 +152,7 @@ const uploadFile = async (prefix: string, file: Express.Multer.File) => {
     });
 
     return fileKey;
-  } else {
-    throw new BadRequestException(`No valid ${file.fieldname} file provided`);
-  }
+  } else throw new BadRequestException('No file provided');
 };
 
 export {

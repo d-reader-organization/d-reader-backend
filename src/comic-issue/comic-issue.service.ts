@@ -38,6 +38,10 @@ export class ComicIssueService {
       where: { id: comicId },
     });
 
+    if (!parentComic) {
+      throw new NotFoundException(`Comic with id ${comicId} does not exist`);
+    }
+
     // Make sure creator of the comic issue owns the parent comic as well
     if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
@@ -134,7 +138,7 @@ export class ComicIssueService {
         include: { pages: true },
         data: {
           ...rest,
-          // TODO!: check if pagesData = undefined will destroy all previous relations
+          // TODO v1.2: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
         },
       });
@@ -210,7 +214,6 @@ export class ComicIssueService {
   async remove(id: number) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(id);
-    // TODO!: might actually have to strip off '/' from prefix
     const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
@@ -234,6 +237,10 @@ export class ComicIssueService {
         comic: { select: { slug: true, creator: { select: { slug: true } } } },
       },
     });
+
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
 
     const prefix = `creators/${comicIssue.comic.creator.slug}/comics/${comicIssue.comic.slug}/issues/${comicIssue.slug}/`;
     return prefix;

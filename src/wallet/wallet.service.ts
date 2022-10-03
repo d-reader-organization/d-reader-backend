@@ -87,7 +87,6 @@ export class WalletService {
   async remove(address: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(address);
-    // TODO!: might actually have to strip off '/' from prefix
     const keys = await listS3FolderKeys({ Prefix: prefix });
 
     if (!isEmpty(keys)) {
@@ -111,6 +110,12 @@ export class WalletService {
       where: { address },
       select: { address: true },
     });
+
+    if (!wallet) {
+      throw new NotFoundException(
+        `Wallet with address ${address} does not exist`,
+      );
+    }
 
     const prefix = `wallets/${wallet.address}/`;
     return prefix;

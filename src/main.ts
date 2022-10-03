@@ -30,6 +30,10 @@ async function bootstrap() {
   const corsConfig = configService.get<CorsConfig>('cors');
   const swaggerConfig = configService.get<SwaggerConfig>('swagger');
 
+  if (!nestConfig) throw new Error('Nest configuration missing');
+  if (!corsConfig) throw new Error('CORS configuration missing');
+  if (!swaggerConfig) throw new Error('Swagger configuration missing');
+
   // Swagger Api
   if (swaggerConfig.enabled) {
     const options = new DocumentBuilder()

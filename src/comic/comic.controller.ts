@@ -183,13 +183,14 @@ export class ComicController {
     return this.comicService.remove(slug);
   }
 
-  // TODO: wallet.comic.id cannot read property from undefined ?
-  // TODO: token gating, metaplex service
+  // TODO: when getting comic pages from the database, select only preview pages
+  // if the person is not an owner or a holder of the collection (comic)
+  // TODO: star ratings, categories etc.
+
   // TODO: when updating comics, handle new hashlists properly?
   // TODO: email sending
   // TODO: cronjob for something?
   // TODO: @deprecated slug -> instead use id
-
   // TODO: comicPages @ApiBody
   // TODO: updatePages on comicIssue.service, comic-page.service.ts
 
@@ -213,5 +214,6 @@ export class ComicController {
    * - [auth] Disconnect function to invalidate a token
    * - [services] Support renaming Creator, Comic, ComicIssue
    * - [services] Support changing Comic Issues comicId?
+   * - [config] Turn on "strictNullChecks" in tsconfig.ts
    */
 }

@@ -84,9 +84,6 @@ model Comic {
   verifiedAt    DateTime?
   publishedAt   DateTime?
   popularizedAt DateTime?
-  // TODO v1.1: categories    ComicCategory[]
-  // TODO v1.1: nfts          NFT[]
-  // TODO v1.1: whitelist     Wallet[]
   issues        ComicIssue[]
   creator       Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
@@ -145,7 +142,6 @@ model ComicIssue {
   comicId       Int
   pages         ComicPage[]
   nfts          NFT[]
-  // whitelist     ComicIssueWhitelist[]
 
   @@unique([number, comicId])
   @@unique([slug, comicId])
@@ -182,11 +178,11 @@ model ComicPage {
 }
 
 // TODO v2
-// - [COMIC] categories ComicCategory[]
 // - [COMIC] family ComicFamily
+// - [COMIC] categories ComicCategory[]
+// - [COMIC] whitelist specific wallets
 // - [COMIC] candyMachineIds Int[]
-// - [COMIC_ISSUE] whitelist additional NFTs
+// - [COMIC_ISSUE] candyMachineIds Int[]
 // - [COMIC_ISSUE] whitelist specific wallets
-// - [COMIC_ISSUE] categories ComicCategory[]
 
 // - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity

@@ -119,6 +119,12 @@ export class ComicPageService {
       },
     });
 
+    if (!comicPage) {
+      throw new NotFoundException(
+        `Comic page with comic issue id ${comicIssueId} and page number ${pageNumber} does not exist`,
+      );
+    }
+
     const prefix = `creators/${comicPage.comicIssue.comic.creator.slug}/comics/${comicPage.comicIssue.comic.slug}/issues/${comicPage.comicIssue.slug}/pages/`;
     return prefix;
   }

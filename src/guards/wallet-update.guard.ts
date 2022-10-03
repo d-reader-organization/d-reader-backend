@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -46,6 +47,12 @@ export class WalletUpdateGuard implements CanActivate {
       where: { [idParam.key]: idParam.type === 'number' ? +id : id },
       select: { id: true, role: true },
     });
+
+    if (!wallet) {
+      throw new NotFoundException(
+        `Wallet with ${idParam.key} ${id} does not exist`,
+      );
+    }
 
     if (!user) return false;
     else if (wallet.role === Role.Superadmin) {

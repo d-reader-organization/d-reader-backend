@@ -82,7 +82,7 @@ export class CreateComicIssueDto {
 }
 
 export class CreateComicIssueFilesDto {
-  // TODO!: @Expose() might be unnecessary here
+  // TODO: @Expose() might be unnecessary here
   @Expose()
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])

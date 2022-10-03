@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  NotFoundException,
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -47,9 +48,15 @@ export class CreatorUpdateGuard implements CanActivate {
       select: { id: true },
     });
 
+    if (!creator) {
+      throw new NotFoundException(
+        `Creator with ${idParam.key} ${id} does not exist`,
+      );
+    }
+
     if (!user) return false;
     else if (user.role === Role.Superadmin) return true;
-    else if (creator.id === user.creator.id) return true;
+    else if (creator.id === user.creator?.id) return true;
     else throw new ForbiddenException("You don't own this creator");
   }
 }
