@@ -89,7 +89,15 @@ export class ComicController {
       wallet.address,
       slug,
     );
-    return plainToInstance(WalletComicDto, myComicStats);
+
+    if (myComicStats) return plainToInstance(WalletComicDto, myComicStats);
+    else {
+      return {
+        rating: null,
+        isFavourite: false,
+        isSubscribed: false,
+      };
+    }
   }
 
   /* Get specific comic by unique slug */
@@ -261,7 +269,6 @@ export class ComicController {
    * TODO v3:
    * - [auth] Disconnect function to invalidate a token
    * - [services] Support renaming Creator, Comic, ComicIssue
-   * - [services] Support changing Comic Issues comicId?
    * - [config] Turn on "strictNullChecks" in tsconfig.ts
    */
 }

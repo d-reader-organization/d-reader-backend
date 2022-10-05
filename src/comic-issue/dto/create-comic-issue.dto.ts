@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDateString,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   MaxLength,
 } from 'class-validator';
@@ -33,10 +34,12 @@ export class CreateComicIssueDto {
   number: number;
 
   @Expose()
+  @IsOptional()
   @MaxLength(256)
   description?: string;
 
   @Expose()
+  @IsOptional()
   @MaxLength(128)
   flavorText?: string;
 

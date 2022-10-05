@@ -3,6 +3,7 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
 import { Presignable } from 'src/types/presignable';
 import { Role } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Exclude()
 export class WalletDto extends Presignable<WalletDto> {
@@ -24,6 +25,7 @@ export class WalletDto extends Presignable<WalletDto> {
 
   @Expose()
   @IsEnum(Role)
+  @ApiProperty({ enum: Role })
   role: Role;
 
   protected async presign(): Promise<WalletDto> {

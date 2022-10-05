@@ -88,10 +88,11 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
   pages?: ComicPageDto[];
 
   @Expose()
+  @IsOptional()
   @ArrayUnique()
   @Type(() => String)
-  @Transform(({ obj }) => obj.nfts.map((nft) => nft.mint))
-  hashlist: string[];
+  @Transform(({ obj }) => obj.nfts?.map((nft) => nft.mint))
+  hashlist?: string[];
 
   protected async presign(): Promise<ComicIssueDto> {
     return await super.presign(this, ['cover', 'soundtrack']);

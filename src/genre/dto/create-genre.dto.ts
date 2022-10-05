@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 
@@ -21,7 +21,6 @@ export class CreateGenreDto {
 export class CreateGenreFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  @IsOptional()
   image?: Express.Multer.File | null;
 }
 

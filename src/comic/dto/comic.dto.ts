@@ -109,9 +109,10 @@ export class ComicDto extends Presignable<ComicDto> {
 
   @Expose()
   @IsArray()
+  @IsOptional()
   @Type(() => String)
-  @Transform(({ obj }) => obj.genres.map((genre) => genre.name))
-  genres: string[];
+  @Transform(({ obj }) => obj.genres?.map((genre) => genre.name))
+  genres?: string[];
 
   @Expose()
   @IsArray()

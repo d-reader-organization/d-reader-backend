@@ -9,9 +9,9 @@ export class WalletComicDto {
 
   @Expose()
   @IsBoolean()
-  isSubscribed: boolean = false;
+  isSubscribed: boolean;
 
   @Expose()
   @IsBoolean()
-  isFavourite: boolean = false;
+  isFavourite: boolean;
 }
