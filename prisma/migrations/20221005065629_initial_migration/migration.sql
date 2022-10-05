@@ -73,6 +73,29 @@ CREATE TABLE "Comic" (
 );
 
 -- CreateTable
+CREATE TABLE "WalletComic" (
+    "comicId" INTEGER NOT NULL,
+    "walletId" INTEGER NOT NULL,
+    "rating" INTEGER,
+    "isSubscribed" BOOLEAN NOT NULL DEFAULT false,
+    "isFavourite" BOOLEAN NOT NULL DEFAULT false,
+    "isWhitelisted" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "WalletComic_pkey" PRIMARY KEY ("comicId","walletId")
+);
+
+-- CreateTable
+CREATE TABLE "Genre" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "image" TEXT NOT NULL DEFAULT '',
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Genre_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "ComicIssue" (
     "id" SERIAL NOT NULL,
     "number" INTEGER NOT NULL,
@@ -117,6 +140,12 @@ CREATE TABLE "ComicPage" (
     CONSTRAINT "ComicPage_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_ComicToGenre" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Wallet_address_key" ON "Wallet"("address");
 
@@ -142,6 +171,12 @@ CREATE UNIQUE INDEX "Comic_name_key" ON "Comic"("name");
 CREATE UNIQUE INDEX "Comic_slug_key" ON "Comic"("slug");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Genre_name_key" ON "Genre"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Genre_slug_key" ON "Genre"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ComicIssue_number_comicId_key" ON "ComicIssue"("number", "comicId");
 
 -- CreateIndex
@@ -156,11 +191,23 @@ CREATE UNIQUE INDEX "NFT_mint_key" ON "NFT"("mint");
 -- CreateIndex
 CREATE UNIQUE INDEX "ComicPage_pageNumber_comicIssueId_key" ON "ComicPage"("pageNumber", "comicIssueId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "_ComicToGenre_AB_unique" ON "_ComicToGenre"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ComicToGenre_B_index" ON "_ComicToGenre"("B");
+
 -- AddForeignKey
 ALTER TABLE "Creator" ADD CONSTRAINT "Creator_walletId_fkey" FOREIGN KEY ("walletId") REFERENCES "Wallet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Comic" ADD CONSTRAINT "Comic_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WalletComic" ADD CONSTRAINT "WalletComic_comicId_fkey" FOREIGN KEY ("comicId") REFERENCES "Comic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WalletComic" ADD CONSTRAINT "WalletComic_walletId_fkey" FOREIGN KEY ("walletId") REFERENCES "Wallet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ComicIssue" ADD CONSTRAINT "ComicIssue_comicId_fkey" FOREIGN KEY ("comicId") REFERENCES "Comic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -170,3 +217,9 @@ ALTER TABLE "NFT" ADD CONSTRAINT "NFT_comicIssueId_fkey" FOREIGN KEY ("comicIssu
 
 -- AddForeignKey
 ALTER TABLE "ComicPage" ADD CONSTRAINT "ComicPage_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ComicToGenre" ADD CONSTRAINT "_ComicToGenre_A_fkey" FOREIGN KEY ("A") REFERENCES "Comic"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ComicToGenre" ADD CONSTRAINT "_ComicToGenre_B_fkey" FOREIGN KEY ("B") REFERENCES "Genre"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,5 +1,11 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import { IsArray, IsPositive, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
@@ -19,6 +25,15 @@ export class ComicDto extends Presignable<ComicDto> {
   @Expose()
   @IsKebabCase()
   slug: string;
+
+  @Expose()
+  @IsPositive()
+  @IsOptional()
+  rating: number | null;
+
+  @Expose()
+  @IsBoolean()
+  isOngoing: boolean;
 
   @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
@@ -94,6 +109,12 @@ export class ComicDto extends Presignable<ComicDto> {
 
   @Expose()
   @IsArray()
+  @Type(() => String)
+  @Transform(({ obj }) => obj.genres.map((genre) => genre.name))
+  genres: string[];
+
+  @Expose()
+  @IsArray()
   @Type(() => ComicIssueDto)
   issues: ComicIssueDto[];
 
@@ -111,7 +132,17 @@ export class ComicDto extends Presignable<ComicDto> {
     input: ComicDto | ComicDto[],
   ): Promise<ComicDto | ComicDto[]> {
     if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return input.presign();
+      return await Promise.all(
+        input.map((obj) => {
+          // TODO: if comicIssues -> presign them as well
+          // ComicIssueDto.presignUrls(obj.issues);
+          return obj.presign();
+        }),
+      );
+    } else {
+      // TODO: if comicIssues -> presign them as well
+      // ComicIssueDto.presignUrls(input.issues);
+      return await input.presign();
+    }
   }
 }

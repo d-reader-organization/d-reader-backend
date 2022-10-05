@@ -5,6 +5,54 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
+    await prisma.genre.createMany({
+      data: [
+        {
+          name: 'Action',
+          slug: 'action',
+          deletedAt: null,
+          image: 'genres/action/image.png',
+        },
+        {
+          name: 'Sci-Fi',
+          slug: 'sci-fi',
+          deletedAt: null,
+          image: 'genres/sci-fi/image.png',
+        },
+        {
+          name: 'Comedy',
+          slug: 'comedy',
+          deletedAt: null,
+          image: 'genres/comedy/image.png',
+        },
+        {
+          name: 'Slice of Life',
+          slug: 'slice-of-life',
+          deletedAt: null,
+          image: 'genres/slice-of-life/image.png',
+        },
+        {
+          name: 'Romance',
+          slug: 'romance',
+          deletedAt: null,
+          image: 'genres/romance/image.png',
+        },
+        {
+          name: 'History',
+          slug: 'history',
+          deletedAt: null,
+          image: 'genres/history/image.png',
+        },
+      ],
+    });
+    console.log(
+      "Comic genres added: 'action', 'sci-fi', 'comedy', 'slice-of-life', 'romance', 'history'",
+    );
+  } catch (e) {
+    console.log('Failed to add comic genres', e);
+  }
+
+  try {
     await prisma.wallet.upsert({
       where: { address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD' },
       update: {},
@@ -79,6 +127,7 @@ async function main() {
                     'Gorecats are an eclectic breed of treacherous little trouble makers, hell bent on using every single one of their glorious nine lives.',
                   flavorText:
                     'by Emmy award winning duo Jim Bryson & Adam Jeffcoat',
+                  genres: { connect: [{ slug: 'action' }, { slug: 'sci-fi' }] },
                   isOngoing: true,
                   deletedAt: null,
                   featuredAt: null,
@@ -294,6 +343,13 @@ async function main() {
               description:
                 'Swamplabs is a studio that creates comics and mangas by latest standards, while paying the artists for the cheapest possible amount',
               flavorText: 'Lorem Ipsum dolor sit flavor text',
+              genres: {
+                connect: [
+                  { slug: 'action' },
+                  { slug: 'sci-fi' },
+                  { slug: 'romance' },
+                ],
+              },
               website: 'https://swamplabs.com',
               createdAt: new Date(),
               deletedAt: null,

@@ -1,6 +1,12 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Expose, Transform } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { Expose, Transform, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
@@ -68,6 +74,11 @@ export class CreateComicDto {
   @Expose()
   @IsOptionalUrl()
   openSea?: string;
+
+  @Expose()
+  @IsArray()
+  @Type(() => String)
+  genres: string[];
 }
 
 export class CreateComicFilesDto {

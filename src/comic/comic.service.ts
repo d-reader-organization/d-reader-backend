@@ -27,14 +27,19 @@ export class ComicService {
     createComicDto: CreateComicDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { slug, ...rest } = createComicDto;
+    const { slug, genres, ...rest } = createComicDto;
 
     // Create Comic without any files uploaded
     let comic: Comic & { issues: ComicIssue[] };
     try {
       comic = await this.prisma.comic.create({
         include: { issues: true },
-        data: { ...rest, slug, creatorId },
+        data: {
+          ...rest,
+          slug,
+          creatorId,
+          genres: { connect: genres.map((slug) => ({ slug })) },
+        },
       });
     } catch {
       throw new BadRequestException('Bad comic data');
@@ -70,6 +75,7 @@ export class ComicService {
 
   async findAll() {
     const comics = await this.prisma.comic.findMany({
+      include: { genres: true },
       where: {
         deletedAt: null,
         publishedAt: { lt: new Date() },
@@ -79,8 +85,9 @@ export class ComicService {
     return comics;
   }
 
-  async findOne(slug: string) {
+  async findOne(slug: string): Promise<Comic & { rating: number | null }> {
     const comic = await this.prisma.comic.findUnique({
+      include: { genres: true },
       where: { slug },
     });
 
@@ -88,14 +95,39 @@ export class ComicService {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
-    return comic;
+    const aggregations = await this.prisma.walletComic.aggregate({
+      _avg: { rating: true },
+      // _count: { rating: true },
+      where: { comicId: comic.id },
+    });
+
+    return { ...comic, rating: aggregations._avg.rating };
+  }
+
+  async findWalletComic(walletId: number, slug: string) {
+    const walletComic = await this.prisma.walletComic.findUnique({
+      where: {
+        comicId_walletId: {
+          walletId: walletId,
+          // TODO: change this to comicSlug
+          comicId: 1,
+        },
+      },
+    });
+
+    return walletComic;
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
+    const { genres, ...rest } = updateComicDto;
+
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug },
-        data: updateComicDto,
+        data: {
+          ...rest,
+          genres: { set: genres.map((slug) => ({ slug })) },
+        },
       });
 
       return updatedComic;
@@ -119,6 +151,44 @@ export class ComicService {
       await deleteS3Object({ Key: fileKey });
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
+  }
+
+  async rate(walletAddress: string, slug: string, rating: number) {
+    const walletComic = await this.prisma.walletComic.upsert({
+      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+      create: { walletId: 1, comicId: 1, rating },
+      update: { rating },
+    });
+
+    return walletComic;
+  }
+
+  async toggleSubscribe(walletAddress: string, slug: string) {
+    let walletComic = await this.prisma.walletComic.findUnique({
+      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+    });
+
+    walletComic = await this.prisma.walletComic.upsert({
+      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+      create: { walletId: 1, comicId: 1, isSubscribed: true },
+      update: { isSubscribed: !walletComic?.isSubscribed },
+    });
+
+    return walletComic;
+  }
+
+  async toggleFavourite(walletAddress: string, slug: string) {
+    let walletComic = await this.prisma.walletComic.findUnique({
+      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+    });
+
+    walletComic = await this.prisma.walletComic.upsert({
+      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+      create: { walletId: 1, comicId: 1, isFavourite: true },
+      update: { isFavourite: !walletComic?.isFavourite },
+    });
+
+    return walletComic;
   }
 
   async publish(slug: string) {

@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
 import { Exclude, Expose, Transform } from 'class-transformer';
-import { IsOptional, MaxLength, MinLength } from 'class-validator';
+import { IsOptional } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from './creator.dto';

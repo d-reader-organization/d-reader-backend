@@ -109,7 +109,18 @@ export class CreatorDto extends Presignable<CreatorDto> {
     input: CreatorDto | CreatorDto[],
   ): Promise<CreatorDto | CreatorDto[]> {
     if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return input.presign();
+      return await Promise.all(
+        input.map((obj) => {
+          // TODO: if comics -> presign them as well
+          // TODO: handle undefined comicIssue.nfts
+          // ComicDto.presignUrls(obj.comics);
+          return obj.presign();
+        }),
+      );
+    } else {
+      // TODO: if comics -> presign them as well
+      // ComicDto.presignUrls(input.comics);
+      return await input.presign();
+    }
   }
 }

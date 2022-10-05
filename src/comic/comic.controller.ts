@@ -29,7 +29,10 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicIdParam, ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { Creator } from '@prisma/client';
+import { Creator, Wallet } from '@prisma/client';
+import { WalletEntity } from 'src/decorators/wallet.decorator';
+import { WalletComicDto } from './dto/wallet-comic.dto';
+import { RateComicDto } from './dto/rate-comic.dto';
 
 @UseGuards(RestAuthGuard, ComicUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -73,6 +76,20 @@ export class ComicController {
     const comics = await this.comicService.findAll();
     const comicsDto = plainToInstance(ComicDto, comics);
     return await ComicDto.presignUrls(comicsDto);
+  }
+
+  /* Get wallets stats for a specific comic: star rating, favourite status etc. */
+  @Get('get/:slug/my-stats')
+  async findMyStats(
+    @Param('slug') slug: string,
+    @WalletEntity()
+    wallet: Wallet,
+  ): Promise<WalletComicDto | null> {
+    const myComicStats = await this.comicService.findWalletComic(
+      wallet.id,
+      slug,
+    );
+    return plainToInstance(WalletComicDto, myComicStats);
   }
 
   /* Get specific comic by unique slug */
@@ -140,6 +157,50 @@ export class ComicController {
     return await ComicDto.presignUrls(comicDto);
   }
 
+  /* Rate specific comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
+  @Patch('rate/:slug')
+  async rate(
+    @Param('slug') slug: string,
+    @Body() rateComicDto: RateComicDto,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<WalletComicDto> {
+    const myComicStats = await this.comicService.rate(
+      wallet.address,
+      slug,
+      rateComicDto.rating,
+    );
+    return plainToInstance(WalletComicDto, myComicStats);
+  }
+
+  /* Subscribe/unsubscribe from specific comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
+  @Patch('subscribe/:slug')
+  async subscribe(
+    @Param('slug') slug: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<WalletComicDto> {
+    const myComicStats = await this.comicService.toggleSubscribe(
+      wallet.address,
+      slug,
+    );
+    return plainToInstance(WalletComicDto, myComicStats);
+  }
+
+  /* Favouritise/unfavouritise a specific comic */
+  @ComicIdParam({ key: 'slug', type: 'string' })
+  @Patch('favouritise/:slug')
+  async favouritise(
+    @Param('slug') slug: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<WalletComicDto> {
+    const myComicStats = await this.comicService.toggleSubscribe(
+      wallet.address,
+      slug,
+    );
+    return plainToInstance(WalletComicDto, myComicStats);
+  }
+
   /* Publish comic */
   @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('publish/:slug')
@@ -183,19 +244,16 @@ export class ComicController {
     return this.comicService.remove(slug);
   }
 
-  // TODO: when getting comic pages from the database, select only preview pages
-  // if the person is not an owner or a holder of the collection (comic)
-  // TODO: star ratings, categories etc.
-
-  // TODO: when updating comics, handle new hashlists properly?
+  // TODO: switch to slugs
+  // TODO: prevent updating comics that are published
   // TODO: email sending
   // TODO: cronjob for something?
-  // TODO: @deprecated slug -> instead use id
   // TODO: comicPages @ApiBody
   // TODO: updatePages on comicIssue.service, comic-page.service.ts
 
   /**
    * TODO v1.2:
+   * - reading metrics (most read etc. async update functions)
    * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
    * - [password] Simulate message creation: const message = Message.from(signatureBytes);

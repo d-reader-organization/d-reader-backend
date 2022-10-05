@@ -32,7 +32,8 @@ import {
   ComicIssueUpdateGuard,
 } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { Creator } from '@prisma/client';
+import { WalletEntity } from 'src/decorators/wallet.decorator';
+import { Creator, Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -81,8 +82,14 @@ export class ComicIssueController {
 
   /* Get specific comic issue by unique id */
   @Get('get/:id')
-  async findOne(@Param('id') id: string): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicIssueDto> {
+    const comicIssue = await this.comicIssueService.findOneProtected(
+      wallet.address,
+      +id,
+    );
     const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
     return ComicIssueDto.presignUrls(comicIssueDto);
   }

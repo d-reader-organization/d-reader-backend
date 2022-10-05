@@ -12,6 +12,7 @@ Table Wallet {
   nonce String [unique, not null]
   role Role [not null, default: 'User']
   creator Creator
+  comics WalletComic [not null]
 }
 
 Table Creator {
@@ -64,9 +65,35 @@ Table Comic {
   verifiedAt DateTime
   publishedAt DateTime
   popularizedAt DateTime
+  genres Genre [not null]
   issues ComicIssue [not null]
+  wallets WalletComic [not null]
   creator Creator [not null]
   creatorId Int [not null]
+}
+
+Table WalletComic {
+  comic Comic [not null]
+  comicId Int [not null]
+  wallet Wallet [not null]
+  walletId Int [not null]
+  rating Int
+  isSubscribed Boolean [not null, default: false]
+  isFavourite Boolean [not null, default: false]
+  isWhitelisted Boolean [not null, default: false]
+
+  indexes {
+    (comicId, walletId) [pk]
+  }
+}
+
+Table Genre {
+  id Int [pk, increment]
+  name String [unique, not null]
+  slug String [unique, not null]
+  image String [not null, default: '']
+  deletedAt DateTime
+  comics Comic [not null]
 }
 
 Table ComicIssue {
@@ -120,6 +147,11 @@ Table ComicPage {
   }
 }
 
+Table ComicToGenre {
+  genresId Int [ref: > Genre.id]
+  comicsId Int [ref: > Comic.id]
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -129,6 +161,10 @@ Enum Role {
 Ref: Creator.walletId - Wallet.id [delete: Cascade]
 
 Ref: Comic.creatorId > Creator.id [delete: Cascade]
+
+Ref: WalletComic.comicId > Comic.id [delete: Cascade]
+
+Ref: WalletComic.walletId > Wallet.id [delete: Cascade]
 
 Ref: ComicIssue.comicId > Comic.id [delete: Cascade]
 

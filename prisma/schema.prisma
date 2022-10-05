@@ -13,16 +13,16 @@ generator dbml {
 }
 
 model Wallet {
-  id        Int       @id @default(autoincrement())
-  address   String    @unique
-  label     String    @default("")
-  avatar    String    @default("")
-  createdAt DateTime  @default(now())
+  id        Int           @id @default(autoincrement())
+  address   String        @unique
+  label     String        @default("")
+  avatar    String        @default("")
+  createdAt DateTime      @default(now())
   lastLogin DateTime?
-  nonce     String    @unique @default(uuid())
-  role      Role      @default(User)
+  nonce     String        @unique @default(uuid())
+  role      Role          @default(User)
   creator   Creator?
-  // whitelistedComicIssues ComicIssueWhitelist[]
+  comics    WalletComic[]
 }
 
 enum Role {
@@ -58,67 +58,62 @@ model Creator {
 }
 
 model Comic {
-  id            Int          @id @default(autoincrement())
-  name          String       @unique
-  slug          String       @unique
-  isOngoing     Boolean      @default(true)
-  thumbnail     String       @default("")
-  pfp           String       @default("")
-  logo          String       @default("")
-  description   String       @default("")
-  flavorText    String       @default("")
-  website       String       @default("")
-  twitter       String       @default("")
-  discord       String       @default("")
-  telegram      String       @default("")
-  instagram     String       @default("")
-  medium        String       @default("")
-  tikTok        String       @default("")
-  youTube       String       @default("")
-  magicEden     String       @default("")
-  openSea       String       @default("")
-  updatedAt     DateTime     @updatedAt
-  createdAt     DateTime     @default(now())
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  slug          String        @unique
+  isOngoing     Boolean       @default(true)
+  thumbnail     String        @default("")
+  pfp           String        @default("")
+  logo          String        @default("")
+  description   String        @default("")
+  flavorText    String        @default("")
+  website       String        @default("")
+  twitter       String        @default("")
+  discord       String        @default("")
+  telegram      String        @default("")
+  instagram     String        @default("")
+  medium        String        @default("")
+  tikTok        String        @default("")
+  youTube       String        @default("")
+  magicEden     String        @default("")
+  openSea       String        @default("")
+  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
   deletedAt     DateTime?
   featuredAt    DateTime?
   verifiedAt    DateTime?
   publishedAt   DateTime?
   popularizedAt DateTime?
+  genres        Genre[]
   issues        ComicIssue[]
-  creator       Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  wallets       WalletComic[]
+  creator       Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
 }
 
-// model ComicStarRating {
-//   id       Int    @id @default(autoincrement())
-//   comic    Comic  @relation(fields: [comicId], references: [id], onDelete: Cascade)
-//   comicId  Int
-//   wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
-//   walletId Int
-//   rating   Int
+model WalletComic {
+  comic         Comic   @relation(fields: [comicId], references: [id], onDelete: Cascade)
+  comicId       Int
+  wallet        Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId      Int
+  rating        Int?
+  isSubscribed  Boolean @default(false)
+  isFavourite   Boolean @default(false)
+  isWhitelisted Boolean @default(false)
+  // isReported Boolean @default(false)
+  // isLiked    Boolean @default(false)
 
-//   @@unique([comicId, walletId])
-// }
+  @@id([comicId, walletId])
+}
 
-// model ComicIssueStarRating {
-//   id           Int        @id @default(autoincrement())
-//   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-//   comicIssueId Int
-//   wallet       Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
-//   walletId     Int
-//   rating       Int
-
-//   @@unique([comicIssueId, walletId])
-// }
-
-// model WalletComic {
-//   isSubscribed Boolean //   subscribedAt DateTime
-//   isFavourite  Boolean //   favouritedAt DateTime
-//   isWatching   Boolean //   watchedAt    DateTime
-//   isReported   Boolean //   reportedAt   DateTime
-//   isWished     Boolean //   wishedAt     DateTime
-//   isLiked      Boolean //   likedAt      DateTime
-// }
+model Genre {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  slug      String    @unique
+  image     String    @default("")
+  deletedAt DateTime?
+  comics    Comic[]
+}
 
 model ComicIssue {
   id            Int         @id @default(autoincrement())
@@ -148,16 +143,6 @@ model ComicIssue {
   @@unique([title, comicId])
 }
 
-// model ComicIssueWhitelist {
-//   id           Int        @id @default(autoincrement())
-//   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-//   comicIssueId Int
-//   wallet       Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
-//   walletId     Int
-
-//   @@unique([comicIssueId, walletId])
-// }
-
 model NFT {
   id           Int        @id @default(autoincrement())
   mint         String     @unique
@@ -179,8 +164,6 @@ model ComicPage {
 
 // TODO v2
 // - [COMIC] family ComicFamily
-// - [COMIC] categories ComicCategory[]
-// - [COMIC] whitelist specific wallets
 // - [COMIC] candyMachineIds Int[]
 // - [COMIC_ISSUE] candyMachineIds Int[]
 // - [COMIC_ISSUE] whitelist specific wallets

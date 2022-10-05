@@ -19,12 +19,14 @@ import {
 import { isEmpty } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage, NFT } from '@prisma/client';
+import { MetaplexService } from 'src/vendors/metaplex.service';
 
 @Injectable()
 export class ComicIssueService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
+    private readonly metaplexService: MetaplexService,
   ) {}
 
   async create(
@@ -108,7 +110,35 @@ export class ComicIssueService {
 
   async findOne(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
-      include: { nfts: true },
+      include: { nfts: true, pages: true },
+      where: { id },
+    });
+
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+
+    return comicIssue;
+  }
+
+  async findOneProtected(walletAddress: string, id: number) {
+    // Find all NFTs that are token gating this Comic
+    const whitelistedNfts = await this.prisma.nFT.findMany({
+      where: { comicIssueId: id },
+    });
+
+    const isHolder = await this.metaplexService.verifyNFTHolder(
+      walletAddress,
+      whitelistedNfts.map((nft) => nft.mint),
+    );
+
+    // TODO v1.2: check isWhitelisted from WalletComic
+
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      include: {
+        nfts: true,
+        pages: { where: { isPreviewable: isHolder ? undefined : true } },
+      },
       where: { id },
     });
 
@@ -120,7 +150,8 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { pages, ...rest } = updateComicIssueDto;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { pages, hashlist, ...rest } = updateComicIssueDto;
 
     // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
@@ -140,6 +171,8 @@ export class ComicIssueService {
           ...rest,
           // TODO v1.2: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
+          // TODO v1.2: unable to edit 'nfts'
+          // nfts: { set: hashlist.map((hash) => ({ mint: hash })) },
         },
       });
     } catch {
