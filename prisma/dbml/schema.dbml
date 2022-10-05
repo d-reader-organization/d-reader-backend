@@ -3,8 +3,7 @@
 //// ------------------------------------------------------
 
 Table Wallet {
-  id Int [pk, increment]
-  address String [unique, not null]
+  address String [pk]
   label String [not null, default: '']
   avatar String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
@@ -35,13 +34,12 @@ Table Creator {
   emailConfirmedAt DateTime
   comics Comic [not null]
   wallet Wallet [not null]
-  walletId Int [unique, not null]
+  walletAddress String [unique, not null]
 }
 
 Table Comic {
-  id Int [pk, increment]
   name String [unique, not null]
-  slug String [unique, not null]
+  slug String [pk]
   isOngoing Boolean [not null, default: true]
   thumbnail String [not null, default: '']
   pfp String [not null, default: '']
@@ -74,23 +72,22 @@ Table Comic {
 
 Table WalletComic {
   comic Comic [not null]
-  comicId Int [not null]
+  comicSlug String [not null]
   wallet Wallet [not null]
-  walletId Int [not null]
+  walletAddress String [not null]
   rating Int
   isSubscribed Boolean [not null, default: false]
   isFavourite Boolean [not null, default: false]
   isWhitelisted Boolean [not null, default: false]
 
   indexes {
-    (comicId, walletId) [pk]
+    (comicSlug, walletAddress) [pk]
   }
 }
 
 Table Genre {
-  id Int [pk, increment]
   name String [unique, not null]
-  slug String [unique, not null]
+  slug String [pk]
   image String [not null, default: '']
   deletedAt DateTime
   comics Comic [not null]
@@ -115,20 +112,19 @@ Table ComicIssue {
   publishedAt DateTime
   popularizedAt DateTime
   comic Comic [not null]
-  comicId Int [not null]
+  comicSlug String [not null]
   pages ComicPage [not null]
   nfts NFT [not null]
 
   indexes {
-    (number, comicId) [unique]
-    (slug, comicId) [unique]
-    (title, comicId) [unique]
+    (number, comicSlug) [unique]
+    (slug, comicSlug) [unique]
+    (title, comicSlug) [unique]
   }
 }
 
 Table NFT {
-  id Int [pk, increment]
-  mint String [unique, not null]
+  mint String [pk]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
 }
@@ -148,8 +144,8 @@ Table ComicPage {
 }
 
 Table ComicToGenre {
-  genresId Int [ref: > Genre.id]
-  comicsId Int [ref: > Comic.id]
+  genresId String [ref: > Genre.slug]
+  comicsId String [ref: > Comic.slug]
 }
 
 Enum Role {
@@ -158,15 +154,15 @@ Enum Role {
   User
 }
 
-Ref: Creator.walletId - Wallet.id [delete: Cascade]
+Ref: Creator.walletAddress - Wallet.address [delete: Cascade]
 
 Ref: Comic.creatorId > Creator.id [delete: Cascade]
 
-Ref: WalletComic.comicId > Comic.id [delete: Cascade]
+Ref: WalletComic.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: WalletComic.walletId > Wallet.id [delete: Cascade]
+Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
-Ref: ComicIssue.comicId > Comic.id [delete: Cascade]
+Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: NFT.comicIssueId > ComicIssue.id [delete: Cascade]
 

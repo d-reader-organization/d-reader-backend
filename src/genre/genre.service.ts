@@ -44,13 +44,13 @@ export class GenreService {
       const prefix = await this.getS3FilePrefix(slug);
       if (image) imageKey = await uploadFile(prefix, image);
     } catch {
-      await this.prisma.genre.delete({ where: { id: genre.id } });
+      await this.prisma.genre.delete({ where: { slug } });
       throw new BadRequestException('Malformed file upload');
     }
 
     // Update Genre with s3 file keys
     genre = await this.prisma.genre.update({
-      where: { id: genre.id },
+      where: { slug },
       data: { image: imageKey },
     });
 
@@ -148,7 +148,7 @@ export class GenreService {
   async getS3FilePrefix(slug: string) {
     const genre = await this.prisma.genre.findUnique({
       where: { slug },
-      select: { id: true },
+      select: { slug: true },
     });
 
     if (!genre) {

@@ -13,8 +13,7 @@ generator dbml {
 }
 
 model Wallet {
-  id        Int           @id @default(autoincrement())
-  address   String        @unique
+  address   String        @id
   label     String        @default("")
   avatar    String        @default("")
   createdAt DateTime      @default(now())
@@ -53,14 +52,13 @@ model Creator {
   popularizedAt    DateTime?
   emailConfirmedAt DateTime?
   comics           Comic[]
-  wallet           Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  walletId         Int       @unique
+  wallet           Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress    String    @unique
 }
 
 model Comic {
-  id            Int           @id @default(autoincrement())
   name          String        @unique
-  slug          String        @unique
+  slug          String        @id
   isOngoing     Boolean       @default(true)
   thumbnail     String        @default("")
   pfp           String        @default("")
@@ -92,10 +90,10 @@ model Comic {
 }
 
 model WalletComic {
-  comic         Comic   @relation(fields: [comicId], references: [id], onDelete: Cascade)
-  comicId       Int
-  wallet        Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  walletId      Int
+  comic         Comic   @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comicSlug     String
+  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress String
   rating        Int?
   isSubscribed  Boolean @default(false)
   isFavourite   Boolean @default(false)
@@ -103,13 +101,12 @@ model WalletComic {
   // isReported Boolean @default(false)
   // isLiked    Boolean @default(false)
 
-  @@id([comicId, walletId])
+  @@id([comicSlug, walletAddress])
 }
 
 model Genre {
-  id        Int       @id @default(autoincrement())
   name      String    @unique
-  slug      String    @unique
+  slug      String    @id
   image     String    @default("")
   deletedAt DateTime?
   comics    Comic[]
@@ -133,19 +130,18 @@ model ComicIssue {
   verifiedAt    DateTime?
   publishedAt   DateTime?
   popularizedAt DateTime?
-  comic         Comic       @relation(fields: [comicId], references: [id], onDelete: Cascade)
-  comicId       Int
+  comic         Comic       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comicSlug     String
   pages         ComicPage[]
   nfts          NFT[]
 
-  @@unique([number, comicId])
-  @@unique([slug, comicId])
-  @@unique([title, comicId])
+  @@unique([number, comicSlug])
+  @@unique([slug, comicSlug])
+  @@unique([title, comicSlug])
 }
 
 model NFT {
-  id           Int        @id @default(autoincrement())
-  mint         String     @unique
+  mint         String     @id
   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
 }

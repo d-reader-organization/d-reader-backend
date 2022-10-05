@@ -54,11 +54,8 @@ export class CreateComicIssueDto {
   releaseDate: string;
 
   @Expose()
-  @IsPositive()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  comicId: number;
+  @IsKebabCase()
+  comicSlug: string;
 
   @Expose()
   @IsArray()
@@ -82,7 +79,6 @@ export class CreateComicIssueDto {
 }
 
 export class CreateComicIssueFilesDto {
-  // TODO: @Expose() might be unnecessary here
   @Expose()
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])

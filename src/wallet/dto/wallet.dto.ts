@@ -1,8 +1,8 @@
 import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
-import { Role } from '@prisma/client';
 import { Presignable } from 'src/types/presignable';
+import { Role } from '@prisma/client';
 
 @Exclude()
 export class WalletDto extends Presignable<WalletDto> {

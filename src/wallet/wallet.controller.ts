@@ -14,21 +14,17 @@ import {
 import { WalletService } from './wallet.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { RolesGuard, Roles } from 'src/guards/roles.guard';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { WalletDto } from './dto/wallet.dto';
-import { Wallet, Role } from '@prisma/client';
+import { Wallet } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { plainToInstance } from 'class-transformer';
-import {
-  WalletIdParam,
-  WalletUpdateGuard,
-} from 'src/guards/wallet-update.guard';
+import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 
-@UseGuards(RestAuthGuard, RolesGuard, WalletUpdateGuard)
+@UseGuards(RestAuthGuard, WalletUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Wallet')
 @Controller('wallet')
@@ -36,7 +32,6 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   /* Create a new wallet */
-  @Roles(Role.Superadmin, Role.Admin)
   @Post('create')
   async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
     const wallet = await this.walletService.create(createWalletDto);
@@ -70,8 +65,6 @@ export class WalletController {
   }
 
   /* Update specific wallet */
-  @Roles(Role.Superadmin, Role.Admin)
-  @WalletIdParam({ key: 'address', type: 'string' })
   @Patch('update/:address')
   async update(
     @Param('address') address: string,
@@ -86,7 +79,6 @@ export class WalletController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
-  @WalletIdParam({ key: 'address', type: 'string' })
   @Patch('update/:address/avatar')
   async updateAvatar(
     @Param('address') address: string,
@@ -98,7 +90,6 @@ export class WalletController {
   }
 
   /* Delete specific wallet */
-  @WalletIdParam({ key: 'address', type: 'string' })
   @Delete('delete/:address')
   remove(@Param('address') address: string) {
     return this.walletService.remove(address);

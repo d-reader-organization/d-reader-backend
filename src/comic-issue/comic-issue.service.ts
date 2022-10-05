@@ -34,14 +34,14 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicId, pages, hashlist, ...rest } = createComicIssueDto;
+    const { slug, comicSlug, pages, hashlist, ...rest } = createComicIssueDto;
 
     const parentComic = await this.prisma.comic.findUnique({
-      where: { id: comicId },
+      where: { slug: comicSlug },
     });
 
     if (!parentComic) {
-      throw new NotFoundException(`Comic with id ${comicId} does not exist`);
+      throw new NotFoundException(`Comic ${comicSlug} does not exist`);
     }
 
     // Make sure creator of the comic issue owns the parent comic as well
@@ -58,7 +58,7 @@ export class ComicIssueService {
         data: {
           ...rest,
           slug,
-          comic: { connect: { id: comicId } },
+          comic: { connect: { slug: comicSlug } },
           pages: { createMany: { data: pagesData } },
           nfts: {
             createMany: {

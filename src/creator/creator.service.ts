@@ -23,7 +23,7 @@ export class CreatorService {
   constructor(private prisma: PrismaService) {}
 
   async create(
-    walletId: number,
+    walletAddress: string,
     createCreatorDto: CreateCreatorDto,
     createCreatorFilesDto: CreateCreatorFilesDto,
   ) {
@@ -33,7 +33,7 @@ export class CreatorService {
     let creator: Creator;
     try {
       creator = await this.prisma.creator.create({
-        data: { ...rest, slug, walletId },
+        data: { ...rest, slug, walletAddress },
       });
     } catch {
       throw new BadRequestException('Bad creator data');

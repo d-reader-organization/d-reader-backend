@@ -27,7 +27,7 @@ import {
 import { ComicDto } from './dto/comic.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { ComicIdParam, ComicUpdateGuard } from 'src/guards/comic-update.guard';
+import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { Creator, Wallet } from '@prisma/client';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -86,7 +86,7 @@ export class ComicController {
     wallet: Wallet,
   ): Promise<WalletComicDto | null> {
     const myComicStats = await this.comicService.findWalletComic(
-      wallet.id,
+      wallet.address,
       slug,
     );
     return plainToInstance(WalletComicDto, myComicStats);
@@ -101,7 +101,6 @@ export class ComicController {
   }
 
   /* Update specific comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -116,7 +115,6 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('thumbnail')
   @UseInterceptors(FileInterceptor('thumbnail'))
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/thumbnail')
   async updateThumbnail(
     @Param('slug') slug: string,
@@ -131,7 +129,6 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('pfp')
   @UseInterceptors(FileInterceptor('pfp'))
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/pfp')
   async updatePfp(
     @Param('slug') slug: string,
@@ -146,7 +143,6 @@ export class ComicController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('logo')
   @UseInterceptors(FileInterceptor('logo'))
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('update/:slug/logo')
   async updateLogo(
     @Param('slug') slug: string,
@@ -158,7 +154,6 @@ export class ComicController {
   }
 
   /* Rate specific comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('rate/:slug')
   async rate(
     @Param('slug') slug: string,
@@ -174,7 +169,6 @@ export class ComicController {
   }
 
   /* Subscribe/unsubscribe from specific comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('subscribe/:slug')
   async subscribe(
     @Param('slug') slug: string,
@@ -188,7 +182,6 @@ export class ComicController {
   }
 
   /* Favouritise/unfavouritise a specific comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('favouritise/:slug')
   async favouritise(
     @Param('slug') slug: string,
@@ -202,7 +195,6 @@ export class ComicController {
   }
 
   /* Publish comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
@@ -211,7 +203,6 @@ export class ComicController {
   }
 
   /* Unpublish comic */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
     const unpublishedComic = await this.comicService.unpublish(slug);
@@ -220,7 +211,6 @@ export class ComicController {
   }
 
   /* Queue comic for deletion */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
     const deletedComic = await this.comicService.pseudoDelete(slug);
@@ -229,7 +219,6 @@ export class ComicController {
   }
 
   /* Remove comic for deletion queue */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
@@ -238,21 +227,23 @@ export class ComicController {
   }
 
   /* Completely remove specific comic, including files from s3 bucket */
-  @ComicIdParam({ key: 'slug', type: 'string' })
   @Delete('remove/:slug')
   remove(@Param('slug') slug: string) {
     return this.comicService.remove(slug);
   }
 
-  // TODO: switch to slugs
-  // TODO: prevent updating comics that are published
-  // TODO: email sending
-  // TODO: cronjob for something?
-  // TODO: comicPages @ApiBody
-  // TODO: updatePages on comicIssue.service, comic-page.service.ts
+  /**
+   * TODO:
+   * - email sending
+   * - cronjob for removing deleted items
+   * - comicPages @ApiBody
+   * - updatePages on comicIssue.service, comic-page.service.ts
+   * - revise @Exclude and @Expose decorators
+   */
 
   /**
    * TODO v1.2:
+   * - prevent updating comics that are published
    * - reading metrics (most read etc. async update functions)
    * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/

@@ -27,10 +27,7 @@ import {
 import { ComicIssueDto } from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import {
-  ComicIssueIdParam,
-  ComicIssueUpdateGuard,
-} from 'src/guards/comic-issue-update.guard';
+import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet } from '@prisma/client';
@@ -95,7 +92,6 @@ export class ComicIssueController {
   }
 
   /* Update specific comic issue */
-  @ComicIssueIdParam()
   @Patch('update/:id')
   async update(
     @Param('id') id: string,
@@ -113,7 +109,6 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('cover')
   @UseInterceptors(FileInterceptor('cover'))
-  @ComicIssueIdParam()
   @Patch('update/:id/cover')
   async updateCover(
     @Param('id') id: string,
@@ -131,7 +126,6 @@ export class ComicIssueController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('soundtrack')
   @UseInterceptors(FileInterceptor('soundtrack'))
-  @ComicIssueIdParam()
   @Patch('update/:id/soundtrack')
   async updateSoundtrack(
     @Param('id') id: string,
@@ -146,7 +140,6 @@ export class ComicIssueController {
   }
 
   /* Publish comic issue */
-  @ComicIssueIdParam()
   @Patch('publish/:id')
   async publish(@Param('id') id: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(+id);
@@ -155,7 +148,6 @@ export class ComicIssueController {
   }
 
   /* Unpublish comic issue */
-  @ComicIssueIdParam()
   @Patch('unpublish/:id')
   async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
     const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
@@ -164,7 +156,6 @@ export class ComicIssueController {
   }
 
   /* Queue comic issue for deletion */
-  @ComicIssueIdParam()
   @Patch('delete/:id')
   async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
@@ -173,7 +164,6 @@ export class ComicIssueController {
   }
 
   /* Remove comic issue for deletion queue */
-  @ComicIssueIdParam()
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
@@ -182,7 +172,6 @@ export class ComicIssueController {
   }
 
   /* Completely remove specific comic issue, including files from s3 bucket */
-  @ComicIssueIdParam()
   @Delete('remove/:id')
   remove(@Param('id') id: string) {
     return this.comicIssueService.remove(+id);

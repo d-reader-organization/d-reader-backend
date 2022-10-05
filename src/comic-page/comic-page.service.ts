@@ -19,7 +19,6 @@ export class ComicPageService {
   constructor(private prisma: PrismaService) {}
 
   async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
-    // TODO v2: Promise.allSettled
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
         const { comicIssueId, image, altImage, pageNumber, ...rest } =

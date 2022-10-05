@@ -5,7 +5,7 @@ import {
 } from './create-comic-issue.dto';
 
 export class UpdateComicIssueDto extends PartialType(
-  OmitType(CreateComicIssueDto, ['comicId', 'title', 'slug'] as const),
+  OmitType(CreateComicIssueDto, ['comicSlug', 'title', 'slug'] as const),
 ) {}
 
 export class UpdateComicIssueFilesDto extends PartialType(

@@ -4,6 +4,7 @@ import {
   IsArray,
   IsDateString,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
   MaxLength,
@@ -82,8 +83,9 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
 
   @Expose()
   @IsArray()
+  @IsOptional()
   @Type(() => ComicPageDto)
-  pages: ComicPageDto[];
+  pages?: ComicPageDto[];
 
   @Expose()
   @ArrayUnique()
@@ -101,7 +103,15 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
     input: ComicIssueDto | ComicIssueDto[],
   ): Promise<ComicIssueDto | ComicIssueDto[]> {
     if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return await input.presign();
+      return await Promise.all(
+        input.map((obj) => {
+          if (obj.pages) ComicPageDto.presignUrls(obj.pages);
+          return obj.presign();
+        }),
+      );
+    } else {
+      if (input.pages) ComicPageDto.presignUrls(input.pages);
+      return await input.presign();
+    }
   }
 }

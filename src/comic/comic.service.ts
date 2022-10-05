@@ -55,13 +55,13 @@ export class ComicService {
       if (pfp) pfpKey = await uploadFile(prefix, pfp);
       if (logo) logoKey = await uploadFile(prefix, logo);
     } catch {
-      await this.prisma.comic.delete({ where: { id: comic.id } });
+      await this.prisma.comic.delete({ where: { slug: comic.slug } });
       throw new BadRequestException('Malformed file upload');
     }
 
     // Update Comic with s3 file keys
     comic = await this.prisma.comic.update({
-      where: { id: comic.id },
+      where: { slug: comic.slug },
       include: { issues: true },
       data: {
         thumbnail: thumbnailKey,
@@ -98,19 +98,18 @@ export class ComicService {
     const aggregations = await this.prisma.walletComic.aggregate({
       _avg: { rating: true },
       // _count: { rating: true },
-      where: { comicId: comic.id },
+      where: { comicSlug: comic.slug },
     });
 
     return { ...comic, rating: aggregations._avg.rating };
   }
 
-  async findWalletComic(walletId: number, slug: string) {
+  async findWalletComic(walletAddress: string, slug: string) {
     const walletComic = await this.prisma.walletComic.findUnique({
       where: {
-        comicId_walletId: {
-          walletId: walletId,
-          // TODO: change this to comicSlug
-          comicId: 1,
+        comicSlug_walletAddress: {
+          walletAddress: walletAddress,
+          comicSlug: slug,
         },
       },
     });
@@ -153,38 +152,38 @@ export class ComicService {
     }
   }
 
-  async rate(walletAddress: string, slug: string, rating: number) {
+  async rate(walletAddress: string, comicSlug: string, rating: number) {
     const walletComic = await this.prisma.walletComic.upsert({
-      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
-      create: { walletId: 1, comicId: 1, rating },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
+      create: { walletAddress, comicSlug, rating },
       update: { rating },
     });
 
     return walletComic;
   }
 
-  async toggleSubscribe(walletAddress: string, slug: string) {
+  async toggleSubscribe(walletAddress: string, comicSlug: string) {
     let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
     });
 
     walletComic = await this.prisma.walletComic.upsert({
-      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
-      create: { walletId: 1, comicId: 1, isSubscribed: true },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
+      create: { walletAddress, comicSlug, isSubscribed: true },
       update: { isSubscribed: !walletComic?.isSubscribed },
     });
 
     return walletComic;
   }
 
-  async toggleFavourite(walletAddress: string, slug: string) {
+  async toggleFavourite(walletAddress: string, comicSlug: string) {
     let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
     });
 
     walletComic = await this.prisma.walletComic.upsert({
-      where: { comicId_walletId: { walletId: 1, comicId: 1 } },
-      create: { walletId: 1, comicId: 1, isFavourite: true },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
+      create: { walletAddress, comicSlug, isFavourite: true },
       update: { isFavourite: !walletComic?.isFavourite },
     });
 

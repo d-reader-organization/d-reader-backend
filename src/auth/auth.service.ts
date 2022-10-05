@@ -23,7 +23,7 @@ export class AuthService {
   async connect(address: string, encoding: string): Promise<Authorization> {
     const wallet = await this.passwordService.validateWallet(address, encoding);
     await this.prisma.wallet.update({
-      where: { id: wallet.id },
+      where: { address: wallet.address },
       data: { lastLogin: new Date() },
     });
 
@@ -68,7 +68,7 @@ export class AuthService {
     }
 
     await this.prisma.wallet.update({
-      where: { id: wallet.id },
+      where: { address: wallet.address },
       data: { lastLogin: new Date() },
     });
 

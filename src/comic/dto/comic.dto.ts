@@ -115,12 +115,14 @@ export class ComicDto extends Presignable<ComicDto> {
 
   @Expose()
   @IsArray()
+  @IsOptional()
   @Type(() => ComicIssueDto)
-  issues: ComicIssueDto[];
+  issues?: ComicIssueDto[];
 
   @Expose()
+  @IsOptional()
   @Type(() => CreatorDto)
-  creator: CreatorDto;
+  creator?: CreatorDto;
 
   protected async presign(): Promise<ComicDto> {
     return await super.presign(this, ['thumbnail', 'logo', 'pfp']);
@@ -134,14 +136,14 @@ export class ComicDto extends Presignable<ComicDto> {
     if (Array.isArray(input)) {
       return await Promise.all(
         input.map((obj) => {
-          // TODO: if comicIssues -> presign them as well
-          // ComicIssueDto.presignUrls(obj.issues);
+          if (obj.issues) ComicIssueDto.presignUrls(obj.issues);
+          if (obj.creator) CreatorDto.presignUrls(obj.creator);
           return obj.presign();
         }),
       );
     } else {
-      // TODO: if comicIssues -> presign them as well
-      // ComicIssueDto.presignUrls(input.issues);
+      if (input.issues) ComicIssueDto.presignUrls(input.issues);
+      if (input.creator) CreatorDto.presignUrls(input.creator);
       return await input.presign();
     }
   }

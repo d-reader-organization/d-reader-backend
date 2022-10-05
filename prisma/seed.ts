@@ -343,13 +343,6 @@ async function main() {
               description:
                 'Swamplabs is a studio that creates comics and mangas by latest standards, while paying the artists for the cheapest possible amount',
               flavorText: 'Lorem Ipsum dolor sit flavor text',
-              genres: {
-                connect: [
-                  { slug: 'action' },
-                  { slug: 'sci-fi' },
-                  { slug: 'romance' },
-                ],
-              },
               website: 'https://swamplabs.com',
               createdAt: new Date(),
               deletedAt: null,
@@ -365,6 +358,13 @@ async function main() {
                     "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery.\\nA young boy discovers what seems to be a completely new species.",
                   flavorText:
                     'Unique and intriguing Sci-Fi with a sprinkle of history on top of it. Brilliant! - The Journal',
+                  genres: {
+                    connect: [
+                      { slug: 'action' },
+                      { slug: 'sci-fi' },
+                      { slug: 'romance' },
+                    ],
+                  },
                   isOngoing: true,
                   deletedAt: null,
                   featuredAt: null,
