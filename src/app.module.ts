@@ -8,13 +8,12 @@ import { ComicModule } from './comic/comic.module';
 import { ComicIssueModule } from './comic-issue/comic-issue.module';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
-
 import { AppService } from './app.service';
-
 import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
+import { TasksService } from './vendors/task.service';
 
 @Module({
   imports: [
@@ -37,12 +36,13 @@ import config from './configs/config';
         middlewares: [loggingMiddleware()],
       },
     }),
+    ScheduleModule.forRoot(),
     WalletModule,
     CreatorModule,
     ComicModule,
     ComicIssueModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TasksService],
 })
 export class AppModule {}

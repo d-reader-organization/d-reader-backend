@@ -17,6 +17,8 @@ import {
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { Comic, ComicIssue } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class ComicService {
@@ -268,5 +270,17 @@ export class ComicService {
 
     const prefix = `creators/${comic.creator.slug}/comics/${comic.slug}/`;
     return prefix;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async clearComicsQueuedForRemoval() {
+    const comicsToRemove = await this.prisma.comic.findMany({
+      where: { deletedAt: { lte: subDays(new Date(), 30) } }, // 30 days ago
+    });
+
+    for (const comic of comicsToRemove) {
+      await this.remove(comic.slug);
+      console.log(`Removed comic ${comic.slug} at ${new Date()}`);
+    }
   }
 }

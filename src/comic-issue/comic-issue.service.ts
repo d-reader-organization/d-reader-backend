@@ -20,6 +20,8 @@ import { isEmpty } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage, NFT } from '@prisma/client';
 import { MetaplexService } from 'src/vendors/metaplex.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class ComicIssueService {
@@ -277,5 +279,17 @@ export class ComicIssueService {
 
     const prefix = `creators/${comicIssue.comic.creator.slug}/comics/${comicIssue.comic.slug}/issues/${comicIssue.slug}/`;
     return prefix;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async clearComicIssuesQueuedForRemoval() {
+    const comicIssuesToRemove = await this.prisma.comicIssue.findMany({
+      where: { deletedAt: { lte: subDays(new Date(), 30) } }, // 30 days ago
+    });
+
+    for (const comicIssue of comicIssuesToRemove) {
+      await this.remove(comicIssue.id);
+      console.log(`Removed comic issue ${comicIssue.id} at ${new Date()}`);
+    }
   }
 }

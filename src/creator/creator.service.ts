@@ -17,6 +17,8 @@ import {
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { Creator } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class CreatorService {
@@ -178,5 +180,17 @@ export class CreatorService {
 
     const prefix = `creators/${slug}/`;
     return prefix;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async clearCreatorsQueuedForRemoval() {
+    const creatorsToRemove = await this.prisma.creator.findMany({
+      where: { deletedAt: { lte: subDays(new Date(), 30) } }, // 30 days ago
+    });
+
+    for (const creator of creatorsToRemove) {
+      await this.remove(creator.slug);
+      console.log(`Removed creator ${creator.slug} at ${new Date()}`);
+    }
   }
 }

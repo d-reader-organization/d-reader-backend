@@ -17,6 +17,8 @@ import {
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { Genre } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class GenreService {
@@ -157,5 +159,17 @@ export class GenreService {
 
     const prefix = `genres/${slug}/`;
     return prefix;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async clearGenresQueuedForRemoval() {
+    const genresToRemove = await this.prisma.genre.findMany({
+      where: { deletedAt: { lte: subDays(new Date(), 90) } }, // 90 days ago
+    });
+
+    for (const genre of genresToRemove) {
+      await this.remove(genre.slug);
+      console.log(`Removed genre ${genre.slug} at ${new Date()}`);
+    }
   }
 }

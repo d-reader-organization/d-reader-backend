@@ -235,7 +235,6 @@ export class ComicController {
   /**
    * TODO:
    * - email sending
-   * - cronjob for removing deleted items
    * - comicPages @ApiBody
    * - updatePages on comicIssue.service, comic-page.service.ts
    * - revise @Exclude and @Expose decorators
