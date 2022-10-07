@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -12,72 +12,56 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
 
 export class CreateComicDto {
-  @Expose()
   @IsNotEmpty()
   @MaxLength(54)
   name: string;
 
-  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 
-  @Expose()
   @IsBoolean()
   isOngoing: boolean;
 
-  @Expose()
   @IsOptional()
   @MaxLength(256)
   description?: string;
 
-  @Expose()
   @IsOptional()
   @MaxLength(128)
   flavorText?: string;
 
-  @Expose()
   @IsOptionalUrl()
   website?: string;
 
-  @Expose()
   @IsOptionalUrl()
   twitter?: string;
 
-  @Expose()
   @IsOptionalUrl()
   discord?: string;
 
-  @Expose()
   @IsOptionalUrl()
   telegram?: string;
 
-  @Expose()
   @IsOptionalUrl()
   instagram?: string;
 
-  @Expose()
   @IsOptionalUrl()
   medium?: string;
 
-  @Expose()
   @IsOptionalUrl()
   tikTok?: string;
 
-  @Expose()
   @IsOptionalUrl()
   youTube?: string;
 
-  @Expose()
   @IsOptionalUrl()
   magicEden?: string;
 
-  @Expose()
   @IsOptionalUrl()
   openSea?: string;
 
-  @Expose()
   @IsArray()
   @Type(() => String)
   genres: string[];

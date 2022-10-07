@@ -1,17 +1,15 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Expose, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 
 export class CreateGenreDto {
-  @Expose()
   @IsString()
   @MinLength(2)
   @MaxLength(40)
   name: string;
 
-  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })

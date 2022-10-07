@@ -117,11 +117,11 @@ CREATE TABLE "ComicIssue" (
 );
 
 -- CreateTable
-CREATE TABLE "NFT" (
+CREATE TABLE "ComicIssueNft" (
     "mint" TEXT NOT NULL,
     "comicIssueId" INTEGER NOT NULL,
 
-    CONSTRAINT "NFT_pkey" PRIMARY KEY ("mint")
+    CONSTRAINT "ComicIssueNft_pkey" PRIMARY KEY ("mint")
 );
 
 -- CreateTable
@@ -197,7 +197,7 @@ ALTER TABLE "WalletComic" ADD CONSTRAINT "WalletComic_walletAddress_fkey" FOREIG
 ALTER TABLE "ComicIssue" ADD CONSTRAINT "ComicIssue_comicSlug_fkey" FOREIGN KEY ("comicSlug") REFERENCES "Comic"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "NFT" ADD CONSTRAINT "NFT_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ComicIssueNft" ADD CONSTRAINT "ComicIssueNft_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ComicPage" ADD CONSTRAINT "ComicPage_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE CASCADE ON UPDATE CASCADE;

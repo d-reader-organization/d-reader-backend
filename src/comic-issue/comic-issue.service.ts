@@ -18,7 +18,7 @@ import {
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage, NFT } from '@prisma/client';
+import { Prisma, ComicIssue, ComicPage, ComicIssueNft } from '@prisma/client';
 import { MetaplexService } from 'src/vendors/metaplex.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
@@ -50,7 +50,7 @@ export class ComicIssueService {
     if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
     // Create ComicIssue without any files uploaded
-    let comicIssue: ComicIssue & { pages: ComicPage[]; nfts: NFT[] };
+    let comicIssue: ComicIssue & { pages: ComicPage[]; nfts: ComicIssueNft[] };
 
     // Upload comic pages and format data for INSERT
     const pagesData = await this.comicPageService.createMany(pages);
@@ -125,7 +125,7 @@ export class ComicIssueService {
 
   async findOneProtected(walletAddress: string, id: number) {
     // Find all NFTs that are token gating this Comic
-    const whitelistedNfts = await this.prisma.nFT.findMany({
+    const whitelistedNfts = await this.prisma.comicIssueNft.findMany({
       where: { comicIssueId: id },
     });
 

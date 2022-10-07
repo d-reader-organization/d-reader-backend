@@ -4,6 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.comicIssueNft.deleteMany();
+  await prisma.comicPage.deleteMany();
+  await prisma.comicIssue.deleteMany();
+  await prisma.walletComic.deleteMany();
+  await prisma.comic.deleteMany();
+  await prisma.creator.deleteMany();
+  await prisma.wallet.deleteMany();
+  await prisma.wallet.deleteMany();
+  await prisma.genre.deleteMany();
+
+  console.log('Emptied database...');
+
   try {
     await prisma.genre.createMany({
       data: [
@@ -46,7 +58,7 @@ async function main() {
       ],
     });
     console.log(
-      "Comic genres added: 'action', 'sci-fi', 'comedy', 'slice-of-life', 'romance', 'history'",
+      "Added comic genres: 'action', 'sci-fi', 'comedy', 'slice-of-life', 'romance', 'history'",
     );
   } catch (e) {
     console.log('Failed to add comic genres', e);
@@ -65,7 +77,7 @@ async function main() {
         role: Role.Superadmin,
       },
     });
-    console.log('Superadmin wallet added');
+    console.log('Added Superadmin wallet');
   } catch (e) {
     console.log('Failed to add Superadmin wallet', e);
   }
@@ -83,7 +95,7 @@ async function main() {
         role: Role.Admin,
       },
     });
-    console.log('Admin wallet added');
+    console.log('Added Admin wallet');
   } catch (e) {
     console.log('Failed to add Admin wallet', e);
   }
@@ -313,9 +325,9 @@ async function main() {
         },
       },
     });
-    console.log('Creator "StudioNX" wallet added');
+    console.log('Added "StudioNX" creator');
   } catch (e) {
-    console.log('Failed to add Creator "StudioNX" wallet', e);
+    console.log('Failed to add "StudioNX" creator', e);
   }
 
   try {
@@ -552,9 +564,9 @@ async function main() {
         },
       },
     });
-    console.log('Creator "Swamplabs" wallet added');
+    console.log('Added "Swamplabs" creator');
   } catch (e) {
-    console.log('Failed to add Creator "Swamplabs" wallet', e);
+    console.log('Failed to add "Swamplabs" creator', e);
   }
 }
 

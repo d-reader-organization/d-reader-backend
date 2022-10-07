@@ -114,7 +114,7 @@ Table ComicIssue {
   comic Comic [not null]
   comicSlug String [not null]
   pages ComicPage [not null]
-  nfts NFT [not null]
+  nfts ComicIssueNft [not null]
 
   indexes {
     (number, comicSlug) [unique]
@@ -123,7 +123,7 @@ Table ComicIssue {
   }
 }
 
-Table NFT {
+Table ComicIssueNft {
   mint String [pk]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
@@ -164,6 +164,6 @@ Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: NFT.comicIssueId > ComicIssue.id [delete: Cascade]
+Ref: ComicIssueNft.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]

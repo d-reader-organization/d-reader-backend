@@ -3,7 +3,7 @@ import { IsNotEmpty, IsPositive, IsString } from 'class-validator';
 // import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 
 @Exclude()
-export class NFTDto {
+export class NftDto {
   @Expose()
   @IsPositive()
   id: number;

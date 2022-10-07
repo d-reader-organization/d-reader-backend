@@ -113,34 +113,34 @@ model Genre {
 }
 
 model ComicIssue {
-  id            Int         @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   number        Int
   title         String
   slug          String
-  description   String      @default("")
-  flavorText    String      @default("")
-  cover         String      @default("")
-  soundtrack    String      @default("")
-  magicEden     String      @default("")
-  openSea       String      @default("")
+  description   String          @default("")
+  flavorText    String          @default("")
+  cover         String          @default("")
+  soundtrack    String          @default("")
+  magicEden     String          @default("")
+  openSea       String          @default("")
   releaseDate   DateTime
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime        @default(now())
   deletedAt     DateTime?
   featuredAt    DateTime?
   verifiedAt    DateTime?
   publishedAt   DateTime?
   popularizedAt DateTime?
-  comic         Comic       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comic         Comic           @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug     String
   pages         ComicPage[]
-  nfts          NFT[]
+  nfts          ComicIssueNft[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
   @@unique([title, comicSlug])
 }
 
-model NFT {
+model ComicIssueNft {
   mint         String     @id
   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
