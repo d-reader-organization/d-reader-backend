@@ -4,7 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 @Injectable()
 export class TasksService {
   @Cron(CronExpression.EVERY_5_MINUTES)
-  handleCron() {
+  dummyTask() {
     console.log('Dummy task fired');
   }
 }

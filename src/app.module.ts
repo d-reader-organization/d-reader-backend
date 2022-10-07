@@ -8,12 +8,13 @@ import { ComicModule } from './comic/comic.module';
 import { ComicIssueModule } from './comic-issue/comic-issue.module';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailModule } from './mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TasksService } from './vendors/task.service';
 import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
-import { TasksService } from './vendors/task.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TasksService } from './vendors/task.service';
     CreatorModule,
     ComicModule,
     ComicIssueModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],

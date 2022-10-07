@@ -242,6 +242,9 @@ export class ComicController {
 
   /**
    * TODO:
+   * - finish email services
+   * - move aws config.ts to .env
+   * - move all cron jobs to task.service.ts ?
    * - comicPages @ApiBody
    */
 
