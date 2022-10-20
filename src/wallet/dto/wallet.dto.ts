@@ -1,4 +1,4 @@
-import { IsEnum, IsPositive, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsString, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
 import { Presignable } from 'src/types/presignable';
@@ -7,10 +7,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 @Exclude()
 export class WalletDto extends Presignable<WalletDto> {
-  @Expose()
-  @IsPositive()
-  id: number;
-
   @Expose()
   @IsSolanaAddress()
   address: string;

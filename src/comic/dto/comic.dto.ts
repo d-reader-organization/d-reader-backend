@@ -15,10 +15,6 @@ import { Presignable } from 'src/types/presignable';
 @Exclude()
 export class ComicDto extends Presignable<ComicDto> {
   @Expose()
-  @IsPositive()
-  id: number;
-
-  @Expose()
   @IsString()
   name: string;
 

@@ -245,6 +245,7 @@ export class ComicController {
    * - finish email services
    * - move aws config.ts to .env
    * - move all cron jobs to task.service.ts ?
+   * - remove magicEden and openSea
    * - comicPages @ApiBody
    */
 

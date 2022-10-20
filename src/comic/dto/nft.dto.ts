@@ -5,10 +5,6 @@ import { IsNotEmpty, IsPositive, IsString } from 'class-validator';
 @Exclude()
 export class NftDto {
   @Expose()
-  @IsPositive()
-  id: number;
-
-  @Expose()
   @IsString()
   // TODO v1.2: @IsHash()
   @IsNotEmpty()

@@ -1,14 +1,10 @@
 import { Exclude, Expose, Transform } from 'class-transformer';
-import { IsPositive, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Presignable } from 'src/types/presignable';
 
 @Exclude()
 export class GenreDto extends Presignable<GenreDto> {
-  @Expose()
-  @IsPositive()
-  id: number;
-
   @Expose()
   @IsString()
   name: string;
