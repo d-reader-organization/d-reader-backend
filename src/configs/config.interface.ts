@@ -30,6 +30,5 @@ export interface SecurityConfig {
 }
 
 export interface S3Config {
-  bucket: string;
   region: string;
 }

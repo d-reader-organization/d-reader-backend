@@ -18,6 +18,7 @@ import config from '../configs/config';
 import * as path from 'path';
 
 const REGION = config().s3.region || 'us-east-1';
+const Bucket = process.env.AWS_BUCKET_NAME;
 
 const s3Client = new S3Client({
   region: REGION,
@@ -31,10 +32,7 @@ const putS3Object = async (
   putObjectInput: Omit<PutObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
-    new PutObjectCommand({
-      Bucket: config().s3.bucket,
-      ...putObjectInput,
-    }),
+    new PutObjectCommand({ Bucket, ...putObjectInput }),
   );
 };
 
@@ -42,10 +40,7 @@ const getS3Object = async (
   getObjectInput: Omit<GetObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
-    new GetObjectCommand({
-      Bucket: config().s3.bucket,
-      ...getObjectInput,
-    }),
+    new GetObjectCommand({ Bucket, ...getObjectInput }),
   );
 };
 
@@ -53,10 +48,7 @@ const getReadUrl = async (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
 
-  const getCommand = new GetObjectCommand({
-    Bucket: config().s3.bucket,
-    Key: key,
-  });
+  const getCommand = new GetObjectCommand({ Bucket, Key: key });
 
   const signedUrl = await getSignedUrl(s3Client, getCommand, {
     expiresIn: 3600,
@@ -69,10 +61,7 @@ const deleteS3Object = async (
   deleteObjectInput: Omit<DeleteObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
-    new DeleteObjectCommand({
-      Bucket: config().s3.bucket,
-      ...deleteObjectInput,
-    }),
+    new DeleteObjectCommand({ Bucket, ...deleteObjectInput }),
   );
 };
 
@@ -80,10 +69,7 @@ const deleteS3Objects = async (
   deleteObjectsInput: Omit<DeleteObjectsCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
-    new DeleteObjectsCommand({
-      Bucket: config().s3.bucket,
-      ...deleteObjectsInput,
-    }),
+    new DeleteObjectsCommand({ Bucket, ...deleteObjectsInput }),
   );
 };
 
@@ -93,10 +79,7 @@ const uploadS3Object = async (
   try {
     const multipartUpload = new Upload({
       client: s3Client,
-      params: {
-        Bucket: config().s3.bucket,
-        ...putObjectInput,
-      },
+      params: { Bucket, ...putObjectInput },
     });
 
     return await multipartUpload.done();
@@ -116,7 +99,7 @@ const listS3FolderKeys = async (
     keys: string[] = [],
   ): Promise<string[]> => {
     const listObjects = new ListObjectsV2Command({
-      Bucket: config().s3.bucket,
+      Bucket,
       MaxKeys: 1000,
       ContinuationToken,
       ...listObjectsInput,

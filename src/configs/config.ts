@@ -21,7 +21,6 @@ const config: Config = {
     bcryptSaltOrRound: 10,
   },
   s3: {
-    bucket: 'd-reader',
     region: 'us-east-1',
   },
 };
