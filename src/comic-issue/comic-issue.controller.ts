@@ -31,13 +31,32 @@ import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet } from '@prisma/client';
+import { CandyMachineService } from 'src/vendors/candy-machine.service';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
 export class ComicIssueController {
-  constructor(private readonly comicIssueService: ComicIssueService) {}
+  constructor(
+    private readonly comicIssueService: ComicIssueService,
+    private readonly candyMachineService: CandyMachineService,
+  ) {}
+
+  @Post('find-minted-nfts')
+  async findMintedNfts() {
+    return await this.candyMachineService.findMintedNfts();
+  }
+
+  @Post('create-candy-machine')
+  async createCandyMachine() {
+    return await this.candyMachineService.create();
+  }
+
+  @Post('mint-one')
+  async mintOne() {
+    return await this.candyMachineService.mintOne();
+  }
 
   // https://github.com/swagger-api/swagger-ui/issues/7625
   /* Create a new comic issue */
