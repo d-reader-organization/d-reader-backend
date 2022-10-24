@@ -1,6 +1,12 @@
-# d-reader-backend
+<h1 align="center">d-reader-backend</h1>
 
 > NestJS backend for dReader dapp on Solana
+
+<p>
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.0-blue.svg?cacheSeconds=2592000" />
+</p>
+
+## Setup
 
 First, install dependencies and copy the .env file:
 
@@ -35,3 +41,8 @@ Open [http://localhost:3005](http://localhost:3005) with your browser to see the
 - **`SOLANA_RPC_NODE_ENDPOINT`** is necessary for application to be able to execute any blockchain-specific actions. Not all nodes are reliable 100% of time so it's best to be aware of alternatives! If your default Solana node is underperforming, feel free to find a new one [here](https://www.allthatnode.com/solana.dsrv) or [here](https://github.com/open-sauce-labs/solomon/blob/master/src/constants/rpcNodeProviders.ts). To understand limitations of the default node check out official [Solana RPC endpoint documentation](https://docs.solana.com/cluster/rpc-endpoints)
 - **`TREASURY_PRIVATE_KEY`** is the AES encrypted private key of a wallet used as a Treasury. All royalties will be collected there and all our payments will be done with it.
 - **`TREASURY_SECRET`** is the secret key used for AES encription/decription of the Treasury wallet's private key
+
+
+## Contributing
+
+When contributing please follow the guidelines specified in the [CONTRIBUTING](./CONTRIBUTING.md) document
