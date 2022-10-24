@@ -89,7 +89,7 @@ export class ComicService {
 
   async findOne(slug: string): Promise<Comic & { rating: number | null }> {
     const comic = await this.prisma.comic.findUnique({
-      include: { genres: true },
+      include: { genres: true, issues: true },
       where: { slug },
     });
 
