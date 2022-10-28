@@ -43,16 +43,19 @@ export class ComicIssueController {
     private readonly candyMachineService: CandyMachineService,
   ) {}
 
+  /* WORK IN PROGRESS - proof of concept endpoint */
   @Post('find-minted-nfts')
   async findMintedNfts() {
     return await this.candyMachineService.findMintedNfts();
   }
 
+  /* WORK IN PROGRESS - proof of concept endpoint */
   @Post('create-candy-machine')
   async createCandyMachine() {
     return await this.candyMachineService.create();
   }
 
+  /* WORK IN PROGRESS - proof of concept endpoint */
   @Post('mint-one')
   async mintOne() {
     return await this.candyMachineService.mintOne();

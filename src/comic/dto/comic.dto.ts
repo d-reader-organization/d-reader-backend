@@ -132,15 +132,23 @@ export class ComicDto extends Presignable<ComicDto> {
   ): Promise<ComicDto | ComicDto[]> {
     if (Array.isArray(input)) {
       return await Promise.all(
-        input.map((obj) => {
-          if (obj.issues) ComicIssueDto.presignUrls(obj.issues);
-          if (obj.creator) CreatorDto.presignUrls(obj.creator);
+        input.map(async (obj) => {
+          if (obj.issues) {
+            obj.issues = await ComicIssueDto.presignUrls(obj.issues);
+          }
+          if (obj.creator) {
+            obj.creator = await CreatorDto.presignUrls(obj.creator);
+          }
           return obj.presign();
         }),
       );
     } else {
-      if (input.issues) ComicIssueDto.presignUrls(input.issues);
-      if (input.creator) CreatorDto.presignUrls(input.creator);
+      if (input.issues) {
+        input.issues = await ComicIssueDto.presignUrls(input.issues);
+      }
+      if (input.creator) {
+        input.creator = await CreatorDto.presignUrls(input.creator);
+      }
       return await input.presign();
     }
   }

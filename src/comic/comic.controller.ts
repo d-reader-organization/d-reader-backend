@@ -67,7 +67,7 @@ export class ComicController {
     );
 
     const comicDto = plainToInstance(ComicDto, comic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Get all comics */
@@ -75,7 +75,7 @@ export class ComicController {
   async findAll(): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll();
     const comicsDto = plainToInstance(ComicDto, comics);
-    return await ComicDto.presignUrls(comicsDto);
+    return ComicDto.presignUrls(comicsDto);
   }
 
   /* Get wallets stats for a specific comic: star rating, favourite status etc. */
@@ -105,7 +105,7 @@ export class ComicController {
   async findOne(@Param('slug') slug: string): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug);
     const comicDto = plainToInstance(ComicDto, comic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Update specific comic */
@@ -116,7 +116,7 @@ export class ComicController {
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.update(slug, updateComicDto);
     const comicDto = plainToInstance(ComicDto, updatedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Update specific comics thumbnail file */
@@ -130,7 +130,7 @@ export class ComicController {
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.updateFile(slug, thumbnail);
     const comicDto = plainToInstance(ComicDto, updatedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Update specific comics pfp file */
@@ -144,7 +144,7 @@ export class ComicController {
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.updateFile(slug, pfp);
     const comicDto = plainToInstance(ComicDto, updatedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Update specific comics logo file */
@@ -158,7 +158,7 @@ export class ComicController {
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.updateFile(slug, logo);
     const comicDto = plainToInstance(ComicDto, updatedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Rate specific comic */
@@ -207,7 +207,7 @@ export class ComicController {
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
     const comicDto = plainToInstance(ComicDto, publishedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Unpublish comic */
@@ -215,7 +215,7 @@ export class ComicController {
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
     const unpublishedComic = await this.comicService.unpublish(slug);
     const comicDto = plainToInstance(ComicDto, unpublishedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Queue comic for deletion */
@@ -223,7 +223,7 @@ export class ComicController {
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
     const deletedComic = await this.comicService.pseudoDelete(slug);
     const comicDto = plainToInstance(ComicDto, deletedComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Remove comic for deletion queue */
@@ -231,7 +231,7 @@ export class ComicController {
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
     const comicDto = plainToInstance(ComicDto, recoveredComic);
-    return await ComicDto.presignUrls(comicDto);
+    return ComicDto.presignUrls(comicDto);
   }
 
   /* Completely remove specific comic, including files from s3 bucket */

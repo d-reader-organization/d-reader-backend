@@ -111,13 +111,13 @@ export class CreatorDto extends Presignable<CreatorDto> {
   ): Promise<CreatorDto | CreatorDto[]> {
     if (Array.isArray(input)) {
       return await Promise.all(
-        input.map((obj) => {
-          if (obj.comics) ComicDto.presignUrls(obj.comics);
+        input.map(async (obj) => {
+          if (obj.comics) obj.comics = await ComicDto.presignUrls(obj.comics);
           return obj.presign();
         }),
       );
     } else {
-      if (input.comics) ComicDto.presignUrls(input.comics);
+      if (input.comics) input.comics = await ComicDto.presignUrls(input.comics);
       return await input.presign();
     }
   }

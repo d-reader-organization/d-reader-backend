@@ -51,7 +51,7 @@ export class GenreController {
   ): Promise<GenreDto> {
     const genre = await this.genreService.create(createGenreDto, files);
     const genreDto = plainToInstance(GenreDto, genre);
-    return await GenreDto.presignUrls(genreDto);
+    return GenreDto.presignUrls(genreDto);
   }
 
   /* Get all genres */
@@ -59,7 +59,7 @@ export class GenreController {
   async findAll(): Promise<GenreDto[]> {
     const genres = await this.genreService.findAll();
     const genresDto = plainToInstance(GenreDto, genres);
-    return await GenreDto.presignUrls(genresDto);
+    return GenreDto.presignUrls(genresDto);
   }
 
   /* Get specific genre by unique slug */
@@ -67,7 +67,7 @@ export class GenreController {
   async findOne(@Param('slug') slug: string): Promise<GenreDto> {
     const genre = await this.genreService.findOne(slug);
     const genreDto = plainToInstance(GenreDto, genre);
-    return await GenreDto.presignUrls(genreDto);
+    return GenreDto.presignUrls(genreDto);
   }
 
   /* Update specific genre */
@@ -79,7 +79,7 @@ export class GenreController {
   ): Promise<GenreDto> {
     const updatedGenre = await this.genreService.update(slug, updateGenreDto);
     const genreDto = plainToInstance(GenreDto, updatedGenre);
-    return await GenreDto.presignUrls(genreDto);
+    return GenreDto.presignUrls(genreDto);
   } */
 
   /* Update specific genres image file */
@@ -94,7 +94,7 @@ export class GenreController {
   ): Promise<GenreDto> {
     const updatedGenre = await this.genreService.updateFile(slug, image);
     const comicDto = plainToInstance(GenreDto, updatedGenre);
-    return await GenreDto.presignUrls(comicDto);
+    return GenreDto.presignUrls(comicDto);
   }
 
   /* Pseudo delete genre */
@@ -103,7 +103,7 @@ export class GenreController {
   async pseudoDelete(@Param('slug') slug: string): Promise<GenreDto> {
     const deletedGenre = await this.genreService.pseudoDelete(slug);
     const genreDto = plainToInstance(GenreDto, deletedGenre);
-    return await GenreDto.presignUrls(genreDto);
+    return GenreDto.presignUrls(genreDto);
   }
 
   /* Recover genre */
@@ -112,7 +112,7 @@ export class GenreController {
   async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
     const recoveredGenre = await this.genreService.pseudoRecover(slug);
     const genreDto = plainToInstance(GenreDto, recoveredGenre);
-    return await GenreDto.presignUrls(genreDto);
+    return GenreDto.presignUrls(genreDto);
   }
 
   /* Completely remove specific genre, including files from s3 bucket */

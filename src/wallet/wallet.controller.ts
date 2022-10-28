@@ -36,7 +36,7 @@ export class WalletController {
   async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
     const wallet = await this.walletService.create(createWalletDto);
     const walletDto = plainToInstance(WalletDto, wallet);
-    return await WalletDto.presignUrls(walletDto);
+    return WalletDto.presignUrls(walletDto);
   }
 
   /* Get all wallets */
@@ -45,7 +45,7 @@ export class WalletController {
   async findAll(): Promise<WalletDto[]> {
     const wallets = await this.walletService.findAll();
     const walletsDto = plainToInstance(WalletDto, wallets);
-    return await WalletDto.presignUrls(walletsDto);
+    return WalletDto.presignUrls(walletsDto);
   }
 
   /* Get wallet data from auth token */
@@ -53,7 +53,7 @@ export class WalletController {
   async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
     const me = await this.walletService.findOne(wallet.address);
     const walletDto = plainToInstance(WalletDto, me);
-    return await WalletDto.presignUrls(walletDto);
+    return WalletDto.presignUrls(walletDto);
   }
 
   /* Get specific wallet by unique address */
@@ -61,7 +61,7 @@ export class WalletController {
   async findOne(@Param('address') address: string): Promise<WalletDto> {
     const wallet = await this.walletService.findOne(address);
     const walletDto = plainToInstance(WalletDto, wallet);
-    return await WalletDto.presignUrls(walletDto);
+    return WalletDto.presignUrls(walletDto);
   }
 
   /* Update specific wallet */
@@ -72,7 +72,7 @@ export class WalletController {
   ): Promise<WalletDto> {
     const wallet = await this.walletService.update(address, updateWalletDto);
     const walletDto = plainToInstance(WalletDto, wallet);
-    return await WalletDto.presignUrls(walletDto);
+    return WalletDto.presignUrls(walletDto);
   }
 
   /* Update specific wallets avatar file */
@@ -86,7 +86,7 @@ export class WalletController {
   ): Promise<WalletDto> {
     const updatedWallet = await this.walletService.updateFile(address, avatar);
     const walletDto = plainToInstance(WalletDto, updatedWallet);
-    return await WalletDto.presignUrls(walletDto);
+    return WalletDto.presignUrls(walletDto);
   }
 
   /* Delete specific wallet */

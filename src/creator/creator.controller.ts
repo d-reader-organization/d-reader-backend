@@ -65,7 +65,7 @@ export class CreatorController {
       files,
     );
     const creatorDto = plainToInstance(CreatorDto, creator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Get all creators */
@@ -73,7 +73,7 @@ export class CreatorController {
   async findAll(): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll();
     const creatorsDto = plainToInstance(CreatorDto, creators);
-    return await CreatorDto.presignUrls(creatorsDto);
+    return CreatorDto.presignUrls(creatorsDto);
   }
 
   /* Get specific creator by unique slug */
@@ -81,7 +81,7 @@ export class CreatorController {
   async findOne(@Param('slug') slug: string): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug);
     const creatorDto = plainToInstance(CreatorDto, creator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creator */
@@ -95,7 +95,7 @@ export class CreatorController {
       updateCreatorDto,
     );
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators thumbnail file */
@@ -112,7 +112,7 @@ export class CreatorController {
       thumbnail,
     );
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators avatar file */
@@ -126,7 +126,7 @@ export class CreatorController {
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, avatar);
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators banner file */
@@ -140,7 +140,7 @@ export class CreatorController {
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, banner);
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Update specific creators logo file */
@@ -154,7 +154,7 @@ export class CreatorController {
   ): Promise<CreatorDto> {
     const updatedCreator = await this.creatorService.updateFile(slug, logo);
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Queue creator for deletion */
@@ -162,7 +162,7 @@ export class CreatorController {
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
     const creatorDto = plainToInstance(CreatorDto, deletedCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Remove creator for deletion queue */
@@ -170,7 +170,7 @@ export class CreatorController {
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
     const creatorDto = plainToInstance(CreatorDto, recoveredCreator);
-    return await CreatorDto.presignUrls(creatorDto);
+    return CreatorDto.presignUrls(creatorDto);
   }
 
   /* Completely remove specific creator, including files from s3 bucket */

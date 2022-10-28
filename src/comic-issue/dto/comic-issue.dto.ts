@@ -16,6 +16,7 @@ import { Presignable } from 'src/types/presignable';
 
 @Exclude()
 export class ComicIssueDto extends Presignable<ComicIssueDto> {
+  @Expose()
   @IsPositive()
   id: number;
 
@@ -105,14 +106,16 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
   ): Promise<ComicIssueDto | ComicIssueDto[]> {
     if (Array.isArray(input)) {
       return await Promise.all(
-        input.map((obj) => {
-          if (obj.pages) ComicPageDto.presignUrls(obj.pages);
+        input.map(async (obj) => {
+          if (obj.pages) obj.pages = await ComicPageDto.presignUrls(obj.pages);
           return obj.presign();
         }),
       );
     } else {
-      if (input.pages) ComicPageDto.presignUrls(input.pages);
-      return await input.presign();
+      if (input.pages) {
+        input.pages = await ComicPageDto.presignUrls(input.pages);
+        return await input.presign();
+      }
     }
   }
 }
