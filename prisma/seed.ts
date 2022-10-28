@@ -151,8 +151,8 @@ async function main() {
                   logo: '',
                   website: 'https://gorecats.io',
                   twitter: 'https://twitter.com/GORECATS',
-                  discord: 'https://discord.com/invite/tNWQwQaxye',
-                  telegram: '',
+                  discord: 'https://discord.com/invite/gorecats',
+                  telegram: 'https://t.me/Gorecats',
                   instagram: 'https://www.instagram.com/gorecats_art',
                   medium: '',
                   tikTok: '',
@@ -181,6 +181,9 @@ async function main() {
                       nfts: {
                         createMany: {
                           data: [
+                            {
+                              mint: 'FUwt1egmDAbNM6BGBM1Ao3FPxHuLsHunURjwA43jeQUr',
+                            },
                             {
                               mint: 'EaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
                             },
@@ -211,107 +214,134 @@ async function main() {
                             {
                               pageNumber: 1,
                               isPreviewable: true,
-                              image: 'page-1.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-1.png',
                             },
                             {
                               pageNumber: 2,
                               isPreviewable: true,
-                              image: 'page-2.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-2.png',
                             },
                             {
                               pageNumber: 3,
                               isPreviewable: true,
-                              image: 'page-3.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-3.png',
                             },
                             {
                               pageNumber: 4,
-                              isPreviewable: false,
-                              image: 'page-4.jpg',
+                              isPreviewable: true,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-4.png',
                             },
                             {
                               pageNumber: 5,
-                              isPreviewable: false,
-                              image: 'page-5.jpg',
+                              isPreviewable: true,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-5.png',
                             },
                             {
                               pageNumber: 6,
-                              isPreviewable: false,
-                              image: 'page-6.jpg',
+                              isPreviewable: true,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-6.png',
                             },
                             {
                               pageNumber: 7,
-                              isPreviewable: false,
-                              image: 'page-7.jpg',
+                              isPreviewable: true,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-7.png',
                             },
                             {
                               pageNumber: 8,
-                              isPreviewable: false,
-                              image: 'page-8.jpg',
+                              isPreviewable: true,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-8.png',
                             },
                             {
                               pageNumber: 9,
                               isPreviewable: false,
-                              image: 'page-9.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-9.png',
                             },
                             {
                               pageNumber: 10,
                               isPreviewable: false,
-                              image: 'page-10.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-10.png',
                             },
                             {
                               pageNumber: 11,
                               isPreviewable: false,
-                              image: 'page-11.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-11.png',
                             },
                             {
                               pageNumber: 12,
                               isPreviewable: false,
-                              image: 'page-12.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-12.png',
                             },
                             {
                               pageNumber: 13,
                               isPreviewable: false,
-                              image: 'page-13.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-13.png',
                             },
                             {
                               pageNumber: 14,
                               isPreviewable: false,
-                              image: 'page-14.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-14.png',
                             },
                             {
                               pageNumber: 15,
                               isPreviewable: false,
-                              image: 'page-15.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-15.png',
                             },
                             {
                               pageNumber: 16,
                               isPreviewable: false,
-                              image: 'page-16.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-16.png',
                             },
                             {
                               pageNumber: 17,
                               isPreviewable: false,
-                              image: 'page-17.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-17.png',
                             },
                             {
                               pageNumber: 18,
                               isPreviewable: false,
-                              image: 'page-18.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-18.png',
                             },
                             {
                               pageNumber: 19,
                               isPreviewable: false,
-                              image: 'page-19.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-19.png',
                             },
                             {
                               pageNumber: 20,
                               isPreviewable: false,
-                              image: 'page-20.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-20.png',
                             },
                             {
                               pageNumber: 21,
                               isPreviewable: false,
-                              image: 'page-21.jpg',
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-21.png',
+                            },
+                            {
+                              pageNumber: 22,
+                              isPreviewable: false,
+                              image:
+                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-22.png',
                             },
                           ],
                         },
@@ -450,107 +480,128 @@ async function main() {
                             {
                               pageNumber: 1,
                               isPreviewable: true,
-                              image: 'page-1.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-1.jpg',
                             },
                             {
                               pageNumber: 2,
                               isPreviewable: true,
-                              image: 'page-2.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-2.jpg',
                             },
                             {
                               pageNumber: 3,
                               isPreviewable: true,
-                              image: 'page-3.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-3.jpg',
                             },
                             {
                               pageNumber: 4,
                               isPreviewable: false,
-                              image: 'page-4.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-4.jpg',
                             },
                             {
                               pageNumber: 5,
                               isPreviewable: false,
-                              image: 'page-5.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-5.jpg',
                             },
                             {
                               pageNumber: 6,
                               isPreviewable: false,
-                              image: 'page-6.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-6.jpg',
                             },
                             {
                               pageNumber: 7,
                               isPreviewable: false,
-                              image: 'page-7.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-7.jpg',
                             },
                             {
                               pageNumber: 8,
                               isPreviewable: false,
-                              image: 'page-8.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-8.jpg',
                             },
                             {
                               pageNumber: 9,
                               isPreviewable: false,
-                              image: 'page-9.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-9.jpg',
                             },
                             {
                               pageNumber: 10,
                               isPreviewable: false,
-                              image: 'page-10.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-10.jpg',
                             },
                             {
                               pageNumber: 11,
                               isPreviewable: false,
-                              image: 'page-11.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-11.jpg',
                             },
                             {
                               pageNumber: 12,
                               isPreviewable: false,
-                              image: 'page-12.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-12.jpg',
                             },
                             {
                               pageNumber: 13,
                               isPreviewable: false,
-                              image: 'page-13.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-13.jpg',
                             },
                             {
                               pageNumber: 14,
                               isPreviewable: false,
-                              image: 'page-14.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-14.jpg',
                             },
                             {
                               pageNumber: 15,
                               isPreviewable: false,
-                              image: 'page-15.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-15.jpg',
                             },
                             {
                               pageNumber: 16,
                               isPreviewable: false,
-                              image: 'page-16.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-16.jpg',
                             },
                             {
                               pageNumber: 17,
                               isPreviewable: false,
-                              image: 'page-17.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-17.jpg',
                             },
                             {
                               pageNumber: 18,
                               isPreviewable: false,
-                              image: 'page-18.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-18.jpg',
                             },
                             {
                               pageNumber: 19,
                               isPreviewable: false,
-                              image: 'page-19.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-19.jpg',
                             },
                             {
                               pageNumber: 20,
                               isPreviewable: false,
-                              image: 'page-20.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-20.jpg',
                             },
                             {
                               pageNumber: 21,
                               isPreviewable: false,
-                              image: 'page-21.jpg',
+                              image:
+                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-21.jpg',
                             },
                           ],
                         },
