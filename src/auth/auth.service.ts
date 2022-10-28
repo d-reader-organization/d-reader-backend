@@ -81,10 +81,9 @@ export class AuthService {
       include: { creator: true },
     });
 
-    if (!wallet || jwtDto.nonce !== wallet.nonce) {
-      throw new NotFoundException(`Invalid wallet address or nonce token`);
-    }
-
-    return wallet;
+    if (!wallet) throw new NotFoundException(`Invalid wallet address`);
+    else if (jwtDto.nonce !== wallet.nonce) {
+      throw new NotFoundException(`Expired nonce token`);
+    } else return wallet;
   }
 }
