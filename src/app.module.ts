@@ -15,6 +15,7 @@ import { AppService } from './app.service';
 import { TasksService } from './vendors/task.service';
 import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
+import { GenreModule } from './genre/genre.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import config from './configs/config';
     ComicModule,
     ComicIssueModule,
     MailModule,
+    GenreModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],
