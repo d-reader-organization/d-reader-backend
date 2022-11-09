@@ -66,22 +66,26 @@ export class WalletService {
   }
 
   async updateFile(address: string, file: Express.Multer.File) {
+    let wallet = await this.findOne(address);
+    const oldFileKey = wallet[file.fieldname];
     const prefix = await this.getS3FilePrefix(address);
-    const fileKey = await uploadFile(prefix, file);
-    try {
-      const updatedWallet = await this.prisma.wallet.update({
-        where: { address },
-        data: { [file.fieldname]: fileKey },
-      });
+    const newFileKey = await uploadFile(prefix, file);
 
-      return updatedWallet;
+    try {
+      wallet = await this.prisma.wallet.update({
+        where: { address },
+        data: { [file.fieldname]: newFileKey },
+      });
     } catch {
-      // Revert file upload
-      await deleteS3Object({ Key: fileKey });
-      throw new NotFoundException(
-        `Wallet with address ${address} does not exist`,
-      );
+      await deleteS3Object({ Key: newFileKey });
+      throw new BadRequestException('Malformed file upload');
     }
+
+    if (oldFileKey !== newFileKey) {
+      await deleteS3Object({ Key: oldFileKey });
+    }
+
+    return wallet;
   }
 
   async remove(address: string) {

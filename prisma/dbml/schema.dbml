@@ -19,7 +19,6 @@ Table Creator {
   email String [unique, not null]
   name String [unique, not null]
   slug String [unique, not null]
-  thumbnail String [not null, default: '']
   avatar String [not null, default: '']
   banner String [not null, default: '']
   logo String [not null, default: '']
@@ -41,7 +40,8 @@ Table Comic {
   name String [unique, not null]
   slug String [pk]
   isOngoing Boolean [not null, default: true]
-  thumbnail String [not null, default: '']
+  isMatureAudience Boolean [not null]
+  cover String [not null, default: '']
   pfp String [not null, default: '']
   logo String [not null, default: '']
   description String [not null, default: '']
@@ -51,11 +51,8 @@ Table Comic {
   discord String [not null, default: '']
   telegram String [not null, default: '']
   instagram String [not null, default: '']
-  medium String [not null, default: '']
   tikTok String [not null, default: '']
   youTube String [not null, default: '']
-  magicEden String [not null, default: '']
-  openSea String [not null, default: '']
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
@@ -63,6 +60,7 @@ Table Comic {
   verifiedAt DateTime
   publishedAt DateTime
   popularizedAt DateTime
+  completedAt DateTime
   genres Genre [not null]
   issues ComicIssue [not null]
   wallets WalletComic [not null]
@@ -88,7 +86,9 @@ Table WalletComic {
 Table Genre {
   name String [unique, not null]
   slug String [pk]
-  image String [not null, default: '']
+  icon String [not null, default: '']
+  priority Int [not null]
+  color String [not null]
   deletedAt DateTime
   comics Comic [not null]
 }
@@ -102,8 +102,6 @@ Table ComicIssue {
   flavorText String [not null, default: '']
   cover String [not null, default: '']
   soundtrack String [not null, default: '']
-  magicEden String [not null, default: '']
-  openSea String [not null, default: '']
   releaseDate DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
@@ -143,6 +141,18 @@ Table ComicPage {
   }
 }
 
+Table CarouselSlide {
+  id Int [pk, increment]
+  image String [not null]
+  title String [not null, default: '']
+  subtitle String [not null, default: '']
+  priority Int [not null]
+  link String [not null]
+  publishedAt DateTime [default: `now()`, not null]
+  expiredAt DateTime [not null]
+  location CarouselLocation [not null]
+}
+
 Table ComicToGenre {
   genresId String [ref: > Genre.slug]
   comicsId String [ref: > Comic.slug]
@@ -152,6 +162,10 @@ Enum Role {
   Superadmin
   Admin
   User
+}
+
+Enum CarouselLocation {
+  Home
 }
 
 Ref: Creator.walletAddress - Wallet.address [delete: Cascade]

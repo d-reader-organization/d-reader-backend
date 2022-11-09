@@ -43,7 +43,6 @@ export class CreatorController {
   @ApiBody({ type: CreateCreatorSwaggerDto })
   @UseInterceptors(
     FileFieldsInterceptor([
-      { name: 'thumbnail', maxCount: 1 },
       { name: 'avatar', maxCount: 1 },
       { name: 'banner', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
@@ -93,23 +92,6 @@ export class CreatorController {
     const updatedCreator = await this.creatorService.update(
       slug,
       updateCreatorDto,
-    );
-    const creatorDto = plainToInstance(CreatorDto, updatedCreator);
-    return CreatorDto.presignUrls(creatorDto);
-  }
-
-  /* Update specific creators thumbnail file */
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('thumbnail')
-  @UseInterceptors(FileInterceptor('thumbnail'))
-  @Patch('update/:slug/thumbnail')
-  async updateThumbnail(
-    @Param('slug') slug: string,
-    @UploadedFile() thumbnail: Express.Multer.File,
-  ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(
-      slug,
-      thumbnail,
     );
     const creatorDto = plainToInstance(CreatorDto, updatedCreator);
     return CreatorDto.presignUrls(creatorDto);

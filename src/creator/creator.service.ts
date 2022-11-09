@@ -41,16 +41,12 @@ export class CreatorService {
       throw new BadRequestException('Bad creator data');
     }
 
-    const { thumbnail, avatar, banner, logo } = createCreatorFilesDto;
+    const { avatar, banner, logo } = createCreatorFilesDto;
 
     // Upload files if any
-    let thumbnailKey: string,
-      avatarKey: string,
-      bannerKey: string,
-      logoKey: string;
+    let avatarKey: string, bannerKey: string, logoKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (thumbnail) thumbnailKey = await uploadFile(prefix, thumbnail);
       if (avatar) avatarKey = await uploadFile(prefix, avatar);
       if (banner) bannerKey = await uploadFile(prefix, banner);
       if (logo) logoKey = await uploadFile(prefix, logo);
@@ -62,7 +58,6 @@ export class CreatorService {
     creator = await this.prisma.creator.update({
       where: { id: creator.id },
       data: {
-        thumbnail: thumbnailKey,
         avatar: avatarKey,
         banner: bannerKey,
         logo: logoKey,
@@ -111,20 +106,32 @@ export class CreatorService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
-    const prefix = await this.getS3FilePrefix(slug);
-    const fileKey = await uploadFile(prefix, file);
+    let creator: Creator;
     try {
-      const updatedCreator = await this.prisma.creator.update({
-        where: { slug },
-        data: { [file.fieldname]: fileKey },
-      });
-
-      return updatedCreator;
+      creator = await this.prisma.creator.findUnique({ where: { slug } });
     } catch {
-      // Revert file upload
-      await deleteS3Object({ Key: fileKey });
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
+
+    const oldFileKey = creator[file.fieldname];
+    const prefix = await this.getS3FilePrefix(slug);
+    const newFileKey = await uploadFile(prefix, file);
+
+    try {
+      creator = await this.prisma.creator.update({
+        where: { slug },
+        data: { [file.fieldname]: newFileKey },
+      });
+    } catch {
+      await deleteS3Object({ Key: newFileKey });
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    if (oldFileKey !== newFileKey) {
+      await deleteS3Object({ Key: oldFileKey });
+    }
+
+    return creator;
   }
 
   async pseudoDelete(slug: string) {

@@ -33,20 +33,24 @@ import { Creator, Wallet } from '@prisma/client';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { WalletComicDto } from './dto/wallet-comic.dto';
 import { RateComicDto } from './dto/rate-comic.dto';
+import { WalletComicService } from './wallet-comic.service';
 
 @UseGuards(RestAuthGuard, ComicUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic')
 @Controller('comic')
 export class ComicController {
-  constructor(private readonly comicService: ComicService) {}
+  constructor(
+    private readonly comicService: ComicService,
+    private readonly walletComicService: WalletComicService,
+  ) {}
 
   /* Create a new comic */
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicSwaggerDto })
   @UseInterceptors(
     FileFieldsInterceptor([
-      { name: 'thumbnail', maxCount: 1 },
+      { name: 'cover', maxCount: 1 },
       { name: 'pfp', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
     ]),
@@ -78,28 +82,6 @@ export class ComicController {
     return ComicDto.presignUrls(comicsDto);
   }
 
-  /* Get wallets stats for a specific comic: star rating, favourite status etc. */
-  @Get('get/:slug/my-stats')
-  async findMyStats(
-    @Param('slug') slug: string,
-    @WalletEntity()
-    wallet: Wallet,
-  ): Promise<WalletComicDto | null> {
-    const myComicStats = await this.comicService.findWalletComic(
-      wallet.address,
-      slug,
-    );
-
-    if (myComicStats) return plainToInstance(WalletComicDto, myComicStats);
-    else {
-      return {
-        rating: null,
-        isFavourite: false,
-        isSubscribed: false,
-      };
-    }
-  }
-
   /* Get specific comic by unique slug */
   @Get('get/:slug')
   async findOne(@Param('slug') slug: string): Promise<ComicDto> {
@@ -119,16 +101,16 @@ export class ComicController {
     return ComicDto.presignUrls(comicDto);
   }
 
-  /* Update specific comics thumbnail file */
+  /* Update specific comics cover file */
   @ApiConsumes('multipart/form-data')
-  @ApiFile('thumbnail')
-  @UseInterceptors(FileInterceptor('thumbnail'))
-  @Patch('update/:slug/thumbnail')
-  async updateThumbnail(
+  @ApiFile('cover')
+  @UseInterceptors(FileInterceptor('cover'))
+  @Patch('update/:slug/cover')
+  async updateCover(
     @Param('slug') slug: string,
-    @UploadedFile() thumbnail: Express.Multer.File,
+    @UploadedFile() cover: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, thumbnail);
+    const updatedComic = await this.comicService.updateFile(slug, cover);
     const comicDto = plainToInstance(ComicDto, updatedComic);
     return ComicDto.presignUrls(comicDto);
   }
@@ -168,7 +150,7 @@ export class ComicController {
     @Body() rateComicDto: RateComicDto,
     @WalletEntity() wallet: Wallet,
   ): Promise<WalletComicDto> {
-    const myComicStats = await this.comicService.rate(
+    const myComicStats = await this.walletComicService.rate(
       wallet.address,
       slug,
       rateComicDto.rating,
@@ -182,7 +164,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<WalletComicDto> {
-    const myComicStats = await this.comicService.toggleSubscribe(
+    const myComicStats = await this.walletComicService.toggleSubscribe(
       wallet.address,
       slug,
     );
@@ -195,7 +177,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<WalletComicDto> {
-    const myComicStats = await this.comicService.toggleSubscribe(
+    const myComicStats = await this.walletComicService.toggleSubscribe(
       wallet.address,
       slug,
     );
@@ -243,9 +225,7 @@ export class ComicController {
   /**
    * TODO:
    * - finish email services
-   * - move aws config.ts to .env
    * - move all cron jobs to task.service.ts ?
-   * - remove magicEden and openSea
    * - comicPages @ApiBody
    */
 

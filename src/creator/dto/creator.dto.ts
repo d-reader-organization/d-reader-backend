@@ -45,10 +45,6 @@ export class CreatorDto extends Presignable<CreatorDto> {
 
   @Expose()
   @IsString()
-  thumbnail: string;
-
-  @Expose()
-  @IsString()
   avatar: string;
 
   @Expose()
@@ -101,7 +97,7 @@ export class CreatorDto extends Presignable<CreatorDto> {
   comics?: ComicDto[];
 
   protected async presign(): Promise<CreatorDto> {
-    return await super.presign(this, ['thumbnail', 'avatar', 'banner', 'logo']);
+    return await super.presign(this, ['avatar', 'banner', 'logo']);
   }
 
   static async presignUrls(input: CreatorDto): Promise<CreatorDto>;

@@ -13,7 +13,7 @@ import { kebabCase } from 'lodash';
 
 export class CreateComicDto {
   @IsNotEmpty()
-  @MaxLength(54)
+  @MaxLength(48)
   name: string;
 
   @IsKebabCase()
@@ -23,6 +23,9 @@ export class CreateComicDto {
 
   @IsBoolean()
   isOngoing: boolean;
+
+  @IsBoolean()
+  isMatureAudience: boolean;
 
   @IsOptional()
   @MaxLength(256)
@@ -48,19 +51,10 @@ export class CreateComicDto {
   instagram?: string;
 
   @IsOptionalUrl()
-  medium?: string;
-
-  @IsOptionalUrl()
   tikTok?: string;
 
   @IsOptionalUrl()
   youTube?: string;
-
-  @IsOptionalUrl()
-  magicEden?: string;
-
-  @IsOptionalUrl()
-  openSea?: string;
 
   @IsArray()
   @Type(() => String)
@@ -71,7 +65,7 @@ export class CreateComicFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   @IsOptional()
-  thumbnail?: Express.Multer.File | null;
+  cover?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])

@@ -2,6 +2,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
@@ -11,6 +12,8 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { Presignable } from 'src/types/presignable';
+import { ComicStatsDto } from './comic-stats.dto';
+import { WalletComicDto } from './wallet-comic.dto';
 
 @Exclude()
 export class ComicDto extends Presignable<ComicDto> {
@@ -23,13 +26,12 @@ export class ComicDto extends Presignable<ComicDto> {
   slug: string;
 
   @Expose()
-  @IsPositive()
-  @IsOptional()
-  rating: number | null;
+  @IsBoolean()
+  isOngoing: boolean;
 
   @Expose()
   @IsBoolean()
-  isOngoing: boolean;
+  isMatureAudience: boolean;
 
   @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
@@ -44,8 +46,16 @@ export class ComicDto extends Presignable<ComicDto> {
   isPublished: boolean;
 
   @Expose()
+  @Transform(({ obj }) => !!obj.popularizedAt)
+  isPopular: boolean;
+
+  @Expose()
+  @Transform(({ obj }) => !!obj.completedAt)
+  isCompleted: boolean;
+
+  @Expose()
   @IsString()
-  thumbnail: string;
+  cover: string;
 
   @Expose()
   @IsString()
@@ -85,10 +95,6 @@ export class ComicDto extends Presignable<ComicDto> {
 
   @Expose()
   @IsEmptyOrUrl()
-  medium: string;
-
-  @Expose()
-  @IsEmptyOrUrl()
   tikTok: string;
 
   @Expose()
@@ -96,19 +102,21 @@ export class ComicDto extends Presignable<ComicDto> {
   youTube: string;
 
   @Expose()
-  @IsEmptyOrUrl()
-  magicEden: string;
-
-  @Expose()
-  @IsEmptyOrUrl()
-  openSea: string;
-
-  @Expose()
   @IsArray()
   @IsOptional()
   @Type(() => String)
   @Transform(({ obj }) => obj.genres?.map((genre) => genre.name))
   genres?: string[];
+
+  @Expose()
+  @IsOptional()
+  @Type(() => ComicStatsDto)
+  stats?: ComicStatsDto;
+
+  @Expose()
+  @IsOptional()
+  @Type(() => WalletComicDto)
+  myStats?: WalletComicDto;
 
   @Expose()
   @IsArray()
@@ -121,8 +129,18 @@ export class ComicDto extends Presignable<ComicDto> {
   @Type(() => CreatorDto)
   creator?: CreatorDto;
 
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  issuesCount?: number | null;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  favouritesCount?: number | null;
+
   protected async presign(): Promise<ComicDto> {
-    return await super.presign(this, ['thumbnail', 'logo', 'pfp']);
+    return await super.presign(this, ['cover', 'logo', 'pfp']);
   }
 
   static async presignUrls(input: ComicDto): Promise<ComicDto>;

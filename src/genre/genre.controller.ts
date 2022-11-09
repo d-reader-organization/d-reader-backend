@@ -28,6 +28,7 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Role } from '@prisma/client';
+import { UpdateGenreDto } from './dto/update-genre.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
@@ -40,7 +41,7 @@ export class GenreController {
   @Roles(Role.Superadmin)
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateGenreSwaggerDto })
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'icon', maxCount: 1 }]))
   @Post('create')
   async create(
     @Body() createGenreDto: CreateGenreDto,
@@ -71,7 +72,7 @@ export class GenreController {
   }
 
   /* Update specific genre */
-  /* @Roles(Role.Superadmin)
+  @Roles(Role.Superadmin)
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -80,19 +81,19 @@ export class GenreController {
     const updatedGenre = await this.genreService.update(slug, updateGenreDto);
     const genreDto = plainToInstance(GenreDto, updatedGenre);
     return GenreDto.presignUrls(genreDto);
-  } */
+  }
 
-  /* Update specific genres image file */
+  /* Update specific genres icon file */
   @Roles(Role.Superadmin)
   @ApiConsumes('multipart/form-data')
-  @ApiFile('image')
-  @UseInterceptors(FileInterceptor('image'))
-  @Patch('update/:slug/image')
-  async updateImage(
+  @ApiFile('icon')
+  @UseInterceptors(FileInterceptor('icon'))
+  @Patch('update/:slug/icon')
+  async updateIcon(
     @Param('slug') slug: string,
-    @UploadedFile() image: Express.Multer.File,
+    @UploadedFile() icon: Express.Multer.File,
   ): Promise<GenreDto> {
-    const updatedGenre = await this.genreService.updateFile(slug, image);
+    const updatedGenre = await this.genreService.updateFile(slug, icon);
     const comicDto = plainToInstance(GenreDto, updatedGenre);
     return GenreDto.presignUrls(comicDto);
   }

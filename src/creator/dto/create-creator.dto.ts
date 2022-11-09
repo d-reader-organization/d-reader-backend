@@ -26,11 +26,6 @@ export class CreateCreatorFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   @IsOptional()
-  thumbnail?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
   avatar?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })

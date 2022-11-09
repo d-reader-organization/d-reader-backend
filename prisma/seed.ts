@@ -1,9 +1,19 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, CarouselLocation } from '@prisma/client';
+import { addDays, subDays } from 'date-fns';
+import { isEmpty } from 'lodash';
+import {
+  Bucket,
+  copyS3Object,
+  deleteS3Objects,
+  listS3FolderKeys,
+  SeedBucket,
+} from '../src/aws/s3client';
 import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('⛏️ Emptying the database...');
   await prisma.comicIssueNft.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
@@ -13,8 +23,112 @@ async function main() {
   await prisma.wallet.deleteMany();
   await prisma.wallet.deleteMany();
   await prisma.genre.deleteMany();
+  await prisma.carouselSlide.deleteMany();
 
-  console.log('Emptied database...');
+  console.log('✅ Emptied database!');
+
+  console.log(`⛏️ Emptying '${Bucket}' s3 bucket...`);
+  const keysToDelete = await listS3FolderKeys({ Prefix: '' });
+  if (!isEmpty(keysToDelete)) {
+    await deleteS3Objects({
+      Delete: { Objects: keysToDelete.map((Key) => ({ Key })) },
+    });
+  }
+  console.log(`✅ Emptied '${Bucket}' s3 bucket!`);
+
+  console.log(`⛏️ Cloning files from '${SeedBucket}' bucket...`);
+
+  const seedFileKeys = await listS3FolderKeys({
+    Bucket: SeedBucket,
+    Prefix: '',
+  });
+
+  for (const seedFileKey of seedFileKeys) {
+    const copySource = `/${SeedBucket}/${seedFileKey}`;
+    await copyS3Object({ CopySource: copySource, Key: seedFileKey });
+    console.log(`🪧 Copied seed file from ${copySource}`);
+  }
+  console.log(`✅ Cloned files from '${SeedBucket}' s3 bucket!`);
+
+  try {
+    await prisma.carouselSlide.createMany({
+      data: [
+        {
+          image: 'carousel/1.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 1,
+          link: 'https://dreader.io/todo',
+          publishedAt: new Date(),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/2.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 2,
+          link: 'https://dreader.io/todo',
+          publishedAt: new Date(),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/3.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 3,
+          link: 'https://dreader.io/todo',
+          publishedAt: addDays(new Date(), 1),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/4.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 4,
+          link: 'https://dreader.io/todo',
+          publishedAt: subDays(new Date(), 1),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/5.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 5,
+          link: 'https://dreader.io/todo',
+          publishedAt: new Date(),
+          expiredAt: subDays(new Date(), 4),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/6.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 6,
+          link: 'https://dreader.io/todo',
+          publishedAt: new Date(),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+        {
+          image: 'carousel/7.png',
+          title: 'Lorem Ipsum',
+          subtitle: 'Dolor sit ament, consecitur',
+          priority: 7,
+          link: 'https://dreader.io/todo',
+          publishedAt: new Date(),
+          expiredAt: addDays(new Date(), 7),
+          location: CarouselLocation.Home,
+        },
+      ],
+    });
+    console.log('➕ Added carousel slides');
+  } catch (e) {
+    console.log('❌ Failed to add carousel slides', e);
+  }
 
   try {
     await prisma.genre.createMany({
@@ -23,45 +137,58 @@ async function main() {
           name: 'Action',
           slug: 'action',
           deletedAt: null,
-          image: 'genres/action/image.png',
+          priority: 1,
+          icon: 'genres/action/icon.png',
+          color: '#a35',
         },
         {
           name: 'Sci-Fi',
           slug: 'sci-fi',
           deletedAt: null,
-          image: 'genres/sci-fi/image.png',
+          priority: 2,
+          icon: 'genres/sci-fi/icon.png',
+          color: '#0f0',
         },
         {
           name: 'Comedy',
           slug: 'comedy',
           deletedAt: null,
-          image: 'genres/comedy/image.png',
+          priority: 3,
+          icon: 'genres/comedy/icon.png',
+          color: '#00f',
         },
         {
           name: 'Slice of Life',
           slug: 'slice-of-life',
           deletedAt: null,
-          image: 'genres/slice-of-life/image.png',
+          priority: 4,
+          icon: 'genres/slice-of-life/icon.png',
+          color: '#fff',
         },
         {
           name: 'Romance',
           slug: 'romance',
           deletedAt: null,
-          image: 'genres/romance/image.png',
+          priority: 5,
+          icon: 'genres/romance/icon.png',
+          color: '#f00',
         },
         {
           name: 'History',
           slug: 'history',
           deletedAt: null,
-          image: 'genres/history/image.png',
+          priority: 6,
+          icon: 'genres/history/icon.png',
+          color: '#24d',
         },
       ],
     });
-    console.log(
-      "Added comic genres: 'action', 'sci-fi', 'comedy', 'slice-of-life', 'romance', 'history'",
-    );
+
+    const genres = await prisma.genre.findMany();
+    const genreNames = genres.map((genre) => `'${genre.name}'`);
+    console.log(`➕ Added comic genres: ${genreNames.join(', ')}`);
   } catch (e) {
-    console.log('Failed to add comic genres', e);
+    console.log('❌ Failed to add comic genres', e);
   }
 
   try {
@@ -77,9 +204,9 @@ async function main() {
         role: Role.Superadmin,
       },
     });
-    console.log('Added Superadmin wallet');
+    console.log('➕ Added Superadmin wallet');
   } catch (e) {
-    console.log('Failed to add Superadmin wallet', e);
+    console.log('❌ Failed to add Superadmin wallet', e);
   }
 
   try {
@@ -95,9 +222,9 @@ async function main() {
         role: Role.Admin,
       },
     });
-    console.log('Added Admin wallet');
+    console.log('➕ Added Admin wallet');
   } catch (e) {
-    console.log('Failed to add Admin wallet', e);
+    console.log('❌ Failed to add Admin wallet', e);
   }
 
   try {
@@ -118,7 +245,6 @@ async function main() {
               email: 'adam@studionx.com',
               name: 'StudioNX',
               slug: 'studio-nx',
-              thumbnail: '',
               avatar: '',
               banner: '',
               logo: '',
@@ -141,12 +267,14 @@ async function main() {
                     'by Emmy award winning duo Jim Bryson & Adam Jeffcoat',
                   genres: { connect: [{ slug: 'action' }, { slug: 'sci-fi' }] },
                   isOngoing: true,
+                  isMatureAudience: true,
                   deletedAt: null,
                   featuredAt: null,
                   verifiedAt: new Date(),
                   publishedAt: new Date(),
                   popularizedAt: null,
-                  thumbnail: '',
+                  completedAt: null,
+                  cover: '',
                   pfp: '',
                   logo: '',
                   website: 'https://gorecats.io',
@@ -154,12 +282,8 @@ async function main() {
                   discord: 'https://discord.com/invite/gorecats',
                   telegram: 'https://t.me/Gorecats',
                   instagram: 'https://www.instagram.com/gorecats_art',
-                  medium: '',
                   tikTok: '',
                   youTube: '',
-                  magicEden:
-                    'https://magiceden.io/creators/gorecats_collection',
-                  openSea: '',
                   issues: {
                     create: {
                       number: 1,
@@ -170,8 +294,6 @@ async function main() {
                       flavorText: 'Jesus these cats are so gore',
                       cover: '',
                       soundtrack: '',
-                      magicEden: 'https://magiceden.io/marketplace/gorecats',
-                      openSea: '',
                       releaseDate: '2022-08-08T08:00:00.000Z',
                       deletedAt: null,
                       featuredAt: null,
@@ -355,9 +477,9 @@ async function main() {
         },
       },
     });
-    console.log('Added "StudioNX" creator');
+    console.log('➕ Added "StudioNX" creator');
   } catch (e) {
-    console.log('Failed to add "StudioNX" creator', e);
+    console.log('❌ Failed to add "StudioNX" creator', e);
   }
 
   try {
@@ -378,7 +500,6 @@ async function main() {
               email: 'karlo@swamplabs.com',
               name: 'Swamplabs',
               slug: 'swamplabs',
-              thumbnail: '',
               avatar: '',
               banner: '',
               logo: '',
@@ -408,12 +529,14 @@ async function main() {
                     ],
                   },
                   isOngoing: true,
+                  isMatureAudience: false,
                   deletedAt: null,
                   featuredAt: null,
                   verifiedAt: new Date(),
                   publishedAt: new Date(),
                   popularizedAt: null,
-                  thumbnail: '',
+                  completedAt: null,
+                  cover: '',
                   pfp: '',
                   logo: '',
                   website: 'https://narentines.com',
@@ -421,12 +544,8 @@ async function main() {
                   discord: 'https://discord.com/invite/narentines',
                   telegram: '',
                   instagram: '',
-                  medium: 'https://medium.com/@NarentinesNFT',
                   tikTok: '',
                   youTube: '',
-                  magicEden:
-                    'https://www.magiceden.io/marketplace/narentinesnft',
-                  openSea: '',
                   issues: {
                     create: {
                       number: 1,
@@ -438,9 +557,6 @@ async function main() {
                         'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
                       cover: '',
                       soundtrack: '',
-                      magicEden:
-                        'https://www.magiceden.io/marketplace/narentinesnft',
-                      openSea: '',
                       releaseDate: '2022-08-08T08:00:00.000Z',
                       deletedAt: null,
                       featuredAt: null,
@@ -615,9 +731,9 @@ async function main() {
         },
       },
     });
-    console.log('Added "Swamplabs" creator');
+    console.log('➕ Added "Swamplabs" creator');
   } catch (e) {
-    console.log('Failed to add "Swamplabs" creator', e);
+    console.log('❌ Failed to add "Swamplabs" creator', e);
   }
 }
 

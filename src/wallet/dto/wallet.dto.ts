@@ -1,9 +1,9 @@
-import { IsEnum, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsString } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { Exclude, Expose } from 'class-transformer';
 import { Presignable } from 'src/types/presignable';
-import { Role } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 
 @Exclude()
 export class WalletDto extends Presignable<WalletDto> {
@@ -12,7 +12,7 @@ export class WalletDto extends Presignable<WalletDto> {
   address: string;
 
   @Expose()
-  @MaxLength(24)
+  @IsString()
   label: string;
 
   @Expose()

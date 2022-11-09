@@ -36,7 +36,6 @@ model Creator {
   // password         String
   name             String    @unique
   slug             String    @unique
-  thumbnail        String    @default("")
   avatar           String    @default("")
   banner           String    @default("")
   logo             String    @default("")
@@ -57,36 +56,35 @@ model Creator {
 }
 
 model Comic {
-  name          String        @unique
-  slug          String        @id
-  isOngoing     Boolean       @default(true)
-  thumbnail     String        @default("")
-  pfp           String        @default("")
-  logo          String        @default("")
-  description   String        @default("")
-  flavorText    String        @default("")
-  website       String        @default("")
-  twitter       String        @default("")
-  discord       String        @default("")
-  telegram      String        @default("")
-  instagram     String        @default("")
-  medium        String        @default("")
-  tikTok        String        @default("")
-  youTube       String        @default("")
-  magicEden     String        @default("")
-  openSea       String        @default("")
-  updatedAt     DateTime      @updatedAt
-  createdAt     DateTime      @default(now())
-  deletedAt     DateTime?
-  featuredAt    DateTime?
-  verifiedAt    DateTime?
-  publishedAt   DateTime?
-  popularizedAt DateTime?
-  genres        Genre[]
-  issues        ComicIssue[]
-  wallets       WalletComic[]
-  creator       Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId     Int
+  name             String        @unique
+  slug             String        @id
+  isOngoing        Boolean       @default(true)
+  isMatureAudience Boolean
+  cover            String        @default("")
+  pfp              String        @default("")
+  logo             String        @default("")
+  description      String        @default("")
+  flavorText       String        @default("")
+  website          String        @default("")
+  twitter          String        @default("")
+  discord          String        @default("")
+  telegram         String        @default("")
+  instagram        String        @default("")
+  tikTok           String        @default("")
+  youTube          String        @default("")
+  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime      @default(now())
+  deletedAt        DateTime?
+  featuredAt       DateTime?
+  verifiedAt       DateTime?
+  publishedAt      DateTime?
+  popularizedAt    DateTime?
+  completedAt      DateTime?
+  genres           Genre[]
+  issues           ComicIssue[]
+  wallets          WalletComic[]
+  creator          Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId        Int
 }
 
 model WalletComic {
@@ -107,7 +105,9 @@ model WalletComic {
 model Genre {
   name      String    @unique
   slug      String    @id
-  image     String    @default("")
+  icon      String    @default("")
+  priority  Int
+  color     String
   deletedAt DateTime?
   comics    Comic[]
 }
@@ -121,8 +121,6 @@ model ComicIssue {
   flavorText    String          @default("")
   cover         String          @default("")
   soundtrack    String          @default("")
-  magicEden     String          @default("")
-  openSea       String          @default("")
   releaseDate   DateTime
   createdAt     DateTime        @default(now())
   deletedAt     DateTime?
@@ -158,7 +156,31 @@ model ComicPage {
   @@unique([pageNumber, comicIssueId])
 }
 
+model CarouselSlide {
+  id          Int              @id @default(autoincrement())
+  image       String
+  title       String           @default("")
+  subtitle    String           @default("")
+  priority    Int
+  link        String
+  publishedAt DateTime         @default(now())
+  expiredAt   DateTime
+  location    CarouselLocation
+}
+
+enum CarouselLocation {
+  Home
+}
+
+// enum CarouselSlideType {
+//   Comic
+//   ComicIssue
+//   Creator
+// }
+
 // TODO v2
+// - [NOTIFICATION] [NOTIFICATION_TYPE] [WALLET_NOTIFICATION]
+// - [COMIC_TAG] isOngoing, isMatureAudience (ComicTagEnum)
 // - [COMIC] family ComicFamily
 // - [COMIC] candyMachineIds Int[]
 // - [COMIC_ISSUE] candyMachineIds Int[]

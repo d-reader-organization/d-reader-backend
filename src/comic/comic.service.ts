@@ -15,14 +15,24 @@ import {
   listS3FolderKeys,
   uploadFile,
 } from '../aws/s3client';
-import { isEmpty } from 'lodash';
-import { Comic, ComicIssue } from '@prisma/client';
+import { ComicStats } from './types/comic-stats';
+import { WalletComicService } from './wallet-comic.service';
+import { Comic, ComicIssue, WalletComic, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
+import { isEmpty } from 'lodash';
+
+type WithStats<T> = T & {
+  stats: ComicStats;
+  myStats?: WalletComic;
+};
 
 @Injectable()
 export class ComicService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private walletComicService: WalletComicService,
+  ) {}
 
   async create(
     creatorId: number,
@@ -47,13 +57,13 @@ export class ComicService {
       throw new BadRequestException('Bad comic data');
     }
 
-    const { thumbnail, pfp, logo } = createComicFilesDto;
+    const { cover, pfp, logo } = createComicFilesDto;
 
     // Upload files if any
-    let thumbnailKey: string, pfpKey: string, logoKey: string;
+    let coverKey: string, pfpKey: string, logoKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (thumbnail) thumbnailKey = await uploadFile(prefix, thumbnail);
+      if (cover) coverKey = await uploadFile(prefix, cover);
       if (pfp) pfpKey = await uploadFile(prefix, pfp);
       if (logo) logoKey = await uploadFile(prefix, logo);
     } catch {
@@ -66,7 +76,7 @@ export class ComicService {
       where: { slug: comic.slug },
       include: { issues: true },
       data: {
-        thumbnail: thumbnailKey,
+        cover: coverKey,
         pfp: pfpKey,
         logo: logoKey,
       },
@@ -75,7 +85,9 @@ export class ComicService {
     return comic;
   }
 
-  async findAll() {
+  async findAll(
+    walletAddress?: string,
+  ): Promise<WithStats<Comic & { genres: Genre[] }>[]> {
     const comics = await this.prisma.comic.findMany({
       include: { genres: true },
       where: {
@@ -84,10 +96,25 @@ export class ComicService {
         verifiedAt: { not: null },
       },
     });
-    return comics;
+
+    const aggregatedComics = await Promise.all(
+      comics.map(async (comic) => {
+        const { stats, myStats } = await this.walletComicService.aggregateAll(
+          comic.slug,
+          walletAddress,
+        );
+
+        return { ...comic, stats, myStats };
+      }),
+    );
+
+    return aggregatedComics;
   }
 
-  async findOne(slug: string): Promise<Comic & { rating: number | null }> {
+  async findOne(
+    slug: string,
+    walletAddress?: string,
+  ): Promise<WithStats<Comic & { genres: Genre[]; issues: ComicIssue[] }>> {
     const comic = await this.prisma.comic.findUnique({
       include: { genres: true, issues: true },
       where: { slug },
@@ -97,26 +124,12 @@ export class ComicService {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
-    const aggregations = await this.prisma.walletComic.aggregate({
-      _avg: { rating: true },
-      // _count: { rating: true },
-      where: { comicSlug: comic.slug },
-    });
+    const { stats, myStats } = await this.walletComicService.aggregateAll(
+      slug,
+      walletAddress,
+    );
 
-    return { ...comic, rating: aggregations._avg.rating };
-  }
-
-  async findWalletComic(walletAddress: string, slug: string) {
-    const walletComic = await this.prisma.walletComic.findUnique({
-      where: {
-        comicSlug_walletAddress: {
-          walletAddress: walletAddress,
-          comicSlug: slug,
-        },
-      },
-    });
-
-    return walletComic;
+    return { ...comic, stats, myStats };
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
@@ -138,58 +151,34 @@ export class ComicService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
-    const prefix = await this.getS3FilePrefix(slug);
-    const fileKey = await uploadFile(prefix, file);
+    let comic: Comic;
     try {
-      const updatedComic = await this.prisma.comic.update({
-        where: { slug },
-        data: { [file.fieldname]: fileKey },
-      });
-
-      return updatedComic;
+      comic = await this.prisma.comic.findUnique({ where: { slug } });
     } catch {
-      // Revert file upload
-      await deleteS3Object({ Key: fileKey });
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
-  }
 
-  async rate(walletAddress: string, comicSlug: string, rating: number) {
-    const walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, rating },
-      update: { rating },
-    });
+    const oldFileKey = comic[file.fieldname];
+    const prefix = await this.getS3FilePrefix(slug);
+    const newFileKey = await uploadFile(prefix, file);
 
-    return walletComic;
-  }
+    try {
+      comic = await this.prisma.comic.update({
+        where: { slug },
+        data: { [file.fieldname]: newFileKey },
+      });
+    } catch {
+      await deleteS3Object({ Key: newFileKey });
+      throw new BadRequestException('Malformed file upload');
+    }
 
-  async toggleSubscribe(walletAddress: string, comicSlug: string) {
-    let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-    });
+    // If all went well with the new file upload and it didn't
+    // override the old one, make sure to garbage collect it
+    if (oldFileKey !== newFileKey) {
+      await deleteS3Object({ Key: oldFileKey });
+    }
 
-    walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, isSubscribed: true },
-      update: { isSubscribed: !walletComic?.isSubscribed },
-    });
-
-    return walletComic;
-  }
-
-  async toggleFavourite(walletAddress: string, comicSlug: string) {
-    let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-    });
-
-    walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, isFavourite: true },
-      update: { isFavourite: !walletComic?.isFavourite },
-    });
-
-    return walletComic;
+    return comic;
   }
 
   async publish(slug: string) {

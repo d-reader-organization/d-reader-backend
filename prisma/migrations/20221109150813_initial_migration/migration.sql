@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('Superadmin', 'Admin', 'User');
 
+-- CreateEnum
+CREATE TYPE "CarouselLocation" AS ENUM ('Home');
+
 -- CreateTable
 CREATE TABLE "Wallet" (
     "address" TEXT NOT NULL,
@@ -20,7 +23,6 @@ CREATE TABLE "Creator" (
     "email" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "thumbnail" TEXT NOT NULL DEFAULT '',
     "avatar" TEXT NOT NULL DEFAULT '',
     "banner" TEXT NOT NULL DEFAULT '',
     "logo" TEXT NOT NULL DEFAULT '',
@@ -43,7 +45,8 @@ CREATE TABLE "Comic" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "isOngoing" BOOLEAN NOT NULL DEFAULT true,
-    "thumbnail" TEXT NOT NULL DEFAULT '',
+    "isMatureAudience" BOOLEAN NOT NULL,
+    "cover" TEXT NOT NULL DEFAULT '',
     "pfp" TEXT NOT NULL DEFAULT '',
     "logo" TEXT NOT NULL DEFAULT '',
     "description" TEXT NOT NULL DEFAULT '',
@@ -53,11 +56,8 @@ CREATE TABLE "Comic" (
     "discord" TEXT NOT NULL DEFAULT '',
     "telegram" TEXT NOT NULL DEFAULT '',
     "instagram" TEXT NOT NULL DEFAULT '',
-    "medium" TEXT NOT NULL DEFAULT '',
     "tikTok" TEXT NOT NULL DEFAULT '',
     "youTube" TEXT NOT NULL DEFAULT '',
-    "magicEden" TEXT NOT NULL DEFAULT '',
-    "openSea" TEXT NOT NULL DEFAULT '',
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
@@ -65,6 +65,7 @@ CREATE TABLE "Comic" (
     "verifiedAt" TIMESTAMP(3),
     "publishedAt" TIMESTAMP(3),
     "popularizedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
     "creatorId" INTEGER NOT NULL,
 
     CONSTRAINT "Comic_pkey" PRIMARY KEY ("slug")
@@ -86,7 +87,9 @@ CREATE TABLE "WalletComic" (
 CREATE TABLE "Genre" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "image" TEXT NOT NULL DEFAULT '',
+    "icon" TEXT NOT NULL DEFAULT '',
+    "priority" INTEGER NOT NULL,
+    "color" TEXT NOT NULL,
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Genre_pkey" PRIMARY KEY ("slug")
@@ -102,8 +105,6 @@ CREATE TABLE "ComicIssue" (
     "flavorText" TEXT NOT NULL DEFAULT '',
     "cover" TEXT NOT NULL DEFAULT '',
     "soundtrack" TEXT NOT NULL DEFAULT '',
-    "magicEden" TEXT NOT NULL DEFAULT '',
-    "openSea" TEXT NOT NULL DEFAULT '',
     "releaseDate" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
@@ -134,6 +135,21 @@ CREATE TABLE "ComicPage" (
     "comicIssueId" INTEGER NOT NULL,
 
     CONSTRAINT "ComicPage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CarouselSlide" (
+    "id" SERIAL NOT NULL,
+    "image" TEXT NOT NULL,
+    "title" TEXT NOT NULL DEFAULT '',
+    "subtitle" TEXT NOT NULL DEFAULT '',
+    "priority" INTEGER NOT NULL,
+    "link" TEXT NOT NULL,
+    "publishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expiredAt" TIMESTAMP(3) NOT NULL,
+    "location" "CarouselLocation" NOT NULL,
+
+    CONSTRAINT "CarouselSlide_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable

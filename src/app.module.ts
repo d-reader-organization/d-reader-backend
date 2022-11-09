@@ -6,6 +6,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { CreatorModule } from './creator/creator.module';
 import { ComicModule } from './comic/comic.module';
 import { ComicIssueModule } from './comic-issue/comic-issue.module';
+import { CarouselModule } from './carousel/carousel.module';
 import { PrismaModule, loggingMiddleware } from 'nestjs-prisma';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './mail/mail.module';
@@ -43,6 +44,7 @@ import { GenreModule } from './genre/genre.module';
     CreatorModule,
     ComicModule,
     ComicIssueModule,
+    CarouselModule,
     MailModule,
     GenreModule,
   ],

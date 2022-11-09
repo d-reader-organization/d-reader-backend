@@ -12,7 +12,6 @@ import {
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -37,12 +36,6 @@ export class CreateComicIssueDto {
   @IsOptional()
   @MaxLength(128)
   flavorText?: string;
-
-  @IsOptionalUrl()
-  magicEden: string;
-
-  @IsOptionalUrl()
-  openSea: string;
 
   @IsDateString()
   @Transform(({ value }) => new Date(value).toISOString())

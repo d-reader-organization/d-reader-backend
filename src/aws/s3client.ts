@@ -1,4 +1,6 @@
 import {
+  CopyObjectCommand,
+  CopyObjectCommandInput,
   DeleteObjectCommand,
   DeleteObjectCommandInput,
   DeleteObjectsCommand,
@@ -15,12 +17,16 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException } from '@nestjs/common';
 import config from '../configs/config';
+import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 
-const REGION = config().s3.region || 'us-east-1';
-const Bucket = process.env.AWS_BUCKET_NAME;
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
-const s3Client = new S3Client({
+export const REGION = config().s3.region || 'us-east-1';
+export const Bucket = process.env.AWS_BUCKET_NAME;
+export const SeedBucket = process.env.AWS_SEED_BUCKET_NAME;
+
+export const s3Client = new S3Client({
   region: REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -28,23 +34,31 @@ const s3Client = new S3Client({
   },
 });
 
-const putS3Object = async (
-  putObjectInput: Omit<PutObjectCommandInput, 'Bucket'>,
+export const putS3Object = async (
+  putObjectInput: Optional<PutObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
     new PutObjectCommand({ Bucket, ...putObjectInput }),
   );
 };
 
-const getS3Object = async (
-  getObjectInput: Omit<GetObjectCommandInput, 'Bucket'>,
+export const getS3Object = async (
+  getObjectInput: Optional<GetObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
     new GetObjectCommand({ Bucket, ...getObjectInput }),
   );
 };
 
-const getReadUrl = async (key: string) => {
+export const copyS3Object = async (
+  copyObjectInput: Optional<CopyObjectCommandInput, 'Bucket'>,
+) => {
+  return await s3Client.send(
+    new CopyObjectCommand({ Bucket, ...copyObjectInput }),
+  );
+};
+
+export const getReadUrl = async (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
 
@@ -57,24 +71,24 @@ const getReadUrl = async (key: string) => {
   return signedUrl;
 };
 
-const deleteS3Object = async (
-  deleteObjectInput: Omit<DeleteObjectCommandInput, 'Bucket'>,
+export const deleteS3Object = async (
+  deleteObjectInput: Optional<DeleteObjectCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
     new DeleteObjectCommand({ Bucket, ...deleteObjectInput }),
   );
 };
 
-const deleteS3Objects = async (
-  deleteObjectsInput: Omit<DeleteObjectsCommandInput, 'Bucket'>,
+export const deleteS3Objects = async (
+  deleteObjectsInput: Optional<DeleteObjectsCommandInput, 'Bucket'>,
 ) => {
   return await s3Client.send(
     new DeleteObjectsCommand({ Bucket, ...deleteObjectsInput }),
   );
 };
 
-const uploadS3Object = async (
-  putObjectInput: Omit<PutObjectCommandInput, 'Bucket'>,
+export const uploadS3Object = async (
+  putObjectInput: Optional<PutObjectCommandInput, 'Bucket'>,
 ) => {
   try {
     const multipartUpload = new Upload({
@@ -88,8 +102,8 @@ const uploadS3Object = async (
   }
 };
 
-const listS3FolderKeys = async (
-  listObjectsInput: Omit<
+export const listS3FolderKeys = async (
+  listObjectsInput: Optional<
     ListObjectsV2CommandInput,
     'Bucket' | 'MaxKeys' | 'ContinuationToken'
   >,
@@ -124,9 +138,16 @@ const listS3FolderKeys = async (
   return await crawlS3FolderKeys();
 };
 
-const uploadFile = async (prefix: string, file: Express.Multer.File) => {
+export const uploadFile = async (
+  prefix: string,
+  file: Express.Multer.File,
+  options?: { uuid: boolean },
+) => {
   if (file) {
-    const fileKey = prefix + file.fieldname + path.extname(file.originalname);
+    const fileKey =
+      prefix +
+      (options.uuid ? uuidv4() : file.fieldname) +
+      path.extname(file.originalname);
 
     await putS3Object({
       ContentType: file.mimetype,
@@ -138,14 +159,4 @@ const uploadFile = async (prefix: string, file: Express.Multer.File) => {
   } else throw new BadRequestException('No file provided');
 };
 
-export {
-  s3Client,
-  putS3Object,
-  uploadS3Object,
-  getS3Object,
-  getReadUrl,
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  uploadFile,
-};
+export default s3Client;

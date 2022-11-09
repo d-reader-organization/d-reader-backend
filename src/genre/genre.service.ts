@@ -38,13 +38,13 @@ export class GenreService {
       throw new BadRequestException('Bad genre data');
     }
 
-    const { image } = createGenreFilesDto;
+    const { icon } = createGenreFilesDto;
 
     // Upload files if any
-    let imageKey: string;
+    let iconKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (image) imageKey = await uploadFile(prefix, image);
+      if (icon) iconKey = await uploadFile(prefix, icon);
     } catch {
       await this.prisma.genre.delete({ where: { slug } });
       throw new BadRequestException('Malformed file upload');
@@ -53,7 +53,7 @@ export class GenreService {
     // Update Genre with s3 file keys
     genre = await this.prisma.genre.update({
       where: { slug },
-      data: { image: imageKey },
+      data: { icon: iconKey },
     });
 
     return genre;
@@ -90,20 +90,26 @@ export class GenreService {
   }
 
   async updateFile(slug: string, file: Express.Multer.File) {
+    let genre = await this.findOne(slug);
+    const oldFileKey = genre[file.fieldname];
     const prefix = await this.getS3FilePrefix(slug);
-    const fileKey = await uploadFile(prefix, file);
-    try {
-      const updatedGenre = await this.prisma.genre.update({
-        where: { slug },
-        data: { [file.fieldname]: fileKey },
-      });
+    const newFileKey = await uploadFile(prefix, file);
 
-      return updatedGenre;
+    try {
+      genre = await this.prisma.genre.update({
+        where: { slug },
+        data: { [file.fieldname]: newFileKey },
+      });
     } catch {
-      // Revert file upload
-      await deleteS3Object({ Key: fileKey });
-      throw new NotFoundException(`Genre ${slug} does not exist`);
+      await deleteS3Object({ Key: newFileKey });
+      throw new BadRequestException('Malformed file upload');
     }
+
+    if (oldFileKey !== newFileKey) {
+      await deleteS3Object({ Key: oldFileKey });
+    }
+
+    return genre;
   }
 
   async pseudoDelete(slug: string) {

@@ -185,21 +185,36 @@ export class ComicIssueService {
   }
 
   async updateFile(id: number, file: Express.Multer.File) {
-    const prefix = await this.getS3FilePrefix(id);
-    const fileKey = await uploadFile(prefix, file);
+    let comicIssue: ComicIssue;
     try {
-      const updatedComicIssue = await this.prisma.comicIssue.update({
+      comicIssue = await this.prisma.comicIssue.findUnique({
         where: { id },
         include: { pages: true },
-        data: { [file.fieldname]: fileKey },
       });
-
-      return updatedComicIssue;
     } catch {
-      // Revert file upload
-      await deleteS3Object({ Key: fileKey });
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
+
+    const oldFileKey = comicIssue[file.fieldname];
+    const prefix = await this.getS3FilePrefix(id);
+    const newFileKey = await uploadFile(prefix, file);
+
+    try {
+      comicIssue = await this.prisma.comicIssue.update({
+        where: { id },
+        include: { pages: true },
+        data: { [file.fieldname]: newFileKey },
+      });
+    } catch {
+      await deleteS3Object({ Key: newFileKey });
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    if (oldFileKey !== newFileKey) {
+      await deleteS3Object({ Key: oldFileKey });
+    }
+
+    return comicIssue;
   }
 
   async publish(id: number) {

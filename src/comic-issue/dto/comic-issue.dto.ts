@@ -7,10 +7,8 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  MaxLength,
 } from 'class-validator';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
-import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Presignable } from 'src/types/presignable';
 
@@ -26,7 +24,6 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
 
   @Expose()
   @IsNotEmpty()
-  @MaxLength(54)
   title: string;
 
   @Expose()
@@ -51,20 +48,16 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
   soundtrack: string;
 
   @Expose()
-  @IsEmptyOrUrl()
-  magicEden: string;
-
-  @Expose()
-  @IsEmptyOrUrl()
-  openSea: string;
-
-  @Expose()
   @IsDateString()
   releaseDate: string;
 
   @Expose()
   @Transform(({ obj }) => !!obj.publishedAt)
   isPublished: boolean;
+
+  @Expose()
+  @Transform(({ obj }) => !!obj.popularizedAt)
+  isPopular: boolean;
 
   @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
