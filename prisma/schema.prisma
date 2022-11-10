@@ -180,7 +180,6 @@ enum CarouselLocation {
 
 // TODO v2
 // - [NOTIFICATION] [NOTIFICATION_TYPE] [WALLET_NOTIFICATION]
-// - [COMIC_TAG] isOngoing, isMatureAudience (ComicTagEnum)
 // - [COMIC] family ComicFamily
 // - [COMIC] candyMachineIds Int[]
 // - [COMIC_ISSUE] candyMachineIds Int[]

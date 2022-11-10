@@ -4,7 +4,6 @@ import {
   IsBoolean,
   IsNumber,
   IsOptional,
-  IsPositive,
   IsString,
 } from 'class-validator';
 import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';

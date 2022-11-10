@@ -76,16 +76,19 @@ export class ComicController {
 
   /* Get all comics */
   @Get('get')
-  async findAll(): Promise<ComicDto[]> {
-    const comics = await this.comicService.findAll();
+  async findAll(@WalletEntity() wallet: Wallet): Promise<ComicDto[]> {
+    const comics = await this.comicService.findAll(wallet.address);
     const comicsDto = plainToInstance(ComicDto, comics);
     return ComicDto.presignUrls(comicsDto);
   }
 
   /* Get specific comic by unique slug */
   @Get('get/:slug')
-  async findOne(@Param('slug') slug: string): Promise<ComicDto> {
-    const comic = await this.comicService.findOne(slug);
+  async findOne(
+    @Param('slug') slug: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicDto> {
+    const comic = await this.comicService.findOne(slug, wallet.address);
     const comicDto = plainToInstance(ComicDto, comic);
     return ComicDto.presignUrls(comicDto);
   }

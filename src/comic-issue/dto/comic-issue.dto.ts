@@ -11,6 +11,8 @@ import {
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Presignable } from 'src/types/presignable';
+import { getRandomFloat, getRandomInt } from 'src/utils/helpers';
+import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 
 @Exclude()
 export class ComicIssueDto extends Presignable<ComicIssueDto> {
@@ -74,6 +76,17 @@ export class ComicIssueDto extends Presignable<ComicIssueDto> {
   // @Expose()
   // @Type(() => ComicDto)
   // comic: ComicDto;
+
+  // TODO: replace with real data
+  @Expose()
+  @IsOptional()
+  @Type(() => ComicIssueStatsDto)
+  @Transform(() => ({
+    floorPrice: getRandomFloat(1, 20),
+    totalSupply: getRandomInt(1, 10) * 100,
+    totalVolume: getRandomFloat(1, 1000),
+  }))
+  stats?: ComicIssueStatsDto[];
 
   @Expose()
   @IsArray()

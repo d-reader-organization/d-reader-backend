@@ -1,60 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletComic } from '@prisma/client';
-import { mockPromise } from 'src/utils/helpers';
+import { getRandomFloat, getRandomInt, mockPromise } from 'src/utils/helpers';
 import { ComicStats } from './types/comic-stats';
 
 @Injectable()
 export class WalletComicService {
   constructor(private prisma: PrismaService) {}
-
-  // async aggregateComicStatsSerial(slug: string): Promise<ComicStats> {
-  //   // TODO: try catch
-  //   const aggregations = await this.prisma.walletComic.aggregate({
-  //     where: { comicSlug: slug },
-  //     _avg: { rating: true },
-  //   });
-  //   const averageRating = aggregations._avg.rating;
-
-  //   const favouritesCount = await this.prisma.walletComic.count({
-  //     where: { comicSlug: slug, isFavourite: true },
-  //   });
-
-  //   const subscribersCount = await this.prisma.walletComic.count({
-  //     where: { comicSlug: slug, isFavourite: true },
-  //   });
-
-  //   const ratersCount = await this.prisma.walletComic.count({
-  //     where: { comicSlug: slug, isFavourite: true },
-  //   });
-
-  //   const issuesCount = await this.prisma.comicIssue.count({
-  //     where: {
-  //       deletedAt: null,
-  //       publishedAt: { lt: new Date() },
-  //       verifiedAt: { not: null },
-  //       comicSlug: slug,
-  //     },
-  //   });
-
-  //   // TODO: total volume of all comic issues and collectibles
-  //   const totalVolume = 72.2;
-  //   // TODO: total number of unique readers across all comic issues
-  //   const readersCount = 1349; // TODO
-  //   // TODO: total number of unique viewers across all comic issues
-  //   const viewersCount = 4221; // TODO
-
-  //   return {
-  //     favouritesCount,
-  //     subscribersCount,
-  //     ratersCount,
-  //     averageRating,
-  //     issuesCount,
-  //     totalVolume,
-  //     readersCount,
-  //     viewersCount,
-  //   };
-  // }
 
   async aggregateComicStats(slug: string): Promise<ComicStats> {
     const aggregateQuery = this.prisma.walletComic.aggregate({
@@ -84,11 +36,11 @@ export class WalletComicService {
     });
 
     // TODO: total number of unique readers across all comic issues
-    const countReadersQuery = mockPromise(1349);
+    const countReadersQuery = mockPromise(0);
     // TODO: total number of unique viewers across all comic issues
-    const countViewersQuery = mockPromise(4221);
+    const countViewersQuery = mockPromise(0);
     // TODO: total volume of all comic issues and collectibles
-    const calculateTotalVolumeQuery = mockPromise(72.2);
+    const calculateTotalVolumeQuery = mockPromise(0);
 
     // TODO: try catch
     const [
@@ -112,14 +64,14 @@ export class WalletComicService {
     ]);
 
     return {
-      averageRating: aggregations._avg.rating,
-      ratersCount,
-      favouritesCount,
-      subscribersCount,
-      issuesCount,
-      readersCount,
-      viewersCount,
-      totalVolume,
+      averageRating: aggregations._avg.rating || getRandomFloat(2, 5),
+      ratersCount: ratersCount || getRandomInt(1, 60),
+      favouritesCount: favouritesCount || getRandomInt(1, 3000),
+      subscribersCount: subscribersCount || getRandomInt(1, 1000),
+      issuesCount: issuesCount || getRandomInt(1, 20),
+      readersCount: readersCount || getRandomInt(1, 7000),
+      viewersCount: viewersCount || getRandomInt(1, 20000),
+      totalVolume: totalVolume || getRandomFloat(1, 1000),
     };
   }
 
@@ -162,10 +114,7 @@ export class WalletComicService {
       ]);
       return { stats, myStats };
     } else {
-      return {
-        stats: await this.aggregateComicStats(slug),
-        myStats: null,
-      };
+      return { stats: await this.aggregateComicStats(slug) };
     }
   }
 

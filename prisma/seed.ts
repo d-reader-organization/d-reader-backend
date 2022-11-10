@@ -192,10 +192,8 @@ async function main() {
   }
 
   try {
-    await prisma.wallet.upsert({
-      where: { address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD' },
-      update: {},
-      create: {
+    await prisma.wallet.create({
+      data: {
         address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
         label: 'Superadmin',
         avatar: '',
@@ -210,10 +208,8 @@ async function main() {
   }
 
   try {
-    await prisma.wallet.upsert({
-      where: { address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9' },
-      update: {},
-      create: {
+    await prisma.wallet.create({
+      data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
         label: 'Admin',
         avatar: '',
@@ -228,10 +224,8 @@ async function main() {
   }
 
   try {
-    await prisma.wallet.upsert({
-      where: { address: 'DXvYRNGBZmvEcefKSsNh7EcjEw1YgoiHaUtt2HLaX6yL' },
-      update: {},
-      create: {
+    await prisma.wallet.create({
+      data: {
         address: 'DXvYRNGBZmvEcefKSsNh7EcjEw1YgoiHaUtt2HLaX6yL',
         label: 'StudioNX',
         avatar: '',
@@ -485,10 +479,8 @@ async function main() {
   }
 
   try {
-    await prisma.wallet.upsert({
-      where: { address: 'AQf9RzGk8WD92AoqCc98CVyEw56AMMKAoiFFasLk1PYQ' },
-      update: {},
-      create: {
+    await prisma.wallet.create({
+      data: {
         address: 'AQf9RzGk8WD92AoqCc98CVyEw56AMMKAoiFFasLk1PYQ',
         label: 'Swamplabs',
         avatar: '',
@@ -502,9 +494,9 @@ async function main() {
               email: 'karlo@swamplabs.com',
               name: 'Swamplabs',
               slug: 'swamplabs',
-              avatar: '',
-              banner: '',
-              logo: '',
+              avatar: 'creators/swamplabs/avatar.png',
+              banner: 'creators/swamplabs/banner.jpg',
+              logo: 'creators/swamplabs/logo.jpg',
               description:
                 'Swamplabs is a studio that creates comics and mangas by latest standards, while paying the artists for the cheapest possible amount',
               flavorText: 'Lorem Ipsum dolor sit flavor text',
@@ -517,8 +509,8 @@ async function main() {
               emailConfirmedAt: new Date(),
               comics: {
                 create: {
-                  name: 'The Narentines',
-                  slug: 'the-narentines',
+                  name: 'Narentines',
+                  slug: 'narentines',
                   description:
                     "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery.\\nA young boy discovers what seems to be a completely new species.",
                   flavorText:
@@ -538,9 +530,9 @@ async function main() {
                   publishedAt: new Date(),
                   popularizedAt: null,
                   completedAt: null,
-                  cover: '',
-                  pfp: '',
-                  logo: '',
+                  cover: 'creators/swamplabs/comics/narentines/cover.png',
+                  pfp: 'creators/swamplabs/comics/narentines/pfp.png',
+                  logo: 'creators/swamplabs/comics/narentines/logo.png',
                   website: 'https://narentines.com',
                   twitter: 'https://twitter.com/Narentines',
                   discord: 'https://discord.com/invite/narentines',
@@ -557,7 +549,8 @@ async function main() {
                         "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs.\\nA new age would start for Narentines, as the great Purge pawes it's path to the Valley",
                       flavorText:
                         'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
-                      cover: '',
+                      cover:
+                        'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
                       soundtrack: '',
                       releaseDate: '2022-08-08T08:00:00.000Z',
                       deletedAt: null,
@@ -599,127 +592,7 @@ async function main() {
                               pageNumber: 1,
                               isPreviewable: true,
                               image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-1.jpg',
-                            },
-                            {
-                              pageNumber: 2,
-                              isPreviewable: true,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-2.jpg',
-                            },
-                            {
-                              pageNumber: 3,
-                              isPreviewable: true,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-3.jpg',
-                            },
-                            {
-                              pageNumber: 4,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-4.jpg',
-                            },
-                            {
-                              pageNumber: 5,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-5.jpg',
-                            },
-                            {
-                              pageNumber: 6,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-6.jpg',
-                            },
-                            {
-                              pageNumber: 7,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-7.jpg',
-                            },
-                            {
-                              pageNumber: 8,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-8.jpg',
-                            },
-                            {
-                              pageNumber: 9,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-9.jpg',
-                            },
-                            {
-                              pageNumber: 10,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-10.jpg',
-                            },
-                            {
-                              pageNumber: 11,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-11.jpg',
-                            },
-                            {
-                              pageNumber: 12,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-12.jpg',
-                            },
-                            {
-                              pageNumber: 13,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-13.jpg',
-                            },
-                            {
-                              pageNumber: 14,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-14.jpg',
-                            },
-                            {
-                              pageNumber: 15,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-15.jpg',
-                            },
-                            {
-                              pageNumber: 16,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-16.jpg',
-                            },
-                            {
-                              pageNumber: 17,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-17.jpg',
-                            },
-                            {
-                              pageNumber: 18,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-18.jpg',
-                            },
-                            {
-                              pageNumber: 19,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-19.jpg',
-                            },
-                            {
-                              pageNumber: 20,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-20.jpg',
-                            },
-                            {
-                              pageNumber: 21,
-                              isPreviewable: false,
-                              image:
-                                'creators/swamplabs/comics/the-narentines/issues/narentines-the-purge/pages/page-21.jpg',
+                                'creators/swamplabs/comics/narentines/issues/narentines-the-purge/pages/page-1.jpg',
                             },
                           ],
                         },
