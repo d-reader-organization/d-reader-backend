@@ -17,7 +17,6 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { BadRequestException } from '@nestjs/common';
 import config from '../configs/config';
-import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
@@ -141,13 +140,11 @@ export const listS3FolderKeys = async (
 export const uploadFile = async (
   prefix: string,
   file: Express.Multer.File,
-  options?: { uuid: boolean },
+  name?: string,
 ) => {
   if (file) {
     const fileKey =
-      prefix +
-      (options.uuid ? uuidv4() : file.fieldname) +
-      path.extname(file.originalname);
+      prefix + (name ?? file.fieldname) + path.extname(file.originalname);
 
     await putS3Object({
       ContentType: file.mimetype,

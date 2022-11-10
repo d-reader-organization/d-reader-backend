@@ -12,6 +12,7 @@ import { UpdateCarouselSlideDto } from 'src/carousel/dto/update-carousel-slide.d
 import { deleteS3Object, uploadFile } from '../aws/s3client';
 import { CarouselSlide } from '@prisma/client';
 import { addDays } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CarouselService {
@@ -26,7 +27,7 @@ export class CarouselService {
     let imageKey: string;
     try {
       const prefix = await this.getS3FilePrefix();
-      imageKey = await uploadFile(prefix, image, { uuid: true });
+      imageKey = await uploadFile(prefix, image, uuidv4());
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -55,6 +56,7 @@ export class CarouselService {
         expiredAt: { gt: new Date() },
         publishedAt: { lt: new Date() },
       },
+      orderBy: { priority: 'asc' },
     });
     return carouselSlides;
   }
@@ -88,7 +90,7 @@ export class CarouselService {
     let carouselSlide = await this.findOne(id);
     const oldFileKey = carouselSlide[file.fieldname];
     const prefix = await this.getS3FilePrefix();
-    const newFileKey = await uploadFile(prefix, file, { uuid: true });
+    const newFileKey = await uploadFile(prefix, file, uuidv4());
 
     try {
       carouselSlide = await this.prisma.carouselSlide.update({

@@ -54,7 +54,7 @@ async function main() {
     await prisma.carouselSlide.createMany({
       data: [
         {
-          image: 'carousel/1.png',
+          image: 'carousel/slides/483d6796-e8ae-4379-80d4-4f9390fa3f1e.jpg',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 1,
@@ -64,7 +64,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/2.png',
+          image: 'carousel/slides/1c4739b4-c402-459a-98ac-e884a6d51296.jpg',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 2,
@@ -74,7 +74,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/3.png',
+          image: 'carousel/slides/3368f69d-a2de-49ae-9001-45f508d029c5.jpg',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 3,
@@ -84,7 +84,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/4.png',
+          image: 'carousel/slides/deb35549-1f59-45db-9aef-2efc0ee5930a.jpg',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 4,
@@ -94,7 +94,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/5.png',
+          image: 'carousel/slides/d340e627-a5b2-461c-9323-c277a879593e.png',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 5,
@@ -104,7 +104,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/6.png',
+          image: 'carousel/slides/e0dd2e2c-56d7-421d-afc0-f5e68f944598.png',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 6,
@@ -114,7 +114,7 @@ async function main() {
           location: CarouselLocation.Home,
         },
         {
-          image: 'carousel/7.png',
+          image: 'carousel/slides/802ff196-544d-41d0-8d17-a1c1c353a317.png',
           title: 'Lorem Ipsum',
           subtitle: 'Dolor sit ament, consecitur',
           priority: 7,
@@ -138,7 +138,7 @@ async function main() {
           slug: 'action',
           deletedAt: null,
           priority: 1,
-          icon: 'genres/action/icon.png',
+          icon: 'genres/action/icon.svg',
           color: '#a35',
         },
         {
@@ -146,7 +146,7 @@ async function main() {
           slug: 'sci-fi',
           deletedAt: null,
           priority: 2,
-          icon: 'genres/sci-fi/icon.png',
+          icon: 'genres/sci-fi/icon.svg',
           color: '#0f0',
         },
         {
@@ -154,7 +154,7 @@ async function main() {
           slug: 'comedy',
           deletedAt: null,
           priority: 3,
-          icon: 'genres/comedy/icon.png',
+          icon: 'genres/comedy/icon.svg',
           color: '#00f',
         },
         {
@@ -162,7 +162,7 @@ async function main() {
           slug: 'slice-of-life',
           deletedAt: null,
           priority: 4,
-          icon: 'genres/slice-of-life/icon.png',
+          icon: 'genres/slice-of-life/icon.svg',
           color: '#fff',
         },
         {
@@ -170,7 +170,7 @@ async function main() {
           slug: 'romance',
           deletedAt: null,
           priority: 5,
-          icon: 'genres/romance/icon.png',
+          icon: 'genres/romance/icon.svg',
           color: '#f00',
         },
         {
@@ -178,7 +178,7 @@ async function main() {
           slug: 'history',
           deletedAt: null,
           priority: 6,
-          icon: 'genres/history/icon.png',
+          icon: 'genres/history/icon.svg',
           color: '#24d',
         },
       ],
@@ -245,9 +245,9 @@ async function main() {
               email: 'adam@studionx.com',
               name: 'StudioNX',
               slug: 'studio-nx',
-              avatar: '',
-              banner: '',
-              logo: '',
+              avatar: 'creators/studio-nx/avatar.png',
+              banner: 'creators/studio-nx/banner.jpg',
+              logo: 'creators/studio-nx/logo.png',
               description:
                 'StudioNX is an Emmy award winning visual development house that creates character driven IP for feature film, TV & games.',
               flavorText: 'Look at that, we have an Emmy award!',
@@ -274,9 +274,9 @@ async function main() {
                   publishedAt: new Date(),
                   popularizedAt: null,
                   completedAt: null,
-                  cover: '',
-                  pfp: '',
-                  logo: '',
+                  cover: 'creators/studio-nx/comics/gorecats/cover.png',
+                  pfp: 'creators/studio-nx/comics/gorecats/pfp.png',
+                  logo: 'creators/studio-nx/comics/gorecats/logo.png',
                   website: 'https://gorecats.io',
                   twitter: 'https://twitter.com/GORECATS',
                   discord: 'https://discord.com/invite/gorecats',
@@ -292,8 +292,10 @@ async function main() {
                       description:
                         'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                       flavorText: 'Jesus these cats are so gore',
-                      cover: '',
-                      soundtrack: '',
+                      cover:
+                        'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
+                      soundtrack:
+                        'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/soundtrack.mp3',
                       releaseDate: '2022-08-08T08:00:00.000Z',
                       deletedAt: null,
                       featuredAt: null,
