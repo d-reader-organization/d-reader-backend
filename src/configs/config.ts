@@ -16,8 +16,8 @@ const config: Config = {
     persistAuthorization: true,
   },
   security: {
-    expiresIn: '1d',
-    refreshIn: '7d',
+    expiresIn: '7d',
+    refreshIn: '30d',
     bcryptSaltOrRound: 10,
   },
   s3: {
