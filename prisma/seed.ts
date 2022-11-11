@@ -210,6 +210,38 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
+        address: '3v2V2hBNxxevfyS3J3z6DrPUa7UTi3Ve4y6rByCPqTyP',
+        label: 'Superadmin',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.Superadmin,
+      },
+    });
+    console.log('➕ Added Superadmin wallet');
+  } catch (e) {
+    console.log('❌ Failed to add Superadmin wallet', e);
+  }
+
+  try {
+    await prisma.wallet.create({
+      data: {
+        address: 'HuZ6UtdfeXgicEpukAU6BCZxAoWpeFNPSgf9yBqwCgRY',
+        label: 'Superadmin',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.Superadmin,
+      },
+    });
+    console.log('➕ Added Superadmin wallet');
+  } catch (e) {
+    console.log('❌ Failed to add Superadmin wallet', e);
+  }
+
+  try {
+    await prisma.wallet.create({
+      data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
         label: 'Admin',
         avatar: '',
@@ -233,236 +265,235 @@ async function main() {
         nonce: uuidv4(),
         role: Role.User,
         creator: {
-          connectOrCreate: {
-            where: { email: 'adam@studionx.com' },
-            create: {
-              email: 'adam@studionx.com',
-              name: 'StudioNX',
-              slug: 'studio-nx',
-              avatar: 'creators/studio-nx/avatar.png',
-              banner: 'creators/studio-nx/banner.jpg',
-              logo: 'creators/studio-nx/logo.png',
-              description:
-                'StudioNX is an Emmy award winning visual development house that creates character driven IP for feature film, TV & games.',
-              flavorText: 'Look at that, we have an Emmy award!',
-              website: 'https://studionx.com',
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              popularizedAt: null,
-              emailConfirmedAt: new Date(),
-              comics: {
-                create: {
-                  name: 'Gorecats',
-                  slug: 'gorecats',
-                  description:
-                    'Gorecats are an eclectic breed of treacherous little trouble makers, hell bent on using every single one of their glorious nine lives.',
-                  flavorText:
-                    'by Emmy award winning duo Jim Bryson & Adam Jeffcoat',
-                  genres: { connect: [{ slug: 'action' }, { slug: 'sci-fi' }] },
-                  isOngoing: true,
-                  isMatureAudience: true,
-                  deletedAt: null,
-                  featuredAt: null,
-                  verifiedAt: new Date(),
-                  publishedAt: new Date(),
-                  popularizedAt: null,
-                  completedAt: null,
-                  cover: 'creators/studio-nx/comics/gorecats/cover.png',
-                  pfp: 'creators/studio-nx/comics/gorecats/pfp.png',
-                  logo: 'creators/studio-nx/comics/gorecats/logo.png',
-                  website: 'https://gorecats.io',
-                  twitter: 'https://twitter.com/GORECATS',
-                  discord: 'https://discord.com/invite/gorecats',
-                  telegram: 'https://t.me/Gorecats',
-                  instagram: 'https://www.instagram.com/gorecats_art',
-                  tikTok: '',
-                  youTube: '',
-                  issues: {
-                    create: {
-                      number: 1,
-                      title: 'Rise of the Gorecats',
-                      slug: 'rise-of-the-gorecats',
-                      description:
-                        'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
-                      flavorText: 'Jesus these cats are so gore',
-                      cover:
-                        'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
-                      soundtrack:
-                        'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/soundtrack.mp3',
-                      releaseDate: '2022-08-08T08:00:00.000Z',
-                      deletedAt: null,
-                      featuredAt: null,
-                      verifiedAt: new Date(),
-                      publishedAt: new Date(),
-                      popularizedAt: null,
-                      nfts: {
-                        createMany: {
-                          data: [
-                            {
-                              mint: 'FUwt1egmDAbNM6BGBM1Ao3FPxHuLsHunURjwA43jeQUr',
-                            },
-                            {
-                              mint: 'EaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
-                            },
-                            {
-                              mint: 'D3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
-                            },
-                            {
-                              mint: 'HnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
-                            },
-                            {
-                              mint: 'GZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
-                            },
-                            {
-                              mint: 'Q84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
-                            },
-                            {
-                              mint: 'ITxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
-                            },
-                            {
-                              mint: 'HpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
-                            },
-                          ],
-                        },
+          create: {
+            email: 'adam@studionx.com',
+            name: 'StudioNX',
+            slug: 'studio-nx',
+            avatar: 'creators/studio-nx/avatar.png',
+            banner: 'creators/studio-nx/banner.jpg',
+            logo: 'creators/studio-nx/logo.png',
+            description:
+              'StudioNX is an Emmy award winning visual development house that creates character driven IP for feature film, TV & games.',
+            flavorText: 'Look at that, we have an Emmy award!',
+            website: 'https://studionx.com',
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            popularizedAt: null,
+            emailConfirmedAt: new Date(),
+            comics: {
+              create: {
+                name: 'Gorecats',
+                slug: 'gorecats',
+                description:
+                  'Gorecats are an eclectic breed of treacherous little trouble makers, hell bent on using every single one of their glorious nine lives.',
+                flavorText:
+                  'by Emmy award winning duo Jim Bryson & Adam Jeffcoat',
+                genres: {
+                  connect: [{ slug: 'action' }, { slug: 'sci-fi' }],
+                },
+                isOngoing: true,
+                isMatureAudience: true,
+                deletedAt: null,
+                featuredAt: null,
+                verifiedAt: new Date(),
+                publishedAt: new Date(),
+                popularizedAt: null,
+                completedAt: null,
+                cover: 'creators/studio-nx/comics/gorecats/cover.png',
+                pfp: 'creators/studio-nx/comics/gorecats/pfp.png',
+                logo: 'creators/studio-nx/comics/gorecats/logo.png',
+                website: 'https://gorecats.io',
+                twitter: 'https://twitter.com/GORECATS',
+                discord: 'https://discord.com/invite/gorecats',
+                telegram: 'https://t.me/Gorecats',
+                instagram: 'https://www.instagram.com/gorecats_art',
+                tikTok: '',
+                youTube: '',
+                issues: {
+                  create: {
+                    number: 1,
+                    title: 'Rise of the Gorecats',
+                    slug: 'rise-of-the-gorecats',
+                    description:
+                      'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
+                    flavorText: 'Jesus these cats are so gore',
+                    cover:
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
+                    soundtrack:
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/soundtrack.mp3',
+                    releaseDate: '2022-08-08T08:00:00.000Z',
+                    deletedAt: null,
+                    featuredAt: null,
+                    verifiedAt: new Date(),
+                    publishedAt: new Date(),
+                    popularizedAt: null,
+                    nfts: {
+                      createMany: {
+                        data: [
+                          {
+                            mint: 'FUwt1egmDAbNM6BGBM1Ao3FPxHuLsHunURjwA43jeQUr',
+                          },
+                          {
+                            mint: 'EaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
+                          },
+                          {
+                            mint: 'D3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
+                          },
+                          {
+                            mint: 'HnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
+                          },
+                          {
+                            mint: 'GZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
+                          },
+                          {
+                            mint: 'Q84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
+                          },
+                          {
+                            mint: 'ITxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
+                          },
+                          {
+                            mint: 'HpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
+                          },
+                        ],
                       },
-                      pages: {
-                        createMany: {
-                          data: [
-                            {
-                              pageNumber: 1,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-1.png',
-                            },
-                            {
-                              pageNumber: 2,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-2.png',
-                            },
-                            {
-                              pageNumber: 3,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-3.png',
-                            },
-                            {
-                              pageNumber: 4,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-4.png',
-                            },
-                            {
-                              pageNumber: 5,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-5.png',
-                            },
-                            {
-                              pageNumber: 6,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-6.png',
-                            },
-                            {
-                              pageNumber: 7,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-7.png',
-                            },
-                            {
-                              pageNumber: 8,
-                              isPreviewable: true,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-8.png',
-                            },
-                            {
-                              pageNumber: 9,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-9.png',
-                            },
-                            {
-                              pageNumber: 10,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-10.png',
-                            },
-                            {
-                              pageNumber: 11,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-11.png',
-                            },
-                            {
-                              pageNumber: 12,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-12.png',
-                            },
-                            {
-                              pageNumber: 13,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-13.png',
-                            },
-                            {
-                              pageNumber: 14,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-14.png',
-                            },
-                            {
-                              pageNumber: 15,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-15.png',
-                            },
-                            {
-                              pageNumber: 16,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-16.png',
-                            },
-                            {
-                              pageNumber: 17,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-17.png',
-                            },
-                            {
-                              pageNumber: 18,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-18.png',
-                            },
-                            {
-                              pageNumber: 19,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-19.png',
-                            },
-                            {
-                              pageNumber: 20,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-20.png',
-                            },
-                            {
-                              pageNumber: 21,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-21.png',
-                            },
-                            {
-                              pageNumber: 22,
-                              isPreviewable: false,
-                              image:
-                                'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-22.png',
-                            },
-                          ],
-                        },
+                    },
+                    pages: {
+                      createMany: {
+                        data: [
+                          {
+                            pageNumber: 1,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-1.png',
+                          },
+                          {
+                            pageNumber: 2,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-2.png',
+                          },
+                          {
+                            pageNumber: 3,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-3.png',
+                          },
+                          {
+                            pageNumber: 4,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-4.png',
+                          },
+                          {
+                            pageNumber: 5,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-5.png',
+                          },
+                          {
+                            pageNumber: 6,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-6.png',
+                          },
+                          {
+                            pageNumber: 7,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-7.png',
+                          },
+                          {
+                            pageNumber: 8,
+                            isPreviewable: true,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-8.png',
+                          },
+                          {
+                            pageNumber: 9,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-9.png',
+                          },
+                          {
+                            pageNumber: 10,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-10.png',
+                          },
+                          {
+                            pageNumber: 11,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-11.png',
+                          },
+                          {
+                            pageNumber: 12,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-12.png',
+                          },
+                          {
+                            pageNumber: 13,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-13.png',
+                          },
+                          {
+                            pageNumber: 14,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-14.png',
+                          },
+                          {
+                            pageNumber: 15,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-15.png',
+                          },
+                          {
+                            pageNumber: 16,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-16.png',
+                          },
+                          {
+                            pageNumber: 17,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-17.png',
+                          },
+                          {
+                            pageNumber: 18,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-18.png',
+                          },
+                          {
+                            pageNumber: 19,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-19.png',
+                          },
+                          {
+                            pageNumber: 20,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-20.png',
+                          },
+                          {
+                            pageNumber: 21,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-21.png',
+                          },
+                          {
+                            pageNumber: 22,
+                            isPreviewable: false,
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages/page-22.png',
+                          },
+                        ],
                       },
                     },
                   },
@@ -473,6 +504,183 @@ async function main() {
         },
       },
     });
+
+    await prisma.comic.create({
+      data: {
+        creator: { connect: { slug: 'studio-nx' } },
+        name: 'Barbabyans',
+        slug: 'barbabyans',
+        description:
+          '3 magical siblings must prove themselves as the worthy warriors they were destined to become and lead their horde to victory across the land… Or not.',
+        flavorText: '“This is so silly, I love it!” - my mom',
+        genres: {
+          connect: [{ slug: 'action' }, { slug: 'comedy' }, { slug: 'sci-fi' }],
+        },
+        isOngoing: false,
+        isMatureAudience: false,
+        deletedAt: null,
+        featuredAt: null,
+        verifiedAt: new Date(),
+        publishedAt: new Date(),
+        popularizedAt: null,
+        completedAt: null,
+        cover: 'creators/studio-nx/comics/barbabyans/cover.jpg',
+        pfp: 'creators/studio-nx/comics/barbabyans/pfp.jpg',
+        logo: '',
+        website: '',
+        twitter: '',
+        discord: '',
+        telegram: '',
+        instagram: '',
+        tikTok: '',
+        youTube: '',
+        issues: {
+          create: {
+            number: 1,
+            title: "Let's Get Outta Here!",
+            slug: 'let-s-get-outta-here',
+            description:
+              '3 magical siblings must prove themselves as the worthy warriors they were destined to become and lead their horde to victory across the land… Or not.',
+            flavorText: '“Chubby babies are so cute” - New York Times',
+            cover:
+              'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/cover.jpg',
+            soundtrack: '',
+            releaseDate: '2022-08-08T08:00:00.000Z',
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            publishedAt: new Date(),
+            popularizedAt: new Date(),
+            nfts: undefined,
+            pages: {
+              createMany: {
+                data: [
+                  {
+                    pageNumber: 1,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/pages/page-1.jpg',
+                  },
+                  {
+                    pageNumber: 2,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/pages/page-2.jpg',
+                  },
+                  {
+                    pageNumber: 3,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/pages/page-3.jpg',
+                  },
+                  {
+                    pageNumber: 4,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/pages/page-4.jpg',
+                  },
+                  {
+                    pageNumber: 5,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/pages/page-5.jpg',
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+
+    await prisma.comic.create({
+      data: {
+        creator: { connect: { slug: 'studio-nx' } },
+        name: 'Barbabyans: Limited Edition',
+        slug: 'barbabyans-limited-edition',
+        description:
+          '3 magical siblings must prove themselves as the worthy warriors they were destined to become and lead their horde to victory across the land… Or not.',
+        flavorText: '“This is so silly, I love it!” - my mom',
+        genres: {
+          connect: [{ slug: 'action' }, { slug: 'comedy' }, { slug: 'sci-fi' }],
+        },
+        isOngoing: false,
+        isMatureAudience: false,
+        deletedAt: null,
+        featuredAt: null,
+        verifiedAt: new Date(),
+        publishedAt: new Date(),
+        popularizedAt: null,
+        completedAt: null,
+        cover: 'creators/studio-nx/comics/barbabyans-limited-edition/cover.jpg',
+        pfp: 'creators/studio-nx/comics/barbabyans-limited-edition/pfp.jpg',
+        logo: '',
+        website: '',
+        twitter: '',
+        discord: '',
+        telegram: '',
+        instagram: '',
+        tikTok: '',
+        youTube: '',
+        issues: {
+          create: {
+            number: 1,
+            title: "Let's Get In Here!",
+            slug: 'let-s-get-in-here',
+            description:
+              '3 magical siblings must prove themselves as the worthy warriors they were destined to become and lead their horde to victory across the land… Or not.',
+            flavorText: '“Chubby babies are so cute” - New York Times',
+            cover:
+              'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/cover.jpg',
+            soundtrack: '',
+            releaseDate: '2022-08-08T08:00:00.000Z',
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            publishedAt: new Date(),
+            popularizedAt: new Date(),
+            nfts: undefined,
+            pages: {
+              createMany: {
+                data: [
+                  {
+                    pageNumber: 1,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/pages/page-1.jpg',
+                  },
+                  {
+                    pageNumber: 2,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/pages/page-2.jpg',
+                  },
+                  {
+                    pageNumber: 3,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/pages/page-3.jpg',
+                  },
+                  {
+                    pageNumber: 4,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/pages/page-4.jpg',
+                  },
+                  {
+                    pageNumber: 5,
+                    isPreviewable: true,
+                    image:
+                      'creators/studio-nx/comics/barbabyans-limited-edition/issues/let-s-get-in-here/pages/page-5.jpg',
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    });
+
     console.log('➕ Added "StudioNX" creator');
   } catch (e) {
     console.log('❌ Failed to add "StudioNX" creator', e);
@@ -488,114 +696,111 @@ async function main() {
         nonce: uuidv4(),
         role: Role.User,
         creator: {
-          connectOrCreate: {
-            where: { email: 'karlo@swamplabs.com' },
-            create: {
-              email: 'karlo@swamplabs.com',
-              name: 'Swamplabs',
-              slug: 'swamplabs',
-              avatar: 'creators/swamplabs/avatar.png',
-              banner: 'creators/swamplabs/banner.jpg',
-              logo: 'creators/swamplabs/logo.jpg',
-              description:
-                'Swamplabs is a studio that creates comics and mangas by latest standards, while paying the artists for the cheapest possible amount',
-              flavorText: 'Lorem Ipsum dolor sit flavor text',
-              website: 'https://swamplabs.com',
-              createdAt: new Date(),
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              popularizedAt: null,
-              emailConfirmedAt: new Date(),
-              comics: {
-                create: {
-                  name: 'Narentines',
-                  slug: 'narentines',
-                  description:
-                    "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery.\\nA young boy discovers what seems to be a completely new species.",
-                  flavorText:
-                    'Unique and intriguing Sci-Fi with a sprinkle of history on top of it. Brilliant! - The Journal',
-                  genres: {
-                    connect: [
-                      { slug: 'action' },
-                      { slug: 'sci-fi' },
-                      { slug: 'romance' },
-                    ],
-                  },
-                  isOngoing: true,
-                  isMatureAudience: false,
-                  deletedAt: null,
-                  featuredAt: null,
-                  verifiedAt: new Date(),
-                  publishedAt: new Date(),
-                  popularizedAt: null,
-                  completedAt: null,
-                  cover: 'creators/swamplabs/comics/narentines/cover.png',
-                  pfp: 'creators/swamplabs/comics/narentines/pfp.png',
-                  logo: 'creators/swamplabs/comics/narentines/logo.png',
-                  website: 'https://narentines.com',
-                  twitter: 'https://twitter.com/Narentines',
-                  discord: 'https://discord.com/invite/narentines',
-                  telegram: '',
-                  instagram: '',
-                  tikTok: '',
-                  youTube: '',
-                  issues: {
-                    create: {
-                      number: 1,
-                      title: 'Narentines: The Purge',
-                      slug: 'narentines-the-purge',
-                      description:
-                        "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs.\\nA new age would start for Narentines, as the great Purge pawes it's path to the Valley",
-                      flavorText:
-                        'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
-                      cover:
-                        'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
-                      soundtrack: '',
-                      releaseDate: '2022-08-08T08:00:00.000Z',
-                      deletedAt: null,
-                      featuredAt: null,
-                      verifiedAt: new Date(),
-                      publishedAt: new Date(),
-                      popularizedAt: null,
-                      nfts: {
-                        createMany: {
-                          data: [
-                            {
-                              mint: 'DaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
-                            },
-                            {
-                              mint: 'C3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
-                            },
-                            {
-                              mint: 'GnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
-                            },
-                            {
-                              mint: 'FZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
-                            },
-                            {
-                              mint: 'Z84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
-                            },
-                            {
-                              mint: 'HTxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
-                            },
-                            {
-                              mint: 'GpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
-                            },
-                          ],
-                        },
+          create: {
+            email: 'karlo@swamplabs.com',
+            name: 'Swamplabs',
+            slug: 'swamplabs',
+            avatar: 'creators/swamplabs/avatar.png',
+            banner: 'creators/swamplabs/banner.jpg',
+            logo: 'creators/swamplabs/logo.jpg',
+            description:
+              'Swamplabs is a studio that creates comics and mangas by latest standards, while paying the artists for the cheapest possible amount',
+            flavorText: 'Lorem Ipsum dolor sit flavor text',
+            website: 'https://swamplabs.com',
+            createdAt: new Date(),
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            popularizedAt: null,
+            emailConfirmedAt: new Date(),
+            comics: {
+              create: {
+                name: 'Narentines',
+                slug: 'narentines',
+                description:
+                  "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery.\\nA young boy discovers what seems to be a completely new species.",
+                flavorText:
+                  'Unique and intriguing Sci-Fi with a sprinkle of history on top of it. Brilliant! - The Journal',
+                genres: {
+                  connect: [
+                    { slug: 'action' },
+                    { slug: 'sci-fi' },
+                    { slug: 'romance' },
+                  ],
+                },
+                isOngoing: true,
+                isMatureAudience: false,
+                deletedAt: null,
+                featuredAt: null,
+                verifiedAt: new Date(),
+                publishedAt: new Date(),
+                popularizedAt: null,
+                completedAt: null,
+                cover: 'creators/swamplabs/comics/narentines/cover.png',
+                pfp: 'creators/swamplabs/comics/narentines/pfp.png',
+                logo: 'creators/swamplabs/comics/narentines/logo.png',
+                website: 'https://narentines.com',
+                twitter: 'https://twitter.com/Narentines',
+                discord: 'https://discord.com/invite/narentines',
+                telegram: '',
+                instagram: '',
+                tikTok: '',
+                youTube: '',
+                issues: {
+                  create: {
+                    number: 1,
+                    title: 'Narentines: The Purge',
+                    slug: 'narentines-the-purge',
+                    description:
+                      "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs.\\nA new age would start for Narentines, as the great Purge pawes it's path to the Valley",
+                    flavorText:
+                      'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
+                    cover:
+                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
+                    soundtrack: '',
+                    releaseDate: '2022-08-08T08:00:00.000Z',
+                    deletedAt: null,
+                    featuredAt: null,
+                    verifiedAt: new Date(),
+                    publishedAt: new Date(),
+                    popularizedAt: null,
+                    nfts: {
+                      createMany: {
+                        data: [
+                          {
+                            mint: 'DaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
+                          },
+                          {
+                            mint: 'C3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
+                          },
+                          {
+                            mint: 'GnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
+                          },
+                          {
+                            mint: 'FZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
+                          },
+                          {
+                            mint: 'Z84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
+                          },
+                          {
+                            mint: 'HTxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
+                          },
+                          {
+                            mint: 'GpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
+                          },
+                        ],
                       },
-                      pages: {
-                        createMany: {
-                          data: [
-                            {
-                              pageNumber: 1,
-                              isPreviewable: true,
-                              image:
-                                'creators/swamplabs/comics/narentines/issues/narentines-the-purge/pages/page-1.jpg',
-                            },
-                          ],
-                        },
+                    },
+                    pages: {
+                      createMany: {
+                        data: [
+                          {
+                            pageNumber: 1,
+                            isPreviewable: true,
+                            image:
+                              'creators/swamplabs/comics/narentines/issues/narentines-the-purge/pages/page-1.jpg',
+                          },
+                        ],
                       },
                     },
                   },

@@ -124,24 +124,29 @@ export class ComicIssueService {
   }
 
   async findOneProtected(walletAddress: string, id: number) {
+    let showOnlyPreviews: boolean | undefined;
+
     // Find all NFTs that are token gating this Comic
     const whitelistedNfts = await this.prisma.comicIssueNft.findMany({
       where: { comicIssueId: id },
     });
 
-    const isHolder = await this.metaplexService.verifyNFTHolder(
-      walletAddress,
-      whitelistedNfts.map((nft) => nft.mint),
-    );
+    if (whitelistedNfts.length !== 0) {
+      const isHolder = await this.metaplexService.verifyNFTHolder(
+        walletAddress,
+        whitelistedNfts.map((nft) => nft.mint),
+      );
+      showOnlyPreviews = isHolder ? undefined : true;
+    }
 
     // TODO v1.2: check isWhitelisted from WalletComic
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id },
       include: {
         nfts: true,
-        pages: { where: { isPreviewable: isHolder ? undefined : true } },
+        pages: { where: { isPreviewable: showOnlyPreviews } },
       },
-      where: { id },
     });
 
     if (!comicIssue) {
