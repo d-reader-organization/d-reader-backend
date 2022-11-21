@@ -89,7 +89,7 @@ export class ComicService {
     walletAddress?: string,
   ): Promise<WithStats<Comic & { genres: Genre[] }>[]> {
     const comics = await this.prisma.comic.findMany({
-      include: { genres: true },
+      include: { genres: true, issues: true },
       where: {
         deletedAt: null,
         publishedAt: { lt: new Date() },
