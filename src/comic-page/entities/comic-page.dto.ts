@@ -1,41 +1,35 @@
-import { Exclude, Expose } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
-import { Presignable } from 'src/types/presignable';
+import { getReadUrl } from 'src/aws/s3client';
+import { ComicPage } from '@prisma/client';
 
-@Exclude()
-export class ComicPageDto extends Presignable<ComicPageDto> {
-  @Expose()
+export class ComicPageDto {
   @IsPositive()
   id: number;
 
-  @Expose()
   @IsPositive()
   pageNumber: number;
 
-  @Expose()
   @IsBoolean()
   isPreviewable: boolean;
 
-  @Expose()
   @IsString()
   @IsNotEmpty()
   image: string;
-
-  @Expose()
-  @IsString()
-  altImage: string;
-
-  protected async presign(): Promise<ComicPageDto> {
-    return await super.presign(this, ['image', 'altImage']);
-  }
-
-  static async presignUrls(input: ComicPageDto): Promise<ComicPageDto>;
-  static async presignUrls(input: ComicPageDto[]): Promise<ComicPageDto[]>;
-  static async presignUrls(
-    input: ComicPageDto | ComicPageDto[],
-  ): Promise<ComicPageDto | ComicPageDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return await input.presign();
-  }
 }
+
+export async function toComicPageDto(page: ComicPage) {
+  const plainPageDto: ComicPageDto = {
+    id: page.id,
+    pageNumber: page.pageNumber,
+    isPreviewable: page.isPreviewable,
+    image: await getReadUrl(page.image),
+  };
+
+  const pageDto = plainToInstance(ComicPageDto, plainPageDto);
+  return pageDto;
+}
+
+export const toComicPageDtoArray = (pages: ComicPage[]) => {
+  return Promise.all(pages.map(toComicPageDto));
+};

@@ -1,6 +1,6 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
-  IsArray,
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -8,125 +8,91 @@ import {
   IsString,
   IsUrl,
   MaxLength,
-  ValidateIf,
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { ApiProperty } from '@nestjs/swagger';
-import { ComicDto } from 'src/comic/dto/comic.dto';
-import { Presignable } from 'src/types/presignable';
-import { getRandomFloat, getRandomInt } from 'src/utils/helpers';
+import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
 import { CreatorStatsDto } from './creator-stats.dto';
+import { CreatorStats } from 'src/comic/types/creator-stats';
+import { Creator } from '@prisma/client';
+import { getReadUrl } from 'src/aws/s3client';
+import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 
-@Exclude()
-export class CreatorDto extends Presignable<CreatorDto> {
-  @Expose()
+export class CreatorDto {
   @IsPositive()
   id: number;
 
-  @Expose()
   @IsEmail()
   email: string;
 
-  @Expose()
   @IsNotEmpty()
   @MaxLength(54)
   name: string;
 
-  @Expose()
   @IsNotEmpty()
   @IsKebabCase()
   slug: string;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.deletedAt)
+  @IsBoolean()
   isDeleted: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.verifiedAt)
+  @IsBoolean()
   isVerified: boolean;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   avatar: string;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   banner: string;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   logo: string;
 
-  @Expose()
+  @IsString()
   @MaxLength(256)
-  @IsOptional()
-  @ValidateIf((p) => p.description !== '')
-  @ApiProperty({ required: false })
   description: string;
 
-  @Expose()
+  @IsString()
   @MaxLength(128)
-  @IsOptional()
-  @ValidateIf((p) => p.flavorText !== '')
-  @ApiProperty({ required: false })
   flavorText: string;
 
-  @Expose()
-  @IsUrl()
-  @IsOptional()
-  @ValidateIf((p) => p.website !== '')
-  @ApiProperty({ required: false })
+  @IsOptionalUrl()
   website: string;
 
-  // @Expose()
-  // @IsUrl()
-  // @IsOptional()
-  // @ValidateIf((p) => p.twitter !== '')
-  // @ApiProperty({ required: false })
-  // twitter: string;
-
-  // @Expose()
-  // @IsUrl()
-  // @IsOptional()
-  // @ValidateIf((p) => p.instagram !== '')
-  // @ApiProperty({ required: false })
-  // instagram: string;
-
-  // TODO: replace with real data
-  @Expose()
   @IsOptional()
   @Type(() => CreatorStatsDto)
-  @Transform(() => ({
-    comicIssuesCount: getRandomInt(1, 30),
-    totalVolume: getRandomFloat(0, 10000),
-  }))
-  stats?: CreatorStatsDto[];
-
-  @Expose()
-  @IsArray()
-  @IsOptional()
-  @Type(() => ComicDto)
-  comics?: ComicDto[];
-
-  protected async presign(): Promise<CreatorDto> {
-    return await super.presign(this, ['avatar', 'banner', 'logo']);
-  }
-
-  static async presignUrls(input: CreatorDto): Promise<CreatorDto>;
-  static async presignUrls(input: CreatorDto[]): Promise<CreatorDto[]>;
-  static async presignUrls(
-    input: CreatorDto | CreatorDto[],
-  ): Promise<CreatorDto | CreatorDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(
-        input.map(async (obj) => {
-          if (obj.comics) obj.comics = await ComicDto.presignUrls(obj.comics);
-          return obj.presign();
-        }),
-      );
-    } else {
-      if (input.comics) input.comics = await ComicDto.presignUrls(input.comics);
-      return await input.presign();
-    }
-  }
+  stats?: CreatorStatsDto;
 }
+
+type CreatorInput = Creator & { stats?: CreatorStats };
+
+export async function toCreatorDto(creator: CreatorInput) {
+  const plainCreatorDto: CreatorDto = {
+    id: creator.id,
+    email: creator.email,
+    name: creator.name,
+    slug: creator.slug,
+    isDeleted: !!creator.deletedAt,
+    isVerified: !!creator.verifiedAt,
+    avatar: await getReadUrl(creator.avatar),
+    banner: await getReadUrl(creator.banner),
+    logo: await getReadUrl(creator.logo),
+    description: creator.description,
+    flavorText: creator.flavorText,
+    website: creator.website,
+    // TODO v1: replace these stats with real data and remove '|| true'
+    stats:
+      creator?.stats || true
+        ? {
+            comicIssuesCount: getRandomInt(1, 30),
+            totalVolume: getRandomFloatOrInt(0, 10000),
+          }
+        : undefined,
+  };
+
+  const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);
+  return creatorDto;
+}
+
+export const toCreatorDtoArray = (creators: CreatorInput[]) => {
+  return Promise.all(creators.map(toCreatorDto));
+};

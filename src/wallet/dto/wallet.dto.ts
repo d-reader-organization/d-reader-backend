@@ -1,40 +1,37 @@
 import { IsEnum, IsString } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { Exclude, Expose } from 'class-transformer';
-import { Presignable } from 'src/types/presignable';
+import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Wallet, Role } from '@prisma/client';
+import { getReadUrl } from 'src/aws/s3client';
 
-@Exclude()
-export class WalletDto extends Presignable<WalletDto> {
-  @Expose()
+export class WalletDto {
   @IsSolanaAddress()
   address: string;
 
-  @Expose()
   @IsString()
   label: string;
 
-  @Expose()
   @IsString()
   avatar: string;
 
-  @Expose()
   @IsEnum(Role)
   @ApiProperty({ enum: Role })
   role: Role;
-
-  protected async presign(): Promise<WalletDto> {
-    return await super.presign(this, ['avatar']);
-  }
-
-  static async presignUrls(input: WalletDto): Promise<WalletDto>;
-  static async presignUrls(input: WalletDto[]): Promise<WalletDto[]>;
-  static async presignUrls(
-    input: WalletDto | WalletDto[],
-  ): Promise<WalletDto | WalletDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return await input.presign();
-  }
 }
+
+export async function toWalletDto(wallet: Wallet) {
+  const plainWalletDto: WalletDto = {
+    address: wallet.address,
+    label: wallet.label,
+    avatar: await getReadUrl(wallet.avatar),
+    role: wallet.role,
+  };
+
+  const walletDto = plainToInstance(WalletDto, plainWalletDto);
+  return walletDto;
+}
+
+export const toWalletDtoArray = (wallets: Wallet[]) => {
+  return Promise.all(wallets.map(toWalletDto));
+};

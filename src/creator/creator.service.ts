@@ -19,6 +19,7 @@ import { isEmpty } from 'lodash';
 import { Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
+import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 
 @Injectable()
 export class CreatorService {
@@ -67,10 +68,11 @@ export class CreatorService {
     return creator;
   }
 
-  async findAll() {
+  async findAll(query: CreatorFilterParams) {
     const creators = await this.prisma.creator.findMany({
       include: { comics: true },
       where: {
+        name: { contains: query?.nameSubstring, mode: 'insensitive' },
         deletedAt: null,
         emailConfirmedAt: { not: null },
         verifiedAt: { not: null },
@@ -136,7 +138,7 @@ export class CreatorService {
 
   async pseudoDelete(slug: string) {
     try {
-      await this.prisma.creator.update({
+      return await this.prisma.creator.update({
         where: { slug },
         data: { deletedAt: new Date() },
       });
@@ -147,7 +149,7 @@ export class CreatorService {
 
   async pseudoRecover(slug: string) {
     try {
-      await this.prisma.creator.update({
+      return await this.prisma.creator.update({
         where: { slug },
         data: { deletedAt: null },
       });

@@ -23,7 +23,7 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
-import { GenreDto } from './dto/genre.dto';
+import { GenreDto, toGenreDto, toGenreDtoArray } from './dto/genre.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
@@ -51,24 +51,28 @@ export class GenreController {
     files: CreateGenreFilesDto,
   ): Promise<GenreDto> {
     const genre = await this.genreService.create(createGenreDto, files);
-    const genreDto = plainToInstance(GenreDto, genre);
-    return GenreDto.presignUrls(genreDto);
+    return await toGenreDto(genre);
+  }
+
+  /* Get all popular genres */
+  @Get('get/popular')
+  async findAllPopular(): Promise<GenreDto[]> {
+    const genreDtoArray = await this.findAll();
+    return genreDtoArray.slice(0, 8);
   }
 
   /* Get all genres */
   @Get('get')
   async findAll(): Promise<GenreDto[]> {
     const genres = await this.genreService.findAll();
-    const genresDto = plainToInstance(GenreDto, genres);
-    return GenreDto.presignUrls(genresDto);
+    return await toGenreDtoArray(genres);
   }
 
   /* Get specific genre by unique slug */
   @Get('get/:slug')
   async findOne(@Param('slug') slug: string): Promise<GenreDto> {
     const genre = await this.genreService.findOne(slug);
-    const genreDto = plainToInstance(GenreDto, genre);
-    return GenreDto.presignUrls(genreDto);
+    return await toGenreDto(genre);
   }
 
   /* Update specific genre */
@@ -79,8 +83,7 @@ export class GenreController {
     @Body() updateGenreDto: UpdateGenreDto,
   ): Promise<GenreDto> {
     const updatedGenre = await this.genreService.update(slug, updateGenreDto);
-    const genreDto = plainToInstance(GenreDto, updatedGenre);
-    return GenreDto.presignUrls(genreDto);
+    return await toGenreDto(updatedGenre);
   }
 
   /* Update specific genres icon file */
@@ -94,8 +97,7 @@ export class GenreController {
     @UploadedFile() icon: Express.Multer.File,
   ): Promise<GenreDto> {
     const updatedGenre = await this.genreService.updateFile(slug, icon);
-    const comicDto = plainToInstance(GenreDto, updatedGenre);
-    return GenreDto.presignUrls(comicDto);
+    return await toGenreDto(updatedGenre);
   }
 
   /* Pseudo delete genre */
@@ -103,8 +105,7 @@ export class GenreController {
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<GenreDto> {
     const deletedGenre = await this.genreService.pseudoDelete(slug);
-    const genreDto = plainToInstance(GenreDto, deletedGenre);
-    return GenreDto.presignUrls(genreDto);
+    return await toGenreDto(deletedGenre);
   }
 
   /* Recover genre */
@@ -112,8 +113,7 @@ export class GenreController {
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
     const recoveredGenre = await this.genreService.pseudoRecover(slug);
-    const genreDto = plainToInstance(GenreDto, recoveredGenre);
-    return GenreDto.presignUrls(genreDto);
+    return await toGenreDto(recoveredGenre);
   }
 
   /* Completely remove specific genre, including files from s3 bucket */

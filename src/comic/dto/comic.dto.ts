@@ -1,172 +1,160 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
 } from 'class-validator';
-import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
-import { Presignable } from 'src/types/presignable';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
+import { PickType } from '@nestjs/swagger';
+import { getReadUrl } from 'src/aws/s3client';
+import { GenreDto } from 'src/genre/dto/genre.dto';
+import { ComicStats } from '../types/comic-stats';
+import { Comic, Genre, WalletComic, Creator } from '@prisma/client';
 
-@Exclude()
-export class ComicDto extends Presignable<ComicDto> {
-  @Expose()
+class PartialGenreDto extends PickType(GenreDto, ['name', 'slug', 'color']) {}
+class PartialCreatorDto extends PickType(CreatorDto, [
+  'name',
+  'slug',
+  'isVerified',
+  'avatar',
+]) {}
+
+export class ComicDto {
   @IsString()
   name: string;
 
-  @Expose()
   @IsKebabCase()
   slug: string;
 
-  @Expose()
-  @IsBoolean()
-  isOngoing: boolean;
-
-  @Expose()
   @IsBoolean()
   isMatureAudience: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.deletedAt)
+  @IsBoolean()
   isDeleted: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.verifiedAt)
-  isVerified: boolean;
-
-  @Expose()
-  @Transform(({ obj }) => !!obj.publishedAt)
-  isPublished: boolean;
-
-  @Expose()
-  @Transform(({ obj }) => !!obj.popularizedAt)
-  isPopular: boolean;
-
-  @Expose()
-  @Transform(({ obj }) => !!obj.completedAt)
+  @IsBoolean()
   isCompleted: boolean;
 
-  @Expose()
-  @IsString()
+  @IsBoolean()
+  isVerified: boolean;
+
+  @IsBoolean()
+  isPublished: boolean;
+
+  @IsBoolean()
+  isPopular: boolean;
+
+  @IsUrl()
   cover: string;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   pfp: string;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   logo: string;
 
-  @Expose()
   @IsString()
   description: string;
 
-  @Expose()
   @IsString()
   flavorText: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   website: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   twitter: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   discord: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   telegram: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   instagram: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   tikTok: string;
 
-  @Expose()
   @IsEmptyOrUrl()
   youTube: string;
 
-  @Expose()
-  @IsArray()
-  @IsOptional()
-  @Type(() => String)
-  @Transform(({ obj }) => obj.genres?.map((genre) => genre.name))
-  genres?: string[];
-
-  @Expose()
   @IsOptional()
   @Type(() => ComicStatsDto)
   stats?: ComicStatsDto;
 
-  @Expose()
   @IsOptional()
   @Type(() => WalletComicDto)
   myStats?: WalletComicDto;
 
-  @Expose()
   @IsArray()
-  @IsOptional()
-  @Type(() => ComicIssueDto)
-  issues?: ComicIssueDto[];
+  @Type(() => PartialGenreDto)
+  genres?: PartialGenreDto[];
 
-  @Expose()
-  @IsOptional()
-  @Type(() => CreatorDto)
-  creator?: CreatorDto;
-
-  @Expose()
-  @IsOptional()
-  @IsNumber()
-  issuesCount?: number | null;
-
-  @Expose()
-  @IsOptional()
-  @IsNumber()
-  favouritesCount?: number | null;
-
-  protected async presign(): Promise<ComicDto> {
-    return await super.presign(this, ['cover', 'logo', 'pfp']);
-  }
-
-  static async presignUrls(input: ComicDto): Promise<ComicDto>;
-  static async presignUrls(input: ComicDto[]): Promise<ComicDto[]>;
-  static async presignUrls(
-    input: ComicDto | ComicDto[],
-  ): Promise<ComicDto | ComicDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(
-        input.map(async (obj) => {
-          if (obj.issues) {
-            obj.issues = await ComicIssueDto.presignUrls(obj.issues);
-          }
-          if (obj.creator) {
-            obj.creator = await CreatorDto.presignUrls(obj.creator);
-          }
-          return obj.presign();
-        }),
-      );
-    } else {
-      if (input.issues) {
-        input.issues = await ComicIssueDto.presignUrls(input.issues);
-      }
-      if (input.creator) {
-        input.creator = await CreatorDto.presignUrls(input.creator);
-      }
-      return await input.presign();
-    }
-  }
+  @Type(() => PartialCreatorDto)
+  creator?: PartialCreatorDto;
 }
+
+type ComicInput = Comic & {
+  genres?: Genre[];
+  creator?: Creator;
+  stats?: ComicStats;
+  myStats?: WalletComic;
+};
+
+export async function toComicDto(comic: ComicInput) {
+  const plainComicDto: ComicDto = {
+    name: comic.name,
+    slug: comic.slug,
+    isMatureAudience: comic.isMatureAudience,
+    isCompleted: !!comic.completedAt,
+    isDeleted: !!comic.deletedAt,
+    isVerified: !!comic.verifiedAt,
+    isPublished: !!comic.publishedAt,
+    isPopular: !!comic.popularizedAt,
+    cover: await getReadUrl(comic.cover),
+    pfp: await getReadUrl(comic.pfp),
+    logo: await getReadUrl(comic.logo),
+    description: comic.description,
+    flavorText: comic.flavorText,
+    website: comic.website,
+    twitter: comic.twitter,
+    discord: comic.discord,
+    telegram: comic.telegram,
+    instagram: comic.instagram,
+    tikTok: comic.tikTok,
+    youTube: comic.youTube,
+    stats: comic?.stats,
+    myStats: comic?.myStats,
+    genres: comic.genres?.map((genre) => {
+      return {
+        name: genre.name,
+        slug: genre.slug,
+        color: genre.color,
+        // icon: await getReadUrl(genre.icon),
+      };
+    }),
+    creator: comic?.creator
+      ? {
+          name: comic.creator.name,
+          slug: comic.creator.slug,
+          isVerified: !!comic.creator.verifiedAt,
+          avatar: await getReadUrl(comic.creator.avatar),
+        }
+      : undefined,
+  };
+
+  const comicDto = plainToInstance(ComicDto, plainComicDto);
+  return comicDto;
+}
+
+export const toComicDtoArray = (comics: ComicInput[]) => {
+  return Promise.all(comics.map(toComicDto));
+};

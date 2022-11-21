@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -24,7 +25,11 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
-import { ComicIssueDto } from './dto/comic-issue.dto';
+import {
+  ComicIssueDto,
+  toComicIssueDto,
+  toComicIssueDtoArray,
+} from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
@@ -32,6 +37,7 @@ import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet } from '@prisma/client';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -87,16 +93,16 @@ export class ComicIssueController {
       files,
     );
 
-    const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(comicIssue);
   }
 
   /* Get all comic issues */
   @Get('get')
-  async findAll(): Promise<ComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAll();
-    const comicIssuesDto = plainToInstance(ComicIssueDto, comicIssues);
-    return ComicIssueDto.presignUrls(comicIssuesDto);
+  async findAll(
+    @Query() query: ComicIssueFilterParams,
+  ): Promise<ComicIssueDto[]> {
+    const comicIssues = await this.comicIssueService.findAll(query);
+    return await toComicIssueDtoArray(comicIssues);
   }
 
   /* Get specific comic issue by unique id */
@@ -106,11 +112,10 @@ export class ComicIssueController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOneProtected(
-      wallet.address,
       +id,
+      wallet.address,
     );
-    const comicIssueDto = plainToInstance(ComicIssueDto, comicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(comicIssue);
   }
 
   /* Update specific comic issue */
@@ -123,8 +128,7 @@ export class ComicIssueController {
       +id,
       updateComicIssueDto,
     );
-    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(updatedComicIssue);
   }
 
   /* Update specific comic issues cover file */
@@ -140,8 +144,7 @@ export class ComicIssueController {
       +id,
       cover,
     );
-    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(updatedComicIssue);
   }
 
   /* Update specific comic issues soundtrack file */
@@ -157,40 +160,35 @@ export class ComicIssueController {
       +id,
       soundtrack,
     );
-    const comicIssueDto = plainToInstance(ComicIssueDto, updatedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(updatedComicIssue);
   }
 
   /* Publish comic issue */
   @Patch('publish/:id')
   async publish(@Param('id') id: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(+id);
-    const comicIssueDto = plainToInstance(ComicIssueDto, publishedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(publishedComicIssue);
   }
 
   /* Unpublish comic issue */
   @Patch('unpublish/:id')
   async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
     const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    const comicIssueDto = plainToInstance(ComicIssueDto, unpublishedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(unpublishedComicIssue);
   }
 
   /* Queue comic issue for deletion */
   @Patch('delete/:id')
   async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
-    const comicIssueDto = plainToInstance(ComicIssueDto, deletedComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(deletedComicIssue);
   }
 
   /* Remove comic issue for deletion queue */
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
-    const comicIssueDto = plainToInstance(ComicIssueDto, recoveredComicIssue);
-    return ComicIssueDto.presignUrls(comicIssueDto);
+    return await toComicIssueDto(recoveredComicIssue);
   }
 
   /* Completely remove specific comic issue, including files from s3 bucket */

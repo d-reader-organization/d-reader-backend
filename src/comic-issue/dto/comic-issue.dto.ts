@@ -1,127 +1,162 @@
-import { Exclude, Expose, Transform, Type } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
 } from 'class-validator';
+import { getReadUrl } from 'src/aws/s3client';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
+import { ComicDto } from 'src/comic/dto/comic.dto';
+import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { Presignable } from 'src/types/presignable';
-import { getRandomFloat, getRandomInt } from 'src/utils/helpers';
+import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
+import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
+import {
+  ComicIssue,
+  Creator,
+  Comic,
+  ComicPage,
+  ComicIssueNft,
+} from '@prisma/client';
+import { PickType } from '@nestjs/swagger';
 
-@Exclude()
-export class ComicIssueDto extends Presignable<ComicIssueDto> {
-  @Expose()
+class PartialComicDto extends PickType(ComicDto, ['name', 'slug']) {}
+class PartialComicPageDto extends PickType(ComicPageDto, ['id', 'image']) {}
+class PartialCreatorDto extends PickType(CreatorDto, [
+  'name',
+  'slug',
+  'isVerified',
+  'avatar',
+]) {}
+
+export class ComicIssueDto {
   @IsPositive()
   id: number;
 
-  @Expose()
   @IsPositive()
   number: number;
 
-  @Expose()
   @IsNotEmpty()
   title: string;
 
-  @Expose()
   @IsNotEmpty()
   @IsKebabCase()
   slug: string;
 
-  @Expose()
   @IsString()
   description: string;
 
-  @Expose()
   @IsString()
   flavorText: string;
 
-  @Expose()
   @IsString()
   cover: string;
 
-  @Expose()
   @IsString()
   soundtrack: string;
 
-  @Expose()
   @IsDateString()
   releaseDate: string;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.publishedAt)
+  @IsBoolean()
   isPublished: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.popularizedAt)
+  @IsBoolean()
   isPopular: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.deletedAt)
+  @IsBoolean()
   isDeleted: boolean;
 
-  @Expose()
-  @Transform(({ obj }) => !!obj.verifiedAt)
+  @IsBoolean()
   isVerified: boolean;
 
-  @Expose()
-  @IsPositive()
-  comicId: number;
+  @IsOptional()
+  @Type(() => PartialCreatorDto)
+  creator?: PartialCreatorDto;
 
-  // @Expose()
-  // @Type(() => ComicDto)
-  // comic: ComicDto;
+  @IsOptional()
+  @Type(() => PartialComicDto)
+  comic?: PartialComicDto;
 
-  // TODO: replace with real data
-  @Expose()
   @IsOptional()
   @Type(() => ComicIssueStatsDto)
-  @Transform(() => ({
-    floorPrice: getRandomFloat(1, 20),
-    totalSupply: getRandomInt(1, 10) * 100,
-    totalVolume: getRandomFloat(1, 1000),
-  }))
-  stats?: ComicIssueStatsDto[];
+  stats?: ComicIssueStatsDto;
 
-  @Expose()
   @IsArray()
   @IsOptional()
-  @Type(() => ComicPageDto)
-  pages?: ComicPageDto[];
+  @Type(() => PartialComicPageDto)
+  pages?: PartialComicPageDto[];
 
-  @Expose()
   @IsOptional()
   @ArrayUnique()
   @Type(() => String)
-  @Transform(({ obj }) => obj.nfts?.map((nft) => nft.mint))
   hashlist?: string[];
-
-  protected async presign(): Promise<ComicIssueDto> {
-    return await super.presign(this, ['cover', 'soundtrack']);
-  }
-
-  static async presignUrls(input: ComicIssueDto): Promise<ComicIssueDto>;
-  static async presignUrls(input: ComicIssueDto[]): Promise<ComicIssueDto[]>;
-  static async presignUrls(
-    input: ComicIssueDto | ComicIssueDto[],
-  ): Promise<ComicIssueDto | ComicIssueDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(
-        input.map(async (obj) => {
-          if (obj.pages) obj.pages = await ComicPageDto.presignUrls(obj.pages);
-          return obj.presign();
-        }),
-      );
-    } else {
-      if (input.pages) {
-        input.pages = await ComicPageDto.presignUrls(input.pages);
-        return await input.presign();
-      }
-    }
-  }
 }
+
+type ComicIssueInput = ComicIssue & {
+  comic?: Pick<Comic & { creator?: Creator }, 'name' | 'slug' | 'creator'>;
+  pages?: ComicPage[];
+  nfts?: ComicIssueNft[];
+  stats?: ComicIssueStats;
+};
+
+export async function toComicIssueDto(issue: ComicIssueInput) {
+  const plainComicIssueDto: ComicIssueDto = {
+    id: issue.id,
+    number: issue.number,
+    title: issue.title,
+    slug: issue.slug,
+    description: issue.description,
+    flavorText: issue.flavorText,
+    cover: await getReadUrl(issue.cover),
+    soundtrack: await getReadUrl(issue.soundtrack),
+    releaseDate: issue.releaseDate.toString(),
+    isPublished: !!issue.publishedAt,
+    isPopular: !!issue.popularizedAt,
+    isDeleted: !!issue.deletedAt,
+    isVerified: !!issue.verifiedAt,
+    creator: issue?.comic?.creator
+      ? {
+          name: issue.comic.creator.name,
+          slug: issue.comic.creator.slug,
+          isVerified: !!issue.comic.creator.verifiedAt,
+          avatar: await getReadUrl(issue.comic.creator.avatar),
+        }
+      : undefined,
+    comic: issue?.comic
+      ? {
+          name: issue.comic.name,
+          slug: issue.comic.slug,
+        }
+      : undefined,
+    stats:
+      // TODO v1: replace these stats with real data and remove '|| true'
+      issue?.stats || true
+        ? {
+            floorPrice: getRandomFloatOrInt(1, 20),
+            totalSupply: getRandomInt(1, 10) * 100,
+            totalVolume: getRandomFloatOrInt(1, 1000),
+            totalIssuesCount: getRandomInt(6, 14),
+          }
+        : undefined,
+    pages: issue.pages?.map((page) => ({
+      id: page.id,
+      pageNumber: page.pageNumber,
+      image: page.image,
+    })),
+    hashlist: issue.nfts?.map((nft) => nft.mint),
+  };
+
+  const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
+  return issueDto;
+}
+
+export const toComicIssueDtoArray = (issues: ComicIssueInput[]) => {
+  return Promise.all(issues.map(toComicIssueDto));
+};

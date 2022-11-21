@@ -1,69 +1,65 @@
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { Exclude, Expose, plainToInstance, Transform } from 'class-transformer';
 import {
   IsEnum,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
 } from 'class-validator';
-import { Presignable } from 'src/types/presignable';
-import { CarouselLocation } from '@prisma/client';
+import { CarouselSlide, CarouselLocation } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { getReadUrl } from 'src/aws/s3client';
 
-@Exclude()
-export class CarouselSlideDto extends Presignable<CarouselSlideDto> {
-  @Expose()
+export class CarouselSlideDto {
   @IsPositive()
   id: number;
 
-  @Expose()
-  @IsString()
+  @IsUrl()
   image: string;
 
-  @Expose()
   @IsNumber()
   priority: number;
 
-  @Expose()
   @IsString()
   link: string;
 
-  @Expose()
   @IsString()
   @IsOptional()
   title?: string;
 
-  @Expose()
   @IsString()
   @IsOptional()
   subtitle?: string;
 
-  @Expose()
   @Transform(({ obj }) => !!obj.publishedAt)
   isPublished: boolean;
 
-  @Expose()
   @Transform(({ obj }) => !!obj.expiredAt)
   isExpired: boolean;
 
-  @Expose()
   @IsEnum(CarouselLocation)
   @ApiProperty({ enum: CarouselLocation })
   location: CarouselLocation;
-
-  protected async presign(): Promise<CarouselSlideDto> {
-    return await super.presign(this, ['image']);
-  }
-
-  static async presignUrls(input: CarouselSlideDto): Promise<CarouselSlideDto>;
-  static async presignUrls(
-    input: CarouselSlideDto[],
-  ): Promise<CarouselSlideDto[]>;
-  static async presignUrls(
-    input: CarouselSlideDto | CarouselSlideDto[],
-  ): Promise<CarouselSlideDto | CarouselSlideDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return await input.presign();
-  }
 }
+
+export async function toCarouselSlideDto(slide: CarouselSlide) {
+  const plainSlideDto: CarouselSlideDto = {
+    id: slide.id,
+    image: await getReadUrl(slide.image),
+    priority: slide.priority,
+    link: slide.link,
+    title: slide.title,
+    subtitle: slide.subtitle,
+    isPublished: !!slide.publishedAt,
+    isExpired: !!slide.expiredAt,
+    location: slide.location,
+  };
+
+  const slideDto = plainToInstance(CarouselSlideDto, plainSlideDto);
+  return slideDto;
+}
+
+export const toCarouselSlideDtoArray = (slides: CarouselSlide[]) => {
+  return Promise.all(slides.map(toCarouselSlideDto));
+};

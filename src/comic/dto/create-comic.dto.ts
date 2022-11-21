@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -16,15 +16,24 @@ export class CreateComicDto {
   @MaxLength(48)
   name: string;
 
+  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 
   @IsBoolean()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? Boolean(value) : value,
+  )
+  @ApiProperty({ default: true })
   isOngoing: boolean;
 
   @IsBoolean()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? Boolean(value) : value,
+  )
+  @ApiProperty({ default: true })
   isMatureAudience: boolean;
 
   @IsOptional()
@@ -56,8 +65,16 @@ export class CreateComicDto {
   @IsOptionalUrl()
   youTube?: string;
 
+  @Expose()
   @IsArray()
+  @IsOptional()
   @Type(() => String)
+  @ApiProperty({ type: [String], required: false })
+  @Transform(({ value }: { value: string[] | string }) => {
+    if (value && typeof value === 'string') {
+      return value.split(',');
+    } else return value || [];
+  })
   genres: string[];
 }
 

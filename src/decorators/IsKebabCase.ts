@@ -29,7 +29,7 @@ export function IsKebabCase(
       validator: {
         validate: (value): boolean => isKebabCase(value),
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + '$property must be in kebab_case format',
+          (eachPrefix) => eachPrefix + '$property must be in kebab-case format',
           validationOptions,
         ),
       },

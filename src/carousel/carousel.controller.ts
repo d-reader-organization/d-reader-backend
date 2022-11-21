@@ -22,7 +22,11 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
-import { CarouselSlideDto } from './dto/carousel-slide.dto';
+import {
+  CarouselSlideDto,
+  toCarouselSlideDto,
+  toCarouselSlideDtoArray,
+} from './dto/carousel-slide.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
@@ -53,24 +57,21 @@ export class CarouselController {
       createCarouselSlideDto,
       files,
     );
-    const carouselSlideDto = plainToInstance(CarouselSlideDto, carouselSlide);
-    return CarouselSlideDto.presignUrls(carouselSlideDto);
+    return await toCarouselSlideDto(carouselSlide);
   }
 
   /* Get all carousel slides */
   @Get('slides/get')
   async findAll(): Promise<CarouselSlideDto[]> {
     const carouselSlides = await this.carouselService.findAll();
-    const carouselSlidesDto = plainToInstance(CarouselSlideDto, carouselSlides);
-    return CarouselSlideDto.presignUrls(carouselSlidesDto);
+    return await toCarouselSlideDtoArray(carouselSlides);
   }
 
   /* Get specific carousel slide by unique id */
   @Get('slides/get/:id')
   async findOne(@Param('id') id: string): Promise<CarouselSlideDto> {
     const carouselSlide = await this.carouselService.findOne(+id);
-    const carouselSlideDto = plainToInstance(CarouselSlideDto, carouselSlide);
-    return CarouselSlideDto.presignUrls(carouselSlideDto);
+    return await toCarouselSlideDto(carouselSlide);
   }
 
   /* Update specific carousel slide */
@@ -84,11 +85,7 @@ export class CarouselController {
       +id,
       updateCarouselSlideDto,
     );
-    const carouselSlideDto = plainToInstance(
-      CarouselSlideDto,
-      updatedCarouselSlide,
-    );
-    return CarouselSlideDto.presignUrls(carouselSlideDto);
+    return await toCarouselSlideDto(updatedCarouselSlide);
   }
 
   /* Update specific carousel slides image file */
@@ -105,8 +102,7 @@ export class CarouselController {
       +id,
       image,
     );
-    const comicDto = plainToInstance(CarouselSlideDto, updatedCarouselSlide);
-    return CarouselSlideDto.presignUrls(comicDto);
+    return await toCarouselSlideDto(updatedCarouselSlide);
   }
 
   /* Make carousel slide expire */
@@ -114,10 +110,6 @@ export class CarouselController {
   @Patch('slides/expire/:id')
   async expire(@Param('id') id: string): Promise<CarouselSlideDto> {
     const expiredCarouselSlide = await this.carouselService.expire(+id);
-    const carouselSlideDto = plainToInstance(
-      CarouselSlideDto,
-      expiredCarouselSlide,
-    );
-    return CarouselSlideDto.presignUrls(carouselSlideDto);
+    return await toCarouselSlideDto(expiredCarouselSlide);
   }
 }

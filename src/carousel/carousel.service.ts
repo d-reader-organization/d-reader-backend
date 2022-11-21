@@ -111,7 +111,7 @@ export class CarouselService {
 
   async expire(id: number) {
     try {
-      await this.prisma.carouselSlide.update({
+      return await this.prisma.carouselSlide.update({
         where: { id },
         data: { expiredAt: new Date() },
       });

@@ -15,8 +15,4 @@ export class CreateComicPageDto {
   @ApiProperty({ type: 'string', format: 'binary', required: true })
   @Transform(({ value }) => value[0])
   image: Express.Multer.File;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  altImage?: Express.Multer.File | null;
 }

@@ -1,3 +1,5 @@
+import { WalletComic } from '@prisma/client';
+
 export type ComicStats = {
   favouritesCount: number;
   subscribersCount: number;
@@ -7,4 +9,9 @@ export type ComicStats = {
   totalVolume: number;
   readersCount: number;
   viewersCount: number;
+};
+
+export type WithComicStats<T> = T & {
+  stats: ComicStats;
+  myStats?: WalletComic;
 };

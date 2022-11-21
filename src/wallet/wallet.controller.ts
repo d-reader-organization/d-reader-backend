@@ -18,10 +18,9 @@ import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { WalletDto } from './dto/wallet.dto';
+import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { Wallet } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { plainToInstance } from 'class-transformer';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard)
@@ -35,8 +34,7 @@ export class WalletController {
   @Post('create')
   async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
     const wallet = await this.walletService.create(createWalletDto);
-    const walletDto = plainToInstance(WalletDto, wallet);
-    return WalletDto.presignUrls(walletDto);
+    return await toWalletDto(wallet);
   }
 
   /* Get all wallets */
@@ -44,24 +42,21 @@ export class WalletController {
   @Get('get')
   async findAll(): Promise<WalletDto[]> {
     const wallets = await this.walletService.findAll();
-    const walletsDto = plainToInstance(WalletDto, wallets);
-    return WalletDto.presignUrls(walletsDto);
+    return await toWalletDtoArray(wallets);
   }
 
   /* Get wallet data from auth token */
   @Get('get/me')
   async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
     const me = await this.walletService.findOne(wallet.address);
-    const walletDto = plainToInstance(WalletDto, me);
-    return WalletDto.presignUrls(walletDto);
+    return await toWalletDto(me);
   }
 
   /* Get specific wallet by unique address */
   @Get('get/:address')
   async findOne(@Param('address') address: string): Promise<WalletDto> {
     const wallet = await this.walletService.findOne(address);
-    const walletDto = plainToInstance(WalletDto, wallet);
-    return WalletDto.presignUrls(walletDto);
+    return await toWalletDto(wallet);
   }
 
   /* Update specific wallet */
@@ -71,8 +66,7 @@ export class WalletController {
     @Body() updateWalletDto: UpdateWalletDto,
   ): Promise<WalletDto> {
     const wallet = await this.walletService.update(address, updateWalletDto);
-    const walletDto = plainToInstance(WalletDto, wallet);
-    return WalletDto.presignUrls(walletDto);
+    return await toWalletDto(wallet);
   }
 
   /* Update specific wallets avatar file */
@@ -85,8 +79,7 @@ export class WalletController {
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<WalletDto> {
     const updatedWallet = await this.walletService.updateFile(address, avatar);
-    const walletDto = plainToInstance(WalletDto, updatedWallet);
-    return WalletDto.presignUrls(walletDto);
+    return await toWalletDto(updatedWallet);
   }
 
   /* Delete specific wallet */

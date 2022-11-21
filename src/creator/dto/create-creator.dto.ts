@@ -1,21 +1,42 @@
-import { ApiProperty, IntersectionType, PickType } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
+import { Expose, Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { CreatorDto } from './creator.dto';
+import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 
-export class CreateCreatorDto extends PickType(CreatorDto, [
-  'name',
-  'email',
-  'description',
-  'flavorText',
-  'website',
-]) {
+export class CreateCreatorDto {
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @MaxLength(54)
+  name: string;
+
+  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(256)
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(128)
+  flavorText?: string;
+
+  @IsOptionalUrl()
+  website?: string;
 
   // @MinLength(8)
   // @MaxLength(54)

@@ -22,6 +22,7 @@ import { Prisma, ComicIssue, ComicPage, ComicIssueNft } from '@prisma/client';
 import { MetaplexService } from 'src/vendors/metaplex.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
+import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 
 @Injectable()
 export class ComicIssueService {
@@ -98,21 +99,43 @@ export class ComicIssueService {
     return comicIssue;
   }
 
-  async findAll() {
+  async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.comicIssue.findMany({
+      include: { comic: { select: { name: true, slug: true, creator: true } } },
       where: {
+        title: { contains: query?.titleSubstring, mode: 'insensitive' },
         deletedAt: null,
         publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
-        comic: { deletedAt: null },
+        comic: {
+          creator: { slug: query?.creatorSlug },
+          deletedAt: null,
+          AND: query?.genreSlugs?.map((slug) => {
+            return {
+              genres: {
+                some: {
+                  slug: {
+                    equals: slug,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+            };
+          }),
+        },
       },
     });
+
     return comicIssues;
   }
 
   async findOne(id: number) {
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      include: { nfts: true, pages: true },
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      include: {
+        nfts: true,
+        pages: true,
+        comic: { select: { name: true, slug: true, creator: true } },
+      },
       where: { id },
     });
 
@@ -123,7 +146,7 @@ export class ComicIssueService {
     return comicIssue;
   }
 
-  async findOneProtected(walletAddress: string, id: number) {
+  async findOneProtected(id: number, walletAddress: string) {
     let showOnlyPreviews: boolean | undefined;
 
     // Find all NFTs that are token gating this Comic
@@ -141,7 +164,7 @@ export class ComicIssueService {
 
     // TODO v1.2: check isWhitelisted from WalletComic
 
-    const comicIssue = await this.prisma.comicIssue.findUnique({
+    const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
         nfts: true,
@@ -224,7 +247,7 @@ export class ComicIssueService {
 
   async publish(id: number) {
     try {
-      await this.prisma.comicIssue.update({
+      return await this.prisma.comicIssue.update({
         where: { id },
         data: { publishedAt: new Date() },
       });
@@ -235,7 +258,7 @@ export class ComicIssueService {
 
   async unpublish(id: number) {
     try {
-      await this.prisma.comicIssue.update({
+      return await this.prisma.comicIssue.update({
         where: { id },
         data: { publishedAt: null },
       });
@@ -246,7 +269,7 @@ export class ComicIssueService {
 
   async pseudoDelete(id: number) {
     try {
-      await this.prisma.comicIssue.update({
+      return await this.prisma.comicIssue.update({
         where: { id },
         data: { deletedAt: new Date() },
       });
@@ -257,7 +280,7 @@ export class ComicIssueService {
 
   async pseudoRecover(id: number) {
     try {
-      await this.prisma.comicIssue.update({
+      return await this.prisma.comicIssue.update({
         where: { id },
         data: { deletedAt: null },
       });

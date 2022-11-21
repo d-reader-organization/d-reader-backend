@@ -58,7 +58,6 @@ model Creator {
 model Comic {
   name             String        @unique
   slug             String        @id
-  isOngoing        Boolean       @default(true)
   isMatureAudience Boolean
   cover            String        @default("")
   pfp              String        @default("")
@@ -149,7 +148,6 @@ model ComicPage {
   pageNumber    Int        @default(autoincrement())
   isPreviewable Boolean    @default(false)
   image         String
-  altImage      String     @default("")
   comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId  Int
 

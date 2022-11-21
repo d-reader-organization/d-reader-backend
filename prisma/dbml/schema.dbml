@@ -39,7 +39,6 @@ Table Creator {
 Table Comic {
   name String [unique, not null]
   slug String [pk]
-  isOngoing Boolean [not null, default: true]
   isMatureAudience Boolean [not null]
   cover String [not null, default: '']
   pfp String [not null, default: '']
@@ -132,7 +131,6 @@ Table ComicPage {
   pageNumber Int [increment, not null]
   isPreviewable Boolean [not null, default: false]
   image String [not null]
-  altImage String [not null, default: '']
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
 

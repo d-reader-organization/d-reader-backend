@@ -1,21 +1,10 @@
-import { Exclude, Expose } from 'class-transformer';
-import { IsNotEmpty, IsPositive, IsString } from 'class-validator';
-// import { ComicIssueDto } from 'src/comic-issue/dto/comic-issue.dto';
+import { IsHash, IsNotEmpty, IsPositive } from 'class-validator';
 
-@Exclude()
 export class NftDto {
-  @Expose()
-  @IsString()
-  // TODO v1.2: @IsHash()
+  @IsHash('sha256')
   @IsNotEmpty()
   mint: string;
 
-  @Expose()
   @IsPositive()
   comicIssueId: number;
-
-  // @Expose()
-  // @IsArray()
-  // @Type(() => ComicIssueDto)
-  // comicIssue: ComicIssueDto;
 }

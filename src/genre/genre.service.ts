@@ -62,6 +62,7 @@ export class GenreService {
   async findAll() {
     const genres = await this.prisma.genre.findMany({
       where: { deletedAt: null },
+      orderBy: { priority: 'asc' },
     });
     return genres;
   }
@@ -114,7 +115,7 @@ export class GenreService {
 
   async pseudoDelete(slug: string) {
     try {
-      await this.prisma.genre.update({
+      return await this.prisma.genre.update({
         where: { slug },
         data: { deletedAt: new Date() },
       });
@@ -125,7 +126,7 @@ export class GenreService {
 
   async pseudoRecover(slug: string) {
     try {
-      await this.prisma.genre.update({
+      return await this.prisma.genre.update({
         where: { slug },
         data: { deletedAt: null },
       });

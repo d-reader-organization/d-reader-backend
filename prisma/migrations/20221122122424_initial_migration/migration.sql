@@ -44,7 +44,6 @@ CREATE TABLE "Creator" (
 CREATE TABLE "Comic" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "isOngoing" BOOLEAN NOT NULL DEFAULT true,
     "isMatureAudience" BOOLEAN NOT NULL,
     "cover" TEXT NOT NULL DEFAULT '',
     "pfp" TEXT NOT NULL DEFAULT '',
@@ -131,7 +130,6 @@ CREATE TABLE "ComicPage" (
     "pageNumber" SERIAL NOT NULL,
     "isPreviewable" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT NOT NULL,
-    "altImage" TEXT NOT NULL DEFAULT '',
     "comicIssueId" INTEGER NOT NULL,
 
     CONSTRAINT "ComicPage_pkey" PRIMARY KEY ("id")

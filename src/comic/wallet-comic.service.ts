@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletComic } from '@prisma/client';
-import { getRandomFloat, getRandomInt, mockPromise } from 'src/utils/helpers';
+import {
+  getRandomFloatOrInt,
+  getRandomInt,
+  mockPromise,
+} from 'src/utils/helpers';
 import { ComicStats } from './types/comic-stats';
 
 @Injectable()
@@ -64,25 +68,25 @@ export class WalletComicService {
     ]);
 
     return {
-      averageRating: aggregations._avg.rating || getRandomFloat(2, 5),
+      averageRating: aggregations._avg.rating || getRandomFloatOrInt(2, 5),
       ratersCount: ratersCount || getRandomInt(1, 60),
       favouritesCount: favouritesCount || getRandomInt(1, 3000),
       subscribersCount: subscribersCount || getRandomInt(1, 1000),
       issuesCount: issuesCount || getRandomInt(1, 20),
       readersCount: readersCount || getRandomInt(1, 7000),
       viewersCount: viewersCount || getRandomInt(1, 20000),
-      totalVolume: totalVolume || getRandomFloat(1, 1000),
+      totalVolume: totalVolume || getRandomFloatOrInt(1, 1000),
     };
   }
 
   async findWalletComicStats(
-    walletAddress: string,
     slug: string,
+    walletAddress: string,
   ): Promise<WalletComic | null> {
     const walletComic = await this.prisma.walletComic.findUnique({
       where: {
         comicSlug_walletAddress: {
-          walletAddress: walletAddress,
+          walletAddress,
           comicSlug: slug,
         },
       },

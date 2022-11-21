@@ -15,17 +15,13 @@ import {
   listS3FolderKeys,
   uploadFile,
 } from '../aws/s3client';
-import { ComicStats } from './types/comic-stats';
 import { WalletComicService } from './wallet-comic.service';
-import { Comic, ComicIssue, WalletComic, Genre } from '@prisma/client';
+import { Comic, Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { isEmpty } from 'lodash';
-
-type WithStats<T> = T & {
-  stats: ComicStats;
-  myStats?: WalletComic;
-};
+import { WithComicStats } from './types/comic-stats';
+import { ComicFilterParams } from './dto/comic-filter-params.dto';
 
 @Injectable()
 export class ComicService {
@@ -39,21 +35,22 @@ export class ComicService {
     createComicDto: CreateComicDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { slug, genres, ...rest } = createComicDto;
+    const { slug, genres, isOngoing, ...rest } = createComicDto;
 
     // Create Comic without any files uploaded
-    let comic: Comic & { issues: ComicIssue[] };
+    let comic: Comic;
     try {
       comic = await this.prisma.comic.create({
-        include: { issues: true },
         data: {
           ...rest,
           slug,
           creatorId,
+          completedAt: !isOngoing ? new Date() : null,
           genres: { connect: genres.map((slug) => ({ slug })) },
         },
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       throw new BadRequestException('Bad comic data');
     }
 
@@ -74,7 +71,6 @@ export class ComicService {
     // Update Comic with s3 file keys
     comic = await this.prisma.comic.update({
       where: { slug: comic.slug },
-      include: { issues: true },
       data: {
         cover: coverKey,
         pfp: pfpKey,
@@ -86,11 +82,26 @@ export class ComicService {
   }
 
   async findAll(
+    query: ComicFilterParams,
     walletAddress?: string,
-  ): Promise<WithStats<Comic & { genres: Genre[] }>[]> {
+  ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>[]> {
     const comics = await this.prisma.comic.findMany({
-      include: { genres: true, issues: true },
+      include: { genres: true, creator: true },
       where: {
+        name: { contains: query?.nameSubstring, mode: 'insensitive' },
+        creator: { slug: query?.creatorSlug },
+        AND: query?.genreSlugs?.map((slug) => {
+          return {
+            genres: {
+              some: {
+                slug: {
+                  equals: slug,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          };
+        }),
         deletedAt: null,
         publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
@@ -114,9 +125,9 @@ export class ComicService {
   async findOne(
     slug: string,
     walletAddress?: string,
-  ): Promise<WithStats<Comic & { genres: Genre[]; issues: ComicIssue[] }>> {
-    const comic = await this.prisma.comic.findUnique({
-      include: { genres: true, issues: true },
+  ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>> {
+    const comic = await this.prisma.comic.findFirst({
+      include: { genres: true, creator: true },
       where: { slug },
     });
 
@@ -183,7 +194,7 @@ export class ComicService {
 
   async publish(slug: string) {
     try {
-      await this.prisma.comic.update({
+      return await this.prisma.comic.update({
         where: { slug },
         data: { publishedAt: new Date() },
       });
@@ -194,7 +205,7 @@ export class ComicService {
 
   async unpublish(slug: string) {
     try {
-      await this.prisma.comic.update({
+      return await this.prisma.comic.update({
         where: { slug },
         data: { publishedAt: null },
       });
@@ -205,7 +216,7 @@ export class ComicService {
 
   async pseudoDelete(slug: string) {
     try {
-      await this.prisma.comic.update({
+      return await this.prisma.comic.update({
         where: { slug },
         data: { deletedAt: new Date() },
       });
@@ -216,7 +227,7 @@ export class ComicService {
 
   async pseudoRecover(slug: string) {
     try {
-      await this.prisma.comic.update({
+      return await this.prisma.comic.update({
         where: { slug },
         data: { deletedAt: null },
       });

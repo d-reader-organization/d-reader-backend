@@ -21,15 +21,13 @@ export class ComicPageService {
   async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
-        const { comicIssueId, image, altImage, pageNumber, ...rest } =
-          createComicPageDto;
+        const { comicIssueId, image, pageNumber, ...rest } = createComicPageDto;
 
         // Upload files if any
-        let imageKey: string, altImageKey: string;
+        let imageKey: string;
         try {
           const prefix = await this.getS3FilePrefix(pageNumber, comicIssueId);
           imageKey = await uploadFile(prefix, image);
-          if (altImage) altImageKey = await uploadFile(prefix, altImage);
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
@@ -39,7 +37,6 @@ export class ComicPageService {
           comicIssueId,
           pageNumber,
           image: imageKey,
-          altImage: altImageKey,
         };
 
         return comicPageData;
@@ -74,10 +71,7 @@ export class ComicPageService {
     const pagesToDelete = await this.prisma.comicPage.findMany({ where });
 
     // Remove s3 assets
-    const keys = pagesToDelete.reduce<string[]>((acc, page) => {
-      if (page.altImage) return [...acc, page.image, page.altImage];
-      else return [...acc, page.image];
-    }, []);
+    const keys = pagesToDelete.map((page) => page.image);
 
     if (!isEmpty(keys)) {
       await deleteS3Objects({

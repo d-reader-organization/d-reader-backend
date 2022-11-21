@@ -1,45 +1,43 @@
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { plainToInstance, Transform } from 'class-transformer';
 import { IsHexColor, IsNumber, IsString } from 'class-validator';
+import { getReadUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { Presignable } from 'src/types/presignable';
+import { Genre } from '@prisma/client';
 
-@Exclude()
-export class GenreDto extends Presignable<GenreDto> {
-  @Expose()
+export class GenreDto {
   @IsString()
   name: string;
 
-  @Expose()
   @IsKebabCase()
   slug: string;
 
-  @Expose()
   @IsString()
   icon: string;
 
-  @Expose()
   @IsHexColor()
   color: string;
 
-  @Expose()
   @IsNumber()
   priority: number;
 
-  @Expose()
   @Transform(({ obj }) => !!obj.deletedAt)
   isDeleted: boolean;
-
-  protected async presign(): Promise<GenreDto> {
-    return await super.presign(this, ['icon']);
-  }
-
-  static async presignUrls(input: GenreDto): Promise<GenreDto>;
-  static async presignUrls(input: GenreDto[]): Promise<GenreDto[]>;
-  static async presignUrls(
-    input: GenreDto | GenreDto[],
-  ): Promise<GenreDto | GenreDto[]> {
-    if (Array.isArray(input)) {
-      return await Promise.all(input.map((obj) => obj.presign()));
-    } else return await input.presign();
-  }
 }
+
+export async function toGenreDto(genre: Genre) {
+  const plainGenreDto: GenreDto = {
+    name: genre.name,
+    slug: genre.slug,
+    icon: await getReadUrl(genre.icon),
+    color: genre.color,
+    priority: genre.priority,
+    isDeleted: !!genre.deletedAt,
+  };
+
+  const genreDto = plainToInstance(GenreDto, plainGenreDto);
+  return genreDto;
+}
+
+export const toGenreDtoArray = (genres: Genre[]) => {
+  return Promise.all(genres.map(toGenreDto));
+};

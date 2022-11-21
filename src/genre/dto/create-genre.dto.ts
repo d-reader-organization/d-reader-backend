@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import {
   IsHexColor,
   IsNumber,
@@ -16,6 +16,7 @@ export class CreateGenreDto {
   @MaxLength(40)
   name: string;
 
+  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.name))
   @ApiProperty({ readOnly: true, required: false })
@@ -25,6 +26,9 @@ export class CreateGenreDto {
   color: string;
 
   @IsNumber()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
   priority: number;
 }
 
