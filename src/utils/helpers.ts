@@ -15,7 +15,8 @@ export function getRandomInt(min: number, max: number) {
 }
 
 export function getRandomFloatOrInt(min: number, max: number) {
-  return min + Math.random() * max;
+  const randomFloat = min + Math.random() * max;
+  return parseFloat(currencyFormat.format(randomFloat));
 }
 
 export function mockPromise<T>(value: T) {
