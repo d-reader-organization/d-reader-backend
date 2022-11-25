@@ -13,15 +13,16 @@ generator dbml {
 }
 
 model Wallet {
-  address   String        @id
-  label     String        @default("")
-  avatar    String        @default("")
-  createdAt DateTime      @default(now())
-  lastLogin DateTime?
-  nonce     String        @unique @default(uuid())
-  role      Role          @default(User)
-  creator   Creator?
-  comics    WalletComic[]
+  address    String        @id
+  label      String        @default("")
+  avatar     String        @default("")
+  createdAt  DateTime      @default(now())
+  lastLogin  DateTime?
+  nonce      String        @unique @default(uuid())
+  role       Role          @default(User)
+  creator    Creator?
+  comics     WalletComic[]
+  newsletter Newsletter?
 }
 
 enum Role {
@@ -163,7 +164,7 @@ model CarouselSlide {
   link        String
   publishedAt DateTime         @default(now())
   expiredAt   DateTime
-  location    CarouselLocation
+  location    CarouselLocation @default(Home)
 }
 
 enum CarouselLocation {
@@ -175,6 +176,21 @@ enum CarouselLocation {
 //   ComicIssue
 //   Creator
 // }
+
+model Newsletter {
+  wallet                       Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress                String  @id
+  email                        String  @unique
+  wantsDevelopmentProgressNews Boolean
+  wantsPlatformContentNews     Boolean
+  wantsFreeNFTs                Boolean
+  ip                           String  @default("")
+  country                      String  @default("")
+  city                         String  @default("")
+  browser                      String  @default("")
+  device                       String  @default("")
+  os                           String  @default("")
+}
 
 // TODO v2
 // - [NOTIFICATION] [NOTIFICATION_TYPE] [WALLET_NOTIFICATION]

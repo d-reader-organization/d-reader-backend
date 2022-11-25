@@ -145,9 +145,26 @@ CREATE TABLE "CarouselSlide" (
     "link" TEXT NOT NULL,
     "publishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiredAt" TIMESTAMP(3) NOT NULL,
-    "location" "CarouselLocation" NOT NULL,
+    "location" "CarouselLocation" NOT NULL DEFAULT 'Home',
 
     CONSTRAINT "CarouselSlide_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Newsletter" (
+    "walletAddress" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "wantsDevelopmentProgressNews" BOOLEAN NOT NULL,
+    "wantsPlatformContentNews" BOOLEAN NOT NULL,
+    "wantsFreeNFTs" BOOLEAN NOT NULL,
+    "ip" TEXT NOT NULL DEFAULT '',
+    "country" TEXT NOT NULL DEFAULT '',
+    "city" TEXT NOT NULL DEFAULT '',
+    "browser" TEXT NOT NULL DEFAULT '',
+    "device" TEXT NOT NULL DEFAULT '',
+    "os" TEXT NOT NULL DEFAULT '',
+
+    CONSTRAINT "Newsletter_pkey" PRIMARY KEY ("walletAddress")
 );
 
 -- CreateTable
@@ -190,6 +207,9 @@ CREATE UNIQUE INDEX "ComicIssue_title_comicSlug_key" ON "ComicIssue"("title", "c
 CREATE UNIQUE INDEX "ComicPage_pageNumber_comicIssueId_key" ON "ComicPage"("pageNumber", "comicIssueId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Newsletter_email_key" ON "Newsletter"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_ComicToGenre_AB_unique" ON "_ComicToGenre"("A", "B");
 
 -- CreateIndex
@@ -215,6 +235,9 @@ ALTER TABLE "ComicIssueNft" ADD CONSTRAINT "ComicIssueNft_comicIssueId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "ComicPage" ADD CONSTRAINT "ComicPage_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Newsletter" ADD CONSTRAINT "Newsletter_walletAddress_fkey" FOREIGN KEY ("walletAddress") REFERENCES "Wallet"("address") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ComicToGenre" ADD CONSTRAINT "_ComicToGenre_A_fkey" FOREIGN KEY ("A") REFERENCES "Comic"("slug") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -17,6 +17,7 @@ import { TasksService } from './vendors/task.service';
 import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
 import { GenreModule } from './genre/genre.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { GenreModule } from './genre/genre.module';
     CarouselModule,
     MailModule,
     GenreModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],

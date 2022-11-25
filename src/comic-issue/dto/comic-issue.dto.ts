@@ -26,7 +26,11 @@ import {
 } from '@prisma/client';
 import { PickType } from '@nestjs/swagger';
 
-class PartialComicDto extends PickType(ComicDto, ['name', 'slug']) {}
+class PartialComicDto extends PickType(ComicDto, [
+  'name',
+  'slug',
+  'isMatureAudience',
+]) {}
 class PartialComicPageDto extends PickType(ComicPageDto, ['id', 'image']) {}
 class PartialCreatorDto extends PickType(CreatorDto, [
   'name',
@@ -100,7 +104,7 @@ export class ComicIssueDto {
 }
 
 type ComicIssueInput = ComicIssue & {
-  comic?: Pick<Comic & { creator?: Creator }, 'name' | 'slug' | 'creator'>;
+  comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
   nfts?: ComicIssueNft[];
   stats?: ComicIssueStats;
@@ -116,7 +120,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     flavorText: issue.flavorText,
     cover: await getReadUrl(issue.cover),
     soundtrack: await getReadUrl(issue.soundtrack),
-    releaseDate: issue.releaseDate.toString(),
+    releaseDate: issue.releaseDate.toISOString(),
     isPublished: !!issue.publishedAt,
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
@@ -133,6 +137,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
       ? {
           name: issue.comic.name,
           slug: issue.comic.slug,
+          isMatureAudience: issue.comic.isMatureAudience,
         }
       : undefined,
     stats:

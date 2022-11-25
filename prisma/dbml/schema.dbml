@@ -12,6 +12,7 @@ Table Wallet {
   role Role [not null, default: 'User']
   creator Creator
   comics WalletComic [not null]
+  newsletter Newsletter
 }
 
 Table Creator {
@@ -148,7 +149,22 @@ Table CarouselSlide {
   link String [not null]
   publishedAt DateTime [default: `now()`, not null]
   expiredAt DateTime [not null]
-  location CarouselLocation [not null]
+  location CarouselLocation [not null, default: 'Home']
+}
+
+Table Newsletter {
+  wallet Wallet [not null]
+  walletAddress String [pk]
+  email String [unique, not null]
+  wantsDevelopmentProgressNews Boolean [not null]
+  wantsPlatformContentNews Boolean [not null]
+  wantsFreeNFTs Boolean [not null]
+  ip String [not null, default: '']
+  country String [not null, default: '']
+  city String [not null, default: '']
+  browser String [not null, default: '']
+  device String [not null, default: '']
+  os String [not null, default: '']
 }
 
 Table ComicToGenre {
@@ -179,3 +195,5 @@ Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 Ref: ComicIssueNft.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
+
+Ref: Newsletter.walletAddress - Wallet.address [delete: Cascade]
