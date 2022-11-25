@@ -174,7 +174,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicDto> {
-    await this.walletComicService.toggleSubscribe(wallet.address, slug);
+    await this.walletComicService.toggleFavourite(wallet.address, slug);
     return await this.findOne(slug, wallet);
   }
 

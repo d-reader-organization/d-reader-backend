@@ -10,6 +10,10 @@ export class ComicIssueFilterParams {
 
   @IsOptional()
   @IsString()
+  comicSlug?: string;
+
+  @IsOptional()
+  @IsString()
   titleSubstring?: string;
 
   @IsOptional()

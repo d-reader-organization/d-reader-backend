@@ -104,6 +104,7 @@ export class ComicIssueService {
       include: { comic: { include: { creator: true } } },
       where: {
         title: { contains: query?.titleSubstring, mode: 'insensitive' },
+        comicSlug: { equals: query?.comicSlug },
         deletedAt: null,
         publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
