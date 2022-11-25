@@ -11,9 +11,10 @@ import { MailService } from './mail.service';
         return {
           // transport: 'smtps://user@domain.com:pass@smtp.domain.com',
           transport: {
+            service: configService.get<string>('MAIL_SERVICE'),
             host: configService.get<string>('MAIL_HOST'),
-            port: 1025,
-            ignoreTLS: true,
+            port: parseInt(configService.get<string>('MAIL_PORT')),
+            ignoreTLS: false,
             secure: false,
             auth: {
               user: configService.get<string>('MAIL_USER'),
@@ -21,7 +22,9 @@ import { MailService } from './mail.service';
             },
           },
           defaults: {
-            from: `"dReader" <${configService.get<string>('MAIL_FROM')}`,
+            from: `"dReader - no reply" <${configService.get<string>(
+              'MAIL_FROM',
+            )}`,
           },
           template: {
             dir: __dirname + '/templates',

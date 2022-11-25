@@ -52,8 +52,6 @@ export class NewsletterController {
       os: parser.getOS()?.name,
     };
 
-    console.log('USER DATA: ', requestUserData);
-
     const newsletter = await this.newsletterService.subscribe(
       wallet.address,
       upsertNewsletterDto,

@@ -25,7 +25,7 @@ export class NewsletterService {
         create: { walletAddress, ...data },
       });
 
-      await this.mailService.subscribedSuccessfully(upsertNewsletterDto.email);
+      this.mailService.subscribedSuccessfully(upsertNewsletterDto.email);
       return newsletter;
     } catch {
       throw new NotFoundException(

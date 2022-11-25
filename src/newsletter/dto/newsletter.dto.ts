@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsBoolean, IsEmail, IsString } from 'class-validator';
+import { IsBoolean, IsEmail } from 'class-validator';
 import { Newsletter } from '@prisma/client';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
@@ -18,24 +18,6 @@ export class NewsletterDto {
 
   @IsBoolean()
   wantsFreeNFTs: boolean;
-
-  @IsString()
-  ip: string;
-
-  @IsString()
-  country: string;
-
-  @IsString()
-  city: string;
-
-  @IsString()
-  browser: string;
-
-  @IsString()
-  device: string;
-
-  @IsString()
-  os: string;
 }
 
 export async function toNewsletterDto(newsletter: Newsletter) {
@@ -45,12 +27,6 @@ export async function toNewsletterDto(newsletter: Newsletter) {
     wantsDevelopmentProgressNews: newsletter.wantsDevelopmentProgressNews,
     wantsPlatformContentNews: newsletter.wantsPlatformContentNews,
     wantsFreeNFTs: newsletter.wantsFreeNFTs,
-    ip: newsletter.ip,
-    country: newsletter.country,
-    city: newsletter.city,
-    browser: newsletter.browser,
-    device: newsletter.device,
-    os: newsletter.os,
   };
 
   const newsletterDto = plainToInstance(NewsletterDto, plainNewsletter);

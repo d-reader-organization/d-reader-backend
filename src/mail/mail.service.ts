@@ -10,7 +10,7 @@ export class MailService {
       await this.mailerService.sendMail({
         to: recipient,
         // from: 'localhost@dReader.io',
-        subject: 'Newsletter - dReader',
+        subject: 'Newsletter subscription',
         template: 'subscribedSuccessfully',
       });
     } catch (e) {
