@@ -170,6 +170,7 @@ export class ComicIssueService {
       include: {
         nfts: true,
         pages: { where: { isPreviewable: showOnlyPreviews } },
+        comic: { include: { creator: true } },
       },
     });
 
