@@ -18,6 +18,7 @@ import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
 import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { PlaygroundModule } from './playground/playground.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     MailModule,
     GenreModule,
     NewsletterModule,
+    PlaygroundModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],
