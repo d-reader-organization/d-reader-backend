@@ -5,6 +5,7 @@ import {
   // CreateAuctionHouseOutput,
   keypairIdentity,
   Metaplex,
+  sol,
   // Pda,
   // toBigNumber,
 } from '@metaplex-foundation/js';
@@ -33,6 +34,7 @@ export class AuctionHouseService {
     );
 
     this.metaplex.use(keypairIdentity(treasuryKeypair));
+    // this.metaplex.use()
     // .use(awsStorage(s3Client, 'd-reader-nft-data'));
   }
 
@@ -40,7 +42,16 @@ export class AuctionHouseService {
     try {
       const createAuctionHouseResponse = await this.metaplex
         .auctionHouse()
-        .create({ sellerFeeBasisPoints: 200 });
+        .create({
+          sellerFeeBasisPoints: 200,
+          // auctioneerAuthority: this.metaplex.identity().publicKey,
+        });
+
+      const { auctionHouse } = createAuctionHouseResponse;
+
+      await this.metaplex
+        .rpc()
+        .airdrop(auctionHouse.feeAccountAddress, sol(100));
 
       return createAuctionHouseResponse;
     } catch (e) {
