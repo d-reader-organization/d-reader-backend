@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import {
+  BlockhashWithExpiryBlockHeight,
+  Connection,
+  Keypair,
+  PublicKey,
+} from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
   CreateNftOutput,
+  IdentitySigner,
   keypairIdentity,
   Metaplex,
   toBigNumber,
@@ -13,6 +19,7 @@ import * as Utf8 from 'crypto-js/enc-utf8';
 import { readFileSync } from 'fs';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
 import { s3Client } from 'src/aws/s3client';
+import * as bs58 from 'bs58';
 
 @Injectable()
 export class CandyMachineService {
@@ -180,15 +187,98 @@ export class CandyMachineService {
 
   async mintOne() {
     const candyMachine = await this.metaplex.candyMachines().findByAddress({
-      address: new PublicKey('6HHj7ipoc3SREXeSdoqeo79XMon9J7HMihP83KqrYpEg'),
+      address: new PublicKey('8AmS1kC56CjC5ANeH9iMSUU1zrqVhTEZGypiFge9VPwY'),
     });
 
-    const mindNftResponse = await this.metaplex.candyMachines().mint({
+    const mintNftResponse = await this.metaplex.candyMachines().mint({
       candyMachine,
       collectionUpdateAuthority: this.metaplex.identity().publicKey,
     });
 
     console.log('********** NFT Minted **********');
-    console.log(mindNftResponse);
+    console.log(mintNftResponse);
+  }
+
+  // TODO: needs to be fixed like the function below
+  async createMintTransaction(
+    feePayer: PublicKey,
+    blockhash?: BlockhashWithExpiryBlockHeight,
+  ) {
+    const candyMachine = await this.metaplex.candyMachines().findByAddress({
+      address: new PublicKey('8AmS1kC56CjC5ANeH9iMSUU1zrqVhTEZGypiFge9VPwY'),
+    });
+
+    const mintTransactionBuilder = await this.metaplex
+      .candyMachines()
+      .builders()
+      .mint(
+        {
+          candyMachine,
+          collectionUpdateAuthority: this.metaplex.identity().publicKey,
+        },
+        // {
+        //   payer: feePayer,
+        // },
+      );
+
+    if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
+    const mintTransaction = mintTransactionBuilder.toTransaction(blockhash);
+
+    mintTransaction.partialSign(this.metaplex.identity());
+    console.log('********** NFT Mint Instruction created **********');
+
+    // return bs58.encode(mintTransaction.serialize());
+
+    return bs58.encode(
+      mintTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      }),
+    );
+  }
+
+  async createNftTransaction(
+    tokenOwner: PublicKey,
+    blockhash?: BlockhashWithExpiryBlockHeight,
+  ) {
+    const imageFileBuffer = readFileSync(
+      process.cwd() + '/src/vendors/logo.webp',
+    );
+
+    const { uri } = await this.metaplex.nfts().uploadMetadata({
+      name: 'Temp NFT',
+      symbol: 'dReader Test',
+      description: 'This NFT was created for PoC purposes',
+      seller_fee_basis_points: 200,
+      image: toMetaplexFile(imageFileBuffer, 'image.jpg'),
+    });
+
+    const mintKeypair = Keypair.generate();
+    const createNftBuilder = await this.metaplex
+      .nfts()
+      .builders()
+      .create(
+        {
+          uri,
+          name: 'Temp NFT',
+          sellerFeeBasisPoints: 200,
+          useNewMint: mintKeypair,
+          tokenExists: false,
+          tokenOwner,
+        },
+        { payer: { publicKey: tokenOwner } as IdentitySigner },
+      );
+
+    if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
+    createNftBuilder.setFeePayer({ publicKey: tokenOwner } as IdentitySigner);
+    const createNftTransaction = createNftBuilder.toTransaction(blockhash);
+    createNftTransaction.partialSign(this.metaplex.identity());
+    createNftTransaction.partialSign(mintKeypair);
+
+    const rawTransaction = createNftTransaction.serialize({
+      requireAllSignatures: false,
+    });
+
+    return bs58.encode(rawTransaction);
   }
 }

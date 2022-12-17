@@ -3,12 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { validateEd25519Address } from 'src/utils/solana';
+import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { v4 as uuidv4 } from 'uuid';
-import * as bs58 from 'bs58';
 import * as nacl from 'tweetnacl';
-import { Message, Transaction } from '@solana/web3.js';
-import { validateEd25519Address } from 'src/utils/solana';
+import * as bs58 from 'bs58';
 
 @Injectable()
 export class PasswordService {
@@ -49,7 +49,7 @@ export class PasswordService {
 
     // Try to construct a Message and match message bytes with OTP bytes
     try {
-      // const message = Message.from(signatureBytes);
+      // @deprecated: const message = Message.from(signatureBytes);
       const isVerified = nacl.sign.detached.verify(
         oneTimePasswordBytes,
         signatureBytes,
