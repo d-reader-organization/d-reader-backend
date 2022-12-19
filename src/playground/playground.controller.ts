@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -18,39 +18,39 @@ export class PlaygroundController {
   ) {}
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('find-minted-nfts')
+  @Get('find-minted-nfts')
   async findMintedNfts() {
     return await this.candyMachineService.findMintedNfts();
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('create-candy-machine')
+  @Get('create-candy-machine')
   async createCandyMachine() {
     return await this.candyMachineService.create();
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('mint-one')
+  @Get('mint-one')
   async mintOne() {
     return await this.candyMachineService.mintOne();
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('/transactions/construct/mint-one')
+  @Get('/transactions/construct/mint-one')
   async createMintTransaction(@WalletEntity() wallet: Wallet) {
     const publicKey = new PublicKey(wallet.address);
     return await this.candyMachineService.createMintTransaction(publicKey);
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('/transactions/construct/create-nft')
+  @Get('/transactions/construct/create-nft')
   async createNftTransaction(@WalletEntity() wallet: Wallet) {
     const publicKey = new PublicKey(wallet.address);
     return await this.candyMachineService.createNftTransaction(publicKey);
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
-  @Post('create-auction-house')
+  @Get('create-auction-house')
   async createAuctionHouse() {
     return await this.auctionHouseService.create();
   }
