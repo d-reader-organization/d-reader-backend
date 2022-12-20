@@ -226,7 +226,6 @@ export class ComicController {
    * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
    * - [password] Simulate message creation: const message = Message.from(signatureBytes);
-   * - [nft.dto.ts] Decorate 'mint' property with @IsHash()?
    */
 
   /**

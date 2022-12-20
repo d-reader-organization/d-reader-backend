@@ -39,9 +39,12 @@ export class CreateAuctionHouseCommand extends CommandRunner {
     const connection = new Connection(endpoint, 'confirmed');
     const metaplex = new Metaplex(connection);
 
+    // TODO: https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
+
     try {
       const response = await metaplex.auctionHouse().create({
         sellerFeeBasisPoints: 200,
+        // I don't think we want auctioneer functionality (yet!)
         // auctioneerAuthority: this.metaplex.identity().publicKey,
       });
 
