@@ -1,16 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Connection, Keypair } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
-import {
-  // CreateAuctionHouseOutput,
-  keypairIdentity,
-  Metaplex,
-  sol,
-  // Pda,
-  // toBigNumber,
-} from '@metaplex-foundation/js';
+import { keypairIdentity, Metaplex, sol } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
+import { Cluster } from 'src/types/cluster';
 
 @Injectable()
 export class AuctionHouseService {
@@ -38,75 +32,65 @@ export class AuctionHouseService {
     // .use(awsStorage(s3Client, 'd-reader-nft-data'));
   }
 
-  async create() {
+  async createAuctionHouse() {
     try {
-      const createAuctionHouseResponse = await this.metaplex
-        .auctionHouse()
-        .create({
-          sellerFeeBasisPoints: 200,
-          // auctioneerAuthority: this.metaplex.identity().publicKey,
-        });
+      const response = await this.metaplex.auctionHouse().create({
+        sellerFeeBasisPoints: 200,
+        // auctioneerAuthority: this.metaplex.identity().publicKey,
+      });
 
-      const { auctionHouse } = createAuctionHouseResponse;
+      const { auctionHouse } = response;
 
-      await this.metaplex
-        .rpc()
-        .airdrop(auctionHouse.feeAccountAddress, sol(100));
+      if (process.env.SOLANA_CLUSTER !== Cluster.MainnetBeta) {
+        await this.metaplex
+          .rpc()
+          .airdrop(auctionHouse.feeAccountAddress, sol(2));
+      }
 
-      return createAuctionHouseResponse;
+      return response;
     } catch (e) {
-      console.log('errored: ', e);
+      console.log('Errored while creating the auction house: ', e);
     }
   }
 
-  async something() {
+  async findOurAuctionHouse() {
+    const address = new PublicKey('something');
+    return this.metaplex.auctionHouse().findByAddress({ address });
+  }
+
+  async withdrawFundsFromFeeWallet(amount: number) {
     try {
-      // const fakeSeller = new PublicKey(
-      //   '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-      // );
-      // const fakeMintAccount = new PublicKey(
-      //   'HUXypHtrwM271dCL7CfoSb1ymMA5c9X5Ra6pGSEXUWV2',
-      // );
-      // const response = await this.metaplex.auctionHouse().list({
-      //   seller: fakeSeller,
-      //   mintAccount: fakeMintAccount,
-      //   auctionHouse: {
-      //     model: 'auctionHouse',
-      //     address: new Pda('6ohKVf92BiVt3gUvD2Pn23XzYNkCxPu2D9unKr4dqXrG', 0),
-      //     creatorAddress: new PublicKey(
-      //       'AQbjzDPKnZrdH4HWVTC6oeu9odozyQn1BiEWXEcVUGCz',
-      //     ),
-      //     authorityAddress: new PublicKey(
-      //       'AQbjzDPKnZrdH4HWVTC6oeu9odozyQn1BiEWXEcVUGCz',
-      //     ),
-      //     treasuryMint: {
-      //       model: 'mint',
-      //       address: new PublicKey(
-      //         'So11111111111111111111111111111111111111112',
-      //       ),
-      //       mintAuthorityAddress: null,
-      //       freezeAuthorityAddress: null,
-      //       decimals: 9,
-      //       supply: {
-      //         basisPoints: toBigNumber(0),
-      //         currency: {
-      //           symbol: 'SOL',
-      //           decimals: 9,
-      //           namespace: 'spl-token',
-      //         },
-      //       },
-      //       isWrappedSol: true,
-      //       currency: {
-      //         symbol: 'SOL',
-      //         decimals: 9,
-      //         namespace: 'spl-token',
-      //       },
-      //     },
-      //   },
-      // });
-      // return response;
+      const auctionHouse = await this.findOurAuctionHouse();
+
+      const response = await this.metaplex
+        .auctionHouse()
+        .withdrawFromFeeAccount({
+          auctionHouse,
+          amount: sol(amount),
+        });
+
+      return response;
     } catch (e) {
-      console.log('errored: ', e);
+      console.log('Errored while withdrawing funds from the fee wallet: ', e);
+    }
+  }
+
+  async withdrawFundsFromTreasuryWallet(amount: number) {
+    try {
+      const auctionHouse = await this.findOurAuctionHouse();
+      const response = await this.metaplex
+        .auctionHouse()
+        .withdrawFromTreasuryAccount({
+          auctionHouse,
+          amount: sol(amount),
+        });
+
+      return response;
+    } catch (e) {
+      console.log(
+        'Errored while withdrawing funds from the treasury wallet: ',
+        e,
+      );
     }
   }
 }

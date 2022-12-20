@@ -21,7 +21,7 @@ export const createAuctionHouse = async (
     options,
   );
 
-  await mx.rpc().airdrop(auctionHouse.feeAccountAddress, sol(100));
+  await mx.rpc().airdrop(auctionHouse.feeAccountAddress, sol(2));
 
   return auctionHouse;
 };

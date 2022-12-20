@@ -14,6 +14,12 @@ First, install dependencies and copy the .env file:
 npm install & cp .env.example .env.local
 ```
 
+Next run the command for generating env variables and replace placeholder values from `.env` as per instructions in the terminal. Fill in any remaining variables by following notes from the [.env section](#env):
+
+```bash
+npm run generate-env:dev
+```
+
 Then run migrations and seed the database:
 
 ```bash
@@ -34,7 +40,6 @@ Open [http://localhost:3005](http://localhost:3005) with your browser to see the
 
 
 ## .env
-
 - **`JWT_ACCESS_SECRET`** and **`JWT_REFRESH_SECRET`** are randomly generated 42 char strings
 - **`SOLANA_CLUSTER`** can be either `mainnet-beta`, `testnet` or `devnet`. Rule of thumb is to use `devnet` on localhost development, and `mainnet-beta` for production applications
 - **`AWS_ACCESS_KEY_ID`** and **`AWS_SECRET_ACCESS_KEY`** are necessary for app to work as intended since app relies on AWS S3 for file storage. These credentials can be obtained upon IAM user creation

@@ -176,6 +176,9 @@ export class CandyMachineService {
         description: 'My metadata',
         seller_fee_basis_points: 1000,
         image: toMetaplexFile(imageFileBuffer, 'image.jpg'),
+        // properties: {
+        //   creators: []
+        // }
         // external_url: '',
       });
 

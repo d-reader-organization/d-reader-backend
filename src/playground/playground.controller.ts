@@ -52,6 +52,6 @@ export class PlaygroundController {
   /* WORK IN PROGRESS - proof of concept endpoint */
   @Get('create-auction-house')
   async createAuctionHouse() {
-    return await this.auctionHouseService.create();
+    return await this.auctionHouseService.createAuctionHouse();
   }
 }

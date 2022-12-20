@@ -21,7 +21,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "heroku:db": "npx prisma db push",
     "migrate:dev": "npx prisma migrate dev",
-    "seed": "npx prisma db seed"
+    "seed": "npx prisma db seed",
+    "generate-env:dev": "npx ts-node src/cli/main.ts generate-env -c devnet",
+    "generate-env:prod": "npx ts-node src/cli/main.ts generate-env -c mainnet-beta",
+    "create-ah:dev": "npx ts-node src/cli/main.ts create-auction-house -c devnet",
+    "create-ah:prod": "npx ts-node src/cli/main.ts create-auction-house -c mainnet-beta"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -51,6 +55,7 @@
     "date-fns": "^2.29.3",
     "geoip-lite": "^1.4.6",
     "lodash": "^4.17.21",
+    "nest-commander": "^3.3.0",
     "nestjs-prisma": "^0.19.0",
     "nodemailer": "^6.8.0",
     "passport-jwt": "^4.0.0",
@@ -85,7 +90,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^29.3.1",
     "prettier": "^2.8.1",
-    "prisma": "^4.7.1",
+    "prisma": "^4.8.0",
     "source-map-support": "^0.5.20",
     "supertest": "^6.3.3",
     "ts-jest": "^29.0.3",
