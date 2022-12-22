@@ -2,6 +2,7 @@ import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { Metaplex, sol } from '@metaplex-foundation/js';
 import { generateSecret, createWallet } from '../utils/wallets';
+import { Cluster as ClusterEnum } from '../types/cluster';
 
 interface GenerateEnvironmentCommandOptions {
   cluster?: Cluster;
@@ -16,7 +17,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     passedParam: string[],
     options: GenerateEnvironmentCommandOptions,
   ): Promise<void> {
-    options.cluster = options.cluster || 'devnet';
+    options.cluster = options.cluster || ClusterEnum.Devnet;
     this.generateEnvironment(options.cluster);
   }
 
@@ -26,7 +27,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
       "Solana cluster to use, select 'devnet' for local development or 'mainnet-beta' for production environment",
   })
   parseCluster(cluster: string): string {
-    if (cluster !== 'devnet' && cluster !== 'mainnet-beta') {
+    if (cluster !== ClusterEnum.Devnet && cluster !== ClusterEnum.MainnetBeta) {
       throw new Error(
         "Faulty --cluster argument, only 'devnet' and 'mainnet-beta' are allowed",
       );
@@ -43,7 +44,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     // Proposal: create a wallet with starting characters 'trsy...'
     const treasuryWallet = createWallet();
 
-    if (cluster !== 'mainnet-beta') {
+    if (cluster !== ClusterEnum.MainnetBeta) {
       metaplex.rpc().airdrop(treasuryWallet.keypair.publicKey, sol(2));
     }
 

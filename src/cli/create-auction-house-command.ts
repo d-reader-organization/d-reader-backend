@@ -1,59 +1,71 @@
-import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
-import { Command, CommandRunner, Option } from 'nest-commander';
-import { Metaplex, sol } from '@metaplex-foundation/js';
-
-interface CreateAuctionHouseCommandOptions {
-  cluster?: Cluster;
-}
+import { Cluster, Connection, Keypair } from '@solana/web3.js';
+import { Command, CommandRunner } from 'nest-commander';
+import {
+  keypairIdentity,
+  Metaplex,
+  sol,
+  WRAPPED_SOL_MINT,
+} from '@metaplex-foundation/js';
+import * as AES from 'crypto-js/aes';
+import * as Utf8 from 'crypto-js/enc-utf8';
+import { Cluster as ClusterEnum } from '../types/cluster';
 
 @Command({
   name: 'create-auction-house',
   description: 'Create a new auction house which is to be used within the app',
 })
 export class CreateAuctionHouseCommand extends CommandRunner {
-  async run(
-    passedParam: string[],
-    options: CreateAuctionHouseCommandOptions,
-  ): Promise<void> {
-    options.cluster = options.cluster || 'devnet';
-    this.createAuctionHouse(options.cluster);
+  private readonly cluster: Cluster;
+  private readonly connection: Connection;
+  private readonly metaplex: Metaplex;
+
+  constructor() {
+    super();
+
+    this.cluster = process.env.SOLANA_CLUSTER as Cluster;
+    this.connection = new Connection(
+      process.env.SOLANA_RPC_NODE_ENDPOINT,
+      'confirmed',
+    );
+    this.metaplex = new Metaplex(this.connection);
+    const treasuryWallet = AES.decrypt(
+      process.env.TREASURY_PRIVATE_KEY,
+      process.env.TREASURY_SECRET,
+    );
+
+    const treasuryKeypair = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
+    );
+
+    this.metaplex.use(keypairIdentity(treasuryKeypair));
   }
 
-  @Option({
-    flags: '-c, --cluster [string]',
-    description:
-      "Solana cluster to use, select 'devnet' for local development or 'mainnet-beta' for production environment",
-  })
-  parseCluster(cluster: string): string {
-    if (cluster !== 'devnet' && cluster !== 'mainnet-beta') {
-      throw new Error(
-        "Faulty --cluster argument, only 'devnet' and 'mainnet-beta' are allowed",
-      );
-    }
-
-    return cluster;
+  async run(): Promise<void> {
+    this.createAuctionHouse();
   }
 
-  async createAuctionHouse(cluster: Cluster) {
-    const endpoint = clusterApiUrl(cluster);
-    const connection = new Connection(endpoint, 'confirmed');
-    const metaplex = new Metaplex(connection);
-
+  async createAuctionHouse() {
     // TODO: https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
-
     try {
-      const response = await metaplex.auctionHouse().create({
-        sellerFeeBasisPoints: 200,
-        // I don't think we want auctioneer functionality (yet!)
-        // auctioneerAuthority: this.metaplex.identity().publicKey,
+      const response = await this.metaplex.auctionHouse().create({
+        sellerFeeBasisPoints: 800, // 8%
+        requiresSignOff: true,
+        canChangeSalePrice: false, // confirm if this will be 'false'
+        treasuryMint: WRAPPED_SOL_MINT,
+        authority: this.metaplex.identity(), // Keypair.generate()
+        feeWithdrawalDestination: this.metaplex.identity().publicKey,
+        treasuryWithdrawalDestinationOwner: this.metaplex.identity().publicKey,
+        auctioneerAuthority: undefined, // out of scope for now
+        auctioneerScopes: undefined,
       });
 
       const { auctionHouse } = response;
 
-      if (process.env.SOLANA_CLUSTER !== 'mainnet-beta') {
-        metaplex.rpc().airdrop(auctionHouse.feeAccountAddress, sol(2));
+      if (this.cluster !== ClusterEnum.MainnetBeta) {
+        this.metaplex.rpc().airdrop(auctionHouse.feeAccountAddress, sol(2));
       }
 
+      // TODO: CONSOLE.LOG EVERYTHING, CONNECT WITH THE GENERATEENVIRONMENT FOR .ENV?
       console.log(response);
       return;
     } catch (e) {

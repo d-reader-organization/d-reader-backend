@@ -1,9 +1,9 @@
 {
   "name": "d-reader-backend",
-  "version": "0.2.0",
-  "description": "",
+  "version": "0.3.0",
+  "description": "NestJS backend for dReader dapp on Solana",
   "author": "",
-  "private": true,
+  "private": false,
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
@@ -24,8 +24,7 @@
     "seed": "npx prisma db seed",
     "generate-env:dev": "npx ts-node src/cli/main.ts generate-env -c devnet",
     "generate-env:prod": "npx ts-node src/cli/main.ts generate-env -c mainnet-beta",
-    "create-ah:dev": "npx ts-node src/cli/main.ts create-auction-house -c devnet",
-    "create-ah:prod": "npx ts-node src/cli/main.ts create-auction-house -c mainnet-beta"
+    "create-ah": "npx ts-node src/cli/main.ts create-auction-house"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

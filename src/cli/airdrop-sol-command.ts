@@ -2,6 +2,7 @@ import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { Metaplex, sol } from '@metaplex-foundation/js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
+import { Cluster as ClusterEnum } from '../types/cluster';
 
 interface AirdropSolCommandOptions {
   address: string;
@@ -12,6 +13,16 @@ interface AirdropSolCommandOptions {
   description: 'Airdrop solana tokens to a specific wallet',
 })
 export class AirdropSolCommand extends CommandRunner {
+  private readonly metaplex: Metaplex;
+
+  constructor() {
+    super();
+
+    const endpoint = clusterApiUrl(ClusterEnum.Devnet);
+    const connection = new Connection(endpoint, 'confirmed');
+    this.metaplex = new Metaplex(connection);
+  }
+
   async run(
     passedParam: string[],
     options: AirdropSolCommandOptions,
@@ -32,13 +43,10 @@ export class AirdropSolCommand extends CommandRunner {
   }
 
   async airdropSol(address: string) {
-    const endpoint = clusterApiUrl('devnet');
-    const connection = new Connection(endpoint, 'confirmed');
-    const metaplex = new Metaplex(connection);
     const publicKey = new PublicKey(address);
 
     try {
-      await metaplex.rpc().airdrop(publicKey, sol(2));
+      await this.metaplex.rpc().airdrop(publicKey, sol(2));
       console.log(`2 Sol added successfully to ${address}!`);
     } catch (e) {
       console.log(`Failed to drop 2 Sol in the wallet ${address}\n${e}`);
