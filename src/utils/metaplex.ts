@@ -3,7 +3,6 @@ import {
   guestIdentity,
   mockStorage,
   keypairIdentity,
-  KeypairSigner,
   CreateNftInput,
   UploadMetadataInput,
   CreateSftInput,
@@ -30,13 +29,13 @@ export const metaplex = async (options: MetaplexTestOptions = {}) => {
   const mx = metaplexGuest(options);
   const wallet = await createWallet(mx, options.solsToAirdrop);
 
-  return mx.use(keypairIdentity(wallet as Keypair));
+  return mx.use(keypairIdentity(wallet));
 };
 
 export const createWallet = async (
   mx: Metaplex,
   solsToAirdrop = 2,
-): Promise<KeypairSigner> => {
+): Promise<Keypair> => {
   const wallet = Keypair.generate();
   await mx.rpc().airdrop(wallet.publicKey, sol(solsToAirdrop));
 

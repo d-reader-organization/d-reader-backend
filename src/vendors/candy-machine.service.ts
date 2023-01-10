@@ -282,6 +282,7 @@ export class CandyMachineService {
       requireAllSignatures: false,
     });
 
-    return bs58.encode(rawTransaction);
+    // return bs58.encode(rawTransaction);
+    return rawTransaction.toString('base64');
   }
 }
