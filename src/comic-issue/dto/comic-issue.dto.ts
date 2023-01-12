@@ -25,13 +25,18 @@ import {
   ComicIssueNft,
 } from '@prisma/client';
 import { PickType } from '@nestjs/swagger';
+import { sortBy } from 'lodash';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
   'slug',
   'isMatureAudience',
 ]) {}
-class PartialComicPageDto extends PickType(ComicPageDto, ['id', 'image']) {}
+class PartialComicPageDto extends PickType(ComicPageDto, [
+  'id',
+  'pageNumber',
+  'image',
+]) {}
 class PartialCreatorDto extends PickType(CreatorDto, [
   'name',
   'slug',
@@ -150,11 +155,16 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
             totalIssuesCount: getRandomInt(6, 14),
           }
         : undefined,
-    pages: issue.pages?.map((page) => ({
-      id: page.id,
-      pageNumber: page.pageNumber,
-      image: page.image,
-    })),
+    pages: sortBy(
+      await Promise.all(
+        issue.pages?.map(async (page) => ({
+          id: page.id,
+          pageNumber: page.pageNumber,
+          image: await getReadUrl(page.image),
+        })),
+      ),
+      'pageNumber',
+    ),
     hashlist: issue.nfts?.map((nft) => nft.mint),
   };
 
