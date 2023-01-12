@@ -11,7 +11,7 @@
 
 First, make sure your node version matches the one specified in `.nvmrc`
 
-Install dependencies and copy the .env.example` content into `.env`:
+Install dependencies and copy the `.env.example` content into `.env`:
 
 ```bash
 npm install & cp .env.example .env
