@@ -155,16 +155,18 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
             totalIssuesCount: getRandomInt(6, 14),
           }
         : undefined,
-    pages: sortBy(
-      await Promise.all(
-        issue.pages?.map(async (page) => ({
-          id: page.id,
-          pageNumber: page.pageNumber,
-          image: await getReadUrl(page.image),
-        })),
-      ),
-      'pageNumber',
-    ),
+    pages: issue.pages
+      ? sortBy(
+          await Promise.all(
+            issue.pages.map(async (page) => ({
+              id: page.id,
+              pageNumber: page.pageNumber,
+              image: await getReadUrl(page.image),
+            })),
+          ),
+          'pageNumber',
+        )
+      : undefined,
     hashlist: issue.nfts?.map((nft) => nft.mint),
   };
 
