@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsPositive,
   MaxLength,
+  Min,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
@@ -28,6 +29,26 @@ export class CreateComicIssueDto {
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   number: number;
+
+  @IsPositive()
+  // @IsDivisibleBy(100)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
+  supply: number;
+
+  @Min(0)
+  @Transform(({ value }) =>
+    // TODO: must be lower than mintPrice
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
+  discountMintPrice: number;
+
+  @Min(0)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
+  mintPrice: number;
 
   @IsOptional()
   @MaxLength(256)

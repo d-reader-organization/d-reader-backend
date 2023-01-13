@@ -96,6 +96,9 @@ Table Genre {
 Table ComicIssue {
   id Int [pk, increment]
   number Int [not null]
+  supply Int [not null]
+  discountMintPrice Float [not null]
+  mintPrice Float [not null]
   title String [not null]
   slug String [not null]
   description String [not null, default: '']

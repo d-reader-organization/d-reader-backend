@@ -21,8 +21,9 @@ import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage, ComicIssueNft } from '@prisma/client';
 import { MetaplexService } from 'src/vendors/metaplex.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { subDays } from 'date-fns';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
+import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class ComicIssueService {
@@ -30,6 +31,7 @@ export class ComicIssueService {
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
     private readonly metaplexService: MetaplexService,
+    private readonly candyMachineService: CandyMachineService,
   ) {}
 
   async create(
@@ -248,14 +250,37 @@ export class ComicIssueService {
   }
 
   async publish(id: number) {
-    try {
-      return await this.prisma.comicIssue.update({
-        where: { id },
-        data: { publishedAt: new Date() },
-      });
-    } catch {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id },
+    });
+
+    if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
+
+    const comic = await this.prisma.comic.findFirst({
+      where: { slug: comicIssue.comicSlug },
+    });
+    const creator = await this.prisma.creator.findUnique({
+      where: { id: comic.creatorId },
+    });
+
+    // TODO: try catch
+    const candyMachine = await this.candyMachineService.createComicIssueCM(
+      comic,
+      comicIssue,
+      creator,
+    );
+
+    console.log('candy machine address: ', candyMachine.address);
+
+    // TODO: once CM is created store it's data in the database (adress etc.)
+    // TODO: if CM creation worked, mark the Issue as published
+
+    return await this.prisma.comicIssue.update({
+      where: { id },
+      data: { publishedAt: new Date() },
+    });
   }
 
   async unpublish(id: number) {

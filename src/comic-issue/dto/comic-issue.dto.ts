@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  Min,
 } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
 import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
@@ -50,6 +51,15 @@ export class ComicIssueDto {
 
   @IsPositive()
   number: number;
+
+  @IsPositive()
+  supply: number;
+
+  @Min(0)
+  discountMintPrice: number;
+
+  @Min(0)
+  mintPrice: number;
 
   @IsNotEmpty()
   title: string;
@@ -119,6 +129,9 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
     number: issue.number,
+    supply: issue.supply,
+    discountMintPrice: issue.discountMintPrice,
+    mintPrice: issue.mintPrice,
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
@@ -150,7 +163,6 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
       issue?.stats || true
         ? {
             floorPrice: getRandomFloatOrInt(1, 20),
-            totalSupply: getRandomInt(1, 10) * 100,
             totalVolume: getRandomFloatOrInt(1, 1000),
             totalIssuesCount: getRandomInt(6, 14),
           }

@@ -5,9 +5,6 @@ export class ComicIssueStatsDto {
   floorPrice: number;
 
   @Min(0)
-  totalSupply: number;
-
-  @Min(0)
   totalVolume: number;
 
   @Min(0)

@@ -6,6 +6,7 @@ import { AuctionHouseService } from 'src/vendors/auction-house.service';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
 import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
+import { PrismaService } from 'nestjs-prisma';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -15,18 +16,26 @@ export class PlaygroundController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
     private readonly auctionHouseService: AuctionHouseService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /* WORK IN PROGRESS - proof of concept endpoint */
   @Get('find-minted-nfts')
   async findMintedNfts() {
-    return await this.candyMachineService.findMintedNfts();
+    return 'WIP';
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
   @Get('create-candy-machine')
   async createCandyMachine() {
-    return await this.candyMachineService.create();
+    const comic = await this.prisma.comic.findFirst();
+    const comicIssue = await this.prisma.comicIssue.findFirst();
+    const creator = await this.prisma.creator.findFirst();
+    return await this.candyMachineService.createComicIssueCM(
+      comic,
+      comicIssue,
+      creator,
+    );
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
