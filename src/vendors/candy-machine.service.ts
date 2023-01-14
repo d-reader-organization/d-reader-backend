@@ -35,6 +35,39 @@ const streamToString = (stream: Readable) => {
   });
 };
 
+const MAX_NAME_LENGTH = 32;
+const MAX_URI_LENGTH = 200;
+const MAX_SYMBOL_LENGTH = 10;
+const MAX_CREATOR_LEN = 32 + 1 + 1;
+const MAX_CREATOR_LIMIT = 5;
+const MAX_DATA_SIZE =
+  4 +
+  MAX_NAME_LENGTH +
+  4 +
+  MAX_SYMBOL_LENGTH +
+  4 +
+  MAX_URI_LENGTH +
+  2 +
+  1 +
+  4 +
+  MAX_CREATOR_LIMIT * MAX_CREATOR_LEN;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const MAX_METADATA_LEN = 1 + 32 + 32 + MAX_DATA_SIZE + 1 + 1 + 9 + 172;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const CREATOR_ARRAY_START =
+  1 +
+  32 +
+  32 +
+  4 +
+  MAX_NAME_LENGTH +
+  4 +
+  MAX_URI_LENGTH +
+  4 +
+  MAX_SYMBOL_LENGTH +
+  2 +
+  1 +
+  4;
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const D_READER_SYMBOL = 'dReader';
 const D_PUBLISHER_SYMBOL = 'dPublisher';
@@ -79,6 +112,50 @@ export class CandyMachineService {
     this.metaplex
       .use(keypairIdentity(treasuryKeypair))
       .use(awsStorage(s3Client, 'd-reader-nft-data'));
+  }
+
+  async findMintedNfts() {
+    try {
+      const candyMachineId = new PublicKey(
+        '3Umowr8NJLMra94hSvp56n6o5ysDbTvPwWpj36ggqU1w',
+      );
+      const candyMachineCreator = PublicKey.findProgramAddress(
+        [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
+        this.metaplex.programs().getCandyMachine().address,
+      );
+      const mints = this.getMintAddresses(candyMachineCreator[0]);
+      console.log(mints);
+      return mints;
+    } catch (e) {
+      console.log('error', e);
+    }
+  }
+
+  async getMintAddresses(firstCreatorAddress: PublicKey) {
+    const metadataAccounts = await this.connection.getProgramAccounts(
+      this.metaplex.programs().getTokenMetadata().address,
+      {
+        // The mint address is located at byte 33 and lasts for 32 bytes.
+        dataSlice: { offset: 33, length: 32 },
+
+        filters: [
+          // Only get Metadata accounts.
+          { dataSize: MAX_METADATA_LEN },
+
+          // Filter using the first creator.
+          {
+            memcmp: {
+              offset: CREATOR_ARRAY_START,
+              bytes: firstCreatorAddress.toBase58(),
+            },
+          },
+        ],
+      },
+    );
+
+    return metadataAccounts.map((metadataAccountInfo) =>
+      bs58.encode(metadataAccountInfo.account.data),
+    );
   }
 
   // v2: when creating the candy machine create 4 different metadata URIs: mint unsigned, mint signed, used unsigned, used signed
@@ -291,7 +368,7 @@ export class CandyMachineService {
 
   async mintOne() {
     const candyMachine = await this.metaplex.candyMachines().findByAddress({
-      address: new PublicKey('BsgABf1rKYp1jMX2rPra2t5xzDtLJhaULisbFXMBk5Se'),
+      address: new PublicKey('9Z76zEyYT1GS6pMcUP4TLVQcLWiySyURKsgw9cRnQakn'),
     });
 
     const mintNftResponse = await this.metaplex.candyMachines().mint({

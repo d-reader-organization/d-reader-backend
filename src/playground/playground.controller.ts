@@ -22,7 +22,7 @@ export class PlaygroundController {
   /* WORK IN PROGRESS - proof of concept endpoint */
   @Get('find-minted-nfts')
   async findMintedNfts() {
-    return 'WIP';
+    return await this.candyMachineService.findMintedNfts();
   }
 
   /* WORK IN PROGRESS - proof of concept endpoint */
