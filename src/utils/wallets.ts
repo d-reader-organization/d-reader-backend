@@ -17,7 +17,7 @@ export const generateSecret = (size: number) => {
   const chars =
     '0123456789abcdefghijklmnopqrstuvwxyz!@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let secret = '';
-  for (let i = 0; i <= size; i++) {
+  for (let i = 0; i < size; i++) {
     const rand = Math.floor(Math.random() * chars.length);
     secret += chars.substring(rand, rand + 1);
   }
@@ -28,7 +28,10 @@ export const generateSecret = (size: number) => {
 export const createWallet = () => {
   const secret = generateSecret(64);
   const keypair = Keypair.generate();
-  const encryptedPrivateKey = encryptAES(keypair.secretKey.toString(), secret);
+  const encryptedPrivateKey = encryptAES(
+    `[${keypair.secretKey.toString()}]`,
+    secret,
+  );
   const address = keypair.publicKey.toBase58();
 
   return { address, secret, keypair, encryptedPrivateKey };

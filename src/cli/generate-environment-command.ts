@@ -36,7 +36,9 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     return cluster;
   }
 
-  generateEnvironment = (cluster: Cluster) => {
+  generateEnvironment = async (cluster: Cluster) => {
+    console.log('Generating new .env values...');
+
     const endpoint = clusterApiUrl(cluster);
     const connection = new Connection(endpoint, 'confirmed');
     const metaplex = new Metaplex(connection);
@@ -45,11 +47,16 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     const treasuryWallet = createWallet();
 
     if (cluster !== ClusterEnum.MainnetBeta) {
-      metaplex.rpc().airdrop(treasuryWallet.keypair.publicKey, sol(2));
+      console.log('Airdropping 2 Sol to the treasury wallet...');
+      try {
+        await metaplex.rpc().airdrop(treasuryWallet.keypair.publicKey, sol(2));
+      } catch (e) {
+        console.log('ERROR: Failed to airdrop 2 Sol!');
+      }
     }
 
     const WRITE_ON_PAPER = {
-      treasurySecretKey: `[${treasuryWallet.keypair.secretKey}]`,
+      treasurySecretKey: `[${treasuryWallet.keypair.secretKey.toString()}]`,
     };
 
     const COPY_PASTE_SOMEWHERE = {
@@ -66,6 +73,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
       TREASURY_SECRET: treasuryWallet.secret,
     };
 
+    console.log('\n');
     console.log('**************************************************');
     console.log('WRITE THESE VALUES ON A SHEET OF PAPER AND HIDE IT');
     console.log('--------------------------------------------------');
@@ -95,10 +103,10 @@ export class GenerateEnvironmentCommand extends CommandRunner {
       `TREASURY_PRIVATE_KEY="${REPLACE_IN_ENV.TREASURY_PRIVATE_KEY}"`,
     );
     console.log(`TREASURY_SECRET="${REPLACE_IN_ENV.TREASURY_SECRET}"`);
-    console.log('**************************************************\n\n');
+    console.log('**************************************************\n');
 
     console.log(
-      "In case you don't have an Auction House set up, make sure to run the `npm run create-ah:dev` and follow instructions\n",
+      "In case you don't have an Auction House set up, make sure to run the `npm run create-ah` and follow instructions\n",
     );
     return;
   };

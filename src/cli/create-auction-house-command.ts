@@ -3,6 +3,7 @@ import { Command, CommandRunner } from 'nest-commander';
 import {
   keypairIdentity,
   Metaplex,
+  MetaplexError,
   sol,
   WRAPPED_SOL_MINT,
 } from '@metaplex-foundation/js';
@@ -46,13 +47,15 @@ export class CreateAuctionHouseCommand extends CommandRunner {
 
   async createAuctionHouse() {
     // TODO: https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
+    console.log('Creating new auction house...');
+
     try {
       const response = await this.metaplex.auctionHouse().create({
         sellerFeeBasisPoints: 800, // 8%
         requiresSignOff: true,
-        canChangeSalePrice: false, // confirm if this will be 'false'
+        canChangeSalePrice: false,
         treasuryMint: WRAPPED_SOL_MINT,
-        authority: this.metaplex.identity(), // Keypair.generate()
+        authority: this.metaplex.identity(),
         feeWithdrawalDestination: this.metaplex.identity().publicKey,
         treasuryWithdrawalDestinationOwner: this.metaplex.identity().publicKey,
         auctioneerAuthority: undefined, // out of scope for now
@@ -61,15 +64,56 @@ export class CreateAuctionHouseCommand extends CommandRunner {
 
       const { auctionHouse } = response;
 
+      const REPLACE_IN_ENV = {
+        AUCTION_HOUSE_ADDRESS: auctionHouse.address,
+      };
+
       if (this.cluster !== ClusterEnum.MainnetBeta) {
-        this.metaplex.rpc().airdrop(auctionHouse.feeAccountAddress, sol(2));
+        console.log(
+          'Airdropping 2 Sol to the auction house fee account wallet...',
+        );
+        try {
+          await this.metaplex
+            .rpc()
+            .airdrop(auctionHouse.feeAccountAddress, sol(2));
+        } catch (e) {
+          console.log('ERROR: Failed to airdrop 2 Sol!');
+        }
       }
 
-      // TODO: CONSOLE.LOG EVERYTHING, CONNECT WITH THE GENERATEENVIRONMENT FOR .ENV?
-      console.log(response);
+      console.log('\n');
+      console.log('**************************************************');
+      console.log('Replace .env placeholder values with these below..');
+      console.log('--------------------------------------------------');
+      console.log(
+        `AUCTION_HOUSE_ADDRESS="${REPLACE_IN_ENV.AUCTION_HOUSE_ADDRESS}"`,
+      );
+
       return;
-    } catch (e) {
-      console.log('Errored while creating the auction house: ', e);
+    } catch (error) {
+      if (error instanceof MetaplexError) {
+        const auctionHouse = await this.metaplex
+          .auctionHouse()
+          .findByCreatorAndMint({
+            creator: this.metaplex.identity().publicKey,
+            treasuryMint: WRAPPED_SOL_MINT,
+          });
+
+        console.log('Errored while creating the auction house!');
+        console.log(
+          `${this.metaplex
+            .identity()
+            .publicKey.toBase58()} already has AuctionHouse program assigned`,
+        );
+        console.log('AuctionHouse address: ', auctionHouse.address.toBase58());
+        console.log(
+          `Check it out on Explorer: https://explorer.solana.com/address/${auctionHouse.address.toBase58()}/anchor-account?cluster=${
+            this.cluster
+          }`,
+        );
+      } else {
+        console.log('Errored while creating the auction house: ', error);
+      }
     }
   }
 }

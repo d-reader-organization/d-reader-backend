@@ -30,6 +30,16 @@ export class AuctionHouseService {
     );
     this.metaplex = new Metaplex(this.connection);
 
+    try {
+      this.auctionHouseAddress = new PublicKey(
+        process.env.AUCTION_HOUSE_ADDRESS,
+      );
+    } catch {
+      console.log(
+        'Make sure to add the AUCTION_HOUSE_ADDRESS environment value',
+      );
+    }
+
     const treasuryWallet = AES.decrypt(
       process.env.TREASURY_PRIVATE_KEY,
       process.env.TREASURY_SECRET,
@@ -44,6 +54,10 @@ export class AuctionHouseService {
     // .use(awsStorage(s3Client, 'd-reader-nft-data'));
   }
 
+  /** @deprecated
+   * We will soon remove this function and rely on CLI to create AH programs
+   * `npm run create-ah` can be used to create a new auction house
+   */
   async createAuctionHouse() {
     try {
       const response = await this.metaplex.auctionHouse().create({
@@ -59,6 +73,7 @@ export class AuctionHouseService {
       });
 
       const { auctionHouse } = response;
+
       this.auctionHouseAddress = auctionHouse.address;
 
       if (process.env.SOLANA_CLUSTER !== Cluster.MainnetBeta) {
