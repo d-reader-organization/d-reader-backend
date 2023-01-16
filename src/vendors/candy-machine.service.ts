@@ -117,14 +117,15 @@ export class CandyMachineService {
   async findMintedNfts() {
     try {
       const candyMachineId = new PublicKey(
-        '3Umowr8NJLMra94hSvp56n6o5ysDbTvPwWpj36ggqU1w',
+        '9Z76zEyYT1GS6pMcUP4TLVQcLWiySyURKsgw9cRnQakn',
       );
-      const candyMachineCreator = PublicKey.findProgramAddress(
+      const candyMachineCreator = await PublicKey.findProgramAddress(
         [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
         this.metaplex.programs().getCandyMachine().address,
       );
-      const mints = this.getMintAddresses(candyMachineCreator[0]);
-      console.log(mints);
+      console.log(candyMachineCreator);
+      const mints = await this.getMintAddresses(candyMachineCreator[0]);
+      console.log("minted NFT's : ", mints);
       return mints;
     } catch (e) {
       console.log('error', e);
