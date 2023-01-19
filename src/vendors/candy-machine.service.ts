@@ -406,7 +406,7 @@ export class CandyMachineService {
     });
 
     const mintKeypair = Keypair.generate();
-    const dummySeller = Keypair.generate();
+    const dummyKeypair = Keypair.generate();
     const mintTransactionBuilder = await this.metaplex
       .candyMachines()
       .builders()
@@ -419,11 +419,11 @@ export class CandyMachineService {
           },
           collectionUpdateAuthority: this.metaplex.identity().publicKey,
         },
-        { payer: dummySeller },
+        { payer: dummyKeypair },
       );
 
     if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-    mintTransactionBuilder.setFeePayer(dummySeller);
+    mintTransactionBuilder.setFeePayer(dummyKeypair);
     const mintTransaction = mintTransactionBuilder.toTransaction(blockhash);
     mintTransaction.partialSign(mintKeypair);
 
