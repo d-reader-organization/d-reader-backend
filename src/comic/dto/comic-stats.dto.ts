@@ -1,4 +1,4 @@
-import { Max, Min } from 'class-validator';
+import { IsOptional, Max, Min } from 'class-validator';
 
 export class ComicStatsDto {
   @Min(0)
@@ -12,7 +12,8 @@ export class ComicStatsDto {
 
   @Min(1)
   @Max(5)
-  averageRating: number;
+  @IsOptional()
+  averageRating: number | null;
 
   @Min(0)
   issuesCount: number;

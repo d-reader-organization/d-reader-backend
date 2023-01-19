@@ -17,7 +17,12 @@ import { GenreDto } from 'src/genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
 import { Comic, Genre, WalletComic, Creator } from '@prisma/client';
 
-class PartialGenreDto extends PickType(GenreDto, ['name', 'slug', 'color']) {}
+class PartialGenreDto extends PickType(GenreDto, [
+  'name',
+  'slug',
+  'color',
+  'icon',
+]) {}
 class PartialCreatorDto extends PickType(CreatorDto, [
   'name',
   'slug',
@@ -133,14 +138,16 @@ export async function toComicDto(comic: ComicInput) {
     youTube: comic.youTube,
     stats: comic?.stats,
     myStats: comic?.myStats,
-    genres: comic.genres?.map((genre) => {
-      return {
-        name: genre.name,
-        slug: genre.slug,
-        color: genre.color,
-        // icon: await getReadUrl(genre.icon),
-      };
-    }),
+    genres: await Promise.all(
+      comic.genres?.map(async (genre) => {
+        return {
+          name: genre.name,
+          slug: genre.slug,
+          color: genre.color,
+          icon: await getReadUrl(genre.icon),
+        };
+      }),
+    ),
     creator: comic?.creator
       ? {
           name: comic.creator.name,

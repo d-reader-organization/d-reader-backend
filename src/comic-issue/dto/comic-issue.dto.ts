@@ -52,7 +52,7 @@ export class ComicIssueDto {
   @IsPositive()
   number: number;
 
-  @IsPositive()
+  @Min(0)
   supply: number;
 
   @Min(0)
@@ -84,6 +84,9 @@ export class ComicIssueDto {
   releaseDate: string;
 
   @IsBoolean()
+  isFree: boolean;
+
+  @IsBoolean()
   isPublished: boolean;
 
   @IsBoolean()
@@ -112,6 +115,9 @@ export class ComicIssueDto {
   @Type(() => PartialComicPageDto)
   pages?: PartialComicPageDto[];
 
+  @Min(0)
+  totalPagesCount?: number;
+
   @IsOptional()
   @ArrayUnique()
   @Type(() => String)
@@ -139,6 +145,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     cover: await getReadUrl(issue.cover),
     soundtrack: await getReadUrl(issue.soundtrack),
     releaseDate: issue.releaseDate.toISOString(),
+    // if supply is 0 it's not an NFT collection and therefore it's free
+    isFree: issue.supply === 0,
     isPublished: !!issue.publishedAt,
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
@@ -162,9 +170,16 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
       // TODO v1: replace these stats with real data and remove '|| true'
       issue?.stats || true
         ? {
+            favouritesCount: getRandomInt(1, 300),
+            subscribersCount: getRandomInt(1, 100),
+            ratersCount: getRandomInt(1, 6),
+            averageRating: getRandomFloatOrInt(2, 5),
             floorPrice: getRandomFloatOrInt(1, 20),
             totalVolume: getRandomFloatOrInt(1, 1000),
-            totalIssuesCount: getRandomInt(6, 14),
+            totalIssuesCount: getRandomInt(20, 70),
+            totalListedCount: getRandomInt(6, 14),
+            readersCount: getRandomInt(1, 700),
+            viewersCount: getRandomInt(1, 2000),
           }
         : undefined,
     pages: issue.pages
@@ -179,6 +194,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           'pageNumber',
         )
       : undefined,
+    totalPagesCount: issue.pages ? issue.pages.length : undefined,
     hashlist: issue.nfts?.map((nft) => nft.mint),
   };
 

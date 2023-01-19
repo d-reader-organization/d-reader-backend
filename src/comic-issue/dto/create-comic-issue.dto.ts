@@ -30,7 +30,9 @@ export class CreateComicIssueDto {
   )
   number: number;
 
-  @IsPositive()
+  // If supply is set to 0 comic issue won't even be an NFT collection
+  // it will simply be a free offchain comic
+  @Min(0)
   // @IsDivisibleBy(100)
   @Transform(({ value }) =>
     typeof value === 'string' ? parseInt(value, 10) : value,
