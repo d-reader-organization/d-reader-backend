@@ -47,7 +47,7 @@ export class PlaygroundController {
     return await this.candyMachineService.mintOne(query.candyMachineAddress);
   }
 
-  /* WORK IN PROGRESS - proof of concept endpoint */
+  /** @deprecated proof of concept endpoint */
   @Get('/transactions/construct/mint-one')
   async constructMintOneTransaction(
     @WalletEntity() wallet: Wallet,

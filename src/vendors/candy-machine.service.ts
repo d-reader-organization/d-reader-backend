@@ -396,6 +396,7 @@ export class CandyMachineService {
     console.log(mintNftResponse.nft.address);
   }
 
+  /** @deprecated */
   async constructMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: string,
