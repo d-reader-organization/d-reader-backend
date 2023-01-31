@@ -1,22 +1,32 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from 'src/vendors/auction-house.service';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { HeliusService } from 'src/vendors/helius.service';
 import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { MintOneParams } from './dto/mint-one-params.dto';
 
-@UseGuards(RestAuthGuard)
-@ApiBearerAuth('JWT-auth')
+// @UseGuards(RestAuthGuard)
+// @ApiBearerAuth('JWT-auth')
 @ApiTags('Playground')
 @Controller('playground')
 export class PlaygroundController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
     private readonly auctionHouseService: AuctionHouseService,
+    private readonly heliusService: HeliusService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -64,5 +74,33 @@ export class PlaygroundController {
   @Get('create-auction-house')
   async createAuctionHouse() {
     return await this.auctionHouseService.createAuctionHouse();
+  }
+
+  @Get('helius/webhooks/create')
+  async createWebhook() {
+    return await this.heliusService.createMagicEdenListingsWebhook();
+  }
+
+  @Get('helius/webhooks/get')
+  async getWebhook() {
+    return await this.heliusService.getMeListingsWebhook();
+  }
+
+  @Get('helius/webhooks/receive')
+  async getReceiveUpdates(@Body() body) {
+    console.log('GET request body: ', body);
+  }
+
+  @Post('helius/webhooks/receive')
+  async receiveUpdates(@Body() body) {
+    try {
+      // console.log(body[0]);
+
+      body[0].instructions.forEach((i) => {
+        console.log(i);
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
