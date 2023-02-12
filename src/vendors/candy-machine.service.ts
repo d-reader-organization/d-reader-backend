@@ -51,9 +51,7 @@ const MAX_DATA_SIZE =
   1 +
   4 +
   MAX_CREATOR_LIMIT * MAX_CREATOR_LEN;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_METADATA_LEN = 1 + 32 + 32 + MAX_DATA_SIZE + 1 + 1 + 9 + 172;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const CREATOR_ARRAY_START =
   1 +
   32 +
@@ -139,11 +137,9 @@ export class CandyMachineService {
       {
         // The mint address is located at byte 33 and lasts for 32 bytes.
         dataSlice: { offset: 33, length: 32 },
-
         filters: [
           // Only get Metadata accounts.
           { dataSize: MAX_METADATA_LEN },
-
           // Filter using the first creator.
           {
             memcmp: {
@@ -208,7 +204,7 @@ export class CandyMachineService {
           tokenPayment: undefined,
           startDate: { date: toDateTime(comicIssue.releaseDate) },
           endDate: undefined, // v2: close mints after a long period of stale sales?
-          thirdPartySigner: { signerKey: this.metaplex.identity().publicKey }, // v2: do we really need this?
+          // thirdPartySigner: { signerKey: this.metaplex.identity().publicKey }, // v2: do we really need this?
           tokenGate: undefined, // v2: gate minting to $PAGES non-holders
           gatekeeper: undefined, // v2: add bot protection
           allowList: undefined, // v2: make sure that holders of previous issues have advantage of miting ahead of time
@@ -415,16 +411,16 @@ export class CandyMachineService {
         {
           mint: mintKeypair,
           candyMachine,
-          guards: {
-            thirdPartySigner: { signer: this.metaplex.identity() },
-          },
+          // guards: {
+          //   thirdPartySigner: { signer: this.metaplex.identity() },
+          // },
           collectionUpdateAuthority: this.metaplex.identity().publicKey,
         },
         { payer: dummyKeypair },
       );
 
     if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-    mintTransactionBuilder.setFeePayer(dummyKeypair);
+    // mintTransactionBuilder.setFeePayer(dummyKeypair);
     const mintTransaction = mintTransactionBuilder.toTransaction(blockhash);
     mintTransaction.partialSign(mintKeypair);
 
