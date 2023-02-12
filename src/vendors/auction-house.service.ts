@@ -11,11 +11,9 @@ import {
   keypairIdentity,
   Metaplex,
   sol,
-  WRAPPED_SOL_MINT,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
-import { Cluster } from 'src/types/cluster';
 
 @Injectable()
 export class AuctionHouseService {
@@ -52,40 +50,6 @@ export class AuctionHouseService {
     this.metaplex.use(keypairIdentity(treasuryKeypair));
     // this.metaplex.use()
     // .use(awsStorage(s3Client, 'd-reader-nft-data'));
-  }
-
-  /** @deprecated
-   * We will soon remove this function and rely on CLI to create AH programs
-   * `npm run create-ah` can be used to create a new auction house
-   */
-  async createAuctionHouse() {
-    try {
-      const response = await this.metaplex.auctionHouse().create({
-        sellerFeeBasisPoints: 800, // 8%
-        requiresSignOff: true,
-        canChangeSalePrice: false,
-        treasuryMint: WRAPPED_SOL_MINT,
-        authority: this.metaplex.identity(),
-        feeWithdrawalDestination: this.metaplex.identity().publicKey,
-        treasuryWithdrawalDestinationOwner: this.metaplex.identity().publicKey,
-        auctioneerAuthority: undefined, // out of scope for now
-        auctioneerScopes: undefined,
-      });
-
-      const { auctionHouse } = response;
-
-      this.auctionHouseAddress = auctionHouse.address;
-
-      if (process.env.SOLANA_CLUSTER !== Cluster.MainnetBeta) {
-        await this.metaplex
-          .rpc()
-          .airdrop(auctionHouse.feeAccountAddress, sol(2));
-      }
-
-      return response;
-    } catch (e) {
-      console.log('Errored while creating the auction house: ', e);
-    }
   }
 
   async findOurAuctionHouse() {

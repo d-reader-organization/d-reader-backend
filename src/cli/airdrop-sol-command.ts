@@ -1,8 +1,6 @@
 import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { Metaplex, sol } from '@metaplex-foundation/js';
-import { isSolanaAddress } from '../decorators/IsSolanaAddress';
-import { Cluster as ClusterEnum } from '../types/cluster';
 
 interface AirdropSolCommandOptions {
   address: string;
@@ -18,7 +16,7 @@ export class AirdropSolCommand extends CommandRunner {
   constructor() {
     super();
 
-    const endpoint = clusterApiUrl(ClusterEnum.Devnet);
+    const endpoint = clusterApiUrl('devnet');
     const connection = new Connection(endpoint, 'confirmed');
     this.metaplex = new Metaplex(connection);
   }
@@ -35,7 +33,7 @@ export class AirdropSolCommand extends CommandRunner {
     description: 'Recipient wallet address',
   })
   parseAddress(address: string): string {
-    if (!isSolanaAddress(address)) {
+    if (!PublicKey.isOnCurve(address)) {
       throw new Error('Faulty --address argument, address is not on curve');
     }
 
