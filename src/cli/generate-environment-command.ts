@@ -1,11 +1,40 @@
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
-import { Command, CommandRunner, Option } from 'nest-commander';
-import { Metaplex, sol } from '@metaplex-foundation/js';
+import { Command, CommandRunner, InquirerService } from 'nest-commander';
+import {
+  keypairIdentity,
+  Metaplex,
+  MetaplexError,
+  sol,
+  WRAPPED_SOL_MINT,
+} from '@metaplex-foundation/js';
 import { generateSecret, createWallet } from '../utils/wallets';
+import { clusterHeliusApiUrl } from '../utils/helius';
 import { Cluster as ClusterEnum } from '../types/cluster';
+import { Chalk } from 'chalk';
+import { sleep } from '../utils/helpers';
 
-interface GenerateEnvironmentCommandOptions {
-  cluster?: Cluster;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const chalk = require('chalk') as Chalk;
+
+const log = console.log;
+const cerr = chalk.bold.red;
+const cuy = chalk.underline.yellow;
+const cb = chalk.blue;
+const chb = chalk.hex('#c99176'); // hex brown
+const cg = chalk.green;
+const cgray = chalk.gray;
+
+interface Options {
+  cluster: Cluster;
+  heliusApiKey: string;
+}
+
+function logEnv(variable: string, value: string) {
+  log(`${cb(variable)}=${chb('"' + value + '"')}`);
+}
+
+function logErr(message: string) {
+  log(cerr('ERROR:'), message);
 }
 
 @Command({
@@ -13,101 +42,123 @@ interface GenerateEnvironmentCommandOptions {
   description: 'Generate necessary environment variables and wallets',
 })
 export class GenerateEnvironmentCommand extends CommandRunner {
-  async run(
-    passedParam: string[],
-    options: GenerateEnvironmentCommandOptions,
-  ): Promise<void> {
-    options.cluster = options.cluster || ClusterEnum.Devnet;
-    this.generateEnvironment(options.cluster);
+  constructor(private readonly inquirerService: InquirerService) {
+    super();
   }
 
-  @Option({
-    flags: '-c, --cluster [string]',
-    description:
-      "Solana cluster to use, select 'devnet' for local development or 'mainnet-beta' for production environment",
-  })
-  parseCluster(cluster: string): string {
-    if (cluster !== ClusterEnum.Devnet && cluster !== ClusterEnum.MainnetBeta) {
-      throw new Error(
-        "Faulty --cluster argument, only 'devnet' and 'mainnet-beta' are allowed",
-      );
-    }
-
-    return cluster;
+  async run(_: string[], options: Options): Promise<void> {
+    options = await this.inquirerService.ask('environment', options);
+    this.generateEnvironment(options);
   }
 
-  generateEnvironment = async (cluster: Cluster) => {
-    console.log('Generating new .env values...');
+  generateEnvironment = async (options: Options) => {
+    log('\n🏗️  Generating new .env values...\n');
 
-    const endpoint = clusterApiUrl(cluster);
+    const endpoint = clusterApiUrl(options.cluster);
+    const heliusEndpoint = clusterHeliusApiUrl(
+      options.cluster,
+      options.heliusApiKey,
+    );
     const connection = new Connection(endpoint, 'confirmed');
-    const metaplex = new Metaplex(connection);
-
     // Proposal: create a wallet with starting characters 'trsy...'
-    const treasuryWallet = createWallet();
+    const treasury = createWallet();
+    const metaplex = new Metaplex(connection);
+    metaplex.use(keypairIdentity(treasury.keypair));
 
-    if (cluster !== ClusterEnum.MainnetBeta) {
-      console.log('Airdropping 2 Sol to the treasury wallet...');
+    if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
       try {
-        await metaplex.rpc().airdrop(treasuryWallet.keypair.publicKey, sol(2));
+        log(cb('🪂  Airdropping SOL'));
+        await metaplex.rpc().airdrop(treasury.keypair.publicKey, sol(1));
+        await sleep(2000);
+        log(`✅  Airdropped ${cuy('1 Sol')} to the treasury...`);
       } catch (e) {
-        console.log('ERROR: Failed to airdrop 2 Sol!');
+        logErr('Failed to airdrop Sol to the treasury!');
+        log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
       }
     }
 
-    const WRITE_ON_PAPER = {
-      treasurySecretKey: `[${treasuryWallet.keypair.secretKey.toString()}]`,
-    };
+    const auctionHouseAddress = await this.createAuctionHouse(metaplex);
+    const treasurySecretKey = `[${treasury.keypair.secretKey.toString()}]`;
+    const signMessagePrompt =
+      'Sign this message for authenticating with your wallet: ';
 
-    const COPY_PASTE_SOMEWHERE = {
-      treasuryAddress: treasuryWallet.address,
-    };
+    log('\n⚠️  Save these values in a text file or sticky notes');
+    log('----------------------------------------------------');
+    log('Treasury address:', cg(treasury.address));
+    log('Treasury secret key:', cgray(treasurySecretKey));
 
-    const REPLACE_IN_ENV = {
-      JWT_ACCESS_SECRET: generateSecret(42),
-      JWT_REFRESH_SECRET: generateSecret(42),
-      SOLANA_CLUSTER: cluster,
-      SOLANA_RPC_NODE_ENDPOINT: endpoint,
-      SIGN_MESSAGE: 'Sign this message for authenticating with your wallet: ',
-      TREASURY_PRIVATE_KEY: treasuryWallet.encryptedPrivateKey,
-      TREASURY_SECRET: treasuryWallet.secret,
-    };
+    log('\n⚠️  Replace .env placeholder values with these below');
+    log('----------------------------------------------------');
+    logEnv('JWT_ACCESS_SECRET', generateSecret(42));
+    logEnv('JWT_REFRESH_SECRET', generateSecret(42));
+    logEnv('SOLANA_CLUSTER', metaplex.cluster);
+    logEnv('SOLANA_RPC_NODE_ENDPOINT', heliusEndpoint);
+    logEnv('HELIUS_API_KEY', treasury.secret);
+    logEnv('SIGN_MESSAGE', signMessagePrompt);
+    logEnv('TREASURY_PRIVATE_KEY', treasury.encryptedPrivateKey);
+    logEnv('TREASURY_SECRET', treasury.secret);
+    logEnv('AUCTION_HOUSE_ADDRESS', auctionHouseAddress);
 
-    console.log('\n');
-    console.log('**************************************************');
-    console.log('WRITE THESE VALUES ON A SHEET OF PAPER AND HIDE IT');
-    console.log('--------------------------------------------------');
-    console.log('Treasury secret key:', WRITE_ON_PAPER.treasurySecretKey);
-    console.log('**************************************************\n\n');
-
-    console.log('**************************************************');
-    console.log('Copy these values in a text file or sticky notes!!');
-    console.log('--------------------------------------------------');
-    console.log(
-      'Treasury wallet address:',
-      COPY_PASTE_SOMEWHERE.treasuryAddress,
-    );
-    console.log('**************************************************\n\n');
-
-    console.log('**************************************************');
-    console.log('Replace .env placeholder values with these below..');
-    console.log('--------------------------------------------------');
-    console.log(`JWT_ACCESS_SECRET="${REPLACE_IN_ENV.JWT_ACCESS_SECRET}"`);
-    console.log(`JWT_REFRESH_SECRET="${REPLACE_IN_ENV.JWT_REFRESH_SECRET}"`);
-    console.log(`SOLANA_CLUSTER="${REPLACE_IN_ENV.SOLANA_CLUSTER}"`);
-    console.log(
-      `SOLANA_RPC_NODE_ENDPOINT="${REPLACE_IN_ENV.SOLANA_RPC_NODE_ENDPOINT}"`,
-    );
-    console.log(`SIGN_MESSAGE="${REPLACE_IN_ENV.SIGN_MESSAGE}"`);
-    console.log(
-      `TREASURY_PRIVATE_KEY="${REPLACE_IN_ENV.TREASURY_PRIVATE_KEY}"`,
-    );
-    console.log(`TREASURY_SECRET="${REPLACE_IN_ENV.TREASURY_SECRET}"`);
-    console.log('**************************************************\n');
-
-    console.log(
-      "In case you don't have an Auction House set up, make sure to run the `npm run create-ah` and follow instructions\n",
-    );
+    log(cg('\n💻 Happy hacking! \n'));
     return;
   };
+
+  async createAuctionHouse(metaplex: Metaplex) {
+    // TODO: https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
+    log('\n🏗️  Creating new auction house...');
+
+    const identityKey = metaplex.identity().publicKey;
+
+    try {
+      const response = await metaplex.auctionHouse().create({
+        sellerFeeBasisPoints: 800, // 8%
+        requiresSignOff: true,
+        canChangeSalePrice: false,
+        treasuryMint: WRAPPED_SOL_MINT,
+        authority: metaplex.identity(),
+        feeWithdrawalDestination: identityKey,
+        treasuryWithdrawalDestinationOwner: identityKey,
+        auctioneerAuthority: undefined, // out of scope for now
+        auctioneerScopes: undefined,
+      });
+
+      const { auctionHouse } = response;
+
+      if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
+        try {
+          log(cb('🪂  Airdropping SOL'));
+          await sleep(8000);
+          await metaplex.rpc().airdrop(auctionHouse.address, sol(1));
+          log(`✅  Airdropped ${cuy('1 Sol')} to the auction house...`);
+        } catch (e) {
+          logErr('Failed to airdrop Sol to the auction house!');
+          log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
+        }
+      }
+
+      return auctionHouse.address.toBase58();
+    } catch (error) {
+      logErr('Failed to create the auction house!');
+
+      if (error instanceof MetaplexError) {
+        const auctionHouse = await metaplex
+          .auctionHouse()
+          .findByCreatorAndMint({
+            creator: identityKey,
+            treasuryMint: WRAPPED_SOL_MINT,
+          });
+
+        log(`${identityKey.toBase58()} already has AuctionHouse assigned`);
+        log('AuctionHouse address: ', cuy(auctionHouse.address.toBase58()));
+        log(
+          'Check it out on Explorer: ',
+          cb(
+            `https://explorer.solana.com/address/${auctionHouse.address.toBase58()}/anchor-account?cluster=${
+              metaplex.cluster
+            }`,
+          ),
+        );
+      } else log(error);
+    }
+  }
 }

@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -18,8 +10,8 @@ import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { MintOneParams } from './dto/mint-one-params.dto';
 
-// @UseGuards(RestAuthGuard)
-// @ApiBearerAuth('JWT-auth')
+@UseGuards(RestAuthGuard)
+@ApiBearerAuth('JWT-auth')
 @ApiTags('Playground')
 @Controller('playground')
 export class PlaygroundController {
@@ -57,7 +49,7 @@ export class PlaygroundController {
     return await this.candyMachineService.mintOne(query.candyMachineAddress);
   }
 
-  /** @deprecated proof of concept endpoint */
+  /** WORK IN PROGRESS - proof of concept endpoint */
   @Get('/transactions/construct/mint-one')
   async constructMintOneTransaction(
     @WalletEntity() wallet: Wallet,
@@ -70,32 +62,22 @@ export class PlaygroundController {
     );
   }
 
-  /* WORK IN PROGRESS - proof of concept endpoint */
-  @Get('create-auction-house')
-  async createAuctionHouse() {
-    return await this.auctionHouseService.createAuctionHouse();
-  }
-
-  @Get('helius/webhooks/create')
+  /** WORK IN PROGRESS - proof of concept endpoint */
+  @Get('webhooks/create')
   async createWebhook() {
-    return await this.heliusService.createMagicEdenListingsWebhook();
+    return await this.heliusService.createWebhook();
   }
 
-  @Get('helius/webhooks/get')
-  async getWebhook() {
-    return await this.heliusService.getMeListingsWebhook();
+  /** WORK IN PROGRESS - proof of concept endpoint */
+  @Get('webhooks/get')
+  async getMyWebhook() {
+    return await this.heliusService.getMyWebhook();
   }
 
-  @Get('helius/webhooks/receive')
-  async getReceiveUpdates(@Body() body) {
-    console.log('GET request body: ', body);
-  }
-
-  @Post('helius/webhooks/receive')
+  /** WORK IN PROGRESS - proof of concept endpoint */
+  @Post('webhooks/receive')
   async receiveUpdates(@Body() body) {
     try {
-      // console.log(body[0]);
-
       body[0].instructions.forEach((i) => {
         console.log(i);
       });

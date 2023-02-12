@@ -170,11 +170,6 @@ Table Newsletter {
   os String [not null, default: '']
 }
 
-Table ComicToGenre {
-  genresId String [ref: > Genre.slug]
-  comicsId String [ref: > Comic.slug]
-}
-
 Enum Role {
   Superadmin
   Admin
