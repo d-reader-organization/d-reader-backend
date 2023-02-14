@@ -77,6 +77,7 @@ Table WalletComic {
   isSubscribed Boolean [not null, default: false]
   isFavourite Boolean [not null, default: false]
   isWhitelisted Boolean [not null, default: false]
+  viewedAt DateTime
 
   indexes {
     (comicSlug, walletAddress) [pk]

@@ -100,6 +100,7 @@ export class WalletComicService {
         isSubscribed: false,
         isFavourite: false,
         isWhitelisted: false,
+        viewedAt: null,
       };
     } else return walletComic;
   }
@@ -132,29 +133,34 @@ export class WalletComicService {
     return walletComic;
   }
 
-  async toggleSubscribe(walletAddress: string, comicSlug: string) {
+  async toggleAction({
+    walletAddress,
+    comicSlug,
+    payload,
+  }: {
+    walletAddress: string;
+    comicSlug: string;
+    payload: Record<string, boolean | Date>;
+  }) {
     let walletComic = await this.prisma.walletComic.findUnique({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
     });
+    if (!walletComic) {
+      return null;
+    }
+
+    const [payloadKey, payloadValue] = Object.entries(payload).at(0);
+    const updatePayload =
+      typeof payloadValue === 'boolean'
+        ? {
+          [payloadKey]: !walletComic[payloadKey],
+          }
+        : payload;
 
     walletComic = await this.prisma.walletComic.upsert({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, isSubscribed: true },
-      update: { isSubscribed: !walletComic?.isSubscribed },
-    });
-
-    return walletComic;
-  }
-
-  async toggleFavourite(walletAddress: string, comicSlug: string) {
-    let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-    });
-
-    walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, isFavourite: true },
-      update: { isFavourite: !walletComic?.isFavourite },
+      create: { walletAddress, comicSlug, ...payload },
+      update: updatePayload,
     });
 
     return walletComic;
