@@ -10,31 +10,12 @@ import {
 import { generateSecret, createWallet } from '../utils/wallets';
 import { clusterHeliusApiUrl } from '../utils/helius';
 import { Cluster as ClusterEnum } from '../types/cluster';
-import { Chalk } from 'chalk';
+import { cb, cg, cgray, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const chalk = require('chalk') as Chalk;
-
-const log = console.log;
-const cerr = chalk.bold.red;
-const cuy = chalk.underline.yellow;
-const cb = chalk.blue;
-const chb = chalk.hex('#c99176'); // hex brown
-const cg = chalk.green;
-const cgray = chalk.gray;
 
 interface Options {
   cluster: Cluster;
   heliusApiKey: string;
-}
-
-function logEnv(variable: string, value: string) {
-  log(`${cb(variable)}=${chb('"' + value + '"')}`);
-}
-
-function logErr(message: string) {
-  log(cerr('ERROR:'), message);
 }
 
 @Command({
@@ -48,7 +29,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
 
   async run(_: string[], options: Options): Promise<void> {
     options = await this.inquirerService.ask('environment', options);
-    this.generateEnvironment(options);
+    await this.generateEnvironment(options);
   }
 
   generateEnvironment = async (options: Options) => {

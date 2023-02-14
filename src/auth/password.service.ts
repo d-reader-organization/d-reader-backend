@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { validateEd25519Address } from 'src/utils/solana';
+import { validateEd25519Address } from '../utils/solana';
 import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { v4 as uuidv4 } from 'uuid';

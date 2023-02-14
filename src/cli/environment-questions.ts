@@ -14,6 +14,7 @@ export class EnvironmentQuestions {
         value: 'mainnet-beta',
       },
     ],
+    default: 'devnet',
     message: `Which cluster do you wish to use?`,
     validate: function (value: string) {
       if (value === 'devnet' || value === 'mainnet-beta') {
@@ -29,8 +30,8 @@ export class EnvironmentQuestions {
   @Question({
     type: 'input',
     name: 'heliusApiKey',
-    message: "What's your Helius API key? (empty if already present)",
     default: process.env.HELIUS_API_KEY,
+    message: "What's your Helius API key? (empty if already present)",
     validate: function (value: string) {
       // TODO: fire a dummy HTTP request towards Helius API to check if the key is valid
       if (!!value || !!process.env.HELIUS_API_KEY) return true;

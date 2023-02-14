@@ -1,53 +1,42 @@
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
-import { Command, CommandRunner, Option } from 'nest-commander';
+import { Cluster, clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { Metaplex, sol } from '@metaplex-foundation/js';
+import { cb, cuy, log, logErr } from './chalk';
+import { sleep } from '../utils/helpers';
 
-interface AirdropSolCommandOptions {
-  address: string;
+interface Options {
+  cluster: Cluster;
+  address: PublicKey;
+  dropAmount: number;
 }
 
 @Command({
   name: 'airdrop-sol',
-  description: 'Airdrop solana tokens to a specific wallet',
+  description: 'Airdrop Solana token to a specific wallet',
 })
 export class AirdropSolCommand extends CommandRunner {
-  private readonly metaplex: Metaplex;
-
-  constructor() {
+  constructor(private readonly inquirerService: InquirerService) {
     super();
+  }
 
-    const endpoint = clusterApiUrl('devnet');
+  async run(_: string[], options: Options): Promise<void> {
+    options = await this.inquirerService.ask('airdrop', options);
+    await this.airdropSol(options);
+  }
+
+  async airdropSol(options: Options) {
+    const endpoint = clusterApiUrl(options.cluster);
     const connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(connection);
-  }
-
-  async run(
-    passedParam: string[],
-    options: AirdropSolCommandOptions,
-  ): Promise<void> {
-    this.airdropSol(options.address);
-  }
-
-  @Option({
-    flags: '-a, --address [string]',
-    description: 'Recipient wallet address',
-  })
-  parseAddress(address: string): string {
-    if (!PublicKey.isOnCurve(address)) {
-      throw new Error('Faulty --address argument, address is not on curve');
-    }
-
-    return address;
-  }
-
-  async airdropSol(address: string) {
-    const publicKey = new PublicKey(address);
+    const metaplex = new Metaplex(connection);
 
     try {
-      await this.metaplex.rpc().airdrop(publicKey, sol(2));
-      console.log(`2 Sol added successfully to ${address}!`);
+      log(cb('🪂  Airdropping SOL'));
+      await metaplex.rpc().airdrop(options.address, sol(options.dropAmount));
+      await sleep(1000);
+      log(`✅  Airdropped ${cuy(options.dropAmount + ' Sol')} successfully!`);
     } catch (e) {
-      console.log(`Failed to drop 2 Sol in the wallet ${address}\n${e}`);
+      logErr(`Failed to drop ${options.dropAmount} Sol`);
+      log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
     }
   }
 }
