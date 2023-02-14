@@ -7,9 +7,10 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import { Authorization, JwtDto } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
-import { SecurityConfig } from 'src/configs/config.interface';
+import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Wallet, Creator } from '@prisma/client';
+import { Cluster } from '../types/cluster';
 
 @Injectable()
 export class AuthService {
@@ -82,10 +83,12 @@ export class AuthService {
     });
 
     if (!wallet) throw new NotFoundException(`Invalid wallet address`);
-    // TODO: ignore this security measure for now
-    // else if (jwtDto.nonce !== wallet.nonce) {
-    //   throw new NotFoundException(`Expired nonce token`);
-    // }
-    else return wallet;
+    else if (
+      // Check nonce token expiry only on the 'mainnet-beta' environment
+      process.env.SOLANA_CLUSTER === Cluster.MainnetBeta &&
+      jwtDto.nonce !== wallet.nonce
+    ) {
+      throw new NotFoundException(`Expired nonce token`);
+    } else return wallet;
   }
 }

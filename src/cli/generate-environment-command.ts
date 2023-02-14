@@ -85,7 +85,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
   };
 
   async createAuctionHouse(metaplex: Metaplex) {
-    // TODO: https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
+    // https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
     log('\n🏗️  Creating new auction house...');
 
     const identityKey = metaplex.identity().publicKey;

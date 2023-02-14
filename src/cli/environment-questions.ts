@@ -1,4 +1,6 @@
+import { Connection } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
+import { clusterHeliusApiUrl } from '../utils/helius';
 
 @QuestionSet({ name: 'environment' })
 export class EnvironmentQuestions {
@@ -32,10 +34,20 @@ export class EnvironmentQuestions {
     name: 'heliusApiKey',
     default: process.env.HELIUS_API_KEY,
     message: "What's your Helius API key? (empty if already present)",
-    validate: function (value: string) {
-      // TODO: fire a dummy HTTP request towards Helius API to check if the key is valid
-      if (!!value || !!process.env.HELIUS_API_KEY) return true;
-      return 'Helius API key missing';
+    validate: async function (value: string) {
+      if (!value && !process.env.HELIUS_API_KEY)
+        return 'Helius API key missing';
+
+      const endpoint = clusterHeliusApiUrl('devnet', value);
+      const connection = new Connection(endpoint, 'confirmed');
+
+      try {
+        // Fire a dummy request with the Helius RPC endpoint and API key
+        await connection.getVersion();
+        return true;
+      } catch {
+        return 'Invalid Helius API key';
+      }
     },
   })
   parseHeliusApiKey(heliusApiKey: string): string {

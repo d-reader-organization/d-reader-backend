@@ -37,8 +37,8 @@ export class CarouselService {
       carouselSlide = await this.prisma.carouselSlide.create({
         data: {
           ...createCarouselSlideDto,
-          // TODO: expires in 14 days by default, change this in the future
-          expiredAt: addDays(new Date(), 14),
+          // expires in 30 days by default, change this in the future
+          expiredAt: addDays(new Date(), 30),
           publishedAt: new Date(),
           image: imageKey,
         },
