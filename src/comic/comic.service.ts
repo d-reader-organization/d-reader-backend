@@ -134,11 +134,7 @@ export class ComicService {
     if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
-    await this.walletComicService.toggleAction({
-      walletAddress,
-      comicSlug: slug,
-      payload: { viewedAt: new Date() },
-    });
+    await this.walletComicService.refreshDate(walletAddress, slug, 'viewedAt');
     const { stats, myStats } = await this.walletComicService.aggregateAll(
       slug,
       walletAddress,

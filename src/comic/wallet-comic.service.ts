@@ -7,6 +7,7 @@ import {
   mockPromise,
 } from 'src/utils/helpers';
 import { ComicStats } from './types/comic-stats';
+import { PickByType } from 'src/types/shared';
 
 @Injectable()
 export class WalletComicService {
@@ -16,10 +17,7 @@ export class WalletComicService {
     const aggregateQuery = this.prisma.walletComic.aggregate({
       where: { comicSlug: slug },
       _avg: { rating: true },
-    });
-
-    const countRatersQuery = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isFavourite: true },
+      _count: true,
     });
 
     const countFavouritesQuery = this.prisma.walletComic.count({
@@ -27,7 +25,16 @@ export class WalletComicService {
     });
 
     const countSubscribersQuery = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isFavourite: true },
+      where: { comicSlug: slug, isSubscribed: true },
+    });
+
+    const countViewersQuery = this.prisma.walletComic.count({
+      where: {
+        comicSlug: slug,
+        viewedAt: {
+          not: null,
+        },
+      },
     });
 
     const countIssuesQuery = this.prisma.comicIssue.count({
@@ -39,17 +46,14 @@ export class WalletComicService {
       },
     });
 
-    // TODO: total number of unique readers across all comic issues
+    // TODO: Once when WalletComicIssue is there
     const countReadersQuery = mockPromise(0);
-    // TODO: total number of unique viewers across all comic issues
-    const countViewersQuery = mockPromise(0);
     // TODO: total volume of all comic issues and collectibles
     const calculateTotalVolumeQuery = mockPromise(0);
 
     // TODO: try catch
     const [
       aggregations,
-      ratersCount,
       favouritesCount,
       subscribersCount,
       issuesCount,
@@ -58,7 +62,6 @@ export class WalletComicService {
       totalVolume,
     ] = await Promise.all([
       aggregateQuery,
-      countRatersQuery,
       countFavouritesQuery,
       countSubscribersQuery,
       countIssuesQuery,
@@ -69,7 +72,7 @@ export class WalletComicService {
 
     return {
       averageRating: aggregations._avg.rating || getRandomFloatOrInt(2, 5),
-      ratersCount: ratersCount || getRandomInt(1, 60),
+      ratersCount: aggregations._count || getRandomInt(1, 60),
       favouritesCount: favouritesCount || getRandomInt(1, 3000),
       subscribersCount: subscribersCount || getRandomInt(1, 1000),
       issuesCount: issuesCount || getRandomInt(1, 20),
@@ -133,15 +136,11 @@ export class WalletComicService {
     return walletComic;
   }
 
-  async toggleAction({
-    walletAddress,
-    comicSlug,
-    payload,
-  }: {
-    walletAddress: string;
-    comicSlug: string;
-    payload: Record<string, boolean | Date>;
-  }) {
+  async toggleState(
+    walletAddress: string,
+    comicSlug: string,
+    property: keyof PickByType<WalletComic, boolean>,
+  ) {
     let walletComic = await this.prisma.walletComic.findUnique({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
     });
@@ -149,20 +148,30 @@ export class WalletComicService {
       return null;
     }
 
-    const [payloadKey, payloadValue] = Object.entries(payload).at(0);
-    const updatePayload =
-      typeof payloadValue === 'boolean'
-        ? {
-          [payloadKey]: !walletComic[payloadKey],
-          }
-        : payload;
-
     walletComic = await this.prisma.walletComic.upsert({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, ...payload },
-      update: updatePayload,
+      create: { walletAddress, comicSlug, [property]: true },
+      update: { [property]: !walletComic?.[property] },
     });
 
     return walletComic;
+  }
+
+  async refreshDate(
+    walletAddress: string,
+    comicSlug: string,
+    property: keyof PickByType<WalletComic, Date>,
+  ) {
+    return await this.prisma.walletComic.upsert({
+      where: {
+        comicSlug_walletAddress: { walletAddress, comicSlug },
+      },
+      create: {
+        walletAddress,
+        comicSlug,
+        [property]: new Date().toISOString(),
+      },
+      update: { [property]: new Date().toISOString() },
+    });
   }
 }
