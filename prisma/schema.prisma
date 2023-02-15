@@ -12,17 +12,17 @@ generator dbml {
 }
 
 model Wallet {
-  address    String        @id
-  label      String        @default("")
-  avatar     String        @default("")
-  createdAt  DateTime      @default(now())
-  lastLogin  DateTime?
-  nonce      String        @unique @default(uuid())
-  role       Role          @default(User)
-  creator    Creator?
-  comics     WalletComic[]
+  address     String             @id
+  label       String             @default("")
+  avatar      String             @default("")
+  createdAt   DateTime           @default(now())
+  lastLogin   DateTime?
+  nonce       String             @unique @default(uuid())
+  role        Role               @default(User)
+  creator     Creator?
+  comics      WalletComic[]
   comicIssues WalletComicIssue[]
-  newsletter Newsletter?
+  newsletter  Newsletter?
 }
 
 enum Role {
@@ -88,14 +88,14 @@ model Comic {
 }
 
 model WalletComic {
-  comic         Comic   @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comic         Comic     @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug     String
-  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  wallet        Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
   walletAddress String
   rating        Int?
-  isSubscribed  Boolean @default(false)
-  isFavourite   Boolean @default(false)
-  isWhitelisted Boolean @default(false)
+  isSubscribed  Boolean   @default(false)
+  isFavourite   Boolean   @default(false)
+  isWhitelisted Boolean   @default(false)
   viewedAt      DateTime?
   // isReported Boolean @default(false)
   // isLiked    Boolean @default(false)
@@ -114,25 +114,25 @@ model Genre {
 }
 
 model ComicIssue {
-  id                Int             @id @default(autoincrement())
+  id                Int                @id @default(autoincrement())
   number            Int
   supply            Int
   discountMintPrice Float
   mintPrice         Float
   title             String
   slug              String
-  description       String          @default("")
-  flavorText        String          @default("")
-  cover             String          @default("")
-  soundtrack        String          @default("")
+  description       String             @default("")
+  flavorText        String             @default("")
+  cover             String             @default("")
+  soundtrack        String             @default("")
   releaseDate       DateTime
-  createdAt         DateTime        @default(now())
+  createdAt         DateTime           @default(now())
   deletedAt         DateTime?
   featuredAt        DateTime?
   verifiedAt        DateTime?
   publishedAt       DateTime?
   popularizedAt     DateTime?
-  comic             Comic           @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comic             Comic              @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug         String
   pages             ComicPage[]
   nfts              ComicIssueNft[]
@@ -198,14 +198,14 @@ model Newsletter {
 }
 
 model WalletComicIssue {
-  comicIssue    ComicIssue   @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId  Int
-  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  wallet        Wallet     @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
   walletAddress String
   rating        Int?
-  isSubscribed  Boolean @default(false)
-  isFavourite   Boolean @default(false)
-  isWhitelisted Boolean @default(false)
+  isSubscribed  Boolean    @default(false)
+  isFavourite   Boolean    @default(false)
+  isWhitelisted Boolean    @default(false)
   viewedAt      DateTime?
   readAt        DateTime?
   // isReported Boolean @default(false)
