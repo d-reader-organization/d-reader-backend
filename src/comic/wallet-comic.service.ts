@@ -17,10 +17,7 @@ export class WalletComicService {
     const aggregateQuery = this.prisma.walletComic.aggregate({
       where: { comicSlug: slug },
       _avg: { rating: true },
-    });
-
-    const countRatersQuery = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isFavourite: true },
+      _count: true,
     });
 
     const countFavouritesQuery = this.prisma.walletComic.count({
@@ -29,6 +26,15 @@ export class WalletComicService {
 
     const countSubscribersQuery = this.prisma.walletComic.count({
       where: { comicSlug: slug, isSubscribed: true },
+    });
+
+    const countViewersQuery = this.prisma.walletComic.count({
+      where: {
+        comicSlug: slug,
+        viewedAt: {
+          not: null,
+        },
+      },
     });
 
     const countIssuesQuery = this.prisma.comicIssue.count({
@@ -40,17 +46,14 @@ export class WalletComicService {
       },
     });
 
-    // TODO: total number of unique readers across all comic issues
+    // TODO: Once when WalletComicIssue is there
     const countReadersQuery = mockPromise(0);
-    // TODO: total number of unique viewers across all comic issues
-    const countViewersQuery = mockPromise(0);
     // TODO: total volume of all comic issues and collectibles
     const calculateTotalVolumeQuery = mockPromise(0);
 
     // TODO: try catch
     const [
       aggregations,
-      ratersCount,
       favouritesCount,
       subscribersCount,
       issuesCount,
@@ -59,7 +62,6 @@ export class WalletComicService {
       totalVolume,
     ] = await Promise.all([
       aggregateQuery,
-      countRatersQuery,
       countFavouritesQuery,
       countSubscribersQuery,
       countIssuesQuery,
@@ -70,7 +72,7 @@ export class WalletComicService {
 
     return {
       averageRating: aggregations._avg.rating || getRandomFloatOrInt(2, 5),
-      ratersCount: ratersCount || getRandomInt(1, 60),
+      ratersCount: aggregations._count || getRandomInt(1, 60),
       favouritesCount: favouritesCount || getRandomInt(1, 3000),
       subscribersCount: subscribersCount || getRandomInt(1, 1000),
       issuesCount: issuesCount || getRandomInt(1, 20),
