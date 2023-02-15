@@ -164,7 +164,11 @@ export class ComicController {
     @Param('slug') slug: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicDto> {
-    await this.walletComicService.toggleSubscribe(wallet.address, slug);
+    await this.walletComicService.toggleState(
+      wallet.address,
+      slug,
+      'isSubscribed',
+    );
     return await this.findOne(slug, wallet);
   }
 
@@ -174,7 +178,11 @@ export class ComicController {
     @Param('slug') slug: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicDto> {
-    await this.walletComicService.toggleFavourite(wallet.address, slug);
+    await this.walletComicService.toggleState(
+      wallet.address,
+      slug,
+      'isFavourite',
+    );
     return await this.findOne(slug, wallet);
   }
 
