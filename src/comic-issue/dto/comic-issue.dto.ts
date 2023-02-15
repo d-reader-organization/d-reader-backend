@@ -15,7 +15,6 @@ import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
 import {
@@ -27,6 +26,8 @@ import {
 } from '@prisma/client';
 import { PickType } from '@nestjs/swagger';
 import { sortBy } from 'lodash';
+import { WalletComicIssueDto } from './wallet-comic-issue.dto';
+import { WalletComicIssueStats } from 'src/comic/types/wallet-comic-issue-stats';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -110,6 +111,10 @@ export class ComicIssueDto {
   @Type(() => ComicIssueStatsDto)
   stats?: ComicIssueStatsDto;
 
+  @IsOptional()
+  @Type(() => WalletComicIssueDto)
+  myStats?: WalletComicIssueDto;
+
   @IsArray()
   @IsOptional()
   @Type(() => PartialComicPageDto)
@@ -129,6 +134,7 @@ type ComicIssueInput = ComicIssue & {
   pages?: ComicPage[];
   nfts?: ComicIssueNft[];
   stats?: ComicIssueStats;
+  myStats?: WalletComicIssueStats;
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
@@ -166,22 +172,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           isMatureAudience: issue.comic.isMatureAudience,
         }
       : undefined,
-    stats:
-      // TODO v1: replace these stats with real data and remove '|| true'
-      issue?.stats || true
-        ? {
-            favouritesCount: getRandomInt(1, 300),
-            subscribersCount: getRandomInt(1, 100),
-            ratersCount: getRandomInt(1, 6),
-            averageRating: getRandomFloatOrInt(2, 5),
-            floorPrice: getRandomFloatOrInt(1, 20),
-            totalVolume: getRandomFloatOrInt(1, 1000),
-            totalIssuesCount: getRandomInt(20, 70),
-            totalListedCount: getRandomInt(6, 14),
-            readersCount: getRandomInt(1, 700),
-            viewersCount: getRandomInt(1, 2000),
-          }
-        : undefined,
+    stats: issue.stats ?? undefined,
+    myStats: issue.myStats ?? undefined,
     pages: issue.pages
       ? sortBy(
           await Promise.all(
