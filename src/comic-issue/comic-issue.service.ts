@@ -24,6 +24,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
 import { subDays } from 'date-fns';
+import { WalletComicIssueService } from './wallet-comic-issue.service';
 
 @Injectable()
 export class ComicIssueService {
@@ -32,6 +33,7 @@ export class ComicIssueService {
     private readonly comicPageService: ComicPageService,
     private readonly metaplexService: MetaplexService,
     private readonly candyMachineService: CandyMachineService,
+    private readonly walletComicIssueService: WalletComicIssueService,
   ) {}
 
   async create(
@@ -179,7 +181,11 @@ export class ComicIssueService {
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
-
+    await this.walletComicIssueService.refreshDate(
+      walletAddress,
+      id,
+      'viewedAt',
+    );
     return comicIssue;
   }
 
@@ -292,6 +298,10 @@ export class ComicIssueService {
     } catch {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
+  }
+
+  async read(id: number, walletAddress: string): Promise<void> {
+    await this.walletComicIssueService.refreshDate(walletAddress, id, 'readAt');
   }
 
   async pseudoDelete(id: number) {

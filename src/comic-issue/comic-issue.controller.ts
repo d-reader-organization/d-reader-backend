@@ -37,13 +37,18 @@ import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
+import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
 export class ComicIssueController {
-  constructor(private readonly comicIssueService: ComicIssueService) {}
+  constructor(
+    private readonly comicIssueService: ComicIssueService,
+    private readonly walletComicIssueService: WalletComicIssueService,
+  ) {}
 
   // https://github.com/swagger-api/swagger-ui/issues/7625
   /* Create a new comic issue */
@@ -107,6 +112,45 @@ export class ComicIssueController {
       updateComicIssueDto,
     );
     return await toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Favouritise/unfavouritise a specific comic issue */
+  @Patch('favouritise/:id')
+  async favouritise(
+    @Param('id') id: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicIssueDto> {
+    await this.walletComicIssueService.toggleState(
+      wallet.address,
+      +id,
+      'isFavourite',
+    );
+    return await this.findOne(id, wallet);
+  }
+
+  /* Rate specific comic issue */
+  @Patch('rate/:id')
+  async rate(
+    @Param('id') id: string,
+    @Body() rateComicDto: RateComicDto,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicIssueDto> {
+    await this.walletComicIssueService.rate(
+      wallet.address,
+      +id,
+      rateComicDto.rating,
+    );
+    return await this.findOne(id, wallet);
+  }
+
+  /* Reads a specific comic issue */
+  @Patch('read/:id')
+  async read(
+    @Param('id') id: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicIssueDto> {
+    await this.comicIssueService.read(+id, wallet.address);
+    return await this.findOne(id, wallet);
   }
 
   /* Update specific comic issues cover file */

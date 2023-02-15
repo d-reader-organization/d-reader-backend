@@ -21,6 +21,7 @@ model Wallet {
   role       Role          @default(User)
   creator    Creator?
   comics     WalletComic[]
+  comicIssues WalletComicIssue[]
   newsletter Newsletter?
 }
 
@@ -135,6 +136,7 @@ model ComicIssue {
   comicSlug         String
   pages             ComicPage[]
   nfts              ComicIssueNft[]
+  wallets           WalletComicIssue[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
@@ -193,6 +195,23 @@ model Newsletter {
   browser                      String  @default("")
   device                       String  @default("")
   os                           String  @default("")
+}
+
+model WalletComicIssue {
+  comicIssue    ComicIssue   @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssueId  Int
+  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress String
+  rating        Int?
+  isSubscribed  Boolean @default(false)
+  isFavourite   Boolean @default(false)
+  isWhitelisted Boolean @default(false)
+  viewedAt      DateTime?
+  readAt        DateTime?
+  // isReported Boolean @default(false)
+  // isLiked    Boolean @default(false)
+
+  @@id([comicIssueId, walletAddress])
 }
 
 // TODO v2
