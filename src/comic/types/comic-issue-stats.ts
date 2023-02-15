@@ -1,6 +1,6 @@
 export type ComicIssueStats = {
   favouritesCount: number;
-  subscribersCount: number;
+  // subscribersCount: number;
   ratersCount: number;
   averageRating: number | null;
   floorPrice: number;

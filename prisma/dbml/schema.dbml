@@ -12,6 +12,7 @@ Table Wallet {
   role Role [not null, default: 'User']
   creator Creator
   comics WalletComic [not null]
+  comicIssues WalletComicIssue [not null]
   newsletter Newsletter
 }
 
@@ -117,6 +118,7 @@ Table ComicIssue {
   comicSlug String [not null]
   pages ComicPage [not null]
   nfts ComicIssueNft [not null]
+  wallets WalletComicIssue [not null]
 
   indexes {
     (number, comicSlug) [unique]
@@ -171,6 +173,23 @@ Table Newsletter {
   os String [not null, default: '']
 }
 
+Table WalletComicIssue {
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
+  wallet Wallet [not null]
+  walletAddress String [not null]
+  rating Int
+  isSubscribed Boolean [not null, default: false]
+  isFavourite Boolean [not null, default: false]
+  isWhitelisted Boolean [not null, default: false]
+  viewedAt DateTime
+  readAt DateTime
+
+  indexes {
+    (comicIssueId, walletAddress) [pk]
+  }
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -196,3 +215,7 @@ Ref: ComicIssueNft.comicIssueId > ComicIssue.id [delete: Cascade]
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: Newsletter.walletAddress - Wallet.address [delete: Cascade]
+
+Ref: WalletComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
+
+Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
