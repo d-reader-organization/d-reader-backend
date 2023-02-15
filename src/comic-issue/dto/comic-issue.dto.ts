@@ -172,8 +172,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           isMatureAudience: issue.comic.isMatureAudience,
         }
       : undefined,
-    stats: issue.stats ?? undefined,
-    myStats: issue.myStats ?? undefined,
+    stats: issue.stats,
+    myStats: issue.myStats,
     pages: issue.pages
       ? sortBy(
           await Promise.all(

@@ -58,7 +58,7 @@ export class WalletComicIssueService {
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        floorPrice: 1, // TO DO
+        floorPrice: 1, // TODO
         totalVolume: 5, // marketplace thing
         totalListedCount: 5, // marketplace thing
       };
