@@ -95,6 +95,7 @@ model WalletComic {
   isSubscribed  Boolean @default(false)
   isFavourite   Boolean @default(false)
   isWhitelisted Boolean @default(false)
+  viewedAt      DateTime?
   // isReported Boolean @default(false)
   // isLiked    Boolean @default(false)
 
