@@ -3,6 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from 'src/types/shared';
 import { WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
+import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
 
 @Injectable()
 export class WalletComicIssueService {
@@ -58,11 +59,12 @@ export class WalletComicIssueService {
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        floorPrice: 1, // TODO
-        totalVolume: 5, // marketplace thing
-        totalListedCount: 5, // marketplace thing
+        totalVolume: getRandomFloatOrInt(1, 1000), // TODO
+        totalListedCount: getRandomInt(6, 14), // TODO
+        floorPrice: getRandomFloatOrInt(1, 20), // TODO
       };
     } catch (error) {
+      // TODO: improve catch block
       console.error(error);
       return null;
     }
