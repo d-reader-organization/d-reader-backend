@@ -169,9 +169,9 @@ export class WalletComicService {
       create: {
         walletAddress,
         comicSlug,
-        [property]: new Date().toISOString(),
+        [property]: new Date(),
       },
-      update: { [property]: new Date().toISOString() },
+      update: { [property]: new Date() },
     });
   }
 }

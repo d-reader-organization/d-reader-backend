@@ -155,9 +155,9 @@ export class WalletComicIssueService {
       create: {
         walletAddress,
         comicIssueId,
-        [property]: new Date().toISOString(),
+        [property]: new Date(),
       },
-      update: { [property]: new Date().toISOString() },
+      update: { [property]: new Date() },
     });
   }
 }
