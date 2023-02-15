@@ -4,6 +4,7 @@ import { ComicIssueController } from './comic-issue.controller';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { MetaplexService } from 'src/vendors/metaplex.service';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { WalletComicIssueService } from './wallet-comic-issue.service';
 
 @Module({
   controllers: [ComicIssueController],
@@ -12,6 +13,7 @@ import { CandyMachineService } from 'src/vendors/candy-machine.service';
     ComicPageService,
     MetaplexService,
     CandyMachineService,
+    WalletComicIssueService,
   ],
 })
 export class ComicIssueModule {}

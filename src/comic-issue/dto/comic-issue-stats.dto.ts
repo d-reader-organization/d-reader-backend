@@ -4,8 +4,8 @@ export class ComicIssueStatsDto {
   @Min(0)
   favouritesCount: number;
 
-  @Min(0)
-  subscribersCount: number;
+  // @Min(0)
+  // subscribersCount: number;
 
   @Min(0)
   ratersCount: number;
