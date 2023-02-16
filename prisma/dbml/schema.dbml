@@ -14,6 +14,7 @@ Table Wallet {
   comics WalletComic [not null]
   comicIssues WalletComicIssue [not null]
   newsletter Newsletter
+  WalletCreator WalletCreator [not null]
 }
 
 Table Creator {
@@ -36,6 +37,7 @@ Table Creator {
   comics Comic [not null]
   wallet Wallet [not null]
   walletAddress String [unique, not null]
+  WalletCreator WalletCreator [not null]
 }
 
 Table Comic {
@@ -190,6 +192,18 @@ Table WalletComicIssue {
   }
 }
 
+Table WalletCreator {
+  creator Creator [not null]
+  creatorSlug String [not null]
+  wallet Wallet [not null]
+  walletAddress String [not null]
+  isFollowing Boolean [not null, default: false]
+
+  indexes {
+    (creatorSlug, walletAddress) [pk]
+  }
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -219,3 +233,7 @@ Ref: Newsletter.walletAddress - Wallet.address [delete: Cascade]
 Ref: WalletComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
+
+Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
+
+Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
