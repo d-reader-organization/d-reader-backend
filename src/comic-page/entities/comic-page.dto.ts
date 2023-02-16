@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
 import { ComicPage } from '@prisma/client';
+import { sortBy } from 'lodash';
 
 export class ComicPageDto {
   @IsPositive()
@@ -28,6 +29,13 @@ export async function toComicPageDto(page: ComicPage) {
 
   const pageDto = plainToInstance(ComicPageDto, plainPageDto);
   return pageDto;
+}
+
+export async function toSortedComicPageDto(pages: ComicPage[]): Promise<ComicPageDto[]> {
+  return sortBy(
+    await Promise.all(pages.map(async (page) => toComicPageDto(page))),
+    'pageNumber',
+  );
 }
 
 export const toComicPageDtoArray = (pages: ComicPage[]) => {
