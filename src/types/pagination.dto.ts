@@ -6,12 +6,12 @@ export class Pagination {
   @Transform(({ value }) =>
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
-  skip?: number;
+  skip: number;
 
   @Min(1)
   @Max(20)
   @Transform(({ value }) =>
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
-  take?: number;
+  take: number;
 }
