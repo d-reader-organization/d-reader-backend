@@ -20,10 +20,14 @@ import { Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
+import { WalletCreatorService } from './wallet-creator.service';
 
 @Injectable()
 export class CreatorService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly walletCreatorService: WalletCreatorService,
+  ) {}
 
   async create(
     walletAddress: string,
@@ -81,7 +85,7 @@ export class CreatorService {
     return creators;
   }
 
-  async findOne(slug: string) {
+  async findOne(slug: string, walletAddress: string) {
     const creator = await this.prisma.creator.findUnique({
       include: { comics: true },
       where: { slug },
@@ -91,7 +95,12 @@ export class CreatorService {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    return creator;
+    const { stats, myStats } = await this.walletCreatorService.aggregateAll(
+      slug,
+      walletAddress,
+    );
+
+    return { ...creator, stats, myStats };
   }
 
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
