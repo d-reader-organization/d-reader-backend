@@ -45,9 +45,11 @@ export class WalletComicService {
         comicSlug: slug,
       },
     });
-
-    // TODO: Once when WalletComicIssue is there
-    const countReadersQuery = mockPromise(0);
+    // TODO v2: distinct
+    const countReadersQuery = this.prisma.walletComicIssue.count({
+      where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
+      // distinct: ['walletAddress'],
+    });
     // TODO: total volume of all comic issues and collectibles
     const calculateTotalVolumeQuery = mockPromise(0);
 
