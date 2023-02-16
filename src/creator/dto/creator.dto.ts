@@ -67,10 +67,12 @@ export class CreatorDto {
   @IsOptional()
   @Type(() => WalletCreatorStatsDto)
   myStats?: WalletCreatorStatsDto;
-
 }
 
-type CreatorInput = Creator & { stats?: CreatorStats, myStats?: WalletCreatorStats };
+type CreatorInput = Creator & {
+  stats?: CreatorStats;
+  myStats?: WalletCreatorStats;
+};
 
 export async function toCreatorDto(creator: CreatorInput) {
   const plainCreatorDto: CreatorDto = {
@@ -86,15 +88,8 @@ export async function toCreatorDto(creator: CreatorInput) {
     description: creator.description,
     flavorText: creator.flavorText,
     website: creator.website,
-    // TODO v1: replace these stats with real data and remove '|| true'
-    stats:
-      creator?.stats || true
-        ? {
-            comicIssuesCount: getRandomInt(1, 30),
-            totalVolume: getRandomFloatOrInt(0, 10000),
-          }
-        : undefined,
-        myStats: creator.myStats,
+    stats: creator.stats,
+    myStats: creator.myStats,
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);

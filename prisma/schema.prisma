@@ -23,7 +23,7 @@ model Wallet {
   comics        WalletComic[]
   comicIssues   WalletComicIssue[]
   newsletter    Newsletter?
-  WalletCreator WalletCreator[]
+  walletCreator WalletCreator[]
 }
 
 enum Role {
@@ -55,7 +55,7 @@ model Creator {
   comics           Comic[]
   wallet           Wallet          @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
   walletAddress    String          @unique
-  WalletCreator    WalletCreator[]
+  walletCreator    WalletCreator[]
 }
 
 model Comic {

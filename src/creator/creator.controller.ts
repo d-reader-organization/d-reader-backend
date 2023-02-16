@@ -166,6 +166,6 @@ export class CreatorController {
     @WalletEntity() wallet: Wallet,
     @Param('slug') slug: string,
   ): Promise<boolean> {
-    return await this.walletCreatorService.follow(wallet.address, slug);
+    return await this.walletCreatorService.toggleFollow(wallet.address, slug);
   }
 }

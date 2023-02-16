@@ -95,9 +95,12 @@ export class CreatorService {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    const myStats = await this.walletCreatorService.walletCreatorStats(slug,walletAddress);
+    const { stats, myStats } = await this.walletCreatorService.aggregateAll(
+      slug,
+      walletAddress,
+    );
 
-    return {...creator, myStats};
+    return { ...creator, stats, myStats };
   }
 
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
