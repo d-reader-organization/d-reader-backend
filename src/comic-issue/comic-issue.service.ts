@@ -99,6 +99,8 @@ export class ComicIssueService {
   async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.comicIssue.findMany({
       include: { comic: { include: { creator: true } } },
+      skip: query.skip,
+      take: query.take,
       where: {
         title: { contains: query?.titleSubstring, mode: 'insensitive' },
         comicSlug: { equals: query?.comicSlug },

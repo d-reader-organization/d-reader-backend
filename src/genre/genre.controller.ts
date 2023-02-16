@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -29,6 +30,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Role } from '@prisma/client';
 import { UpdateGenreDto } from './dto/update-genre.dto';
+import { GenreFilterParams } from './dto/genre-filter-params.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
@@ -54,17 +56,10 @@ export class GenreController {
     return await toGenreDto(genre);
   }
 
-  /* Get all popular genres */
-  @Get('get/popular')
-  async findAllPopular(): Promise<GenreDto[]> {
-    const genreDtoArray = await this.findAll();
-    return genreDtoArray.slice(0, 8);
-  }
-
   /* Get all genres */
   @Get('get')
-  async findAll(): Promise<GenreDto[]> {
-    const genres = await this.genreService.findAll();
+  async findAll(@Query() query: GenreFilterParams): Promise<GenreDto[]> {
+    const genres = await this.genreService.findAll(query);
     return await toGenreDtoArray(genres);
   }
 

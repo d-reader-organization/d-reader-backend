@@ -19,6 +19,7 @@ import { isEmpty } from 'lodash';
 import { Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
+import { GenreFilterParams } from './dto/genre-filter-params.dto';
 
 @Injectable()
 export class GenreService {
@@ -59,8 +60,10 @@ export class GenreService {
     return genre;
   }
 
-  async findAll() {
+  async findAll(query: GenreFilterParams) {
     const genres = await this.prisma.genre.findMany({
+      skip: query?.skip,
+      take: query?.take,
       where: { deletedAt: null },
       orderBy: { priority: 'asc' },
     });
