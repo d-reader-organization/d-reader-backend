@@ -39,10 +39,11 @@ import { Creator, Wallet } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
-import { ComicPage } from '@prisma/client';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
-import { sortBy } from 'lodash';
-import { getReadUrl } from 'src/aws/s3client';
+import {
+  ComicPageDto,
+  toSortedComicPageDto,
+} from 'src/comic-page/entities/comic-page.dto';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -107,18 +108,15 @@ export class ComicIssueController {
   }
 
   @Get('get/:id/pages')
-  async getPages(@Param('id') id: string): Promise<ComicPage[] | null> {
-    const pages = await this.comicPageService.getComicPagesForIssue(+id);
-    return sortBy(
-      await Promise.all(
-        pages.map(async (page) => ({
-          id: page.id,
-          pageNumber: page.pageNumber,
-          image: await getReadUrl(page.image),
-        })),
-      ),
-      'pageNumber',
-    ) as ComicPage[];
+  async getPages(
+    @Param('id') id: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicPageDto[]> {
+    const pages = await this.comicPageService.getComicPagesForIssue(
+      +id,
+      wallet.address,
+    );
+    return await toSortedComicPageDto(pages);
   }
 
   /* Update specific comic issue */
