@@ -8,6 +8,7 @@ import { CreateComicPageDto } from './dto/create-comic-page.dto';
 import { deleteS3Objects, uploadFile } from '../aws/s3client';
 import { Prisma } from '@prisma/client';
 import { isEmpty } from 'lodash';
+import { ComicPage } from '@prisma/client';
 
 export type ComicPageWhereInput = {
   comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
@@ -50,6 +51,14 @@ export class ComicPageService {
     // return comicPages;
 
     return comicPagesData;
+  }
+
+  async getComicPagesForIssue(comicIssueId: number): Promise<ComicPage[]> {
+    return await this.prisma.comicPage.findMany({
+      where: {
+        comicIssueId,
+      },
+    });
   }
 
   // update

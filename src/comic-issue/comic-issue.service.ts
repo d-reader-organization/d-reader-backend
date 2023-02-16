@@ -127,56 +127,10 @@ export class ComicIssueService {
     return comicIssues;
   }
 
-  async findOne(id: number) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
-      include: {
-        pages: true,
-        comic: { include: { creator: true } },
-      },
-      where: { id },
-    });
-
-    if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    }
-
-    return comicIssue;
-  }
-
-  async findOneProtected(id: number, walletAddress: string) {
-    let showOnlyPreviews: boolean | undefined;
-
-    // find all NFTs that token gate the comic issue and are owned by the wallet
-    const ownedComicIssues = await this.prisma.comicIssueNft.findMany({
-      where: { collectionNft: { comicIssueId: id }, owner: walletAddress },
-    });
-
-    // if wallet does not own the issue, see if it's whitelisted per comic issue basis
-    if (ownedComicIssues.length === 0) {
-      const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
-        where: { walletAddress, comicIssueId: id, isWhitelisted: true },
-      });
-
-      // if wallet does not own the issue, see if it's whitelisted per comic basis
-      if (!walletComicIssue) {
-        const walletComic = await this.prisma.walletComic.findFirst({
-          where: {
-            walletAddress,
-            comic: { issues: { some: { id } } },
-            isWhitelisted: true,
-          },
-        });
-
-        // if wallet is still not allowed to view the full content of the issue
-        // make sure to show only preview pages of the comic
-        if (!walletComic) showOnlyPreviews = true;
-      }
-    }
-
+  async findOne(id: number, walletAddress: string) {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
-        pages: { where: { isPreviewable: showOnlyPreviews } },
         comic: { include: { creator: true } },
       },
     });
