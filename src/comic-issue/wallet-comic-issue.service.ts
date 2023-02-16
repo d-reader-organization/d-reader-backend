@@ -92,6 +92,7 @@ export class WalletComicIssueService {
         isWhitelisted: false,
         viewedAt: null,
         readAt: null,
+        isSubscribed: false,
       };
     } else return walletComic;
   }
@@ -130,9 +131,6 @@ export class WalletComicIssueService {
     let walletComicIssue = await this.prisma.walletComicIssue.findUnique({
       where: { comicIssueId_walletAddress: { walletAddress, comicIssueId } },
     });
-    if (!walletComicIssue) {
-      return null;
-    }
 
     walletComicIssue = await this.prisma.walletComicIssue.upsert({
       where: { comicIssueId_walletAddress: { walletAddress, comicIssueId } },

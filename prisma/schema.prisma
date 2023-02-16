@@ -12,17 +12,18 @@ generator dbml {
 }
 
 model Wallet {
-  address     String             @id
-  label       String             @default("")
-  avatar      String             @default("")
-  createdAt   DateTime           @default(now())
-  lastLogin   DateTime?
-  nonce       String             @unique @default(uuid())
-  role        Role               @default(User)
-  creator     Creator?
-  comics      WalletComic[]
-  comicIssues WalletComicIssue[]
-  newsletter  Newsletter?
+  address       String             @id
+  label         String             @default("")
+  avatar        String             @default("")
+  createdAt     DateTime           @default(now())
+  lastLogin     DateTime?
+  nonce         String             @unique @default(uuid())
+  role          Role               @default(User)
+  creator       Creator?
+  comics        WalletComic[]
+  comicIssues   WalletComicIssue[]
+  newsletter    Newsletter?
+  WalletCreator WalletCreator[]
 }
 
 enum Role {
@@ -32,28 +33,29 @@ enum Role {
 }
 
 model Creator {
-  id               Int       @id @default(autoincrement())
-  email            String    @unique
+  id               Int             @id @default(autoincrement())
+  email            String          @unique
   // password         String
-  name             String    @unique
-  slug             String    @unique
-  avatar           String    @default("")
-  banner           String    @default("")
-  logo             String    @default("")
-  description      String    @default("")
-  flavorText       String    @default("")
-  website          String    @default("")
+  name             String          @unique
+  slug             String          @unique
+  avatar           String          @default("")
+  banner           String          @default("")
+  logo             String          @default("")
+  description      String          @default("")
+  flavorText       String          @default("")
+  website          String          @default("")
   // twitter          String    @default("")
   // instagram          String    @default("")
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime        @default(now())
   deletedAt        DateTime?
   featuredAt       DateTime?
   verifiedAt       DateTime?
   popularizedAt    DateTime?
   emailConfirmedAt DateTime?
   comics           Comic[]
-  wallet           Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress    String    @unique
+  wallet           Wallet          @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress    String          @unique
+  WalletCreator    WalletCreator[]
 }
 
 model Comic {
@@ -212,6 +214,16 @@ model WalletComicIssue {
   // isLiked    Boolean @default(false)
 
   @@id([comicIssueId, walletAddress])
+}
+
+model WalletCreator {
+  creator       Creator @relation(fields: [creatorSlug], references: [slug], onDelete: Cascade)
+  creatorSlug   String
+  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress String
+  isFollowing   Boolean @default(false)
+
+  @@id([creatorSlug, walletAddress])
 }
 
 // TODO v2

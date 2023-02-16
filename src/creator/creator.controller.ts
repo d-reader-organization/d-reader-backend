@@ -32,13 +32,17 @@ import { Wallet } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
+import { WalletCreatorService } from './wallet-creator.service';
 
 @UseGuards(RestAuthGuard, CreatorUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Creator')
 @Controller('creator')
 export class CreatorController {
-  constructor(private readonly creatorService: CreatorService) {}
+  constructor(
+    private readonly creatorService: CreatorService,
+    private readonly walletCreatorService: WalletCreatorService,
+  ) {}
 
   /* Create a new creator */
   @ApiConsumes('multipart/form-data')
@@ -152,5 +156,13 @@ export class CreatorController {
   @Delete('remove/:slug')
   remove(@Param('slug') slug: string) {
     return this.creatorService.remove(slug);
+  }
+
+  @Post('follow/:slug')
+  async follow(
+    @WalletEntity() wallet: Wallet,
+    @Param('slug') slug: string,
+  ): Promise<boolean> {
+    return await this.walletCreatorService.follow(wallet.address, slug);
   }
 }

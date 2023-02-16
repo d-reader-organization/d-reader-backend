@@ -144,9 +144,6 @@ export class WalletComicService {
     let walletComic = await this.prisma.walletComic.findUnique({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
     });
-    if (!walletComic) {
-      return null;
-    }
 
     walletComic = await this.prisma.walletComic.upsert({
       where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
