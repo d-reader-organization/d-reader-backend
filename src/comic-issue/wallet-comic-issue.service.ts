@@ -89,10 +89,10 @@ export class WalletComicIssueService {
         walletAddress,
         rating: null,
         isFavourite: false,
+        isSubscribed: false,
         isWhitelisted: false,
         viewedAt: null,
         readAt: null,
-        isSubscribed: false,
       };
     } else return walletComic;
   }

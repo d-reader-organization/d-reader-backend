@@ -157,7 +157,6 @@ export class CandyMachineService {
   }
 
   // v2: when creating the candy machine create 4 different metadata URIs: mint unsigned, mint signed, used unsigned, used signed
-  // TODO: If this is the first comic issue from the comic, create a new ComicCollectionNFT
   // This NFT would serve as a root NFT, a collection of collections (comic issues)
   // https://docs.metaplex.com/programs/token-metadata/certified-collections#nested-collections
   async createComicIssueCM(
@@ -173,10 +172,31 @@ export class CandyMachineService {
     // TODO copy S3 image from one bucket to another (with d-reader-nft-data)
     const coverImage = await this.generateMetaplexFileFromS3(comicIssue.cover);
 
-    const collectionNft = await this.createComicIssueCollectionNft(
-      comicIssue,
-      coverImage,
-    );
+    // If Collection NFT already exists - use it, otherwise create a fresh one
+    let collectionNftAddress: PublicKey;
+    const collectionNft = await this.prisma.comicIssueCollectionNft.findUnique({
+      where: { comicIssueId: comicIssue.id },
+    });
+
+    if (collectionNft) {
+      collectionNftAddress = new PublicKey(collectionNft.address);
+    } else {
+      const newCollectionNft = await this.createComicIssueCollectionNft(
+        comicIssue,
+        coverImage,
+      );
+
+      await this.prisma.comicIssueCollectionNft.create({
+        data: {
+          address: newCollectionNft.address.toBase58(),
+          uri: newCollectionNft.uri,
+          name: newCollectionNft.name,
+          comicIssue: { connect: { id: comicIssue.id } },
+        },
+      });
+
+      collectionNftAddress = newCollectionNft.address;
+    }
 
     // v2: try catch
     const comicCreator = new PublicKey(creator.walletAddress);
@@ -186,7 +206,7 @@ export class CandyMachineService {
         candyMachine: Keypair.generate(), // v2: prefix key with 'cndy'
         authority: this.metaplex.identity(),
         collection: {
-          address: collectionNft.address,
+          address: collectionNftAddress,
           updateAuthority: this.metaplex.identity(),
         },
         symbol: D_PUBLISHER_SYMBOL,

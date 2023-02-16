@@ -330,36 +330,6 @@ async function main() {
                     verifiedAt: new Date(),
                     publishedAt: new Date(),
                     popularizedAt: null,
-                    nfts: {
-                      createMany: {
-                        data: [
-                          {
-                            mint: 'FUwt1egmDAbNM6BGBM1Ao3FPxHuLsHunURjwA43jeQUr',
-                          },
-                          {
-                            mint: 'EaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
-                          },
-                          {
-                            mint: 'D3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
-                          },
-                          {
-                            mint: 'HnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
-                          },
-                          {
-                            mint: 'GZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
-                          },
-                          {
-                            mint: 'Q84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
-                          },
-                          {
-                            mint: 'ITxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
-                          },
-                          {
-                            mint: 'HpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
-                          },
-                        ],
-                      },
-                    },
                     pages: {
                       createMany: {
                         data: [
@@ -555,7 +525,6 @@ async function main() {
             verifiedAt: new Date(),
             publishedAt: new Date(),
             popularizedAt: new Date(),
-            nfts: undefined,
             pages: {
               createMany: {
                 data: [
@@ -645,7 +614,6 @@ async function main() {
             verifiedAt: new Date(),
             publishedAt: new Date(),
             popularizedAt: new Date(),
-            nfts: undefined,
             pages: {
               createMany: {
                 data: [
@@ -772,33 +740,6 @@ async function main() {
                     verifiedAt: new Date(),
                     publishedAt: new Date(),
                     popularizedAt: null,
-                    nfts: {
-                      createMany: {
-                        data: [
-                          {
-                            mint: 'DaaY6ooYGbtZZFQJ4wvt3oSD2NG64ELPAzzt4HrX8DxQ',
-                          },
-                          {
-                            mint: 'C3YjWNBybTFV33LKfx67FcWS7RqqLsDY9b3m7w8nSRAh',
-                          },
-                          {
-                            mint: 'GnKX2EBzuZLX1Qv7uv6aHj5jPDwQcBknRHtKhpZdsrEV',
-                          },
-                          {
-                            mint: 'FZF5kLAvzN2JkN3xE7Y6QQAnTP9PgapEvUcj3tALpH5h',
-                          },
-                          {
-                            mint: 'Z84BdVBNasC19d4zZbzsu5dZNhqtYLbhnXdALPZuguC',
-                          },
-                          {
-                            mint: 'HTxAAxdiEwJzdwXiUY4xPP8LqytXz21C42i4gZ5qfoF2',
-                          },
-                          {
-                            mint: 'GpKpp7bk4e7Lp9mTJbQ7SR5brBTE1x1qD9dnEfiphMfa',
-                          },
-                        ],
-                      },
-                    },
                     pages: {
                       createMany: {
                         data: [

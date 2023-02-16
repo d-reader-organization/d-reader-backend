@@ -10,7 +10,6 @@ import {
   MaxLength,
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
 import { CreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator } from '@prisma/client';

@@ -6,7 +6,10 @@ import { WalletCreatorStats } from './types/my-stats';
 @Injectable()
 export class WalletCreatorService {
   constructor(private readonly prisma: PrismaService) {}
-  async toggleFollow(walletAddress: string, creatorSlug: string): Promise<boolean> {
+  async toggleFollow(
+    walletAddress: string,
+    creatorSlug: string,
+  ): Promise<boolean> {
     let walletCreator = await this.prisma.walletCreator.findUnique({
       where: {
         creatorSlug_walletAddress: { walletAddress, creatorSlug },
