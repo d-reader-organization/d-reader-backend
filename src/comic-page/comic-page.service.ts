@@ -53,7 +53,7 @@ export class ComicPageService {
     return comicPagesData;
   }
 
-  async getComicPagesForIssue(
+  async getComicIssuePages(
     comicIssueId: number,
     walletAddress: string,
   ): Promise<ComicPage[]> {

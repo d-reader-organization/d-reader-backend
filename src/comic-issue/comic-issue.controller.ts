@@ -42,7 +42,7 @@ import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put in
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import {
   ComicPageDto,
-  toSortedComicPageDto,
+  toComicPageDtoArray,
 } from 'src/comic-page/entities/comic-page.dto';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
@@ -112,11 +112,11 @@ export class ComicIssueController {
     @Param('id') id: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
-    const pages = await this.comicPageService.getComicPagesForIssue(
+    const pages = await this.comicPageService.getComicIssuePages(
       +id,
       wallet.address,
     );
-    return await toSortedComicPageDto(pages);
+    return await toComicPageDtoArray(pages);
   }
 
   /* Update specific comic issue */

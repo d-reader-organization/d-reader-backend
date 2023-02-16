@@ -31,13 +31,9 @@ export async function toComicPageDto(page: ComicPage) {
   return pageDto;
 }
 
-export async function toSortedComicPageDto(pages: ComicPage[]): Promise<ComicPageDto[]> {
-  return sortBy(
-    await Promise.all(pages.map(async (page) => toComicPageDto(page))),
-    'pageNumber',
-  );
+export async function toComicPageDtoArray(
+  pages: ComicPage[],
+): Promise<ComicPageDto[]> {
+  const comicPagesDto = await Promise.all(pages.map(toComicPageDto));
+  return sortBy(comicPagesDto, 'pageNumber');
 }
-
-export const toComicPageDtoArray = (pages: ComicPage[]) => {
-  return Promise.all(pages.map(toComicPageDto));
-};
