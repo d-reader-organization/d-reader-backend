@@ -81,8 +81,11 @@ export class CreatorController {
 
   /* Get specific creator by unique slug */
   @Get('get/:slug')
-  async findOne(@Param('slug') slug: string): Promise<CreatorDto> {
-    const creator = await this.creatorService.findOne(slug);
+  async findOne(
+    @WalletEntity() wallet: Wallet,
+    @Param('slug') slug: string,
+  ): Promise<CreatorDto> {
+    const creator = await this.creatorService.findOne(slug, wallet.address);
     return await toCreatorDto(creator);
   }
 

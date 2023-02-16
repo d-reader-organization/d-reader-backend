@@ -16,6 +16,8 @@ import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator } from '@prisma/client';
 import { getReadUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
+import { WalletCreatorStats } from '../types/my-stats';
+import { WalletCreatorStatsDto } from './wallet-creator.dto';
 
 export class CreatorDto {
   @IsPositive()
@@ -61,9 +63,14 @@ export class CreatorDto {
   @IsOptional()
   @Type(() => CreatorStatsDto)
   stats?: CreatorStatsDto;
+
+  @IsOptional()
+  @Type(() => WalletCreatorStatsDto)
+  myStats?: WalletCreatorStatsDto;
+
 }
 
-type CreatorInput = Creator & { stats?: CreatorStats };
+type CreatorInput = Creator & { stats?: CreatorStats, myStats?: WalletCreatorStats };
 
 export async function toCreatorDto(creator: CreatorInput) {
   const plainCreatorDto: CreatorDto = {
@@ -87,6 +94,7 @@ export async function toCreatorDto(creator: CreatorInput) {
             totalVolume: getRandomFloatOrInt(0, 10000),
           }
         : undefined,
+        myStats: creator.myStats,
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);
