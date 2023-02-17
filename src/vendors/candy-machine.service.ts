@@ -406,14 +406,12 @@ export class CandyMachineService {
     console.log(mintNftResponse.nft.address);
   }
 
-  /** @deprecated */
   async constructMintOneTransaction(
     feePayer: PublicKey,
-    candyMachineAddress: string,
     blockhash?: BlockhashWithExpiryBlockHeight,
   ) {
     const candyMachine = await this.metaplex.candyMachines().findByAddress({
-      address: new PublicKey(candyMachineAddress),
+      address: new PublicKey('DsSDatrYovGaMu9V1T3g9ENkTWK7okpQYHjuzy1541SM'),
     });
 
     const mintKeypair = Keypair.generate();
@@ -425,25 +423,25 @@ export class CandyMachineService {
         {
           mint: mintKeypair,
           candyMachine,
-          // guards: {
-          //   thirdPartySigner: { signer: this.metaplex.identity() },
-          // },
+          guards: {
+            thirdPartySigner: { signer: this.metaplex.identity() },
+          },
           collectionUpdateAuthority: this.metaplex.identity().publicKey,
+          owner:feePayer,
         },
-        { payer: dummyKeypair },
       );
-
+    const ins = mintTransactionBuilder.getInstructions();
     if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-    // mintTransactionBuilder.setFeePayer(dummyKeypair);
     const mintTransaction = mintTransactionBuilder.toTransaction(blockhash);
+    mintTransaction.feePayer = feePayer;
     mintTransaction.partialSign(mintKeypair);
+    mintTransaction.partialSign(this.metaplex.identity());
 
     const rawTransaction = mintTransaction.serialize({
       requireAllSignatures: false,
       verifySignatures: false,
     });
 
-    // return bs58.encode(rawTransaction);
     return rawTransaction.toString('base64');
   }
 
