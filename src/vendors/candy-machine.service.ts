@@ -27,7 +27,7 @@ import { sleep } from 'src/utils/helpers';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
-import { mintInstruction } from './instructions/mint';
+import { constructMintInstruction } from './instructions/mint';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -390,30 +390,13 @@ export class CandyMachineService {
     }
   }
 
-  async mintOne(candyMachineAddress: string) {
-    const candyMachine = await this.metaplex.candyMachines().findByAddress({
-      address: new PublicKey(candyMachineAddress),
-    });
-
-    const mintNftResponse = await this.metaplex.candyMachines().mint({
-      candyMachine,
-      guards: {
-        thirdPartySigner: { signer: this.metaplex.identity() },
-      },
-      collectionUpdateAuthority: this.metaplex.identity().publicKey,
-    });
-
-    console.log('********** NFT Minted **********');
-    console.log(mintNftResponse.nft.address);
-  }
-
   async constructMintOneTransaction(
     feePayer: PublicKey,
-    candy_machine_address: string,
+    candyMachineAddress: string,
   ) {
     const mint = Keypair.generate();
-    const candyMachine = new PublicKey(candy_machine_address);
-    const mint_ix = await mintInstruction(
+    const candyMachine = new PublicKey(candyMachineAddress);
+    const mintInstructions = await constructMintInstruction(
       this.metaplex,
       candyMachine,
       feePayer,
@@ -428,14 +411,15 @@ export class CandyMachineService {
       ],
     );
 
-    const tx = new Transaction().add(...mint_ix.instructions);
-    tx.feePayer = feePayer;
-    tx.recentBlockhash = (
-      await this.metaplex.connection.getLatestBlockhash()
-    ).blockhash;
-    tx.sign(mint);
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
+    const mintTransaction = new Transaction({
+      feePayer,
+      ...latestBlockhash,
+    }).add(...mintInstructions);
 
-    const rawTransaction = tx.serialize({
+    mintTransaction.sign(mint);
+
+    const rawTransaction = mintTransaction.serialize({
       requireAllSignatures: false,
       verifySignatures: false,
     });

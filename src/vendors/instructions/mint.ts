@@ -30,7 +30,7 @@ export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
 );
 
-export async function mintInstruction(
+export async function constructMintInstruction(
   metaplex: Metaplex,
   candyMachine: PublicKey,
   payer: PublicKey,
@@ -39,7 +39,7 @@ export async function mintInstruction(
   remainingAccounts?: AccountMeta[] | null,
   mintArgs?: Uint8Array | null,
   label?: string | null,
-): Promise<{ instructions: TransactionInstruction[] } | undefined> {
+): Promise<TransactionInstruction[]> {
   // candy machine object
   const candyMachineObject: CandyMachine = await metaplex
     .candyMachines()
@@ -47,7 +47,7 @@ export async function mintInstruction(
       address: candyMachine,
     });
 
-  // PDAs.
+  // PDAs
   const authorityPda = metaplex.candyMachines().pdas().authority({
     candyMachine: candyMachine,
   });
@@ -82,7 +82,7 @@ export async function mintInstruction(
 
   const collectionMint = candyMachineObject.collectionMintAddress;
   // Retrieves the collection nft
-  const collection = await metaplex
+  const collectionNft = await metaplex
     .nfts()
     .findByMint({ mintAddress: collectionMint });
   if (!candyMachineObject.candyGuard) {
@@ -99,7 +99,7 @@ export async function mintInstruction(
     nftMetadata,
     nftMint: mint.publicKey,
     nftMintAuthority: payer,
-    collectionUpdateAuthority: collection.updateAuthorityAddress,
+    collectionUpdateAuthority: collectionNft.updateAuthorityAddress,
     collectionAuthorityRecord,
     collectionMasterEdition,
     collectionMetadata,
@@ -120,8 +120,8 @@ export async function mintInstruction(
     label: label ?? null,
   };
 
-  const ixs: TransactionInstruction[] = [];
-  ixs.push(
+  const instructions: TransactionInstruction[] = [];
+  instructions.push(
     SystemProgram.createAccount({
       fromPubkey: payer,
       newAccountPubkey: mint.publicKey,
@@ -133,9 +133,10 @@ export async function mintInstruction(
     }),
   );
 
-  ixs.push(createInitializeMintInstruction(mint.publicKey, 0, payer, payer));
-
-  ixs.push(
+  instructions.push(
+    createInitializeMintInstruction(mint.publicKey, 0, payer, payer),
+  );
+  instructions.push(
     createAssociatedTokenAccountInstruction(
       payer,
       nftTokenAccount,
@@ -143,18 +144,17 @@ export async function mintInstruction(
       mint.publicKey,
     ),
   );
-
-  ixs.push(
+  instructions.push(
     createMintToInstruction(mint.publicKey, nftTokenAccount, payer, 1, []),
   );
 
-  const mintIx = createMintInstruction(accounts, args);
+  const mintInstruction = createMintInstruction(accounts, args);
 
   if (remainingAccounts) {
-    mintIx.keys.push(...remainingAccounts);
+    mintInstruction.keys.push(...remainingAccounts);
   }
 
-  ixs.push(mintIx);
+  instructions.push(mintInstruction);
 
-  return { instructions: ixs };
+  return instructions;
 }
