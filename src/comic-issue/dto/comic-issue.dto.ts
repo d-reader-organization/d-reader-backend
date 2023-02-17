@@ -121,7 +121,7 @@ type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
   stats?: ComicIssueStats;
-  myStats?: WalletComicIssueStats & { canRead: boolean};
+  myStats?: WalletComicIssueStats & { canRead: boolean };
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
