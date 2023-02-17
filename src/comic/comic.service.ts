@@ -16,12 +16,13 @@ import {
   uploadFile,
 } from '../aws/s3client';
 import { WalletComicService } from './wallet-comic.service';
-import { Comic, Creator, Genre } from '@prisma/client';
+import { Comic, Creator, Genre, Prisma } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { isEmpty } from 'lodash';
 import { WithComicStats } from './types/comic-stats';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { FiltersTag } from 'src/types/filters';
 
 @Injectable()
 export class ComicService {
@@ -85,30 +86,7 @@ export class ComicService {
     query: ComicFilterParams,
     walletAddress?: string,
   ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>[]> {
-    const comics = await this.prisma.comic.findMany({
-      include: { genres: true, creator: true },
-      skip: query.skip,
-      take: query.take,
-      where: {
-        name: { contains: query?.nameSubstring, mode: 'insensitive' },
-        creator: { slug: query?.creatorSlug },
-        AND: query?.genreSlugs?.map((slug) => {
-          return {
-            genres: {
-              some: {
-                slug: {
-                  equals: slug,
-                  mode: 'insensitive',
-                },
-              },
-            },
-          };
-        }),
-        deletedAt: null,
-        publishedAt: { lt: new Date() },
-        verifiedAt: { not: null },
-      },
-    });
+    const comics = await this.specialFindMany(this.findManyArgs(query));
 
     const aggregatedComics = await Promise.all(
       comics.map(async (comic) => {
@@ -117,7 +95,9 @@ export class ComicService {
           walletAddress,
         );
 
-        return { ...comic, stats, myStats };
+        return { ...comic, stats, myStats } as WithComicStats<
+          Comic & { genres: Genre[]; creator: Creator }
+        >;
       }),
     );
 
@@ -283,6 +263,72 @@ export class ComicService {
     for (const comic of comicsToRemove) {
       await this.remove(comic.slug);
       console.log(`Removed comic ${comic.slug} at ${new Date()}`);
+    }
+  }
+
+  async specialFindMany<T extends Prisma.ComicFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ComicFindManyArgs>,
+  ) {
+    return await this.prisma.comic.findMany<
+      Prisma.SelectSubset<T, Prisma.ComicFindManyArgs>
+    >(args);
+  }
+
+  private findManyArgs(query: ComicFilterParams) {
+    return {
+      include: {
+        genres: true,
+        creator: true,
+        issues: {
+          where: {},
+        },
+      },
+      skip: query.skip,
+      take: query.take,
+      ...this.restArgs(query),
+    };
+  }
+
+  private restArgs(query: ComicFilterParams): Record<string, any> {
+    const defaultFilter = {
+      name: { contains: query?.nameSubstring, mode: 'insensitive' },
+      creator: { slug: query?.creatorSlug },
+      deletedAt: null,
+      publishedAt: { lt: new Date() },
+      verifiedAt: { not: null },
+    };
+    switch (query.tag) {
+      case FiltersTag.Free:
+        return {
+          where: { ...defaultFilter, publishedAt: { not: null } },
+        };
+      case FiltersTag.Latest:
+        return { where: defaultFilter };
+      case FiltersTag.Likes:
+        return { where: defaultFilter };
+      case FiltersTag.New:
+        return { where: defaultFilter };
+      case FiltersTag.Performance:
+        return { where: defaultFilter };
+      case FiltersTag.Popular:
+        return {
+          where: {
+            ...defaultFilter,
+            publishedAt: { not: null },
+            popularizedAt: { not: null },
+          },
+          orderBy: {
+            popularizedAt: 'desc',
+          },
+        };
+      case FiltersTag.Rating:
+        return { where: defaultFilter };
+      case FiltersTag.Readers:
+        return { where: defaultFilter };
+      case FiltersTag.Viewers:
+        return { where: defaultFilter };
+      default:
+        return { where: defaultFilter };
     }
   }
 }
