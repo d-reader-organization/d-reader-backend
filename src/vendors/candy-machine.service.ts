@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
-  BlockhashWithExpiryBlockHeight,
   Cluster,
   Connection,
   Keypair,
   PublicKey,
+  Transaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -12,7 +12,6 @@ import {
   Metaplex,
   MetaplexFile,
   toBigNumber,
-  toDateTime,
   toMetaplexFile,
   sol,
 } from '@metaplex-foundation/js';
@@ -28,6 +27,7 @@ import { sleep } from 'src/utils/helpers';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
+import { mintInstruction } from './instructions/mint';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -75,7 +75,8 @@ const HUNDRED_PERCENT_TAX = 10000;
 const D_PUBLISHER_PRIMARY_SALE_SHARE = 10;
 const D_PUBLISHER_SECONDARY_SALE_SHARE = 25;
 
-const GLOBAL_BOT_TAX = 0.01;
+/** @deprecated */
+// const GLOBAL_BOT_TAX = 0.01;
 
 const STATE_TRAIT = 'state';
 const SIGNED_TRAIT = 'signed';
@@ -210,13 +211,13 @@ export class CandyMachineService {
         itemsAvailable: toBigNumber(comicIssue.supply),
         // groups: [], // v2: add different groups
         guards: {
-          botTax: { lamports: sol(GLOBAL_BOT_TAX), lastInstruction: false },
+          botTax: undefined,
           solPayment: {
             amount: sol(comicIssue.mintPrice),
             destination: this.metaplex.identity().publicKey,
           },
           tokenPayment: undefined,
-          startDate: { date: toDateTime(comicIssue.releaseDate) },
+          startDate: undefined,
           endDate: undefined, // v2: close mints after a long period of stale sales?
           // thirdPartySigner: { signerKey: this.metaplex.identity().publicKey }, // v2: do we really need this?
           tokenGate: undefined, // v2: gate minting to $PAGES non-holders
@@ -408,36 +409,33 @@ export class CandyMachineService {
 
   async constructMintOneTransaction(
     feePayer: PublicKey,
-    blockhash?: BlockhashWithExpiryBlockHeight,
+    candy_machine_address: string,
   ) {
-    const candyMachine = await this.metaplex.candyMachines().findByAddress({
-      address: new PublicKey('DsSDatrYovGaMu9V1T3g9ENkTWK7okpQYHjuzy1541SM'),
-    });
-
-    const mintKeypair = Keypair.generate();
-    const dummyKeypair = Keypair.generate();
-    const mintTransactionBuilder = await this.metaplex
-      .candyMachines()
-      .builders()
-      .mint(
+    const mint = Keypair.generate();
+    const candyMachine = new PublicKey(candy_machine_address);
+    const mint_ix = await mintInstruction(
+      this.metaplex,
+      candyMachine,
+      feePayer,
+      mint,
+      this.metaplex.connection,
+      [
         {
-          mint: mintKeypair,
-          candyMachine,
-          guards: {
-            thirdPartySigner: { signer: this.metaplex.identity() },
-          },
-          collectionUpdateAuthority: this.metaplex.identity().publicKey,
-          owner:feePayer,
+          pubkey: this.metaplex.identity().publicKey,
+          isSigner: false,
+          isWritable: true,
         },
-      );
-    const ins = mintTransactionBuilder.getInstructions();
-    if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-    const mintTransaction = mintTransactionBuilder.toTransaction(blockhash);
-    mintTransaction.feePayer = feePayer;
-    mintTransaction.partialSign(mintKeypair);
-    mintTransaction.partialSign(this.metaplex.identity());
+      ],
+    );
 
-    const rawTransaction = mintTransaction.serialize({
+    const tx = new Transaction().add(...mint_ix.instructions);
+    tx.feePayer = feePayer;
+    tx.recentBlockhash = (
+      await this.metaplex.connection.getLatestBlockhash()
+    ).blockhash;
+    tx.sign(mint);
+
+    const rawTransaction = tx.serialize({
       requireAllSignatures: false,
       verifySignatures: false,
     });
