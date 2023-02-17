@@ -112,7 +112,7 @@ export class ComicIssueController {
     @Param('id') id: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
-    const pages = await this.comicPageService.getComicIssuePages(
+    const pages = await this.comicIssueService.getPages(
       +id,
       wallet.address,
     );

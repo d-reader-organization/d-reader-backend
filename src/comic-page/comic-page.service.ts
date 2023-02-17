@@ -55,41 +55,12 @@ export class ComicPageService {
 
   async getComicIssuePages(
     comicIssueId: number,
-    walletAddress: string,
+    isPreviewable?: boolean,
   ): Promise<ComicPage[]> {
-    let showOnlyPreviews: boolean | undefined;
-
-    // find all NFTs that token gate the comic issue and are owned by the wallet
-    const ownedComicIssues = await this.prisma.comicIssueNft.findMany({
-      where: { collectionNft: { comicIssueId }, owner: walletAddress },
-    });
-
-    // if wallet does not own the issue, see if it's whitelisted per comic issue basis
-    if (ownedComicIssues.length === 0) {
-      const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
-        where: { walletAddress, comicIssueId, isWhitelisted: true },
-      });
-
-      // if wallet does not own the issue, see if it's whitelisted per comic basis
-      if (!walletComicIssue) {
-        const walletComic = await this.prisma.walletComic.findFirst({
-          where: {
-            walletAddress,
-            comic: { issues: { some: { id: comicIssueId } } },
-            isWhitelisted: true,
-          },
-        });
-
-        // if wallet is still not allowed to view the full content of the issue
-        // make sure to show only preview pages of the comic
-        if (!walletComic) showOnlyPreviews = true;
-      }
-    }
-
     return await this.prisma.comicPage.findMany({
       where: {
         comicIssueId,
-        isPreviewable: showOnlyPreviews,
+        isPreviewable,
       },
     });
   }
