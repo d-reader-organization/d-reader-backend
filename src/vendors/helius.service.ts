@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Connection } from '@solana/web3.js';
+import { Cluster, Connection } from '@solana/web3.js';
 import { Helius, TransactionType, WebhookType } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
+import { clusterHeliusApiUrl } from 'src/utils/helius';
 
 @Injectable()
 export class HeliusService {
@@ -9,11 +10,11 @@ export class HeliusService {
   private readonly helius: Helius;
 
   constructor(private readonly prisma: PrismaService) {
-    this.connection = new Connection(
-      process.env.SOLANA_RPC_NODE_ENDPOINT,
-      'confirmed',
+    const endpoint = clusterHeliusApiUrl(
+      process.env.HELIUS_API_KEY,
+      process.env.SOLANA_CLUSTER as Cluster,
     );
-
+    this.connection = new Connection(endpoint, 'confirmed');
     this.helius = new Helius(process.env.HELIUS_API_KEY);
   }
 

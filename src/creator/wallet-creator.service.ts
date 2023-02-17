@@ -6,7 +6,10 @@ import { WalletCreatorStats } from './types/my-stats';
 @Injectable()
 export class WalletCreatorService {
   constructor(private readonly prisma: PrismaService) {}
-  async toggleFollow(walletAddress: string, creatorSlug: string): Promise<boolean> {
+  async toggleFollow(
+    walletAddress: string,
+    creatorSlug: string,
+  ): Promise<boolean> {
     let walletCreator = await this.prisma.walletCreator.findUnique({
       where: {
         creatorSlug_walletAddress: { walletAddress, creatorSlug },
@@ -44,9 +47,16 @@ export class WalletCreatorService {
       where: { creatorSlug: slug, isFollowing: true },
     });
 
-    const [followersCount] = await Promise.all([countFollowersQuery]);
+    const countComicIssues = this.prisma.comicIssue.count({
+      where: { comic: { creator: { slug } } },
+    });
 
-    return { followersCount, comicIssuesCount: 5, totalVolume: 125 };
+    const [followersCount, comicIssuesCount] = await Promise.all([
+      countFollowersQuery,
+      countComicIssues,
+    ]);
+
+    return { followersCount, comicIssuesCount, totalVolume: 125 };
   }
 
   async walletCreatorStats(

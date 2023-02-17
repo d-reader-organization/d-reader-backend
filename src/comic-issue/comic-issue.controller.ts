@@ -39,6 +39,11 @@ import { Creator, Wallet } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
+import { ComicPageService } from 'src/comic-page/comic-page.service';
+import {
+  ComicPageDto,
+  toComicPageDtoArray,
+} from 'src/comic-page/entities/comic-page.dto';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -48,6 +53,7 @@ export class ComicIssueController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
     private readonly walletComicIssueService: WalletComicIssueService,
+    private readonly comicPageService: ComicPageService,
   ) {}
 
   // https://github.com/swagger-api/swagger-ui/issues/7625
@@ -94,11 +100,23 @@ export class ComicIssueController {
     @Param('id') id: string,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOneProtected(
+    const comicIssue = await this.comicIssueService.findOne(
       +id,
       wallet.address,
     );
     return await toComicIssueDto(comicIssue);
+  }
+
+  @Get('get/:id/pages')
+  async getPages(
+    @Param('id') id: string,
+    @WalletEntity() wallet: Wallet,
+  ): Promise<ComicPageDto[]> {
+    const pages = await this.comicIssueService.getPages(
+      +id,
+      wallet.address,
+    );
+    return await toComicPageDtoArray(pages);
   }
 
   /* Update specific comic issue */

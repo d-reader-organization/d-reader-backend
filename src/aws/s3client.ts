@@ -23,7 +23,7 @@ type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export const REGION = config().s3.region || 'us-east-1';
 export const Bucket = process.env.AWS_BUCKET_NAME;
-export const SeedBucket = process.env.AWS_SEED_BUCKET_NAME;
+export const SeedBucket = process.env.AWS_BUCKET_NAME + '-seed';
 
 export const s3Client = new S3Client({
   region: REGION,

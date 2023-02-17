@@ -75,6 +75,8 @@ export class CreatorService {
   async findAll(query: CreatorFilterParams) {
     const creators = await this.prisma.creator.findMany({
       include: { comics: true },
+      skip: query.skip,
+      take: query.take,
       where: {
         name: { contains: query?.nameSubstring, mode: 'insensitive' },
         deletedAt: null,

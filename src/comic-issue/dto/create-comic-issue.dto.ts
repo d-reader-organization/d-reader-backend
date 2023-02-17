@@ -1,7 +1,6 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
-  ArrayUnique,
   IsArray,
   IsDateString,
   IsNotEmpty,
@@ -41,7 +40,7 @@ export class CreateComicIssueDto {
 
   @Min(0)
   @Transform(({ value }) =>
-    // TODO: must be lower than mintPrice
+    // TODO v1: must be lower than mintPrice
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   discountMintPrice: number;
@@ -71,19 +70,6 @@ export class CreateComicIssueDto {
   @Type(() => CreateComicPageDto)
   @ApiProperty({ type: [CreateComicPageDto] })
   pages: CreateComicPageDto[];
-
-  // TODO v2: revise this later. Possibly it's a bug within swagger-ui
-  // @Transform is necessary for ApiProperty to work properly
-  // for multipart/form-data with swagger
-  @ArrayUnique()
-  @Type(() => String)
-  @ApiProperty({ type: [String] })
-  @Transform(({ value }: { value: string[] | string }) => {
-    if (typeof value === 'string') {
-      return value.split(',');
-    } else return value;
-  })
-  hashlist: string[];
 }
 
 export class CreateComicIssueFilesDto {

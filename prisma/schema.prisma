@@ -116,28 +116,28 @@ model Genre {
 }
 
 model ComicIssue {
-  id                Int                @id @default(autoincrement())
+  id                Int                      @id @default(autoincrement())
   number            Int
   supply            Int
   discountMintPrice Float
   mintPrice         Float
   title             String
   slug              String
-  description       String             @default("")
-  flavorText        String             @default("")
-  cover             String             @default("")
-  soundtrack        String             @default("")
+  description       String                   @default("")
+  flavorText        String                   @default("")
+  cover             String                   @default("")
+  soundtrack        String                   @default("")
   releaseDate       DateTime
-  createdAt         DateTime           @default(now())
+  createdAt         DateTime                 @default(now())
   deletedAt         DateTime?
   featuredAt        DateTime?
   verifiedAt        DateTime?
   publishedAt       DateTime?
   popularizedAt     DateTime?
-  comic             Comic              @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comic             Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug         String
+  collectionNft     ComicIssueCollectionNft?
   pages             ComicPage[]
-  nfts              ComicIssueNft[]
   wallets           WalletComicIssue[]
 
   @@unique([number, comicSlug])
@@ -146,9 +146,34 @@ model ComicIssue {
 }
 
 model ComicIssueNft {
-  mint         String     @id
-  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-  comicIssueId Int
+  address              String                  @id
+  uri                  String
+  name                 String
+  owner                String
+  candyMachine         ComicIssueCandyMachine  @relation(fields: [candyMachineAddress], references: [address])
+  candyMachineAddress  String
+  collectionNft        ComicIssueCollectionNft @relation(fields: [collectionNftAddress], references: [address])
+  collectionNftAddress String
+}
+
+model ComicIssueCandyMachine {
+  address              String          @id
+  mintAuthorityAddress String?
+  itemsAvailable       Int
+  itemsMinted          Int
+  itemsRemaining       Int
+  itemsLoaded          Int
+  isFullyLoaded        Int
+  items                ComicIssueNft[]
+}
+
+model ComicIssueCollectionNft {
+  address         String          @id
+  uri             String
+  name            String
+  comicIssue      ComicIssue      @relation(fields: [comicIssueId], references: [id])
+  comicIssueId    Int             @unique
+  collectionItems ComicIssueNft[]
 }
 
 model ComicPage {
