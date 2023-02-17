@@ -106,8 +106,7 @@ export class CandyMachineService {
 
     this.metaplex
       .use(keypairIdentity(treasuryKeypair))
-      // TODO: add this bucket name to .env so local development doesn't mess up prod
-      .use(awsStorage(s3Client, 'd-reader-nft-data'));
+      .use(awsStorage(s3Client, process.env.AWS_BUCKET_NAME + '-metadata'));
   }
 
   async findMintedNfts(candyMachineAddress: string) {

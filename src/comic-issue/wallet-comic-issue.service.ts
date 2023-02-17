@@ -3,7 +3,11 @@ import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from 'src/types/shared';
 import { WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import { getRandomFloatOrInt, getRandomInt } from 'src/utils/helpers';
+import {
+  getRandomFloatOrInt,
+  getRandomInt,
+  mockPromise,
+} from 'src/utils/helpers';
 
 @Injectable()
 export class WalletComicIssueService {
@@ -37,6 +41,11 @@ export class WalletComicIssueService {
       },
     });
 
+    // TODO: replace with real values
+    const calculateTotalVolumeQuery = mockPromise(getRandomFloatOrInt(1, 1000));
+    const calculateTotalListedQuery = mockPromise(getRandomInt(6, 14));
+    const calculateFloorPriceQuery = mockPromise(getRandomFloatOrInt(1, 20));
+
     try {
       const [
         aggregations,
@@ -44,12 +53,18 @@ export class WalletComicIssueService {
         readersCount,
         viewersCount,
         totalIssuesCount,
+        totalVolume,
+        totalListedCount,
+        floorPrice,
       ] = await Promise.all([
         aggregateQuery,
         countFavouritesQuery,
         countReadersQuery,
         countViewersQuery,
         countIssuesQuery,
+        calculateTotalVolumeQuery,
+        calculateTotalListedQuery,
+        calculateFloorPriceQuery,
       ]);
 
       return {
@@ -59,9 +74,9 @@ export class WalletComicIssueService {
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        totalVolume: getRandomFloatOrInt(1, 1000), // TODO
-        totalListedCount: getRandomInt(6, 14), // TODO
-        floorPrice: getRandomFloatOrInt(1, 20), // TODO
+        totalVolume,
+        totalListedCount,
+        floorPrice,
       };
     } catch (error) {
       // TODO: improve catch block

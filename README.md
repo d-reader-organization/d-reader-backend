@@ -64,7 +64,8 @@ npm run authorize-wallet
 ## 🌱 .env
 - **`JWT_ACCESS_SECRET`** and **`JWT_REFRESH_SECRET`** are randomly generated 42 char strings
 - **`SOLANA_CLUSTER`** can be either `mainnet-beta`, `testnet` or `devnet`. Rule of thumb is to use `devnet` on localhost development, and `mainnet-beta` for production applications
-- **`AWS_ACCESS_KEY_ID`** and **`AWS_SECRET_ACCESS_KEY`** are necessary for app to work as intended since app relies on AWS S3 for file storage. These credentials can be obtained upon IAM user creation (contact DevOps to create IAM user for you)
+- **`AWS_ACCESS_KEY_ID`** and **`AWS_SECRET_ACCESS_KEY`** are necessary for app to work as intended since app relies on AWS S3 for file storage. These credentials can be obtained upon IAM user creation (contact sysadmin to create IAM user for you)
+- **`AWS_BUCKET_NAME`** should be delivered by sysadmin alongside AWS credentials
 - **`TREASURY_PRIVATE_KEY`** is the AES encrypted private key of a wallet used as a Treasury. All royalties will be collected there and all our payments will be done with it.
 - **`TREASURY_SECRET`** is the secret key used for AES encription/decription of the Treasury wallet's private key, preferably 64 byte long
 - **`MAIL_SERVICE`** and other mail related variables are unnecessary unless working on features which rely on email sending. Make sure to [download NodemailerApp](https://nodemailer.com/app) in that case

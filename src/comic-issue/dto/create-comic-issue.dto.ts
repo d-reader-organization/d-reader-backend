@@ -40,7 +40,7 @@ export class CreateComicIssueDto {
 
   @Min(0)
   @Transform(({ value }) =>
-    // TODO: must be lower than mintPrice
+    // TODO v1: must be lower than mintPrice
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   discountMintPrice: number;
