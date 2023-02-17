@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { IsOptional, IsString, IsArray } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { FiltersTag } from 'src/types/filters';
 import { Pagination } from 'src/types/pagination.dto';
 
 export class ComicFilterParams extends Pagination {
@@ -24,7 +23,4 @@ export class ComicFilterParams extends Pagination {
     } else return value;
   })
   genreSlugs?: string[];
-
-  @IsOptional()
-  tag?: FiltersTag;
 }

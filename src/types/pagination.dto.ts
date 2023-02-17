@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
-import { Max, Min } from 'class-validator';
+import { IsOptional, Max, Min } from 'class-validator';
+import { FiltersTag } from './filters';
 
 export class Pagination {
   @Min(0)
@@ -14,4 +15,7 @@ export class Pagination {
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   take: number;
+
+  @IsOptional()
+  tag?: FiltersTag;
 }

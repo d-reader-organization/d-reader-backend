@@ -303,13 +303,18 @@ export class ComicService {
           where: { ...defaultFilter, publishedAt: { not: null } },
         };
       case FiltersTag.Latest:
-        return { where: defaultFilter };
+        return {
+          where: defaultFilter,
+          orderBy: {
+            publishedAt: 'desc',
+          },
+        };
       case FiltersTag.Likes:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       case FiltersTag.New:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       case FiltersTag.Performance:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       case FiltersTag.Popular:
         return {
           where: {
@@ -322,11 +327,11 @@ export class ComicService {
           },
         };
       case FiltersTag.Rating:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       case FiltersTag.Readers:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       case FiltersTag.Viewers:
-        return { where: defaultFilter };
+        return { where: defaultFilter }; // TODO
       default:
         return { where: defaultFilter };
     }
