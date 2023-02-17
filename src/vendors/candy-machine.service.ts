@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   BlockhashWithExpiryBlockHeight,
+  Cluster,
   Connection,
   Keypair,
   PublicKey,
@@ -20,20 +21,13 @@ import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
 import { getS3Object, s3Client } from 'src/aws/s3client';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
-import { Readable } from 'stream';
 import * as bs58 from 'bs58';
 import * as path from 'path';
 import { chunk } from 'lodash';
 import { sleep } from 'src/utils/helpers';
-
-const streamToString = (stream: Readable) => {
-  return new Promise<Buffer>((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', (chunk) => chunks.push(chunk));
-    stream.once('end', () => resolve(Buffer.concat(chunks)));
-    stream.once('error', reject);
-  });
-};
+import { clusterHeliusApiUrl } from 'src/utils/helius';
+import { streamToString } from 'src/utils/files';
+import { Readable } from 'stream';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -94,10 +88,11 @@ export class CandyMachineService {
   private readonly metaplex: Metaplex;
 
   constructor(private readonly prisma: PrismaService) {
-    this.connection = new Connection(
-      process.env.SOLANA_RPC_NODE_ENDPOINT,
-      'confirmed',
+    const endpoint = clusterHeliusApiUrl(
+      process.env.HELIUS_API_KEY,
+      process.env.SOLANA_CLUSTER as Cluster,
     );
+    this.connection = new Connection(endpoint, 'confirmed');
     this.metaplex = new Metaplex(this.connection);
 
     const treasuryWallet = AES.decrypt(

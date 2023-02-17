@@ -8,7 +8,6 @@ import {
   WRAPPED_SOL_MINT,
 } from '@metaplex-foundation/js';
 import { generateSecret, createWallet } from '../utils/wallets';
-import { clusterHeliusApiUrl } from '../utils/helius';
 import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cg, cgray, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
@@ -36,10 +35,6 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     log('\n🏗️  Generating new .env values...\n');
 
     const endpoint = clusterApiUrl(options.cluster);
-    const heliusEndpoint = clusterHeliusApiUrl(
-      options.cluster,
-      options.heliusApiKey,
-    );
     const connection = new Connection(endpoint, 'confirmed');
     // Proposal: create a wallet with starting characters 'trsy...'
     const treasury = createWallet();
@@ -73,8 +68,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     logEnv('JWT_ACCESS_SECRET', generateSecret(42));
     logEnv('JWT_REFRESH_SECRET', generateSecret(42));
     logEnv('SOLANA_CLUSTER', metaplex.cluster);
-    logEnv('SOLANA_RPC_NODE_ENDPOINT', heliusEndpoint);
-    logEnv('HELIUS_API_KEY', treasury.secret);
+    logEnv('HELIUS_API_KEY', options.heliusApiKey);
     logEnv('SIGN_MESSAGE', signMessagePrompt);
     logEnv('TREASURY_PRIVATE_KEY', treasury.encryptedPrivateKey);
     logEnv('TREASURY_SECRET', treasury.secret);
