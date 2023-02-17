@@ -38,7 +38,7 @@ export class EnvironmentQuestions {
       if (!value && !process.env.HELIUS_API_KEY)
         return 'Helius API key missing';
 
-      const endpoint = clusterHeliusApiUrl('devnet', value);
+      const endpoint = clusterHeliusApiUrl(value, 'devnet');
       const connection = new Connection(endpoint, 'confirmed');
 
       try {

@@ -14,7 +14,7 @@ Table Wallet {
   comics WalletComic [not null]
   comicIssues WalletComicIssue [not null]
   newsletter Newsletter
-  WalletCreator WalletCreator [not null]
+  walletCreator WalletCreator [not null]
 }
 
 Table Creator {
@@ -37,7 +37,7 @@ Table Creator {
   comics Comic [not null]
   wallet Wallet [not null]
   walletAddress String [unique, not null]
-  WalletCreator WalletCreator [not null]
+  walletCreator WalletCreator [not null]
 }
 
 Table Comic {
@@ -118,8 +118,8 @@ Table ComicIssue {
   popularizedAt DateTime
   comic Comic [not null]
   comicSlug String [not null]
+  collectionNft ComicIssueCollectionNft
   pages ComicPage [not null]
-  nfts ComicIssueNft [not null]
   wallets WalletComicIssue [not null]
 
   indexes {
@@ -130,9 +130,34 @@ Table ComicIssue {
 }
 
 Table ComicIssueNft {
-  mint String [pk]
+  address String [pk]
+  uri String [not null]
+  name String [not null]
+  owner String [not null]
+  candyMachine ComicIssueCandyMachine [not null]
+  candyMachineAddress String [not null]
+  collectionNft ComicIssueCollectionNft [not null]
+  collectionNftAddress String [not null]
+}
+
+Table ComicIssueCandyMachine {
+  address String [pk]
+  mintAuthorityAddress String
+  itemsAvailable Int [not null]
+  itemsMinted Int [not null]
+  itemsRemaining Int [not null]
+  itemsLoaded Int [not null]
+  isFullyLoaded Int [not null]
+  items ComicIssueNft [not null]
+}
+
+Table ComicIssueCollectionNft {
+  address String [pk]
+  uri String [not null]
+  name String [not null]
   comicIssue ComicIssue [not null]
-  comicIssueId Int [not null]
+  comicIssueId Int [unique, not null]
+  collectionItems ComicIssueNft [not null]
 }
 
 Table ComicPage {
@@ -224,7 +249,11 @@ Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: ComicIssueNft.comicIssueId > ComicIssue.id [delete: Cascade]
+Ref: ComicIssueNft.candyMachineAddress > ComicIssueCandyMachine.address
+
+Ref: ComicIssueNft.collectionNftAddress > ComicIssueCollectionNft.address
+
+Ref: ComicIssueCollectionNft.comicIssueId - ComicIssue.id
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 

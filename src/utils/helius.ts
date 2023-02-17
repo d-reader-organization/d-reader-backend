@@ -1,6 +1,9 @@
 import { Cluster } from '@solana/web3.js';
 
-export function clusterHeliusApiUrl(cluster: Cluster, apiKey: string) {
+export function clusterHeliusApiUrl(
+  apiKey: string,
+  cluster: Cluster = 'devnet',
+) {
   switch (cluster) {
     case 'devnet':
       return `https://rpc-devnet.helius.xyz/?api-key=${apiKey}`;

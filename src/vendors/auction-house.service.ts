@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   BlockhashWithExpiryBlockHeight,
+  Cluster,
   Connection,
   Keypair,
   PublicKey,
@@ -14,6 +15,7 @@ import {
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
+import { clusterHeliusApiUrl } from 'src/utils/helius';
 
 @Injectable()
 export class AuctionHouseService {
@@ -22,21 +24,13 @@ export class AuctionHouseService {
   private auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    this.connection = new Connection(
-      process.env.SOLANA_RPC_NODE_ENDPOINT,
-      'confirmed',
+    const endpoint = clusterHeliusApiUrl(
+      process.env.HELIUS_API_KEY,
+      process.env.SOLANA_CLUSTER as Cluster,
     );
+    this.connection = new Connection(endpoint, 'confirmed');
     this.metaplex = new Metaplex(this.connection);
-
-    try {
-      this.auctionHouseAddress = new PublicKey(
-        process.env.AUCTION_HOUSE_ADDRESS,
-      );
-    } catch {
-      console.log(
-        'Make sure to add the AUCTION_HOUSE_ADDRESS environment value',
-      );
-    }
+    this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
 
     const treasuryWallet = AES.decrypt(
       process.env.TREASURY_PRIVATE_KEY,
@@ -48,8 +42,7 @@ export class AuctionHouseService {
     );
 
     this.metaplex.use(keypairIdentity(treasuryKeypair));
-    // this.metaplex.use()
-    // .use(awsStorage(s3Client, 'd-reader-nft-data'));
+    // this.metaplex.use(awsStorage(s3Client, 'd-reader-nft-data'));
   }
 
   async findOurAuctionHouse() {

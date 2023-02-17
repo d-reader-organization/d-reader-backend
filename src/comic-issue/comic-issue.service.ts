@@ -18,8 +18,7 @@ import {
 } from '../aws/s3client';
 import { isEmpty } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage, ComicIssueNft } from '@prisma/client';
-import { MetaplexService } from 'src/vendors/metaplex.service';
+import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
@@ -31,7 +30,6 @@ export class ComicIssueService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
-    private readonly metaplexService: MetaplexService,
     private readonly candyMachineService: CandyMachineService,
     private readonly walletComicIssueService: WalletComicIssueService,
   ) {}
@@ -41,7 +39,7 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicSlug, pages, hashlist, ...rest } = createComicIssueDto;
+    const { slug, comicSlug, pages, ...rest } = createComicIssueDto;
 
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
@@ -55,23 +53,18 @@ export class ComicIssueService {
     if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
     // Create ComicIssue without any files uploaded
-    let comicIssue: ComicIssue & { pages: ComicPage[]; nfts: ComicIssueNft[] };
+    let comicIssue: ComicIssue & { pages: ComicPage[] };
 
     // Upload comic pages and format data for INSERT
     const pagesData = await this.comicPageService.createMany(pages);
     try {
       comicIssue = await this.prisma.comicIssue.create({
-        include: { nfts: true, pages: true },
+        include: { pages: true },
         data: {
           ...rest,
           slug,
           comic: { connect: { slug: comicSlug } },
           pages: { createMany: { data: pagesData } },
-          nfts: {
-            createMany: {
-              data: hashlist.map((hash) => ({ mint: hash })),
-            },
-          },
         },
       });
     } catch {
@@ -93,7 +86,7 @@ export class ComicIssueService {
     // Update Comic Issue with s3 file keys
     comicIssue = await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
-      include: { nfts: true, pages: true },
+      include: { pages: true },
       data: {
         cover: coverKey,
         soundtrack: soundtrackKey,
@@ -106,6 +99,8 @@ export class ComicIssueService {
   async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.comicIssue.findMany({
       include: { comic: { include: { creator: true } } },
+      skip: query.skip,
+      take: query.take,
       where: {
         title: { contains: query?.titleSubstring, mode: 'insensitive' },
         comicSlug: { equals: query?.comicSlug },
@@ -134,46 +129,10 @@ export class ComicIssueService {
     return comicIssues;
   }
 
-  async findOne(id: number) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
-      include: {
-        nfts: true,
-        pages: true,
-        comic: { include: { creator: true } },
-      },
-      where: { id },
-    });
-
-    if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    }
-
-    return comicIssue;
-  }
-
-  async findOneProtected(id: number, walletAddress: string) {
-    let showOnlyPreviews: boolean | undefined;
-
-    // Find all NFTs that are token gating this Comic
-    const whitelistedNfts = await this.prisma.comicIssueNft.findMany({
-      where: { comicIssueId: id },
-    });
-
-    if (whitelistedNfts.length !== 0) {
-      const isHolder = await this.metaplexService.verifyNFTHolder(
-        walletAddress,
-        whitelistedNfts.map((nft) => nft.mint),
-      );
-      showOnlyPreviews = isHolder ? undefined : true;
-    }
-
-    // TODO v1.2: check isWhitelisted from WalletComic
-
+  async findOne(id: number, walletAddress: string) {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
-        nfts: true,
-        pages: { where: { isPreviewable: showOnlyPreviews } },
         comic: { include: { creator: true } },
       },
     });
@@ -186,17 +145,58 @@ export class ComicIssueService {
       comicIssue.comicSlug,
       walletAddress,
     );
+    const canRead = !(await this.shouldShowOnlyPreviews(id, walletAddress));
     await this.walletComicIssueService.refreshDate(
       walletAddress,
       id,
       'viewedAt',
     );
-    return { ...comicIssue, stats, myStats };
+    return { ...comicIssue, stats, myStats: { ...myStats, canRead } };
+  }
+
+  async getPages(comicIssueId: number, walletAddress: string) {
+    let showOnlyPreviews: boolean | undefined =
+      await this.shouldShowOnlyPreviews(comicIssueId, walletAddress);
+    return this.comicPageService.findAll(comicIssueId, showOnlyPreviews);
+  }
+
+  private async shouldShowOnlyPreviews(
+    comicIssueId: number,
+    walletAddress: string,
+  ): Promise<boolean | undefined> {
+    // find all NFTs that token gate the comic issue and are owned by the wallet
+    const ownedComicIssues = await this.prisma.comicIssueNft.findMany({
+      where: { collectionNft: { comicIssueId }, owner: walletAddress },
+    });
+
+    // if wallet does not own the issue, see if it's whitelisted per comic issue basis
+    if (!ownedComicIssues.length) {
+      const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
+        where: { walletAddress, comicIssueId, isWhitelisted: true },
+      });
+
+      // if wallet does not own the issue, see if it's whitelisted per comic basis
+      if (!walletComicIssue) {
+        const walletComic = await this.prisma.walletComic.findFirst({
+          where: {
+            walletAddress,
+            comic: { issues: { some: { id: comicIssueId } } },
+            isWhitelisted: true,
+          },
+        });
+
+        // if wallet is still not allowed to view the full content of the issue
+        // make sure to show only preview pages of the comic
+        if (!walletComic) {
+          return true;
+        }
+      }
+    }
+    return;
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { pages, hashlist, ...rest } = updateComicIssueDto;
+    const { pages, ...rest } = updateComicIssueDto;
 
     // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
@@ -216,8 +216,6 @@ export class ComicIssueService {
           ...rest,
           // TODO v1.2: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
-          // TODO v1.2: unable to edit 'nfts'
-          // nfts: { set: hashlist.map((hash) => ({ mint: hash })) },
         },
       });
     } catch {
@@ -276,17 +274,11 @@ export class ComicIssueService {
       where: { id: comic.creatorId },
     });
 
-    // TODO: try catch
-    const candyMachine = await this.candyMachineService.createComicIssueCM(
+    await this.candyMachineService.createComicIssueCM(
       comic,
       comicIssue,
       creator,
     );
-
-    console.log('candy machine address: ', candyMachine.address);
-
-    // TODO: once CM is created store it's data in the database (adress etc.)
-    // TODO: if CM creation worked, mark the Issue as published
 
     return await this.prisma.comicIssue.update({
       where: { id },

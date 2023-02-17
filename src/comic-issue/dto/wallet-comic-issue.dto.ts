@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsPositive } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional, IsPositive } from 'class-validator';
 
 export class WalletComicIssueDto {
   @IsPositive()
@@ -12,4 +12,8 @@ export class WalletComicIssueDto {
 
   @IsDate()
   readAt: Date | null;
+
+  @IsBoolean()
+  @IsOptional()
+  canRead?: boolean;
 }

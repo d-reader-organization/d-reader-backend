@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   BlockhashWithExpiryBlockHeight,
+  Cluster,
   Connection,
   Keypair,
   PublicKey,
@@ -20,20 +21,13 @@ import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
 import { getS3Object, s3Client } from 'src/aws/s3client';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
-import { Readable } from 'stream';
 import * as bs58 from 'bs58';
 import * as path from 'path';
 import { chunk } from 'lodash';
 import { sleep } from 'src/utils/helpers';
-
-const streamToString = (stream: Readable) => {
-  return new Promise<Buffer>((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', (chunk) => chunks.push(chunk));
-    stream.once('end', () => resolve(Buffer.concat(chunks)));
-    stream.once('error', reject);
-  });
-};
+import { clusterHeliusApiUrl } from 'src/utils/helius';
+import { streamToString } from 'src/utils/files';
+import { Readable } from 'stream';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -94,10 +88,11 @@ export class CandyMachineService {
   private readonly metaplex: Metaplex;
 
   constructor(private readonly prisma: PrismaService) {
-    this.connection = new Connection(
-      process.env.SOLANA_RPC_NODE_ENDPOINT,
-      'confirmed',
+    const endpoint = clusterHeliusApiUrl(
+      process.env.HELIUS_API_KEY,
+      process.env.SOLANA_CLUSTER as Cluster,
     );
+    this.connection = new Connection(endpoint, 'confirmed');
     this.metaplex = new Metaplex(this.connection);
 
     const treasuryWallet = AES.decrypt(
@@ -111,8 +106,7 @@ export class CandyMachineService {
 
     this.metaplex
       .use(keypairIdentity(treasuryKeypair))
-      // TODO: add this bucket name to .env so local development doesn't mess up prod
-      .use(awsStorage(s3Client, 'd-reader-nft-data'));
+      .use(awsStorage(s3Client, process.env.AWS_BUCKET_NAME + '-metadata'));
   }
 
   async findMintedNfts(candyMachineAddress: string) {
@@ -157,7 +151,6 @@ export class CandyMachineService {
   }
 
   // v2: when creating the candy machine create 4 different metadata URIs: mint unsigned, mint signed, used unsigned, used signed
-  // TODO: If this is the first comic issue from the comic, create a new ComicCollectionNFT
   // This NFT would serve as a root NFT, a collection of collections (comic issues)
   // https://docs.metaplex.com/programs/token-metadata/certified-collections#nested-collections
   async createComicIssueCM(
@@ -173,10 +166,31 @@ export class CandyMachineService {
     // TODO copy S3 image from one bucket to another (with d-reader-nft-data)
     const coverImage = await this.generateMetaplexFileFromS3(comicIssue.cover);
 
-    const collectionNft = await this.createComicIssueCollectionNft(
-      comicIssue,
-      coverImage,
-    );
+    // If Collection NFT already exists - use it, otherwise create a fresh one
+    let collectionNftAddress: PublicKey;
+    const collectionNft = await this.prisma.comicIssueCollectionNft.findUnique({
+      where: { comicIssueId: comicIssue.id },
+    });
+
+    if (collectionNft) {
+      collectionNftAddress = new PublicKey(collectionNft.address);
+    } else {
+      const newCollectionNft = await this.createComicIssueCollectionNft(
+        comicIssue,
+        coverImage,
+      );
+
+      await this.prisma.comicIssueCollectionNft.create({
+        data: {
+          address: newCollectionNft.address.toBase58(),
+          uri: newCollectionNft.uri,
+          name: newCollectionNft.name,
+          comicIssue: { connect: { id: comicIssue.id } },
+        },
+      });
+
+      collectionNftAddress = newCollectionNft.address;
+    }
 
     // v2: try catch
     const comicCreator = new PublicKey(creator.walletAddress);
@@ -186,7 +200,7 @@ export class CandyMachineService {
         candyMachine: Keypair.generate(), // v2: prefix key with 'cndy'
         authority: this.metaplex.identity(),
         collection: {
-          address: collectionNft.address,
+          address: collectionNftAddress,
           updateAuthority: this.metaplex.identity(),
         },
         symbol: D_PUBLISHER_SYMBOL,

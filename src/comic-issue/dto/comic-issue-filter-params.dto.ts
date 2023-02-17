@@ -2,8 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { IsOptional, IsString, IsArray } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
+import { Pagination } from 'src/types/pagination.dto';
 
-export class ComicIssueFilterParams {
+export class ComicIssueFilterParams extends Pagination {
   @IsOptional()
   @IsKebabCase()
   creatorSlug?: string;

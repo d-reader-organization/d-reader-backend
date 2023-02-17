@@ -221,14 +221,10 @@ export class ComicController {
   }
 
   /**
-   * TODO:
+   * TODO v1.2:
    * - finish email services
    * - move all cron jobs to task.service.ts ?
    * - comicPages @ApiBody
-   */
-
-  /**
-   * TODO v1.2:
    * - prevent updating comics that are published
    * - reading metrics (most read etc. async update functions)
    * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting

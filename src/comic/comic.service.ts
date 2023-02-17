@@ -87,6 +87,8 @@ export class ComicService {
   ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>[]> {
     const comics = await this.prisma.comic.findMany({
       include: { genres: true, creator: true },
+      skip: query.skip,
+      take: query.take,
       where: {
         name: { contains: query?.nameSubstring, mode: 'insensitive' },
         creator: { slug: query?.creatorSlug },

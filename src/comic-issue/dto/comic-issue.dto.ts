@@ -1,6 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
 import {
-  ArrayUnique,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -17,13 +16,7 @@ import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import {
-  ComicIssue,
-  Creator,
-  Comic,
-  ComicPage,
-  ComicIssueNft,
-} from '@prisma/client';
+import { ComicIssue, Creator, Comic, ComicPage } from '@prisma/client';
 import { PickType } from '@nestjs/swagger';
 import { sortBy } from 'lodash';
 import { WalletComicIssueDto } from './wallet-comic-issue.dto';
@@ -122,19 +115,13 @@ export class ComicIssueDto {
 
   @Min(0)
   totalPagesCount?: number;
-
-  @IsOptional()
-  @ArrayUnique()
-  @Type(() => String)
-  hashlist?: string[];
 }
 
 type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
-  nfts?: ComicIssueNft[];
   stats?: ComicIssueStats;
-  myStats?: WalletComicIssueStats;
+  myStats?: WalletComicIssueStats & { canRead: boolean};
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
@@ -187,7 +174,6 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
         )
       : undefined,
     totalPagesCount: issue.pages ? issue.pages.length : undefined,
-    hashlist: issue.nfts?.map((nft) => nft.mint),
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);

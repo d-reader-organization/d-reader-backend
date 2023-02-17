@@ -1,4 +1,3 @@
 export type WalletCreatorStats = {
-    isFollowing: boolean;
-  };
-  
+  isFollowing: boolean;
+};
