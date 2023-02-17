@@ -251,9 +251,4 @@ model WalletCreator {
   @@id([creatorSlug, walletAddress])
 }
 
-// TODO v2
-// - [NOTIFICATION] [NOTIFICATION_TYPE] [WALLET_NOTIFICATION]
-// - [COMIC] family ComicFamily
-// - [COMIC_ISSUE] whitelist specific wallets
-
 // - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity
