@@ -43,12 +43,6 @@ export class PlaygroundController {
     );
   }
 
-  /* WORK IN PROGRESS - proof of concept endpoint */
-  @Get('mint-one')
-  async mintOne(@Query() query: MintOneParams) {
-    return await this.candyMachineService.mintOne(query.candyMachineAddress);
-  }
-
   /** WORK IN PROGRESS - proof of concept endpoint */
   @Get('/transactions/construct/mint-one')
   async constructMintOneTransaction(
