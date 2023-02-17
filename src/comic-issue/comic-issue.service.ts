@@ -24,6 +24,7 @@ import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
 import { subDays } from 'date-fns';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { FiltersTag } from 'src/types/filters';
 
 @Injectable()
 export class ComicIssueService {
@@ -97,35 +98,7 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const comicIssues = await this.prisma.comicIssue.findMany({
-      include: { comic: { include: { creator: true } } },
-      skip: query.skip,
-      take: query.take,
-      where: {
-        title: { contains: query?.titleSubstring, mode: 'insensitive' },
-        comicSlug: { equals: query?.comicSlug },
-        deletedAt: null,
-        publishedAt: { lt: new Date() },
-        verifiedAt: { not: null },
-        comic: {
-          creator: { slug: query?.creatorSlug },
-          deletedAt: null,
-          AND: query?.genreSlugs?.map((slug) => {
-            return {
-              genres: {
-                some: {
-                  slug: {
-                    equals: slug,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            };
-          }),
-        },
-      },
-    });
-
+    const comicIssues = await this.specialFindMany(this.findManyArgs(query));
     return comicIssues;
   }
 
@@ -195,6 +168,71 @@ export class ComicIssueService {
       }
     }
     return;
+  }
+
+  async specialFindMany<T extends Prisma.ComicIssueFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ComicIssueFindManyArgs>,
+  ) {
+    return await this.prisma.comicIssue.findMany<
+      Prisma.SelectSubset<T, Prisma.ComicIssueFindManyArgs>
+    >(args);
+  }
+
+  private findManyArgs(query: ComicIssueFilterParams) {
+    return {
+      include: { comic: { include: { creator: true } } },
+      skip: query.skip,
+      take: query.take,
+      ...this.restArgs(query),
+    };
+  }
+
+  private restArgs(query: ComicIssueFilterParams): Record<string, any> {
+    const defaultFilter = {
+      title: { contains: query?.titleSubstring, mode: 'insensitive' },
+      comicSlug: { equals: query?.comicSlug },
+      deletedAt: null,
+      publishedAt: { lt: new Date() },
+      verifiedAt: { not: null },
+    };
+    switch (query.tag) {
+      case FiltersTag.Free:
+        return {
+          where: { ...defaultFilter, publishedAt: { not: null }, supply: 0 },
+        };
+      case FiltersTag.Latest:
+        return {
+          where: defaultFilter,
+          orderBy: {
+            publishedAt: 'desc',
+          },
+        };
+      case FiltersTag.Likes:
+        return { where: defaultFilter }; // TODO
+      case FiltersTag.New:
+        return { where: defaultFilter }; // TODO
+      case FiltersTag.Performance:
+        return { where: defaultFilter }; // TODO
+      case FiltersTag.Popular:
+        return {
+          where: {
+            ...defaultFilter,
+            publishedAt: { not: null },
+            popularizedAt: { not: null },
+          },
+          orderBy: {
+            popularizedAt: 'desc',
+          },
+        };
+      case FiltersTag.Rating:
+        return { where: defaultFilter }; // TODO
+      case FiltersTag.Readers:
+        return { where: defaultFilter }; // TODO
+      case FiltersTag.Viewers:
+        return { where: defaultFilter }; // TODO
+      default:
+        return { where: defaultFilter };
+    }
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
