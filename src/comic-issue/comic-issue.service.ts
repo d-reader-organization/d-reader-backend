@@ -157,10 +157,7 @@ export class ComicIssueService {
   async getPages(comicIssueId: number, walletAddress: string) {
     let showOnlyPreviews: boolean | undefined =
       await this.shouldShowOnlyPreviews(comicIssueId, walletAddress);
-    return this.comicPageService.getComicIssuePages(
-      comicIssueId,
-      showOnlyPreviews,
-    );
+    return this.comicPageService.findAll(comicIssueId, showOnlyPreviews);
   }
 
   private async shouldShowOnlyPreviews(

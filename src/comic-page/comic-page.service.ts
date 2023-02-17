@@ -53,7 +53,7 @@ export class ComicPageService {
     return comicPagesData;
   }
 
-  async getComicIssuePages(
+  async findAll(
     comicIssueId: number,
     isPreviewable?: boolean,
   ): Promise<ComicPage[]> {
