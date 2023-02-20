@@ -87,8 +87,16 @@ export async function toCreatorDto(creator: CreatorInput) {
     description: creator.description,
     flavorText: creator.flavorText,
     website: creator.website,
-    stats: creator.stats,
-    myStats: creator.myStats,
+    stats: creator.stats
+      ? {
+          comicIssuesCount: creator.stats.comicIssuesCount,
+          totalVolume: creator.stats.totalVolume,
+          followersCount: creator.stats.followersCount,
+        }
+      : undefined,
+    myStats: creator.myStats
+      ? { isFollowing: creator.myStats.isFollowing }
+      : undefined,
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);

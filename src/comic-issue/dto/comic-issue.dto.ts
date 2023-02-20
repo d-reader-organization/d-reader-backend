@@ -1,6 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
 import {
-  IsArray,
   IsBoolean,
   IsDateString,
   IsNotEmpty,
@@ -10,7 +9,6 @@ import {
   Min,
 } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
-import { ComicPageDto } from 'src/comic-page/entities/comic-page.dto';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -18,7 +16,6 @@ import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
 import { ComicIssue, Creator, Comic, ComicPage } from '@prisma/client';
 import { PickType } from '@nestjs/swagger';
-import { sortBy } from 'lodash';
 import { WalletComicIssueDto } from './wallet-comic-issue.dto';
 import { WalletComicIssueStats } from 'src/comic/types/wallet-comic-issue-stats';
 
@@ -27,16 +24,19 @@ class PartialComicDto extends PickType(ComicDto, [
   'slug',
   'isMatureAudience',
 ]) {}
-class PartialComicPageDto extends PickType(ComicPageDto, [
-  'id',
-  'pageNumber',
-  'image',
-]) {}
 class PartialCreatorDto extends PickType(CreatorDto, [
   'name',
   'slug',
   'isVerified',
   'avatar',
+]) {}
+
+class PartialWalletComicIssueDto extends PickType(WalletComicIssueDto, [
+  'rating',
+  'isFavourite',
+  'canRead',
+  'readAt',
+  'viewedAt',
 ]) {}
 
 export class ComicIssueDto {
@@ -105,13 +105,8 @@ export class ComicIssueDto {
   stats?: ComicIssueStatsDto;
 
   @IsOptional()
-  @Type(() => WalletComicIssueDto)
-  myStats?: WalletComicIssueDto;
-
-  @IsArray()
-  @IsOptional()
-  @Type(() => PartialComicPageDto)
-  pages?: PartialComicPageDto[];
+  @Type(() => PartialWalletComicIssueDto)
+  myStats?: PartialWalletComicIssueDto;
 
   @Min(0)
   totalPagesCount?: number;
@@ -160,18 +155,14 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
         }
       : undefined,
     stats: issue.stats,
-    myStats: issue.myStats,
-    pages: issue.pages
-      ? sortBy(
-          await Promise.all(
-            issue.pages.map(async (page) => ({
-              id: page.id,
-              pageNumber: page.pageNumber,
-              image: await getReadUrl(page.image),
-            })),
-          ),
-          'pageNumber',
-        )
+    myStats: issue.myStats
+      ? {
+          rating: issue.myStats.rating,
+          isFavourite: issue.myStats.isFavourite,
+          canRead: issue.myStats.canRead,
+          readAt: issue.myStats.readAt,
+          viewedAt: issue.myStats.viewedAt,
+        }
       : undefined,
     totalPagesCount: issue.pages ? issue.pages.length : undefined,
   };
