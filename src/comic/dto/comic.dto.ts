@@ -136,8 +136,25 @@ export async function toComicDto(comic: ComicInput) {
     instagram: comic.instagram,
     tikTok: comic.tikTok,
     youTube: comic.youTube,
-    stats: comic?.stats,
-    myStats: comic?.myStats,
+    stats: comic?.stats
+      ? {
+          favouritesCount: comic.stats.favouritesCount,
+          subscribersCount: comic.stats.subscribersCount,
+          ratersCount: comic.stats.ratersCount,
+          averageRating: comic.stats.averageRating,
+          issuesCount: comic.stats.issuesCount,
+          totalVolume: comic.stats.totalVolume,
+          readersCount: comic.stats.readersCount,
+          viewersCount: comic.stats.viewersCount,
+        }
+      : undefined,
+    myStats: comic?.myStats
+      ? {
+          rating: comic.myStats.rating,
+          isSubscribed: comic.myStats.isSubscribed,
+          isFavourite: comic.myStats.isFavourite,
+        }
+      : undefined,
     genres: await Promise.all(
       comic.genres?.map(async (genre) => {
         return {
