@@ -125,8 +125,17 @@ export class ComicIssueService {
         },
       },
     });
-
-    return comicIssues;
+    return await Promise.all(
+      comicIssues.map(async (item) => {
+        return {
+          ...item,
+          stats: await this.walletComicIssueService.aggregateComicIssueStats(
+            item.id,
+            item.comicSlug,
+          ),
+        };
+      }),
+    );
   }
 
   async findOne(id: number, walletAddress: string) {
