@@ -41,6 +41,12 @@ export class WalletComicIssueService {
       },
     });
 
+    const countTotalPagesQuery = this.prisma.comicPage.count({
+      where: {
+        comicIssueId: id,
+      },
+    });
+
     // TODO: replace with real values
     const calculateTotalVolumeQuery = mockPromise(getRandomFloatOrInt(1, 1000));
     const calculateTotalListedQuery = mockPromise(getRandomInt(6, 14));
@@ -56,6 +62,7 @@ export class WalletComicIssueService {
         totalVolume,
         totalListedCount,
         floorPrice,
+        totalPagesCount,
       ] = await Promise.all([
         aggregateQuery,
         countFavouritesQuery,
@@ -65,6 +72,7 @@ export class WalletComicIssueService {
         calculateTotalVolumeQuery,
         calculateTotalListedQuery,
         calculateFloorPriceQuery,
+        countTotalPagesQuery,
       ]);
 
       return {
@@ -77,6 +85,7 @@ export class WalletComicIssueService {
         totalVolume,
         totalListedCount,
         floorPrice,
+        totalPagesCount,
       };
     } catch (error) {
       // TODO: improve catch block
