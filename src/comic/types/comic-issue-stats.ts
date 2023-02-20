@@ -9,4 +9,5 @@ export type ComicIssueStats = {
   totalListedCount: number;
   readersCount: number;
   viewersCount: number;
+  totalPagesCount: number;
 };
