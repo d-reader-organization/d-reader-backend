@@ -147,7 +147,7 @@ Table ComicIssueCandyMachine {
   itemsMinted Int [not null]
   itemsRemaining Int [not null]
   itemsLoaded Int [not null]
-  isFullyLoaded Int [not null]
+  isFullyLoaded Boolean [not null]
   items ComicIssueNft [not null]
 }
 

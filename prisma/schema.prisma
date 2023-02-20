@@ -163,7 +163,7 @@ model ComicIssueCandyMachine {
   itemsMinted          Int
   itemsRemaining       Int
   itemsLoaded          Int
-  isFullyLoaded        Int
+  isFullyLoaded        Boolean
   items                ComicIssueNft[]
 }
 

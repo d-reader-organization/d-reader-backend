@@ -248,6 +248,18 @@ export class CandyMachineService {
       { payer: this.metaplex.identity() }, // v2: in the future comicCreator might become the payer
     );
 
+    await this.prisma.comicIssueCandyMachine.create({
+      data: {
+        address: candyMachine.address.toBase58(),
+        mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
+        itemsAvailable: candyMachine.itemsAvailable.toNumber(),
+        itemsMinted: candyMachine.itemsMinted.toNumber(),
+        itemsRemaining: candyMachine.itemsRemaining.toNumber(),
+        itemsLoaded: candyMachine.itemsLoaded,
+        isFullyLoaded: candyMachine.isFullyLoaded,
+      },
+    });
+
     const sharedMetadata = await this.createComicIssueMintNftMetadata(
       comic,
       comicIssue,
