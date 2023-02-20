@@ -33,6 +33,6 @@ export class ComicIssueStatsDto {
   @Min(0)
   viewersCount: number;
 
-  @Min(1)
+  @Min(0)
   totalPagesCount: number;
 }
