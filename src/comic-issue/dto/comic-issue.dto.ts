@@ -107,9 +107,6 @@ export class ComicIssueDto {
   @IsOptional()
   @Type(() => PartialWalletComicIssueDto)
   myStats?: PartialWalletComicIssueDto;
-
-  @Min(0)
-  totalPagesCount?: number;
 }
 
 type ComicIssueInput = ComicIssue & {
@@ -164,7 +161,6 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           viewedAt: issue.myStats.viewedAt,
         }
       : undefined,
-    totalPagesCount: issue.pages ? issue.pages.length : undefined,
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
