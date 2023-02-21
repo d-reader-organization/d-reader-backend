@@ -3,6 +3,7 @@ import { Cluster, Connection } from '@solana/web3.js';
 import { Helius, TransactionType, WebhookType } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
+import { UpdateWebhookDto } from './dto/update-helius-webhook.dto';
 
 @Injectable()
 export class HeliusService {
@@ -26,6 +27,10 @@ export class HeliusService {
       //   authHeader: 'TODO',
       webhookType: WebhookType.ENHANCED,
     });
+  }
+
+  updateWebhook(id: string, payload: UpdateWebhookDto) {
+    return this.helius.editWebhook(id, payload);
   }
 
   getMyWebhook(id: string) {
