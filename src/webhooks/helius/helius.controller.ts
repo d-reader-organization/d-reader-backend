@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Patch,
+} from '@nestjs/common';
 import { EnrichedTransaction, Webhook } from 'helius-sdk';
 import { UpdateWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
@@ -18,15 +26,17 @@ export class HeliusController {
   }
 
   @Patch('update/:id')
-  async updateWebhook(@Param('id') id: string, @Body() body: UpdateWebhookDto): Promise<Webhook> {
+  async updateWebhook(
+    @Param('id') id: string,
+    @Body() body: UpdateWebhookDto,
+  ): Promise<Webhook> {
     return await this.heliusService.updateWebhook(id, body);
   }
 
   @Post('handle')
-  update(@Body() body: EnrichedTransaction[]): void {
-    body.forEach(item => {
-      console.log(item);
-    });
+  async handle(@Body() body: EnrichedTransaction[]): Promise<boolean> {
+    await this.heliusService.handleWebhookEvent(body);
+    return true;
   }
 
   @Delete('delete/:id')
