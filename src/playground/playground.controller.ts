@@ -1,10 +1,9 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from 'src/vendors/auction-house.service';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
-import { HeliusService } from 'src/vendors/helius.service';
 import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
@@ -18,7 +17,6 @@ export class PlaygroundController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
     private readonly auctionHouseService: AuctionHouseService,
-    private readonly heliusService: HeliusService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -54,29 +52,5 @@ export class PlaygroundController {
       publicKey,
       query.candyMachineAddress,
     );
-  }
-
-  /** WORK IN PROGRESS - proof of concept endpoint */
-  @Get('webhooks/create')
-  async createWebhook() {
-    return await this.heliusService.createWebhook();
-  }
-
-  /** WORK IN PROGRESS - proof of concept endpoint */
-  @Get('webhooks/get')
-  async getMyWebhook() {
-    return await this.heliusService.getMyWebhook();
-  }
-
-  /** WORK IN PROGRESS - proof of concept endpoint */
-  @Post('webhooks/receive')
-  async receiveUpdates(@Body() body) {
-    try {
-      body[0].instructions.forEach((i) => {
-        console.log(i);
-      });
-    } catch (e) {
-      console.log(e);
-    }
   }
 }

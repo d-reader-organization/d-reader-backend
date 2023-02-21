@@ -18,24 +18,21 @@ export class HeliusService {
     this.helius = new Helius(process.env.HELIUS_API_KEY);
   }
 
-  async createWebhook() {
-    const result = await this.helius.createWebhook({
-      accountAddresses: ['7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD'],
+  createWebhook() {
+    return this.helius.createWebhook({
+      accountAddresses: ['7VZxFV9MDLnyEmF17jj9CZHrXajCoqoKdQwnQXn5dE9w'],
       transactionTypes: [TransactionType.ANY],
-      webhookURL:
-        'https://f274-93-141-253-1.eu.ngrok.io/playground/helius/webhooks/receive',
+      webhookURL: 'https://07f8-5-133-138-103.eu.ngrok.io/helius/handle',
       //   authHeader: 'TODO',
       webhookType: WebhookType.ENHANCED,
     });
-
-    return result;
   }
 
-  async getMyWebhook() {
-    const result = await this.helius.getWebhookByID(
-      '2d2a6b9c-8597-4dab-987b-dd9a6778fad8',
-    );
+  getMyWebhook(id: string) {
+    return this.helius.getWebhookByID(id);
+  }
 
-    return result;
+  deleteWebhook(id: string) {
+    return this.helius.deleteWebhook(id);
   }
 }
