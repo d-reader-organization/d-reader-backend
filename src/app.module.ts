@@ -19,6 +19,7 @@ import config from './configs/config';
 import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { PlaygroundModule } from './playground/playground.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { PlaygroundModule } from './playground/playground.module';
     GenreModule,
     NewsletterModule,
     PlaygroundModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],
