@@ -67,8 +67,8 @@ export class HeliusService {
         switch (enrichedTransaction.type) {
           case TransactionType.NFT_MINT:
             return await this.mintAction(enrichedTransaction);
-          case TransactionType.UPDATE_ITEM: // verify what should go here. // contact Josip
-            return this.updateCollectionNfts(enrichedTransaction);
+          case TransactionType.ANY:
+            return this.updateComicIssueNfts(enrichedTransaction);
           default:
             return;
         }
@@ -76,10 +76,9 @@ export class HeliusService {
     );
   }
 
-  // TODO: contact Josip, we will never update collectionNft
-  // only collection items (comicIssueNfts)
-  private updateCollectionNfts(enrichedTransaction: EnrichedTransaction) {
+  private updateComicIssueNfts(enrichedTransaction: EnrichedTransaction) {
     console.log(enrichedTransaction);
+    // owner has changed, update owner?
   }
 
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
