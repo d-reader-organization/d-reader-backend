@@ -125,6 +125,7 @@ export class ComicIssueService {
         },
       },
     });
+
     return await Promise.all(
       comicIssues.map(async (item) => {
         return {

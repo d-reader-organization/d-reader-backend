@@ -66,7 +66,7 @@ export class HeliusService {
         switch (enrichedTransaction.type) {
           case TransactionType.NFT_MINT:
             return await this.mintAction(enrichedTransaction);
-          case TransactionType.UPDATE_ITEM: // verify what should go here.
+          case TransactionType.UPDATE_ITEM: // verify what should go here. // contact Josip
             return await this.updateCollectionNfts(enrichedTransaction);
           default:
             return;
@@ -75,6 +75,8 @@ export class HeliusService {
     );
   }
 
+  // TODO: contact Josip, we will never update collectionNft
+  // only collection items (comicIssueNfts)
   private updateCollectionNfts(enrichedTransaction: EnrichedTransaction) {
     const { fromUserAccount, toUserAccount } =
       enrichedTransaction.tokenTransfers.at(0);
@@ -95,6 +97,8 @@ export class HeliusService {
       owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
       uri: 'uri',
     };
+
+    // TODO: this might be unnecessary now
     const comicIssueCandyMachine =
       await this.prisma.comicIssueCandyMachine.findFirst({
         where: {
@@ -102,17 +106,20 @@ export class HeliusService {
         },
       });
     if (!comicIssueCandyMachine) {
-      return;
+      // TODO: throw Error('Unsupported candy machine')
     }
+
+    // This should be done as a prisma $transaction!
+    // e.g. what if (for whatever the reason) comicIssueNft.create fails?
+    // It will still update the comicIssueCandyMachine with faulty increments/decrements
+    // more details: https://www.prisma.io/docs/guides/performance-and-optimization/prisma-client-transactions-guide
     return Promise.all([
       this.prisma.comicIssueNft.create({ data: payload }),
       this.prisma.comicIssueCandyMachine.update({
-        where: {
-          address: comicIssueCandyMachine.address,
-        },
+        where: { address: payload.address },
         data: {
-          itemsRemaining: comicIssueCandyMachine.itemsRemaining - 1,
-          itemsMinted: comicIssueCandyMachine.itemsMinted + 1,
+          itemsRemaining: { decrement: 1 },
+          itemsMinted: { increment: 1 },
         },
       }),
     ]);
