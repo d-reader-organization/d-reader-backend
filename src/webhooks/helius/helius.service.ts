@@ -6,6 +6,7 @@ import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
+import uuid from 'uuid';
 
 @Injectable()
 export class HeliusService {
@@ -64,8 +65,8 @@ export class HeliusService {
         switch (enrichedTransaction.type) {
           case TransactionType.NFT_MINT:
             return await this.mintAction(enrichedTransaction);
-          case TransactionType.UPDATE_ITEM: // verify what should go here. // contact Josip
-            return await this.updateCollectionNfts(enrichedTransaction);
+          case TransactionType.ANY:
+            return this.updateComicIssueNfts(enrichedTransaction);
           default:
             return;
         }
@@ -73,17 +74,9 @@ export class HeliusService {
     );
   }
 
-  // TODO: contact Josip, we will never update collectionNft
-  // only collection items (comicIssueNfts)
-  private updateCollectionNfts(enrichedTransaction: EnrichedTransaction) {
-    const { fromUserAccount, toUserAccount } =
-      enrichedTransaction.tokenTransfers.at(0);
-    return this.prisma.comicIssueCollectionNft.update({
-      where: {
-        address: fromUserAccount,
-      },
-      data: { address: toUserAccount },
-    });
+  private updateComicIssueNfts(enrichedTransaction: EnrichedTransaction) {
+    console.log(enrichedTransaction);
+    // owner has changed, update owner?
   }
 
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
@@ -91,35 +84,36 @@ export class HeliusService {
       address: enrichedTransaction.tokenTransfers.at(0).mint,
       candyMachineAddress: 'candyMachineAddress',
       collectionNftAddress: 'collectionNftAddress',
-      name: 'name',
+      name: uuid.v4(),
       owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
       uri: 'uri',
     };
 
-    // TODO: this might be unnecessary now
     const comicIssueCandyMachine =
       await this.prisma.comicIssueCandyMachine.findFirst({
         where: {
-          address: payload.address,
+          address: payload.candyMachineAddress,
         },
       });
     if (!comicIssueCandyMachine) {
-      // TODO: throw Error('Unsupported candy machine')
+      throw Error('Unsupported candy machine');
     }
 
-    // This should be done as a prisma $transaction!
-    // e.g. what if (for whatever the reason) comicIssueNft.create fails?
-    // It will still update the comicIssueCandyMachine with faulty increments/decrements
-    // more details: https://www.prisma.io/docs/guides/performance-and-optimization/prisma-client-transactions-guide
-    return Promise.all([
-      this.prisma.comicIssueNft.create({ data: payload }),
+    const createComicIssueNft = this.prisma.comicIssueNft.create({
+      data: payload,
+    });
+    const updateComicIssueCandyMachine =
       this.prisma.comicIssueCandyMachine.update({
-        where: { address: payload.address },
+        where: { address: payload.candyMachineAddress },
         data: {
           itemsRemaining: { decrement: 1 },
           itemsMinted: { increment: 1 },
         },
-      }),
+      });
+
+    await this.prisma.$transaction([
+      createComicIssueNft,
+      updateComicIssueCandyMachine,
     ]);
   }
 }
