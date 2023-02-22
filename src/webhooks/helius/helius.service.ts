@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Cluster, Connection } from '@solana/web3.js';
-import {
-  EnrichedTransaction,
-  Helius,
-  TransactionType,
-  WebhookType,
-} from 'helius-sdk';
+import { EnrichedTransaction, Helius, TransactionType } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
-import { UpdateWebhookDto } from './dto/update-helius-webhook.dto';
+import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
+import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
+import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 
 @Injectable()
 export class HeliusService {
@@ -24,31 +21,32 @@ export class HeliusService {
     this.helius = new Helius(process.env.HELIUS_API_KEY);
   }
 
-  createWebhook() {
-    return this.helius.createWebhook({
-      accountAddresses: ['7VZxFV9MDLnyEmF17jj9CZHrXajCoqoKdQwnQXn5dE9w'],
-      transactionTypes: [TransactionType.NFT_MINT],
-      webhookURL: 'https://07f8-5-133-138-103.eu.ngrok.io/helius/handle',
-      //   authHeader: 'TODO',
-      webhookType: WebhookType.ENHANCED,
-    });
+  createWebhook(payload: CreateHeliusWebhookDto) {
+    return this.helius.createWebhook(payload);
   }
 
-  createCollectionWebhook() {
-    // finish this
+  createCollectionWebhook(createWebhookDto: CreateHeliusCollectionWebhookDto) {
+    const y00ts = '4mKSoDDqApmF1DqXvVTSL6tu2zixrSSNjqMxUnwvVzy2';
+    const deGods = '6XxjKYFbcndh2gDcsUrmZgVEsoDxXMnfsaGY6fpTJzNr';
+    const okayBears = '3saAedkM9o5g1u5DCqsuMZuC4GRqPB4TuMkvSsSVvGQ3';
+    const abc = 'ES2iF5ctjqvtopPn4n6K7c9fdHjYg41rYXL2XzJK37jF';
+
+    // remove hardcoding
+    createWebhookDto.collectionNftAddresses = [y00ts, deGods, okayBears, abc];
+
     return this.helius.createCollectionWebhook({
-      accountAddresses: [''],
-      transactionTypes: [TransactionType.ANY],
-      webhookURL: 'https://07f8-5-133-138-103.eu.ngrok.io/helius/handle',
-      webhookType: WebhookType.ENHANCED,
+      accountAddresses: [],
+      transactionTypes: createWebhookDto.transactionTypes,
+      webhookURL: createWebhookDto.webhookURL,
+      webhookType: createWebhookDto.webhookType,
       collectionQuery: {
-        firstVerifiedCreators: [],
-        verifiedCollectionAddresses: [],
+        firstVerifiedCreators: undefined,
+        verifiedCollectionAddresses: [y00ts, deGods, okayBears, abc],
       },
     });
   }
 
-  updateWebhook(id: string, payload: UpdateWebhookDto) {
+  updateWebhook(id: string, payload: UpdateHeliusWebhookDto) {
     return this.helius.editWebhook(id, payload);
   }
 

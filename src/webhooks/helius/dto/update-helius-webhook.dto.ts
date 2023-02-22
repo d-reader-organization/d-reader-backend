@@ -1,13 +1,6 @@
-import { IsOptional } from 'class-validator';
-import { TransactionType } from 'helius-sdk';
+import { PartialType } from '@nestjs/swagger';
+import { CreateHeliusWebhookDto } from './create-helius-webhook.dto';
 
-export class UpdateWebhookDto {
-  @IsOptional()
-  accountAddresses?: string[];
-
-  @IsOptional()
-  transactionTypes?: TransactionType[];
-
-  @IsOptional()
-  webhookUrl?: string;
-}
+export class UpdateHeliusWebhookDto extends PartialType(
+  CreateHeliusWebhookDto,
+) {}
