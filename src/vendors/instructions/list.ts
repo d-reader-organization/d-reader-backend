@@ -6,22 +6,19 @@ import {
   amount,
   lamports,
 } from '@metaplex-foundation/js';
-import {
-  createPrintListingReceiptInstruction,
-  createSellInstruction,
-} from '@metaplex-foundation/mpl-auction-house';
+import { createSellInstruction } from '@metaplex-foundation/mpl-auction-house';
 import { TransactionInstruction } from '@solana/web3.js';
-import { PublicKey, SYSVAR_INSTRUCTIONS_PUBKEY } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
-export async function constructListInstruction(
+export function constructListInstruction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   mintAccount: PublicKey,
-  tokens: SplTokenAmount,
   seller: PublicKey,
   priceObject: SolAmount | SplTokenAmount,
+  tokens?: SplTokenAmount,
   associatedTokenAccount?: PublicKey,
-) {
+): TransactionInstruction[] {
   const priceBasisPoint = priceObject.basisPoints ?? 0;
 
   const price = auctionHouse.isNative
@@ -69,7 +66,7 @@ export async function constructListInstruction(
     wallet: seller,
     tokenAccount,
     metadata,
-    authority: seller,
+    authority: metaplex.identity().publicKey,
     auctionHouse: auctionHouse.address,
     auctionHouseFeeAccount: auctionHouse.feeAccountAddress,
     sellerTradeState,
@@ -90,7 +87,7 @@ export async function constructListInstruction(
   // Sell Instruction.
   const sellInstruction = createSellInstruction(accounts, args);
 
-  // Update the account to be a signer since it's not covered properly by MPL due to its dynamic nature.
+  // Make seller as signer since createSellInstruction don't assign a signer
   const signerKeyIndex = sellInstruction.keys.findIndex((key) =>
     key.pubkey.equals(seller),
   );
@@ -98,24 +95,6 @@ export async function constructListInstruction(
   sellInstruction.keys[signerKeyIndex].isWritable = true;
 
   instructions.push(sellInstruction);
-
-  // Receipt.
-  const bookkeeper = metaplex.identity();
-  const receipt = metaplex.auctionHouse().pdas().listingReceipt({
-    tradeState: sellerTradeState,
-  });
-
-  // Print list receipt
-  instructions.push(
-    createPrintListingReceiptInstruction(
-      {
-        receipt,
-        bookkeeper: bookkeeper.publicKey,
-        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      { receiptBump: receipt.bump },
-    ),
-  );
 
   return instructions;
 }
