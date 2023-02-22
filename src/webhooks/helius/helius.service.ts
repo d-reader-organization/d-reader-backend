@@ -9,6 +9,7 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { UpdateWebhookDto } from './dto/update-helius-webhook.dto';
+import uuid from 'uuid';
 
 @Injectable()
 export class HeliusService {
@@ -28,7 +29,7 @@ export class HeliusService {
     return this.helius.createWebhook({
       accountAddresses: ['7VZxFV9MDLnyEmF17jj9CZHrXajCoqoKdQwnQXn5dE9w'],
       transactionTypes: [TransactionType.NFT_MINT],
-      webhookURL: 'https://07f8-5-133-138-103.eu.ngrok.io/helius/handle',
+      webhookURL: 'https://46ff-5-133-138-103.eu.ngrok.io/helius/handle',
       //   authHeader: 'TODO',
       webhookType: WebhookType.ENHANCED,
     });
@@ -39,7 +40,7 @@ export class HeliusService {
     return this.helius.createCollectionWebhook({
       accountAddresses: [''],
       transactionTypes: [TransactionType.ANY],
-      webhookURL: 'https://07f8-5-133-138-103.eu.ngrok.io/helius/handle',
+      webhookURL: 'https://46ff-5-133-138-103.eu.ngrok.io/helius/handle',
       webhookType: WebhookType.ENHANCED,
       collectionQuery: {
         firstVerifiedCreators: [],
@@ -67,7 +68,7 @@ export class HeliusService {
           case TransactionType.NFT_MINT:
             return await this.mintAction(enrichedTransaction);
           case TransactionType.UPDATE_ITEM: // verify what should go here. // contact Josip
-            return await this.updateCollectionNfts(enrichedTransaction);
+            return this.updateCollectionNfts(enrichedTransaction);
           default:
             return;
         }
@@ -78,14 +79,7 @@ export class HeliusService {
   // TODO: contact Josip, we will never update collectionNft
   // only collection items (comicIssueNfts)
   private updateCollectionNfts(enrichedTransaction: EnrichedTransaction) {
-    const { fromUserAccount, toUserAccount } =
-      enrichedTransaction.tokenTransfers.at(0);
-    return this.prisma.comicIssueCollectionNft.update({
-      where: {
-        address: fromUserAccount,
-      },
-      data: { address: toUserAccount },
-    });
+    console.log(enrichedTransaction);
   }
 
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
@@ -93,35 +87,36 @@ export class HeliusService {
       address: enrichedTransaction.tokenTransfers.at(0).mint,
       candyMachineAddress: 'candyMachineAddress',
       collectionNftAddress: 'collectionNftAddress',
-      name: 'name',
+      name: uuid.v4(),
       owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
       uri: 'uri',
     };
 
-    // TODO: this might be unnecessary now
     const comicIssueCandyMachine =
       await this.prisma.comicIssueCandyMachine.findFirst({
         where: {
-          address: payload.address,
+          address: payload.candyMachineAddress,
         },
       });
     if (!comicIssueCandyMachine) {
-      // TODO: throw Error('Unsupported candy machine')
+      throw Error('Unsupported candy machine');
     }
 
-    // This should be done as a prisma $transaction!
-    // e.g. what if (for whatever the reason) comicIssueNft.create fails?
-    // It will still update the comicIssueCandyMachine with faulty increments/decrements
-    // more details: https://www.prisma.io/docs/guides/performance-and-optimization/prisma-client-transactions-guide
-    return Promise.all([
-      this.prisma.comicIssueNft.create({ data: payload }),
+    const createComicIssueNft = this.prisma.comicIssueNft.create({
+      data: payload,
+    });
+    const updateComicIssueCandyMachine =
       this.prisma.comicIssueCandyMachine.update({
-        where: { address: payload.address },
+        where: { address: payload.candyMachineAddress },
         data: {
           itemsRemaining: { decrement: 1 },
           itemsMinted: { increment: 1 },
         },
-      }),
+      });
+
+    await this.prisma.$transaction([
+      createComicIssueNft,
+      updateComicIssueCandyMachine,
     ]);
   }
 }
