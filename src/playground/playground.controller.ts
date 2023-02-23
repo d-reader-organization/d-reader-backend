@@ -8,6 +8,7 @@ import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { MintOneParams } from './dto/mint-one-params.dto';
+import { ListParams } from './dto/list-params.dto';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -51,6 +52,21 @@ export class PlaygroundController {
     return await this.candyMachineService.constructMintOneTransaction(
       publicKey,
       query.candyMachineAddress,
+    );
+  }
+
+  @Get('/transactions/construct/list')
+  async constructListTransaction(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: ListParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const mintAccount = new PublicKey(query.mintAccount);
+
+    return await this.auctionHouseService.constructListTransaction(
+      publicKey,
+      mintAccount,
+      query.price,
     );
   }
 }
