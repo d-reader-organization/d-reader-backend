@@ -5,6 +5,7 @@ import {
   Connection,
   Keypair,
   PublicKey,
+  Transaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -12,10 +13,12 @@ import {
   keypairIdentity,
   Metaplex,
   sol,
+  token,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
+import { constructListInstruction } from './instructions';
 
 @Injectable()
 export class AuctionHouseService {
@@ -87,38 +90,34 @@ export class AuctionHouseService {
     }
   }
 
-  // Currently handles only price greater than 0, need to assign auction house authority as signer for changing price if someone listed at 0
-  async createListingTransaction(
+  /* currently only list NFTs */
+  async constructListTransaction(
     seller: PublicKey,
-    address: PublicKey,
     mintAccount: PublicKey,
-    tokenAccount: PublicKey,
     price: number,
-    blockhash?: BlockhashWithExpiryBlockHeight,
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
-      const listingBuilder = this.metaplex
-        .auctionHouse()
-        .builders()
-        .list({
-          auctionHouse,
-          seller: { publicKey: seller } as IdentitySigner,
-          mintAccount,
-          tokenAccount,
-          price: sol(price),
-          bookkeeper: this.metaplex.identity(),
-          printReceipt: true,
-          //default tokens is 1 , which is fine for nfts
-        });
 
-      if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-      listingBuilder.setFeePayer({ publicKey: seller } as IdentitySigner);
-      const listingTransaction = listingBuilder.toTransaction(blockhash);
-      listingTransaction.partialSign(this.metaplex.identity()); // CHECK
+      const listInstruction = constructListInstruction(
+        this.metaplex,
+        auctionHouse,
+        mintAccount,
+        seller,
+        sol(price),
+        token(1, 0),
+      );
 
-      const rawTransaction = listingTransaction.serialize({
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const listTransaction = new Transaction({
+        feePayer: seller,
+        ...latestBlockhash,
+      }).add(...listInstruction);
+
+      const rawTransaction = listTransaction.serialize({
         requireAllSignatures: false,
+        verifySignatures: false,
       });
 
       return rawTransaction.toString('base64');
