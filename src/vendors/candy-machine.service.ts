@@ -407,16 +407,18 @@ export class CandyMachineService {
     candyMachineAddress: string,
   ) {
     const mint = Keypair.generate();
-    const candyMachine = new PublicKey(candyMachineAddress);
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: new PublicKey(candyMachineAddress) });
     const mintInstructions = await constructMintInstruction(
       this.metaplex,
-      candyMachine,
+      candyMachine.address,
       feePayer,
       mint,
       this.metaplex.connection,
       [
         {
-          pubkey: this.metaplex.identity().publicKey,
+          pubkey: candyMachine.candyGuard.guards.solPayment.destination,
           isSigner: false,
           isWritable: true,
         },
