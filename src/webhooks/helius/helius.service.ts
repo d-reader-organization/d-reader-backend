@@ -6,7 +6,7 @@ import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
-import uuid from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class HeliusService {
@@ -55,7 +55,7 @@ export class HeliusService {
     return Promise.all(
       data.map(async (enrichedTransaction) => {
         switch (enrichedTransaction.type) {
-          case TransactionType.NFT_MINT:
+          case (TransactionType.NFT_MINT, TransactionType.TOKEN_MINT):
             return await this.mintAction(enrichedTransaction);
           case TransactionType.ANY:
             return this.updateComicIssueNfts(enrichedTransaction);
@@ -74,9 +74,9 @@ export class HeliusService {
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
     const payload = {
       address: enrichedTransaction.tokenTransfers.at(0).mint,
-      candyMachineAddress: 'candyMachineAddress',
-      collectionNftAddress: 'collectionNftAddress',
-      name: uuid.v4(),
+      candyMachineAddress: 'A3UgZc39HZbDiiDB24vjgNdmnV43RGznRavFkj5sJ68c',
+      collectionNftAddress: '68gsxWrLkMkwMznXM9qam7FvDK1SDBhVJZaQUpAwXL6k',
+      name: uuidv4(),
       owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
       uri: 'uri',
     };
