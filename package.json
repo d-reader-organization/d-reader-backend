@@ -35,6 +35,7 @@
     "@aws-sdk/s3-request-presigner": "^3.267.0",
     "@metaplex-foundation/js": "^0.18.1",
     "@metaplex-foundation/js-plugin-aws": "^0.18.1",
+    "@metaplex-foundation/mpl-auction-house": "^2.3.2",
     "@metaplex-foundation/mpl-candy-guard": "^0.3.2",
     "@metaplex-foundation/mpl-candy-machine-core": "^0.1.2",
     "@nestjs-modules/mailer": "^1.8.1",

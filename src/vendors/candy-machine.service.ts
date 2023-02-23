@@ -27,7 +27,7 @@ import { sleep } from 'src/utils/helpers';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
-import { constructMintInstruction } from './instructions/mint';
+import { constructMintInstruction } from './instructions';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
