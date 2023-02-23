@@ -9,6 +9,9 @@ import {
   SeedBucket,
 } from '../src/aws/s3client';
 import { v4 as uuidv4 } from 'uuid';
+import * as Utf8 from 'crypto-js/enc-utf8';
+import * as AES from 'crypto-js/aes';
+import { Keypair } from '@solana/web3.js';
 
 const prisma = new PrismaClient();
 
@@ -189,6 +192,32 @@ async function main() {
     console.log(`➕ Added comic genres: ${genreNames.join(', ')}`);
   } catch (e) {
     console.log('❌ Failed to add comic genres', e);
+  }
+
+  try {
+    const wallet = AES.decrypt(
+      process.env.TREASURY_PRIVATE_KEY,
+      process.env.TREASURY_SECRET,
+    );
+
+    const keypair = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(wallet.toString(Utf8))),
+    );
+    const address = keypair.publicKey.toBase58();
+
+    await prisma.wallet.create({
+      data: {
+        address,
+        label: 'Superadmin',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.Superadmin,
+      },
+    });
+    console.log('➕ Added Treasury wallet');
+  } catch (e) {
+    console.log('❌ Failed to add Treasury wallet', e);
   }
 
   try {
