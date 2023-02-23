@@ -16,11 +16,10 @@ import {
   uploadFile,
 } from '../aws/s3client';
 import { WalletComicService } from './wallet-comic.service';
-import { Comic, Creator, Genre } from '@prisma/client';
+import { Comic } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { isEmpty } from 'lodash';
-import { WithComicStats } from './types/comic-stats';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
 
 @Injectable()
@@ -81,10 +80,7 @@ export class ComicService {
     return comic;
   }
 
-  async findAll(
-    query: ComicFilterParams,
-    walletAddress?: string,
-  ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>[]> {
+  async findAll(query: ComicFilterParams, walletAddress?: string) {
     const comics = await this.prisma.comic.findMany({
       include: { genres: true, creator: true },
       skip: query.skip,
@@ -124,10 +120,7 @@ export class ComicService {
     return aggregatedComics;
   }
 
-  async findOne(
-    slug: string,
-    walletAddress?: string,
-  ): Promise<WithComicStats<Comic & { genres: Genre[]; creator: Creator }>> {
+  async findOne(slug: string, walletAddress?: string) {
     const comic = await this.prisma.comic.findFirst({
       include: { genres: true, creator: true },
       where: { slug },

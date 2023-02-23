@@ -167,6 +167,8 @@ model ComicIssueCandyMachine {
   items                ComicIssueNft[]
 }
 
+// TODO ComicCollectionNft
+
 model ComicIssueCollectionNft {
   address         String          @id
   uri             String
