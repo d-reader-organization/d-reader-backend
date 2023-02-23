@@ -27,22 +27,14 @@ export class HeliusService {
   }
 
   createCollectionWebhook(createWebhookDto: CreateHeliusCollectionWebhookDto) {
-    const y00ts = '4mKSoDDqApmF1DqXvVTSL6tu2zixrSSNjqMxUnwvVzy2';
-    const deGods = '6XxjKYFbcndh2gDcsUrmZgVEsoDxXMnfsaGY6fpTJzNr';
-    const okayBears = '3saAedkM9o5g1u5DCqsuMZuC4GRqPB4TuMkvSsSVvGQ3';
-    const abc = 'ES2iF5ctjqvtopPn4n6K7c9fdHjYg41rYXL2XzJK37jF';
-
-    // remove hardcoding
-    createWebhookDto.collectionNftAddresses = [y00ts, deGods, okayBears, abc];
-
     return this.helius.createCollectionWebhook({
-      accountAddresses: [],
+      accountAddresses: undefined,
       transactionTypes: createWebhookDto.transactionTypes,
       webhookURL: createWebhookDto.webhookURL,
       webhookType: createWebhookDto.webhookType,
       collectionQuery: {
         firstVerifiedCreators: undefined,
-        verifiedCollectionAddresses: [y00ts, deGods, okayBears, abc],
+        verifiedCollectionAddresses: createWebhookDto.collectionNftAddresses,
       },
     });
   }

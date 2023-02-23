@@ -43,6 +43,7 @@ export class AuthorizeWalletCommand extends CommandRunner {
     const authorization = await this.authService.connect(address, encoding);
 
     log(cg('✅  Authorization successful!'));
+    log(cg('👛  Wallet: ') + address);
     log(cb('🔐  JWT token: '), authorization.accessToken);
     try {
     } catch (e) {
