@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Cluster, Connection, PublicKey } from '@solana/web3.js';
+import {
+  Cluster,
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -119,7 +124,7 @@ export class HeliusService {
     const logIntoMintReceipt = this.prisma.mintReceipt.create({
       data: {
         buyer: nftTransactionInfo.buyer,
-        price: nftTransactionInfo.amount / 1000000000,
+        price: nftTransactionInfo.amount / LAMPORTS_PER_SOL, // not sure if there is an existing helper function that can convert to SOL properly (max 9 decimals I assume?)
         mintedAt: new Date(nftTransactionInfo.timestamp),
         description: enrichedTransaction.description,
       },
