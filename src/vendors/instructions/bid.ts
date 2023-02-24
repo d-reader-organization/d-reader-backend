@@ -26,7 +26,6 @@ export const constructPrivateBidInstruction = async (
     ? lamports(priceBasisPoint)
     : amount(priceBasisPoint, auctionHouse.treasuryMint.currency);
 
-  // Accounts.
   const authority = auctionHouse.authorityAddress;
   const metadata = metaplex.nfts().pdas().metadata({
     mint: mintAccount,
@@ -45,11 +44,6 @@ export const constructPrivateBidInstruction = async (
           owner: seller,
         })
       : null);
-
-  //handle properly
-  if (!tokenAccount) {
-    return;
-  }
 
   const buyerTokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
     mint: mintAccount,
@@ -79,7 +73,6 @@ export const constructPrivateBidInstruction = async (
     buyerTradeState,
   };
 
-  // Args.
   const args = {
     tradeStateBump: buyerTradeState.bump,
     escrowPaymentBump: escrowPayment.bump,
@@ -89,13 +82,13 @@ export const constructPrivateBidInstruction = async (
 
   const instructions: TransactionInstruction[] = [];
 
-  // Sell Instruction.
+  // Buy Instruction.
   const buyInstruction = createBuyInstruction(
     { ...accounts, tokenAccount },
     args,
   );
 
-  // Update the accounts to be signers since it's not covered properly by MPL due to its dynamic nature.
+  // Make buyer as signer since createBuyInstruction don't assign a signer.
   const signerKeyIndex = buyInstruction.keys.findIndex(({ pubkey }) =>
     pubkey.equals(buyer),
   );
