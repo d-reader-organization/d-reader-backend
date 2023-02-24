@@ -135,29 +135,39 @@ export class AuctionHouseService {
     seller?: PublicKey,
     tokenAccount?: PublicKey,
   ) {
-    const auctionHouse = await this.findOurAuctionHouse();
-    const bidInstruction = await constructPrivateBidInstruction(
-      this.metaplex,
-      auctionHouse,
-      buyer,
-      mintAccount,
-      sol(price),
-      token(1),
-      seller,
-      tokenAccount,
-    );
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
-    const bidTransaction = new Transaction({
-      feePayer: buyer,
-      ...latestBlockhash,
-    }).add(...bidInstruction);
+    try {
+      if (!seller && !tokenAccount) {
+        throw new Error(
+          'seller or associated token account must be provided !',
+        );
+      }
+      const auctionHouse = await this.findOurAuctionHouse();
+      const bidInstruction = await constructPrivateBidInstruction(
+        this.metaplex,
+        auctionHouse,
+        buyer,
+        mintAccount,
+        sol(price),
+        token(1),
+        seller,
+        tokenAccount,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const bidTransaction = new Transaction({
+        feePayer: buyer,
+        ...latestBlockhash,
+      }).add(...bidInstruction);
 
-    const rawTransaction = bidTransaction.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
-    });
+      const rawTransaction = bidTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
 
-    return rawTransaction.toString('base64');
+      return rawTransaction.toString('base64');
+    } catch (e) {
+      console.log('Error while constructing private bid transaction ', e);
+    }
   }
 
   async createCancelBidTransaction(
