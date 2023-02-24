@@ -229,6 +229,14 @@ Table WalletCreator {
   }
 }
 
+Table MintReceipt {
+  id Int [pk, increment]
+  buyer String [not null]
+  price Float [not null]
+  mintedAt DateTime [not null]
+  description String [not null]
+}
+
 Enum Role {
   Superadmin
   Admin

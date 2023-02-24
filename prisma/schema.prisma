@@ -253,4 +253,12 @@ model WalletCreator {
   @@id([creatorSlug, walletAddress])
 }
 
+model MintReceipt {
+  id          Int      @id @default(autoincrement())
+  buyer       String
+  price       Float
+  mintedAt    DateTime
+  description String
+}
+
 // - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity

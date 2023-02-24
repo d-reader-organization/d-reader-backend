@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Cluster, Connection, PublicKey } from '@solana/web3.js';
-import { EnrichedTransaction, Helius, TransactionType } from 'helius-sdk';
+import {
+  EnrichedTransaction,
+  Helius,
+  NFTEvent,
+  TransactionType,
+} from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
@@ -108,10 +113,32 @@ export class HeliusService {
           itemsMinted: { increment: 1 },
         },
       });
+    const nftTransactionInfo = enrichedTransaction.events.nft as NFTEvent & {
+      amount: number;
+    };
+    const logIntoMintReceipt = this.prisma.mintReceipt.create({
+      data: {
+        buyer: nftTransactionInfo.buyer,
+        price: nftTransactionInfo.amount / 1000000000,
+        mintedAt: new Date(nftTransactionInfo.timestamp),
+        description: enrichedTransaction.description,
+      },
+    });
 
-    await this.prisma.$transaction([
-      createComicIssueNft,
-      updateComicIssueCandyMachine,
-    ]);
+    try {
+      const [comicIssueNft] = await this.prisma.$transaction([
+        createComicIssueNft,
+        updateComicIssueCandyMachine,
+        logIntoMintReceipt,
+      ]);
+      const webhook = await this.getMyWebhook(
+        'c2e87057-b3e4-49a1-a84f-a31b0585a69d',
+      );
+      this.updateWebhook(webhook.webhookID, {
+        accountAddresses: [...webhook.accountAddresses, comicIssueNft.address],
+      });
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
