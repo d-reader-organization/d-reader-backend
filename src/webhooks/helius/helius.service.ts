@@ -111,39 +111,42 @@ export class HeliusService {
       throw Error('Unsupported candy machine');
     }
 
-    const createComicIssueNft = this.prisma.comicIssueNft.create({
-      data: payload,
-    });
-    const updateComicIssueCandyMachine =
-      this.prisma.comicIssueCandyMachine.update({
+    try {
+      const comicIssueNft = await this.prisma.comicIssueNft.create({
+        data: payload,
+      });
+      await this.appendAddress(comicIssueNft.address);
+    } catch (error) {
+      console.error(error);
+    }
+
+    try {
+      await this.prisma.comicIssueCandyMachine.update({
         where: { address: payload.candyMachineAddress },
         data: {
           itemsRemaining: { decrement: 1 },
           itemsMinted: { increment: 1 },
         },
       });
-    const nftTransactionInfo = enrichedTransaction.events.nft as NFTEvent & {
-      amount: number;
-    };
-    const logIntoMintReceipt = this.prisma.mintReceipt.create({
-      data: {
-        buyer: nftTransactionInfo.buyer,
-        price: nftTransactionInfo.amount,
-        timestamp: new Date(nftTransactionInfo.timestamp),
-        description: enrichedTransaction.description,
-        comicIssueCandyMachineAddress:
-          'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
-        comicIssueNftAddress: nft.address.toBase58(),
-      },
-    });
+    } catch (error) {
+      console.error(error);
+    }
 
     try {
-      const [comicIssueNft] = await this.prisma.$transaction([
-        createComicIssueNft,
-        updateComicIssueCandyMachine,
-        logIntoMintReceipt,
-      ]);
-      await this.appendAddress(comicIssueNft.address);
+      const nftTransactionInfo = enrichedTransaction.events.nft as NFTEvent & {
+        amount: number;
+      };
+      await this.prisma.mintReceipt.create({
+        data: {
+          buyer: nftTransactionInfo.buyer,
+          price: nftTransactionInfo.amount,
+          timestamp: new Date(nftTransactionInfo.timestamp),
+          description: enrichedTransaction.description,
+          comicIssueCandyMachineAddress:
+            'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
+          comicIssueNftAddress: nft.address.toBase58(),
+        },
+      });
     } catch (error) {
       console.error(error);
     }
