@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { Cluster, Connection } from '@solana/web3.js';
+import { Cluster, Connection, PublicKey } from '@solana/web3.js';
 import { EnrichedTransaction, Helius, TransactionType } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { Metaplex } from '@metaplex-foundation/js';
 
 @Injectable()
 export class HeliusService {
   private readonly connection: Connection;
   private readonly helius: Helius;
+  private readonly metaplex: Metaplex;
 
   constructor(private readonly prisma: PrismaService) {
     const endpoint = clusterHeliusApiUrl(
@@ -20,6 +21,7 @@ export class HeliusService {
     );
     this.connection = new Connection(endpoint, 'confirmed');
     this.helius = new Helius(process.env.HELIUS_API_KEY);
+    this.metaplex = new Metaplex(this.connection);
   }
 
   createWebhook(payload: CreateHeliusWebhookDto) {
@@ -72,13 +74,17 @@ export class HeliusService {
   }
 
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
+    const mintAddress = new PublicKey(
+      enrichedTransaction.tokenTransfers.at(0).mint,
+    );
+    const nft = await this.metaplex.nfts().findByMint({ mintAddress });
     const payload = {
-      address: enrichedTransaction.tokenTransfers.at(0).mint,
-      candyMachineAddress: 'A3UgZc39HZbDiiDB24vjgNdmnV43RGznRavFkj5sJ68c',
-      collectionNftAddress: '68gsxWrLkMkwMznXM9qam7FvDK1SDBhVJZaQUpAwXL6k',
-      name: uuidv4(),
+      address: mintAddress.toBase58(),
+      candyMachineAddress: 'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
+      collectionNftAddress: nft.collection.address.toBase58(),
+      name: nft.name,
       owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
-      uri: 'uri',
+      uri: nft.uri,
     };
 
     const comicIssueCandyMachine =
