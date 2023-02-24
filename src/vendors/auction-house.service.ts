@@ -12,8 +12,6 @@ import {
   keypairIdentity,
   Metaplex,
   sol,
-  SolAmount,
-  SplTokenAmount,
   token,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
@@ -133,7 +131,7 @@ export class AuctionHouseService {
   async constructPrivateBidTransaction(
     buyer: PublicKey,
     mintAccount: PublicKey,
-    price: SolAmount | SplTokenAmount,
+    price: number,
     seller?: PublicKey,
     tokenAccount?: PublicKey,
   ) {
@@ -143,7 +141,7 @@ export class AuctionHouseService {
       auctionHouse,
       buyer,
       mintAccount,
-      price,
+      sol(price),
       token(1),
       seller,
       tokenAccount,
