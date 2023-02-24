@@ -138,6 +138,7 @@ Table ComicIssueNft {
   candyMachineAddress String [not null]
   collectionNft ComicIssueCollectionNft [not null]
   collectionNftAddress String [not null]
+  mintReceipts MintReceipt [not null]
 }
 
 Table ComicIssueCandyMachine {
@@ -149,6 +150,7 @@ Table ComicIssueCandyMachine {
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
   items ComicIssueNft [not null]
+  mintReceipts MintReceipt [not null]
 }
 
 Table ComicIssueCollectionNft {
@@ -233,8 +235,12 @@ Table MintReceipt {
   id Int [pk, increment]
   buyer String [not null]
   price Float [not null]
-  mintedAt DateTime [not null]
+  timestamp DateTime [not null]
   description String [not null]
+  comicIssueCandyMachine ComicIssueCandyMachine [not null]
+  comicIssueCandyMachineAddress String [not null]
+  comicIssueNft ComicIssueNft [not null]
+  comicIssueNftAddress String [not null]
 }
 
 Enum Role {
@@ -274,3 +280,7 @@ Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
 Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
+
+Ref: MintReceipt.comicIssueCandyMachineAddress > ComicIssueCandyMachine.address [delete: Cascade]
+
+Ref: MintReceipt.comicIssueNftAddress > ComicIssueNft.address [delete: Cascade]

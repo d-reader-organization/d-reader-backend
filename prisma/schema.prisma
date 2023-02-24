@@ -154,6 +154,7 @@ model ComicIssueNft {
   candyMachineAddress  String
   collectionNft        ComicIssueCollectionNft @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
+  mintReceipts         MintReceipt[]
 }
 
 model ComicIssueCandyMachine {
@@ -165,6 +166,7 @@ model ComicIssueCandyMachine {
   itemsLoaded          Int
   isFullyLoaded        Boolean
   items                ComicIssueNft[]
+  mintReceipts         MintReceipt[]
 }
 
 // TODO ComicCollectionNft
@@ -254,11 +256,15 @@ model WalletCreator {
 }
 
 model MintReceipt {
-  id          Int      @id @default(autoincrement())
-  buyer       String
-  price       Float
-  mintedAt    DateTime
-  description String
+  id                            Int                    @id @default(autoincrement())
+  buyer                         String
+  price                         Float
+  timestamp                     DateTime
+  description                   String
+  comicIssueCandyMachine        ComicIssueCandyMachine @relation(fields: [comicIssueCandyMachineAddress], references: [address], onDelete: Cascade)
+  comicIssueCandyMachineAddress String
+  comicIssueNft                 ComicIssueNft          @relation(fields: [comicIssueNftAddress], references: [address], onDelete: Cascade)
+  comicIssueNftAddress          String
 }
 
 // - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity

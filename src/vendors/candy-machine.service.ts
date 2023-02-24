@@ -29,8 +29,6 @@ import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
-import { TransactionType, WebhookType } from 'helius-sdk';
-import { getApiUrl } from 'src/utils/environment';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -302,19 +300,9 @@ export class CandyMachineService {
       iteration = iteration + 1;
     }
 
-    await this.createHeliusWebhook(candyMachine.address.toBase58());
+    await this.heliusService.appendAddress(candyMachine.address.toBase58());
 
     return await this.metaplex.candyMachines().refresh(candyMachine);
-  }
-
-  private createHeliusWebhook(address: string) {
-    const apiUrl = getApiUrl(process.env.NODE_ENV);
-    return this.heliusService.createWebhook({
-      accountAddresses: [address],
-      webhookURL: `${apiUrl}/helius/handle`,
-      transactionTypes: [TransactionType.NFT_MINT, TransactionType.TOKEN_MINT],
-      webhookType: WebhookType.ENHANCED,
-    });
   }
 
   // TODO: contain data about the collection: flavorText, comic name, creator name, pagesCount, issue.number...

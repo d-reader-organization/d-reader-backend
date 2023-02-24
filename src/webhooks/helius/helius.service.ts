@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Cluster,
-  Connection,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-} from '@solana/web3.js';
+import { Cluster, Connection, PublicKey } from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -48,6 +43,15 @@ export class HeliusService {
         firstVerifiedCreators: undefined,
         verifiedCollectionAddresses: createWebhookDto.collectionNftAddresses,
       },
+    });
+  }
+
+  async appendAddress(address: string) {
+    const { accountAddresses } = await this.getMyWebhook(
+      process.env.WEBHOOK_ID,
+    );
+    await this.updateWebhook(process.env.WEBHOOK_ID, {
+      accountAddresses: [...accountAddresses, address],
     });
   }
 
@@ -124,9 +128,12 @@ export class HeliusService {
     const logIntoMintReceipt = this.prisma.mintReceipt.create({
       data: {
         buyer: nftTransactionInfo.buyer,
-        price: nftTransactionInfo.amount / LAMPORTS_PER_SOL, // not sure if there is an existing helper function that can convert to SOL properly (max 9 decimals I assume?)
-        mintedAt: new Date(nftTransactionInfo.timestamp),
+        price: nftTransactionInfo.amount,
+        timestamp: new Date(nftTransactionInfo.timestamp),
         description: enrichedTransaction.description,
+        comicIssueCandyMachineAddress:
+          'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
+        comicIssueNftAddress: nft.address.toBase58(),
       },
     });
 
@@ -136,12 +143,7 @@ export class HeliusService {
         updateComicIssueCandyMachine,
         logIntoMintReceipt,
       ]);
-      const webhook = await this.getMyWebhook(
-        'c2e87057-b3e4-49a1-a84f-a31b0585a69d',
-      );
-      this.updateWebhook(webhook.webhookID, {
-        accountAddresses: [...webhook.accountAddresses, comicIssueNft.address],
-      });
+      await this.appendAddress(comicIssueNft.address);
     } catch (error) {
       console.error(error);
     }
