@@ -177,7 +177,7 @@ export class ComicIssueService {
     walletAddress: string,
   ): Promise<boolean | undefined> {
     // find all NFTs that token gate the comic issue and are owned by the wallet
-    const ownedComicIssues = await this.prisma.comicIssueNft.findMany({
+    const ownedComicIssues = await this.prisma.nft.findMany({
       where: { collectionNft: { comicIssueId }, owner: walletAddress },
     });
 

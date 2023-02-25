@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cluster, Connection, PublicKey } from '@solana/web3.js';
+import { Cluster, PublicKey } from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -7,7 +7,6 @@ import {
   TransactionType,
 } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
-import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
@@ -15,18 +14,15 @@ import { Metaplex } from '@metaplex-foundation/js';
 
 @Injectable()
 export class HeliusService {
-  private readonly connection: Connection;
   private readonly helius: Helius;
   private readonly metaplex: Metaplex;
 
   constructor(private readonly prisma: PrismaService) {
-    const endpoint = clusterHeliusApiUrl(
+    this.helius = new Helius(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    this.connection = new Connection(endpoint, 'confirmed');
-    this.helius = new Helius(process.env.HELIUS_API_KEY);
-    this.metaplex = new Metaplex(this.connection);
+    this.metaplex = new Metaplex(this.helius.connection);
   }
 
   createWebhook(payload: CreateHeliusWebhookDto) {
@@ -101,18 +97,17 @@ export class HeliusService {
       uri: nft.uri,
     };
 
-    const comicIssueCandyMachine =
-      await this.prisma.comicIssueCandyMachine.findFirst({
-        where: {
-          address: payload.candyMachineAddress,
-        },
-      });
+    const comicIssueCandyMachine = await this.prisma.candyMachine.findFirst({
+      where: {
+        address: payload.candyMachineAddress,
+      },
+    });
     if (!comicIssueCandyMachine) {
       throw Error('Unsupported candy machine');
     }
 
     try {
-      const comicIssueNft = await this.prisma.comicIssueNft.create({
+      const comicIssueNft = await this.prisma.nft.create({
         data: payload,
       });
       await this.appendAddress(comicIssueNft.address);
@@ -121,7 +116,7 @@ export class HeliusService {
     }
 
     try {
-      await this.prisma.comicIssueCandyMachine.update({
+      await this.prisma.candyMachine.update({
         where: { address: payload.candyMachineAddress },
         data: {
           itemsRemaining: { decrement: 1 },
@@ -136,15 +131,14 @@ export class HeliusService {
       const nftTransactionInfo = enrichedTransaction.events.nft as NFTEvent & {
         amount: number;
       };
-      await this.prisma.mintReceipt.create({
+      await this.prisma.candyMachineReceipt.create({
         data: {
           buyer: nftTransactionInfo.buyer,
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp),
           description: enrichedTransaction.description,
-          comicIssueCandyMachineAddress:
-            'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
-          comicIssueNftAddress: nft.address.toBase58(),
+          candyMachineAddress: 'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
+          nftAddress: nft.address.toBase58(),
         },
       });
     } catch (error) {

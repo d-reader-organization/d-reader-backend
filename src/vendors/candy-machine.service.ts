@@ -24,11 +24,11 @@ import * as bs58 from 'bs58';
 import * as path from 'path';
 import { chunk } from 'lodash';
 import { sleep } from 'src/utils/helpers';
-import { clusterHeliusApiUrl } from 'src/utils/helius';
 import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
+import { heliusClusterApiUrl } from 'helius-sdk';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -86,19 +86,18 @@ const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
 
 @Injectable()
 export class CandyMachineService {
-  private readonly connection: Connection;
   private readonly metaplex: Metaplex;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
   ) {
-    const endpoint = clusterHeliusApiUrl(
+    const endpoint = heliusClusterApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    this.connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(this.connection);
+    const connection = new Connection(endpoint, 'confirmed');
+    this.metaplex = new Metaplex(connection);
 
     const treasuryWallet = AES.decrypt(
       process.env.TREASURY_PRIVATE_KEY,
@@ -131,7 +130,7 @@ export class CandyMachineService {
   }
 
   async getMintAddresses(firstCreatorAddress: PublicKey) {
-    const metadataAccounts = await this.connection.getProgramAccounts(
+    const metadataAccounts = await this.metaplex.connection.getProgramAccounts(
       this.metaplex.programs().getTokenMetadata().address,
       {
         // The mint address is located at byte 33 and lasts for 32 bytes.
@@ -173,7 +172,7 @@ export class CandyMachineService {
 
     // If Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
-    const collectionNft = await this.prisma.comicIssueCollectionNft.findUnique({
+    const collectionNft = await this.prisma.collectionNft.findUnique({
       where: { comicIssueId: comicIssue.id },
     });
 
@@ -185,7 +184,7 @@ export class CandyMachineService {
         coverImage,
       );
 
-      await this.prisma.comicIssueCollectionNft.create({
+      await this.prisma.collectionNft.create({
         data: {
           address: newCollectionNft.address.toBase58(),
           uri: newCollectionNft.uri,
@@ -252,7 +251,7 @@ export class CandyMachineService {
       { payer: this.metaplex.identity() }, // v2: in the future comicCreator might become the payer
     );
 
-    await this.prisma.comicIssueCandyMachine.create({
+    await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
         mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
