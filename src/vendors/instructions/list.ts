@@ -6,8 +6,14 @@ import {
   amount,
   lamports,
 } from '@metaplex-foundation/js';
-import { createSellInstruction } from '@metaplex-foundation/mpl-auction-house';
-import { TransactionInstruction } from '@solana/web3.js';
+import {
+  createPrintListingReceiptInstruction,
+  createSellInstruction,
+} from '@metaplex-foundation/mpl-auction-house';
+import {
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 
 export function constructListInstruction(
@@ -95,6 +101,21 @@ export function constructListInstruction(
   sellInstruction.keys[signerKeyIndex].isWritable = true;
 
   instructions.push(sellInstruction);
+
+  const receipt = metaplex.auctionHouse().pdas().listingReceipt({
+    tradeState: sellerTradeState,
+  });
+
+  instructions.push(
+    createPrintListingReceiptInstruction(
+      {
+        receipt,
+        bookkeeper: seller,
+        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+      },
+      { receiptBump: receipt.bump },
+    ),
+  );
 
   return instructions;
 }
