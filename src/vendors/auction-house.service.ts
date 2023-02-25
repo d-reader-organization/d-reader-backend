@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import {
-  BlockhashWithExpiryBlockHeight,
   Cluster,
   Connection,
   Keypair,
@@ -18,7 +17,10 @@ import {
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { clusterHeliusApiUrl } from 'src/utils/helius';
-import { constructListInstruction } from './instructions';
+import {
+  constructListInstruction,
+  constructPrivateBidInstruction,
+} from './instructions';
 
 @Injectable()
 export class AuctionHouseService {
@@ -126,54 +128,45 @@ export class AuctionHouseService {
     }
   }
 
-  /* Add a Buy Transaction where user buy on the listed price */
-
-  /*  public bid if seller and token Account is missing else private bid*/
-  async createBidTransaction(
+  async constructPrivateBidTransaction(
     buyer: PublicKey,
-    address: PublicKey,
     mintAccount: PublicKey,
     price: number,
     seller?: PublicKey,
     tokenAccount?: PublicKey,
-    blockhash?: BlockhashWithExpiryBlockHeight,
   ) {
-    // deposit the amount in escrow
     try {
-      const buyersBalance = await this.getBuyersBalance(buyer, address);
-      if (buyersBalance < sol(price)) {
-        // CHECK
+      if (!seller && !tokenAccount) {
         throw new Error(
-          "Buyer don't have enough amount in escrow to create a bid",
+          'seller or associated token account must be provided !',
         );
       }
       const auctionHouse = await this.findOurAuctionHouse();
-      const bidBuilder = await this.metaplex
-        .auctionHouse()
-        .builders()
-        .bid({
-          auctionHouse,
-          buyer: { publicKey: buyer } as IdentitySigner,
-          price: sol(price),
-          authority: this.metaplex.identity(),
-          mintAccount,
-          seller, // undefined if public big
-          tokenAccount,
-          //default tokens is 1 , which is fine for nfts
-        });
-
-      if (!blockhash) blockhash = await this.connection.getLatestBlockhash();
-      bidBuilder.setFeePayer({ publicKey: buyer } as IdentitySigner);
-      const bidTransaction = bidBuilder.toTransaction(blockhash);
-      bidTransaction.partialSign(this.metaplex.identity()); // CHECK
+      const bidInstruction = await constructPrivateBidInstruction(
+        this.metaplex,
+        auctionHouse,
+        buyer,
+        mintAccount,
+        sol(price),
+        token(1),
+        seller,
+        tokenAccount,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const bidTransaction = new Transaction({
+        feePayer: buyer,
+        ...latestBlockhash,
+      }).add(...bidInstruction);
 
       const rawTransaction = bidTransaction.serialize({
         requireAllSignatures: false,
+        verifySignatures: false,
       });
 
       return rawTransaction.toString('base64');
     } catch (e) {
-      console.log('Error while creating bidding transaction ', e);
+      console.log('Error while constructing private bid transaction ', e);
     }
   }
 

@@ -9,6 +9,7 @@ import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { ListParams } from './dto/list-params.dto';
+import { PrivateBidParams } from './dto/private-bid-params.dto';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -67,6 +68,27 @@ export class PlaygroundController {
       publicKey,
       mintAccount,
       query.price,
+    );
+  }
+
+  @Get('/transactions/construct/private-bid')
+  async constructPrivateBidTransaction(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: PrivateBidParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const seller = query.seller ? new PublicKey(query.seller) : null;
+    const tokenAccount = query.tokenAccount
+      ? new PublicKey(query.tokenAccount)
+      : null;
+    const mintAccount = new PublicKey(query.mintAccount);
+
+    return await this.auctionHouseService.constructPrivateBidTransaction(
+      publicKey,
+      mintAccount,
+      query.price,
+      seller,
+      tokenAccount,
     );
   }
 }
