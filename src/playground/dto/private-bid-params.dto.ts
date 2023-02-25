@@ -1,13 +1,15 @@
-import { IsString, IsNumberString } from 'class-validator';
-import { IsOptionalString } from 'src/decorators/IsOptionalString';
+import { IsNumberString, IsOptional } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class PrivateBidParams {
-  @IsString()
+  @IsSolanaAddress()
   mintAccount: string;
   @IsNumberString()
   price: number;
-  @IsOptionalString()
-  seller: string;
-  @IsOptionalString()
-  tokenAccount: string;
+  @IsSolanaAddress()
+  @IsOptional()
+  seller?: string;
+  @IsSolanaAddress()
+  @IsOptional()
+  tokenAccount?: string;
 }
