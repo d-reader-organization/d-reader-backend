@@ -7,9 +7,15 @@ import {
   amount,
   lamports,
 } from '@metaplex-foundation/js';
-import { createBuyInstruction } from '@metaplex-foundation/mpl-auction-house';
+import {
+  createBuyInstruction,
+  createPrintBidReceiptInstruction,
+} from '@metaplex-foundation/mpl-auction-house';
 import { createAssociatedTokenAccountInstruction } from '@solana/spl-token';
-import { TransactionInstruction } from '@solana/web3.js';
+import {
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+  TransactionInstruction,
+} from '@solana/web3.js';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -96,6 +102,21 @@ export const constructPrivateBidInstruction = async (
   buyInstruction.keys[signerKeyIndex].isSigner = true;
 
   instructions.push(buyInstruction);
+
+  const receipt = metaplex.auctionHouse().pdas().bidReceipt({
+    tradeState: buyerTradeState,
+  });
+
+  instructions.push(
+    createPrintBidReceiptInstruction(
+      {
+        receipt,
+        bookkeeper: buyer,
+        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+      },
+      { receiptBump: receipt.bump },
+    ),
+  );
 
   if (!tokenAccount) {
     const account = await metaplex.rpc().getAccount(buyerTokenAccount);
