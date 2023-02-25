@@ -43,10 +43,8 @@ export class HeliusService {
   }
 
   async appendAddress(address: string) {
-    const { accountAddresses } = await this.getMyWebhook(
-      process.env.WEBHOOK_ID,
-    );
-    await this.updateWebhook(process.env.WEBHOOK_ID, {
+    const { webhookID, accountAddresses } = await this.getMyWebhook();
+    await this.updateWebhook(webhookID, {
       accountAddresses: [...accountAddresses, address],
     });
   }
@@ -55,8 +53,9 @@ export class HeliusService {
     return this.helius.editWebhook(id, payload);
   }
 
-  getMyWebhook(id: string) {
-    return this.helius.getWebhookByID(id);
+  async getMyWebhook() {
+    const webhooks = await this.helius.getAllWebhooks();
+    return webhooks[0]; // replace in the future
   }
 
   deleteWebhook(id: string) {

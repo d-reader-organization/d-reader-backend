@@ -46,7 +46,6 @@ export class AuctionHouseService {
     );
 
     this.metaplex.use(keypairIdentity(treasuryKeypair));
-    // this.metaplex.use(awsStorage(s3Client, 'd-reader-nft-data'));
   }
 
   async findOurAuctionHouse() {

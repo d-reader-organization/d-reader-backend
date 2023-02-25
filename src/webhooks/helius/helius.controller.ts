@@ -41,10 +41,10 @@ export class HeliusController {
     return toHeliusWebhookDto(webhook);
   }
 
-  /* Get specific webhook by unique id */
-  @Get('get/:id')
-  async getMyWebhook(@Param('id') id: string): Promise<HeliusWebhookDto> {
-    const webhook = await this.heliusService.getMyWebhook(id);
+  /* Get specific webhook */
+  @Get('get')
+  async getMyWebhook(): Promise<HeliusWebhookDto> {
+    const webhook = await this.heliusService.getMyWebhook();
     return toHeliusWebhookDto(webhook);
   }
 

@@ -167,7 +167,7 @@ export class CandyMachineService {
         'Cannot create an NFT collection with supply lower than 1',
       );
     }
-    // TODO copy S3 image from one bucket to another (with d-reader-nft-data)
+    // TODO: copy S3 image from one bucket to another
     const coverImage = await this.generateMetaplexFileFromS3(comicIssue.cover);
 
     // If Collection NFT already exists - use it, otherwise create a fresh one
