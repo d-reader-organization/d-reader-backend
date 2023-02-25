@@ -4,6 +4,7 @@ import { ComicIssueController } from './comic-issue.controller';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CandyMachineService } from 'src/vendors/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { HeliusService } from 'src/webhooks/helius/helius.service';
 
 @Module({
   controllers: [ComicIssueController],
@@ -12,6 +13,7 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
     ComicPageService,
     CandyMachineService,
     WalletComicIssueService,
+    HeliusService,
   ],
 })
 export class ComicIssueModule {}
