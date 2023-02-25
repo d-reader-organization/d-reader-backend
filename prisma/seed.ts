@@ -17,13 +17,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('⛏️ Emptying the database...');
-  await prisma.comicIssueNft.deleteMany();
+  await prisma.nft.deleteMany();
+  await prisma.collectionNft.deleteMany();
+  await prisma.candyMachineReceipt.deleteMany();
+  await prisma.candyMachine.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.walletComic.deleteMany();
   await prisma.comic.deleteMany();
+  await prisma.newsletter.deleteMany();
   await prisma.creator.deleteMany();
-  await prisma.wallet.deleteMany();
   await prisma.wallet.deleteMany();
   await prisma.genre.deleteMany();
   await prisma.carouselSlide.deleteMany();

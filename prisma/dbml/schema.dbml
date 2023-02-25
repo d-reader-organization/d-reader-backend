@@ -118,7 +118,7 @@ Table ComicIssue {
   popularizedAt DateTime
   comic Comic [not null]
   comicSlug String [not null]
-  collectionNft ComicIssueCollectionNft
+  collectionNft CollectionNft
   pages ComicPage [not null]
   wallets WalletComicIssue [not null]
 
@@ -129,35 +129,49 @@ Table ComicIssue {
   }
 }
 
-Table ComicIssueNft {
+Table Nft {
   address String [pk]
   uri String [not null]
   name String [not null]
   owner String [not null]
-  candyMachine ComicIssueCandyMachine [not null]
+  candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
-  collectionNft ComicIssueCollectionNft [not null]
+  collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
+  candyMachineReceipt CandyMachineReceipt [not null]
 }
 
-Table ComicIssueCandyMachine {
+Table CandyMachine {
   address String [pk]
-  mintAuthorityAddress String
+  mintAuthorityAddress String [not null]
   itemsAvailable Int [not null]
   itemsMinted Int [not null]
   itemsRemaining Int [not null]
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
-  items ComicIssueNft [not null]
+  items Nft [not null]
+  receipts CandyMachineReceipt [not null]
 }
 
-Table ComicIssueCollectionNft {
+Table CandyMachineReceipt {
+  id Int [pk, increment]
+  buyer String [not null]
+  price Float [not null]
+  timestamp DateTime [not null]
+  description String [not null]
+  candyMachine CandyMachine [not null]
+  candyMachineAddress String [not null]
+  nft Nft [not null]
+  nftAddress String [not null]
+}
+
+Table CollectionNft {
   address String [pk]
   uri String [not null]
   name String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
-  collectionItems ComicIssueNft [not null]
+  collectionItems Nft [not null]
 }
 
 Table ComicPage {
@@ -249,11 +263,15 @@ Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: ComicIssueNft.candyMachineAddress > ComicIssueCandyMachine.address
+Ref: Nft.candyMachineAddress > CandyMachine.address
 
-Ref: ComicIssueNft.collectionNftAddress > ComicIssueCollectionNft.address
+Ref: Nft.collectionNftAddress > CollectionNft.address
 
-Ref: ComicIssueCollectionNft.comicIssueId - ComicIssue.id
+Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
+
+Ref: CandyMachineReceipt.nftAddress > Nft.address [delete: Cascade]
+
+Ref: CollectionNft.comicIssueId - ComicIssue.id
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 

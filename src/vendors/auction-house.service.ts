@@ -16,25 +16,24 @@ import {
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
-import { clusterHeliusApiUrl } from 'src/utils/helius';
 import {
   constructListInstruction,
   constructPrivateBidInstruction,
 } from './instructions';
+import { heliusClusterApiUrl } from 'helius-sdk';
 
 @Injectable()
 export class AuctionHouseService {
-  private readonly connection: Connection;
   private readonly metaplex: Metaplex;
   private auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    const endpoint = clusterHeliusApiUrl(
+    const endpoint = heliusClusterApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    this.connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(this.connection);
+    const connection = new Connection(endpoint, 'confirmed');
+    this.metaplex = new Metaplex(connection);
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
 
     const treasuryWallet = AES.decrypt(
