@@ -1,8 +1,7 @@
-import { IsNumberString } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsString, IsNumberString } from 'class-validator';
 
 export class ListParams {
-  @IsSolanaAddress()
+  @IsString()
   mintAccount: string;
 
   @IsNumberString()
