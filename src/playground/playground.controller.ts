@@ -10,6 +10,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { ListParams } from './dto/list-params.dto';
 import { PrivateBidParams } from './dto/private-bid-params.dto';
+import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -89,6 +90,22 @@ export class PlaygroundController {
       query.price,
       seller,
       tokenAccount,
+    );
+  }
+
+  @Get('/transactions/execute-sale')
+  async constructExecutelistedSale(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: ExecuteSaleParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const bidReceipt = new PublicKey(query.bidReceipt);
+    const listReceipt = new PublicKey(query.listReceipt);
+
+    return await this.auctionHouseService.constructExecutelistedSale(
+      publicKey,
+      listReceipt,
+      bidReceipt,
     );
   }
 }

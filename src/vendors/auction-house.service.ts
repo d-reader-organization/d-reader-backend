@@ -55,36 +55,47 @@ export class AuctionHouseService {
   }
 
   // Execute Sale for a nft listed and agreed on the bid by seller
-  async executeListedSale(
-    address: PublicKey,
-    buyer: PublicKey,
-    receiptAddress: PublicKey,
+  async constructExecutelistedSale(
+    payer: PublicKey,
+    listReceipt: PublicKey,
+    bidReceipt: PublicKey,
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
       const listing = await this.metaplex
         .auctionHouse()
-        .findListingByReceipt({ receiptAddress, auctionHouse });
+        .findListingByReceipt({ receiptAddress: listReceipt, auctionHouse });
 
       const bid = await this.metaplex
         .auctionHouse()
-        .findBidByReceipt({ receiptAddress, auctionHouse });
+        .findBidByReceipt({ receiptAddress: bidReceipt, auctionHouse });
 
-      const buyersBalance = await this.getBuyersBalance(buyer, address);
-
-      if (buyersBalance < bid.price) {
-        // CHECK
-        throw new Error("Buyer don't have enough amount in his escrow !");
-      }
-      const executeSaleResponse = await this.metaplex
+      const executeSaleTransactionBuilder = this.metaplex
         .auctionHouse()
-        .executeSale({
-          auctionHouse,
-          auctioneerAuthority: this.metaplex.identity(),
-          listing,
-          bid,
-        });
-      return executeSaleResponse;
+        .builders()
+        .executeSale(
+          {
+            auctionHouse,
+            listing,
+            bid,
+          },
+          { payer: this.metaplex.identity() },
+        );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+
+      const executeSaleTransaction =
+        executeSaleTransactionBuilder.toTransaction(latestBlockhash);
+
+      executeSaleTransaction.feePayer = payer;
+      executeSaleTransaction.sign(this.metaplex.identity());
+
+      const rawTransaction = executeSaleTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+
+      return rawTransaction.toString('base64');
     } catch (e) {
       console.log('Error while executing sale ', e);
     }
