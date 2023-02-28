@@ -87,7 +87,7 @@ export class CreatorService {
     const mappedCreators = await Promise.all(
       creators.map(async (creator) => ({
         ...creator,
-        creatorStats: await this.walletCreatorService.aggregateCreatorStats(
+        stats: await this.walletCreatorService.aggregateCreatorStats(
           creator.slug,
         ),
       })),
