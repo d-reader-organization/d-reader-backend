@@ -299,7 +299,7 @@ export class CandyMachineService {
       iteration = iteration + 1;
     }
 
-    await this.heliusService.appendAddress(candyMachine.address.toBase58());
+    this.heliusService.subscribeTo(candyMachine.address.toBase58());
 
     return await this.metaplex.candyMachines().refresh(candyMachine);
   }

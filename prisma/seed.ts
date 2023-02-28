@@ -344,9 +344,9 @@ async function main() {
                 issues: {
                   create: {
                     number: 1,
-                    supply: 4,
+                    supply: 8,
                     discountMintPrice: 0.1,
-                    mintPrice: 0.05,
+                    mintPrice: 0.00001,
                     title: 'Rise of the Gorecats',
                     slug: 'rise-of-the-gorecats',
                     description:
@@ -542,7 +542,7 @@ async function main() {
             number: 1,
             supply: 4,
             discountMintPrice: 0.1,
-            mintPrice: 0.05,
+            mintPrice: 0.00002,
             title: "Let's Get Outta Here!",
             slug: 'let-s-get-outta-here',
             description:
@@ -631,7 +631,7 @@ async function main() {
             number: 1,
             supply: 4,
             discountMintPrice: 0.1,
-            mintPrice: 0.05,
+            mintPrice: 0.00002,
             title: "Let's Get In Here!",
             slug: 'let-s-get-in-here',
             description:
@@ -756,7 +756,7 @@ async function main() {
                     number: 1,
                     supply: 4,
                     discountMintPrice: 0.1,
-                    mintPrice: 0.05,
+                    mintPrice: 0.00002,
                     title: 'Narentines: The Purge',
                     slug: 'narentines-the-purge',
                     description:

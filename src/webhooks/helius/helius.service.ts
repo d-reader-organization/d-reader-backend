@@ -10,7 +10,11 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
-import { Metaplex } from '@metaplex-foundation/js';
+import {
+  Metaplex,
+  toMetadata,
+  toMetadataAccount,
+} from '@metaplex-foundation/js';
 
 @Injectable()
 export class HeliusService {
@@ -42,7 +46,14 @@ export class HeliusService {
     });
   }
 
-  async appendAddress(address: string) {
+  async subscribeTo(address: string) {
+    const { webhookID, accountAddresses } = await this.getMyWebhook();
+    await this.updateWebhook(webhookID, {
+      accountAddresses: [...accountAddresses, address],
+    });
+  }
+
+  async removeSubscription(address: string) {
     const { webhookID, accountAddresses } = await this.getMyWebhook();
     await this.updateWebhook(webhookID, {
       accountAddresses: [...accountAddresses, address],
@@ -62,14 +73,14 @@ export class HeliusService {
     return this.helius.deleteWebhook(id);
   }
 
-  handleWebhookEvent(data: EnrichedTransaction[]) {
+  handleWebhookEvent(enrichedTransactions: EnrichedTransaction[]) {
     return Promise.all(
-      data.map(async (enrichedTransaction) => {
-        switch (enrichedTransaction.type) {
-          case (TransactionType.NFT_MINT, TransactionType.TOKEN_MINT):
-            return await this.mintAction(enrichedTransaction);
+      enrichedTransactions.map((transaction) => {
+        switch (transaction.type) {
+          case TransactionType.NFT_MINT:
+            return this.mintAction(transaction);
           case TransactionType.ANY:
-            return this.updateComicIssueNfts(enrichedTransaction);
+            return this.updateComicIssueNfts(transaction);
           default:
             return;
         }
@@ -78,50 +89,58 @@ export class HeliusService {
   }
 
   private updateComicIssueNfts(enrichedTransaction: EnrichedTransaction) {
-    console.log(enrichedTransaction);
+    console.log('update comic issue nfts', enrichedTransaction);
     // owner has changed, update owner?
   }
 
   private async mintAction(enrichedTransaction: EnrichedTransaction) {
-    const mintAddress = new PublicKey(
-      enrichedTransaction.tokenTransfers.at(0).mint,
-    );
-    const nft = await this.metaplex.nfts().findByMint({ mintAddress });
-    const payload = {
-      address: mintAddress.toBase58(),
-      candyMachineAddress: 'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
-      collectionNftAddress: nft.collection.address.toBase58(),
-      name: nft.name,
-      owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
-      uri: nft.uri,
-    };
+    const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
+    const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
 
-    const comicIssueCandyMachine = await this.prisma.candyMachine.findFirst({
-      where: {
-        address: payload.candyMachineAddress,
+    const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+    await this.metaplex.rpc().confirmTransaction(
+      enrichedTransaction.signature,
+      {
+        ...latestBlockhash,
       },
-    });
-    if (!comicIssueCandyMachine) {
-      throw Error('Unsupported candy machine');
-    }
+      'finalized',
+    );
+
+    const info = await this.metaplex.rpc().getAccount(metadataPda);
+    const metadata = toMetadata(toMetadataAccount(info));
+
+    // Candy Machine Guard program is the 5th instruction
+    // Candy Machine address is the 3rd account in the guard instruction
+    const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
 
     try {
-      const comicIssueNft = await this.prisma.nft.create({
-        data: payload,
-      });
-      await this.appendAddress(comicIssueNft.address);
-    } catch (error) {
-      console.error(error);
-    }
-
-    try {
-      await this.prisma.candyMachine.update({
-        where: { address: payload.candyMachineAddress },
+      const candyMachine = await this.prisma.candyMachine.update({
+        where: { address: candyMachineAddress },
         data: {
           itemsRemaining: { decrement: 1 },
           itemsMinted: { increment: 1 },
         },
       });
+
+      if (candyMachine.itemsRemaining === 0)
+        this.removeSubscription(candyMachine.address);
+    } catch (error) {
+      console.error('Unsupported candy machine: ', error);
+      return;
+    }
+
+    try {
+      const comicIssueNft = await this.prisma.nft.create({
+        data: {
+          owner: enrichedTransaction.tokenTransfers.at(0).toUserAccount,
+          address: mint.toBase58(),
+          name: metadata.name,
+          uri: metadata.uri,
+          candyMachineAddress,
+          collectionNftAddress: metadata.collection.address.toBase58(),
+        },
+      });
+      this.subscribeTo(comicIssueNft.address);
     } catch (error) {
       console.error(error);
     }
@@ -136,8 +155,8 @@ export class HeliusService {
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp),
           description: enrichedTransaction.description,
-          candyMachineAddress: 'FRzbE9ENACT1ag8z4Q1JpQ5chU18GZq26Bxr8Vd71BDb',
-          nftAddress: nft.address.toBase58(),
+          candyMachineAddress,
+          nftAddress: mint.toBase58(),
         },
       });
     } catch (error) {
