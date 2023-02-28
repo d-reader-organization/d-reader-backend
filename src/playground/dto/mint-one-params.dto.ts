@@ -1,6 +1,6 @@
-import { IsString } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class MintOneParams {
-  @IsString()
+  @IsSolanaAddress()
   candyMachineAddress: string;
 }

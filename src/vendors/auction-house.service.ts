@@ -59,6 +59,7 @@ export class AuctionHouseService {
     payer: PublicKey,
     listReceipt: PublicKey,
     bidReceipt: PublicKey,
+    printReceipt: boolean,
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
@@ -78,6 +79,7 @@ export class AuctionHouseService {
             auctionHouse,
             listing,
             bid,
+            printReceipt,
           },
           { payer: this.metaplex.identity() },
         );
@@ -88,7 +90,8 @@ export class AuctionHouseService {
         executeSaleTransactionBuilder.toTransaction(latestBlockhash);
 
       executeSaleTransaction.feePayer = payer;
-      executeSaleTransaction.sign(this.metaplex.identity());
+
+      if (printReceipt) executeSaleTransaction.sign(this.metaplex.identity());
 
       const rawTransaction = executeSaleTransaction.serialize({
         requireAllSignatures: false,
@@ -106,6 +109,7 @@ export class AuctionHouseService {
     seller: PublicKey,
     mintAccount: PublicKey,
     price: number,
+    printReceipt: boolean,
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
@@ -116,6 +120,7 @@ export class AuctionHouseService {
         mintAccount,
         seller,
         sol(price),
+        printReceipt,
         token(1, 0),
       );
 
@@ -141,6 +146,7 @@ export class AuctionHouseService {
     buyer: PublicKey,
     mintAccount: PublicKey,
     price: number,
+    printReceipt: boolean,
     seller?: PublicKey,
     tokenAccount?: PublicKey,
   ) {
@@ -158,6 +164,7 @@ export class AuctionHouseService {
         mintAccount,
         sol(price),
         token(1),
+        printReceipt,
         seller,
         tokenAccount,
       );

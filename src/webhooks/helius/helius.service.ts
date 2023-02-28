@@ -67,9 +67,9 @@ export class HeliusService {
       data.map(async (enrichedTransaction) => {
         switch (enrichedTransaction.type) {
           case (TransactionType.NFT_MINT, TransactionType.TOKEN_MINT):
-            return await this.mintAction(enrichedTransaction);
+            return await this.handleMintEvent(enrichedTransaction);
           case TransactionType.ANY:
-            return this.updateComicIssueNfts(enrichedTransaction);
+            return this.handleNftTransfer(enrichedTransaction);
           default:
             return;
         }
@@ -77,12 +77,12 @@ export class HeliusService {
     );
   }
 
-  private updateComicIssueNfts(enrichedTransaction: EnrichedTransaction) {
+  private handleNftTransfer(enrichedTransaction: EnrichedTransaction) {
     console.log(enrichedTransaction);
     // owner has changed, update owner?
   }
 
-  private async mintAction(enrichedTransaction: EnrichedTransaction) {
+  private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mintAddress = new PublicKey(
       enrichedTransaction.tokenTransfers.at(0).mint,
     );

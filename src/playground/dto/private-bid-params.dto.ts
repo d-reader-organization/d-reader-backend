@@ -1,4 +1,4 @@
-import { IsNumberString, IsOptional } from 'class-validator';
+import { IsBooleanString, IsNumberString, IsOptional } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class PrivateBidParams {
@@ -15,4 +15,8 @@ export class PrivateBidParams {
   @IsSolanaAddress()
   @IsOptional()
   tokenAccount?: string;
+
+  @IsBooleanString()
+  @IsOptional()
+  printReceipt?: string;
 }
