@@ -64,11 +64,12 @@ export class PlaygroundController {
   ) {
     const publicKey = new PublicKey(wallet.address);
     const mintAccount = new PublicKey(query.mintAccount);
-
+    const printReceipt = query.printReceipt == 'false' ? false : true;
     return await this.auctionHouseService.constructListTransaction(
       publicKey,
       mintAccount,
       query.price,
+      printReceipt,
     );
   }
 
@@ -83,11 +84,13 @@ export class PlaygroundController {
       ? new PublicKey(query.tokenAccount)
       : null;
     const mintAccount = new PublicKey(query.mintAccount);
+    const printReceipt = query.printReceipt == 'false' ? false : true;
 
     return await this.auctionHouseService.constructPrivateBidTransaction(
       publicKey,
       mintAccount,
       query.price,
+      printReceipt,
       seller,
       tokenAccount,
     );
@@ -101,11 +104,13 @@ export class PlaygroundController {
     const publicKey = new PublicKey(wallet.address);
     const bidReceipt = new PublicKey(query.bidReceipt);
     const listReceipt = new PublicKey(query.listReceipt);
+    const printReceipt = query.printReceipt == 'false' ? false : true;
 
     return await this.auctionHouseService.constructExecutelistedSale(
       publicKey,
       listReceipt,
       bidReceipt,
+      printReceipt,
     );
   }
 }

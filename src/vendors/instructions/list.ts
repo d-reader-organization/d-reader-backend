@@ -22,6 +22,7 @@ export function constructListInstruction(
   mintAccount: PublicKey,
   seller: PublicKey,
   priceObject: SolAmount | SplTokenAmount,
+  printReceipt: boolean,
   tokens?: SplTokenAmount,
   associatedTokenAccount?: PublicKey,
 ): TransactionInstruction[] {
@@ -102,20 +103,22 @@ export function constructListInstruction(
 
   instructions.push(sellInstruction);
 
-  const receipt = metaplex.auctionHouse().pdas().listingReceipt({
-    tradeState: sellerTradeState,
-  });
+  if (printReceipt) {
+    const receipt = metaplex.auctionHouse().pdas().listingReceipt({
+      tradeState: sellerTradeState,
+    });
 
-  instructions.push(
-    createPrintListingReceiptInstruction(
-      {
-        receipt,
-        bookkeeper: seller,
-        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      { receiptBump: receipt.bump },
-    ),
-  );
+    instructions.push(
+      createPrintListingReceiptInstruction(
+        {
+          receipt,
+          bookkeeper: seller,
+          instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+        },
+        { receiptBump: receipt.bump },
+      ),
+    );
+  }
 
   return instructions;
 }
