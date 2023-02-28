@@ -24,6 +24,7 @@ export const constructPrivateBidInstruction = async (
   mintAccount: PublicKey,
   priceObject: SolAmount | SplTokenAmount,
   tokens: SplTokenAmount,
+  printReceipt: boolean,
   seller?: PublicKey,
   associatedTokenAccount?: PublicKey,
 ): Promise<TransactionInstruction[]> => {
@@ -103,20 +104,22 @@ export const constructPrivateBidInstruction = async (
 
   instructions.push(buyInstruction);
 
-  const receipt = metaplex.auctionHouse().pdas().bidReceipt({
-    tradeState: buyerTradeState,
-  });
+  if (printReceipt) {
+    const receipt = metaplex.auctionHouse().pdas().bidReceipt({
+      tradeState: buyerTradeState,
+    });
 
-  instructions.push(
-    createPrintBidReceiptInstruction(
-      {
-        receipt,
-        bookkeeper: buyer,
-        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
-      },
-      { receiptBump: receipt.bump },
-    ),
-  );
+    instructions.push(
+      createPrintBidReceiptInstruction(
+        {
+          receipt,
+          bookkeeper: buyer,
+          instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+        },
+        { receiptBump: receipt.bump },
+      ),
+    );
+  }
 
   if (!tokenAccount) {
     const account = await metaplex.rpc().getAccount(buyerTokenAccount);

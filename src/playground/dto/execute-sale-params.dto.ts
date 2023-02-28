@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsBooleanString, IsOptional, IsString } from 'class-validator';
 
 export class ExecuteSaleParams {
   @IsString()
@@ -6,4 +6,8 @@ export class ExecuteSaleParams {
 
   @IsString()
   bidReceipt: string;
+
+  @IsBooleanString()
+  @IsOptional()
+  printReceipt?: string;
 }

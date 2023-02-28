@@ -78,9 +78,9 @@ export class HeliusService {
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
           case TransactionType.NFT_MINT:
-            return this.mintAction(transaction);
+            return this.handleMintEvent(transaction);
           case TransactionType.ANY:
-            return this.updateComicIssueNfts(transaction);
+            return this.handleNftTransfer(transaction);
           default:
             return;
         }
@@ -88,12 +88,12 @@ export class HeliusService {
     );
   }
 
-  private updateComicIssueNfts(enrichedTransaction: EnrichedTransaction) {
+  private handleNftTransfer(enrichedTransaction: EnrichedTransaction) {
     console.log('update comic issue nfts', enrichedTransaction);
     // owner has changed, update owner?
   }
 
-  private async mintAction(enrichedTransaction: EnrichedTransaction) {
+  private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
 
