@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletComic } from '@prisma/client';
-import {
-  getRandomFloatOrInt,
-  getRandomInt,
-  mockPromise,
-} from 'src/utils/helpers';
+import { getRandomFloatOrInt, mockPromise } from 'src/utils/helpers';
 import { ComicStats } from './types/comic-stats';
 import { PickByType } from 'src/types/shared';
 
@@ -75,13 +71,13 @@ export class WalletComicService {
     ]);
 
     return {
-      averageRating: aggregations._avg.rating || getRandomFloatOrInt(2, 5),
-      ratersCount: aggregations._count || getRandomInt(1, 60),
-      favouritesCount: favouritesCount || getRandomInt(1, 3000),
-      subscribersCount: subscribersCount || getRandomInt(1, 1000),
-      issuesCount: issuesCount || getRandomInt(1, 20),
-      readersCount: readersCount || getRandomInt(1, 7000),
-      viewersCount: viewersCount || getRandomInt(1, 20000),
+      averageRating: aggregations._avg.rating,
+      ratersCount: aggregations._count,
+      favouritesCount: favouritesCount,
+      subscribersCount: subscribersCount,
+      issuesCount: issuesCount,
+      readersCount: readersCount,
+      viewersCount: viewersCount,
       totalVolume: totalVolume,
     };
   }
