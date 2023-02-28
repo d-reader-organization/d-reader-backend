@@ -37,10 +37,11 @@ export class WalletUpdateGuard implements CanActivate {
     }
 
     if (!user) return false;
-    else if (wallet.role === Role.Superadmin) {
-      throw new ForbiddenException('Cannot update wallet with Superadmin role');
-    } else if (user.role === Role.Superadmin) return true;
-    else if (user.address === wallet.address) return true;
-    else throw new ForbiddenException("You don't own this wallet");
+    return true;
+    // else if (wallet.role === Role.Superadmin) {
+    //   throw new ForbiddenException('Cannot update wallet with Superadmin role');
+    // } else if (user.role === Role.Superadmin) return true;
+    // else if (user.address === wallet.address) return true;
+    // else throw new ForbiddenException("You don't own this wallet");
   }
 }
