@@ -84,7 +84,15 @@ export class CreatorService {
         verifiedAt: { not: null },
       },
     });
-    return creators;
+    const mappedCreators = await Promise.all(
+      creators.map(async (creator) => ({
+        ...creator,
+        creatorStats: await this.walletCreatorService.aggregateCreatorStats(
+          creator.slug,
+        ),
+      })),
+    );
+    return mappedCreators;
   }
 
   async findOne(slug: string, walletAddress: string) {
