@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from 'src/auction-house/auction-house.service';
-import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
 import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
