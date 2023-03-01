@@ -5,6 +5,6 @@ import { HeliusService } from 'src/webhooks/helius/helius.service';
 
 @Module({
   controllers: [CandyMachineController],
-  providers: [CandyMachineService,HeliusService],
+  providers: [CandyMachineService, HeliusService],
 })
 export class CandyMachineModule {}
