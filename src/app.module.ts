@@ -17,7 +17,6 @@ import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
 import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
-import { PlaygroundModule } from './playground/playground.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
@@ -52,7 +51,6 @@ import { AuctionHouseModule } from './auction-house/auction-house.module';
     MailModule,
     GenreModule,
     NewsletterModule,
-    PlaygroundModule,
     WebhooksModule,
     CandyMachineModule,
     AuctionHouseModule,
