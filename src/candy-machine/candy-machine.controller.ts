@@ -10,7 +10,7 @@ import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
-@ApiTags('Launchpad')
+@ApiTags('Candy Machine')
 @Controller('candy-machine')
 export class CandyMachineController {
   constructor(

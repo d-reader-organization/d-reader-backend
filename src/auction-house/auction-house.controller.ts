@@ -12,7 +12,7 @@ import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
-@ApiTags('MarketPlace')
+@ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {
   constructor(
