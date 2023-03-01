@@ -26,7 +26,7 @@ import { chunk } from 'lodash';
 import { sleep } from 'src/utils/helpers';
 import { streamToString } from 'src/utils/files';
 import { Readable } from 'stream';
-import { constructMintInstruction } from './instructions';
+import { constructMintInstruction } from '../auction-house/instructions';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { heliusClusterApiUrl } from 'helius-sdk';
 
