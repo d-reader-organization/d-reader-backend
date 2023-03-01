@@ -21,7 +21,7 @@ import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
-import { CandyMachineService } from 'src/vendors/candy-machine.service';
+import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
 import { subDays } from 'date-fns';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 
