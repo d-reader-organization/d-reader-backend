@@ -13,7 +13,6 @@ import { MailModule } from './mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TasksService } from './vendors/task.service';
 import { SecurityConfig } from 'src/configs/config.interface';
 import config from './configs/config';
 import { GenreModule } from './genre/genre.module';
@@ -59,6 +58,6 @@ import { AuctionHouseModule } from './auction-house/auction-house.module';
     AuctionHouseModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TasksService],
+  providers: [AppService],
 })
 export class AppModule {}
