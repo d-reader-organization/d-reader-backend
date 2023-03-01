@@ -1,3 +1,3 @@
 export * from './list';
-export * from './mint';
+export * from '../../candy-machine/instructions/mint';
 export * from './bid';

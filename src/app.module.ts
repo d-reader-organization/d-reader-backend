@@ -20,6 +20,7 @@ import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { CandyMachineModule } from './candy-machine/candy-machine.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     NewsletterModule,
     PlaygroundModule,
     WebhooksModule,
+    CandyMachineModule
   ],
   controllers: [AppController],
   providers: [AppService, TasksService],

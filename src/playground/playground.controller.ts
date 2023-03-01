@@ -7,7 +7,7 @@ import { CandyMachineService } from 'src/vendors/candy-machine.service';
 import { Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
-import { MintOneParams } from './dto/mint-one-params.dto';
+import { MintOneParams } from '../candy-machine/dto/mint-one-params.dto';
 import { ListParams } from './dto/list-params.dto';
 import { PrivateBidParams } from './dto/private-bid-params.dto';
 import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
