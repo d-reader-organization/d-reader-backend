@@ -79,7 +79,7 @@ export class HeliusService {
         switch (transaction.type) {
           case TransactionType.NFT_MINT:
             return this.handleMintEvent(transaction);
-          case TransactionType.ANY:
+          case TransactionType.TRANSFER:
             return this.handleNftTransfer(transaction);
           default:
             return;
@@ -88,9 +88,41 @@ export class HeliusService {
     );
   }
 
-  private handleNftTransfer(enrichedTransaction: EnrichedTransaction) {
-    console.log('update comic issue nfts', enrichedTransaction);
-    // owner has changed, update owner?
+  private async handleNftTransfer(enrichedTransaction: EnrichedTransaction) {
+    try {
+      const tokenTransfers = enrichedTransaction.tokenTransfers[0];
+      const address = tokenTransfers.mint;
+      const previousOwner = tokenTransfers.fromUserAccount;
+      const owner = tokenTransfers.toUserAccount;
+
+      const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+
+      await this.prisma.nft.update({
+        where: { address },
+        data: {
+          owner,
+        },
+      });
+
+      const { value } = await this.metaplex.rpc().confirmTransaction(
+        enrichedTransaction.signature,
+        {
+          ...latestBlockhash,
+        },
+        'finalized',
+      );
+
+      if (!!value.err) {
+        await this.prisma.nft.update({
+          where: { address },
+          data: {
+            owner: previousOwner,
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
