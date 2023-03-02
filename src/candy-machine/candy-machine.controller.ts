@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -7,6 +7,7 @@ import { CandyMachineService } from './candy-machine.service';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { Wallet } from '@prisma/client';
+import { CandyMachineReceiptParams } from './dto/candy-machine-receipts.dto';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -47,5 +48,15 @@ export class CandyMachineController {
       publicKey,
       query.candyMachineAddress,
     );
+  }
+
+  @Get('get/receipts')
+  async findReceipts(@Query() query: CandyMachineReceiptParams) {
+    return await this.candyMachineService.findReceipts(query);
+  }
+
+  @Get('get/:address')
+  async findByAddress(@Param('address') address: string) {
+    return await this.candyMachineService.findByAddress(address);
   }
 }
