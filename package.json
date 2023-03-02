@@ -24,7 +24,8 @@
     "seed": "npx prisma db seed",
     "generate-env": "npx ts-node src/cli/main.ts generate-env",
     "airdrop-sol": "npx ts-node src/cli/main.ts airdrop-sol",
-    "authorize-wallet": "npx ts-node src/cli/main.ts authorize-wallet"
+    "authorize-wallet": "npx ts-node src/cli/main.ts authorize-wallet",
+    "mint-one": "npx ts-node src/cli/main.ts mint-one"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

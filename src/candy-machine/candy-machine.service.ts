@@ -22,72 +22,33 @@ import {
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
-import { getS3Object, s3Client } from 'src/aws/s3client';
+import { getS3Object, s3Client } from '../aws/s3client';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
+import { sleep } from '../utils/helpers';
+import { streamToString } from '../utils/files';
+import { constructMintInstruction } from './instructions';
+import { HeliusService } from '../webhooks/helius/helius.service';
+import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
+import { heliusClusterApiUrl } from 'helius-sdk';
+import { Readable } from 'stream';
+import { chunk } from 'lodash';
 import * as bs58 from 'bs58';
 import * as path from 'path';
-import { chunk } from 'lodash';
-import { sleep } from 'src/utils/helpers';
-import { streamToString } from 'src/utils/files';
-import { Readable } from 'stream';
-import { constructMintInstruction } from './instructions';
-import { HeliusService } from 'src/webhooks/helius/helius.service';
-import { heliusClusterApiUrl } from 'helius-sdk';
-import { CandyMachineReceiptParams } from './dto/candy-machine-receipts.dto';
-
-const MAX_NAME_LENGTH = 32;
-const MAX_URI_LENGTH = 200;
-const MAX_SYMBOL_LENGTH = 10;
-const MAX_CREATOR_LEN = 32 + 1 + 1;
-const MAX_CREATOR_LIMIT = 5;
-const MAX_DATA_SIZE =
-  4 +
-  MAX_NAME_LENGTH +
-  4 +
-  MAX_SYMBOL_LENGTH +
-  4 +
-  MAX_URI_LENGTH +
-  2 +
-  1 +
-  4 +
-  MAX_CREATOR_LIMIT * MAX_CREATOR_LEN;
-const MAX_METADATA_LEN = 1 + 32 + 32 + MAX_DATA_SIZE + 1 + 1 + 9 + 172;
-const CREATOR_ARRAY_START =
-  1 +
-  32 +
-  32 +
-  4 +
-  MAX_NAME_LENGTH +
-  4 +
-  MAX_URI_LENGTH +
-  4 +
-  MAX_SYMBOL_LENGTH +
-  2 +
-  1 +
-  4;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const D_READER_SYMBOL = 'dReader';
-const D_PUBLISHER_SYMBOL = 'dPublisher';
-
-const D_READER_FRONTEND_URL = 'https://dreader.app';
-
-const SECONDARY_SALE_TAX = 800; // 8%
-const HUNDRED = 100;
-const HUNDRED_PERCENT_TAX = 10000;
-
-// v2: in the future this will vary 10-20% depending on the type of comic
-// we will have to create a simple function with a switch case `calculatePublisherCut`
-const D_PUBLISHER_PRIMARY_SALE_SHARE = 10;
-const D_PUBLISHER_SECONDARY_SALE_SHARE = 25;
-
-/** @deprecated */
-// const GLOBAL_BOT_TAX = 0.01;
-
-const STATE_TRAIT = 'state';
-const SIGNED_TRAIT = 'signed';
-const DEFAULT_COMIC_ISSUE_STATE = 'mint';
-const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
+import {
+  MAX_METADATA_LEN,
+  CREATOR_ARRAY_START,
+  D_PUBLISHER_SYMBOL,
+  SECONDARY_SALE_TAX,
+  D_PUBLISHER_PRIMARY_SALE_SHARE,
+  HUNDRED,
+  HUNDRED_PERCENT_TAX,
+  D_READER_FRONTEND_URL,
+  USED_TRAIT,
+  DEFAULT_COMIC_ISSUE_USED,
+  SIGNED_TRAIT,
+  DEFAULT_COMIC_ISSUE_IS_SIGNED,
+  D_PUBLISHER_SECONDARY_SALE_SHARE,
+} from 'src/constants';
 
 @Injectable()
 export class CandyMachineService {
@@ -331,6 +292,7 @@ export class CandyMachineService {
                 share: HUNDRED_PERCENT_TAX,
               },
             ],
+            // TODO v2: add 4 images here, for 4 different stats
             files: [
               {
                 uri: coverImage,
@@ -372,8 +334,8 @@ export class CandyMachineService {
         external_url: D_READER_FRONTEND_URL,
         attributes: [
           {
-            trait_type: STATE_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_STATE,
+            trait_type: USED_TRAIT,
+            value: DEFAULT_COMIC_ISSUE_USED,
           },
           {
             trait_type: SIGNED_TRAIT,
@@ -391,6 +353,7 @@ export class CandyMachineService {
               share: HUNDRED - D_PUBLISHER_SECONDARY_SALE_SHARE,
             },
           ],
+          // TODO v2: add 4 images here, for 4 different stats
           files: [
             {
               uri: coverImage,
@@ -414,12 +377,12 @@ export class CandyMachineService {
 
   async constructMintOneTransaction(
     feePayer: PublicKey,
-    candyMachineAddress: string,
+    candyMachineAddress: PublicKey,
   ) {
     const mint = Keypair.generate();
     const candyMachine = await this.metaplex
       .candyMachines()
-      .findByAddress({ address: new PublicKey(candyMachineAddress) });
+      .findByAddress({ address: candyMachineAddress });
     const mintInstructions = await constructMintInstruction(
       this.metaplex,
       candyMachine.address,
@@ -466,11 +429,13 @@ export class CandyMachineService {
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
-    return await this.prisma.candyMachineReceipt.findMany({
+    const receipts = await this.prisma.candyMachineReceipt.findMany({
       skip: query.skip,
       take: query.take,
       where: { candyMachineAddress: query.candyMachineAddress },
     });
+
+    return receipts;
   }
 
   async generateMetaplexFileFromS3(key: string) {

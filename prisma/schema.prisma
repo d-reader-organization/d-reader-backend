@@ -45,7 +45,7 @@ model Creator {
   flavorText       String          @default("")
   website          String          @default("")
   // twitter          String    @default("")
-  // instagram          String    @default("")
+  // instagram        String    @default("")
   createdAt        DateTime        @default(now())
   deletedAt        DateTime?
   featuredAt       DateTime?
@@ -146,15 +146,15 @@ model ComicIssue {
 }
 
 model Nft {
-  address              String                @id
+  address              String               @id
   uri                  String
   name                 String
   owner                String
-  candyMachine         CandyMachine          @relation(fields: [candyMachineAddress], references: [address])
+  candyMachine         CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress  String
-  collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
+  collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
-  candyMachineReceipt  CandyMachineReceipt[]
+  receipt              CandyMachineReceipt?
 }
 
 model CandyMachine {
@@ -170,15 +170,14 @@ model CandyMachine {
 }
 
 model CandyMachineReceipt {
-  id                  Int          @id @default(autoincrement())
+  nftAddress          String       @id
+  nft                 Nft          @relation(fields: [nftAddress], references: [address])
   buyer               String
   price               Float
   timestamp           DateTime
   description         String
   candyMachine        CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
   candyMachineAddress String
-  nft                 Nft          @relation(fields: [nftAddress], references: [address], onDelete: Cascade)
-  nftAddress          String
 }
 
 // TODO ComicCollectionNft

@@ -20,6 +20,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
+import { NftModule } from './nft/nft.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AuctionHouseModule } from './auction-house/auction-house.module';
     WebhooksModule,
     CandyMachineModule,
     AuctionHouseModule,
+    NftModule,
   ],
   controllers: [AppController],
   providers: [AppService],

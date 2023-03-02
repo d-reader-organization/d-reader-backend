@@ -138,7 +138,7 @@ Table Nft {
   candyMachineAddress String [not null]
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
-  candyMachineReceipt CandyMachineReceipt [not null]
+  receipt CandyMachineReceipt
 }
 
 Table CandyMachine {
@@ -154,15 +154,14 @@ Table CandyMachine {
 }
 
 Table CandyMachineReceipt {
-  id Int [pk, increment]
+  nftAddress String [pk]
+  nft Nft [not null]
   buyer String [not null]
   price Float [not null]
   timestamp DateTime [not null]
   description String [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
-  nft Nft [not null]
-  nftAddress String [not null]
 }
 
 Table CollectionNft {
@@ -267,9 +266,9 @@ Ref: Nft.candyMachineAddress > CandyMachine.address
 
 Ref: Nft.collectionNftAddress > CollectionNft.address
 
-Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
+Ref: CandyMachineReceipt.nftAddress - Nft.address
 
-Ref: CandyMachineReceipt.nftAddress > Nft.address [delete: Cascade]
+Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
 
 Ref: CollectionNft.comicIssueId - ComicIssue.id
 

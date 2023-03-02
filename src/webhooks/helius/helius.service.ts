@@ -183,12 +183,12 @@ export class HeliusService {
       };
       await this.prisma.candyMachineReceipt.create({
         data: {
+          nftAddress: mint.toBase58(),
           buyer: nftTransactionInfo.buyer,
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp),
           description: enrichedTransaction.description,
           candyMachineAddress,
-          nftAddress: mint.toBase58(),
         },
       });
     } catch (error) {

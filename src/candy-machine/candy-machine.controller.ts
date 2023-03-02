@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -7,9 +7,14 @@ import { CandyMachineService } from './candy-machine.service';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { Wallet } from '@prisma/client';
-import { CandyMachineReceiptParams } from './dto/candy-machine-receipts.dto';
+import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
+import { CandyMachineUpdateGuard } from 'src/guards/candy-machine-update.guard';
+import {
+  CandyMachineReceiptDto,
+  toCMReceiptDtoArray,
+} from './dto/candy-machine-receipt.dto';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, CandyMachineUpdateGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
@@ -26,7 +31,7 @@ export class CandyMachineController {
     );
   }
 
-  @Get('create-candy-machine')
+  @Post('create-candy-machine')
   async createCandyMachine() {
     const comic = await this.prisma.comic.findFirst();
     const comicIssue = await this.prisma.comicIssue.findFirst();
@@ -44,18 +49,23 @@ export class CandyMachineController {
     @Query() query: MintOneParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
+    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
     return await this.candyMachineService.constructMintOneTransaction(
       publicKey,
-      query.candyMachineAddress,
+      candyMachineAddress,
     );
   }
 
   @Get('get/receipts')
-  async findReceipts(@Query() query: CandyMachineReceiptParams) {
-    return await this.candyMachineService.findReceipts(query);
+  async findReceipts(
+    @Query() query: CandyMachineReceiptParams,
+  ): Promise<CandyMachineReceiptDto[]> {
+    const receipts = await this.candyMachineService.findReceipts(query);
+    return await toCMReceiptDtoArray(receipts);
   }
 
   @Get('get/:address')
+  // TODO: create DTO for these `CandyMachineDto` like we do it with wallets
   async findByAddress(@Param('address') address: string) {
     return await this.candyMachineService.findByAddress(address);
   }
