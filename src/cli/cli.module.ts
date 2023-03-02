@@ -11,6 +11,10 @@ import config from '../configs/config';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from '../auth/auth.module';
 import { SecurityConfig } from '../configs/config.interface';
+import { MintOneCommand } from './mint-one-command';
+import { MintOneQuestions } from './mint-one-questions';
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { HeliusService } from '../webhooks/helius/helius.service';
 
 @Module({
   imports: [
@@ -35,6 +39,10 @@ import { SecurityConfig } from '../configs/config.interface';
     AirdropSolCommand,
     AirdropQuestions,
     AuthorizeWalletCommand,
+    MintOneCommand,
+    MintOneQuestions,
+    CandyMachineService,
+    HeliusService,
   ],
 })
 export class CLIModule {}

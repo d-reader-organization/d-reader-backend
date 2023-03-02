@@ -2,23 +2,20 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
-import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { ListParams } from './dto/list-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { PrivateBidParams } from './dto/private-bid-params.dto';
 import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
+import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, AuctionHouseGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {
-  constructor(
-    private readonly auctionHouseService: AuctionHouseService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
   @Get('/transactions/construct/list')
   async constructListTransaction(

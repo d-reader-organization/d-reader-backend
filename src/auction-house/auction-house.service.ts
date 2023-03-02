@@ -6,7 +6,6 @@ import {
   PublicKey,
   Transaction,
 } from '@solana/web3.js';
-import { PrismaService } from 'nestjs-prisma';
 import {
   IdentitySigner,
   keypairIdentity,
@@ -27,7 +26,7 @@ export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private auctionHouseAddress: PublicKey;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor() {
     const endpoint = heliusClusterApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
