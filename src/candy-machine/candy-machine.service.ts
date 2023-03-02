@@ -466,19 +466,11 @@ export class CandyMachineService {
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
-    const receipts = await this.prisma.candyMachineReceipt.findMany({
+    return await this.prisma.candyMachineReceipt.findMany({
       skip: query.skip,
       take: query.take,
       where: { candyMachineAddress: query.candyMachineAddress },
     });
-
-    if (!receipts || !receipts.length) {
-      throw new NotFoundException(
-        `Receipts with Candy Machine address ${query.candyMachineAddress} does not exist`,
-      );
-    }
-
-    return receipts;
   }
 
   async generateMetaplexFileFromS3(key: string) {
