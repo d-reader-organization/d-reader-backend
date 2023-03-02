@@ -7,6 +7,7 @@ import { CandyMachineService } from './candy-machine.service';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { Wallet } from '@prisma/client';
+import { CandyMachineReceiptParams } from './dto/candy-machine-receipts.dto';
 
 @UseGuards(RestAuthGuard)
 @ApiBearerAuth('JWT-auth')
@@ -47,6 +48,11 @@ export class CandyMachineController {
       publicKey,
       query.candyMachineAddress,
     );
+  }
+
+  @Get('get/receipts')
+  async findReceipts(@Query() query: CandyMachineReceiptParams) {
+    return await this.candyMachineService.findReceipts(query);
   }
 
   @Get('get/:address')
