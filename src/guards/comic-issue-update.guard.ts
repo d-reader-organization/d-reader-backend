@@ -18,11 +18,14 @@ export class ComicIssueUpdateGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const { user, params, method } = request;
+    const { user, params, method, path } = request;
 
     // If reading or creating new Creator entities, allow
     if (method.toLowerCase() === 'get') return true;
     else if (method.toLowerCase() === 'post') return true;
+    else if (path.includes('/comic-issue/favouritise')) {
+      return true;
+    }
 
     const { id } = params;
     if (!id) return true;
