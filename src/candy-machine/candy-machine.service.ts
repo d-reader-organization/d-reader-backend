@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Cluster,
   Connection,
@@ -29,6 +33,7 @@ import { Readable } from 'stream';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { heliusClusterApiUrl } from 'helius-sdk';
+import { CandyMachineReceiptParams } from './dto/candy-machine-receipts.dto';
 
 const MAX_NAME_LENGTH = 32;
 const MAX_URI_LENGTH = 200;
@@ -444,6 +449,28 @@ export class CandyMachineService {
     });
 
     return rawTransaction.toString('base64');
+  }
+
+  async findByAddress(address: string) {
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address },
+    });
+
+    if (!candyMachine) {
+      throw new NotFoundException(
+        `Candy Machine with address ${address} does not exist`,
+      );
+    }
+
+    return candyMachine;
+  }
+
+  async findReceipts(query: CandyMachineReceiptParams) {
+    return await this.prisma.candyMachineReceipt.findMany({
+      skip: query.skip,
+      take: query.take,
+      where: { candyMachineAddress: query.candyMachineAddress },
+    });
   }
 
   async generateMetaplexFileFromS3(key: string) {
