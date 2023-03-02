@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -47,5 +47,10 @@ export class CandyMachineController {
       publicKey,
       query.candyMachineAddress,
     );
+  }
+
+  @Get('get/:address')
+  async findByAddress(@Param('address') address: string) {
+    return await this.candyMachineService.findByAddress(address);
   }
 }

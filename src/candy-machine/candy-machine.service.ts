@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Cluster,
   Connection,
@@ -444,6 +448,20 @@ export class CandyMachineService {
     });
 
     return rawTransaction.toString('base64');
+  }
+
+  async findByAddress(address: string) {
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address },
+    });
+
+    if (!candyMachine) {
+      throw new NotFoundException(
+        `Candy Machine with address ${address} does not exist`,
+      );
+    }
+
+    return candyMachine;
   }
 
   async generateMetaplexFileFromS3(key: string) {
