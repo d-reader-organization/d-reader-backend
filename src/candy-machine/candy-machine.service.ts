@@ -226,6 +226,8 @@ export class CandyMachineService {
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
         itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
+        baseMintPrice: comicIssue.mintPrice,
+        endsAt: undefined,
       },
     });
 
@@ -430,9 +432,10 @@ export class CandyMachineService {
 
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
+      where: { candyMachineAddress: query.candyMachineAddress },
+      include: { nft: true, buyer: true },
       skip: query.skip,
       take: query.take,
-      where: { candyMachineAddress: query.candyMachineAddress },
     });
 
     return receipts;

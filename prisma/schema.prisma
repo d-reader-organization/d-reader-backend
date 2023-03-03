@@ -12,18 +12,20 @@ generator dbml {
 }
 
 model Wallet {
-  address       String             @id
-  label         String             @default("")
-  avatar        String             @default("")
-  createdAt     DateTime           @default(now())
+  address       String                @id
+  label         String                @default("")
+  avatar        String                @default("")
+  createdAt     DateTime              @default(now())
   lastLogin     DateTime?
-  nonce         String             @unique @default(uuid())
-  role          Role               @default(User)
+  nonce         String                @unique @default(uuid())
+  role          Role                  @default(User)
   creator       Creator?
   comics        WalletComic[]
   comicIssues   WalletComicIssue[]
   newsletter    Newsletter?
   walletCreator WalletCreator[]
+  mintReceipts  CandyMachineReceipt[]
+  nfts          Nft[]
 }
 
 enum Role {
@@ -149,7 +151,8 @@ model Nft {
   address              String               @id
   uri                  String
   name                 String
-  owner                String
+  owner                Wallet               @relation(fields: [ownerAddress], references: [address])
+  ownerAddress         String
   candyMachine         CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress  String
   collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
@@ -165,6 +168,8 @@ model CandyMachine {
   itemsRemaining       Int
   itemsLoaded          Int
   isFullyLoaded        Boolean
+  endsAt               DateTime?
+  baseMintPrice        Float
   items                Nft[]
   receipts             CandyMachineReceipt[]
 }
@@ -172,7 +177,8 @@ model CandyMachine {
 model CandyMachineReceipt {
   nftAddress          String       @id
   nft                 Nft          @relation(fields: [nftAddress], references: [address])
-  buyer               String
+  buyer               Wallet       @relation(fields: [buyerAddress], references: [address])
+  buyerAddress        String
   price               Float
   timestamp           DateTime
   description         String
