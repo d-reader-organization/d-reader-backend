@@ -150,6 +150,22 @@ export class ComicIssueService {
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
+
+    const { candyMachineAddress } = await this.prisma.nft.findFirst({
+      where: {
+        collectionNft: { comicIssueId: id },
+        candyMachine: {
+          itemsRemaining: {
+            gt: 0,
+          },
+        },
+      },
+      distinct: ['candyMachineAddress'],
+      select: {
+        candyMachineAddress: true,
+      },
+    });
+
     const { stats, myStats } = await this.walletComicIssueService.aggregateAll(
       id,
       comicIssue.comicSlug,
@@ -161,7 +177,12 @@ export class ComicIssueService {
       id,
       'viewedAt',
     );
-    return { ...comicIssue, stats, myStats: { ...myStats, canRead } };
+    return {
+      ...comicIssue,
+      stats,
+      myStats: { ...myStats, canRead },
+      candyMachineAddress,
+    };
   }
 
   async getPages(comicIssueId: number, walletAddress: string) {
