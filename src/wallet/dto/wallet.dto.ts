@@ -1,4 +1,4 @@
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -12,7 +12,7 @@ export class WalletDto {
   @IsString()
   label: string;
 
-  @IsString()
+  @IsUrl()
   avatar: string;
 
   @IsEnum(Role)

@@ -1,42 +1,66 @@
-import { IsDateString, IsNumber, IsString } from 'class-validator';
+import { IsDateString, IsNumber, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { plainToInstance } from 'class-transformer';
-import { CandyMachineReceipt } from '@prisma/client';
+import { plainToInstance, Type } from 'class-transformer';
+import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
+import { getReadUrl } from 'src/aws/s3client';
+
+class ReceiptNftDto {
+  @IsSolanaAddress()
+  address: string;
+
+  @IsString()
+  name: string;
+}
+
+class ReceiptBuyerDto {
+  @IsSolanaAddress()
+  address: string;
+
+  @IsUrl()
+  avatar: string;
+
+  @IsString()
+  label: string;
+}
 
 export class CandyMachineReceiptDto {
-  @IsSolanaAddress()
-  nftAddress: string;
+  @Type(() => ReceiptNftDto)
+  nft: ReceiptNftDto;
 
-  @IsSolanaAddress()
-  candyMachineAddress: string;
-
-  @IsSolanaAddress()
-  buyer: string;
+  @Type(() => ReceiptBuyerDto)
+  buyer: ReceiptBuyerDto;
 
   @IsNumber()
   price: number;
 
   @IsDateString()
   timestamp: string;
-
-  @IsString()
-  description: string;
 }
 
-export async function toCMReceiptDto(receipt: CandyMachineReceipt) {
+type CandyMachineReceiptInput = CandyMachineReceipt & {
+  nft: Nft;
+  buyer: Wallet;
+};
+
+export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
   const plainReceiptDto: CandyMachineReceiptDto = {
-    nftAddress: receipt.nftAddress,
-    candyMachineAddress: receipt.candyMachineAddress,
-    buyer: receipt.buyer,
+    nft: {
+      address: receipt.nft.address,
+      name: receipt.nft.name,
+    },
+    buyer: {
+      address: receipt.buyer.address,
+      avatar: await getReadUrl(receipt.buyer.avatar),
+      label: receipt.buyer.label,
+    },
     price: receipt.price,
     timestamp: receipt.timestamp.toISOString(),
-    description: receipt.description,
   };
 
   const receiptDto = plainToInstance(CandyMachineReceiptDto, plainReceiptDto);
   return receiptDto;
 }
 
-export const toCMReceiptDtoArray = (receipts: CandyMachineReceipt[]) => {
+export const toCMReceiptDtoArray = (receipts: CandyMachineReceiptInput[]) => {
   return Promise.all(receipts.map(toCMReceiptDto));
 };
