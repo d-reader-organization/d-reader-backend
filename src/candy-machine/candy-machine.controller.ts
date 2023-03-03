@@ -13,6 +13,7 @@ import {
   CandyMachineReceiptDto,
   toCMReceiptDtoArray,
 } from './dto/candy-machine-receipt.dto';
+import { CandyMachineDto, toCandyMachineDto } from './dto/candy-machine.dto';
 
 @UseGuards(RestAuthGuard, CandyMachineUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -65,8 +66,10 @@ export class CandyMachineController {
   }
 
   @Get('get/:address')
-  // TODO: create DTO for these `CandyMachineDto` like we do it with wallets
-  async findByAddress(@Param('address') address: string) {
-    return await this.candyMachineService.findByAddress(address);
+  async findByAddress(
+    @Param('address') address: string,
+  ): Promise<CandyMachineDto> {
+    const candyMachine = await this.candyMachineService.findByAddress(address);
+    return await toCandyMachineDto(candyMachine);
   }
 }
