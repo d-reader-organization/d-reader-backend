@@ -178,7 +178,7 @@ export class ComicIssueService {
   ): Promise<boolean | undefined> {
     // find all NFTs that token gate the comic issue and are owned by the wallet
     const ownedComicIssues = await this.prisma.nft.findMany({
-      where: { collectionNft: { comicIssueId }, owner: walletAddress },
+      where: { collectionNft: { comicIssueId }, ownerAddress: walletAddress },
     });
 
     // if wallet does not own the issue, see if it's whitelisted per comic issue basis

@@ -66,7 +66,7 @@ export async function toNftDto(nft: Nft) {
     uri: nft.uri,
     image: offChainMetadataJson.image,
     name: nft.name,
-    owner: nft.owner,
+    owner: nft.ownerAddress,
     royalties: offChainMetadataJson.seller_fee_basis_points / 100,
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
