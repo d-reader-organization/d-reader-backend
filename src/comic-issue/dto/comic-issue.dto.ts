@@ -107,6 +107,10 @@ export class ComicIssueDto {
   @IsOptional()
   @Type(() => PartialWalletComicIssueDto)
   myStats?: PartialWalletComicIssueDto;
+
+  @IsOptional()
+  @IsString()
+  candyMachineAddress?: string;
 }
 
 type ComicIssueInput = ComicIssue & {
@@ -114,6 +118,7 @@ type ComicIssueInput = ComicIssue & {
   pages?: ComicPage[];
   stats?: ComicIssueStats;
   myStats?: WalletComicIssueStats & { canRead: boolean };
+  candyMachineAddress?: string;
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
@@ -161,6 +166,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           viewedAt: issue.myStats.viewedAt,
         }
       : undefined,
+    candyMachineAddress: issue.candyMachineAddress ?? undefined,
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
