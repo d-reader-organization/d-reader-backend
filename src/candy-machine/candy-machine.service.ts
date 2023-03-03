@@ -9,6 +9,7 @@ import {
   Keypair,
   PublicKey,
   Transaction,
+  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -18,13 +19,13 @@ import {
   toBigNumber,
   toMetaplexFile,
   sol,
+  TransactionBuilder,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
 import { getS3Object, s3Client } from '../aws/s3client';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
-import { sleep } from '../utils/helpers';
 import { streamToString } from '../utils/files';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
@@ -167,7 +168,7 @@ export class CandyMachineService {
 
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
-        candyMachine: Keypair.generate(), // v2: prefix key with 'cndy'
+        candyMachine: Keypair.generate(),
         authority: this.metaplex.identity(),
         collection: {
           address: collectionNftAddress,
@@ -247,28 +248,41 @@ export class CandyMachineService {
       })),
     );
 
-    const INSERT_CHUNK_SIZE = 10;
+    const INSERT_CHUNK_SIZE = 9;
     const itemChunksOfTen = chunk(items, INSERT_CHUNK_SIZE);
     let iteration = 0;
-    // TODO: this most likely can't get executed in parallel but we can possibly take up more than 10 items per chunk
+    const transactionBuilders: TransactionBuilder[] = [];
     for (const itemsChunk of itemChunksOfTen) {
       console.log(
         `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
           (iteration + 1) * INSERT_CHUNK_SIZE - 1
         } `,
       );
-
-      await sleep(100); // to prevent API rate limiting on free RPC nodes, we can remove this in production
-      await this.metaplex.candyMachines().insertItems({
-        candyMachine: candyMachine,
-        index: iteration * INSERT_CHUNK_SIZE,
-        items: itemsChunk,
-      });
+      const transactionBuilder = this.metaplex
+        .candyMachines()
+        .builders()
+        .insertItems({
+          candyMachine: candyMachine,
+          index: iteration * INSERT_CHUNK_SIZE,
+          items: itemsChunk,
+        });
+      transactionBuilders.push(transactionBuilder);
       iteration = iteration + 1;
     }
 
-    this.heliusService.subscribeTo(candyMachine.address.toBase58());
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
+    await Promise.all(
+      transactionBuilders.map((transactionBuilder) => {
+        const transaction = transactionBuilder.toTransaction(latestBlockhash);
+        return sendAndConfirmTransaction(
+          this.metaplex.connection,
+          transaction,
+          [this.metaplex.identity()],
+        );
+      }),
+    );
 
+    this.heliusService.subscribeTo(candyMachine.address.toBase58());
     return await this.metaplex.candyMachines().refresh(candyMachine);
   }
 
