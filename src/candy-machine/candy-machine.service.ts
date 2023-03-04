@@ -49,7 +49,7 @@ import {
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
   D_PUBLISHER_SECONDARY_SALE_SHARE,
-} from 'src/constants';
+} from '../constants';
 
 @Injectable()
 export class CandyMachineService {
