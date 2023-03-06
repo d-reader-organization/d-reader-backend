@@ -26,6 +26,9 @@ export class NftDto {
   @IsString()
   name: string;
 
+  @IsString()
+  description: string;
+
   @IsSolanaAddress()
   owner: string;
 
@@ -66,6 +69,7 @@ export async function toNftDto(nft: Nft) {
     uri: nft.uri,
     image: offChainMetadataJson.image,
     name: nft.name,
+    description: offChainMetadataJson.description,
     owner: nft.ownerAddress,
     royalties: offChainMetadataJson.seller_fee_basis_points / 100,
     // candyMachineAddress: nft.candyMachineAddress,

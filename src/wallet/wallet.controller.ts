@@ -19,9 +19,10 @@ import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
-import { Wallet } from '@prisma/client';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
+import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
+import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -50,6 +51,15 @@ export class WalletController {
   async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
     const me = await this.walletService.findOne(wallet.address);
     return await toWalletDto(me);
+  }
+
+  /* Get all NFTs owned by the authorized wallet */
+  @Get('get/my-assets')
+  async findMyAssets(
+    @WalletEntity() wallet: Wallet,
+  ): Promise<WalletAssetDto[]> {
+    const assets = await this.walletService.findMyAssets(wallet.address);
+    return await toWalletAssetDtoArray(assets);
   }
 
   /* Get specific wallet by unique address */
