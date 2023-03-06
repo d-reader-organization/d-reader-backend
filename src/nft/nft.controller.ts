@@ -1,18 +1,8 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, Param } from '@nestjs/common';
 import { NftService } from './nft.service';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { NftDto, toNftDtoArray } from './dto/nft.dto';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Wallet } from '@prisma/client';
-import { Pagination } from 'src/types/pagination.dto';
+import { NftDto, toNftDto, toNftDtoArray } from './dto/nft.dto';
 import { NftFilterParams } from './dto/nft-filter-params.dto';
 
 @UseGuards(RestAuthGuard)
@@ -22,22 +12,17 @@ import { NftFilterParams } from './dto/nft-filter-params.dto';
 export class NftController {
   constructor(private readonly nftService: NftService) {}
 
-  /* Get all NFTs owned by the authorized wallet */
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Get('get/my-items')
-  async findMy(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: NftFilterParams,
-  ): Promise<NftDto[]> {
-    const nfts = await this.nftService.findAll(query, wallet.address);
+  /* Get all NFTs */
+  @Get('get')
+  async findAll(@Query() query: NftFilterParams): Promise<NftDto[]> {
+    const nfts = await this.nftService.findAll(query);
     return await toNftDtoArray(nfts);
   }
 
-  /* Get all NFTs */
-  @UseInterceptors(ClassSerializerInterceptor)
-  @Get('get')
-  async findAll(@Query() query: Pagination): Promise<NftDto[]> {
-    const nfts = await this.nftService.findAll(query);
-    return await toNftDtoArray(nfts);
+  /* Get specific NFT by unique on-chain address */
+  @Get('get/:address')
+  async findOne(@Param('address') address: string): Promise<NftDto> {
+    const nft = await this.nftService.findOne(address);
+    return await toNftDto(nft);
   }
 }

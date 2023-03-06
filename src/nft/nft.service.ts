@@ -6,9 +6,9 @@ import { NftFilterParams } from './dto/nft-filter-params.dto';
 export class NftService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query: NftFilterParams, address?: string) {
+  async findAll(query: NftFilterParams) {
     const nfts = await this.prisma.nft.findMany({
-      where: { ownerAddress: address },
+      where: { ownerAddress: query?.owner },
       skip: query?.skip,
       take: query?.take,
       orderBy: { name: 'asc' },

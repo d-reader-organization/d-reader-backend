@@ -50,6 +50,15 @@ export class WalletService {
     return wallet;
   }
 
+  async findMyAssets(address: string) {
+    const nfts = await this.prisma.nft.findMany({
+      where: { ownerAddress: address },
+      orderBy: { name: 'asc' },
+    });
+
+    return nfts;
+  }
+
   async update(address: string, updateWalletDto: UpdateWalletDto) {
     try {
       const updatedWallet = await this.prisma.wallet.update({
