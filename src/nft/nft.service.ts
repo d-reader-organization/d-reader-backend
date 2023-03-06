@@ -20,6 +20,13 @@ export class NftService {
   async findOne(address: string) {
     const nft = await this.prisma.nft.findUnique({
       where: { address },
+      include: {
+        collectionNft: {
+          include: {
+            comicIssue: true,
+          },
+        },
+      },
     });
 
     if (!nft) {

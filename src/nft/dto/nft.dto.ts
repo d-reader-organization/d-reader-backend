@@ -47,13 +47,22 @@ export class NftDto {
   @IsString()
   comicIssueName: string;
 
+  @IsNumber()
+  comicIssueId: number;
+
   @IsArray()
   @Type(() => NftAttributeDto)
   @ApiProperty({ type: [NftAttributeDto] })
   attributes: NftAttributeDto[];
 }
 
-export async function toNftDto(nft: Nft) {
+type NftInput = Nft & {
+  collectionNft?: {
+    comicIssueId?: number;
+  };
+};
+
+export async function toNftDto(nft: NftInput) {
   const getNftResponse = await axios.get<JsonMetadata>(nft.uri);
   const { data: offChainMetadataJson } = getNftResponse;
 
@@ -78,6 +87,7 @@ export async function toNftDto(nft: Nft) {
     isSigned: isNil(signedTrait) ? undefined : signedTrait.value === 'true',
     comicName: offChainMetadataJson.collection.family,
     comicIssueName: offChainMetadataJson.collection.name,
+    comicIssueId: nft.collectionNft.comicIssueId,
     attributes: offChainMetadataJson.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,
