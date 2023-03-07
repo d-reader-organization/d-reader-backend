@@ -9,6 +9,7 @@ import { PrivateBidParams } from './dto/private-bid-params.dto';
 import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
 import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
+import { CancelBidParams } from './dto/cancel-bid-params.dto';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard)
 @ApiBearerAuth('JWT-auth')
@@ -71,6 +72,14 @@ export class AuctionHouseController {
       listReceipt,
       bidReceipt,
       printReceipt,
+    );
+  }
+
+  @Get('/transactions/construct/cancel-bid')
+  async constructCancelBidTransaction(@Query() query: CancelBidParams) {
+    const receiptAddress = new PublicKey(query.receiptAddress);
+    return await this.auctionHouseService.constructCancelBidTransaction(
+      receiptAddress,
     );
   }
 }
