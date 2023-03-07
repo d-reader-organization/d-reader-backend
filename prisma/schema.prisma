@@ -170,6 +170,8 @@ model CandyMachine {
   isFullyLoaded        Boolean
   endsAt               DateTime?
   baseMintPrice        Float
+  collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
+  collectionNftAddress String
   items                Nft[]
   receipts             CandyMachineReceipt[]
 }
@@ -189,12 +191,13 @@ model CandyMachineReceipt {
 // TODO ComicCollectionNft
 
 model CollectionNft {
-  address         String     @id
+  address         String         @id
   uri             String
   name            String
-  comicIssue      ComicIssue @relation(fields: [comicIssueId], references: [id])
-  comicIssueId    Int        @unique
+  comicIssue      ComicIssue     @relation(fields: [comicIssueId], references: [id])
+  comicIssueId    Int            @unique
   collectionItems Nft[]
+  candyMachines   CandyMachine[]
 }
 
 model ComicPage {
