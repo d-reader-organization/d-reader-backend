@@ -3,6 +3,7 @@ import {
   Metaplex,
   PublicKey,
   SolAmount,
+  SplTokenAmount,
 } from '@metaplex-foundation/js';
 import {
   WithdrawInstructionAccounts,
@@ -10,11 +11,11 @@ import {
 } from '@metaplex-foundation/mpl-auction-house';
 import { TransactionInstruction } from '@solana/web3.js';
 
-export async function withdrawFromBuyerEscrow(
+export function withdrawFromBuyerEscrow(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   buyer: PublicKey,
-  amount: SolAmount,
+  amount: SolAmount | SplTokenAmount,
 ) {
   const amountBasisPoint = amount.basisPoints;
 

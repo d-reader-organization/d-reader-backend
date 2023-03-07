@@ -195,6 +195,7 @@ export class AuctionHouseService {
         .findBidByReceipt({ receiptAddress, auctionHouse });
 
       const cancelBidInstruction = constructCancelBidInstruction(
+        this.metaplex,
         bid,
         auctionHouse,
       );

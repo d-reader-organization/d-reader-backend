@@ -23,6 +23,7 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   TransactionInstruction,
 } from '@solana/web3.js';
+import { withdrawFromBuyerEscrow } from './withdrawFromBuyerEscrow';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -146,6 +147,7 @@ export const constructPrivateBidInstruction = async (
 };
 
 export function constructCancelBidInstruction(
+  metaplex: Metaplex,
   bid: Bid,
   auctionHouse: AuctionHouse,
 ): TransactionInstruction[] {
@@ -191,6 +193,9 @@ export function constructCancelBidInstruction(
       }),
     );
   }
+  instruction.push(
+    ...withdrawFromBuyerEscrow(metaplex, auctionHouse, buyerAddress, price),
+  );
 
   return instruction;
 }
