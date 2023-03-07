@@ -154,6 +154,8 @@ Table CandyMachine {
   isFullyLoaded Boolean [not null]
   endsAt DateTime
   baseMintPrice Float [not null]
+  collectionNft CollectionNft [not null]
+  collectionNftAddress String [not null]
   items Nft [not null]
   receipts CandyMachineReceipt [not null]
 }
@@ -177,6 +179,7 @@ Table CollectionNft {
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
   collectionItems Nft [not null]
+  candyMachines CandyMachine [not null]
 }
 
 Table ComicPage {
@@ -273,6 +276,8 @@ Ref: Nft.ownerAddress > Wallet.address
 Ref: Nft.candyMachineAddress > CandyMachine.address
 
 Ref: Nft.collectionNftAddress > CollectionNft.address
+
+Ref: CandyMachine.collectionNftAddress > CollectionNft.address
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 

@@ -222,6 +222,7 @@ export class CandyMachineService {
       data: {
         address: candyMachine.address.toBase58(),
         mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
+        collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
         itemsAvailable: candyMachine.itemsAvailable.toNumber(),
         itemsMinted: candyMachine.itemsMinted.toNumber(),
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
