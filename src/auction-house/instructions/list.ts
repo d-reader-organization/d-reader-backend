@@ -1,12 +1,17 @@
 import {
   AuctionHouse,
+  Listing,
   Metaplex,
+  Pda,
   SolAmount,
   SplTokenAmount,
   amount,
   lamports,
 } from '@metaplex-foundation/js';
 import {
+  CancelInstructionAccounts,
+  createCancelInstruction,
+  createCancelListingReceiptInstruction,
   createPrintListingReceiptInstruction,
   createSellInstruction,
 } from '@metaplex-foundation/mpl-auction-house';
@@ -117,6 +122,51 @@ export function constructListInstruction(
         },
         { receiptBump: receipt.bump },
       ),
+    );
+  }
+
+  return instructions;
+}
+
+export function constructCancelListingInstruction(
+  auctionHouse: AuctionHouse,
+  listing: Listing,
+) {
+  const {
+    asset,
+    sellerAddress,
+    receiptAddress,
+    tradeStateAddress,
+    price,
+    tokens,
+  } = listing;
+
+  const { address, authorityAddress, feeAccountAddress } = auctionHouse;
+
+  const accounts: CancelInstructionAccounts = {
+    wallet: sellerAddress,
+    tokenAccount: asset.token.address,
+    tokenMint: asset.address,
+    authority: authorityAddress,
+    auctionHouse: address,
+    auctionHouseFeeAccount: feeAccountAddress,
+    tradeState: tradeStateAddress,
+  };
+
+  const args = {
+    buyerPrice: price.basisPoints,
+    tokenSize: tokens.basisPoints,
+  };
+
+  const instructions: TransactionInstruction[] = [];
+  instructions.push(createCancelInstruction(accounts, args));
+
+  if (!!receiptAddress) {
+    instructions.push(
+      createCancelListingReceiptInstruction({
+        receipt: receiptAddress as Pda,
+        instruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+      }),
     );
   }
 
