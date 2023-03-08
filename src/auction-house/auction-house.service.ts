@@ -17,6 +17,7 @@ import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import {
   constructCancelBidInstruction,
+  constructCancelListingInstruction,
   constructListInstruction,
   constructPrivateBidInstruction,
 } from './instructions';
@@ -213,7 +214,37 @@ export class AuctionHouseService {
 
       return rawTransaction.toString('base64');
     } catch (e) {
-      console.log('Error while creating bidding transaction ', e);
+      console.log('Error while constructing cancel bid transaction ', e);
+    }
+  }
+
+  async constructCancelListingTransaction(receiptAddress: PublicKey) {
+    try {
+      const auctionHouse = await this.findOurAuctionHouse();
+
+      const listing = await this.metaplex
+        .auctionHouse()
+        .findListingByReceipt({ receiptAddress, auctionHouse });
+
+      const cancelBidInstruction = constructCancelListingInstruction(
+        listing,
+        auctionHouse,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const bidTransaction = new Transaction({
+        feePayer: listing.sellerAddress,
+        ...latestBlockhash,
+      }).add(...cancelBidInstruction);
+
+      const rawTransaction = bidTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+
+      return rawTransaction.toString('base64');
+    } catch (e) {
+      console.log('Error while constructing cancel listing transaction ', e);
     }
   }
 

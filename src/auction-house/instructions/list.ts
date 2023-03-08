@@ -129,8 +129,8 @@ export function constructListInstruction(
 }
 
 export function constructCancelListingInstruction(
-  auctionHouse: AuctionHouse,
   listing: Listing,
+  auctionHouse: AuctionHouse,
 ) {
   const {
     asset,
