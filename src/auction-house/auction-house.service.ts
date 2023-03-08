@@ -226,18 +226,18 @@ export class AuctionHouseService {
         .auctionHouse()
         .findListingByReceipt({ receiptAddress, auctionHouse });
 
-      const cancelBidInstruction = constructCancelListingInstruction(
+      const cancelListingTransaction = constructCancelListingInstruction(
         listing,
         auctionHouse,
       );
       const latestBlockhash =
         await this.metaplex.connection.getLatestBlockhash();
-      const bidTransaction = new Transaction({
+      const listingTransaction = new Transaction({
         feePayer: listing.sellerAddress,
         ...latestBlockhash,
-      }).add(...cancelBidInstruction);
+      }).add(...cancelListingTransaction);
 
-      const rawTransaction = bidTransaction.serialize({
+      const rawTransaction = listingTransaction.serialize({
         requireAllSignatures: false,
         verifySignatures: false,
       });
