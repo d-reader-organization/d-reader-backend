@@ -16,6 +16,7 @@ export class WalletComicIssueService {
   async aggregateComicIssueStats(
     id: number,
     comicSlug: string,
+    candyMachineAddress?: string,
   ): Promise<ComicIssueStats> {
     const aggregateQuery = this.prisma.walletComicIssue.aggregate({
       where: { comicIssueId: id },
@@ -50,7 +51,17 @@ export class WalletComicIssueService {
     // TODO: replace with real values
     const calculateTotalVolumeQuery = mockPromise(getRandomFloatOrInt(1, 1000));
     const calculateTotalListedQuery = mockPromise(getRandomInt(6, 14));
-    const calculateFloorPriceQuery = mockPromise(getRandomFloatOrInt(1, 20));
+    let calculatePriceQuery: Promise<number | { baseMintPrice: number }>;
+    if (candyMachineAddress) {
+      calculatePriceQuery = this.prisma.candyMachine.findFirst({
+        where: {
+          address: candyMachineAddress,
+        },
+        select: { baseMintPrice: true },
+      });
+    } else {
+      calculatePriceQuery = mockPromise(getRandomFloatOrInt(1, 20));
+    }
 
     try {
       const [
@@ -60,8 +71,8 @@ export class WalletComicIssueService {
         viewersCount,
         totalIssuesCount,
         totalVolume,
-        totalListedCount,
-        floorPrice,
+        _totalListedCount,
+        price,
         totalPagesCount,
       ] = await Promise.all([
         aggregateQuery,
@@ -71,7 +82,7 @@ export class WalletComicIssueService {
         countIssuesQuery,
         calculateTotalVolumeQuery,
         calculateTotalListedQuery,
-        calculateFloorPriceQuery,
+        calculatePriceQuery,
         countTotalPagesQuery,
       ]);
 
@@ -83,8 +94,7 @@ export class WalletComicIssueService {
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
         totalVolume,
-        totalListedCount,
-        floorPrice,
+        price: typeof price == 'number' ? price : price.baseMintPrice,
         totalPagesCount,
       };
     } catch (error) {
@@ -121,9 +131,18 @@ export class WalletComicIssueService {
     } else return walletComic;
   }
 
-  async aggregateAll(id: number, comicSlug: string, walletAddress?: string) {
+  async aggregateAll(
+    id: number,
+    comicSlug: string,
+    walletAddress?: string,
+    candyMachineAddress?: string,
+  ) {
     if (walletAddress) {
-      const getStatsPromise = this.aggregateComicIssueStats(id, comicSlug);
+      const getStatsPromise = this.aggregateComicIssueStats(
+        id,
+        comicSlug,
+        candyMachineAddress,
+      );
       const getWalletStatsPromise = this.findWalletComicIssueStats(
         id,
         walletAddress,

@@ -98,7 +98,10 @@ export class ComicIssueService {
 
   async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.comicIssue.findMany({
-      include: { comic: { include: { creator: true } } },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: { select: { address: true } },
+      },
       skip: query.skip,
       take: query.take,
       where: {
@@ -128,11 +131,24 @@ export class ComicIssueService {
 
     return await Promise.all(
       comicIssues.map(async (item) => {
+        let candyMachineAddress = undefined;
+        if (item.collectionNft) {
+          const candyMachine = await this.prisma.candyMachine.findFirst({
+            where: {
+              collectionNftAddress: item.collectionNft.address,
+              itemsRemaining: { gt: 0 },
+              endsAt: { gt: new Date() },
+            },
+            select: { address: true },
+          });
+          if (!!candyMachine) candyMachineAddress = candyMachine.address;
+        }
         return {
           ...item,
           stats: await this.walletComicIssueService.aggregateComicIssueStats(
             item.id,
             item.comicSlug,
+            candyMachineAddress,
           ),
         };
       }),
@@ -170,6 +186,7 @@ export class ComicIssueService {
       id,
       comicIssue.comicSlug,
       walletAddress,
+      candyMachineAddress,
     );
     const canRead = !(await this.shouldShowOnlyPreviews(id, walletAddress));
     await this.walletComicIssueService.refreshDate(

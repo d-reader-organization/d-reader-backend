@@ -16,16 +16,13 @@ export class ComicIssueStatsDto {
   averageRating: number | null;
 
   @Min(0)
-  floorPrice: number;
+  price: number;
 
   @Min(0)
   totalVolume: number;
 
   @Min(0)
   totalIssuesCount: number;
-
-  @Min(0)
-  totalListedCount: number;
 
   @Min(0)
   readersCount: number;
