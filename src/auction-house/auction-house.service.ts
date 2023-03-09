@@ -6,13 +6,7 @@ import {
   PublicKey,
   Transaction,
 } from '@solana/web3.js';
-import {
-  IdentitySigner,
-  keypairIdentity,
-  Metaplex,
-  sol,
-  token,
-} from '@metaplex-foundation/js';
+import { keypairIdentity, Metaplex, sol, token } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import {
@@ -245,96 +239,6 @@ export class AuctionHouseService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log('Error while constructing cancel listing transaction ', e);
-    }
-  }
-
-  async createCancelListTransaction(
-    address: PublicKey,
-    receiptAddress: PublicKey,
-  ) {
-    try {
-      const auctionHouse = await this.findOurAuctionHouse();
-      const listing = await this.metaplex
-        .auctionHouse()
-        .findListingByReceipt({ receiptAddress, auctionHouse });
-      const cancelListingResponse = await this.metaplex
-        .auctionHouse()
-        .cancelListing({
-          auctionHouse, // The Auction House in which to cancel listing
-          listing: listing, // The listing to cancel
-        });
-
-      return cancelListingResponse.response;
-    } catch (e) {
-      console.log('Error while creating cancel list transaction ', e);
-    }
-  }
-
-  async getBuyersBalance(buyer: PublicKey, address: PublicKey) {
-    try {
-      return await this.metaplex.auctionHouse().getBuyerBalance({
-        auctionHouse: address,
-        buyerAddress: buyer, // The buyer's address
-      });
-    } catch (e) {
-      console.log('Error while fetching buyers balance.', e);
-    }
-  }
-
-  async depositBuytoEscrow(
-    buyer: PublicKey,
-    address: PublicKey,
-    amount: number,
-  ) {
-    try {
-      const auctionHouse = await this.findOurAuctionHouse();
-      const depositBuilder = this.metaplex
-        .auctionHouse()
-        .builders()
-        .depositToBuyerAccount({
-          auctionHouse,
-          buyer: { publicKey: buyer } as IdentitySigner,
-          amount: sol(amount),
-        });
-      depositBuilder.setFeePayer({ publicKey: buyer } as IdentitySigner);
-    } catch (e) {
-      console.log('Error while fetching buyers balance.', e);
-    }
-  }
-
-  async withdrawFundsFromFeeWallet(amount: number) {
-    try {
-      const auctionHouse = await this.findOurAuctionHouse();
-
-      const response = await this.metaplex
-        .auctionHouse()
-        .withdrawFromFeeAccount({
-          auctionHouse,
-          amount: sol(amount),
-        });
-
-      return response;
-    } catch (e) {
-      console.log('Errored while withdrawing funds from the fee wallet: ', e);
-    }
-  }
-
-  async withdrawFundsFromTreasuryWallet(amount: number) {
-    try {
-      const auctionHouse = await this.findOurAuctionHouse();
-      const response = await this.metaplex
-        .auctionHouse()
-        .withdrawFromTreasuryAccount({
-          auctionHouse,
-          amount: sol(amount),
-        });
-
-      return response;
-    } catch (e) {
-      console.log(
-        'Errored while withdrawing funds from the treasury wallet: ',
-        e,
-      );
     }
   }
 }
