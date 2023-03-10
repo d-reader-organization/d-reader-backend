@@ -8,7 +8,6 @@ import {
   IsPositive,
   MaxLength,
   Min,
-  Validate,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';

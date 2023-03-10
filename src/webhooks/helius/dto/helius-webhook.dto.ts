@@ -20,7 +20,6 @@ export class HeliusWebhookDto {
 
   @IsArray()
   @ArrayNotEmpty()
-  @IsSolanaAddress({ each: true })
   @Type(() => String)
   accountAddresses: string[];
 
