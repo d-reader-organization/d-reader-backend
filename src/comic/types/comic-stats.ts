@@ -4,7 +4,6 @@ export type ComicStats = {
   ratersCount: number;
   averageRating: number | null;
   issuesCount: number;
-  totalVolume: number;
   readersCount: number;
   viewersCount: number;
 };

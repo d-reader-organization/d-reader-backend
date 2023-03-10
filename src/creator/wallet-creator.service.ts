@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from 'src/comic/types/creator-stats';
+import { mockPromise, getRandomFloatOrInt } from 'src/utils/helpers';
 import { WalletCreatorStats } from './types/my-stats';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class WalletCreatorService {
     walletAddress: string,
     creatorSlug: string,
   ): Promise<boolean> {
+    // TODO v2: https://github.com/prisma/prisma/discussions/2531
     let walletCreator = await this.prisma.walletCreator.findUnique({
       where: {
         creatorSlug_walletAddress: { walletAddress, creatorSlug },
@@ -21,21 +23,16 @@ export class WalletCreatorService {
       create: { creatorSlug, walletAddress, isFollowing: true },
       update: { isFollowing: !walletCreator?.isFollowing },
     });
+
     return !!walletCreator;
   }
 
   async aggregateAll(slug: string, walletAddress?: string) {
     if (walletAddress) {
-      const getStatsPromise = this.aggregateCreatorStats(slug);
-      const getWalletStatsPromise = this.walletCreatorStats(
-        slug,
-        walletAddress,
-      );
+      const getStats = this.aggregateCreatorStats(slug);
+      const getWalletStats = this.walletCreatorStats(slug, walletAddress);
 
-      const [stats, myStats] = await Promise.all([
-        getStatsPromise,
-        getWalletStatsPromise,
-      ]);
+      const [stats, myStats] = await Promise.all([getStats, getWalletStats]);
       return { stats, myStats };
     } else {
       return { stats: await this.aggregateCreatorStats(slug) };
@@ -43,7 +40,7 @@ export class WalletCreatorService {
   }
 
   async aggregateCreatorStats(slug: string): Promise<CreatorStats> {
-    const countFollowersQuery = this.prisma.walletCreator.count({
+    const countFollowers = this.prisma.walletCreator.count({
       where: { creatorSlug: slug, isFollowing: true },
     });
 
@@ -51,12 +48,15 @@ export class WalletCreatorService {
       where: { comic: { creator: { slug } } },
     });
 
-    const [followersCount, comicIssuesCount] = await Promise.all([
-      countFollowersQuery,
+    const calculateTotalVolume = mockPromise(getRandomFloatOrInt(1, 1000));
+
+    const [followersCount, comicIssuesCount, totalVolume] = await Promise.all([
+      countFollowers,
       countComicIssues,
+      calculateTotalVolume,
     ]);
 
-    return { followersCount, comicIssuesCount, totalVolume: 125 };
+    return { followersCount, comicIssuesCount, totalVolume };
   }
 
   async walletCreatorStats(

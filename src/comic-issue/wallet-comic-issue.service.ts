@@ -3,101 +3,82 @@ import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from 'src/types/shared';
 import { WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import {
-  getRandomFloatOrInt,
-  getRandomInt,
-  mockPromise,
-} from 'src/utils/helpers';
+import { getRandomFloatOrInt } from 'src/utils/helpers';
+import { ComicIssue } from '@prisma/client';
 
 @Injectable()
 export class WalletComicIssueService {
   constructor(private prisma: PrismaService) {}
 
   async aggregateComicIssueStats(
-    id: number,
-    comicSlug: string,
+    issue: ComicIssue & { collectionNft: { address: string } },
   ): Promise<ComicIssueStats> {
-    const aggregateQuery = this.prisma.walletComicIssue.aggregate({
-      where: { comicIssueId: id },
+    const aggregate = this.prisma.walletComicIssue.aggregate({
+      where: { comicIssueId: issue.id },
       _avg: { rating: true },
-      _count: true,
-    });
-
-    const countFavouritesQuery = this.prisma.walletComicIssue.count({
-      where: { comicIssueId: id, isFavourite: true },
-    });
-
-    const countReadersQuery = this.prisma.walletComicIssue.count({
-      where: { comicIssueId: id, readAt: { not: null } },
-    });
-
-    const countViewersQuery = this.prisma.walletComicIssue.count({
-      where: { comicIssueId: id, viewedAt: { not: null } },
-    });
-
-    const countIssuesQuery = this.prisma.comicIssue.count({
-      where: {
-        comicSlug,
+      _count: {
+        isFavourite: true,
+        readAt: true,
+        viewedAt: true,
+        rating: true,
       },
     });
 
-    const countTotalPagesQuery = this.prisma.comicPage.count({
-      where: {
-        comicIssueId: id,
-      },
+    const countIssues = this.prisma.comicIssue.count({
+      where: { comicSlug: issue.comicSlug },
     });
 
-    // TODO: replace with real values
-    const calculateTotalVolumeQuery = mockPromise(getRandomFloatOrInt(1, 1000));
-    const calculateTotalListedQuery = mockPromise(getRandomInt(6, 14));
-    const calculateFloorPriceQuery = mockPromise(getRandomFloatOrInt(1, 20));
+    const countTotalPages = this.prisma.comicPage.count({
+      where: { comicIssueId: issue.id },
+    });
+
+    const getPrice = this.getComicIssuePrice(issue);
 
     try {
-      const [
-        aggregations,
-        favouritesCount,
-        readersCount,
-        viewersCount,
-        totalIssuesCount,
-        totalVolume,
-        totalListedCount,
-        floorPrice,
-        totalPagesCount,
-      ] = await Promise.all([
-        aggregateQuery,
-        countFavouritesQuery,
-        countReadersQuery,
-        countViewersQuery,
-        countIssuesQuery,
-        calculateTotalVolumeQuery,
-        calculateTotalListedQuery,
-        calculateFloorPriceQuery,
-        countTotalPagesQuery,
-      ]);
+      const [aggregations, totalIssuesCount, price, totalPagesCount] =
+        await Promise.all([aggregate, countIssues, getPrice, countTotalPages]);
 
       return {
-        favouritesCount,
-        readersCount,
-        viewersCount,
+        favouritesCount: aggregations._count.isFavourite,
+        readersCount: aggregations._count.readAt,
+        viewersCount: aggregations._count.viewedAt,
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
-        ratersCount: aggregations._count,
-        totalVolume,
-        totalListedCount,
-        floorPrice,
+        ratersCount: aggregations._count.rating,
+        price: price ?? getRandomFloatOrInt(1, 6),
         totalPagesCount,
       };
     } catch (error) {
-      // TODO: improve catch block
       console.error(error);
       return null;
     }
   }
 
+  async getComicIssuePrice(issue: ComicIssue): Promise<number | undefined> {
+    // if comic is not a web3 collection the price is 0
+    if (issue.supply === 0) return issue.mintPrice;
+
+    // if comic is a web3 collection price is equal to the base price
+    // from the active CandyMachine
+    const activeCandyMachine = await this.prisma.candyMachine.findFirst({
+      where: {
+        collectionNft: { comicIssueId: issue.id },
+        itemsRemaining: { gt: 0 },
+        endsAt: { gt: new Date() },
+      },
+      select: { baseMintPrice: true },
+    });
+
+    if (activeCandyMachine) return activeCandyMachine.baseMintPrice;
+
+    // if there is no active candy machine, look for floor price on marketplace
+    return getRandomFloatOrInt(1, 6);
+  }
+
   async findWalletComicIssueStats(
     comicIssueId: number,
     walletAddress: string,
-  ): Promise<WalletComicIssue | null> {
+  ): Promise<WalletComicIssue> {
     const walletComic = await this.prisma.walletComicIssue.findUnique({
       where: {
         comicIssueId_walletAddress: {
@@ -121,21 +102,66 @@ export class WalletComicIssueService {
     } else return walletComic;
   }
 
-  async aggregateAll(id: number, comicSlug: string, walletAddress?: string) {
+  async aggregateAll(
+    issue: ComicIssue & { collectionNft: { address: string } },
+    walletAddress?: string,
+  ) {
     if (walletAddress) {
-      const getStatsPromise = this.aggregateComicIssueStats(id, comicSlug);
-      const getWalletStatsPromise = this.findWalletComicIssueStats(
-        id,
+      const getStats = this.aggregateComicIssueStats(issue);
+      const getWalletStats = this.findWalletComicIssueStats(
+        issue.id,
         walletAddress,
       );
 
-      const [stats, myStats] = await Promise.all([
-        getStatsPromise,
-        getWalletStatsPromise,
-      ]);
+      const [stats, myStats] = await Promise.all([getStats, getWalletStats]);
       return { stats, myStats };
     } else {
-      return { stats: await this.aggregateComicIssueStats(id, comicSlug) };
+      return { stats: await this.aggregateComicIssueStats(issue) };
+    }
+  }
+
+  async shouldShowPreviews(
+    comicIssueId: number,
+    walletAddress: string,
+    collectionAddress?: string,
+  ): Promise<boolean | undefined> {
+    let collectionNftAddress = collectionAddress;
+    // if collection NFT address was not provided, make sure it doesn't exist
+    if (!collectionAddress) {
+      const collectionNft = await this.prisma.collectionNft.findFirst({
+        where: { comicIssueId },
+      });
+
+      // if comic issue is not an NFT collection it's a FREE web2 comic
+      if (!collectionNft) return;
+      else collectionNftAddress = collectionNft.address;
+    }
+
+    // find all NFTs that token gate the comic issue and are owned by the wallet
+    const ownedComicIssues = await this.prisma.nft.findMany({
+      where: { collectionNftAddress, ownerAddress: walletAddress },
+    });
+
+    // if wallet does not own the issue, see if it's whitelisted per comic issue basis
+    if (!ownedComicIssues.length) {
+      const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
+        where: { walletAddress, comicIssueId, isWhitelisted: true },
+      });
+
+      // if wallet does not own the issue, see if it's whitelisted per comic basis
+      if (!walletComicIssue) {
+        const walletComic = await this.prisma.walletComic.findFirst({
+          where: {
+            walletAddress,
+            comic: { issues: { some: { id: comicIssueId } } },
+            isWhitelisted: true,
+          },
+        });
+
+        // if wallet is still not allowed to view the full content of the issue
+        // make sure to show only preview pages of the comic
+        if (!walletComic) return true;
+      }
     }
   }
 
@@ -171,9 +197,7 @@ export class WalletComicIssueService {
     property: keyof PickByType<WalletComicIssue, Date>,
   ) {
     return await this.prisma.walletComicIssue.upsert({
-      where: {
-        comicIssueId_walletAddress: { walletAddress, comicIssueId },
-      },
+      where: { comicIssueId_walletAddress: { walletAddress, comicIssueId } },
       create: {
         walletAddress,
         comicIssueId,

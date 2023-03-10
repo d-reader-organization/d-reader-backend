@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedWhereUnique", "filteredRelationCount"]
 }
 
 datasource db {
@@ -188,7 +189,7 @@ model CandyMachineReceipt {
   candyMachineAddress String
 }
 
-// TODO ComicCollectionNft
+// ComicCollectionNft
 
 model CollectionNft {
   address         String         @id
@@ -275,4 +276,7 @@ model WalletCreator {
   @@id([creatorSlug, walletAddress])
 }
 
-// - case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity
+// TODO v1
+// case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity
+// https://www.prisma.io/docs/concepts/components/prisma-client/full-text-search
+// https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#compare-columns-in-the-same-table

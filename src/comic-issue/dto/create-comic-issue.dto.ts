@@ -29,8 +29,6 @@ export class CreateComicIssueDto {
   )
   number: number;
 
-  // If supply is set to 0 comic issue won't even be an NFT collection
-  // it will simply be a free offchain comic
   @Min(0)
   // @IsDivisibleBy(100)
   @Transform(({ value }) =>
@@ -40,7 +38,6 @@ export class CreateComicIssueDto {
 
   @Min(0)
   @Transform(({ value }) =>
-    // TODO v1: must be lower than mintPrice
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   discountMintPrice: number;

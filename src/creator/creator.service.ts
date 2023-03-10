@@ -84,7 +84,8 @@ export class CreatorService {
         verifiedAt: { not: null },
       },
     });
-    const mappedCreators = await Promise.all(
+
+    const aggregatedCreators = await Promise.all(
       creators.map(async (creator) => ({
         ...creator,
         stats: await this.walletCreatorService.aggregateCreatorStats(
@@ -92,7 +93,7 @@ export class CreatorService {
         ),
       })),
     );
-    return mappedCreators;
+    return aggregatedCreators;
   }
 
   async findOne(slug: string, walletAddress: string) {

@@ -11,6 +11,7 @@ import {
   UploadedFiles,
   UploadedFile,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -196,8 +197,9 @@ export class ComicController {
   /* Unpublish comic */
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
-    const unpublishedComic = await this.comicService.unpublish(slug);
-    return await toComicDto(unpublishedComic);
+    throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${slug}`);
+    // const unpublishedComic = await this.comicService.unpublish(slug);
+    // return await toComicDto(unpublishedComic);
   }
 
   /* Queue comic for deletion */
@@ -225,8 +227,6 @@ export class ComicController {
    * - finish email services
    * - move all cron jobs to task.service.ts ?
    * - comicPages @ApiBody
-   * - prevent updating comics that are published
-   * - reading metrics (most read etc. async update functions)
    * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
    * - [password] Simulate message creation: const message = Message.from(signatureBytes);
