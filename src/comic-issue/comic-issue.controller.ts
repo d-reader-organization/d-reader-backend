@@ -11,6 +11,7 @@ import {
   UploadedFiles,
   UploadedFile,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -210,8 +211,9 @@ export class ComicIssueController {
   /* Unpublish comic issue */
   @Patch('unpublish/:id')
   async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
-    const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    return await toComicIssueDto(unpublishedComicIssue);
+    throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${id}`);
+    // const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
+    // return await toComicIssueDto(unpublishedComicIssue);
   }
 
   /* Queue comic issue for deletion */

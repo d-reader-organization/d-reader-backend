@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletComic } from '@prisma/client';
-import { getRandomFloatOrInt, mockPromise } from 'src/utils/helpers';
 import { ComicStats } from './types/comic-stats';
 import { PickByType } from 'src/types/shared';
 
@@ -10,30 +9,18 @@ export class WalletComicService {
   constructor(private prisma: PrismaService) {}
 
   async aggregateComicStats(slug: string): Promise<ComicStats> {
-    const aggregateQuery = this.prisma.walletComic.aggregate({
+    const aggregate = this.prisma.walletComic.aggregate({
       where: { comicSlug: slug },
       _avg: { rating: true },
-      _count: true,
-    });
-
-    const countFavouritesQuery = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isFavourite: true },
-    });
-
-    const countSubscribersQuery = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isSubscribed: true },
-    });
-
-    const countViewersQuery = this.prisma.walletComic.count({
-      where: {
-        comicSlug: slug,
-        viewedAt: {
-          not: null,
-        },
+      _count: {
+        isFavourite: true,
+        isSubscribed: true,
+        viewedAt: true,
+        rating: true,
       },
     });
 
-    const countIssuesQuery = this.prisma.comicIssue.count({
+    const countIssues = this.prisma.comicIssue.count({
       where: {
         deletedAt: null,
         publishedAt: { lt: new Date() },
@@ -42,50 +29,38 @@ export class WalletComicService {
       },
     });
 
-    // TODO v2: distinct
-    const countReadersQuery = this.prisma.walletComicIssue.count({
+    // TODO: distinct
+    const countReaders = this.prisma.walletComicIssue.count({
       where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
       // distinct: ['walletAddress'],
     });
 
-    // TODO: total volume of all comic issues and collectibles
-    const calculateTotalVolumeQuery = mockPromise(getRandomFloatOrInt(1, 1000));
+    try {
+      const [aggregations, issuesCount, readersCount] = await Promise.all([
+        aggregate,
+        countIssues,
+        countReaders,
+      ]);
 
-    // TODO: try catch
-    const [
-      aggregations,
-      favouritesCount,
-      subscribersCount,
-      issuesCount,
-      readersCount,
-      viewersCount,
-      totalVolume,
-    ] = await Promise.all([
-      aggregateQuery,
-      countFavouritesQuery,
-      countSubscribersQuery,
-      countIssuesQuery,
-      countReadersQuery,
-      countViewersQuery,
-      calculateTotalVolumeQuery,
-    ]);
-
-    return {
-      averageRating: aggregations._avg.rating,
-      ratersCount: aggregations._count,
-      favouritesCount: favouritesCount,
-      subscribersCount: subscribersCount,
-      issuesCount: issuesCount,
-      readersCount: readersCount,
-      viewersCount: viewersCount,
-      totalVolume: totalVolume,
-    };
+      return {
+        averageRating: aggregations._avg.rating,
+        ratersCount: aggregations._count.rating,
+        favouritesCount: aggregations._count.isFavourite,
+        subscribersCount: aggregations._count.isSubscribed,
+        issuesCount: issuesCount,
+        readersCount: readersCount,
+        viewersCount: aggregations._count.viewedAt,
+      };
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
   }
 
   async findWalletComicStats(
     slug: string,
     walletAddress: string,
-  ): Promise<WalletComic | null> {
+  ): Promise<WalletComic> {
     const walletComic = await this.prisma.walletComic.findUnique({
       where: {
         comicSlug_walletAddress: {
@@ -110,16 +85,10 @@ export class WalletComicService {
 
   async aggregateAll(slug: string, walletAddress?: string) {
     if (walletAddress) {
-      const getStatsPromise = this.aggregateComicStats(slug);
-      const getWalletStatsPromise = this.findWalletComicStats(
-        slug,
-        walletAddress,
-      );
+      const getStats = this.aggregateComicStats(slug);
+      const getWalletStats = this.findWalletComicStats(slug, walletAddress);
 
-      const [stats, myStats] = await Promise.all([
-        getStatsPromise,
-        getWalletStatsPromise,
-      ]);
+      const [stats, myStats] = await Promise.all([getStats, getWalletStats]);
       return { stats, myStats };
     } else {
       return { stats: await this.aggregateComicStats(slug) };
@@ -160,9 +129,7 @@ export class WalletComicService {
     property: keyof PickByType<WalletComic, Date>,
   ) {
     return await this.prisma.walletComic.upsert({
-      where: {
-        comicSlug_walletAddress: { walletAddress, comicSlug },
-      },
+      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
       create: {
         walletAddress,
         comicSlug,

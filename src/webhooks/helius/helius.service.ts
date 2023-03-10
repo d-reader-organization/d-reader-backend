@@ -150,8 +150,9 @@ export class HeliusService {
         },
       });
 
-      if (candyMachine.itemsRemaining === 0)
+      if (candyMachine.itemsRemaining === 0) {
         this.removeSubscription(candyMachine.address);
+      }
     } catch (error) {
       console.error('Unsupported candy machine: ', error);
       return;

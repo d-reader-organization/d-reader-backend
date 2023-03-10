@@ -1,13 +1,15 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { IsArray } from 'class-validator';
+import { ArrayNotEmpty, IsArray } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { CreateHeliusWebhookDto } from './create-helius-webhook.dto';
 
 export class CreateHeliusCollectionWebhookDto extends OmitType(
   CreateHeliusWebhookDto,
   ['accountAddresses'],
 ) {
-  // TODO: validate is array of solana addresses
   @IsArray()
+  @ArrayNotEmpty()
+  @IsSolanaAddress({ each: true })
   @ApiProperty({ default: [] })
   collectionNftAddresses: string[];
 }

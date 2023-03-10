@@ -1,8 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { plainToInstance, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsUrl, IsOptional, IsString } from 'class-validator';
 import { TransactionType, Webhook, WebhookType } from 'helius-sdk';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import {
+  IsArray,
+  IsEnum,
+  IsUrl,
+  IsOptional,
+  IsString,
+  ArrayNotEmpty,
+} from 'class-validator';
 
 export class HeliusWebhookDto {
   @IsString()
@@ -12,8 +19,8 @@ export class HeliusWebhookDto {
   wallet: string;
 
   @IsArray()
+  @ArrayNotEmpty()
   @Type(() => String)
-  // TODO: validate is array of solana addresses
   accountAddresses: string[];
 
   @IsArray()

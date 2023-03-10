@@ -14,8 +14,10 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Validation - strip validated object of any properties that do not have any decorators
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  // Validation
+  // strip validated object of any properties that don't have any decorator
+  // transform incoming network payloads into DTOs
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // enable shutdown hook
   const prismaService: PrismaService = app.get(PrismaService);

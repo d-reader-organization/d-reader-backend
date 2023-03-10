@@ -14,10 +14,15 @@ import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import { ComicIssue, Creator, Comic, ComicPage } from '@prisma/client';
-import { PickType } from '@nestjs/swagger';
 import { WalletComicIssueDto } from './wallet-comic-issue.dto';
-import { WalletComicIssueStats } from 'src/comic/types/wallet-comic-issue-stats';
+import { PickType } from '@nestjs/swagger';
+import {
+  ComicIssue,
+  Creator,
+  Comic,
+  ComicPage,
+  WalletComicIssue,
+} from '@prisma/client';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -29,14 +34,6 @@ class PartialCreatorDto extends PickType(CreatorDto, [
   'slug',
   'isVerified',
   'avatar',
-]) {}
-
-class PartialWalletComicIssueDto extends PickType(WalletComicIssueDto, [
-  'rating',
-  'isFavourite',
-  'canRead',
-  'readAt',
-  'viewedAt',
 ]) {}
 
 export class ComicIssueDto {
@@ -105,8 +102,8 @@ export class ComicIssueDto {
   stats?: ComicIssueStatsDto;
 
   @IsOptional()
-  @Type(() => PartialWalletComicIssueDto)
-  myStats?: PartialWalletComicIssueDto;
+  @Type(() => WalletComicIssueDto)
+  myStats?: WalletComicIssueDto;
 
   @IsOptional()
   @IsString()
@@ -117,7 +114,7 @@ type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
   stats?: ComicIssueStats;
-  myStats?: WalletComicIssueStats & { canRead: boolean };
+  myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
 };
 

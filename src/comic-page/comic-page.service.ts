@@ -58,10 +58,7 @@ export class ComicPageService {
     isPreviewable?: boolean,
   ): Promise<ComicPage[]> {
     return await this.prisma.comicPage.findMany({
-      where: {
-        comicIssueId,
-        isPreviewable,
-      },
+      where: { comicIssueId, isPreviewable },
     });
   }
 

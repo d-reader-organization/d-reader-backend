@@ -143,7 +143,6 @@ export async function toComicDto(comic: ComicInput) {
           ratersCount: comic.stats.ratersCount,
           averageRating: comic.stats.averageRating,
           issuesCount: comic.stats.issuesCount,
-          totalVolume: comic.stats.totalVolume,
           readersCount: comic.stats.readersCount,
           viewersCount: comic.stats.viewersCount,
         }
