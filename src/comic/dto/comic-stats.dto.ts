@@ -19,9 +19,6 @@ export class ComicStatsDto {
   issuesCount: number;
 
   @Min(0)
-  totalVolume: number;
-
-  @Min(0)
   readersCount: number;
 
   @Min(0)

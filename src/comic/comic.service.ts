@@ -121,7 +121,7 @@ export class ComicService {
   }
 
   async findOne(slug: string, walletAddress?: string) {
-    const comic = await this.prisma.comic.findFirst({
+    const comic = await this.prisma.comic.findUnique({
       include: { genres: true, creator: true },
       where: { slug },
     });
@@ -129,6 +129,7 @@ export class ComicService {
     if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
+
     await this.walletComicService.refreshDate(walletAddress, slug, 'viewedAt');
     const { stats, myStats } = await this.walletComicService.aggregateAll(
       slug,
@@ -143,7 +144,7 @@ export class ComicService {
 
     try {
       const updatedComic = await this.prisma.comic.update({
-        where: { slug },
+        where: { slug, publishedAt: null },
         data: {
           ...rest,
           genres: { set: genres.map((slug) => ({ slug })) },
@@ -152,7 +153,9 @@ export class ComicService {
 
       return updatedComic;
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(
+        `Comic ${slug} does not exist or is published`,
+      );
     }
   }
 
@@ -190,11 +193,13 @@ export class ComicService {
   async publish(slug: string) {
     try {
       return await this.prisma.comic.update({
-        where: { slug },
+        where: { slug, publishedAt: null },
         data: { publishedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(
+        `Comic ${slug} does not exist or is published`,
+      );
     }
   }
 
@@ -212,11 +217,13 @@ export class ComicService {
   async pseudoDelete(slug: string) {
     try {
       return await this.prisma.comic.update({
-        where: { slug },
+        where: { slug, publishedAt: null },
         data: { deletedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(
+        `Comic ${slug} does not exist or is published`,
+      );
     }
   }
 
@@ -243,9 +250,11 @@ export class ComicService {
     }
 
     try {
-      await this.prisma.comic.delete({ where: { slug } });
+      await this.prisma.comic.delete({ where: { slug, publishedAt: null } });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(
+        `Comic ${slug} does not exist or is published`,
+      );
     }
     return;
   }

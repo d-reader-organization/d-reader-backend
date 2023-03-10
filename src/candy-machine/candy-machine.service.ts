@@ -134,7 +134,6 @@ export class CandyMachineService {
         'Cannot create an NFT collection with supply lower than 1',
       );
     }
-    // TODO: copy S3 image from one bucket to another
     const coverImage = await this.generateMetaplexFileFromS3(comicIssue.cover);
 
     // If Collection NFT already exists - use it, otherwise create a fresh one
@@ -244,7 +243,6 @@ export class CandyMachineService {
     const items = await Promise.all(
       indexArray.map((index) => ({
         uri: sharedMetadata.uri,
-        // TODO: test if this is actually indexing or if it's done automatically
         name: `${sharedMetadata.name} #${index + 1}`,
       })),
     );
@@ -287,7 +285,6 @@ export class CandyMachineService {
     return await this.metaplex.candyMachines().refresh(candyMachine);
   }
 
-  // TODO: contain data about the collection: flavorText, comic name, creator name, pagesCount, issue.number...
   async createComicIssueCollectionNft(
     comicIssue: ComicIssue,
     coverImage: MetaplexFile,
@@ -309,7 +306,7 @@ export class CandyMachineService {
                 share: HUNDRED_PERCENT_TAX,
               },
             ],
-            // TODO v2: add 4 images here, for 4 different stats
+            // TODO v2: add 4 images here, for 4 different states?
             files: [
               {
                 uri: coverImage,
@@ -370,7 +367,6 @@ export class CandyMachineService {
               share: HUNDRED - D_PUBLISHER_SECONDARY_SALE_SHARE,
             },
           ],
-          // TODO v2: add 4 images here, for 4 different stats
           files: [
             {
               uri: coverImage,

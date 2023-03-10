@@ -3,8 +3,7 @@ export type ComicIssueStats = {
   // subscribersCount: number;
   ratersCount: number;
   averageRating: number | null;
-  price: number;
-  totalVolume: number;
+  price?: number | null;
   totalIssuesCount: number;
   readersCount: number;
   viewersCount: number;

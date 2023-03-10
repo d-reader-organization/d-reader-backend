@@ -22,8 +22,8 @@ import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
-import { subDays } from 'date-fns';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { subDays } from 'date-fns';
 
 @Injectable()
 export class ComicIssueService {
@@ -40,6 +40,7 @@ export class ComicIssueService {
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
     const { slug, comicSlug, pages, ...rest } = createComicIssueDto;
+    this.validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
@@ -96,6 +97,23 @@ export class ComicIssueService {
     return comicIssue;
   }
 
+  async findActiveCandyMachine(
+    collectionNftAddress: string,
+  ): Promise<string | undefined> {
+    if (!collectionNftAddress) return undefined;
+
+    const candyMachine = await this.prisma.candyMachine.findFirst({
+      where: {
+        collectionNftAddress,
+        itemsRemaining: { gt: 0 },
+        endsAt: { gt: new Date() },
+      },
+      select: { address: true },
+    });
+
+    return candyMachine?.address;
+  }
+
   async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.comicIssue.findMany({
       include: {
@@ -130,25 +148,11 @@ export class ComicIssueService {
     });
 
     return await Promise.all(
-      comicIssues.map(async (item) => {
-        let candyMachineAddress = undefined;
-        if (item.collectionNft) {
-          const candyMachine = await this.prisma.candyMachine.findFirst({
-            where: {
-              collectionNftAddress: item.collectionNft.address,
-              itemsRemaining: { gt: 0 },
-              endsAt: { gt: new Date() },
-            },
-            select: { address: true },
-          });
-          if (!!candyMachine) candyMachineAddress = candyMachine.address;
-        }
+      comicIssues.map(async (issue) => {
         return {
-          ...item,
+          ...issue,
           stats: await this.walletComicIssueService.aggregateComicIssueStats(
-            item.id,
-            item.comicSlug,
-            candyMachineAddress,
+            issue,
           ),
         };
       }),
@@ -168,94 +172,63 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    let candyMachineAddress: string = undefined;
-    if (comicIssue.collectionNft) {
-      const candyMachine = await this.prisma.candyMachine.findFirst({
-        where: {
-          collectionNftAddress: comicIssue.collectionNft?.address,
-          itemsRemaining: { gt: 0 },
-          endsAt: { gt: new Date() },
-        },
-        select: { address: true },
-      });
-
-      candyMachineAddress = candyMachine.address;
-    }
-
-    const { stats, myStats } = await this.walletComicIssueService.aggregateAll(
-      id,
-      comicIssue.comicSlug,
-      walletAddress,
-      candyMachineAddress,
+    const findActiveCandyMachine = await this.findActiveCandyMachine(
+      comicIssue.collectionNft?.address,
     );
-    const canRead = !(await this.shouldShowOnlyPreviews(id, walletAddress));
+
+    const aggregateStats = await this.walletComicIssueService.aggregateAll(
+      comicIssue,
+      walletAddress,
+    );
+
+    const checkShouldShowPreviews =
+      await this.walletComicIssueService.shouldShowPreviews(id, walletAddress);
+
     await this.walletComicIssueService.refreshDate(
       walletAddress,
       id,
       'viewedAt',
     );
+
+    const [candyMachineAddress, { stats, myStats }, showOnlyPreviews] =
+      await Promise.all([
+        findActiveCandyMachine,
+        aggregateStats,
+        checkShouldShowPreviews,
+      ]);
+
     return {
       ...comicIssue,
       stats,
-      myStats: { ...myStats, canRead },
+      myStats: { ...myStats, canRead: !showOnlyPreviews },
       candyMachineAddress,
     };
   }
 
   async getPages(comicIssueId: number, walletAddress: string) {
-    const showOnlyPreviews = await this.shouldShowOnlyPreviews(
+    const showPreviews = await this.walletComicIssueService.shouldShowPreviews(
       comicIssueId,
       walletAddress,
     );
-    return this.comicPageService.findAll(comicIssueId, showOnlyPreviews);
-  }
 
-  private async shouldShowOnlyPreviews(
-    comicIssueId: number,
-    walletAddress: string,
-  ): Promise<boolean | undefined> {
-    const collectionNft = await this.prisma.collectionNft.findFirst({
-      where: {
-        comicIssueId,
-      },
-    });
-
-    // if comic issue have a collection nft (web3 comic)
-    if (!!collectionNft) {
-      // find all NFTs that token gate the comic issue and are owned by the wallet
-      const ownedComicIssues = await this.prisma.nft.findMany({
-        where: { collectionNft: { comicIssueId }, ownerAddress: walletAddress },
-      });
-
-      // if wallet does not own the issue, see if it's whitelisted per comic issue basis
-      if (!ownedComicIssues.length) {
-        const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
-          where: { walletAddress, comicIssueId, isWhitelisted: true },
-        });
-
-        // if wallet does not own the issue, see if it's whitelisted per comic basis
-        if (!walletComicIssue) {
-          const walletComic = await this.prisma.walletComic.findFirst({
-            where: {
-              walletAddress,
-              comic: { issues: { some: { id: comicIssueId } } },
-              isWhitelisted: true,
-            },
-          });
-
-          // if wallet is still not allowed to view the full content of the issue
-          // make sure to show only preview pages of the comic
-          if (!walletComic) {
-            return true;
-          }
-        }
-      }
-    }
-    return;
+    return this.comicPageService.findAll(comicIssueId, showPreviews);
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
     const { pages, ...rest } = updateComicIssueDto;
+    this.validatePrice(updateComicIssueDto);
+
+    let updatedComicIssue: ComicIssue & { pages: ComicPage[] };
+    try {
+      updatedComicIssue = await this.prisma.comicIssue.findUnique({
+        where: { id, publishedAt: null },
+        include: { pages: true },
+      });
+    } catch {
+      throw new NotFoundException(
+        `Comic issue with id ${id} does not exist or is published`,
+      );
+    }
 
     // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
@@ -266,7 +239,6 @@ export class ComicIssueService {
       pagesData = await this.comicPageService.createMany(pages);
     }
 
-    let updatedComicIssue: ComicIssue;
     try {
       updatedComicIssue = await this.prisma.comicIssue.update({
         where: { id },
@@ -278,14 +250,14 @@ export class ComicIssueService {
         },
       });
     } catch {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new BadRequestException('Bad comic issue data');
     }
 
     return updatedComicIssue;
   }
 
   async updateFile(id: number, file: Express.Multer.File) {
-    let comicIssue: ComicIssue;
+    let comicIssue: ComicIssue & { pages: ComicPage[] };
     try {
       comicIssue = await this.prisma.comicIssue.findUnique({
         where: { id },
@@ -301,13 +273,15 @@ export class ComicIssueService {
 
     try {
       comicIssue = await this.prisma.comicIssue.update({
-        where: { id },
+        where: { id, publishedAt: null },
         include: { pages: true },
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
       await deleteS3Object({ Key: newFileKey });
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(
+        'Malformed file upload or Comic issue already published',
+      );
     }
 
     if (oldFileKey !== newFileKey) {
@@ -319,30 +293,31 @@ export class ComicIssueService {
 
   async publish(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
+      include: { comic: { include: { creator: true } } },
     });
 
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    } else if (!!comicIssue.publishedAt) {
+      throw new BadRequestException('Comic already published');
     }
 
-    const comic = await this.prisma.comic.findFirst({
-      where: { slug: comicIssue.comicSlug },
-    });
-    const creator = await this.prisma.creator.findUnique({
-      where: { id: comic.creatorId },
-    });
+    // if supply is 0 we are creating an offchain (web2) comic issue
+    if (comicIssue.supply > 0) {
+      await this.candyMachineService.createComicIssueCM(
+        comicIssue.comic,
+        comicIssue,
+        comicIssue.comic.creator,
+      );
+    }
 
-    await this.candyMachineService.createComicIssueCM(
-      comic,
-      comicIssue,
-      creator,
-    );
-
-    return await this.prisma.comicIssue.update({
+    const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       data: { publishedAt: new Date() },
     });
+
+    return updatedComicIssue;
   }
 
   async unpublish(id: number) {
@@ -363,11 +338,13 @@ export class ComicIssueService {
   async pseudoDelete(id: number) {
     try {
       return await this.prisma.comicIssue.update({
-        where: { id },
+        where: { id, publishedAt: null },
         data: { deletedAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        `Comic issue with id ${id} does not exist or is published`,
+      );
     }
   }
 
@@ -394,9 +371,27 @@ export class ComicIssueService {
     }
 
     try {
-      await this.prisma.comicIssue.delete({ where: { id } });
+      await this.prisma.comicIssue.delete({ where: { id, publishedAt: null } });
     } catch {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        `Comic issue with id ${id} does not exist or is published`,
+      );
+    }
+  }
+
+  validatePrice(comicIssue: CreateComicIssueDto | UpdateComicIssueDto) {
+    // if supply is 0, it's a web2 comic which must be FREE
+    if (
+      (comicIssue.supply === 0 && comicIssue.mintPrice !== 0) ||
+      (comicIssue.supply === 0 && comicIssue.discountMintPrice !== 0)
+    ) {
+      throw new BadRequestException('Offchain Comic issues must be free');
+    }
+
+    if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
+      throw new BadRequestException(
+        'Discount mint price should be lower than base mint price',
+      );
     }
   }
 

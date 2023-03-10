@@ -769,7 +769,7 @@ async function main() {
                 name: 'Narentines',
                 slug: 'narentines',
                 description:
-                  "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery.\\nA young boy discovers what seems to be a completely new species.",
+                  "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery. A young boy discovers what seems to be a completely new species.",
                 flavorText:
                   'Unique and intriguing Sci-Fi with a sprinkle of history on top of it. Brilliant! - The Journal',
                 genres: {
@@ -807,7 +807,7 @@ async function main() {
                     title: 'Narentines: The Purge',
                     slug: 'narentines-the-purge',
                     description:
-                      "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs.\\nA new age would start for Narentines, as the great Purge pawes it's path to the Valley",
+                      "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs. A new age would start for Narentines, as the great Purge pawes it's path to the Valley",
                     flavorText:
                       'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
                     cover:

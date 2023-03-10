@@ -16,10 +16,8 @@ export class ComicIssueStatsDto {
   averageRating: number | null;
 
   @Min(0)
-  price: number;
-
-  @Min(0)
-  totalVolume: number;
+  @IsOptional()
+  price?: number | null;
 
   @Min(0)
   totalIssuesCount: number;
