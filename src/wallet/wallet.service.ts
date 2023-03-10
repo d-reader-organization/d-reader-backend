@@ -90,7 +90,7 @@ export class WalletService {
       throw new BadRequestException('Malformed file upload');
     }
 
-    if (oldFileKey !== newFileKey) {
+    if (oldFileKey && oldFileKey !== newFileKey) {
       await deleteS3Object({ Key: oldFileKey });
     }
 
