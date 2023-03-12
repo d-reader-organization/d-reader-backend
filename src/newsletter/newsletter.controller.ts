@@ -16,13 +16,14 @@ import {
   toNewsletterDto,
   toNewsletterDtoArray,
 } from './dto/newsletter.dto';
-import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Wallet } from '@prisma/client';
+import { Wallet, Role } from '@prisma/client';
 import { UpsertNewsletterDto } from './dto/upsert-newsletter.dto';
 import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
+import { RealIP } from 'nestjs-real-ip';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
@@ -39,12 +40,13 @@ export class NewsletterController {
     @Body() upsertNewsletterDto: UpsertNewsletterDto,
     @WalletEntity() wallet: Wallet,
     @Req() request: Request,
+    @RealIP() ip = '',
   ): Promise<NewsletterDto> {
-    const geo = geoip.lookup(request.ip);
+    const geo = geoip.lookup(ip);
     const parser = new UAParser(request.headers['user-agent']);
 
     const requestUserData: RequestUserData = {
-      ip: request.ip,
+      ip,
       country: geo?.country,
       city: geo?.city,
       browser: parser.getBrowser()?.name,
@@ -62,6 +64,7 @@ export class NewsletterController {
 
   /* Get all newsletter subscriptions */
   @Get('get')
+  @Roles(Role.Superadmin)
   async findAll(): Promise<NewsletterDto[]> {
     const newsletters = await this.newsletterService.findAll();
     return await toNewsletterDtoArray(newsletters);
@@ -69,6 +72,7 @@ export class NewsletterController {
 
   /* Get specific newsletter subscription by wallet address */
   @Get('get/:address')
+  @Roles(Role.Superadmin)
   async findOne(@Param('address') address: string): Promise<NewsletterDto> {
     const newsletter = await this.newsletterService.findOne(address);
     return await toNewsletterDto(newsletter);

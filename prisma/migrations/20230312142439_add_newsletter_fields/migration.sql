@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Newsletter" ADD COLUMN     "subscribedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "updatedAt" TIMESTAMP(3);
