@@ -211,6 +211,8 @@ Table Newsletter {
   wallet Wallet [not null]
   walletAddress String [pk]
   email String [unique, not null]
+  subscribedAt DateTime [default: `now()`, not null]
+  updatedAt DateTime
   wantsDevelopmentProgressNews Boolean [not null]
   wantsPlatformContentNews Boolean [not null]
   wantsFreeNFTs Boolean [not null]

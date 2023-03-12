@@ -235,18 +235,20 @@ enum CarouselLocation {
 // }
 
 model Newsletter {
-  wallet                       Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress                String  @id
-  email                        String  @unique
+  wallet                       Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  walletAddress                String    @id
+  email                        String    @unique
+  subscribedAt                 DateTime  @default(now())
+  updatedAt                    DateTime? @updatedAt
   wantsDevelopmentProgressNews Boolean
   wantsPlatformContentNews     Boolean
   wantsFreeNFTs                Boolean
-  ip                           String  @default("")
-  country                      String  @default("")
-  city                         String  @default("")
-  browser                      String  @default("")
-  device                       String  @default("")
-  os                           String  @default("")
+  ip                           String    @default("")
+  country                      String    @default("")
+  city                         String    @default("")
+  browser                      String    @default("")
+  device                       String    @default("")
+  os                           String    @default("")
 }
 
 model WalletComicIssue {
