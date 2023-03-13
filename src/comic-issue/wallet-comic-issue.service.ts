@@ -14,14 +14,21 @@ export class WalletComicIssueService {
     issue: ComicIssue & { collectionNft: { address: string } },
   ): Promise<ComicIssueStats> {
     const aggregate = this.prisma.walletComicIssue.aggregate({
-      where: { comicIssueId: issue.id },
+      where: { comicIssueId: issue.id, rating: { not: null } },
       _avg: { rating: true },
-      _count: {
-        isFavourite: true,
-        readAt: true,
-        viewedAt: true,
-        rating: true,
-      },
+      _count: true,
+    });
+
+    const countFavourites = this.prisma.walletComicIssue.count({
+      where: { comicIssueId: issue.id, isFavourite: true },
+    });
+
+    const countReaders = this.prisma.walletComicIssue.count({
+      where: { comicIssueId: issue.id, readAt: { not: null } },
+    });
+
+    const countViewers = this.prisma.walletComicIssue.count({
+      where: { comicIssueId: issue.id, viewedAt: { not: null } },
     });
 
     const countIssues = this.prisma.comicIssue.count({
@@ -35,16 +42,31 @@ export class WalletComicIssueService {
     const getPrice = this.getComicIssuePrice(issue);
 
     try {
-      const [aggregations, totalIssuesCount, price, totalPagesCount] =
-        await Promise.all([aggregate, countIssues, getPrice, countTotalPages]);
+      const [
+        aggregations,
+        favouritesCount,
+        readersCount,
+        viewersCount,
+        totalIssuesCount,
+        price,
+        totalPagesCount,
+      ] = await Promise.all([
+        aggregate,
+        countFavourites,
+        countReaders,
+        countViewers,
+        countIssues,
+        getPrice,
+        countTotalPages,
+      ]);
 
       return {
-        favouritesCount: aggregations._count.isFavourite,
-        readersCount: aggregations._count.readAt,
-        viewersCount: aggregations._count.viewedAt,
+        favouritesCount,
+        readersCount,
+        viewersCount,
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
-        ratersCount: aggregations._count.rating,
+        ratersCount: aggregations._count,
         price: price ?? getRandomFloatOrInt(1, 6),
         totalPagesCount,
       };
