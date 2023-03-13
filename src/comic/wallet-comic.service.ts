@@ -10,13 +10,25 @@ export class WalletComicService {
 
   async aggregateComicStats(slug: string): Promise<ComicStats> {
     const aggregate = this.prisma.walletComic.aggregate({
-      where: { comicSlug: slug },
+      where: { comicSlug: slug, rating: { not: null } },
       _avg: { rating: true },
-      _count: {
-        isFavourite: true,
-        isSubscribed: true,
-        viewedAt: true,
-        rating: true,
+      _count: true,
+    });
+
+    const countFavourites = this.prisma.walletComic.count({
+      where: { comicSlug: slug, isFavourite: true },
+    });
+
+    const countSubscribers = this.prisma.walletComic.count({
+      where: { comicSlug: slug, isSubscribed: true },
+    });
+
+    const countViewers = this.prisma.walletComic.count({
+      where: {
+        comicSlug: slug,
+        viewedAt: {
+          not: null,
+        },
       },
     });
 
@@ -36,20 +48,30 @@ export class WalletComicService {
     });
 
     try {
-      const [aggregations, issuesCount, readersCount] = await Promise.all([
+      const [
+        aggregations,
+        favouritesCount,
+        subscribersCount,
+        issuesCount,
+        readersCount,
+        viewersCount,
+      ] = await Promise.all([
         aggregate,
+        countFavourites,
+        countSubscribers,
         countIssues,
         countReaders,
+        countViewers,
       ]);
 
       return {
         averageRating: aggregations._avg.rating,
-        ratersCount: aggregations._count.rating,
-        favouritesCount: aggregations._count.isFavourite,
-        subscribersCount: aggregations._count.isSubscribed,
+        ratersCount: aggregations._count,
+        favouritesCount: favouritesCount,
+        subscribersCount: subscribersCount,
         issuesCount: issuesCount,
         readersCount: readersCount,
-        viewersCount: aggregations._count.viewedAt,
+        viewersCount: viewersCount,
       };
     } catch (error) {
       console.error(error);

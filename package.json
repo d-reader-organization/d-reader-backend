@@ -31,9 +31,9 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.288.0",
-    "@aws-sdk/lib-storage": "^3.288.0",
-    "@aws-sdk/s3-request-presigner": "^3.288.0",
+    "@aws-sdk/client-s3": "^3.289.0",
+    "@aws-sdk/lib-storage": "^3.289.0",
+    "@aws-sdk/s3-request-presigner": "^3.289.0",
     "@metaplex-foundation/js": "^0.18.3",
     "@metaplex-foundation/js-plugin-aws": "^0.18.3",
     "@metaplex-foundation/mpl-auction-house": "^2.5.0",
@@ -92,7 +92,7 @@
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
     "chalk": "^4.1.2",
-    "eslint": "^8.35.0",
+    "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^29.5.0",

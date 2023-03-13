@@ -1,12 +1,17 @@
 import { IsArray, IsBoolean, IsNumber, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
-import { Nft } from '@prisma/client';
+import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
 import { JsonMetadata } from '@metaplex-foundation/js';
 import { ApiProperty } from '@nestjs/swagger';
-import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
-import axios from 'axios';
+import { Nft } from '@prisma/client';
 import { isNil } from 'lodash';
+import axios from 'axios';
+
+// TODO v2: extend JsonMetadata to formats which we use
+// type ComicIssueJsonMetadata = JsonMetadata & {
+//   attributes: ...
+// }
 
 export class NftAttributeDto {
   trait: string;
