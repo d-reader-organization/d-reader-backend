@@ -86,7 +86,7 @@ export class WalletComicIssueService {
       where: {
         collectionNft: { comicIssueId: issue.id },
         itemsRemaining: { gt: 0 },
-        endsAt: { gt: new Date() },
+        OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
       },
       select: { baseMintPrice: true },
     });

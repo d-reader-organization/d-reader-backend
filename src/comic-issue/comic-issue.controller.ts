@@ -45,6 +45,7 @@ import {
   ComicPageDto,
   toComicPageDtoArray,
 } from 'src/comic-page/entities/comic-page.dto';
+import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
 @ApiBearerAuth('JWT-auth')
@@ -199,6 +200,19 @@ export class ComicIssueController {
       soundtrack,
     );
     return await toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Publish an off-chain comic issue on chain */
+  @Patch('publish-on-chain/:id')
+  async publishOnChain(
+    @Param('id') id: string,
+    @Body() publishOnChainDto: PublishOnChainDto,
+  ): Promise<ComicIssueDto> {
+    const publishedComicIssue = await this.comicIssueService.publishOnChain(
+      +id,
+      publishOnChainDto,
+    );
+    return await toComicIssueDto(publishedComicIssue);
   }
 
   /* Publish comic issue */
