@@ -24,6 +24,7 @@ import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
+import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 
 @Injectable()
 export class ComicIssueService {
@@ -292,6 +293,53 @@ export class ComicIssueService {
     return comicIssue;
   }
 
+  async publishOnChain(id: number, publishOnChainDto: PublishOnChainDto) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id, deletedAt: null },
+      include: { collectionNft: true },
+    });
+
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    } else if (!!comicIssue.publishedAt) {
+      // throw new BadRequestException('Comic issue already published');
+    } else if (!!comicIssue.collectionNft) {
+      throw new BadRequestException('Comic issue already on chain');
+    } else if (publishOnChainDto.supply < 1) {
+      throw new BadRequestException('Supply must be greater than 0');
+    }
+
+    this.validatePrice(publishOnChainDto);
+
+    const updatedComicIssue = await this.prisma.comicIssue.update({
+      where: { id },
+      data: { publishedAt: new Date(), ...publishOnChainDto },
+      include: { comic: { include: { creator: true } }, collectionNft: true },
+    });
+
+    try {
+      await this.candyMachineService.createComicIssueCM(
+        updatedComicIssue.comic,
+        updatedComicIssue,
+        updatedComicIssue.comic.creator,
+      );
+    } catch (e) {
+      // revert in case of failure
+      await this.prisma.comicIssue.update({
+        where: { id },
+        data: {
+          publishedAt: comicIssue.publishedAt,
+          supply: comicIssue.supply,
+          mintPrice: comicIssue.mintPrice,
+          discountMintPrice: comicIssue.discountMintPrice,
+        },
+      });
+      throw e;
+    }
+
+    return updatedComicIssue;
+  }
+
   async publish(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
@@ -380,7 +428,9 @@ export class ComicIssueService {
     }
   }
 
-  validatePrice(comicIssue: CreateComicIssueDto | UpdateComicIssueDto) {
+  validatePrice(
+    comicIssue: CreateComicIssueDto | UpdateComicIssueDto | PublishOnChainDto,
+  ) {
     // if supply is 0, it's a web2 comic which must be FREE
     if (
       (comicIssue.supply === 0 && comicIssue.mintPrice !== 0) ||
@@ -392,6 +442,10 @@ export class ComicIssueService {
     if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
       throw new BadRequestException(
         'Discount mint price should be lower than base mint price',
+      );
+    } else if (comicIssue.discountMintPrice < 0 || comicIssue.mintPrice < 0) {
+      throw new BadRequestException(
+        'Mint prices must be greater than or equal to 0',
       );
     }
   }
