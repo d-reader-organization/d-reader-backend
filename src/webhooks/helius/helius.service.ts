@@ -198,7 +198,7 @@ export class HeliusService {
             },
           },
           price: nftTransactionInfo.amount,
-          timestamp: new Date(nftTransactionInfo.timestamp),
+          timestamp: new Date(nftTransactionInfo.timestamp * 1000),
           description: enrichedTransaction.description,
         },
       });
