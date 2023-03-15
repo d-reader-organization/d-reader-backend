@@ -247,7 +247,7 @@ export class CandyMachineService {
       })),
     );
 
-    const INSERT_CHUNK_SIZE = 9;
+    const INSERT_CHUNK_SIZE = 8;
     const itemChunksOfTen = chunk(items, INSERT_CHUNK_SIZE);
     let iteration = 0;
     const transactionBuilders: TransactionBuilder[] = [];

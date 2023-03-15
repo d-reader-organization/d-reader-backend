@@ -31,8 +31,8 @@ export class HeliusWebhookDto {
   @IsUrl()
   webhookURL: string;
 
-  @IsEnum(WebhookType)
-  @ApiProperty({ enum: WebhookType })
+  // @IsEnum(WebhookType)
+  // @ApiProperty({ enum: WebhookType })
   @IsOptional()
   webhookType?: WebhookType;
 

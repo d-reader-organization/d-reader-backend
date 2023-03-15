@@ -67,7 +67,7 @@ export class WalletComicIssueService {
         totalIssuesCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        price: price ?? getRandomFloatOrInt(1, 6),
+        price,
         totalPagesCount,
       };
     } catch (error) {
