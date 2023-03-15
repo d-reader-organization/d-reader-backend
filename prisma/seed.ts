@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
 import { Keypair } from '@solana/web3.js';
+import { getRandomInt } from '../src/utils/helpers';
 
 const prisma = new PrismaClient();
 
@@ -2364,8 +2365,8 @@ async function main() {
   }
 
   try {
-    // 100 dummy wallets
-    const indexArray = [...Array(100).keys()];
+    // 10 dummy wallets
+    const indexArray = [...Array(10).keys()];
     const walletArray = indexArray.map(() =>
       Keypair.generate().publicKey.toBase58(),
     );
@@ -2383,63 +2384,65 @@ async function main() {
       console.log(i, ' ➕ Adding wallet ' + walletAddress);
       await prisma.wallet.create({ data: { address: walletAddress } });
 
-      await Promise.all(
-        comicSlugs.map((comicSlug) => {
-          prisma.walletComic.create({
-            data: {
-              walletAddress,
-              comicSlug,
-              isFavourite: true,
-              isSubscribed: true,
-              viewedAt: new Date(),
-              rating: 4,
-            },
-          });
-        }),
-      );
+      // await Promise.all(
+      //   comicSlugs.map(async (comicSlug) => {
+      //     await prisma.walletComic.create({
+      //       data: {
+      //         walletAddress,
+      //         comicSlug,
+      //         isFavourite: getRandomInt(0, 10) > 5,
+      //         isSubscribed: getRandomInt(0, 10) > 5,
+      //         viewedAt: getRandomInt(0, 10) > 5 ? new Date() : undefined,
+      //         rating: getRandomInt(0, 10) > 3 ? getRandomInt(3, 5) : undefined,
+      //       },
+      //     });
+      //   }),
+      // );
 
-      await Promise.all(
-        comicIssueIds.map((comicIssueId) => {
-          prisma.walletComicIssue.create({
-            data: {
-              walletAddress,
-              comicIssueId,
-              isFavourite: true,
-              isSubscribed: true,
-              viewedAt: new Date(),
-              readAt: new Date(),
-              rating: 4,
-            },
-          });
-        }),
-      );
+      // await Promise.all(
+      //   comicIssueIds.map(async (comicIssueId) => {
+      //     await prisma.walletComicIssue.create({
+      //       data: {
+      //         walletAddress,
+      //         comicIssueId,
+      //         isFavourite: getRandomInt(0, 10) > 5,
+      //         isSubscribed: getRandomInt(0, 10) > 5,
+      //         viewedAt: getRandomInt(0, 10) > 5 ? new Date() : undefined,
+      //         readAt: getRandomInt(0, 10) > 4 ? new Date() : undefined,
+      //         rating: getRandomInt(0, 10) > 3 ? getRandomInt(3, 5) : undefined,
+      //       },
+      //     });
+      //   }),
+      // );
 
-      // for (const comicSlug of comicSlugs) {
-      //   await prisma.walletComic.create({
-      //     data: {
-      //       walletAddress,
-      //       comicSlug,
-      //       isFavourite: true,
-      //       isSubscribed: true,
-      //       viewedAt: new Date(),
-      //       rating: 4,
-      //     },
-      //   });
-      // }
+      for (const comicSlug of comicSlugs) {
+        const shouldRate = getRandomInt(0, 10) > 7;
+        await prisma.walletComic.create({
+          data: {
+            walletAddress,
+            comicSlug,
+            isFavourite: getRandomInt(0, 10) > 5,
+            isSubscribed: getRandomInt(0, 10) > 5,
+            viewedAt: getRandomInt(0, 10) > 5 ? new Date() : undefined,
+            rating: shouldRate ? getRandomInt(3, 5) : undefined,
+          },
+        });
+      }
 
-      // for (const comicIssueId of comicIssueIds) {
-      //   await prisma.walletComicIssue.create({
-      //     data: {
-      //       walletAddress,
-      //       comicIssueId,
-      //       isFavourite: true,
-      //       isSubscribed: true,
-      //       viewedAt: new Date(),
-      //       readAt: new Date(),
-      //       rating: 4,
-      //     },
-      //   });
-      // }
+      for (const comicIssueId of comicIssueIds) {
+        const shouldRate = getRandomInt(0, 10) > 7;
+        await prisma.walletComicIssue.create({
+          data: {
+            walletAddress,
+            comicIssueId,
+            isFavourite: getRandomInt(0, 10) > 5,
+            isSubscribed: getRandomInt(0, 10) > 5,
+            viewedAt: getRandomInt(0, 10) > 5 ? new Date() : undefined,
+            readAt: getRandomInt(0, 10) > 6 ? new Date() : undefined,
+            rating: shouldRate ? getRandomInt(3, 5) : undefined,
+          },
+        });
+      }
 
       i++;
     }

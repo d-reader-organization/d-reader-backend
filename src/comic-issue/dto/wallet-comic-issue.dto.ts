@@ -1,7 +1,9 @@
-import { IsBoolean, IsDate, IsOptional, IsPositive } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional, Max, Min } from 'class-validator';
 
 export class WalletComicIssueDto {
-  @IsPositive()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
   rating: number | null;
 
   @IsBoolean()
