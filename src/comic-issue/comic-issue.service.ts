@@ -107,7 +107,7 @@ export class ComicIssueService {
       where: {
         collectionNftAddress,
         itemsRemaining: { gt: 0 },
-        endsAt: { gt: new Date() },
+        OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
       },
       select: { address: true },
     });
