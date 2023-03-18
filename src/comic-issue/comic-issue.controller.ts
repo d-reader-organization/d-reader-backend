@@ -46,8 +46,9 @@ import {
   toComicPageDtoArray,
 } from 'src/comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, ComicIssueUpdateGuard)
+@UseGuards(RestAuthGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')

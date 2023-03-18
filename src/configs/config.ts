@@ -23,6 +23,11 @@ const config: Config = {
   s3: {
     region: 'us-east-1',
   },
+  throttle: {
+    ttl: 30,
+    limit: 15,
+    ignoreUserAgents: [],
+  },
 };
 
 export default (): Config => config;

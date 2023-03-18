@@ -32,8 +32,9 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Role } from '@prisma/client';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, RolesGuard)
+@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Carousel')
 @Controller('carousel')

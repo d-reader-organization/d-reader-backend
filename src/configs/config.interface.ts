@@ -4,6 +4,7 @@ export interface Config {
   swagger: SwaggerConfig;
   security: SecurityConfig;
   s3: S3Config;
+  throttle: ThrottleConfig;
 }
 
 export interface NestConfig {
@@ -31,4 +32,10 @@ export interface SecurityConfig {
 
 export interface S3Config {
   region: string;
+}
+
+export interface ThrottleConfig {
+  ttl: number;
+  limit: number;
+  ignoreUserAgents: RegExp[];
 }

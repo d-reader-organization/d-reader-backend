@@ -13,14 +13,15 @@ import { MailModule } from './mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SecurityConfig } from 'src/configs/config.interface';
-import config from './configs/config';
+import { SecurityConfig, ThrottleConfig } from 'src/configs/config.interface';
 import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
 import { NftModule } from './nft/nft.module';
+import config from './configs/config';
 
 @Module({
   imports: [
@@ -44,6 +45,18 @@ import { NftModule } from './nft/nft.module';
       },
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const throttleConfig = configService.get<ThrottleConfig>('throttle');
+        return {
+          ttl: throttleConfig.ttl,
+          limit: throttleConfig.limit,
+          ignoreUserAgents: throttleConfig.ignoreUserAgents,
+        };
+      },
+    }),
     WalletModule,
     CreatorModule,
     ComicModule,

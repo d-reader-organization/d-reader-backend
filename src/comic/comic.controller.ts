@@ -36,8 +36,9 @@ import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { WalletComicService } from './wallet-comic.service';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, ComicUpdateGuard)
+@UseGuards(RestAuthGuard, ComicUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic')
 @Controller('comic')
