@@ -24,10 +24,11 @@ import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
 import { RealIP } from 'nestjs-real-ip';
+import { ThrottlerGuard } from '@nestjs/throttler';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
-@UseGuards(RestAuthGuard, RolesGuard)
+@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Newsletter')
 @Controller('newsletter')

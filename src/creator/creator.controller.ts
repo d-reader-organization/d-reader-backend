@@ -33,8 +33,9 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, CreatorUpdateGuard)
+@UseGuards(RestAuthGuard, CreatorUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Creator')
 @Controller('creator')

@@ -14,8 +14,9 @@ import {
   toCMReceiptDtoArray,
 } from './dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from './dto/candy-machine.dto';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, CandyMachineUpdateGuard)
+@UseGuards(RestAuthGuard, CandyMachineUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
@@ -44,6 +45,7 @@ export class CandyMachineController {
     );
   }
 
+  @Throttle(5, 30)
   @Get('/transactions/construct/mint-one')
   async constructMintOneTransaction(
     @WalletEntity() wallet: Wallet,

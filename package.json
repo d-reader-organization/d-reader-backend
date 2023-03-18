@@ -48,6 +48,7 @@
     "@nestjs/platform-express": "^9.3.8",
     "@nestjs/schedule": "^2.2.0",
     "@nestjs/swagger": "^6.2.1",
+    "@nestjs/throttler": "^4.0.0",
     "@solana/spl-token": "^0.3.7",
     "@solana/web3.js": "^1.73.3",
     "@types/uuid": "^9.0.1",

@@ -31,8 +31,9 @@ import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Role } from '@prisma/client';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-filter-params.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, RolesGuard)
+@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Genre')
 @Controller('genre')

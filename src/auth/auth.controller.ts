@@ -4,8 +4,10 @@ import { WalletEntity } from '../decorators/wallet.decorator';
 import { RestAuthGuard } from '../guards/rest-auth.guard';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
+@UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -14,6 +16,7 @@ export class AuthController {
     private readonly passwordService: PasswordService,
   ) {}
 
+  @Throttle(2, 10)
   /* Request a new one time password for your wallet to sign */
   @Get('wallet/request-password/:address')
   async requestPassword(@Param('address') address: string) {
