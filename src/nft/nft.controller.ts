@@ -4,8 +4,9 @@ import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { NftDto, toNftDto, toNftDtoArray } from './dto/nft.dto';
 import { NftFilterParams } from './dto/nft-filter-params.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard)
+@UseGuards(RestAuthGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('NFTs')
 @Controller('nft')

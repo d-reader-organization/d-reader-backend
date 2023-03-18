@@ -22,9 +22,10 @@ import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
-@UseGuards(RestAuthGuard, WalletUpdateGuard)
+@UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Wallet')
 @Controller('wallet')

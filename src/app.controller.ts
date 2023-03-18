@@ -4,7 +4,9 @@ import { AppService } from './app.service';
 import { WalletEntity } from './decorators/wallet.decorator';
 import { RestAuthGuard } from './guards/rest-auth.guard';
 import { Wallet } from '@prisma/client';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
+@UseGuards(ThrottlerGuard)
 @ApiTags('App')
 @Controller('app')
 export class AppController {

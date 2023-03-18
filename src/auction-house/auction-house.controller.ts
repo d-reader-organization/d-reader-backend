@@ -10,14 +10,16 @@ import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
 import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, AuctionHouseGuard)
+@UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
+  @Throttle(5, 30)
   @Get('/transactions/construct/list')
   async constructListTransaction(
     @WalletEntity() wallet: Wallet,
@@ -34,6 +36,7 @@ export class AuctionHouseController {
     );
   }
 
+  @Throttle(5, 30)
   @Get('/transactions/construct/private-bid')
   async constructPrivateBidTransaction(
     @WalletEntity() wallet: Wallet,
@@ -57,6 +60,7 @@ export class AuctionHouseController {
     );
   }
 
+  @Throttle(5, 30)
   @Get('/transactions/execute-sale')
   async constructExecutelistedSale(
     @WalletEntity() wallet: Wallet,
@@ -75,6 +79,7 @@ export class AuctionHouseController {
     );
   }
 
+  @Throttle(5, 30)
   @Get('/transactions/construct/cancel-bid')
   async constructCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
@@ -83,6 +88,7 @@ export class AuctionHouseController {
     );
   }
 
+  @Throttle(5, 30)
   @Get('/transactions/construct/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
