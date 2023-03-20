@@ -445,6 +445,7 @@ export class CandyMachineService {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
       include: { nft: true, buyer: true },
+      orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,
     });
