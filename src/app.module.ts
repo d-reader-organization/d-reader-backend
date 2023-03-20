@@ -20,6 +20,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
+import { WebSocketModule } from './websockets/websockets.module';
 import { NftModule } from './nft/nft.module';
 import config from './configs/config';
 
@@ -64,10 +65,11 @@ import config from './configs/config';
     CarouselModule,
     MailModule,
     GenreModule,
-    NewsletterModule,
     WebhooksModule,
+    NewsletterModule,
     CandyMachineModule,
     AuctionHouseModule,
+    WebSocketModule,
     NftModule,
   ],
   controllers: [AppController],
