@@ -15,13 +15,17 @@ import {
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
+import { WebSocketGateway } from 'src/websockets/websocket.gateway';
 
 @Injectable()
 export class HeliusService {
   private readonly helius: Helius;
   private readonly metaplex: Metaplex;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+  ) {
     this.helius = new Helius(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
@@ -46,15 +50,29 @@ export class HeliusService {
     });
   }
 
+  async findAll() {
+    return await this.helius.getAllWebhooks();
+  }
+
+  async findOne(id: string) {
+    const webhook = await this.helius.getWebhookByID(id);
+    return webhook;
+  }
+
+  async findFirst() {
+    const webhooks = await this.findAll();
+    return webhooks[0];
+  }
+
   async subscribeTo(address: string) {
-    const { webhookID, accountAddresses } = await this.getMyWebhook();
+    const { webhookID, accountAddresses } = await this.findFirst();
     await this.updateWebhook(webhookID, {
       accountAddresses: [...accountAddresses, address],
     });
   }
 
   async removeSubscription(address: string) {
-    const { webhookID, accountAddresses } = await this.getMyWebhook();
+    const { webhookID, accountAddresses } = await this.findFirst();
     await this.updateWebhook(webhookID, {
       accountAddresses: [...accountAddresses, address],
     });
@@ -62,11 +80,6 @@ export class HeliusService {
 
   updateWebhook(id: string, payload: UpdateHeliusWebhookDto) {
     return this.helius.editWebhook(id, payload);
-  }
-
-  async getMyWebhook() {
-    const webhooks = await this.helius.getAllWebhooks();
-    return webhooks[0]; // replace in the future
   }
 
   deleteWebhook(id: string) {
@@ -187,7 +200,8 @@ export class HeliusService {
         amount: number;
       };
 
-      await this.prisma.candyMachineReceipt.create({
+      const receipt = await this.prisma.candyMachineReceipt.create({
+        include: { nft: true, buyer: true },
         data: {
           nft: { connect: { address: mint.toBase58() } },
           candyMachine: { connect: { address: candyMachineAddress } },
@@ -202,6 +216,9 @@ export class HeliusService {
           description: enrichedTransaction.description,
         },
       });
+
+      console.log('receiptCreated');
+      this.websocketGateway.handleMintReceipt(receipt);
     } catch (error) {
       console.error(error);
     }

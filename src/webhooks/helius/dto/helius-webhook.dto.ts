@@ -4,7 +4,7 @@ import { TransactionType, Webhook, WebhookType } from 'helius-sdk';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import {
   IsArray,
-  IsEnum,
+  // IsEnum,
   IsUrl,
   IsOptional,
   IsString,
@@ -46,6 +46,6 @@ export function toHeliusWebhookDto(heliusWebhook: Webhook) {
   return heliusWebhookDto;
 }
 
-export const toWalletDtoArray = (webhooks: Webhook[]) => {
+export const toHeliusWebhookDtoArray = (webhooks: Webhook[]) => {
   return Promise.all(webhooks.map(toHeliusWebhookDto));
 };
