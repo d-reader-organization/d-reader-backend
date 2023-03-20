@@ -37,7 +37,7 @@ export class CandyMachineReceiptDto {
   timestamp: string;
 }
 
-type CandyMachineReceiptInput = CandyMachineReceipt & {
+export type CandyMachineReceiptInput = CandyMachineReceipt & {
   nft: Nft;
   buyer: Wallet;
 };

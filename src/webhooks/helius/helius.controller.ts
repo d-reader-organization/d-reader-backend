@@ -11,7 +11,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { EnrichedTransaction } from 'helius-sdk';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
-import { HeliusWebhookDto, toHeliusWebhookDto } from './dto/helius-webhook.dto';
+import {
+  HeliusWebhookDto,
+  toHeliusWebhookDto,
+  toHeliusWebhookDtoArray,
+} from './dto/helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
 
@@ -42,10 +46,24 @@ export class HeliusController {
     return toHeliusWebhookDto(webhook);
   }
 
-  /* Get specific webhook */
+  /* Get all webhooks */
   @Get('get')
-  async getMyWebhook(): Promise<HeliusWebhookDto> {
-    const webhook = await this.heliusService.getMyWebhook();
+  async findAll(): Promise<HeliusWebhookDto[]> {
+    const webhooks = await this.heliusService.findAll();
+    return toHeliusWebhookDtoArray(webhooks);
+  }
+
+  /* Get first webhook */
+  @Get('get/first')
+  async findFirst(): Promise<HeliusWebhookDto> {
+    const webhook = await this.heliusService.findFirst();
+    return toHeliusWebhookDto(webhook);
+  }
+
+  /* Get specific webhook by unique id */
+  @Get('get/:id')
+  async findOne(@Param('id') id: string): Promise<UpdateHeliusWebhookDto> {
+    const webhook = await this.heliusService.findOne(id);
     return toHeliusWebhookDto(webhook);
   }
 
