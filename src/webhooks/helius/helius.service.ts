@@ -120,39 +120,21 @@ export class HeliusService {
         .getAccount(new PublicKey(tokenMetadata));
       const metadata = toMetadata(toMetadataAccount(info));
 
-      const nft = await this.prisma.nft.upsert({
-        where: { address: mint },
-        create: {
-          address: mint,
-          uri: metadata.uri,
+      const listing = await this.prisma.listing.create({
+        data: {
+          nftAddress: mint,
           name: metadata.name,
-          ownerAddress: sellerAddress,
-          listing: {
-            create: {
-              tradeStateAddress,
-              sellerAddress,
-              price,
-              feePayer,
-              signature,
-              createdAt,
-            },
-          },
-        },
-        update: {
-          listing: {
-            create: {
-              tradeStateAddress,
-              sellerAddress,
-              price,
-              feePayer,
-              signature,
-              createdAt,
-            },
-          },
+          uri: metadata.uri,
+          tradeStateAddress,
+          sellerAddress,
+          price,
+          feePayer,
+          signature,
+          createdAt,
         },
       });
 
-      return nft;
+      return listing;
     } catch (error) {
       console.log(error);
     }

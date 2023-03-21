@@ -154,12 +154,11 @@ model Nft {
   name                 String
   owner                Wallet               @relation(fields: [ownerAddress], references: [address])
   ownerAddress         String
-  candyMachine         CandyMachine?         @relation(fields: [candyMachineAddress], references: [address])
-  candyMachineAddress  String?
-  collectionNft        CollectionNft?        @relation(fields: [collectionNftAddress], references: [address])
-  collectionNftAddress String?
+  candyMachine         CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+  candyMachineAddress  String
+  collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
+  collectionNftAddress String
   receipt              CandyMachineReceipt?
-  listing              Listing?              
 }
 
 model CandyMachine {
@@ -280,15 +279,17 @@ model WalletCreator {
 }
 
 model Listing {
-  nft   Nft @relation(fields: [mint],references: [address])
-  mint  String @id
+  id                Int        @id @default(autoincrement())
+  nftAddress        String
+  name              String
+  uri               String
   tradeStateAddress String
-  sellerAddress String
-  price Int
-  feePayer String
-  signature String
-  createdAt DateTime
-  canceledAt DateTime?
+  sellerAddress     String
+  price             Int
+  feePayer          String
+  signature         String
+  createdAt         DateTime
+  canceledAt        DateTime?
 }
 
 // TODO v1
