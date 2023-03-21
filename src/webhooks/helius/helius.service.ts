@@ -94,11 +94,68 @@ export class HeliusService {
             return this.handleMintEvent(transaction);
           case TransactionType.TRANSFER:
             return this.handleNftTransfer(transaction);
+          case TransactionType.NFT_LISTING:
+            return this.handleNftListing(transaction);
           default:
             return;
         }
       }),
     );
+  }
+
+  private async handleNftListing(transaction: EnrichedTransaction) {
+    try {
+      // change after helius fix
+      const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved for a nft listing
+      const tradeStateAddress = transaction.instructions[0].accounts[6]; //index 6 for seller's tradeStadeAccount
+      const sellerAddress = transaction.events.nft.seller;
+      // change after helius fix
+      const price = transaction.events.nft.transactionAmount;
+      const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
+      const feePayer = transaction.feePayer;
+      const signature = transaction.signature;
+      const createdAt = new Date(transaction.timestamp * 1000);
+      const info = await this.metaplex
+        .rpc()
+        .getAccount(new PublicKey(tokenMetadata));
+      const metadata = toMetadata(toMetadataAccount(info));
+
+      const nft = await this.prisma.nft.upsert({
+        where: { address: mint },
+        create: {
+          address: mint,
+          uri: metadata.uri,
+          name: metadata.name,
+          ownerAddress: sellerAddress,
+          listing: {
+            create: {
+              tradeStateAddress,
+              sellerAddress,
+              price,
+              feePayer,
+              signature,
+              createdAt,
+            },
+          },
+        },
+        update: {
+          listing: {
+            create: {
+              tradeStateAddress,
+              sellerAddress,
+              price,
+              feePayer,
+              signature,
+              createdAt,
+            },
+          },
+        },
+      });
+
+      return nft;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private async handleNftTransfer(enrichedTransaction: EnrichedTransaction) {

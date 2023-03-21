@@ -137,11 +137,12 @@ Table Nft {
   name String [not null]
   owner Wallet [not null]
   ownerAddress String [not null]
-  candyMachine CandyMachine [not null]
-  candyMachineAddress String [not null]
-  collectionNft CollectionNft [not null]
-  collectionNftAddress String [not null]
+  candyMachine CandyMachine
+  candyMachineAddress String
+  collectionNft CollectionNft
+  collectionNftAddress String
   receipt CandyMachineReceipt
+  listing Listing
 }
 
 Table CandyMachine {
@@ -253,6 +254,18 @@ Table WalletCreator {
   }
 }
 
+Table Listing {
+  nft Nft [not null]
+  mint String [pk]
+  tradeStateAddress String [not null]
+  sellerAddress String [not null]
+  price Int [not null]
+  feePayer String [not null]
+  signature String [not null]
+  createdAt DateTime [not null]
+  canceledAt DateTime
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -300,3 +313,5 @@ Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
 Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
+
+Ref: Listing.mint - Nft.address
