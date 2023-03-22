@@ -283,11 +283,11 @@ model Listing {
   nftAddress        String
   name              String
   uri               String
-  tradeStateAddress String
   sellerAddress     String
   price             Int
   feePayer          String
   signature         String
+  symbol            String
   createdAt         DateTime
   canceledAt        DateTime?
 }

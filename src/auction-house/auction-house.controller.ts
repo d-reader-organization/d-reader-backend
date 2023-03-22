@@ -91,9 +91,13 @@ export class AuctionHouseController {
   @Throttle(5, 30)
   @Get('/transactions/construct/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
-    const receiptAddress = new PublicKey(query.receiptAddress);
+    const receiptAddress = query.receiptAddress
+      ? new PublicKey(query.receiptAddress)
+      : undefined;
+    const mint = query.mint ?? undefined;
     return await this.auctionHouseService.constructCancelListingTransaction(
       receiptAddress,
+      mint,
     );
   }
 }

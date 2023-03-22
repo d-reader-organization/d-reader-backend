@@ -107,7 +107,6 @@ export class HeliusService {
     try {
       // change after helius fix
       const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved for a nft listing
-      const tradeStateAddress = transaction.instructions[0].accounts[6]; //index 6 for seller's tradeStadeAccount
       const sellerAddress = transaction.events.nft.seller;
       // change after helius fix
       const price = transaction.events.nft.transactionAmount;
@@ -125,9 +124,9 @@ export class HeliusService {
           nftAddress: mint,
           name: metadata.name,
           uri: metadata.uri,
-          tradeStateAddress,
           sellerAddress,
           price,
+          symbol: metadata.symbol,
           feePayer,
           signature,
           createdAt,

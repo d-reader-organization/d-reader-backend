@@ -15,6 +15,7 @@ import { MintOneCommand } from './mint-one-command';
 import { MintOneQuestions } from './mint-one-questions';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { HeliusService } from '../webhooks/helius/helius.service';
     MintOneQuestions,
     CandyMachineService,
     HeliusService,
+    WebSocketGateway,
   ],
 })
 export class CLIModule {}

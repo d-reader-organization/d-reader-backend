@@ -258,11 +258,11 @@ Table Listing {
   nftAddress String [not null]
   name String [not null]
   uri String [not null]
-  tradeStateAddress String [not null]
   sellerAddress String [not null]
   price Int [not null]
   feePayer String [not null]
   signature String [not null]
+  symbol String [not null]
   createdAt DateTime [not null]
   canceledAt DateTime
 }
