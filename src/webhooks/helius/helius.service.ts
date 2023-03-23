@@ -166,6 +166,26 @@ export class HeliusService {
           where: { address },
           data: { ownerAddress: previousOwner },
         });
+      } else {
+        const listing = await this.prisma.listing.findFirst({
+          where: {
+            nftAddress: address,
+            sellerAddress: previousOwner,
+            canceledAt: {
+              not: null,
+            },
+          },
+        });
+        if (listing) {
+          await this.prisma.listing.update({
+            where: {
+              id: listing.id,
+            },
+            data: {
+              canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+            },
+          });
+        }
       }
     } catch (error) {
       console.log(error);
