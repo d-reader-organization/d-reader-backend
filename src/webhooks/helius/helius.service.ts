@@ -16,6 +16,7 @@ import {
   toMetadataAccount,
 } from '@metaplex-foundation/js';
 import { WebSocketGateway } from 'src/websockets/websocket.gateway';
+import axios from 'axios';
 
 @Injectable()
 export class HeliusService {
@@ -118,15 +119,42 @@ export class HeliusService {
         .rpc()
         .getAccount(new PublicKey(tokenMetadata));
       const metadata = toMetadata(toMetadataAccount(info));
+      const { data: collectionMetadata } = await axios.get(metadata.uri);
+      const mintAttributeIndex = collectionMetadata.attributes.findIndex(
+        (attribute) => attribute.trait_type == 'used',
+      );
+      const signedAttributeIndex = collectionMetadata.attributes.findIndex(
+        (attribute) => attribute.trait_type == 'signed',
+      );
+      const isMint =
+        mintAttributeIndex == -1
+          ? null
+          : collectionMetadata.attributes[mintAttributeIndex].value == 'false';
+      const isSigned =
+        signedAttributeIndex == -1
+          ? null
+          : collectionMetadata.attributes[signedAttributeIndex].value == 'true';
 
       const listing = await this.prisma.listing.create({
         data: {
           nftAddress: mint,
           name: metadata.name,
-          uri: metadata.uri,
           sellerAddress,
           price,
           symbol: metadata.symbol,
+          metadata: {
+            connectOrCreate: {
+              where: {
+                collectionUri: metadata.uri,
+              },
+              create: {
+                collectionName: collectionMetadata.collection.name,
+                collectionUri: metadata.uri,
+                isMint,
+                isSigned,
+              },
+            },
+          },
           feePayer,
           signature,
           createdAt,
@@ -167,25 +195,14 @@ export class HeliusService {
           data: { ownerAddress: previousOwner },
         });
       } else {
-        const listing = await this.prisma.listing.findFirst({
+        await this.prisma.listing.update({
           where: {
-            nftAddress: address,
-            sellerAddress: previousOwner,
-            canceledAt: {
-              not: null,
-            },
+            nftAddress_canceledAt: { nftAddress: address, canceledAt: null },
+          },
+          data: {
+            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
           },
         });
-        if (listing) {
-          await this.prisma.listing.update({
-            where: {
-              id: listing.id,
-            },
-            data: {
-              canceledAt: new Date(enrichedTransaction.timestamp * 1000),
-            },
-          });
-        }
       }
     } catch (error) {
       console.log(error);
@@ -230,6 +247,13 @@ export class HeliusService {
     }
 
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
+    const mintAttributeIndex = metadata.json.attributes.findIndex(
+      (attribute) => attribute.trait_type == 'used',
+    );
+    const signedAttributeIndex = metadata.json.attributes.findIndex(
+      (attribute) => attribute.trait_type == 'signed',
+    );
+
     try {
       const comicIssueNft = await this.prisma.nft.create({
         data: {
@@ -245,6 +269,22 @@ export class HeliusService {
           candyMachine: { connect: { address: candyMachineAddress } },
           collectionNft: {
             connect: { address: metadata.collection.address.toBase58() },
+          },
+          metadata: {
+            connectOrCreate: {
+              where: {
+                collectionUri: metadata.uri,
+              },
+              create: {
+                collectionName: metadata.json.collection.name,
+                collectionUri: metadata.uri,
+                isMint:
+                  metadata.json.attributes[mintAttributeIndex].value == 'false',
+                isSigned:
+                  metadata.json.attributes[signedAttributeIndex].value ==
+                  'true',
+              },
+            },
           },
         },
       });

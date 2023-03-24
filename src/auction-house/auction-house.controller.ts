@@ -11,6 +11,7 @@ import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { toListingDtoArray } from './dto/listing.dto';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -99,5 +100,12 @@ export class AuctionHouseController {
       receiptAddress,
       mint,
     );
+  }
+
+  @Throttle(5, 30)
+  @Get('/get')
+  async findAll() {
+    const listings = await this.auctionHouseService.findAll();
+    return await toListingDtoArray(listings);
   }
 }

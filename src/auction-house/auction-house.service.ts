@@ -265,6 +265,14 @@ export class AuctionHouseService {
     }
   }
 
+  async findAll() {
+    return await this.prisma.listing.findMany({
+      where: {
+        canceledAt: null,
+      },
+    });
+  }
+
   toListing(auctionHouse: AuctionHouse, listingModel: ListingModel) {
     const address = new PublicKey(listingModel.nftAddress);
     const sellerAddress = new PublicKey(listingModel.sellerAddress);

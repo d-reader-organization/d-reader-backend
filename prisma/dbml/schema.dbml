@@ -141,7 +141,9 @@ Table Nft {
   candyMachineAddress String [not null]
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
+  collectionUri String [not null]
   receipt CandyMachineReceipt
+  metadata Metadata [not null]
 }
 
 Table CandyMachine {
@@ -253,11 +255,21 @@ Table WalletCreator {
   }
 }
 
+Table Metadata {
+  collectionUri String [pk]
+  nft Nft [not null]
+  listing Listing [not null]
+  collectionName String [not null]
+  isSigned Boolean
+  isMint Boolean
+}
+
 Table Listing {
   id Int [pk, increment]
+  collectionUri String [not null]
+  metadata Metadata [not null]
   nftAddress String [not null]
   name String [not null]
-  uri String [not null]
   sellerAddress String [not null]
   price Int [not null]
   feePayer String [not null]
@@ -265,6 +277,10 @@ Table Listing {
   symbol String [not null]
   createdAt DateTime [not null]
   canceledAt DateTime
+
+  indexes {
+    (nftAddress, canceledAt) [unique]
+  }
 }
 
 Enum Role {
@@ -293,6 +309,8 @@ Ref: Nft.candyMachineAddress > CandyMachine.address
 
 Ref: Nft.collectionNftAddress > CollectionNft.address
 
+Ref: Nft.collectionUri > Metadata.collectionUri
+
 Ref: CandyMachine.collectionNftAddress > CollectionNft.address
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
@@ -314,3 +332,5 @@ Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
 Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
+
+Ref: Listing.collectionUri > Metadata.collectionUri
