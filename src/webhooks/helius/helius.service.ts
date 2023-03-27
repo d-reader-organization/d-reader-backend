@@ -15,7 +15,7 @@ import {
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
-import { WebSocketGateway } from 'src/websockets/websocket.gateway';
+import { WebSocketGateway } from '../../websockets/websocket.gateway';
 
 @Injectable()
 export class HeliusService {
@@ -154,23 +154,6 @@ export class HeliusService {
     // Candy Machine address is the 3rd account in the guard instruction
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
 
-    try {
-      const candyMachine = await this.prisma.candyMachine.update({
-        where: { address: candyMachineAddress },
-        data: {
-          itemsRemaining: { decrement: 1 },
-          itemsMinted: { increment: 1 },
-        },
-      });
-
-      if (candyMachine.itemsRemaining === 0) {
-        this.removeSubscription(candyMachine.address);
-      }
-    } catch (error) {
-      console.error('Unsupported candy machine: ', error);
-      return;
-    }
-
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
     try {
       const comicIssueNft = await this.prisma.nft.create({
@@ -217,7 +200,18 @@ export class HeliusService {
         },
       });
 
-      console.log('receiptCreated');
+      const candyMachine = await this.prisma.candyMachine.update({
+        where: { address: candyMachineAddress },
+        data: {
+          itemsRemaining: { decrement: 1 },
+          itemsMinted: { increment: 1 },
+        },
+      });
+
+      if (candyMachine.itemsRemaining === 0) {
+        this.removeSubscription(candyMachine.address);
+      }
+
       this.websocketGateway.handleMintReceipt(receipt);
     } catch (error) {
       console.error(error);

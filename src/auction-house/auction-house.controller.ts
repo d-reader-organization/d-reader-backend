@@ -20,7 +20,7 @@ export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
   @Throttle(5, 30)
-  @Get('/transactions/construct/list')
+  @Get('/transactions/list')
   async constructListTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: ListParams,
@@ -37,7 +37,7 @@ export class AuctionHouseController {
   }
 
   @Throttle(5, 30)
-  @Get('/transactions/construct/private-bid')
+  @Get('/transactions/private-bid')
   async constructPrivateBidTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: PrivateBidParams,
@@ -80,7 +80,7 @@ export class AuctionHouseController {
   }
 
   @Throttle(5, 30)
-  @Get('/transactions/construct/cancel-bid')
+  @Get('/transactions/cancel-bid')
   async constructCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
     return await this.auctionHouseService.constructCancelBidTransaction(
@@ -89,7 +89,7 @@ export class AuctionHouseController {
   }
 
   @Throttle(5, 30)
-  @Get('/transactions/construct/cancel-listing')
+  @Get('/transactions/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
     return await this.auctionHouseService.constructCancelListingTransaction(

@@ -4,9 +4,10 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { ConfigService } from '@nestjs/config';
-import { SecurityConfig } from 'src/configs/config.interface';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SecurityConfig, ThrottleConfig } from 'src/configs/config.interface';
 import { PasswordService } from './password.service';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -20,6 +21,18 @@ import { PasswordService } from './password.service';
         };
       },
       inject: [ConfigService],
+    }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => {
+        const throttleConfig = configService.get<ThrottleConfig>('throttle');
+        return {
+          ttl: throttleConfig.ttl,
+          limit: throttleConfig.limit,
+          ignoreUserAgents: throttleConfig.ignoreUserAgents,
+        };
+      },
     }),
   ],
   controllers: [AuthController],

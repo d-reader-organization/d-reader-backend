@@ -43,10 +43,11 @@ Table Creator {
 }
 
 Table Comic {
-  name String [unique, not null]
+  name String [not null]
   slug String [pk]
-  isMatureAudience Boolean [not null]
+  audienceType AudienceType [not null, default: 'Everyone']
   cover String [not null, default: '']
+  banner String [not null, default: '']
   pfp String [not null, default: '']
   logo String [not null, default: '']
   description String [not null, default: '']
@@ -105,13 +106,17 @@ Table ComicIssue {
   supply Int [not null]
   discountMintPrice Float [not null]
   mintPrice Float [not null]
+  sellerFeeBasisPoints Int [not null]
   title String [not null]
   slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
   cover String [not null, default: '']
-  soundtrack String [not null, default: '']
+  signedCover String [not null, default: '']
+  usedCover String [not null, default: '']
+  usedSignedCover String [not null, default: '']
   releaseDate DateTime [not null]
+  updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
   featuredAt DateTime
@@ -165,7 +170,7 @@ Table CandyMachineReceipt {
   nft Nft [not null]
   buyer Wallet [not null]
   buyerAddress String [not null]
-  price Float [not null]
+  price Int [not null]
   timestamp DateTime [not null]
   description String [not null]
   candyMachine CandyMachine [not null]
@@ -257,6 +262,13 @@ Enum Role {
   Superadmin
   Admin
   User
+}
+
+Enum AudienceType {
+  Everyone
+  Teen
+  TeenPlus
+  Mature
 }
 
 Enum CarouselLocation {

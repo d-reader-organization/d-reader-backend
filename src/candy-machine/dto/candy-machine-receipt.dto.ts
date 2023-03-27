@@ -1,8 +1,8 @@
 import { IsDateString, IsNumber, IsString, IsUrl } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 
 class ReceiptNftDto {
   @IsSolanaAddress()

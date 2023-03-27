@@ -36,6 +36,8 @@ export class ComicService {
   ) {
     const { slug, genres, isOngoing, ...rest } = createComicDto;
 
+    // TODO v2: allow custom slugs
+
     // Create Comic without any files uploaded
     let comic: Comic;
     try {
@@ -53,13 +55,14 @@ export class ComicService {
       throw new BadRequestException('Bad comic data');
     }
 
-    const { cover, pfp, logo } = createComicFilesDto;
+    const { cover, banner, pfp, logo } = createComicFilesDto;
 
     // Upload files if any
-    let coverKey: string, pfpKey: string, logoKey: string;
+    let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
       if (cover) coverKey = await uploadFile(prefix, cover);
+      if (banner) bannerKey = await uploadFile(prefix, pfp);
       if (pfp) pfpKey = await uploadFile(prefix, pfp);
       if (logo) logoKey = await uploadFile(prefix, logo);
     } catch {
@@ -72,6 +75,7 @@ export class ComicService {
       where: { slug: comic.slug },
       data: {
         cover: coverKey,
+        banner: bannerKey,
         pfp: pfpKey,
         logo: logoKey,
       },

@@ -2,6 +2,9 @@
 CREATE TYPE "Role" AS ENUM ('Superadmin', 'Admin', 'User');
 
 -- CreateEnum
+CREATE TYPE "AudienceType" AS ENUM ('Everyone', 'Teen', 'TeenPlus', 'Mature');
+
+-- CreateEnum
 CREATE TYPE "CarouselLocation" AS ENUM ('Home');
 
 -- CreateTable
@@ -44,8 +47,9 @@ CREATE TABLE "Creator" (
 CREATE TABLE "Comic" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "isMatureAudience" BOOLEAN NOT NULL,
+    "audienceType" "AudienceType" NOT NULL DEFAULT 'Everyone',
     "cover" TEXT NOT NULL DEFAULT '',
+    "banner" TEXT NOT NULL DEFAULT '',
     "pfp" TEXT NOT NULL DEFAULT '',
     "logo" TEXT NOT NULL DEFAULT '',
     "description" TEXT NOT NULL DEFAULT '',
@@ -102,13 +106,17 @@ CREATE TABLE "ComicIssue" (
     "supply" INTEGER NOT NULL,
     "discountMintPrice" DOUBLE PRECISION NOT NULL,
     "mintPrice" DOUBLE PRECISION NOT NULL,
+    "sellerFeeBasisPoints" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT NOT NULL DEFAULT '',
     "flavorText" TEXT NOT NULL DEFAULT '',
     "cover" TEXT NOT NULL DEFAULT '',
-    "soundtrack" TEXT NOT NULL DEFAULT '',
+    "signedCover" TEXT NOT NULL DEFAULT '',
+    "usedCover" TEXT NOT NULL DEFAULT '',
+    "usedSignedCover" TEXT NOT NULL DEFAULT '',
     "releaseDate" TIMESTAMP(3) NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
     "featuredAt" TIMESTAMP(3),
@@ -125,7 +133,7 @@ CREATE TABLE "Nft" (
     "address" TEXT NOT NULL,
     "uri" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "owner" TEXT NOT NULL,
+    "ownerAddress" TEXT NOT NULL,
     "candyMachineAddress" TEXT NOT NULL,
     "collectionNftAddress" TEXT NOT NULL,
 
@@ -141,21 +149,23 @@ CREATE TABLE "CandyMachine" (
     "itemsRemaining" INTEGER NOT NULL,
     "itemsLoaded" INTEGER NOT NULL,
     "isFullyLoaded" BOOLEAN NOT NULL,
+    "endsAt" TIMESTAMP(3),
+    "baseMintPrice" DOUBLE PRECISION NOT NULL,
+    "collectionNftAddress" TEXT NOT NULL,
 
     CONSTRAINT "CandyMachine_pkey" PRIMARY KEY ("address")
 );
 
 -- CreateTable
 CREATE TABLE "CandyMachineReceipt" (
-    "id" SERIAL NOT NULL,
-    "buyer" TEXT NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL,
+    "nftAddress" TEXT NOT NULL,
+    "buyerAddress" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL,
     "description" TEXT NOT NULL,
     "candyMachineAddress" TEXT NOT NULL,
-    "nftAddress" TEXT NOT NULL,
 
-    CONSTRAINT "CandyMachineReceipt_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "CandyMachineReceipt_pkey" PRIMARY KEY ("nftAddress")
 );
 
 -- CreateTable
@@ -198,6 +208,8 @@ CREATE TABLE "CarouselSlide" (
 CREATE TABLE "Newsletter" (
     "walletAddress" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "subscribedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3),
     "wantsDevelopmentProgressNews" BOOLEAN NOT NULL,
     "wantsPlatformContentNews" BOOLEAN NOT NULL,
     "wantsFreeNFTs" BOOLEAN NOT NULL,
@@ -256,9 +268,6 @@ CREATE UNIQUE INDEX "Creator_slug_key" ON "Creator"("slug");
 CREATE UNIQUE INDEX "Creator_walletAddress_key" ON "Creator"("walletAddress");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Comic_name_key" ON "Comic"("name");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Genre_name_key" ON "Genre"("name");
 
 -- CreateIndex
@@ -301,16 +310,25 @@ ALTER TABLE "WalletComic" ADD CONSTRAINT "WalletComic_walletAddress_fkey" FOREIG
 ALTER TABLE "ComicIssue" ADD CONSTRAINT "ComicIssue_comicSlug_fkey" FOREIGN KEY ("comicSlug") REFERENCES "Comic"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Nft" ADD CONSTRAINT "Nft_ownerAddress_fkey" FOREIGN KEY ("ownerAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Nft" ADD CONSTRAINT "Nft_candyMachineAddress_fkey" FOREIGN KEY ("candyMachineAddress") REFERENCES "CandyMachine"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Nft" ADD CONSTRAINT "Nft_collectionNftAddress_fkey" FOREIGN KEY ("collectionNftAddress") REFERENCES "CollectionNft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_candyMachineAddress_fkey" FOREIGN KEY ("candyMachineAddress") REFERENCES "CandyMachine"("address") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CandyMachine" ADD CONSTRAINT "CandyMachine_collectionNftAddress_fkey" FOREIGN KEY ("collectionNftAddress") REFERENCES "CollectionNft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_nftAddress_fkey" FOREIGN KEY ("nftAddress") REFERENCES "Nft"("address") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_nftAddress_fkey" FOREIGN KEY ("nftAddress") REFERENCES "Nft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_buyerAddress_fkey" FOREIGN KEY ("buyerAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_candyMachineAddress_fkey" FOREIGN KEY ("candyMachineAddress") REFERENCES "CandyMachine"("address") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CollectionNft" ADD CONSTRAINT "CollectionNft_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
