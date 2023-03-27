@@ -13,6 +13,7 @@ import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 
 export class CreateCreatorDto {
   @IsEmail()
+  @Transform(({ value }) => value.toLowerCase())
   email: string;
 
   @IsNotEmpty()

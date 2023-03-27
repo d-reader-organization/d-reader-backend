@@ -15,31 +15,27 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   keypairIdentity,
   Metaplex,
-  MetaplexFile,
   toBigNumber,
-  toMetaplexFile,
   sol,
   TransactionBuilder,
+  MetaplexFile,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
-import { getS3Object, s3Client } from '../aws/s3client';
-import { Comic, ComicIssue, Creator } from '@prisma/client';
-import { streamToString } from '../utils/files';
+import { s3Client } from '../aws/s3client';
+import { ComicIssue } from '@prisma/client';
+import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import { heliusClusterApiUrl } from 'helius-sdk';
-import { Readable } from 'stream';
 import { chunk } from 'lodash';
 import * as bs58 from 'bs58';
-import * as path from 'path';
 import {
   MAX_METADATA_LEN,
   CREATOR_ARRAY_START,
   D_PUBLISHER_SYMBOL,
-  SECONDARY_SALE_TAX,
   D_PUBLISHER_PRIMARY_SALE_SHARE,
   HUNDRED,
   HUNDRED_PERCENT_TAX,
@@ -87,9 +83,8 @@ export class CandyMachineService {
         [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
         this.metaplex.programs().getCandyMachine().address,
       );
-      console.log(candyMachineCreator);
+
       const mints = await this.getMintAddresses(candyMachineCreator[0]);
-      console.log("minted NFT's : ", mints);
       return mints;
     } catch (e) {
       console.log('error', e);
@@ -121,22 +116,26 @@ export class CandyMachineService {
     );
   }
 
-  // v2: when creating the candy machine create 4 different metadata URIs: mint unsigned, mint signed, used unsigned, used signed
-  // This NFT would serve as a root NFT, a collection of collections (comic issues)
-  // https://docs.metaplex.com/programs/token-metadata/certified-collections#nested-collections
   async createComicIssueCM(
-    comic: Comic,
     comicIssue: ComicIssue,
-    creator: Creator,
+    comicName: string,
+    creatorAddress: string,
   ) {
-    if (comicIssue.supply <= 0) {
-      throw new BadRequestException(
-        'Cannot create an NFT collection with supply lower than 1',
-      );
-    }
-    const coverImage = await this.generateMetaplexFileFromS3(comicIssue.cover);
+    this.validateInput(comicIssue);
 
-    // If Collection NFT already exists - use it, otherwise create a fresh one
+    // we can do this in parallel
+    const coverImage = await s3toMxFile(comicIssue.cover, 'cover');
+    const signedCoverImage = await s3toMxFile(
+      comicIssue.signedCover,
+      'signed-cover',
+    );
+    const usedCoverImage = await s3toMxFile(comicIssue.usedCover, 'used-cover');
+    const usedSignedCoverImage = await s3toMxFile(
+      comicIssue.usedSignedCover,
+      'used-signed-cover',
+    );
+
+    // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
     const collectionNft = await this.prisma.collectionNft.findUnique({
       where: { comicIssueId: comicIssue.id },
@@ -145,10 +144,38 @@ export class CandyMachineService {
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
-      const newCollectionNft = await this.createComicIssueCollectionNft(
-        comicIssue,
-        coverImage,
-      );
+      const { uri: collectionNftUri } = await this.metaplex
+        .nfts()
+        .uploadMetadata({
+          name: comicIssue.title,
+          symbol: D_PUBLISHER_SYMBOL,
+          description: comicIssue.description,
+          seller_fee_basis_points: HUNDRED_PERCENT_TAX,
+          image: coverImage,
+          external_url: D_READER_FRONTEND_URL,
+          properties: {
+            creators: [
+              {
+                address: this.metaplex.identity().publicKey.toBase58(),
+                share: HUNDRED_PERCENT_TAX,
+              },
+            ],
+            files: this.writeFiles(
+              coverImage,
+              signedCoverImage,
+              usedCoverImage,
+              usedSignedCoverImage,
+            ),
+          },
+        });
+
+      const { nft: newCollectionNft } = await this.metaplex.nfts().create({
+        uri: collectionNftUri,
+        name: comicIssue.title,
+        sellerFeeBasisPoints: HUNDRED_PERCENT_TAX,
+        symbol: D_PUBLISHER_SYMBOL,
+        isCollection: true,
+      });
 
       await this.prisma.collectionNft.create({
         data: {
@@ -162,9 +189,7 @@ export class CandyMachineService {
       collectionNftAddress = newCollectionNft.address;
     }
 
-    // v2: try catch
-    const comicCreator = new PublicKey(creator.walletAddress);
-
+    const comicCreator = new PublicKey(creatorAddress);
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
         candyMachine: Keypair.generate(),
@@ -176,32 +201,14 @@ export class CandyMachineService {
         symbol: D_PUBLISHER_SYMBOL,
         maxEditionSupply: toBigNumber(0),
         isMutable: true,
-        sellerFeeBasisPoints: SECONDARY_SALE_TAX,
+        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         itemsAvailable: toBigNumber(comicIssue.supply),
-        // groups: [], // v2: add different groups
         guards: {
           botTax: undefined,
           solPayment: {
             amount: sol(comicIssue.mintPrice),
             destination: this.metaplex.identity().publicKey,
           },
-          tokenPayment: undefined,
-          startDate: undefined,
-          endDate: undefined, // v2: close mints after a long period of stale sales?
-          // thirdPartySigner: { signerKey: this.metaplex.identity().publicKey }, // v2: do we really need this?
-          tokenGate: undefined, // v2: gate minting to $PAGES non-holders
-          gatekeeper: undefined, // v2: add bot protection
-          allowList: undefined, // v2: make sure that holders of previous issues have advantage of miting ahead of time
-          mintLimit: undefined, // v2: possibly limit minting to ~2 NFTs or depending on your 'level'
-          redeemedAmount: undefined, // v2: possibly secure n% of the supply for dReader drops (staking) and creators wallet
-          addressGate: undefined, // v2: combine with groups and redemeedAmount to secure mints for creators and dReader
-          nftPayment: undefined,
-          nftGate: undefined, // v2: gate special editions in the future?
-          nftBurn: undefined, // v2: creators can drop 'FREE MINT' NFTs to end users
-          tokenBurn: undefined,
-          freezeSolPayment: undefined,
-          freezeTokenPayment: undefined,
-          programGate: undefined,
         },
         creators: [
           {
@@ -214,7 +221,7 @@ export class CandyMachineService {
           },
         ],
       },
-      { payer: this.metaplex.identity() }, // v2: in the future comicCreator might become the payer
+      { payer: this.metaplex.identity() },
     );
 
     await this.prisma.candyMachine.create({
@@ -232,26 +239,58 @@ export class CandyMachineService {
       },
     });
 
-    const sharedMetadata = await this.createComicIssueMintNftMetadata(
-      comic,
-      comicIssue,
-      creator,
-      coverImage,
-    );
+    // Upload collection item metadata
+    const { uri: metadataUri, metadata } = await this.metaplex
+      .nfts()
+      .uploadMetadata({
+        name: comicIssue.title,
+        symbol: D_PUBLISHER_SYMBOL,
+        description: comicIssue.description,
+        seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
+        image: coverImage,
+        external_url: D_READER_FRONTEND_URL,
+        attributes: [
+          {
+            trait_type: USED_TRAIT,
+            value: DEFAULT_COMIC_ISSUE_USED,
+          },
+          {
+            trait_type: SIGNED_TRAIT,
+            value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
+          },
+        ],
+        properties: {
+          creators: [
+            {
+              address: this.metaplex.identity().publicKey.toBase58(),
+              share: D_PUBLISHER_SECONDARY_SALE_SHARE,
+            },
+            {
+              address: creatorAddress,
+              share: HUNDRED - D_PUBLISHER_SECONDARY_SALE_SHARE,
+            },
+          ],
+          files: this.writeFiles(coverImage),
+        },
+        collection: {
+          name: comicIssue.title,
+          family: comicName,
+        },
+      });
 
     const indexArray = Array.from(Array(comicIssue.supply).keys());
     const items = await Promise.all(
       indexArray.map((index) => ({
-        uri: sharedMetadata.uri,
-        name: `${sharedMetadata.name} #${index + 1}`,
+        uri: metadataUri,
+        name: `${metadata.name} #${index + 1}`,
       })),
     );
 
     const INSERT_CHUNK_SIZE = 8;
-    const itemChunksOfTen = chunk(items, INSERT_CHUNK_SIZE);
+    const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
     let iteration = 0;
     const transactionBuilders: TransactionBuilder[] = [];
-    for (const itemsChunk of itemChunksOfTen) {
+    for (const itemsChunk of itemChunks) {
       console.log(
         `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
           (iteration + 1) * INSERT_CHUNK_SIZE - 1
@@ -283,109 +322,6 @@ export class CandyMachineService {
 
     this.heliusService.subscribeTo(candyMachine.address.toBase58());
     return await this.metaplex.candyMachines().refresh(candyMachine);
-  }
-
-  async createComicIssueCollectionNft(
-    comicIssue: ComicIssue,
-    coverImage: MetaplexFile,
-  ) {
-    try {
-      const { uri: collectionNftUri } = await this.metaplex
-        .nfts()
-        .uploadMetadata({
-          name: comicIssue.title,
-          symbol: D_PUBLISHER_SYMBOL,
-          description: comicIssue.description,
-          seller_fee_basis_points: HUNDRED_PERCENT_TAX,
-          image: coverImage,
-          external_url: D_READER_FRONTEND_URL,
-          properties: {
-            creators: [
-              {
-                address: this.metaplex.identity().publicKey.toBase58(),
-                share: HUNDRED_PERCENT_TAX,
-              },
-            ],
-            // TODO v2: add 4 images here, for 4 different states?
-            files: [
-              {
-                uri: coverImage,
-                type: coverImage.contentType,
-              },
-            ],
-          },
-        });
-
-      const createNftOutput = await this.metaplex.nfts().create({
-        uri: collectionNftUri,
-        name: comicIssue.title,
-        sellerFeeBasisPoints: HUNDRED_PERCENT_TAX,
-        symbol: D_PUBLISHER_SYMBOL,
-        isCollection: true,
-      });
-
-      return createNftOutput.nft;
-    } catch (e) {
-      throw new BadRequestException(
-        `Error while trying to create the Collection NFT for Issue ${comicIssue.id}: ${e}`,
-      );
-    }
-  }
-
-  async createComicIssueMintNftMetadata(
-    comic: Comic,
-    comicIssue: ComicIssue,
-    creator: Creator,
-    coverImage: MetaplexFile,
-  ) {
-    try {
-      const { uri, metadata } = await this.metaplex.nfts().uploadMetadata({
-        name: comicIssue.title,
-        symbol: D_PUBLISHER_SYMBOL,
-        description: comicIssue.description,
-        seller_fee_basis_points: SECONDARY_SALE_TAX,
-        image: coverImage,
-        external_url: D_READER_FRONTEND_URL,
-        attributes: [
-          {
-            trait_type: USED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_USED,
-          },
-          {
-            trait_type: SIGNED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
-          },
-        ],
-        properties: {
-          creators: [
-            {
-              address: this.metaplex.identity().publicKey.toBase58(),
-              share: D_PUBLISHER_SECONDARY_SALE_SHARE,
-            },
-            {
-              address: creator.walletAddress,
-              share: HUNDRED - D_PUBLISHER_SECONDARY_SALE_SHARE,
-            },
-          ],
-          files: [
-            {
-              uri: coverImage,
-              type: coverImage.contentType,
-            },
-          ],
-        },
-        collection: {
-          name: comicIssue.title,
-          family: comic.name,
-        },
-      });
-
-      return { uri, name: metadata.name };
-    } catch (e) {
-      throw new BadRequestException(
-        `Error while trying to create the NFT metadata: ${e}`,
-      );
-    }
   }
 
   async constructMintOneTransaction(
@@ -453,10 +389,45 @@ export class CandyMachineService {
     return receipts;
   }
 
-  async generateMetaplexFileFromS3(key: string) {
-    const getCoverFromS3 = await getS3Object({ Key: key });
-    const coverImage = await streamToString(getCoverFromS3.Body as Readable);
-    const coverImageFileName = 'cover' + path.extname(key);
-    return toMetaplexFile(coverImage, coverImageFileName);
+  validateInput(comicIssue: ComicIssue) {
+    if (comicIssue.supply <= 0) {
+      throw new BadRequestException(
+        'Cannot create an NFT collection with supply lower than 1',
+      );
+    }
+    if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
+      throw new BadRequestException(
+        'Discount mint price should be lower than base mint price',
+      );
+    } else if (comicIssue.discountMintPrice < 0 || comicIssue.mintPrice < 0) {
+      throw new BadRequestException(
+        'Mint prices must be greater than or equal to 0',
+      );
+    }
+    if (!comicIssue.cover) {
+      throw new BadRequestException('Missing cover image');
+    }
+    if (!comicIssue.signedCover) {
+      throw new BadRequestException('Missing signed cover image');
+    }
+    if (!comicIssue.usedCover) {
+      throw new BadRequestException('Missing used cover image');
+    }
+    if (!comicIssue.usedSignedCover) {
+      throw new BadRequestException('Missing used & signed cover image');
+    }
+    if (
+      comicIssue.sellerFeeBasisPoints < 0 ||
+      comicIssue.sellerFeeBasisPoints > 10000
+    ) {
+      throw new BadRequestException('Invalid seller fee value');
+    }
+  }
+
+  writeFiles(...files: MetaplexFile[]) {
+    return files.map((file) => ({
+      uri: file,
+      type: file.contentType,
+    }));
   }
 }

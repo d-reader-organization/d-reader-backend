@@ -2,6 +2,7 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsOptional,
   IsString,
   IsUrl,
@@ -11,11 +12,18 @@ import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { getReadUrl } from 'src/aws/s3client';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
-import { Comic, Genre, WalletComic, Creator } from '@prisma/client';
+import { round } from 'lodash';
+import {
+  Comic,
+  Genre,
+  WalletComic,
+  Creator,
+  AudienceType,
+} from '@prisma/client';
 
 class PartialGenreDto extends PickType(GenreDto, [
   'name',
@@ -37,8 +45,9 @@ export class ComicDto {
   @IsKebabCase()
   slug: string;
 
-  @IsBoolean()
-  isMatureAudience: boolean;
+  @IsEnum(AudienceType)
+  @ApiProperty({ enum: AudienceType, default: AudienceType.Everyone })
+  audienceType: AudienceType;
 
   @IsBoolean()
   isDeleted: boolean;
@@ -57,6 +66,9 @@ export class ComicDto {
 
   @IsUrl()
   cover: string;
+
+  @IsUrl()
+  banner: string;
 
   @IsUrl()
   pfp: string;
@@ -118,13 +130,14 @@ export async function toComicDto(comic: ComicInput) {
   const plainComicDto: ComicDto = {
     name: comic.name,
     slug: comic.slug,
-    isMatureAudience: comic.isMatureAudience,
+    audienceType: comic.audienceType,
     isCompleted: !!comic.completedAt,
     isDeleted: !!comic.deletedAt,
     isVerified: !!comic.verifiedAt,
     isPublished: !!comic.publishedAt,
     isPopular: !!comic.popularizedAt,
     cover: await getReadUrl(comic.cover),
+    banner: await getReadUrl(comic.banner),
     pfp: await getReadUrl(comic.pfp),
     logo: await getReadUrl(comic.logo),
     description: comic.description,
@@ -141,7 +154,7 @@ export async function toComicDto(comic: ComicInput) {
           favouritesCount: comic.stats.favouritesCount,
           subscribersCount: comic.stats.subscribersCount,
           ratersCount: comic.stats.ratersCount,
-          averageRating: comic.stats.averageRating,
+          averageRating: round(comic.stats.averageRating),
           issuesCount: comic.stats.issuesCount,
           readersCount: comic.stats.readersCount,
           viewersCount: comic.stats.viewersCount,

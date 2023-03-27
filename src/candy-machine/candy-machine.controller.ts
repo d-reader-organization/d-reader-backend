@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -27,33 +27,20 @@ export class CandyMachineController {
   ) {}
 
   @Get('find-minted-nfts')
-  async findMintedNfts(@Query() query: MintOneParams) {
-    return await this.candyMachineService.findMintedNfts(
-      query.candyMachineAddress,
-    );
-  }
-
-  @Post('create-candy-machine')
-  async createCandyMachine() {
-    const comic = await this.prisma.comic.findFirst();
-    const comicIssue = await this.prisma.comicIssue.findFirst();
-    const creator = await this.prisma.creator.findFirst();
-    return await this.candyMachineService.createComicIssueCM(
-      comic,
-      comicIssue,
-      creator,
-    );
+  findMintedNfts(@Query() query: MintOneParams) {
+    return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
   }
 
   @Throttle(5, 30)
-  @Get('/transactions/construct/mint-one')
-  async constructMintOneTransaction(
+  @Get('/transactions/mint-one')
+  constructMintOneTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: MintOneParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
-    return await this.candyMachineService.constructMintOneTransaction(
+
+    return this.candyMachineService.constructMintOneTransaction(
       publicKey,
       candyMachineAddress,
     );

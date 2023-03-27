@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -48,6 +49,13 @@ export class CreateComicIssueDto {
   )
   mintPrice: number;
 
+  @Min(0)
+  @Max(1)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
+  sellerFee: number;
+
   @IsOptional()
   @MaxLength(256)
   description?: string;
@@ -76,7 +84,18 @@ export class CreateComicIssueFilesDto {
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  soundtrack?: Express.Multer.File | null;
+  @IsOptional()
+  signedCover?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  usedCover?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  usedSignedCover?: Express.Multer.File | null;
 }
 
 export class CreateComicIssueSwaggerDto extends IntersectionType(

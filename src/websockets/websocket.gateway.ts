@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 import {
   CandyMachineReceiptInput,
   toCMReceiptDto,
-} from 'src/candy-machine/dto/candy-machine-receipt.dto';
+} from '../candy-machine/dto/candy-machine-receipt.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })

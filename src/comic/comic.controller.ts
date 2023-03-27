@@ -31,12 +31,13 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { Creator, Wallet } from '@prisma/client';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { RateComicDto } from './dto/rate-comic.dto';
-import { WalletComicService } from './wallet-comic.service';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { WalletComicService } from './wallet-comic.service';
+import { Creator, Wallet, Role } from '@prisma/client';
+import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { Roles } from 'src/guards/roles.guard';
 
 @UseGuards(RestAuthGuard, ComicUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -54,6 +55,7 @@ export class ComicController {
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'cover', maxCount: 1 },
+      { name: 'banner', maxCount: 1 },
       { name: 'pfp', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
     ]),
@@ -116,6 +118,19 @@ export class ComicController {
     @UploadedFile() cover: Express.Multer.File,
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.updateFile(slug, cover);
+    return await toComicDto(updatedComic);
+  }
+
+  /* Update specific comics banner file */
+  @ApiConsumes('multipart/form-data')
+  @ApiFile('banner')
+  @UseInterceptors(FileInterceptor('banner'))
+  @Patch('update/:slug/banner')
+  async updateBanner(
+    @Param('slug') slug: string,
+    @UploadedFile() banner: Express.Multer.File,
+  ): Promise<ComicDto> {
+    const updatedComic = await this.comicService.updateFile(slug, banner);
     return await toComicDto(updatedComic);
   }
 
@@ -189,6 +204,7 @@ export class ComicController {
   }
 
   /* Publish comic */
+  @Roles(Role.Superadmin, Role.Admin)
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
@@ -224,18 +240,13 @@ export class ComicController {
   }
 
   /**
-   * TODO v1.2:
+   * TODO v2:
    * - finish email services
-   * - move all cron jobs to task.service.ts ?
    * - comicPages @ApiBody
-   * - [main.ts] API rate limiting: https://docs.nestjs.com/security/rate-limiting
+   * - move all cron jobs to task.service.ts ?
+   * - [s3] Move s3client.ts to s3.service.ts
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
    * - [password] Simulate message creation: const message = Message.from(signatureBytes);
-   */
-
-  /**
-   * TODO v2:
-   * - [s3] Move s3client.ts to s3.service.ts
    * - [auth] bcrypt.hash wallet.nonce
    * - [auth] TokenPayload revision
    */

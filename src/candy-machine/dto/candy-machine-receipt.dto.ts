@@ -1,8 +1,8 @@
 import { IsDateString, IsNumber, IsString, IsUrl } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 
 class ReceiptNftDto {
   @IsSolanaAddress()
@@ -30,6 +30,9 @@ export class CandyMachineReceiptDto {
   @Type(() => ReceiptBuyerDto)
   buyer: ReceiptBuyerDto;
 
+  @IsString()
+  candyMachineAddress: string;
+
   @IsNumber()
   price: number;
 
@@ -53,6 +56,7 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
       avatar: await getReadUrl(receipt.buyer.avatar),
       label: receipt.buyer.label,
     },
+    candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,
     timestamp: receipt.timestamp.toISOString(),
   };

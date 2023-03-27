@@ -3,6 +3,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   MaxLength,
@@ -10,6 +11,7 @@ import {
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
+import { AudienceType } from '@prisma/client';
 
 export class CreateComicDto {
   @IsNotEmpty()
@@ -29,12 +31,9 @@ export class CreateComicDto {
   @ApiProperty({ default: true })
   isOngoing: boolean;
 
-  @IsBoolean()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? Boolean(value) : value,
-  )
-  @ApiProperty({ default: true })
-  isMatureAudience: boolean;
+  @IsEnum(AudienceType)
+  @ApiProperty({ enum: AudienceType })
+  audienceType: AudienceType;
 
   @IsOptional()
   @MaxLength(256)
@@ -83,6 +82,11 @@ export class CreateComicFilesDto {
   @Transform(({ value }) => value[0])
   @IsOptional()
   cover?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  banner?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])

@@ -36,7 +36,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Creator, Wallet } from '@prisma/client';
+import { Creator, Wallet, Role } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
@@ -47,6 +47,7 @@ import {
 } from 'src/comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { Roles } from 'src/guards/roles.guard';
 
 @UseGuards(RestAuthGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -66,7 +67,6 @@ export class ComicIssueController {
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'cover', maxCount: 1 },
-      { name: 'soundtrack', maxCount: 1 },
       // { name: 'pages', maxCount: 1 },
     ]),
   )
@@ -97,6 +97,7 @@ export class ComicIssueController {
     return await toComicIssueDtoArray(comicIssues);
   }
 
+  // TODO v2: get by comicSlug & (comic issue) slug
   /* Get specific comic issue by unique id */
   @Get('get/:id')
   async findOne(
@@ -187,23 +188,8 @@ export class ComicIssueController {
     return await toComicIssueDto(updatedComicIssue);
   }
 
-  /* Update specific comic issues soundtrack file */
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('soundtrack')
-  @UseInterceptors(FileInterceptor('soundtrack'))
-  @Patch('update/:id/soundtrack')
-  async updateSoundtrack(
-    @Param('id') id: string,
-    @UploadedFile() soundtrack: Express.Multer.File,
-  ): Promise<ComicIssueDto> {
-    const updatedComicIssue = await this.comicIssueService.updateFile(
-      +id,
-      soundtrack,
-    );
-    return await toComicIssueDto(updatedComicIssue);
-  }
-
   /* Publish an off-chain comic issue on chain */
+  @Roles(Role.Superadmin, Role.Admin)
   @Patch('publish-on-chain/:id')
   async publishOnChain(
     @Param('id') id: string,
@@ -217,6 +203,7 @@ export class ComicIssueController {
   }
 
   /* Publish comic issue */
+  @Roles(Role.Superadmin, Role.Admin)
   @Patch('publish/:id')
   async publish(@Param('id') id: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(+id);

@@ -41,7 +41,6 @@ export class WalletComicService {
       },
     });
 
-    // TODO: distinct
     const countReaders = this.prisma.walletComicIssue.count({
       where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
       // distinct: ['walletAddress'],
