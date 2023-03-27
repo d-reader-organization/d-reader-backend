@@ -278,7 +278,7 @@ Table Listing {
   signature String [not null]
   symbol String [not null]
   createdAt DateTime [not null]
-  canceledAt DateTime
+  canceledAt DateTime [not null]
 
   indexes {
     (nftAddress, canceledAt) [unique]

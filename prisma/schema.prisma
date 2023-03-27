@@ -303,7 +303,7 @@ model Listing {
   signature               String
   symbol                  String
   createdAt               DateTime
-  canceledAt              DateTime?
+  canceledAt              DateTime
   @@unique([nftAddress,canceledAt])
 }
 

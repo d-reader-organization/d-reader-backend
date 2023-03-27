@@ -237,7 +237,7 @@ export class AuctionHouseService {
         const listingModel = await this.prisma.listing.findFirst({
           where: {
             nftAddress: mint,
-            canceledAt: null,
+            canceledAt: new Date(0),
           },
         });
         listing = this.toListing(auctionHouse, listingModel);
@@ -268,7 +268,7 @@ export class AuctionHouseService {
   async findAll() {
     return await this.prisma.listing.findMany({
       where: {
-        canceledAt: null,
+        canceledAt: new Date(0),
       },
     });
   }

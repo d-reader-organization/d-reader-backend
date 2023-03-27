@@ -29,7 +29,7 @@ CREATE TABLE "Listing" (
     "signature" TEXT NOT NULL,
     "symbol" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL,
-    "canceledAt" TIMESTAMP(3),
+    "canceledAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Listing_pkey" PRIMARY KEY ("id")
 );

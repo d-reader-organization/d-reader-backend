@@ -97,11 +97,29 @@ export class HeliusService {
             return this.handleNftTransfer(transaction);
           case TransactionType.NFT_LISTING:
             return this.handleNftListing(transaction);
+          case TransactionType.NFT_CANCEL_LISTING:
+            return this.handleCancelListing(transaction);
           default:
             return;
         }
       }),
     );
+  }
+
+  private async handleCancelListing(transaction: EnrichedTransaction) {
+    try {
+      const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved
+      await this.prisma.listing.update({
+        where: {
+          nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
+        },
+        data: {
+          canceledAt: new Date(transaction.timestamp * 1000),
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private async handleNftListing(transaction: EnrichedTransaction) {
@@ -167,6 +185,7 @@ export class HeliusService {
           feePayer,
           signature,
           createdAt,
+          canceledAt: new Date(0),
         },
       });
 
@@ -206,7 +225,10 @@ export class HeliusService {
       } else {
         await this.prisma.listing.update({
           where: {
-            nftAddress_canceledAt: { nftAddress: address, canceledAt: null },
+            nftAddress_canceledAt: {
+              nftAddress: address,
+              canceledAt: new Date(0),
+            },
           },
           data: {
             canceledAt: new Date(enrichedTransaction.timestamp * 1000),
