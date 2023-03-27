@@ -30,6 +30,9 @@ export class CandyMachineReceiptDto {
   @Type(() => ReceiptBuyerDto)
   buyer: ReceiptBuyerDto;
 
+  @IsString()
+  candyMachineAddress: string;
+
   @IsNumber()
   price: number;
 
@@ -53,6 +56,7 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
       avatar: await getReadUrl(receipt.buyer.avatar),
       label: receipt.buyer.label,
     },
+    candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,
     timestamp: receipt.timestamp.toISOString(),
   };
