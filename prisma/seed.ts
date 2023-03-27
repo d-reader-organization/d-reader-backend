@@ -422,7 +422,7 @@ async function main() {
                     usedCover:
                       'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
                     usedSignedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed.png',
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
                     releaseDate: subDays(new Date(), 21),
                     deletedAt: null,
                     featuredAt: null,
@@ -502,7 +502,7 @@ async function main() {
               usedCover:
                 'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
               usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed.jpg',
+                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 23),
               deletedAt: null,
               featuredAt: null,
@@ -537,7 +537,7 @@ async function main() {
               usedCover:
                 'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-cover.jpg',
               usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-signed.jpg',
+                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -572,7 +572,7 @@ async function main() {
               usedCover:
                 'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-cover.jpg',
               usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-signed.jpg',
+                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -607,7 +607,7 @@ async function main() {
               usedCover:
                 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-cover.jpg',
               usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-signed.jpg',
+                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -682,7 +682,7 @@ async function main() {
             usedCover:
               'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-cover.png',
             usedSignedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-signed.png',
+              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-signed-cover.png',
             releaseDate: subDays(new Date(), 17),
             deletedAt: null,
             featuredAt: null,
@@ -758,7 +758,7 @@ async function main() {
             usedCover:
               'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
             usedSignedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed.png',
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
             releaseDate: subDays(new Date(), 15),
             deletedAt: null,
             featuredAt: null,
@@ -866,7 +866,7 @@ async function main() {
                     usedCover:
                       'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-cover.png',
                     usedSignedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed.png',
+                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed-cover.png',
                     releaseDate: subDays(new Date(), 17),
                     deletedAt: null,
                     featuredAt: null,
@@ -945,7 +945,7 @@ async function main() {
               usedCover:
                 'creators/swamplabs/comics/lupers/issues/canis-lupers/used-cover.jpg',
               usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed.jpg',
+                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -980,7 +980,7 @@ async function main() {
               usedCover:
                 'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-cover.jpg',
               usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed.jpg',
+                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1015,7 +1015,7 @@ async function main() {
               usedCover:
                 'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-cover.jpg',
               usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed.jpg',
+                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -1050,7 +1050,7 @@ async function main() {
               usedCover:
                 'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-cover.jpg',
               usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed.jpg',
+                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -1157,7 +1157,7 @@ async function main() {
                     usedCover:
                       'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-cover.jpg',
                     usedSignedCover:
-                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed.jpg',
+                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed-cover.jpg',
                     releaseDate: subDays(new Date(), 14),
                     deletedAt: null,
                     featuredAt: null,
@@ -1234,7 +1234,7 @@ async function main() {
               usedCover:
                 'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-cover.png',
               usedSignedCover:
-                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed.png',
+                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed-cover.png',
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -1342,7 +1342,7 @@ async function main() {
                       usedCover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-cover.png',
                       usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed.png',
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed-cover.png',
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -1377,7 +1377,7 @@ async function main() {
                       usedCover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-cover.jpg',
                       usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed.jpg',
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -1412,7 +1412,7 @@ async function main() {
                       usedCover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-cover.jpg',
                       usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed.jpg',
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 17),
                       deletedAt: null,
                       featuredAt: null,
@@ -1447,7 +1447,7 @@ async function main() {
                       usedCover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-cover.jpg',
                       usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed.jpg',
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -1630,7 +1630,7 @@ async function main() {
               usedCover:
                 'creators/saucerpen/comics/birthday/issues/episode-1/used-cover.jpg',
               usedSignedCover:
-                'creators/saucerpen/comics/birthday/issues/episode-1/used-signed.jpg',
+                'creators/saucerpen/comics/birthday/issues/episode-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -1705,7 +1705,7 @@ async function main() {
               usedCover:
                 'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-cover.jpg',
               usedSignedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed.jpg',
+                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1778,7 +1778,7 @@ async function main() {
               usedCover:
                 'creators/saucerpen/comics/island/issues/episode-1/used-cover.jpg',
               usedSignedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/used-signed.jpg',
+                'creators/saucerpen/comics/island/issues/episode-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 14),
               deletedAt: null,
               featuredAt: null,
@@ -1852,7 +1852,7 @@ async function main() {
               usedCover:
                 'creators/saucerpen/comics/lamia/issues/true-love/used-cover.jpg',
               usedSignedCover:
-                'creators/saucerpen/comics/lamia/issues/true-love/used-signed.jpg',
+                'creators/saucerpen/comics/lamia/issues/true-love/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -1959,7 +1959,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-1/used-cover.jpg',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-1/used-signed.jpg',
+                        'creators/roach-writes/comics/wretches/issues/issue-1/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -1994,7 +1994,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-2/used-cover.jpg',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-2/used-signed.jpg',
+                        'creators/roach-writes/comics/wretches/issues/issue-2/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -2029,7 +2029,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-3/used-cover.jpg',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-3/used-signed.jpg',
+                        'creators/roach-writes/comics/wretches/issues/issue-3/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -2064,7 +2064,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-4/used-cover.png',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-4/used-signed.png',
+                        'creators/roach-writes/comics/wretches/issues/issue-4/used-signed-cover.png',
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -2099,7 +2099,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-5/used-signed.jpg',
+                        'creators/roach-writes/comics/wretches/issues/issue-5/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 15),
                       deletedAt: null,
                       featuredAt: null,
@@ -2134,7 +2134,7 @@ async function main() {
                       usedCover:
                         'creators/roach-writes/comics/wretches/issues/issue-6/used-cover.jpg',
                       usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-6/used-signed.jpg',
+                        'creators/roach-writes/comics/wretches/issues/issue-6/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 12),
                       deletedAt: null,
                       featuredAt: null,
@@ -2211,7 +2211,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/jana/issues/issue-1/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/jana/issues/issue-1/used-signed.jpg',
+                'creators/roach-writes/comics/jana/issues/issue-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
               featuredAt: null,
@@ -2245,7 +2245,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/jana/issues/issue-2/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/jana/issues/issue-2/used-signed.jpg',
+                'creators/roach-writes/comics/jana/issues/issue-2/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -2323,7 +2323,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-signed.jpg',
+                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -2359,7 +2359,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-signed.jpg',
+                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -2428,7 +2428,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/painted-pray/issues/issue-1/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-signed.jpg',
+                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -2501,7 +2501,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-cover.jpg',
               usedSignedCover:
-                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-signed.jpg',
+                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-signed-cover.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -2578,7 +2578,7 @@ async function main() {
               usedCover:
                 'creators/roach-writes/comics/multi-versus/issues/episode-1/used-cover.png',
               usedSignedCover:
-                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-signed.png',
+                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-signed-cover.png',
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
