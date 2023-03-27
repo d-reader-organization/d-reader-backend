@@ -86,7 +86,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
 
     try {
       const response = await metaplex.auctionHouse().create({
-        sellerFeeBasisPoints: 800, // 8%
+        sellerFeeBasisPoints: 200, // 2%
         requiresSignOff: false,
         canChangeSalePrice: false,
         treasuryMint: WRAPPED_SOL_MINT,

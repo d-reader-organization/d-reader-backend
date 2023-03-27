@@ -1,6 +1,8 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["extendedWhereUnique", "filteredRelationCount"]
+  // https://www.prisma.io/docs/concepts/components/prisma-client/full-text-search
+  // https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#compare-columns-in-the-same-table
 }
 
 datasource db {
@@ -61,35 +63,43 @@ model Creator {
   walletCreator    WalletCreator[]
 }
 
+enum AudienceType {
+  Everyone
+  Teen
+  TeenPlus
+  Mature
+}
+
 model Comic {
-  name             String        @unique
-  slug             String        @id
-  isMatureAudience Boolean
-  cover            String        @default("")
-  pfp              String        @default("")
-  logo             String        @default("")
-  description      String        @default("")
-  flavorText       String        @default("")
-  website          String        @default("")
-  twitter          String        @default("")
-  discord          String        @default("")
-  telegram         String        @default("")
-  instagram        String        @default("")
-  tikTok           String        @default("")
-  youTube          String        @default("")
-  updatedAt        DateTime      @updatedAt
-  createdAt        DateTime      @default(now())
-  deletedAt        DateTime?
-  featuredAt       DateTime?
-  verifiedAt       DateTime?
-  publishedAt      DateTime?
-  popularizedAt    DateTime?
-  completedAt      DateTime?
-  genres           Genre[]
-  issues           ComicIssue[]
-  wallets          WalletComic[]
-  creator          Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId        Int
+  name          String
+  slug          String        @id
+  audienceType  AudienceType  @default(Everyone)
+  cover         String        @default("")
+  banner        String        @default("")
+  pfp           String        @default("")
+  logo          String        @default("")
+  description   String        @default("")
+  flavorText    String        @default("")
+  website       String        @default("")
+  twitter       String        @default("")
+  discord       String        @default("")
+  telegram      String        @default("")
+  instagram     String        @default("")
+  tikTok        String        @default("")
+  youTube       String        @default("")
+  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime      @default(now())
+  deletedAt     DateTime?
+  featuredAt    DateTime?
+  verifiedAt    DateTime?
+  publishedAt   DateTime?
+  popularizedAt DateTime?
+  completedAt   DateTime?
+  genres        Genre[]
+  issues        ComicIssue[]
+  wallets       WalletComic[]
+  creator       Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId     Int
 }
 
 model WalletComic {
@@ -119,29 +129,33 @@ model Genre {
 }
 
 model ComicIssue {
-  id                Int                @id @default(autoincrement())
-  number            Int
-  supply            Int
-  discountMintPrice Float
-  mintPrice         Float
-  title             String
-  slug              String
-  description       String             @default("")
-  flavorText        String             @default("")
-  cover             String             @default("")
-  soundtrack        String             @default("")
-  releaseDate       DateTime
-  createdAt         DateTime           @default(now())
-  deletedAt         DateTime?
-  featuredAt        DateTime?
-  verifiedAt        DateTime?
-  publishedAt       DateTime?
-  popularizedAt     DateTime?
-  comic             Comic              @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
-  comicSlug         String
-  collectionNft     CollectionNft?
-  pages             ComicPage[]
-  wallets           WalletComicIssue[]
+  id                   Int                @id @default(autoincrement())
+  number               Int
+  supply               Int
+  discountMintPrice    Float
+  mintPrice            Float
+  sellerFeeBasisPoints Int
+  title                String
+  slug                 String
+  description          String             @default("")
+  flavorText           String             @default("")
+  cover                String             @default("")
+  signedCover          String             @default("")
+  usedCover            String             @default("")
+  usedSignedCover      String             @default("")
+  releaseDate          DateTime
+  updatedAt            DateTime           @updatedAt
+  createdAt            DateTime           @default(now())
+  deletedAt            DateTime?
+  featuredAt           DateTime?
+  verifiedAt           DateTime?
+  publishedAt          DateTime?
+  popularizedAt        DateTime?
+  comic                Comic              @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comicSlug            String
+  collectionNft        CollectionNft?
+  pages                ComicPage[]
+  wallets              WalletComicIssue[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
@@ -182,7 +196,7 @@ model CandyMachineReceipt {
   nft                 Nft          @relation(fields: [nftAddress], references: [address])
   buyer               Wallet       @relation(fields: [buyerAddress], references: [address])
   buyerAddress        String
-  price               Float
+  price               Int
   timestamp           DateTime
   description         String
   candyMachine        CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
@@ -219,6 +233,8 @@ model CarouselSlide {
   subtitle    String           @default("")
   priority    Int
   link        String
+  // comicIssueSlug String?
+  // comicSlug      String?
   publishedAt DateTime         @default(now())
   expiredAt   DateTime
   location    CarouselLocation @default(Home)
@@ -227,12 +243,6 @@ model CarouselSlide {
 enum CarouselLocation {
   Home
 }
-
-// enum CarouselSlideType {
-//   Comic
-//   ComicIssue
-//   Creator
-// }
 
 model Newsletter {
   wallet                       Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
@@ -277,8 +287,3 @@ model WalletCreator {
 
   @@id([creatorSlug, walletAddress])
 }
-
-// TODO v1
-// case insensitive slugs, emails etc. revise https://www.prisma.io/docs/concepts/components/prisma-client/case-sensitivity
-// https://www.prisma.io/docs/concepts/components/prisma-client/full-text-search
-// https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#compare-columns-in-the-same-table

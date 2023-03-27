@@ -1,4 +1,3 @@
-import { PrismaClient, Role, CarouselLocation } from '@prisma/client';
 import { addDays, subDays } from 'date-fns';
 import { isEmpty } from 'lodash';
 import {
@@ -13,6 +12,12 @@ import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
 import { Keypair } from '@solana/web3.js';
 import { getRandomInt } from '../src/utils/helpers';
+import {
+  PrismaClient,
+  Role,
+  AudienceType,
+  CarouselLocation,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -380,7 +385,7 @@ async function main() {
                     { slug: 'sci-fi' },
                   ],
                 },
-                isMatureAudience: true,
+                audienceType: AudienceType.Mature,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -389,6 +394,7 @@ async function main() {
                 completedAt: null,
                 cover: 'creators/studio-nx/comics/gorecats/cover.png',
                 pfp: 'creators/studio-nx/comics/gorecats/pfp.png',
+                banner: '',
                 logo: 'creators/studio-nx/comics/gorecats/logo.png',
                 website: 'https://gorecats.io',
                 twitter: 'https://twitter.com/GORECATS',
@@ -403,6 +409,7 @@ async function main() {
                     supply: 0,
                     discountMintPrice: 0,
                     mintPrice: 0,
+                    sellerFeeBasisPoints: 400,
                     title: 'Rise of the Gorecats',
                     slug: 'rise-of-the-gorecats',
                     description:
@@ -410,8 +417,12 @@ async function main() {
                     flavorText: 'Jesus these cats are so gore',
                     cover:
                       'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
-                    soundtrack:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/soundtrack.mp3',
+                    signedCover:
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
+                    usedCover:
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
+                    usedSignedCover:
+                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed.png',
                     releaseDate: subDays(new Date(), 21),
                     deletedAt: null,
                     featuredAt: null,
@@ -422,7 +433,7 @@ async function main() {
                       createMany: {
                         data: generatePages(
                           'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages',
-                          22,
+                          14,
                           'png',
                         ),
                       },
@@ -453,7 +464,7 @@ async function main() {
             { slug: 'action' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -462,6 +473,7 @@ async function main() {
         completedAt: null,
         cover: 'creators/studio-nx/comics/barbabyans/cover.jpg',
         pfp: 'creators/studio-nx/comics/barbabyans/pfp.jpg',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -477,6 +489,7 @@ async function main() {
               supply: 0,
               discountMintPrice: 0,
               mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: 'Adventure Begins!',
               slug: 'adventure-begins',
               description:
@@ -484,7 +497,12 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
+              usedCover:
+                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
+              usedSignedCover:
+                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed.jpg',
               releaseDate: subDays(new Date(), 23),
               deletedAt: null,
               featuredAt: null,
@@ -506,6 +524,7 @@ async function main() {
               supply: 0,
               discountMintPrice: 0,
               mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: 'Red Hawk Down',
               slug: 'red-hawk-down',
               description:
@@ -513,7 +532,12 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/signed-cover.jpg',
+              usedCover:
+                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-cover.jpg',
+              usedSignedCover:
+                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-signed.jpg',
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -535,6 +559,7 @@ async function main() {
               supply: 0,
               discountMintPrice: 0,
               mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: "Let's Get Outta Here!",
               slug: 'let-s-get-outta-here',
               description:
@@ -542,7 +567,12 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/signed-cover.jpg',
+              usedCover:
+                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-cover.jpg',
+              usedSignedCover:
+                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-signed.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -564,6 +594,7 @@ async function main() {
               supply: 0,
               discountMintPrice: 0,
               mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: 'A cheesy quest for good food',
               slug: 'a-cheesy-quest-for-good-food',
               description:
@@ -571,7 +602,12 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/signed-cover.jpg',
+              usedCover:
+                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-cover.jpg',
+              usedSignedCover:
+                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-signed.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -609,7 +645,7 @@ async function main() {
             { slug: 'action' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -618,6 +654,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/studio-nx/comics/niko-and-the-sword/cover.png',
         pfp: 'creators/studio-nx/comics/niko-and-the-sword/pfp.png',
+        banner: 'creators/studio-nx/comics/niko-and-the-sword/banner.jpg',
         logo: 'creators/studio-nx/comics/niko-and-the-sword/logo.png',
         website: 'https://www.artofniko.com/',
         twitter: 'https://twitter.com/StudioNX',
@@ -630,8 +667,9 @@ async function main() {
           create: {
             number: 1,
             supply: 0,
-            discountMintPrice: 0.0,
-            mintPrice: 0.0,
+            discountMintPrice: 0,
+            mintPrice: 0,
+            sellerFeeBasisPoints: 400,
             title: 'Introduction',
             slug: 'introduction',
             description:
@@ -639,7 +677,12 @@ async function main() {
             flavorText: "“I'm just getting started!” - Niko",
             cover:
               'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/cover.png',
-            soundtrack: '',
+            signedCover:
+              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/signed-cover.png',
+            usedCover:
+              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-cover.png',
+            usedSignedCover:
+              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-signed.png',
             releaseDate: subDays(new Date(), 17),
             deletedAt: null,
             featuredAt: null,
@@ -678,7 +721,7 @@ async function main() {
             { slug: 'romance' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -687,6 +730,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/studio-nx/comics/the-dark-portal/cover.jpg',
         pfp: 'creators/studio-nx/comics/the-dark-portal/pfp.jpg',
+        banner: '',
         logo: 'creators/studio-nx/comics/the-dark-portal/logo.jpg',
         website: 'https://www.studionx.com/',
         twitter: 'https://twitter.com/StudioNX',
@@ -699,8 +743,9 @@ async function main() {
           create: {
             number: 1,
             supply: 0,
-            discountMintPrice: 0.0,
-            mintPrice: 0.0,
+            discountMintPrice: 0,
+            mintPrice: 0,
+            sellerFeeBasisPoints: 600,
             title: 'Concept Art',
             slug: 'concept-art',
             description:
@@ -708,7 +753,12 @@ async function main() {
             flavorText: 'Lovely pieces put by Jim Bryson',
             cover:
               'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
-            soundtrack: '',
+            signedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
+            usedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
+            usedSignedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed.png',
             releaseDate: subDays(new Date(), 15),
             deletedAt: null,
             featuredAt: null,
@@ -778,7 +828,7 @@ async function main() {
                     { slug: 'fantasy' },
                   ],
                 },
-                isMatureAudience: false,
+                audienceType: AudienceType.Everyone,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -787,6 +837,7 @@ async function main() {
                 completedAt: null,
                 cover: 'creators/swamplabs/comics/narentines/cover.png',
                 pfp: 'creators/swamplabs/comics/narentines/pfp.png',
+                banner: 'creators/swamplabs/comics/narentines/banner.jpg',
                 logo: 'creators/swamplabs/comics/narentines/logo.png',
                 website: 'https://narentines.com',
                 twitter: 'https://twitter.com/Narentines',
@@ -801,6 +852,7 @@ async function main() {
                     supply: 0,
                     discountMintPrice: 0,
                     mintPrice: 0,
+                    sellerFeeBasisPoints: 400,
                     title: 'Narentines: The Purge',
                     slug: 'narentines-the-purge',
                     description:
@@ -809,7 +861,12 @@ async function main() {
                       'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
                     cover:
                       'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
-                    soundtrack: '',
+                    signedCover:
+                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/signed-cover.png',
+                    usedCover:
+                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-cover.png',
+                    usedSignedCover:
+                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed.png',
                     releaseDate: subDays(new Date(), 17),
                     deletedAt: null,
                     featuredAt: null,
@@ -850,7 +907,7 @@ async function main() {
             { slug: 'romance' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.TeenPlus,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -859,6 +916,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/swamplabs/comics/lupers/cover.jpg',
         pfp: 'creators/swamplabs/comics/lupers/pfp.jpg',
+        banner: 'creators/swamplabs/comics/lupers/banner.jpg',
         logo: 'creators/swamplabs/comics/lupers/logo.png',
         website: 'https://narentines.com',
         twitter: 'https://twitter.com/Narentines',
@@ -872,8 +930,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: 'Canis Lupers',
               slug: 'canis-lupers',
               description:
@@ -881,7 +940,12 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/canis-lupers/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/swamplabs/comics/lupers/issues/canis-lupers/signed-cover.jpg',
+              usedCover:
+                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-cover.jpg',
+              usedSignedCover:
+                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -901,8 +965,9 @@ async function main() {
             {
               number: 2,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 500,
               title: 'Godiary: Ionus',
               slug: 'godiary-ionus',
               description:
@@ -910,7 +975,12 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-ionus/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-ionus/signed-cover.jpg',
+              usedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-cover.jpg',
+              usedSignedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -930,8 +1000,9 @@ async function main() {
             {
               number: 3,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 200,
               title: 'Godiary: Diluna',
               slug: 'godiary-diluna',
               description:
@@ -939,7 +1010,12 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-diluna/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-diluna/signed-cover.jpg',
+              usedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-cover.jpg',
+              usedSignedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed.jpg',
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -959,8 +1035,9 @@ async function main() {
             {
               number: 4,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 200,
               title: 'Godiary: Nuptus',
               slug: 'godiary-nuptus',
               description:
@@ -968,7 +1045,12 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-nuptus/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/signed-cover.jpg',
+              usedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-cover.jpg',
+              usedSignedCover:
+                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed.jpg',
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -1037,7 +1119,7 @@ async function main() {
                     { slug: 'fantasy' },
                   ],
                 },
-                isMatureAudience: false,
+                audienceType: AudienceType.Everyone,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -1046,6 +1128,7 @@ async function main() {
                 completedAt: null,
                 cover: 'creators/longwood-labs/comics/the-heist/cover.jpg',
                 pfp: 'creators/longwood-labs/comics/the-heist/pfp.jpg',
+                banner: 'creators/longwood-labs/comics/the-heist/banner.jpg',
                 logo: '',
                 website: 'https://theheist.game/',
                 twitter: 'https://twitter.com/playtheheist',
@@ -1060,6 +1143,7 @@ async function main() {
                     supply: 0,
                     discountMintPrice: 0,
                     mintPrice: 0,
+                    sellerFeeBasisPoints: 400,
                     title: 'How It All Began',
                     slug: 'how-it-all-began',
                     description:
@@ -1068,7 +1152,12 @@ async function main() {
 
                     cover:
                       'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/cover.jpg',
-                    soundtrack: '',
+                    signedCover:
+                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/signed-cover.jpg',
+                    usedCover:
+                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-cover.jpg',
+                    usedSignedCover:
+                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed.jpg',
                     releaseDate: subDays(new Date(), 14),
                     deletedAt: null,
                     featuredAt: null,
@@ -1107,7 +1196,7 @@ async function main() {
             { slug: 'romance' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1116,6 +1205,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/longwood-labs/comics/the-remnants/cover.png',
         pfp: 'creators/longwood-labs/comics/the-remnants/pfp.jpg',
+        banner: '',
         logo: '',
         website: 'https://theremnants.app',
         twitter: 'https://twitter.com/RemnantsNFT',
@@ -1129,8 +1219,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 800,
               title: 'All Alone',
               slug: 'all-alone',
               description:
@@ -1138,7 +1229,12 @@ async function main() {
               flavorText: '“I wonder what I can do with these bolt cutters”',
               cover:
                 'creators/longwood-labs/comics/the-remnants/issues/all-alone/cover.png',
-              soundtrack: '',
+              signedCover:
+                'creators/longwood-labs/comics/the-remnants/issues/all-alone/signed-cover.png',
+              usedCover:
+                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-cover.png',
+              usedSignedCover:
+                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed.png',
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -1206,7 +1302,7 @@ async function main() {
                     { slug: 'sci-fi' },
                   ],
                 },
-                isMatureAudience: true,
+                audienceType: AudienceType.Mature,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -1216,6 +1312,8 @@ async function main() {
                 cover:
                   'creators/gooneytoons-studio/comics/gooneytoons/cover.png',
                 pfp: 'creators/gooneytoons-studio/comics/gooneytoons/pfp.png',
+                banner:
+                  'creators/gooneytoons-studio/comics/gooneytoons/banner.png',
                 logo: 'creators/gooneytoons-studio/comics/gooneytoons/logo.png',
                 website: 'https://gooneytoons.studio/',
                 twitter: 'https://twitter.com/GooneyToonsNFT',
@@ -1231,6 +1329,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Birth of The Gooneys',
                       slug: 'birth-of-the-gooneys',
                       description:
@@ -1238,7 +1337,12 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/cover.png',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/signed-cover.png',
+                      usedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-cover.png',
+                      usedSignedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed.png',
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -1260,6 +1364,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Carnage of The Gooneys',
                       slug: 'carnage-of-the-gooneys',
                       description:
@@ -1267,7 +1372,12 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/signed-cover.jpg',
+                      usedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed.jpg',
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -1289,6 +1399,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Mutation of The Gooneys',
                       slug: 'mutation-of-the-gooneys',
                       description:
@@ -1296,7 +1407,12 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/signed-cover.jpg',
+                      usedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed.jpg',
                       releaseDate: subDays(new Date(), 17),
                       deletedAt: null,
                       featuredAt: null,
@@ -1318,6 +1434,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Release of The Gooneys',
                       slug: 'release-of-the-gooneys',
                       description:
@@ -1325,7 +1442,12 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/signed-cover.jpg',
+                      usedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed.jpg',
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -1398,7 +1520,7 @@ async function main() {
                     { slug: 'horror' },
                   ],
                 },
-                isMatureAudience: true,
+                audienceType: AudienceType.Mature,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -1407,6 +1529,7 @@ async function main() {
                 completedAt: null,
                 cover: 'creators/saucerpen/comics/animosities/cover.jpeg',
                 pfp: 'creators/saucerpen/comics/animosities/pfp.jpeg',
+                banner: '',
                 logo: '',
                 website: '',
                 twitter: '',
@@ -1421,6 +1544,7 @@ async function main() {
                     supply: 0,
                     discountMintPrice: 0,
                     mintPrice: 0,
+                    sellerFeeBasisPoints: 400,
                     title: 'Episode 1',
                     slug: 'episode-1',
                     description: 'Short comic about love, anger, and treachery',
@@ -1428,7 +1552,12 @@ async function main() {
                       '“This story will fill you with hate and sorrow” - NYT',
                     cover:
                       'creators/saucerpen/comics/animosities/issues/episode-1/cover.jpeg',
-                    soundtrack: '',
+                    signedCover:
+                      'creators/saucerpen/comics/animosities/issues/episode-1/signed-cover.jpeg',
+                    usedCover:
+                      'creators/saucerpen/comics/animosities/issues/episode-1/used-cover.jpeg',
+                    usedSignedCover:
+                      'creators/saucerpen/comics/animosities/issues/episode-1/used-signed-cover.jpeg',
                     releaseDate: subDays(new Date(), 20),
                     deletedAt: null,
                     featuredAt: null,
@@ -1463,7 +1592,7 @@ async function main() {
         genres: {
           connect: [{ slug: 'romance' }],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1472,6 +1601,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/saucerpen/comics/birthday/cover.jpg',
         pfp: '',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -1485,8 +1615,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 250,
               title: 'Episode 1',
               slug: 'episode-1',
               description:
@@ -1494,7 +1625,12 @@ async function main() {
               flavorText: '“So lovely” - my mom',
               cover:
                 'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/saucerpen/comics/birthday/issues/episode-1/signed-cover.jpg',
+              usedCover:
+                'creators/saucerpen/comics/birthday/issues/episode-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/saucerpen/comics/birthday/issues/episode-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -1531,7 +1667,7 @@ async function main() {
             { slug: 'adventure' },
           ],
         },
-        isMatureAudience: true,
+        audienceType: AudienceType.Mature,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1540,6 +1676,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/saucerpen/comics/immaculate-taint/cover.jpg',
         pfp: 'creators/saucerpen/comics/immaculate-taint/pfp.jpg',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -1553,8 +1690,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 500,
               title: 'Episode 1',
               slug: 'episode-1',
               description:
@@ -1562,7 +1700,12 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/signed-cover.jpg',
+              usedCover:
+                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1598,7 +1741,7 @@ async function main() {
             { slug: 'non-fiction' },
           ],
         },
-        isMatureAudience: true,
+        audienceType: AudienceType.Mature,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1607,6 +1750,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/saucerpen/comics/island/cover.jpg',
         pfp: 'creators/saucerpen/comics/island/pfp.jpg',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -1620,15 +1764,21 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 600,
               title: 'Episode 1',
               slug: 'episode-1',
               description: 'Summer vacation spent on the island of Susak',
               flavorText: '',
               cover:
                 'creators/saucerpen/comics/island/issues/episode-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/saucerpen/comics/island/issues/episode-1/signed-cover.jpg',
+              usedCover:
+                'creators/saucerpen/comics/island/issues/episode-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/saucerpen/comics/island/issues/episode-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 14),
               deletedAt: null,
               featuredAt: null,
@@ -1664,7 +1814,7 @@ async function main() {
             { slug: 'history' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1673,6 +1823,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/saucerpen/comics/lamia/cover.jpg',
         pfp: 'creators/saucerpen/comics/lamia/pfp.jpg',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -1686,8 +1837,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 500,
               title: 'True Love',
               slug: 'true-love',
               description:
@@ -1695,7 +1847,12 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/saucerpen/comics/lamia/issues/true-love/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/saucerpen/comics/lamia/issues/true-love/signed-cover.jpg',
+              usedCover:
+                'creators/saucerpen/comics/lamia/issues/true-love/used-cover.jpg',
+              usedSignedCover:
+                'creators/saucerpen/comics/lamia/issues/true-love/used-signed.jpg',
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -1764,7 +1921,7 @@ async function main() {
                     { slug: 'fantasy' },
                   ],
                 },
-                isMatureAudience: false,
+                audienceType: AudienceType.Teen,
                 deletedAt: null,
                 featuredAt: null,
                 verifiedAt: new Date(),
@@ -1773,6 +1930,7 @@ async function main() {
                 completedAt: null,
                 cover: 'creators/roach-writes/comics/wretches/cover.jpg',
                 pfp: 'creators/roach-writes/comics/wretches/pfp.jpg',
+                banner: '',
                 logo: 'creators/roach-writes/comics/wretches/logo.jpg',
                 website: '',
                 twitter: '',
@@ -1788,6 +1946,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 1',
                       slug: 'issue-1',
                       description:
@@ -1795,7 +1954,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-1/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-1/signed-cover.jpg',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-1/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-1/used-signed.jpg',
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -1817,6 +1981,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 2',
                       slug: 'issue-2',
                       description:
@@ -1824,7 +1989,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-2/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-2/signed-cover.jpg',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-2/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-2/used-signed.jpg',
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -1846,6 +2016,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 3',
                       slug: 'issue-3',
                       description:
@@ -1853,7 +2024,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-3/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-3/signed-cover.jpg',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-3/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-3/used-signed.jpg',
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -1875,6 +2051,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 4',
                       slug: 'issue-4',
                       description:
@@ -1882,7 +2059,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-4/cover.png',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-4/signed-cover.png',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-4/used-cover.png',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-4/used-signed.png',
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -1904,6 +2086,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 5',
                       slug: 'issue-5',
                       description:
@@ -1911,7 +2094,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-5/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-5/signed-cover.jpg',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-5/used-signed.jpg',
                       releaseDate: subDays(new Date(), 15),
                       deletedAt: null,
                       featuredAt: null,
@@ -1933,6 +2121,7 @@ async function main() {
                       supply: 0,
                       discountMintPrice: 0,
                       mintPrice: 0,
+                      sellerFeeBasisPoints: 400,
                       title: 'Issue 6',
                       slug: 'issue-6',
                       description:
@@ -1940,7 +2129,12 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-6/cover.jpg',
-                      soundtrack: '',
+                      signedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-6/signed-cover.jpg',
+                      usedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-6/used-cover.jpg',
+                      usedSignedCover:
+                        'creators/roach-writes/comics/wretches/issues/issue-6/used-signed.jpg',
                       releaseDate: subDays(new Date(), 12),
                       deletedAt: null,
                       featuredAt: null,
@@ -1980,7 +2174,7 @@ async function main() {
             { slug: 'fantasy' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -1989,6 +2183,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/roach-writes/comics/jana/cover.jpg',
         pfp: 'creators/roach-writes/comics/jana/pfp.jpg',
+        banner: '',
         logo: 'creators/roach-writes/comics/jana/logo.jpg',
         website: '',
         twitter: '',
@@ -2002,15 +2197,21 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 300,
               title: 'Issue 1',
               slug: 'issue-1',
               description: 'Jana and the tower of Want',
               flavorText: '',
               cover:
                 'creators/roach-writes/comics/jana/issues/issue-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/jana/issues/issue-1/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/jana/issues/issue-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/jana/issues/issue-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
               featuredAt: null,
@@ -2030,15 +2231,21 @@ async function main() {
             {
               number: 2,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 100,
               title: 'Issue 2',
               slug: 'issue-2',
               description: 'Jana and the tower of Want',
               flavorText: '',
               cover:
                 'creators/roach-writes/comics/jana/issues/issue-2/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/jana/issues/issue-2/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/jana/issues/issue-2/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/jana/issues/issue-2/used-signed.jpg',
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -2077,7 +2284,7 @@ async function main() {
             { slug: 'adventure' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -2086,6 +2293,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/roach-writes/comics/knockturn-county/cover.jpg',
         pfp: 'creators/roach-writes/comics/knockturn-county/pfp.jpg',
+        banner: '',
         logo: 'creators/roach-writes/comics/knockturn-county/logo.jpg',
         website: '',
         twitter: '',
@@ -2099,8 +2307,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 200,
               title: 'Issue 1',
               slug: 'issue-1',
               description:
@@ -2109,7 +2318,12 @@ async function main() {
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               cover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-1/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -2129,8 +2343,9 @@ async function main() {
             {
               number: 2,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 400,
               title: 'Issue 2',
               slug: 'issue-2',
               description:
@@ -2139,7 +2354,12 @@ async function main() {
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               cover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-2/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-signed.jpg',
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -2171,7 +2391,7 @@ async function main() {
         genres: {
           connect: [{ slug: 'non-fiction' }],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -2180,6 +2400,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/roach-writes/comics/painted-pray/cover.jpg',
         pfp: 'creators/roach-writes/comics/painted-pray/pfp.jpg',
+        banner: '',
         logo: 'creators/roach-writes/comics/painted-pray/logo.jpg',
         website: '',
         twitter: '',
@@ -2193,15 +2414,21 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 500,
               title: 'Issue 1',
               slug: 'issue-1',
               description: 'Life in Savannah dessert',
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/painted-pray/issues/issue-1/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/painted-pray/issues/issue-1/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-signed.jpg',
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -2237,7 +2464,7 @@ async function main() {
             { slug: 'romance' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -2246,6 +2473,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/roach-writes/comics/dark-waters/cover.jpg',
         pfp: 'creators/roach-writes/comics/dark-waters/pfp.jpg',
+        banner: '',
         logo: 'creators/roach-writes/comics/dark-waters/logo.jpg',
         website: '',
         twitter: '',
@@ -2259,15 +2487,21 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 300,
               title: 'Treacherous Seas',
               slug: 'treacherous-seas',
               description: 'Proceeds go to the Ronald McDonald House charity',
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/cover.jpg',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/signed-cover.jpg',
+              usedCover:
+                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-cover.jpg',
+              usedSignedCover:
+                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-signed.jpg',
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -2306,7 +2540,7 @@ async function main() {
             { slug: 'comedy' },
           ],
         },
-        isMatureAudience: false,
+        audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
         verifiedAt: new Date(),
@@ -2315,6 +2549,7 @@ async function main() {
         completedAt: new Date(),
         cover: 'creators/roach-writes/comics/multi-versus/cover.png',
         pfp: '',
+        banner: '',
         logo: '',
         website: '',
         twitter: '',
@@ -2328,8 +2563,9 @@ async function main() {
             {
               number: 1,
               supply: 0,
-              discountMintPrice: 0.0,
-              mintPrice: 0.0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 600,
               title: 'Episode 1',
               slug: 'episode-1',
               description:
@@ -2337,7 +2573,12 @@ async function main() {
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/multi-versus/issues/episode-1/cover.png',
-              soundtrack: '',
+              signedCover:
+                'creators/roach-writes/comics/multi-versus/issues/episode-1/signed-cover.png',
+              usedCover:
+                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-cover.png',
+              usedSignedCover:
+                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-signed.png',
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -2365,8 +2606,8 @@ async function main() {
   }
 
   try {
-    // 10 dummy wallets
-    const indexArray = [...Array(10).keys()];
+    // 100 dummy wallets
+    const indexArray = [...Array(100).keys()];
     const walletArray = indexArray.map(() =>
       Keypair.generate().publicKey.toBase58(),
     );

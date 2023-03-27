@@ -16,7 +16,7 @@ import {
   listS3FolderKeys,
   uploadFile,
 } from '../aws/s3client';
-import { isEmpty } from 'lodash';
+import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -40,7 +40,7 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicSlug, pages, ...rest } = createComicIssueDto;
+    const { slug, comicSlug, sellerFee, pages, ...rest } = createComicIssueDto;
     this.validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
@@ -65,6 +65,7 @@ export class ComicIssueService {
         data: {
           ...rest,
           slug,
+          sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
           pages: { createMany: { data: pagesData } },
         },
@@ -73,14 +74,20 @@ export class ComicIssueService {
       throw new BadRequestException('Bad comic issue data');
     }
 
-    const { cover, soundtrack } = createComicIssueFilesDto;
-
+    const { cover, signedCover, usedCover, usedSignedCover } =
+      createComicIssueFilesDto;
     // Upload files if any
-    let coverKey: string, soundtrackKey: string;
+    let coverKey: string,
+      signedCoverKey: string,
+      usedCoverKey: string,
+      usedSignedCoverKey: string;
     try {
       const prefix = await this.getS3FilePrefix(comicIssue.id);
       if (cover) coverKey = await uploadFile(prefix, cover);
-      if (soundtrack) soundtrackKey = await uploadFile(prefix, soundtrack);
+      if (signedCover) signedCoverKey = await uploadFile(prefix, signedCover);
+      if (usedCover) usedCoverKey = await uploadFile(prefix, usedCover);
+      if (usedSignedCover)
+        usedSignedCoverKey = await uploadFile(prefix, usedSignedCover);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -91,7 +98,9 @@ export class ComicIssueService {
       include: { pages: true },
       data: {
         cover: coverKey,
-        soundtrack: soundtrackKey,
+        signedCover: signedCoverKey,
+        usedCover: usedCoverKey,
+        usedSignedCover: usedSignedCoverKey,
       },
     });
 
@@ -217,7 +226,7 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { pages, ...rest } = updateComicIssueDto;
+    const { pages, sellerFee, ...rest } = updateComicIssueDto;
     this.validatePrice(updateComicIssueDto);
 
     let updatedComicIssue: ComicIssue & { pages: ComicPage[] };
@@ -247,7 +256,8 @@ export class ComicIssueService {
         include: { pages: true },
         data: {
           ...rest,
-          // TODO v1.2: check if pagesData = undefined will destroy all previous relations
+          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
+          // TODO v2: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
         },
       });
@@ -319,9 +329,9 @@ export class ComicIssueService {
 
     try {
       await this.candyMachineService.createComicIssueCM(
-        updatedComicIssue.comic,
         updatedComicIssue,
-        updatedComicIssue.comic.creator,
+        updatedComicIssue.comic.name,
+        updatedComicIssue.comic.creator.walletAddress,
       );
     } catch (e) {
       // revert in case of failure
@@ -343,7 +353,7 @@ export class ComicIssueService {
   async publish(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
-      include: { comic: { include: { creator: true } } },
+      include: { comic: { include: { creator: true } }, collectionNft: true },
     });
 
     if (!comicIssue) {
@@ -355,9 +365,9 @@ export class ComicIssueService {
     // if supply is 0 we are creating an offchain (web2) comic issue
     if (comicIssue.supply > 0) {
       await this.candyMachineService.createComicIssueCM(
-        comicIssue.comic,
         comicIssue,
-        comicIssue.comic.creator,
+        comicIssue.comic.name,
+        comicIssue.comic.creator.walletAddress,
       );
     }
 

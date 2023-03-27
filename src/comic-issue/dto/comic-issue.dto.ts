@@ -6,6 +6,8 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
+  Max,
   Min,
 } from 'class-validator';
 import { getReadUrl } from 'src/aws/s3client';
@@ -23,11 +25,12 @@ import {
   ComicPage,
   WalletComicIssue,
 } from '@prisma/client';
+import { divide, round } from 'lodash';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
   'slug',
-  'isMatureAudience',
+  'audienceType',
 ]) {}
 class PartialCreatorDto extends PickType(CreatorDto, [
   'name',
@@ -52,6 +55,10 @@ export class ComicIssueDto {
   @Min(0)
   mintPrice: number;
 
+  @Min(0)
+  @Max(1)
+  sellerFee: number;
+
   @IsNotEmpty()
   title: string;
 
@@ -65,11 +72,17 @@ export class ComicIssueDto {
   @IsString()
   flavorText: string;
 
-  @IsString()
+  @IsUrl()
   cover: string;
 
-  @IsString()
-  soundtrack: string;
+  // @IsUrl()
+  // signedCover: string;
+
+  // @IsUrl()
+  // usedCover: string;
+
+  // @IsUrl()
+  // usedSignedCover: string;
 
   @IsDateString()
   releaseDate: string;
@@ -125,12 +138,15 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     supply: issue.supply,
     discountMintPrice: issue.discountMintPrice,
     mintPrice: issue.mintPrice,
+    sellerFee: divide(issue.sellerFeeBasisPoints, 100),
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
     cover: await getReadUrl(issue.cover),
-    soundtrack: await getReadUrl(issue.soundtrack),
+    // signedCover: await getReadUrl(issue.signedCover),
+    // usedCover: await getReadUrl(issue.usedCover),
+    // usedSignedCover: await getReadUrl(issue.usedSignedCover),
     releaseDate: issue.releaseDate.toISOString(),
     // if supply is 0 it's not an NFT collection and therefore it's free
     isFree: issue.supply === 0,
@@ -150,10 +166,21 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
       ? {
           name: issue.comic.name,
           slug: issue.comic.slug,
-          isMatureAudience: issue.comic.isMatureAudience,
+          audienceType: issue.comic.audienceType,
         }
       : undefined,
-    stats: issue.stats,
+    stats: issue?.stats
+      ? {
+          favouritesCount: issue.stats.favouritesCount,
+          ratersCount: issue.stats.ratersCount,
+          averageRating: round(issue.stats.averageRating, 1),
+          price: issue.stats.price,
+          totalIssuesCount: issue.stats.totalIssuesCount,
+          readersCount: issue.stats.readersCount,
+          viewersCount: issue.stats.viewersCount,
+          totalPagesCount: issue.stats.totalPagesCount,
+        }
+      : undefined,
     myStats: issue.myStats
       ? {
           rating: issue.myStats.rating,
