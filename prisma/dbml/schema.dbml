@@ -17,6 +17,7 @@ Table Wallet {
   walletCreator WalletCreator [not null]
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
+  listings Listing [not null]
 }
 
 Table Creator {
@@ -271,6 +272,7 @@ Table Listing {
   nftAddress String [not null]
   name String [not null]
   sellerAddress String [not null]
+  seller Wallet [not null]
   price Int [not null]
   feePayer String [not null]
   signature String [not null]
@@ -334,3 +336,5 @@ Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: Listing.collectionUri > Metadata.collectionUri
+
+Ref: Listing.sellerAddress > Wallet.address

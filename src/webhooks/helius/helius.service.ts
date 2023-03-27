@@ -139,7 +139,16 @@ export class HeliusService {
         data: {
           nftAddress: mint,
           name: metadata.name,
-          sellerAddress,
+          seller: {
+            connectOrCreate: {
+              where: {
+                address: sellerAddress,
+              },
+              create: {
+                address: sellerAddress,
+              },
+            },
+          },
           price,
           symbol: metadata.symbol,
           metadata: {

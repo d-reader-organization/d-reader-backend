@@ -42,3 +42,6 @@ ALTER TABLE "Nft" ADD CONSTRAINT "Nft_collectionUri_fkey" FOREIGN KEY ("collecti
 
 -- AddForeignKey
 ALTER TABLE "Listing" ADD CONSTRAINT "Listing_collectionUri_fkey" FOREIGN KEY ("collectionUri") REFERENCES "Metadata"("collectionUri") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Listing" ADD CONSTRAINT "Listing_sellerAddress_fkey" FOREIGN KEY ("sellerAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;

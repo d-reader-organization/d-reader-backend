@@ -27,6 +27,7 @@ model Wallet {
   walletCreator WalletCreator[]
   mintReceipts  CandyMachineReceipt[]
   nfts          Nft[]
+  listings      Listing[]
 }
 
 enum Role {
@@ -296,6 +297,7 @@ model Listing {
   nftAddress              String
   name                    String
   sellerAddress           String
+  seller                  Wallet    @relation(fields: [sellerAddress], references: [address])
   price                   Int
   feePayer                String
   signature               String
