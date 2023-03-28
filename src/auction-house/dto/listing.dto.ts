@@ -1,4 +1,3 @@
-import { Listing } from '@prisma/client';
 import axios from 'axios';
 import { Type, plainToInstance } from 'class-transformer';
 import {
@@ -14,6 +13,7 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { JsonMetadata, Metaplex } from '@metaplex-foundation/js';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { Cluster, Connection, PublicKey } from '@solana/web3.js';
+import { Listings } from '../utils/types';
 
 export class ListingDto {
   @IsPositive()
@@ -95,8 +95,8 @@ export class CreatorsDto {
   share?: number;
 }
 
-export async function toListingDto(listing: Listing) {
-  const response = await axios.get(listing.uri);
+export async function toListingDto(listing: Listings) {
+  const response = await axios.get(listing.nft.uri);
   const collectionMetadata: JsonMetadata = response.data;
 
   const endpoint = heliusClusterApiUrl(
@@ -110,17 +110,17 @@ export async function toListingDto(listing: Listing) {
     .pdas()
     .associatedTokenAccount({
       mint: new PublicKey(listing.nftAddress),
-      owner: new PublicKey(listing.sellerAddress),
+      owner: new PublicKey(listing.nft.owner.address),
     })
     .toString();
 
   const plainListingDto: ListingDto = {
     id: listing.id,
     nftAddress: listing.nftAddress,
-    name: listing.name,
+    name: listing.nft.name,
     description: collectionMetadata.description,
     cover: collectionMetadata.image,
-    sellerAddress: listing.sellerAddress,
+    sellerAddress: listing.nft.owner.address,
     tokenAddress,
     price: listing.price,
     symbol: listing.symbol,
@@ -137,6 +137,6 @@ export async function toListingDto(listing: Listing) {
   return listingDto;
 }
 
-export const toListingDtoArray = (listings: Listing[]) => {
+export const toListingDtoArray = (listings: Listings[]) => {
   return Promise.all(listings.map(toListingDto));
 };

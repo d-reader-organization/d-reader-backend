@@ -17,7 +17,6 @@ Table Wallet {
   walletCreator WalletCreator [not null]
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
-  listings Listing [not null]
 }
 
 Table Creator {
@@ -149,6 +148,7 @@ Table Nft {
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
   receipt CandyMachineReceipt
+  listing Listing [not null]
 }
 
 Table CandyMachine {
@@ -263,7 +263,6 @@ Table WalletCreator {
 Table Metadata {
   uri String [pk]
   nft Nft [not null]
-  listing Listing [not null]
   collectionName String [not null]
   isUsed Boolean [not null]
   isSigned Boolean [not null]
@@ -271,18 +270,15 @@ Table Metadata {
 
 Table Listing {
   id Int [pk, increment]
-  uri String [not null]
-  metadata Metadata [not null]
   nftAddress String [not null]
-  name String [not null]
-  sellerAddress String [not null]
-  seller Wallet [not null]
+  nft Nft [not null]
   price Int [not null]
   feePayer String [not null]
   signature String [not null]
   symbol String [not null]
   createdAt DateTime [not null]
   canceledAt DateTime [not null]
+  soldAt DateTime
 
   indexes {
     (nftAddress, canceledAt) [unique]
@@ -346,6 +342,4 @@ Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
 
-Ref: Listing.uri > Metadata.uri
-
-Ref: Listing.sellerAddress > Wallet.address
+Ref: Listing.nftAddress > Nft.address

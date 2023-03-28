@@ -29,7 +29,6 @@ model Wallet {
   walletCreator WalletCreator[]
   mintReceipts  CandyMachineReceipt[]
   nfts          Nft[]
-  listings      Listing[]
 }
 
 enum Role {
@@ -175,6 +174,7 @@ model Nft {
   collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   receipt              CandyMachineReceipt?
+  listing              Listing[]
 }
 
 model CandyMachine {
@@ -293,7 +293,6 @@ model WalletCreator {
 model Metadata {
   uri            String    @id
   nft            Nft[]
-  listing        Listing[]
   collectionName String
   isUsed         Boolean
   isSigned       Boolean
@@ -301,19 +300,15 @@ model Metadata {
 
 model Listing {
   id            Int      @id @default(autoincrement())
-  uri           String
-  metadata      Metadata @relation(fields: [uri], references: [uri])
   nftAddress    String
-  name          String
-  sellerAddress String
-  seller        Wallet   @relation(fields: [sellerAddress], references: [address])
+  nft           Nft      @relation(fields: [nftAddress], references: [address])
   price         Int
   feePayer      String
   signature     String
   symbol        String
   createdAt     DateTime
   canceledAt    DateTime
-  // TODO: soldAt        DateTime?
+  soldAt        DateTime?
 
   @@unique([nftAddress, canceledAt])
 }

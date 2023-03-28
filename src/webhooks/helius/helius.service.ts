@@ -130,7 +130,6 @@ export class HeliusService {
     try {
       // change after helius fix
       const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved for a nft listing
-      const sellerAddress = transaction.events.nft.seller;
       // change after helius fix
       const price = transaction.events.nft.transactionAmount;
       const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
@@ -158,18 +157,21 @@ export class HeliusService {
         );
       }
 
-      const listing = await this.prisma.listing.create({
+      await this.prisma.nft.update({
+        where: {
+          address: mint,
+        },
         data: {
-          nftAddress: mint,
-          name: metadata.name,
-          seller: {
-            connectOrCreate: {
-              where: { address: sellerAddress },
-              create: { address: sellerAddress },
+          listing: {
+            create: {
+              price,
+              symbol: metadata.symbol,
+              feePayer,
+              signature,
+              createdAt,
+              canceledAt: new Date(0),
             },
           },
-          price,
-          symbol: metadata.symbol,
           metadata: {
             connectOrCreate: {
               where: { uri: metadata.uri },
@@ -181,14 +183,8 @@ export class HeliusService {
               },
             },
           },
-          feePayer,
-          signature,
-          createdAt,
-          canceledAt: new Date(0),
         },
       });
-
-      return listing;
     } catch (error) {
       console.log(error);
     }

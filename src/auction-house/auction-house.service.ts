@@ -24,7 +24,7 @@ import {
 } from './instructions';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
-import { Listing as ListingModel } from '@prisma/client';
+import { ListingReceipt, Listings } from './utils/types';
 
 @Injectable()
 export class AuctionHouseService {
@@ -239,6 +239,13 @@ export class AuctionHouseService {
             nftAddress: mint,
             canceledAt: new Date(0),
           },
+          include: {
+            nft: {
+              include: {
+                owner: true,
+              },
+            },
+          },
         });
         listing = this.toListing(auctionHouse, listingModel);
       }
@@ -265,15 +272,24 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings() {
+  async findAllListings(): Promise<Listings[]> {
     return await this.prisma.listing.findMany({
       where: { canceledAt: new Date(0) },
+      include: {
+        nft: {
+          select: {
+            owner: true,
+            name: true,
+            uri: true,
+          },
+        },
+      },
     });
   }
 
-  toListing(auctionHouse: AuctionHouse, listingModel: ListingModel) {
+  toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
     const address = new PublicKey(listingModel.nftAddress);
-    const sellerAddress = new PublicKey(listingModel.sellerAddress);
+    const sellerAddress = new PublicKey(listingModel.nft.owner);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
       owner: sellerAddress,
