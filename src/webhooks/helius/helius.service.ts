@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Cluster, PublicKey } from '@solana/web3.js';
 import {
   EnrichedTransaction,
@@ -11,11 +11,15 @@ import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import {
+  JsonMetadata,
   Metaplex,
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
 import { WebSocketGateway } from '../../websockets/websocket.gateway';
+import axios from 'axios';
+import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
+import { isNil } from 'lodash';
 
 @Injectable()
 export class HeliusService {
@@ -94,11 +98,100 @@ export class HeliusService {
             return this.handleMintEvent(transaction);
           case TransactionType.TRANSFER:
             return this.handleNftTransfer(transaction);
+          case TransactionType.NFT_LISTING:
+            return this.handleNftListing(transaction);
+          case TransactionType.NFT_CANCEL_LISTING:
+            return this.handleCancelListing(transaction);
           default:
+            console.log('Unhandled webhook event type: ', transaction.type);
             return;
         }
       }),
     );
+  }
+
+  private async handleCancelListing(transaction: EnrichedTransaction) {
+    try {
+      const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved
+      await this.prisma.listing.update({
+        where: {
+          nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
+        },
+        data: {
+          canceledAt: new Date(transaction.timestamp * 1000),
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  private async handleNftListing(transaction: EnrichedTransaction) {
+    try {
+      // change after helius fix
+      const mint = transaction.events.nft.tokensInvolved[0].mint; // only 1 token would be involved for a nft listing
+      const sellerAddress = transaction.events.nft.seller;
+      // change after helius fix
+      const price = transaction.events.nft.transactionAmount;
+      const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
+      const feePayer = transaction.feePayer;
+      const signature = transaction.signature;
+      const createdAt = new Date(transaction.timestamp * 1000);
+      const info = await this.metaplex
+        .rpc()
+        .getAccount(new PublicKey(tokenMetadata));
+      const metadata = toMetadata(toMetadataAccount(info));
+      const { data: collectionMetadata } = await axios.get<JsonMetadata>(
+        metadata.uri,
+      );
+
+      const usedTrait = collectionMetadata.attributes.find(
+        (a) => a.trait_type === USED_TRAIT,
+      );
+      const signedTrait = collectionMetadata.attributes.find(
+        (a) => a.trait_type === SIGNED_TRAIT,
+      );
+
+      if (isNil(usedTrait) || isNil(signedTrait)) {
+        throw new BadRequestException(
+          "Unsupported NFT type, no 'used' or 'signed' traits specified",
+        );
+      }
+
+      const listing = await this.prisma.listing.create({
+        data: {
+          nftAddress: mint,
+          name: metadata.name,
+          seller: {
+            connectOrCreate: {
+              where: { address: sellerAddress },
+              create: { address: sellerAddress },
+            },
+          },
+          price,
+          symbol: metadata.symbol,
+          metadata: {
+            connectOrCreate: {
+              where: { uri: metadata.uri },
+              create: {
+                collectionName: collectionMetadata.collection.name,
+                uri: metadata.uri,
+                isUsed: usedTrait.value === 'true',
+                isSigned: signedTrait.value === 'true',
+              },
+            },
+          },
+          feePayer,
+          signature,
+          createdAt,
+          canceledAt: new Date(0),
+        },
+      });
+
+      return listing;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private async handleNftTransfer(enrichedTransaction: EnrichedTransaction) {
@@ -128,6 +221,18 @@ export class HeliusService {
           where: { address },
           data: { ownerAddress: previousOwner },
         });
+      } else {
+        await this.prisma.listing.update({
+          where: {
+            nftAddress_canceledAt: {
+              nftAddress: address,
+              canceledAt: new Date(0),
+            },
+          },
+          data: {
+            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+          },
+        });
       }
     } catch (error) {
       console.log(error);
@@ -155,6 +260,19 @@ export class HeliusService {
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
 
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
+    const usedTrait = metadata.json.attributes.find(
+      (a) => a.trait_type === USED_TRAIT,
+    );
+    const signedTrait = metadata.json.attributes.find(
+      (a) => a.trait_type === SIGNED_TRAIT,
+    );
+
+    if (isNil(usedTrait) || isNil(signedTrait)) {
+      throw new BadRequestException(
+        "Unsupported NFT type, no 'used' or 'signed' traits specified",
+      );
+    }
+
     try {
       const comicIssueNft = await this.prisma.nft.create({
         data: {
@@ -166,10 +284,20 @@ export class HeliusService {
           },
           address: mint.toBase58(),
           name: metadata.name,
-          uri: metadata.uri,
           candyMachine: { connect: { address: candyMachineAddress } },
           collectionNft: {
             connect: { address: metadata.collection.address.toBase58() },
+          },
+          metadata: {
+            connectOrCreate: {
+              where: { uri: metadata.uri },
+              create: {
+                collectionName: metadata.json.collection.name,
+                uri: metadata.uri,
+                isUsed: usedTrait.value === 'true',
+                isSigned: signedTrait.value === 'true',
+              },
+            },
           },
         },
       });

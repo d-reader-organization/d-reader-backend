@@ -41,7 +41,7 @@ export class NftDto {
   royalties: number;
 
   @IsBoolean()
-  isMintCondition: boolean;
+  isUsed: boolean;
 
   @IsBoolean()
   isSigned: boolean;
@@ -88,7 +88,7 @@ export async function toNftDto(nft: NftInput) {
     royalties: offChainMetadataJson.seller_fee_basis_points / 100,
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
-    isMintCondition: isNil(usedTrait) ? undefined : usedTrait.value === 'true',
+    isUsed: isNil(usedTrait) ? undefined : usedTrait.value === 'true',
     isSigned: isNil(signedTrait) ? undefined : signedTrait.value === 'true',
     comicName: offChainMetadataJson.collection.family,
     comicIssueName: offChainMetadataJson.collection.name,

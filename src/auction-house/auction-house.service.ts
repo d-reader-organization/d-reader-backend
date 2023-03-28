@@ -3,10 +3,17 @@ import {
   Cluster,
   Connection,
   Keypair,
+  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
 } from '@solana/web3.js';
-import { keypairIdentity, Metaplex, sol, token } from '@metaplex-foundation/js';
+import {
+  AuctionHouse,
+  keypairIdentity,
+  Metaplex,
+  sol,
+  token,
+} from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import {
@@ -16,13 +23,15 @@ import {
   constructPrivateBidInstruction,
 } from './instructions';
 import { heliusClusterApiUrl } from 'helius-sdk';
+import { PrismaService } from 'nestjs-prisma';
+import { Listing as ListingModel } from '@prisma/client';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private auctionHouseAddress: PublicKey;
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     const endpoint = heliusClusterApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
@@ -212,13 +221,27 @@ export class AuctionHouseService {
     }
   }
 
-  async constructCancelListingTransaction(receiptAddress: PublicKey) {
+  async constructCancelListingTransaction(
+    receiptAddress?: PublicKey,
+    mint?: string,
+  ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
 
-      const listing = await this.metaplex
-        .auctionHouse()
-        .findListingByReceipt({ receiptAddress, auctionHouse });
+      let listing: any;
+      if (receiptAddress) {
+        listing = await this.metaplex
+          .auctionHouse()
+          .findListingByReceipt({ receiptAddress, auctionHouse });
+      } else {
+        const listingModel = await this.prisma.listing.findFirst({
+          where: {
+            nftAddress: mint,
+            canceledAt: new Date(0),
+          },
+        });
+        listing = this.toListing(auctionHouse, listingModel);
+      }
 
       const cancelListingTransaction = constructCancelListingInstruction(
         listing,
@@ -240,5 +263,45 @@ export class AuctionHouseService {
     } catch (e) {
       console.log('Error while constructing cancel listing transaction ', e);
     }
+  }
+
+  async findAllListings() {
+    return await this.prisma.listing.findMany({
+      where: { canceledAt: new Date(0) },
+    });
+  }
+
+  toListing(auctionHouse: AuctionHouse, listingModel: ListingModel) {
+    const address = new PublicKey(listingModel.nftAddress);
+    const sellerAddress = new PublicKey(listingModel.sellerAddress);
+    const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
+      mint: address,
+      owner: sellerAddress,
+    });
+
+    const price = sol(listingModel.price / LAMPORTS_PER_SOL);
+    const tokens = token(1, 0, listingModel.symbol); // only considers nfts
+    const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
+      auctionHouse: auctionHouse.address,
+      wallet: sellerAddress,
+      treasuryMint: auctionHouse.treasuryMint.address,
+      tokenMint: address,
+      price: price.basisPoints,
+      tokenSize: tokens.basisPoints,
+      tokenAccount,
+    });
+
+    return {
+      asset: {
+        token: {
+          address: tokenAccount,
+        },
+        address,
+      },
+      sellerAddress,
+      tradeStateAddress,
+      price,
+      tokens,
+    };
   }
 }

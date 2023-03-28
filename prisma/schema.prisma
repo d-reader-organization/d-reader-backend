@@ -29,6 +29,7 @@ model Wallet {
   walletCreator WalletCreator[]
   mintReceipts  CandyMachineReceipt[]
   nfts          Nft[]
+  listings      Listing[]
 }
 
 enum Role {
@@ -164,6 +165,7 @@ model ComicIssue {
 
 model Nft {
   address              String               @id
+  metadata             Metadata             @relation(fields: [uri], references: [uri])
   uri                  String
   name                 String
   owner                Wallet               @relation(fields: [ownerAddress], references: [address])
@@ -286,4 +288,32 @@ model WalletCreator {
   isFollowing   Boolean @default(false)
 
   @@id([creatorSlug, walletAddress])
+}
+
+model Metadata {
+  uri            String    @id
+  nft            Nft[]
+  listing        Listing[]
+  collectionName String
+  isUsed         Boolean
+  isSigned       Boolean
+}
+
+model Listing {
+  id            Int      @id @default(autoincrement())
+  uri           String
+  metadata      Metadata @relation(fields: [uri], references: [uri])
+  nftAddress    String
+  name          String
+  sellerAddress String
+  seller        Wallet   @relation(fields: [sellerAddress], references: [address])
+  price         Int
+  feePayer      String
+  signature     String
+  symbol        String
+  createdAt     DateTime
+  canceledAt    DateTime
+  // TODO: soldAt        DateTime?
+
+  @@unique([nftAddress, canceledAt])
 }

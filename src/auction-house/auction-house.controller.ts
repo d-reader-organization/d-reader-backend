@@ -11,6 +11,7 @@ import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { toListingDtoArray } from './dto/listing.dto';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -91,9 +92,34 @@ export class AuctionHouseController {
   @Throttle(5, 30)
   @Get('/transactions/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
-    const receiptAddress = new PublicKey(query.receiptAddress);
+    const receiptAddress = query.receiptAddress
+      ? new PublicKey(query.receiptAddress)
+      : undefined;
+    const mint = query.mint ?? undefined;
     return await this.auctionHouseService.constructCancelListingTransaction(
       receiptAddress,
+      mint,
     );
   }
+
+  // This should be paginated and return active listings
+  @Throttle(5, 30)
+  @Get('/get/listings')
+  async findAllListings() {
+    const listings = await this.auctionHouseService.findAllListings();
+    return await toListingDtoArray(listings);
+  }
+
+  // @Throttle(5, 30)
+  // @Get('/get/collection-stats/:symbol') // symbol = comicIssueId
+  // async findCollectionStats(symbol: string) {
+  //   const stats = await this.auctionHouseService.findCollectionStats(symbol);
+  //   return something;
+
+  //   // totalVolume = sum all the prices of comic issue listed items which have been sold
+  //   // itemsListed = count all the active items
+  //   // floorPrice = findFirst listed item, orderBy price 'asc'
+
+  //   // returns totalVolume, itemsListed, floorPrice
+  // }
 }
