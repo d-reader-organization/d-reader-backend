@@ -10,9 +10,13 @@ import {
   IsString,
 } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { JsonMetadata, Metaplex } from '@metaplex-foundation/js';
-import { heliusClusterApiUrl } from 'helius-sdk';
-import { Cluster, Connection, PublicKey } from '@solana/web3.js';
+import {
+  JsonMetadata,
+  Pda,
+  associatedTokenProgram,
+  tokenProgram,
+} from '@metaplex-foundation/js';
+import { PublicKey } from '@solana/web3.js';
 import { Listings } from '../utils/types';
 
 export class ListingDto {
@@ -98,21 +102,11 @@ export class CreatorsDto {
 export async function toListingDto(listing: Listings) {
   const response = await axios.get(listing.nft.uri);
   const collectionMetadata: JsonMetadata = response.data;
-
-  const endpoint = heliusClusterApiUrl(
-    process.env.HELIUS_API_KEY,
-    process.env.SOLANA_CLUSTER as Cluster,
-  );
-  const connection = new Connection(endpoint, 'confirmed');
-  const metaplex = new Metaplex(connection);
-  const tokenAddress = metaplex
-    .tokens()
-    .pdas()
-    .associatedTokenAccount({
-      mint: new PublicKey(listing.nftAddress),
-      owner: new PublicKey(listing.nft.owner.address),
-    })
-    .toString();
+  const tokenAddress = Pda.find(associatedTokenProgram.address, [
+    new PublicKey(listing.nft.owner.address).toBuffer(),
+    tokenProgram.address.toBuffer(),
+    new PublicKey(listing.nftAddress).toBuffer(),
+  ]).toString();
 
   const plainListingDto: ListingDto = {
     id: listing.id,
@@ -131,7 +125,10 @@ export async function toListingDto(listing: Listings) {
     attributes: collectionMetadata.attributes,
     creators: collectionMetadata.properties.creators,
     signature: listing.signature,
-    canceledAt: listing.canceledAt?.toISOString(), // TODO: ignore Date(0) values
+    canceledAt:
+      listing.canceledAt.toISOString() != new Date(0).toISOString()
+        ? listing.canceledAt.toISOString()
+        : null,
   };
   const listingDto = plainToInstance(ListingDto, plainListingDto);
   return listingDto;

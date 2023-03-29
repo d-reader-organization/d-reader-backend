@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
@@ -12,6 +12,9 @@ import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
+import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { toCollectionStats } from './dto/collection-stats.dto';
+import { CollectionStats } from './utils/types';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -102,24 +105,18 @@ export class AuctionHouseController {
     );
   }
 
-  // This should be paginated and return active listings
   @Throttle(5, 30)
   @Get('/get/listings')
-  async findAllListings() {
-    const listings = await this.auctionHouseService.findAllListings();
+  async findAllListings(@Query() query: ListingFilterParams) {
+    const listings = await this.auctionHouseService.findAllListings(query);
     return await toListingDtoArray(listings);
   }
 
-  // @Throttle(5, 30)
-  // @Get('/get/collection-stats/:symbol') // symbol = comicIssueId
-  // async findCollectionStats(symbol: string) {
-  //   const stats = await this.auctionHouseService.findCollectionStats(symbol);
-  //   return something;
-
-  //   // totalVolume = sum all the prices of comic issue listed items which have been sold
-  //   // itemsListed = count all the active items
-  //   // floorPrice = findFirst listed item, orderBy price 'asc'
-
-  //   // returns totalVolume, itemsListed, floorPrice
-  // }
+  @Throttle(5, 30)
+  @Get('/get/collection-stats/:comicIssueId')
+  async findCollectionStats(@Param('comicIssueId') comicIssueId: number) {
+    const stats: CollectionStats =
+      await this.auctionHouseService.findCollectionStats(comicIssueId);
+    return toCollectionStats(stats);
+  }
 }

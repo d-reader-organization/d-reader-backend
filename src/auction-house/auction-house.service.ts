@@ -25,6 +25,8 @@ import {
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { ListingReceipt, Listings } from './utils/types';
+import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { Prisma } from 'prisma/prisma-client';
 
 @Injectable()
 export class AuctionHouseService {
@@ -272,9 +274,74 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings(): Promise<Listings[]> {
+  async findCollectionStats(comicIssueId: number) {
+    const aggregate = this.prisma.listing.aggregate({
+      where: {
+        nft: {
+          collectionNft: {
+            comicIssueId,
+          },
+        },
+        soldAt: {
+          not: null,
+        },
+      },
+      _sum: {
+        price: true,
+      },
+    });
+    const countListed = this.prisma.listing.count({
+      where: {
+        nft: {
+          collectionNft: {
+            comicIssueId,
+          },
+        },
+        canceledAt: new Date(0),
+      },
+    });
+    const minListed = this.prisma.listing.findFirst({
+      where: {
+        nft: {
+          collectionNft: {
+            comicIssueId,
+          },
+        },
+        canceledAt: new Date(0),
+      },
+      orderBy: {
+        price: 'asc',
+      },
+      select: {
+        price: true,
+      },
+    });
+
+    try {
+      const [{ _sum: totalVolume }, itemsListed, { price: floorPrice }] =
+        await Promise.all([aggregate, countListed, minListed]);
+      return {
+        totalVolume: totalVolume.price,
+        itemsListed,
+        floorPrice,
+      };
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async findAllListings(query: ListingFilterParams): Promise<Listings[]> {
+    let conditions: Prisma.ListingWhereInput = { canceledAt: new Date(0) };
+    if (query.isSold) {
+      conditions = {
+        ...conditions,
+        soldAt: {
+          not: null,
+        },
+      };
+    }
     return await this.prisma.listing.findMany({
-      where: { canceledAt: new Date(0) },
+      where: conditions,
       include: {
         nft: {
           select: {
@@ -284,12 +351,14 @@ export class AuctionHouseService {
           },
         },
       },
+      take: query.take,
+      skip: query.skip,
     });
   }
 
   toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
     const address = new PublicKey(listingModel.nftAddress);
-    const sellerAddress = new PublicKey(listingModel.nft.owner);
+    const sellerAddress = new PublicKey(listingModel.nft.owner.address);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
       owner: sellerAddress,

@@ -18,7 +18,7 @@ import {
 } from '@metaplex-foundation/js';
 import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import axios from 'axios';
-import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
+import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import { isNil } from 'lodash';
 
 @Injectable()
@@ -236,109 +236,117 @@ export class HeliusService {
   }
 
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
-    const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
-    const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
-
-    const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
-    await this.metaplex.rpc().confirmTransaction(
-      enrichedTransaction.signature,
-      {
-        ...latestBlockhash,
-      },
-      'finalized',
-    );
-
-    const info = await this.metaplex.rpc().getAccount(metadataPda);
-    const metadata = toMetadata(toMetadataAccount(info));
-
-    // Candy Machine Guard program is the 5th instruction
-    // Candy Machine address is the 3rd account in the guard instruction
-    const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
-
-    const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
-    const usedTrait = metadata.json.attributes.find(
-      (a) => a.trait_type === USED_TRAIT,
-    );
-    const signedTrait = metadata.json.attributes.find(
-      (a) => a.trait_type === SIGNED_TRAIT,
-    );
-
-    if (isNil(usedTrait) || isNil(signedTrait)) {
-      throw new BadRequestException(
-        "Unsupported NFT type, no 'used' or 'signed' traits specified",
-      );
-    }
-
     try {
-      const comicIssueNft = await this.prisma.nft.create({
-        data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: ownerAddress },
-              create: { address: ownerAddress },
+      const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
+      const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
+
+      const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      await this.metaplex.rpc().confirmTransaction(
+        enrichedTransaction.signature,
+        {
+          ...latestBlockhash,
+        },
+        'finalized',
+      );
+
+      const info = await this.metaplex.rpc().getAccount(metadataPda);
+      const metadata = toMetadata(toMetadataAccount(info));
+      const { data: json } = await axios.get<JsonMetadata>(metadata.uri);
+
+      // Candy Machine Guard program is the 5th instruction
+      // Candy Machine address is the 3rd account in the guard instruction
+      const candyMachineAddress =
+        enrichedTransaction.instructions[4].accounts[2];
+
+      const ownerAddress =
+        enrichedTransaction.tokenTransfers.at(0).toUserAccount;
+      const usedTrait = json.attributes.find(
+        (a) => a.trait_type === USED_TRAIT,
+      );
+      const signedTrait = json.attributes.find(
+        (a) => a.trait_type === SIGNED_TRAIT,
+      );
+
+      if (isNil(usedTrait) || isNil(signedTrait)) {
+        throw new BadRequestException(
+          "Unsupported NFT type, no 'used' or 'signed' traits specified",
+        );
+      }
+
+      try {
+        const comicIssueNft = await this.prisma.nft.create({
+          data: {
+            owner: {
+              connectOrCreate: {
+                where: { address: ownerAddress },
+                create: { address: ownerAddress },
+              },
             },
-          },
-          address: mint.toBase58(),
-          name: metadata.name,
-          candyMachine: { connect: { address: candyMachineAddress } },
-          collectionNft: {
-            connect: { address: metadata.collection.address.toBase58() },
-          },
-          metadata: {
-            connectOrCreate: {
-              where: { uri: metadata.uri },
-              create: {
-                collectionName: metadata.json.collection.name,
-                uri: metadata.uri,
-                isUsed: usedTrait.value === 'true',
-                isSigned: signedTrait.value === 'true',
+            address: mint.toBase58(),
+            name: metadata.name,
+            candyMachine: { connect: { address: candyMachineAddress } },
+            collectionNft: {
+              connect: { address: metadata.collection.address.toBase58() },
+            },
+            metadata: {
+              connectOrCreate: {
+                where: { uri: metadata.uri },
+                create: {
+                  collectionName: json.collection.name,
+                  uri: metadata.uri,
+                  isUsed: usedTrait.value === 'true',
+                  isSigned: signedTrait.value === 'true',
+                },
               },
             },
           },
-        },
-      });
-      this.subscribeTo(comicIssueNft.address);
-    } catch (error) {
-      console.error(error);
-    }
-
-    try {
-      const nftTransactionInfo = enrichedTransaction.events.nft as NFTEvent & {
-        amount: number;
-      };
-
-      const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { nft: true, buyer: true },
-        data: {
-          nft: { connect: { address: mint.toBase58() } },
-          candyMachine: { connect: { address: candyMachineAddress } },
-          buyer: {
-            connectOrCreate: {
-              where: { address: nftTransactionInfo.buyer },
-              create: { address: nftTransactionInfo.buyer },
-            },
-          },
-          price: nftTransactionInfo.amount,
-          timestamp: new Date(nftTransactionInfo.timestamp * 1000),
-          description: enrichedTransaction.description,
-        },
-      });
-
-      const candyMachine = await this.prisma.candyMachine.update({
-        where: { address: candyMachineAddress },
-        data: {
-          itemsRemaining: { decrement: 1 },
-          itemsMinted: { increment: 1 },
-        },
-      });
-
-      if (candyMachine.itemsRemaining === 0) {
-        this.removeSubscription(candyMachine.address);
+        });
+        this.subscribeTo(comicIssueNft.address);
+      } catch (error) {
+        console.error(error);
       }
 
-      this.websocketGateway.handleMintReceipt(receipt);
-    } catch (error) {
-      console.error(error);
+      try {
+        const nftTransactionInfo = enrichedTransaction.events
+          .nft as NFTEvent & {
+          amount: number;
+        };
+
+        const receipt = await this.prisma.candyMachineReceipt.create({
+          include: { nft: true, buyer: true },
+          data: {
+            nft: { connect: { address: mint.toBase58() } },
+            candyMachine: { connect: { address: candyMachineAddress } },
+            buyer: {
+              connectOrCreate: {
+                where: { address: nftTransactionInfo.buyer },
+                create: { address: nftTransactionInfo.buyer },
+              },
+            },
+            price: nftTransactionInfo.amount,
+            timestamp: new Date(nftTransactionInfo.timestamp * 1000),
+            description: enrichedTransaction.description,
+          },
+        });
+
+        const candyMachine = await this.prisma.candyMachine.update({
+          where: { address: candyMachineAddress },
+          data: {
+            itemsRemaining: { decrement: 1 },
+            itemsMinted: { increment: 1 },
+          },
+        });
+
+        if (candyMachine.itemsRemaining === 0) {
+          this.removeSubscription(candyMachine.address);
+        }
+
+        this.websocketGateway.handleMintReceipt(receipt);
+      } catch (error) {
+        console.error(error);
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 }

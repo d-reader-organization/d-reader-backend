@@ -14,3 +14,9 @@ export type Listings = Listing & {
     owner: Wallet;
   };
 };
+
+export type CollectionStats = {
+  totalVolume: number;
+  itemsListed: number;
+  floorPrice: number;
+};

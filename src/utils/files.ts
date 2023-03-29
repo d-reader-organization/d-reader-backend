@@ -1,5 +1,5 @@
 import { toMetaplexFile } from '@metaplex-foundation/js';
-import { getS3Object } from 'src/aws/s3client';
+import { getS3Object } from '../aws/s3client';
 import { Readable } from 'stream';
 import * as path from 'path';
 
