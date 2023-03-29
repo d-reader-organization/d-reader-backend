@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { Type, plainToInstance } from 'class-transformer';
 import {
-  ArrayNotEmpty,
   IsArray,
-  IsDateString,
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -18,6 +17,11 @@ import {
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { Listings } from './types';
+import { BasicWalletDto } from 'src/candy-machine/dto/candy-machine-receipt.dto';
+import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
+import { isNil } from 'lodash';
+import { NftAttributeDto } from 'src/nft/dto/nft.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class ListingDto {
   @IsPositive()
@@ -31,14 +35,10 @@ export class ListingDto {
   name: string;
 
   @IsString()
-  description: string;
-
-  @IsString()
   cover: string;
 
-  @IsSolanaAddress()
-  @IsString()
-  sellerAddress: string;
+  @Type(() => BasicWalletDto)
+  seller: BasicWalletDto;
 
   @IsString()
   tokenAddress: string;
@@ -46,37 +46,42 @@ export class ListingDto {
   @IsNumber()
   price: number;
 
-  @IsString()
-  symbol: string;
-
-  @IsDateString()
-  createdAt: string;
-
-  @IsNumber()
-  royalties: number;
-
-  @IsString()
-  collectionName: string;
-
-  @IsString()
-  externalUrl: string;
-
   @IsArray()
-  @ArrayNotEmpty()
-  @Type(() => AttributesDto)
-  attributes: AttributesDto[];
+  @Type(() => NftAttributeDto)
+  @ApiProperty({ type: [NftAttributeDto] })
+  attributes: NftAttributeDto[];
 
-  @IsArray()
-  @ArrayNotEmpty()
-  @Type(() => CreatorsDto)
-  creators: CreatorsDto[];
+  @IsBoolean()
+  isUsed: boolean;
 
-  @IsString()
-  signature: string;
+  @IsBoolean()
+  isSigned: boolean;
 
-  @IsOptional()
-  @IsDateString()
-  canceledAt?: string;
+  // @IsString()
+  // description: string;
+
+  // @IsString()
+  // symbol: string;
+
+  // @IsDateString()
+  // createdAt: string;
+
+  // @IsNumber()
+  // royalties: number;
+
+  // @IsString()
+  // collectionName: string;
+
+  // @IsString()
+  // externalUrl: string;
+
+  // @IsArray()
+  // @ArrayNotEmpty()
+  // @Type(() => CreatorsDto)
+  // creators: CreatorsDto[];
+
+  // @IsString()
+  // signature: string;
 }
 
 export class AttributesDto {
@@ -100,7 +105,7 @@ export class CreatorsDto {
 }
 
 export async function toListingDto(listing: Listings) {
-  const response = await axios.get(listing.nft.uri);
+  const response = await axios.get<JsonMetadata>(listing.nft.uri);
   const collectionMetadata: JsonMetadata = response.data;
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     new PublicKey(listing.nft.owner.address).toBuffer(),
@@ -108,38 +113,44 @@ export async function toListingDto(listing: Listings) {
     new PublicKey(listing.nftAddress).toBuffer(),
   ]).toString();
 
+  const usedTrait = collectionMetadata.attributes.find(
+    (a) => a.trait_type === USED_TRAIT,
+  );
+  const signedTrait = collectionMetadata.attributes.find(
+    (a) => a.trait_type === SIGNED_TRAIT,
+  );
+
   const plainListingDto: ListingDto = {
     id: listing.id,
     nftAddress: listing.nftAddress,
     name: listing.nft.name,
-    description: collectionMetadata.description, // hide this in array?
     cover: collectionMetadata.image,
-    // sellerAddress: listing.nft.owner.address,
     seller: {
       address: listing.nft.owner.address,
       avatar: listing.nft.owner.avatar,
       label: listing.nft.owner.label,
-    }
+    },
     tokenAddress,
     price: listing.price,
-    symbol: listing.symbol, // hide this in array?
-    createdAt: listing.createdAt.toISOString(), // hide this in array?
-    royalties: collectionMetadata.seller_fee_basis_points, // hide this in array?
-    collectionName: collectionMetadata.collection.name, // hide this in array?
-    externalUrl: collectionMetadata.external_url, // hide this in array?
-    attributes: collectionMetadata.attributes,
-    creators: collectionMetadata.properties.creators, // hide this in array?
-    signature: listing.signature, // hide this in array?
-    canceledAt:
-      listing.canceledAt.toISOString() != new Date(0).toISOString() // hide this in array?
-        ? listing.canceledAt.toISOString() // hide this in array?
-        : null, // hide this in array?
+    attributes: collectionMetadata.attributes.map((a) => ({
+      trait: a.trait_type,
+      value: a.value,
+    })),
+    isUsed: isNil(usedTrait) ? undefined : usedTrait.value === 'true',
+    isSigned: isNil(signedTrait) ? undefined : signedTrait.value === 'true',
+    // description: collectionMetadata.description, // hide this in array?
+    // symbol: listing.symbol, // hide this in array?
+    // createdAt: listing.createdAt.toISOString(), // hide this in array?
+    // royalties: collectionMetadata.seller_fee_basis_points, // hide this in array?
+    // collectionName: collectionMetadata.collection.name, // hide this in array?
+    // externalUrl: collectionMetadata.external_url, // hide this in array?
+    // creators: collectionMetadata.properties.creators, // hide this in array?
+    // signature: listing.signature, // hide this in array?
   };
   const listingDto = plainToInstance(ListingDto, plainListingDto);
   return listingDto;
 }
 
-// TODO: array should only return scoped data
 export const toListingDtoArray = (listings: Listings[]) => {
   return Promise.all(listings.map(toListingDto));
 };
