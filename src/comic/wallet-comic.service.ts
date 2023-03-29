@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { WalletComic } from '@prisma/client';
 import { ComicStats } from './types/comic-stats';
-import { PickByType } from 'src/types/shared';
+import { PickByType } from '../types/shared';
 
 @Injectable()
 export class WalletComicService {

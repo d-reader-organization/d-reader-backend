@@ -7,8 +7,8 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateComicDto,
   CreateComicFilesDto,
-} from 'src/comic/dto/create-comic.dto';
-import { UpdateComicDto } from 'src/comic/dto/update-comic.dto';
+} from '../comic/dto/create-comic.dto';
+import { UpdateComicDto } from '../comic/dto/update-comic.dto';
 import {
   deleteS3Object,
   deleteS3Objects,

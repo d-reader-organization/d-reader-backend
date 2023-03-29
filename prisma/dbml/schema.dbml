@@ -138,6 +138,7 @@ Table ComicIssue {
 
 Table Nft {
   address String [pk]
+  metadata Metadata [not null]
   uri String [not null]
   name String [not null]
   owner Wallet [not null]
@@ -147,6 +148,7 @@ Table Nft {
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
   receipt CandyMachineReceipt
+  listing Listing [not null]
 }
 
 Table CandyMachine {
@@ -258,6 +260,31 @@ Table WalletCreator {
   }
 }
 
+Table Metadata {
+  uri String [pk]
+  nft Nft [not null]
+  collectionName String [not null]
+  isUsed Boolean [not null]
+  isSigned Boolean [not null]
+}
+
+Table Listing {
+  id Int [pk, increment]
+  nftAddress String [not null]
+  nft Nft [not null]
+  price Int [not null]
+  feePayer String [not null]
+  signature String [not null]
+  symbol String [not null]
+  createdAt DateTime [not null]
+  canceledAt DateTime [not null]
+  soldAt DateTime
+
+  indexes {
+    (nftAddress, canceledAt) [unique]
+  }
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -284,6 +311,8 @@ Ref: WalletComic.comicSlug > Comic.slug [delete: Cascade]
 Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
+
+Ref: Nft.uri > Metadata.uri
 
 Ref: Nft.ownerAddress > Wallet.address
 
@@ -312,3 +341,5 @@ Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
 Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
+
+Ref: Listing.nftAddress > Nft.address

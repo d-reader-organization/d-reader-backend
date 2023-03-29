@@ -164,6 +164,7 @@ model ComicIssue {
 
 model Nft {
   address              String               @id
+  metadata             Metadata             @relation(fields: [uri], references: [uri])
   uri                  String
   name                 String
   owner                Wallet               @relation(fields: [ownerAddress], references: [address])
@@ -173,6 +174,7 @@ model Nft {
   collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   receipt              CandyMachineReceipt?
+  listing              Listing[]
 }
 
 model CandyMachine {
@@ -286,4 +288,27 @@ model WalletCreator {
   isFollowing   Boolean @default(false)
 
   @@id([creatorSlug, walletAddress])
+}
+
+model Metadata {
+  uri            String    @id
+  nft            Nft[]
+  collectionName String
+  isUsed         Boolean
+  isSigned       Boolean
+}
+
+model Listing {
+  id            Int      @id @default(autoincrement())
+  nftAddress    String
+  nft           Nft      @relation(fields: [nftAddress], references: [address])
+  price         Int
+  feePayer      String
+  signature     String
+  symbol        String
+  createdAt     DateTime
+  canceledAt    DateTime
+  soldAt        DateTime?
+
+  @@unique([nftAddress, canceledAt])
 }

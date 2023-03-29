@@ -7,8 +7,8 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateGenreDto,
   CreateGenreFilesDto,
-} from 'src/genre/dto/create-genre.dto';
-import { UpdateGenreDto } from 'src/genre/dto/update-genre.dto';
+} from '../genre/dto/create-genre.dto';
+import { UpdateGenreDto } from '../genre/dto/update-genre.dto';
 import {
   deleteS3Object,
   deleteS3Objects,
