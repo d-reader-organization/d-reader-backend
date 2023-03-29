@@ -18,8 +18,31 @@ import {
   AudienceType,
   CarouselLocation,
 } from '@prisma/client';
+import { CandyMachineService } from '../src/candy-machine/candy-machine.service';
+import { HeliusService } from '../src/webhooks/helius/helius.service';
+import { PrismaService } from 'nestjs-prisma';
+import { WebSocketGateway } from '../src/websockets/websocket.gateway';
+import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
+import { ComicPageService } from '../src/comic-page/comic-page.service';
+import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
+import { TransactionType, WebhookType } from 'helius-sdk';
 
 const prisma = new PrismaClient();
+const prismaService = new PrismaService();
+const webSocketGateway = new WebSocketGateway();
+const heliusService = new HeliusService(prismaService, webSocketGateway);
+const comicPageService = new ComicPageService(prismaService);
+const candyMachineService = new CandyMachineService(
+  prismaService,
+  heliusService,
+);
+const walletComicIssueService = new WalletComicIssueService(prismaService);
+const comicIssueService = new ComicIssueService(
+  prismaService,
+  comicPageService,
+  candyMachineService,
+  walletComicIssueService,
+);
 
 const generatePages = (
   imagePath: string,
@@ -58,7 +81,7 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  const skipS3Seed = false;
+  const skipS3Seed = true;
   if (!skipS3Seed) {
     console.log(`⛏️ Emptying '${Bucket}' s3 bucket...`);
     const keysToDelete = await listS3FolderKeys({ Prefix: '' });
@@ -2695,6 +2718,51 @@ async function main() {
       e,
     );
   }
+
+  const webhooks = await heliusService.findAll();
+  let webhookURL = 'https://replace.me';
+  for (const webhook of webhooks) {
+    webhookURL = webhook.webhookURL;
+    await heliusService.deleteWebhook(webhook.webhookID);
+  }
+
+  const placeholderAccount = '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD';
+  await heliusService.createWebhook({
+    accountAddresses: [placeholderAccount],
+    transactionTypes: [TransactionType.ANY],
+    webhookURL,
+    webhookType: 'enhancedDevnet' as WebhookType,
+    authHeader: undefined,
+  });
+
+  const comicIssues = await prisma.comicIssue.findMany();
+
+  let i = 1;
+  for (const comicIssue of comicIssues) {
+    if (
+      (comicIssue.comicSlug === 'the-dark-portal' &&
+        comicIssue.slug === 'concept-art') ||
+      (comicIssue.comicSlug === 'knockturn-county' &&
+        comicIssue.slug === 'issue-2') ||
+      (comicIssue.comicSlug === 'wretches' && comicIssue.slug === 'issue-5') ||
+      (comicIssue.comicSlug === 'lupers' &&
+        comicIssue.slug === 'godiary-nuptus')
+    ) {
+      console.log('Skipping comic issue ', comicIssue.id);
+      continue;
+    } else {
+      console.log(i, ' ➕ Publishing comic issue ' + comicIssue.id);
+
+      await comicIssueService.publishOnChain(comicIssue.id, {
+        supply: getRandomInt(2, 6) * 10,
+        mintPrice: getRandomInt(1, 2) * 0.1,
+        discountMintPrice: 0.05,
+      });
+      i++;
+    }
+  }
+
+  await heliusService.removeSubscription(placeholderAccount);
 }
 
 main()

@@ -12,7 +12,7 @@ class ReceiptNftDto {
   name: string;
 }
 
-class ReceiptBuyerDto {
+export class BasicWalletDto {
   @IsSolanaAddress()
   address: string;
 
@@ -27,8 +27,8 @@ export class CandyMachineReceiptDto {
   @Type(() => ReceiptNftDto)
   nft: ReceiptNftDto;
 
-  @Type(() => ReceiptBuyerDto)
-  buyer: ReceiptBuyerDto;
+  @Type(() => BasicWalletDto)
+  buyer: BasicWalletDto;
 
   @IsString()
   candyMachineAddress: string;

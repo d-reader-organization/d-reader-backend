@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { MailService } from 'src/mail/mail.service';
-import { RequestUserData } from 'src/types/request-user-data';
+import { MailService } from '../mail/mail.service';
+import { RequestUserData } from '../types/request-user-data';
 import { UpsertNewsletterDto } from './dto/upsert-newsletter.dto';
 
 @Injectable()

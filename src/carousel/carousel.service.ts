@@ -7,8 +7,8 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateCarouselSlideDto,
   CreateCarouselSlideFilesDto,
-} from 'src/carousel/dto/create-carousel-slide.dto';
-import { UpdateCarouselSlideDto } from 'src/carousel/dto/update-carousel-slide.dto';
+} from '../carousel/dto/create-carousel-slide.dto';
+import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
 import { deleteS3Object, uploadFile } from '../aws/s3client';
 import { CarouselSlide } from '@prisma/client';
 import { addDays } from 'date-fns';

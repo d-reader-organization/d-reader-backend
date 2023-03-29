@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
@@ -11,6 +11,9 @@ import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { toListingDtoArray } from './dto/listing.dto';
+import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { toCollectionStats } from './dto/collection-stats.dto';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -91,9 +94,29 @@ export class AuctionHouseController {
   @Throttle(5, 30)
   @Get('/transactions/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
-    const receiptAddress = new PublicKey(query.receiptAddress);
+    const receiptAddress = query.receiptAddress
+      ? new PublicKey(query.receiptAddress)
+      : undefined;
+    const mint = query.mint ?? undefined;
     return await this.auctionHouseService.constructCancelListingTransaction(
       receiptAddress,
+      mint,
     );
+  }
+
+  @Throttle(5, 30)
+  @Get('/get/listings')
+  async findAllListings(@Query() query: ListingFilterParams) {
+    const listings = await this.auctionHouseService.findAllListings(query);
+    return await toListingDtoArray(listings);
+  }
+
+  @Throttle(5, 30)
+  @Get('/get/collection-stats/:comicIssueId')
+  async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
+    const stats = await this.auctionHouseService.findCollectionStats(
+      +comicIssueId,
+    );
+    return toCollectionStats(stats);
   }
 }
