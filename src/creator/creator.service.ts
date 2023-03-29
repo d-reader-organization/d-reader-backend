@@ -7,8 +7,8 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateCreatorDto,
   CreateCreatorFilesDto,
-} from 'src/creator/dto/create-creator.dto';
-import { UpdateCreatorDto } from 'src/creator/dto/update-creator.dto';
+} from '../creator/dto/create-creator.dto';
+import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
 import {
   deleteS3Object,
   deleteS3Objects,

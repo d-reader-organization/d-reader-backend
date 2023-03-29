@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { PickByType } from 'src/types/shared';
+import { PickByType } from '../types/shared';
 import { WalletComicIssue } from '@prisma/client';
-import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import { getRandomFloatOrInt } from 'src/utils/helpers';
+import { ComicIssueStats } from '../comic/types/comic-issue-stats';
+import { getRandomFloatOrInt } from '../utils/helpers';
 import { ComicIssue } from '@prisma/client';
 
 @Injectable()

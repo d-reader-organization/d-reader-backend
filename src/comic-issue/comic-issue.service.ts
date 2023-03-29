@@ -17,11 +17,11 @@ import {
   uploadFile,
 } from '../aws/s3client';
 import { isEmpty, isNil } from 'lodash';
-import { ComicPageService } from 'src/comic-page/comic-page.service';
+import { ComicPageService } from '../comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
-import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';

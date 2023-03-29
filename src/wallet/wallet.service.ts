@@ -11,7 +11,7 @@ import {
   deleteS3Objects,
   listS3FolderKeys,
   uploadFile,
-} from 'src/aws/s3client';
+} from '../aws/s3client';
 import { isEmpty } from 'lodash';
 
 @Injectable()
