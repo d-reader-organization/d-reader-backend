@@ -17,7 +17,7 @@ import {
   tokenProgram,
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
-import { Listings } from '../utils/types';
+import { Listings } from './types';
 
 export class ListingDto {
   @IsPositive()
@@ -112,28 +112,34 @@ export async function toListingDto(listing: Listings) {
     id: listing.id,
     nftAddress: listing.nftAddress,
     name: listing.nft.name,
-    description: collectionMetadata.description,
+    description: collectionMetadata.description, // hide this in array?
     cover: collectionMetadata.image,
-    sellerAddress: listing.nft.owner.address,
+    // sellerAddress: listing.nft.owner.address,
+    seller: {
+      address: listing.nft.owner.address,
+      avatar: listing.nft.owner.avatar,
+      label: listing.nft.owner.label,
+    }
     tokenAddress,
     price: listing.price,
-    symbol: listing.symbol,
-    createdAt: listing.createdAt.toISOString(),
-    royalties: collectionMetadata.seller_fee_basis_points,
-    collectionName: collectionMetadata.collection.name,
-    externalUrl: collectionMetadata.external_url,
+    symbol: listing.symbol, // hide this in array?
+    createdAt: listing.createdAt.toISOString(), // hide this in array?
+    royalties: collectionMetadata.seller_fee_basis_points, // hide this in array?
+    collectionName: collectionMetadata.collection.name, // hide this in array?
+    externalUrl: collectionMetadata.external_url, // hide this in array?
     attributes: collectionMetadata.attributes,
-    creators: collectionMetadata.properties.creators,
-    signature: listing.signature,
+    creators: collectionMetadata.properties.creators, // hide this in array?
+    signature: listing.signature, // hide this in array?
     canceledAt:
-      listing.canceledAt.toISOString() != new Date(0).toISOString()
-        ? listing.canceledAt.toISOString()
-        : null,
+      listing.canceledAt.toISOString() != new Date(0).toISOString() // hide this in array?
+        ? listing.canceledAt.toISOString() // hide this in array?
+        : null, // hide this in array?
   };
   const listingDto = plainToInstance(ListingDto, plainListingDto);
   return listingDto;
 }
 
+// TODO: array should only return scoped data
 export const toListingDtoArray = (listings: Listings[]) => {
   return Promise.all(listings.map(toListingDto));
 };

@@ -1,26 +1,26 @@
-import { IsNumber, Min } from 'class-validator';
-import { CollectionStats } from '../utils/types';
+import { IsInt, Min } from 'class-validator';
+import { CollectionStats } from './types';
 import { plainToInstance } from 'class-transformer';
 
 export class CollectionStatsDto {
-  @IsNumber()
+  @IsInt()
   @Min(0)
   totalVolume: number;
 
-  @IsNumber()
+  @IsInt()
   @Min(0)
   itemsListed: number;
 
-  @IsNumber()
+  @IsInt()
   @Min(0)
   floorPrice: number;
 }
 
-export async function toCollectionStats(stats: CollectionStats) {
+export function toCollectionStats(stats: CollectionStats) {
   const collectionStats: CollectionStatsDto = {
-    totalVolume: stats.totalVolume ?? 0,
-    itemsListed: stats.itemsListed ?? 0,
-    floorPrice: stats.floorPrice ?? 0,
+    totalVolume: stats.totalVolume,
+    itemsListed: stats.itemsListed,
+    floorPrice: stats.floorPrice,
   };
   return plainToInstance(CollectionStatsDto, collectionStats);
 }

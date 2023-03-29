@@ -24,9 +24,9 @@ import {
 } from './instructions';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
-import { ListingReceipt, Listings } from './utils/types';
+import { CollectionStats, ListingReceipt, Listings } from './dto/types';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
-import { Prisma } from 'prisma/prisma-client';
+import { isBoolean } from 'lodash';
 
 @Injectable()
 export class AuctionHouseService {
@@ -274,21 +274,13 @@ export class AuctionHouseService {
     }
   }
 
-  async findCollectionStats(comicIssueId: number) {
+  async findCollectionStats(comicIssueId: number): Promise<CollectionStats> {
     const aggregate = this.prisma.listing.aggregate({
       where: {
-        nft: {
-          collectionNft: {
-            comicIssueId,
-          },
-        },
-        soldAt: {
-          not: null,
-        },
+        nft: { collectionNft: { comicIssueId } },
+        soldAt: { not: null },
       },
-      _sum: {
-        price: true,
-      },
+      _sum: { price: true },
     });
     const countListed = this.prisma.listing.count({
       where: {
@@ -321,9 +313,9 @@ export class AuctionHouseService {
       const [{ _sum: totalVolume }, itemsListed, { price: floorPrice }] =
         await Promise.all([aggregate, countListed, minListed]);
       return {
-        totalVolume: totalVolume.price,
-        itemsListed,
-        floorPrice,
+        totalVolume: totalVolume.price || 0,
+        itemsListed: itemsListed || 0,
+        floorPrice: floorPrice || 0,
       };
     } catch (e) {
       console.log(e);
@@ -331,17 +323,15 @@ export class AuctionHouseService {
   }
 
   async findAllListings(query: ListingFilterParams): Promise<Listings[]> {
-    let conditions: Prisma.ListingWhereInput = { canceledAt: new Date(0) };
-    if (query.isSold) {
-      conditions = {
-        ...conditions,
-        soldAt: {
-          not: null,
-        },
-      };
-    }
     return await this.prisma.listing.findMany({
-      where: conditions,
+      where: {
+        canceledAt: new Date(0),
+        soldAt: isBoolean(query.isSold)
+          ? {
+              [query.isSold ? 'not' : 'equals']: null,
+            }
+          : undefined,
+      },
       include: {
         nft: {
           select: {

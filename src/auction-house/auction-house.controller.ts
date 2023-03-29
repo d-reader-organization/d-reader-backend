@@ -14,7 +14,6 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
-import { CollectionStats } from './utils/types';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -114,9 +113,10 @@ export class AuctionHouseController {
 
   @Throttle(5, 30)
   @Get('/get/collection-stats/:comicIssueId')
-  async findCollectionStats(@Param('comicIssueId') comicIssueId: number) {
-    const stats: CollectionStats =
-      await this.auctionHouseService.findCollectionStats(comicIssueId);
+  async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
+    const stats = await this.auctionHouseService.findCollectionStats(
+      +comicIssueId,
+    );
     return toCollectionStats(stats);
   }
 }
