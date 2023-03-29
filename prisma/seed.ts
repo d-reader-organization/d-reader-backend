@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
 import { Keypair } from '@solana/web3.js';
-import { getRandomInt } from '../src/utils/helpers';
+import { getRandomInt, sleep } from '../src/utils/helpers';
 import {
   PrismaClient,
   Role,
@@ -2725,6 +2725,8 @@ async function main() {
     webhookURL = webhook.webhookURL;
     await heliusService.deleteWebhook(webhook.webhookID);
   }
+
+  await sleep(2000);
 
   const placeholderAccount = '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD';
   await heliusService.createWebhook({
