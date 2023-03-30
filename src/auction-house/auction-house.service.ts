@@ -284,38 +284,29 @@ export class AuctionHouseService {
     });
     const countListed = this.prisma.listing.count({
       where: {
-        nft: {
-          collectionNft: {
-            comicIssueId,
-          },
-        },
+        nft: { collectionNft: { comicIssueId } },
         canceledAt: new Date(0),
       },
     });
-    const minListed = this.prisma.listing.findFirst({
+    const getCheapestItem = this.prisma.listing.findFirst({
       where: {
-        nft: {
-          collectionNft: {
-            comicIssueId,
-          },
-        },
+        nft: { collectionNft: { comicIssueId } },
         canceledAt: new Date(0),
       },
-      orderBy: {
-        price: 'asc',
-      },
-      select: {
-        price: true,
-      },
+      orderBy: { price: 'asc' },
+      select: { price: true },
     });
 
     try {
-      const [{ _sum: totalVolume }, itemsListed, { price: floorPrice }] =
-        await Promise.all([aggregate, countListed, minListed]);
+      const [aggregations, itemsListed, cheapestItem] = await Promise.all([
+        aggregate,
+        countListed,
+        getCheapestItem,
+      ]);
       return {
-        totalVolume: totalVolume.price || 0,
+        totalVolume: aggregations._sum?.price || 0,
         itemsListed: itemsListed || 0,
-        floorPrice: floorPrice || 0,
+        floorPrice: cheapestItem.price || 0,
       };
     } catch (e) {
       console.log(e);
