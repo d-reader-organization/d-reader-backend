@@ -322,7 +322,10 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings(query: ListingFilterParams): Promise<Listings[]> {
+  async findAllListings(
+    query: ListingFilterParams,
+    comicIssueId: number,
+  ): Promise<Listings[]> {
     return await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
@@ -331,6 +334,11 @@ export class AuctionHouseService {
               [query.isSold ? 'not' : 'equals']: null,
             }
           : undefined,
+        nft: {
+          collectionNft: {
+            comicIssueId,
+          },
+        },
       },
       include: {
         nft: {
