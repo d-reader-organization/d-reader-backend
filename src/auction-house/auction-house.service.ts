@@ -296,7 +296,6 @@ export class AuctionHouseService {
       orderBy: { price: 'asc' },
       select: { price: true },
     });
-
     try {
       const [aggregations, itemsListed, cheapestItem] = await Promise.all([
         aggregate,
@@ -306,7 +305,7 @@ export class AuctionHouseService {
       return {
         totalVolume: aggregations._sum?.price || 0,
         itemsListed: itemsListed || 0,
-        floorPrice: cheapestItem.price || 0,
+        floorPrice: cheapestItem?.price || 0,
       };
     } catch (e) {
       console.log(e);
