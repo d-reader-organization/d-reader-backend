@@ -6,10 +6,13 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
+  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import {
   AuctionHouse,
+  Bid,
   keypairIdentity,
+  Listing,
   Metaplex,
   sol,
   token,
@@ -107,6 +110,72 @@ export class AuctionHouseService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log('Error while executing sale ', e);
+    }
+  }
+
+  async constructInstantBuyTransaction(
+    mintAccount: PublicKey,
+    buyer: PublicKey,
+    price: number,
+    seller: PublicKey,
+    tokenAccount: PublicKey,
+  ) {
+    try {
+      const auctionHouse = await this.findOurAuctionHouse();
+      const bidTransaction = await this.constructPrivateBidTransaction(
+        buyer,
+        mintAccount,
+        price,
+        false,
+        seller,
+        tokenAccount,
+      );
+      const listingModel = await this.prisma.listing.findUnique({
+        where: {
+          nftAddress_canceledAt: {
+            nftAddress: mintAccount.toString(),
+            canceledAt: new Date(0),
+          },
+        },
+        include: {
+          nft: {
+            select: {
+              name: true,
+              owner: true,
+            },
+          },
+        },
+      });
+      if (!listingModel) {
+        throw new Error(
+          `cannot find any listing with mint ${mintAccount.toString()}`,
+        );
+      }
+      const listing = this.toListing(auctionHouse, listingModel);
+      const executeSaleTransactionBuilder = this.metaplex
+        .auctionHouse()
+        .builders()
+        .executeSale(
+          {
+            auctionHouse,
+            listing,
+            bid,
+            printReceipt: false,
+          },
+          { payer: this.metaplex.identity() },
+        );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const executeSaleTransaction =
+        executeSaleTransactionBuilder.toTransaction(latestBlockhash);
+
+      await sendAndConfirmTransaction(
+        this.metaplex.connection,
+        executeSaleTransaction,
+        [this.metaplex.identity()],
+      );
+    } catch (error) {
+      console.log('Error while executing sale', error);
     }
   }
 
@@ -243,8 +312,9 @@ export class AuctionHouseService {
           },
           include: {
             nft: {
-              include: {
-                owner: true,
+              select: {
+                name: true,
+                ownerAddress: true,
               },
             },
           },
@@ -348,7 +418,7 @@ export class AuctionHouseService {
 
   toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
     const address = new PublicKey(listingModel.nftAddress);
-    const sellerAddress = new PublicKey(listingModel.nft.owner.address);
+    const sellerAddress = new PublicKey(listingModel.nft.ownerAddress);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
       owner: sellerAddress,

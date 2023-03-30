@@ -20,11 +20,13 @@ import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import axios from 'axios';
 import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import { isNil } from 'lodash';
+import { AuctionHouseService } from '../../auction-house/auction-house.service';
 
 @Injectable()
 export class HeliusService {
   private readonly helius: Helius;
   private readonly metaplex: Metaplex;
+  private readonly auctionHouseService: AuctionHouseService;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -102,12 +104,32 @@ export class HeliusService {
             return this.handleNftListing(transaction);
           case TransactionType.NFT_CANCEL_LISTING:
             return this.handleCancelListing(transaction);
+          case TransactionType.NFT_BID:
+            return this.handleInstantBuy(transaction);
           default:
             console.log('Unhandled webhook event type: ', transaction.type);
             return;
         }
       }),
     );
+  }
+
+  private async handleInstantBuy(transaction: EnrichedTransaction) {
+    try {
+      const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      const { value } = await this.metaplex
+        .rpc()
+        .confirmTransaction(
+          transaction.signature,
+          { ...latestBlockhash },
+          'finalized',
+        );
+      if (!!value.err) {
+        throw new Error('Bid transaction failed to finalize');
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private async handleCancelListing(transaction: EnrichedTransaction) {

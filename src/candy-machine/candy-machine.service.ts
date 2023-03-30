@@ -212,12 +212,8 @@ export class CandyMachineService {
         },
         creators: [
           {
-            address: this.metaplex.identity().publicKey,
-            share: D_PUBLISHER_PRIMARY_SALE_SHARE,
-          },
-          {
             address: comicCreator,
-            share: HUNDRED - D_PUBLISHER_PRIMARY_SALE_SHARE,
+            share: HUNDRED,
           },
         ],
       },

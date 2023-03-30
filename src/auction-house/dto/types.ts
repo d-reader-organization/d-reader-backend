@@ -3,7 +3,7 @@ import { Listing, Wallet } from '@prisma/client';
 export type ListingReceipt = Listing & {
   nft: {
     name: string;
-    owner: Wallet;
+    ownerAddress: string;
   };
 };
 
