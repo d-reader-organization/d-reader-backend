@@ -13,7 +13,6 @@ export class NftService {
       take: query?.take,
       orderBy: { name: 'asc' },
     });
-
     return nfts;
   }
 
@@ -24,6 +23,11 @@ export class NftService {
         collectionNft: {
           include: {
             comicIssue: true,
+          },
+        },
+        listing: {
+          where: {
+            canceledAt: new Date(0),
           },
         },
       },

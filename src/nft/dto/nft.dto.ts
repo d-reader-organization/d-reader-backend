@@ -4,7 +4,7 @@ import { plainToInstance, Type } from 'class-transformer';
 import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
 import { JsonMetadata } from '@metaplex-foundation/js';
 import { ApiProperty } from '@nestjs/swagger';
-import { Nft } from '@prisma/client';
+import { Nft, Listing } from '@prisma/client';
 import { isNil } from 'lodash';
 import axios from 'axios';
 
@@ -59,12 +59,16 @@ export class NftDto {
   @Type(() => NftAttributeDto)
   @ApiProperty({ type: [NftAttributeDto] })
   attributes: NftAttributeDto[];
+
+  @IsBoolean()
+  isListed: boolean;
 }
 
 type NftInput = Nft & {
   collectionNft?: {
     comicIssueId?: number;
   };
+  listing?: Listing[];
 };
 
 export async function toNftDto(nft: NftInput) {
@@ -97,6 +101,7 @@ export async function toNftDto(nft: NftInput) {
       trait: a.trait_type,
       value: a.value,
     })),
+    isListed: isNil(nft.listing) ? null : nft.listing.length > 0 ? true : false,
   };
 
   const nftDto = plainToInstance(NftDto, plainNftDto);
