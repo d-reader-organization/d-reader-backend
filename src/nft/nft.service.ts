@@ -11,9 +11,15 @@ export class NftService {
       where: { ownerAddress: query?.owner },
       skip: query?.skip,
       take: query?.take,
+      include: {
+        collectionNft: {
+          include: {
+            comicIssue: true,
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     });
-
     return nfts;
   }
 
@@ -24,6 +30,11 @@ export class NftService {
         collectionNft: {
           include: {
             comicIssue: true,
+          },
+        },
+        listing: {
+          where: {
+            canceledAt: new Date(0),
           },
         },
       },
