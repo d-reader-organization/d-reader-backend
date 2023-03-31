@@ -14,6 +14,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
+import { InstantBuyParams } from './dto/instant-buy-params.dto';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -79,6 +80,28 @@ export class AuctionHouseController {
       listReceipt,
       bidReceipt,
       printReceipt,
+    );
+  }
+
+  @Throttle(5, 30)
+  @Get('/transactions/instant-buy')
+  async constructInstantBuy(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: InstantBuyParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const mintAccount = new PublicKey(query.mint);
+    const seller = query.seller ? new PublicKey(query.seller) : undefined;
+    const tokenAccount = query.tokenAccount
+      ? new PublicKey(query.tokenAccount)
+      : undefined;
+
+    return await this.auctionHouseService.constructInstantBuyTransaction(
+      publicKey,
+      mintAccount,
+      query.price,
+      seller,
+      tokenAccount,
     );
   }
 

@@ -1,23 +1,14 @@
-import {
-  Bid,
-  BidAndListingHaveDifferentAuctionHousesError,
-  BidAndListingHaveDifferentMintsError,
-  CanceledBidIsNotAllowedError,
-  CanceledListingIsNotAllowedError,
-  Listing,
-  Metaplex,
-  lamports,
-} from '@metaplex-foundation/js';
+import { Bid, Listing, Metaplex, lamports } from '@metaplex-foundation/js';
 import { AuctionHouse } from '@metaplex-foundation/js';
 import { createExecuteSaleInstruction } from '@metaplex-foundation/mpl-auction-house';
-import { Transaction, TransactionInstruction } from '@solana/web3.js';
+import { TransactionInstruction } from '@solana/web3.js';
 
-export async function constructExecuteSaleInstruction(
+export function constructExecuteSaleInstruction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   listing: Listing,
   bid: Bid,
-) {
+): TransactionInstruction {
   const { sellerAddress, asset } = listing;
   const { buyerAddress } = bid;
   const {
@@ -29,11 +20,7 @@ export async function constructExecuteSaleInstruction(
   } = auctionHouse;
 
   const { tokens, price } = bid;
-  if (!listing.auctionHouse.address.equals(bid.auctionHouse.address)) {
-    throw new BidAndListingHaveDifferentAuctionHousesError();
-  }
 
-  // Accounts.
   const buyerReceiptTokenAccount = metaplex
     .tokens()
     .pdas()
@@ -79,7 +66,6 @@ export async function constructExecuteSaleInstruction(
     programAsSigner,
   };
 
-  // Args.
   const args = {
     freeTradeStateBump: freeTradeState.bump,
     escrowPaymentBump: escrowPayment.bump,

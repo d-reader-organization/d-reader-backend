@@ -6,13 +6,11 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
-  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import {
   AuctionHouse,
-  Bid,
+  JsonMetadata,
   keypairIdentity,
-  Listing,
   Metaplex,
   sol,
   token,
@@ -30,6 +28,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { CollectionStats, ListingReceipt, Listings } from './dto/types';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { isBoolean } from 'lodash';
+import { constructExecuteSaleInstruction } from './instructions/executeSale';
+import axios from 'axios';
 
 @Injectable()
 export class AuctionHouseService {
@@ -114,22 +114,13 @@ export class AuctionHouseService {
   }
 
   async constructInstantBuyTransaction(
-    mintAccount: PublicKey,
     buyer: PublicKey,
+    mintAccount: PublicKey,
     price: number,
     seller: PublicKey,
     tokenAccount: PublicKey,
   ) {
     try {
-      const auctionHouse = await this.findOurAuctionHouse();
-      const bidTransaction = await this.constructPrivateBidTransaction(
-        buyer,
-        mintAccount,
-        price,
-        false,
-        seller,
-        tokenAccount,
-      );
       const listingModel = await this.prisma.listing.findUnique({
         where: {
           nftAddress_canceledAt: {
@@ -141,7 +132,8 @@ export class AuctionHouseService {
           nft: {
             select: {
               name: true,
-              owner: true,
+              ownerAddress: true,
+              uri:true
             },
           },
         },
@@ -151,29 +143,50 @@ export class AuctionHouseService {
           `cannot find any listing with mint ${mintAccount.toString()}`,
         );
       }
-      const listing = this.toListing(auctionHouse, listingModel);
-      const executeSaleTransactionBuilder = this.metaplex
-        .auctionHouse()
-        .builders()
-        .executeSale(
-          {
-            auctionHouse,
-            listing,
-            bid,
-            printReceipt: false,
-          },
-          { payer: this.metaplex.identity() },
-        );
+
+      const auctionHouse = await this.findOurAuctionHouse();
+      const bidInstruction = await constructPrivateBidInstruction(
+        this.metaplex,
+        auctionHouse,
+        buyer,
+        mintAccount,
+        sol(price),
+        token(1),
+        false,
+        seller,
+        tokenAccount,
+      );
+      const listing: any = this.toListing(auctionHouse, listingModel);
+      const bid: any = this.toBid(
+        auctionHouse,
+        buyer,
+        mintAccount,
+        price,
+        listingModel.symbol,
+        listingModel.nft.uri
+      );
+      const executeSaleInstruction = constructExecuteSaleInstruction(
+        this.metaplex,
+        auctionHouse,
+        listing,
+        bid,
+      );
       const latestBlockhash =
         await this.metaplex.connection.getLatestBlockhash();
-      const executeSaleTransaction =
-        executeSaleTransactionBuilder.toTransaction(latestBlockhash);
 
-      await sendAndConfirmTransaction(
-        this.metaplex.connection,
-        executeSaleTransaction,
-        [this.metaplex.identity()],
-      );
+      const instantBuyTransaction = new Transaction({
+        feePayer: buyer,
+        ...latestBlockhash,
+      })
+        .add(...bidInstruction)
+        .add(executeSaleInstruction);
+
+      const rawTransaction = instantBuyTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+
+      return rawTransaction.toString('base64');
     } catch (error) {
       console.log('Error while executing sale', error);
     }
@@ -444,6 +457,46 @@ export class AuctionHouseService {
         address,
       },
       sellerAddress,
+      tradeStateAddress,
+      price,
+      tokens,
+    };
+  }
+
+  async toBid(
+    auctionHouse: AuctionHouse,
+    buyerAddress: PublicKey,
+    address: PublicKey,
+    amount: number,
+    symbol: string,
+    uri:  string
+  ) {
+    const price = sol(amount);
+    const tokens = token(1, 0, symbol); // only considers nfts
+    const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
+      mint: address,
+      owner: buyerAddress,
+    });
+    const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
+      auctionHouse: auctionHouse.address,
+      wallet: buyerAddress,
+      treasuryMint: auctionHouse.treasuryMint.address,
+      tokenMint: address,
+      price: price.basisPoints,
+      tokenSize: tokens.basisPoints,
+      tokenAccount,
+    });
+    const {data:metadata} = await axios.get<JsonMetadata>(uri);
+    
+    return {
+      asset: {
+        token: {
+          address: tokenAccount,
+        },
+        creators: metadata.properties.creators,
+        address,
+      },
+      buyerAddress,
       tradeStateAddress,
       price,
       tokens,
