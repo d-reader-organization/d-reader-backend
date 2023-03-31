@@ -11,6 +11,13 @@ export class NftService {
       where: { ownerAddress: query?.owner },
       skip: query?.skip,
       take: query?.take,
+      include: {
+        collectionNft: {
+          include: {
+            comicIssue: true,
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     });
     return nfts;
