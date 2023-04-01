@@ -128,9 +128,15 @@ export class AuctionHouseController {
   }
 
   @Throttle(5, 30)
-  @Get('/get/listings')
-  async findAllListings(@Query() query: ListingFilterParams) {
-    const listings = await this.auctionHouseService.findAllListings(query);
+  @Get('/get/listings/:comicIssueId')
+  async findAllListings(
+    @Query() query: ListingFilterParams,
+    @Param('comicIssueId') comicIssueId: string,
+  ) {
+    const listings = await this.auctionHouseService.findAllListings(
+      query,
+      +comicIssueId,
+    );
     return await toListingDtoArray(listings);
   }
 
