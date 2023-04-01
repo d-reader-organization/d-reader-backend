@@ -1,7 +1,7 @@
 import { Bid, Listing, Metaplex, lamports } from '@metaplex-foundation/js';
 import { AuctionHouse } from '@metaplex-foundation/js';
 import { createExecuteSaleInstruction } from '@metaplex-foundation/mpl-auction-house';
-import { TransactionInstruction } from '@solana/web3.js';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 
 export function constructExecuteSaleInstruction(
   metaplex: Metaplex,
@@ -20,7 +20,6 @@ export function constructExecuteSaleInstruction(
   } = auctionHouse;
 
   const { tokens, price } = bid;
-
   const buyerReceiptTokenAccount = metaplex
     .tokens()
     .pdas()
@@ -28,6 +27,7 @@ export function constructExecuteSaleInstruction(
       mint: asset.address,
       owner: buyerAddress,
     });
+
   const escrowPayment = metaplex.auctionHouse().pdas().buyerEscrow({
     auctionHouse: auctionHouseAddress,
     buyer: buyerAddress,
@@ -44,8 +44,8 @@ export function constructExecuteSaleInstruction(
       tokenSize: tokens.basisPoints,
       tokenAccount: asset.token.address,
     });
-  const programAsSigner = metaplex.auctionHouse().pdas().programAsSigner();
 
+  const programAsSigner = metaplex.auctionHouse().pdas().programAsSigner();
   const accounts = {
     buyer: buyerAddress,
     seller: sellerAddress,
@@ -73,11 +73,10 @@ export function constructExecuteSaleInstruction(
     buyerPrice: price.basisPoints,
     tokenSize: tokens.basisPoints,
   };
-
   const executeSaleInstruction = createExecuteSaleInstruction(accounts, args);
   asset.creators.forEach(({ address }) => {
     executeSaleInstruction.keys.push({
-      pubkey: address,
+      pubkey: new PublicKey(address),
       isWritable: true,
       isSigner: false,
     });

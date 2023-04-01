@@ -1,4 +1,4 @@
-import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class InstantBuyParams {

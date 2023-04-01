@@ -9,11 +9,12 @@ import {
 } from '@solana/web3.js';
 import {
   AuctionHouse,
-  JsonMetadata,
   keypairIdentity,
   Metaplex,
   sol,
   token,
+  toMetadata,
+  toMetadataAccount,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
@@ -29,7 +30,6 @@ import { CollectionStats, ListingReceipt, Listings } from './dto/types';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { isBoolean } from 'lodash';
 import { constructExecuteSaleInstruction } from './instructions/executeSale';
-import axios from 'axios';
 
 @Injectable()
 export class AuctionHouseService {
@@ -117,8 +117,8 @@ export class AuctionHouseService {
     buyer: PublicKey,
     mintAccount: PublicKey,
     price: number,
-    seller: PublicKey,
-    tokenAccount: PublicKey,
+    seller?: PublicKey,
+    tokenAccount?: PublicKey,
   ) {
     try {
       const listingModel = await this.prisma.listing.findUnique({
@@ -133,7 +133,7 @@ export class AuctionHouseService {
             select: {
               name: true,
               ownerAddress: true,
-              uri:true
+              uri: true,
             },
           },
         },
@@ -156,14 +156,14 @@ export class AuctionHouseService {
         seller,
         tokenAccount,
       );
-      const listing: any = this.toListing(auctionHouse, listingModel);
-      const bid: any = this.toBid(
+      const listing: any = await this.toListing(auctionHouse, listingModel);
+      const bid: any = await this.toBid(
         auctionHouse,
         buyer,
         mintAccount,
         price,
         listingModel.symbol,
-        listingModel.nft.uri
+        seller,
       );
       const executeSaleInstruction = constructExecuteSaleInstruction(
         this.metaplex,
@@ -332,7 +332,7 @@ export class AuctionHouseService {
             },
           },
         });
-        listing = this.toListing(auctionHouse, listingModel);
+        listing = await this.toListing(auctionHouse, listingModel);
       }
 
       const cancelListingTransaction = constructCancelListingInstruction(
@@ -429,7 +429,7 @@ export class AuctionHouseService {
     });
   }
 
-  toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
+  async toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
     const address = new PublicKey(listingModel.nftAddress);
     const sellerAddress = new PublicKey(listingModel.nft.ownerAddress);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
@@ -449,17 +449,27 @@ export class AuctionHouseService {
       tokenAccount,
     });
 
+    const metadataAddress = this.metaplex
+      .nfts()
+      .pdas()
+      .metadata({ mint: address });
+    const info = await this.metaplex.rpc().getAccount(metadataAddress);
+    const metadata = toMetadata(toMetadataAccount(info));
+
     return {
       asset: {
         token: {
           address: tokenAccount,
         },
         address,
+        creators: metadata.creators,
+        metadataAddress,
       },
       sellerAddress,
       tradeStateAddress,
       price,
       tokens,
+      auctionHouse,
     };
   }
 
@@ -469,14 +479,15 @@ export class AuctionHouseService {
     address: PublicKey,
     amount: number,
     symbol: string,
-    uri:  string
+    seller: PublicKey,
   ) {
     const price = sol(amount);
     const tokens = token(1, 0, symbol); // only considers nfts
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
-      owner: buyerAddress,
+      owner: seller,
     });
+
     const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
       auctionHouse: auctionHouse.address,
       wallet: buyerAddress,
@@ -486,20 +497,18 @@ export class AuctionHouseService {
       tokenSize: tokens.basisPoints,
       tokenAccount,
     });
-    const {data:metadata} = await axios.get<JsonMetadata>(uri);
-    
     return {
       asset: {
         token: {
           address: tokenAccount,
         },
-        creators: metadata.properties.creators,
         address,
       },
       buyerAddress,
       tradeStateAddress,
       price,
       tokens,
+      auctionHouse,
     };
   }
 }
