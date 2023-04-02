@@ -13,6 +13,8 @@ import {
   Metaplex,
   sol,
   token,
+  toMetadata,
+  toMetadataAccount,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
@@ -24,9 +26,13 @@ import {
 } from './instructions';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
-import { CollectionStats, ListingReceipt, Listings } from './dto/types';
+import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { constructExecuteSaleInstruction } from './instructions/executeSale';
+import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
+import { ListingModel } from './dto/types/listing-model';
+import { BidModel } from './dto/types/bid-model';
 
 @Injectable()
 export class AuctionHouseService {
@@ -107,6 +113,77 @@ export class AuctionHouseService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log('Error while executing sale ', e);
+    }
+  }
+
+  async constructInstantBuyTransaction(
+    buyer: PublicKey,
+    mintAccount: PublicKey,
+    price: number,
+    seller?: PublicKey,
+    tokenAccount?: PublicKey,
+  ) {
+    try {
+      const listingModel = await this.prisma.listing.findUnique({
+        where: {
+          nftAddress_canceledAt: {
+            nftAddress: mintAccount.toString(),
+            canceledAt: new Date(0),
+          },
+        },
+        include: { nft: true },
+      });
+      if (!listingModel) {
+        throw new Error(
+          `cannot find any listing with mint ${mintAccount.toString()}`,
+        );
+      }
+
+      const auctionHouse = await this.findOurAuctionHouse();
+      const bidInstruction = await constructPrivateBidInstruction(
+        this.metaplex,
+        auctionHouse,
+        buyer,
+        mintAccount,
+        sol(price),
+        token(1),
+        false,
+        seller,
+        tokenAccount,
+      );
+      const listing = await this.toListing(auctionHouse, listingModel);
+      const bid = this.toBid(
+        auctionHouse,
+        buyer,
+        mintAccount,
+        price,
+        listingModel.symbol,
+        seller,
+      );
+      const executeSaleInstruction = constructExecuteSaleInstruction(
+        this.metaplex,
+        auctionHouse,
+        listing,
+        bid,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+
+      const instantBuyTransaction = new Transaction({
+        feePayer: buyer,
+        ...latestBlockhash,
+      })
+        .add(...bidInstruction)
+        .add(executeSaleInstruction);
+
+      const rawTransaction = instantBuyTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+
+      return rawTransaction.toString('base64');
+    } catch (error) {
+      console.log('Error while executing sale', error);
     }
   }
 
@@ -241,15 +318,9 @@ export class AuctionHouseService {
             nftAddress: mint,
             canceledAt: new Date(0),
           },
-          include: {
-            nft: {
-              include: {
-                owner: true,
-              },
-            },
-          },
+          include: { nft: true },
         });
-        listing = this.toListing(auctionHouse, listingModel);
+        listing = await this.toListing(auctionHouse, listingModel);
       }
 
       const cancelListingTransaction = constructCancelListingInstruction(
@@ -274,7 +345,9 @@ export class AuctionHouseService {
     }
   }
 
-  async findCollectionStats(comicIssueId: number): Promise<CollectionStats> {
+  async findCollectionStats(
+    comicIssueId: number,
+  ): Promise<CollectonMarketplaceStats> {
     const aggregate = this.prisma.listing.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
@@ -312,10 +385,7 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings(
-    query: ListingFilterParams,
-    comicIssueId: number,
-  ): Promise<Listings[]> {
+  async findAllListings(query: ListingFilterParams, comicIssueId: number) {
     return await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
@@ -330,23 +400,20 @@ export class AuctionHouseService {
           },
         },
       },
-      include: {
-        nft: {
-          select: {
-            owner: true,
-            name: true,
-            uri: true,
-          },
-        },
-      },
+      include: { nft: { include: { owner: true } } },
       take: query.take,
       skip: query.skip,
     });
   }
 
-  toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
+  async toListing(
+    auctionHouse: AuctionHouse,
+    listingModel: Listing & {
+      nft: Nft;
+    },
+  ): Promise<ListingModel> {
     const address = new PublicKey(listingModel.nftAddress);
-    const sellerAddress = new PublicKey(listingModel.nft.owner.address);
+    const sellerAddress = new PublicKey(listingModel.nft.ownerAddress);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
       owner: sellerAddress,
@@ -364,17 +431,62 @@ export class AuctionHouseService {
       tokenAccount,
     });
 
+    const metadataAddress = this.metaplex
+      .nfts()
+      .pdas()
+      .metadata({ mint: address });
+    const info = await this.metaplex.rpc().getAccount(metadataAddress);
+    const metadata = toMetadata(toMetadataAccount(info));
+
     return {
       asset: {
-        token: {
-          address: tokenAccount,
-        },
+        token: { address: tokenAccount },
         address,
+        creators: metadata.creators,
+        metadataAddress,
       },
       sellerAddress,
       tradeStateAddress,
       price,
       tokens,
+      auctionHouse,
+    };
+  }
+
+  toBid(
+    auctionHouse: AuctionHouse,
+    buyerAddress: PublicKey,
+    address: PublicKey,
+    amount: number,
+    symbol: string,
+    seller: PublicKey,
+  ): BidModel {
+    const price = sol(amount);
+    const tokens = token(1, 0, symbol); // only considers nfts
+    const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
+      mint: address,
+      owner: seller,
+    });
+
+    const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
+      auctionHouse: auctionHouse.address,
+      wallet: buyerAddress,
+      treasuryMint: auctionHouse.treasuryMint.address,
+      tokenMint: address,
+      price: price.basisPoints,
+      tokenSize: tokens.basisPoints,
+      tokenAccount,
+    });
+    return {
+      asset: {
+        token: { address: tokenAccount },
+        address,
+      },
+      buyerAddress,
+      tradeStateAddress,
+      price,
+      tokens,
+      auctionHouse,
     };
   }
 }
