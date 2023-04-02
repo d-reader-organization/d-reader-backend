@@ -114,7 +114,7 @@ export class HeliusService {
     );
   }
 
-  private async handleInstantBuy(transaction: any) {
+  private async handleInstantBuy(transaction: EnrichedTransaction) {
     try {
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       const { value } = await this.metaplex
@@ -127,7 +127,7 @@ export class HeliusService {
       if (!!value.err) {
         throw new Error('Sale transaction failed to finalize');
       }
-      const nftAddress = transaction.events.nft.nfts[0].mint;
+      const nftAddress = (transaction.events.nft as any).nfts[0].mint;
       await this.prisma.nft.update({
         where: { address: nftAddress },
         data: {
@@ -150,9 +150,9 @@ export class HeliusService {
     }
   }
 
-  private async handleCancelListing(transaction: any) {
+  private async handleCancelListing(transaction: EnrichedTransaction) {
     try {
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
+      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved
       await this.prisma.listing.update({
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
@@ -166,12 +166,12 @@ export class HeliusService {
     }
   }
 
-  private async handleNftListing(transaction: any) {
+  private async handleNftListing(transaction: EnrichedTransaction) {
     try {
       // change after helius fix
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
+      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved for a nft listing
       // change after helius fix
-      const price = transaction.events.nft.amount;
+      const price = (transaction.events.nft as any).amount;
       const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;

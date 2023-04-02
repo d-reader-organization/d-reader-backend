@@ -65,10 +65,10 @@ const generatePages = (
 
 async function main() {
   console.log('⛏️ Emptying the database...');
-  await prisma.nft.deleteMany();
-  await prisma.collectionNft.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
+  await prisma.nft.deleteMany();
   await prisma.candyMachine.deleteMany();
+  await prisma.collectionNft.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.walletComic.deleteMany();

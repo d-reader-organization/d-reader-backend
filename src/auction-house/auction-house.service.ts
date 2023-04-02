@@ -26,10 +26,13 @@ import {
 } from './instructions';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
-import { CollectionStats, ListingReceipt, Listings } from './dto/types';
+import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
-import { isBoolean } from 'lodash';
 import { constructExecuteSaleInstruction } from './instructions/executeSale';
+import { Listing, Nft } from '@prisma/client';
+import { isBoolean } from 'lodash';
+import { ListingModel } from './dto/types/listing-model';
+import { BidModel } from './dto/types/bid-model';
 
 @Injectable()
 export class AuctionHouseService {
@@ -128,15 +131,7 @@ export class AuctionHouseService {
             canceledAt: new Date(0),
           },
         },
-        include: {
-          nft: {
-            select: {
-              name: true,
-              ownerAddress: true,
-              uri: true,
-            },
-          },
-        },
+        include: { nft: true },
       });
       if (!listingModel) {
         throw new Error(
@@ -156,8 +151,8 @@ export class AuctionHouseService {
         seller,
         tokenAccount,
       );
-      const listing: any = await this.toListing(auctionHouse, listingModel);
-      const bid: any = await this.toBid(
+      const listing = await this.toListing(auctionHouse, listingModel);
+      const bid = this.toBid(
         auctionHouse,
         buyer,
         mintAccount,
@@ -323,14 +318,7 @@ export class AuctionHouseService {
             nftAddress: mint,
             canceledAt: new Date(0),
           },
-          include: {
-            nft: {
-              select: {
-                name: true,
-                ownerAddress: true,
-              },
-            },
-          },
+          include: { nft: true },
         });
         listing = await this.toListing(auctionHouse, listingModel);
       }
@@ -357,7 +345,9 @@ export class AuctionHouseService {
     }
   }
 
-  async findCollectionStats(comicIssueId: number): Promise<CollectionStats> {
+  async findCollectionStats(
+    comicIssueId: number,
+  ): Promise<CollectonMarketplaceStats> {
     const aggregate = this.prisma.listing.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
@@ -395,10 +385,7 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings(
-    query: ListingFilterParams,
-    comicIssueId: number,
-  ): Promise<Listings[]> {
+  async findAllListings(query: ListingFilterParams, comicIssueId: number) {
     return await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
@@ -413,21 +400,18 @@ export class AuctionHouseService {
           },
         },
       },
-      include: {
-        nft: {
-          select: {
-            owner: true,
-            name: true,
-            uri: true,
-          },
-        },
-      },
+      include: { nft: { include: { owner: true } } },
       take: query.take,
       skip: query.skip,
     });
   }
 
-  async toListing(auctionHouse: AuctionHouse, listingModel: ListingReceipt) {
+  async toListing(
+    auctionHouse: AuctionHouse,
+    listingModel: Listing & {
+      nft: Nft;
+    },
+  ): Promise<ListingModel> {
     const address = new PublicKey(listingModel.nftAddress);
     const sellerAddress = new PublicKey(listingModel.nft.ownerAddress);
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
@@ -456,9 +440,7 @@ export class AuctionHouseService {
 
     return {
       asset: {
-        token: {
-          address: tokenAccount,
-        },
+        token: { address: tokenAccount },
         address,
         creators: metadata.creators,
         metadataAddress,
@@ -471,14 +453,14 @@ export class AuctionHouseService {
     };
   }
 
-  async toBid(
+  toBid(
     auctionHouse: AuctionHouse,
     buyerAddress: PublicKey,
     address: PublicKey,
     amount: number,
     symbol: string,
     seller: PublicKey,
-  ) {
+  ): BidModel {
     const price = sol(amount);
     const tokens = token(1, 0, symbol); // only considers nfts
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
@@ -497,9 +479,7 @@ export class AuctionHouseService {
     });
     return {
       asset: {
-        token: {
-          address: tokenAccount,
-        },
+        token: { address: tokenAccount },
         address,
       },
       buyerAddress,

@@ -16,12 +16,12 @@ import {
   tokenProgram,
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
-import { Listings } from './types';
 import { BasicWalletDto } from 'src/candy-machine/dto/candy-machine-receipt.dto';
 import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
-import { isNil } from 'lodash';
 import { NftAttributeDto } from 'src/nft/dto/nft.dto';
+import { Listing, Wallet, Nft } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
+import { isNil } from 'lodash';
 
 export class ListingDto {
   @IsPositive()
@@ -104,7 +104,13 @@ export class CreatorsDto {
   share?: number;
 }
 
-export async function toListingDto(listing: Listings) {
+type ListingInput = Listing & {
+  nft: Nft & {
+    owner: Wallet;
+  };
+};
+
+export async function toListingDto(listing: ListingInput) {
   const response = await axios.get<JsonMetadata>(listing.nft.uri);
   const collectionMetadata: JsonMetadata = response.data;
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
@@ -151,6 +157,6 @@ export async function toListingDto(listing: Listings) {
   return listingDto;
 }
 
-export const toListingDtoArray = (listings: Listings[]) => {
+export const toListingDtoArray = (listings: ListingInput[]) => {
   return Promise.all(listings.map(toListingDto));
 };

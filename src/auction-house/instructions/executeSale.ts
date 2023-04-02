@@ -1,13 +1,15 @@
-import { Bid, Listing, Metaplex, lamports } from '@metaplex-foundation/js';
+import { Metaplex, lamports } from '@metaplex-foundation/js';
 import { AuctionHouse } from '@metaplex-foundation/js';
 import { createExecuteSaleInstruction } from '@metaplex-foundation/mpl-auction-house';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { ListingModel } from '../dto/types/listing-model';
+import { BidModel } from '../dto/types/bid-model';
 
 export function constructExecuteSaleInstruction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
-  listing: Listing,
-  bid: Bid,
+  listing: ListingModel,
+  bid: BidModel,
 ): TransactionInstruction {
   const { sellerAddress, asset } = listing;
   const { buyerAddress } = bid;

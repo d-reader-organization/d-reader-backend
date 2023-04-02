@@ -1,5 +1,5 @@
 import { IsInt, Min } from 'class-validator';
-import { CollectionStats } from './types';
+import { CollectonMarketplaceStats } from './types/collection-marketplace-stats';
 import { plainToInstance } from 'class-transformer';
 
 export class CollectionStatsDto {
@@ -16,7 +16,7 @@ export class CollectionStatsDto {
   floorPrice: number;
 }
 
-export function toCollectionStats(stats: CollectionStats) {
+export function toCollectionStats(stats: CollectonMarketplaceStats) {
   const collectionStats: CollectionStatsDto = {
     totalVolume: stats.totalVolume,
     itemsListed: stats.itemsListed,
