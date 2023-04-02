@@ -3,8 +3,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
 import { WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
-import { getRandomFloatOrInt } from '../utils/helpers';
 import { ComicIssue } from '@prisma/client';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { divide } from 'lodash';
 
 @Injectable()
 export class WalletComicIssueService {
@@ -93,8 +94,19 @@ export class WalletComicIssueService {
 
     if (activeCandyMachine) return activeCandyMachine.baseMintPrice;
 
-    // if there is no active candy machine, look for floor price on marketplace
-    return getRandomFloatOrInt(1, 6);
+    // if there is no active candy machine, look for cheapest price on the marketplace
+    // TODO: double check this
+    const cheapestItem = await this.prisma.listing.findFirst({
+      where: {
+        nft: { collectionNft: { comicIssueId: issue.id } },
+        canceledAt: new Date(0),
+      },
+      orderBy: { price: 'asc' },
+      select: { price: true },
+    });
+
+    if (!cheapestItem) return null;
+    return divide(cheapestItem.price, LAMPORTS_PER_SOL);
   }
 
   async findWalletComicIssueStats(
