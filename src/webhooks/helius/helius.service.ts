@@ -20,11 +20,13 @@ import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import axios from 'axios';
 import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import { isNil } from 'lodash';
+import { AuctionHouseService } from '../../auction-house/auction-house.service';
 
 @Injectable()
 export class HeliusService {
   private readonly helius: Helius;
   private readonly metaplex: Metaplex;
+  private readonly auctionHouseService: AuctionHouseService;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -102,6 +104,8 @@ export class HeliusService {
             return this.handleNftListing(transaction);
           case TransactionType.NFT_CANCEL_LISTING:
             return this.handleCancelListing(transaction);
+          case TransactionType.NFT_SALE:
+            return this.handleInstantBuy(transaction);
           default:
             console.log('Unhandled webhook event type: ', transaction.type);
             return;
@@ -110,9 +114,45 @@ export class HeliusService {
     );
   }
 
-  private async handleCancelListing(transaction: any) {
+  private async handleInstantBuy(transaction: EnrichedTransaction) {
     try {
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
+      const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      const { value } = await this.metaplex
+        .rpc()
+        .confirmTransaction(
+          transaction.signature,
+          { ...latestBlockhash },
+          'finalized',
+        );
+      if (!!value.err) {
+        throw new Error('Sale transaction failed to finalize');
+      }
+      const nftAddress = (transaction.events.nft as any).nfts[0].mint;
+      await this.prisma.nft.update({
+        where: { address: nftAddress },
+        data: {
+          ownerAddress: transaction.tokenTransfers[0].toUserAccount,
+          listing: {
+            update: {
+              where: {
+                nftAddress_canceledAt: { nftAddress, canceledAt: new Date(0) },
+              },
+              data: {
+                canceledAt: new Date(transaction.timestamp * 1000),
+                soldAt: new Date(transaction.timestamp * 1000),
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  private async handleCancelListing(transaction: EnrichedTransaction) {
+    try {
+      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved
       await this.prisma.listing.update({
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
@@ -126,12 +166,12 @@ export class HeliusService {
     }
   }
 
-  private async handleNftListing(transaction: any) {
+  private async handleNftListing(transaction: EnrichedTransaction) {
     try {
       // change after helius fix
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
+      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved for a nft listing
       // change after helius fix
-      const price = transaction.events.nft.amount;
+      const price = (transaction.events.nft as any).amount;
       const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;

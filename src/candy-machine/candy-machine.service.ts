@@ -36,7 +36,6 @@ import {
   MAX_METADATA_LEN,
   CREATOR_ARRAY_START,
   D_PUBLISHER_SYMBOL,
-  D_PUBLISHER_PRIMARY_SALE_SHARE,
   HUNDRED,
   HUNDRED_PERCENT_TAX,
   D_READER_FRONTEND_URL,
@@ -212,12 +211,8 @@ export class CandyMachineService {
         },
         creators: [
           {
-            address: this.metaplex.identity().publicKey,
-            share: D_PUBLISHER_PRIMARY_SALE_SHARE,
-          },
-          {
             address: comicCreator,
-            share: HUNDRED - D_PUBLISHER_PRIMARY_SALE_SHARE,
+            share: HUNDRED,
           },
         ],
       },
@@ -279,6 +274,8 @@ export class CandyMachineService {
       });
 
     const indexArray = Array.from(Array(comicIssue.supply).keys());
+    // TODO: start indices from previous highest index
+    // e.g. if existing collection has #999 items, continue with #1000
     const items = await Promise.all(
       indexArray.map((index) => ({
         uri: metadataUri,
@@ -300,7 +297,7 @@ export class CandyMachineService {
         .candyMachines()
         .builders()
         .insertItems({
-          candyMachine: candyMachine,
+          candyMachine,
           index: iteration * INSERT_CHUNK_SIZE,
           items: itemsChunk,
         });
