@@ -4,7 +4,6 @@ export type ListingReceipt = Listing & {
   nft: {
     name: string;
     ownerAddress: string;
-    uri?: string;
   };
 };
 

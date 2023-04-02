@@ -104,7 +104,7 @@ export class HeliusService {
             return this.handleNftListing(transaction);
           case TransactionType.NFT_CANCEL_LISTING:
             return this.handleCancelListing(transaction);
-          case TransactionType.NFT_BID:
+          case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
             console.log('Unhandled webhook event type: ', transaction.type);
@@ -114,7 +114,7 @@ export class HeliusService {
     );
   }
 
-  private async handleInstantBuy(transaction: EnrichedTransaction) {
+  private async handleInstantBuy(transaction: any) {
     try {
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       const { value } = await this.metaplex
@@ -125,8 +125,26 @@ export class HeliusService {
           'finalized',
         );
       if (!!value.err) {
-        throw new Error('Bid transaction failed to finalize');
+        throw new Error('Sale transaction failed to finalize');
       }
+      const nftAddress = transaction.events.nft.nfts[0].mint;
+      await this.prisma.nft.update({
+        where: { address: nftAddress },
+        data: {
+          ownerAddress: transaction.tokenTransfers[0].toUserAccount,
+          listing: {
+            update: {
+              where: {
+                nftAddress_canceledAt: { nftAddress, canceledAt: new Date(0) },
+              },
+              data: {
+                canceledAt: new Date(transaction.timestamp * 1000),
+                soldAt: new Date(transaction.timestamp * 1000),
+              },
+            },
+          },
+        },
+      });
     } catch (error) {
       console.log(error);
     }
