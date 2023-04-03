@@ -145,7 +145,7 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price),
+        sol(price / LAMPORTS_PER_SOL),
         token(1),
         false,
         seller,
@@ -202,7 +202,7 @@ export class AuctionHouseService {
         auctionHouse,
         mintAccount,
         seller,
-        sol(price),
+        sol(price / LAMPORTS_PER_SOL),
         printReceipt,
         token(1, 0),
       );
@@ -245,7 +245,7 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price),
+        sol(price / LAMPORTS_PER_SOL),
         token(1),
         printReceipt,
         seller,
@@ -461,7 +461,7 @@ export class AuctionHouseService {
     symbol: string,
     seller: PublicKey,
   ): BidModel {
-    const price = sol(amount);
+    const price = sol(amount / LAMPORTS_PER_SOL);
     const tokens = token(1, 0, symbol); // only considers nfts
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,

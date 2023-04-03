@@ -10,7 +10,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getRandomInt, sleep } from '../src/utils/helpers';
 import {
   PrismaClient,
@@ -2757,8 +2757,8 @@ async function main() {
 
       await comicIssueService.publishOnChain(comicIssue.id, {
         supply: getRandomInt(2, 6) * 10,
-        mintPrice: getRandomInt(1, 2) * 0.1,
-        discountMintPrice: 0.05,
+        mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL,
+        discountMintPrice: 0.05 * LAMPORTS_PER_SOL,
       });
       i++;
     }
