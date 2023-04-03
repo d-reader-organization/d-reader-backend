@@ -3,7 +3,6 @@ import {
   Cluster,
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
 } from '@solana/web3.js';
@@ -33,6 +32,7 @@ import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
 import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
+import { solFromLamports } from '../utils/helpers';
 
 @Injectable()
 export class AuctionHouseService {
@@ -145,7 +145,7 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price / LAMPORTS_PER_SOL),
+        solFromLamports(price),
         token(1),
         false,
         seller,
@@ -202,7 +202,7 @@ export class AuctionHouseService {
         auctionHouse,
         mintAccount,
         seller,
-        sol(price / LAMPORTS_PER_SOL),
+        solFromLamports(price),
         printReceipt,
         token(1, 0),
       );
@@ -245,7 +245,7 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price / LAMPORTS_PER_SOL),
+        solFromLamports(price),
         token(1),
         printReceipt,
         seller,
@@ -419,7 +419,7 @@ export class AuctionHouseService {
       owner: sellerAddress,
     });
 
-    const price = sol(listingModel.price / LAMPORTS_PER_SOL);
+    const price = solFromLamports(listingModel.price);
     const tokens = token(1, 0, listingModel.symbol); // only considers nfts
     const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
       auctionHouse: auctionHouse.address,
@@ -461,7 +461,7 @@ export class AuctionHouseService {
     symbol: string,
     seller: PublicKey,
   ): BidModel {
-    const price = sol(amount / LAMPORTS_PER_SOL);
+    const price = solFromLamports(amount);
     const tokens = token(1, 0, symbol); // only considers nfts
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,
