@@ -132,8 +132,8 @@ model ComicIssue {
   id                   Int                @id @default(autoincrement())
   number               Int
   supply               Int
-  discountMintPrice    Float
-  mintPrice            Float
+  discountMintPrice    Int
+  mintPrice            Int
   sellerFeeBasisPoints Int
   title                String
   slug                 String
@@ -186,7 +186,7 @@ model CandyMachine {
   itemsLoaded          Int
   isFullyLoaded        Boolean
   endsAt               DateTime?
-  baseMintPrice        Float
+  baseMintPrice        Int
   collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   items                Nft[]

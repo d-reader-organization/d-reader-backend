@@ -13,6 +13,7 @@ import {
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
+import { IsLamport } from 'src/decorators/IsLamport';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -37,13 +38,13 @@ export class CreateComicIssueDto {
   )
   supply: number;
 
-  @Min(0)
+  @IsLamport()
   @Transform(({ value }) =>
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   discountMintPrice: number;
 
-  @Min(0)
+  @IsLamport()
   @Transform(({ value }) =>
     typeof value === 'string' ? parseInt(value, 10) : value,
   )

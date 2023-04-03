@@ -3,6 +3,7 @@ import { Type, plainToInstance } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsInt,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -43,7 +44,7 @@ export class ListingDto {
   @IsString()
   tokenAddress: string;
 
-  @IsNumber()
+  @IsInt()
   price: number;
 
   @IsArray()
