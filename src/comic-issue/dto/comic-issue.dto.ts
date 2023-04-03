@@ -26,6 +26,7 @@ import {
   WalletComicIssue,
 } from '@prisma/client';
 import { divide, round } from 'lodash';
+import { IsLamport } from 'src/decorators/IsLamport';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -49,10 +50,10 @@ export class ComicIssueDto {
   @Min(0)
   supply: number;
 
-  @Min(0)
+  @IsLamport()
   discountMintPrice: number;
 
-  @Min(0)
+  @IsLamport()
   mintPrice: number;
 
   @Min(0)
