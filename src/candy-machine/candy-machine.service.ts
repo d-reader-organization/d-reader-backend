@@ -7,6 +7,7 @@ import {
   Cluster,
   Connection,
   Keypair,
+  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
   sendAndConfirmTransaction,
@@ -205,7 +206,7 @@ export class CandyMachineService {
         guards: {
           botTax: undefined,
           solPayment: {
-            amount: sol(comicIssue.mintPrice),
+            amount: sol(comicIssue.mintPrice / LAMPORTS_PER_SOL),
             destination: this.metaplex.identity().publicKey,
           },
         },
