@@ -33,6 +33,7 @@ import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
 import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
+import { BuyArgs } from './dto/types/buyArgs';
 
 @Injectable()
 export class AuctionHouseService {
@@ -116,14 +117,17 @@ export class AuctionHouseService {
     }
   }
 
-  async constructInstantBuyTransaction(
-    buyer: PublicKey,
-    mintAccount: PublicKey,
-    price: number,
-    seller?: PublicKey,
-    tokenAccount?: PublicKey,
-  ) {
+  async constructMultipleBuys(buyer:PublicKey,buyArgs:BuyArgs[]): Promise<string[]>{
+    const transactions = buyArgs.map((args) =>{
+      return this.constructInstantBuyTransaction(buyer,args)
+    })
+    return await Promise.all(transactions);
+  }
+
+  async constructInstantBuyTransaction(buyer:PublicKey,buyArgs:BuyArgs) {
     try {
+      const {mintAccount,seller,tokenAccount,price} = buyArgs;
+
       const listingModel = await this.prisma.listing.findUnique({
         where: {
           nftAddress_canceledAt: {
