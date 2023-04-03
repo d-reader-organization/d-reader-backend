@@ -1,12 +1,13 @@
-import { IsDateString, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { CandyMachine } from '@prisma/client';
+import { IsLamport } from 'src/decorators/IsLamport';
 
 export class CandyMachineDto {
   @IsSolanaAddress()
   address: string;
-  
+
   @IsInt()
   @Min(0)
   supply: number;
@@ -15,8 +16,7 @@ export class CandyMachineDto {
   @Min(0)
   itemsMinted: number;
 
-  @IsInt()
-  @Min(0)
+  @IsLamport()
   baseMintPrice: number;
 
   @IsOptional()
