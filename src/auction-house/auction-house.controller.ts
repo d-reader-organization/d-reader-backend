@@ -94,25 +94,29 @@ export class AuctionHouseController {
     @WalletEntity() wallet: Wallet,
     @SilentQuery() query: BuyParamsArray,
   ) {
-    let buyParams: InstantBuyParams[];
-    if (typeof query.instantBuyParams === 'string') {
-      buyParams = [JSON.parse(query.instantBuyParams)];
-    } else {
-      buyParams = query.instantBuyParams.map((val: any) => {
-        const params: InstantBuyParams =
-          typeof val === 'string' ? JSON.parse(val) : val;
-        return {
-          mintAccount: new PublicKey(params.mintAccount),
-          price: +params.price,
-          seller: new PublicKey(params.seller),
-        };
-      });
+    try {
+      let buyParams: InstantBuyParams[];
+      if (typeof query.instantBuyParams === 'string') {
+        buyParams = [JSON.parse(query.instantBuyParams)];
+      } else {
+        buyParams = query.instantBuyParams.map((val: any) => {
+          const params: InstantBuyParams =
+            typeof val === 'string' ? JSON.parse(val) : val;
+          return {
+            mintAccount: new PublicKey(params.mintAccount),
+            price: +params.price,
+            seller: new PublicKey(params.seller),
+          };
+        });
+      }
+      const publicKey = new PublicKey(wallet.address);
+      return await this.auctionHouseService.constructMultipleBuys(
+        publicKey,
+        buyParams,
+      );
+    } catch (e) {
+      console.log('Error while constructing instant buy transaction', e);
     }
-    const publicKey = new PublicKey(wallet.address);
-    return await this.auctionHouseService.constructMultipleBuys(
-      publicKey,
-      buyParams,
-    );
   }
 
   @Throttle(5, 30)
