@@ -16,7 +16,6 @@ import {
   keypairIdentity,
   Metaplex,
   toBigNumber,
-  sol,
   TransactionBuilder,
   MetaplexFile,
 } from '@metaplex-foundation/js';
@@ -45,6 +44,7 @@ import {
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
   D_PUBLISHER_SECONDARY_SALE_SHARE,
 } from '../constants';
+import { solFromLamports } from 'src/utils/helpers';
 
 @Injectable()
 export class CandyMachineService {
@@ -205,7 +205,7 @@ export class CandyMachineService {
         guards: {
           botTax: undefined,
           solPayment: {
-            amount: sol(comicIssue.mintPrice),
+            amount: solFromLamports(comicIssue.mintPrice),
             destination: this.metaplex.identity().publicKey,
           },
         },

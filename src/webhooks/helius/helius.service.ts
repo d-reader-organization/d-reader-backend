@@ -1,11 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Cluster, PublicKey } from '@solana/web3.js';
-import {
-  EnrichedTransaction,
-  Helius,
-  NFTEvent,
-  TransactionType,
-} from 'helius-sdk';
+import { EnrichedTransaction, Helius, TransactionType } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
@@ -127,7 +122,7 @@ export class HeliusService {
       if (!!value.err) {
         throw new Error('Sale transaction failed to finalize');
       }
-      const nftAddress = (transaction.events.nft as any).nfts[0].mint;
+      const nftAddress = transaction.events.nft.nfts[0].mint;
       await this.prisma.nft.update({
         where: { address: nftAddress },
         data: {
@@ -152,7 +147,7 @@ export class HeliusService {
 
   private async handleCancelListing(transaction: EnrichedTransaction) {
     try {
-      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved
+      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
       await this.prisma.listing.update({
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
@@ -168,10 +163,8 @@ export class HeliusService {
 
   private async handleNftListing(transaction: EnrichedTransaction) {
     try {
-      // change after helius fix
-      const mint = (transaction.events.nft as any).nfts[0].mint; // only 1 token would be involved for a nft listing
-      // change after helius fix
-      const price = (transaction.events.nft as any).amount;
+      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
+      const price = transaction.events.nft.amount;
       const tokenMetadata = transaction.instructions[0].accounts[2]; //index 2 for tokenMetadata account
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
@@ -347,10 +340,7 @@ export class HeliusService {
       }
 
       try {
-        const nftTransactionInfo = enrichedTransaction.events
-          .nft as NFTEvent & {
-          amount: number;
-        };
+        const nftTransactionInfo = enrichedTransaction.events.nft;
 
         const receipt = await this.prisma.candyMachineReceipt.create({
           include: { nft: true, buyer: true },

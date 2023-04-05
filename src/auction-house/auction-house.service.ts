@@ -3,7 +3,6 @@ import {
   Cluster,
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
 } from '@solana/web3.js';
@@ -11,7 +10,6 @@ import {
   AuctionHouse,
   keypairIdentity,
   Metaplex,
-  sol,
   token,
   toMetadata,
   toMetadataAccount,
@@ -34,6 +32,7 @@ import { isBoolean } from 'lodash';
 import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buyArgs';
+import { solFromLamports } from '../utils/helpers';
 
 @Injectable()
 export class AuctionHouseService {
@@ -121,16 +120,19 @@ export class AuctionHouseService {
     buyer: PublicKey,
     buyArgs: BuyArgs[],
   ): Promise<string[]> {
-    const transactions = buyArgs.map((args) => {
-      return this.constructInstantBuyTransaction(buyer, args);
-    });
-    return await Promise.all(transactions);
+    try {
+      const transactions = buyArgs.map((args) => {
+        return this.constructInstantBuyTransaction(buyer, args);
+      });
+      return await Promise.all(transactions);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
     try {
-      const { mintAccount, seller, tokenAccount, price } = buyArgs;
-
+      const { mintAccount, seller, price } = buyArgs;
       const listingModel = await this.prisma.listing.findUnique({
         where: {
           nftAddress_canceledAt: {
@@ -152,11 +154,10 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price),
+        solFromLamports(price),
         token(1),
         false,
         seller,
-        tokenAccount,
       );
       const listing = await this.toListing(auctionHouse, listingModel);
       const bid = this.toBid(
@@ -209,7 +210,7 @@ export class AuctionHouseService {
         auctionHouse,
         mintAccount,
         seller,
-        sol(price),
+        solFromLamports(price),
         printReceipt,
         token(1, 0),
       );
@@ -252,11 +253,10 @@ export class AuctionHouseService {
         auctionHouse,
         buyer,
         mintAccount,
-        sol(price),
+        solFromLamports(price),
         token(1),
         printReceipt,
         seller,
-        tokenAccount,
       );
       const latestBlockhash =
         await this.metaplex.connection.getLatestBlockhash();
@@ -426,7 +426,7 @@ export class AuctionHouseService {
       owner: sellerAddress,
     });
 
-    const price = sol(listingModel.price / LAMPORTS_PER_SOL);
+    const price = solFromLamports(listingModel.price);
     const tokens = token(1, 0, listingModel.symbol); // only considers nfts
     const tradeStateAddress = this.metaplex.auctionHouse().pdas().tradeState({
       auctionHouse: auctionHouse.address,
@@ -468,7 +468,7 @@ export class AuctionHouseService {
     symbol: string,
     seller: PublicKey,
   ): BidModel {
-    const price = sol(amount);
+    const price = solFromLamports(amount);
     const tokens = token(1, 0, symbol); // only considers nfts
     const tokenAccount = this.metaplex.tokens().pdas().associatedTokenAccount({
       mint: address,

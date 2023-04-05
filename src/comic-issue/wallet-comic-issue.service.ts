@@ -4,8 +4,6 @@ import { PickByType } from '../types/shared';
 import { WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssue } from '@prisma/client';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { divide } from 'lodash';
 
 @Injectable()
 export class WalletComicIssueService {
@@ -106,7 +104,7 @@ export class WalletComicIssueService {
     });
 
     if (!cheapestItem) return null;
-    return divide(cheapestItem.price, LAMPORTS_PER_SOL);
+    return cheapestItem.price;
   }
 
   async findWalletComicIssueStats(

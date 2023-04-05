@@ -1,32 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PublicKey } from '@solana/web3.js';
-import { Transform } from 'class-transformer';
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { IsNumberString } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class InstantBuyParams {
-  @ApiProperty({ type: 'string' })
-  @Transform(({ value }) => new PublicKey(value))
-  mintAccount: PublicKey;
+  @IsSolanaAddress()
+  mintAccount: string;
 
   @IsNumberString()
   price: number;
 
   @IsSolanaAddress()
-  @IsOptional()
-  @ApiProperty({ type: 'string' })
-  @Transform(({ value }) => {
-    if (value) return new PublicKey(value);
-  })
-  seller?: PublicKey;
-
-  @IsString()
-  @IsOptional()
-  @ApiProperty({ type: 'string' })
-  @Transform(({ value }) => {
-    if (value) return new PublicKey(value);
-  })
-  tokenAccount?: PublicKey;
+  seller: string;
 }
 
 export class BuyParamsArray {

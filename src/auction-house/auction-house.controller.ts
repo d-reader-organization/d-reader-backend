@@ -14,8 +14,9 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
-import { BuyParamsArray, InstantBuyParams } from './dto/instant-buy-params.dto';
+import { BuyParamsArray } from './dto/instant-buy-params.dto';
 import { SilentQuery } from 'src/decorators/silent-query.decorator';
+import { validateAndFormatParams } from '../utils/validate-params';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -49,9 +50,6 @@ export class AuctionHouseController {
   ) {
     const publicKey = new PublicKey(wallet.address);
     const seller = query.seller ? new PublicKey(query.seller) : null;
-    const tokenAccount = query.tokenAccount
-      ? new PublicKey(query.tokenAccount)
-      : null;
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
@@ -61,7 +59,6 @@ export class AuctionHouseController {
       query.price,
       printReceipt,
       seller,
-      tokenAccount,
     );
   }
 
@@ -94,29 +91,12 @@ export class AuctionHouseController {
     @WalletEntity() wallet: Wallet,
     @SilentQuery() query: BuyParamsArray,
   ) {
-    try {
-      let buyParams: InstantBuyParams[];
-      if (typeof query.instantBuyParams === 'string') {
-        buyParams = [JSON.parse(query.instantBuyParams)];
-      } else {
-        buyParams = query.instantBuyParams.map((val: any) => {
-          const params: InstantBuyParams =
-            typeof val === 'string' ? JSON.parse(val) : val;
-          return {
-            mintAccount: new PublicKey(params.mintAccount),
-            price: +params.price,
-            seller: new PublicKey(params.seller),
-          };
-        });
-      }
-      const publicKey = new PublicKey(wallet.address);
-      return await this.auctionHouseService.constructMultipleBuys(
-        publicKey,
-        buyParams,
-      );
-    } catch (e) {
-      console.log('Error while constructing instant buy transaction', e);
-    }
+    const buyParams = validateAndFormatParams(query.instantBuyParams);
+    const publicKey = new PublicKey(wallet.address);
+    return await this.auctionHouseService.constructMultipleBuys(
+      publicKey,
+      buyParams,
+    );
   }
 
   @Throttle(5, 30)

@@ -1,3 +1,6 @@
+import { sol } from '@metaplex-foundation/js';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
     style: 'decimal',
@@ -19,6 +22,10 @@ export function getRandomInt(min: number, max: number) {
 export function getRandomFloatOrInt(min: number, max: number) {
   const randomFloat = Math.floor(Math.random() * (max - min + 1) + min);
   return parseFloat(currencyFormat.format(randomFloat));
+}
+
+export function solFromLamports(lamports: number) {
+  return sol(lamports / LAMPORTS_PER_SOL);
 }
 
 export function mockPromise<T>(value: T) {
