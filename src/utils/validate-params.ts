@@ -5,28 +5,18 @@ import { BuyArgs } from '../auction-house/dto/types/buyArgs';
 
 export const validateAndFormatParams = (
   instantBuyParams: InstantBuyParams[],
-) => {
+): BuyArgs[] => {
   let buyParams: BuyArgs[];
   if (typeof instantBuyParams === 'string') {
-    const params: InstantBuyParams = JSON.parse(instantBuyParams);
-    validate(params);
-    return [
-      {
-        mintAccount: new PublicKey(params.mintAccount),
-        price: +params.price,
-        seller: new PublicKey(params.seller),
-      },
-    ];
+    const param: InstantBuyParams = JSON.parse(instantBuyParams);
+    validate(param);
+    return [format(param)];
   } else {
     buyParams = instantBuyParams.map((val: any) => {
       const params: InstantBuyParams =
         typeof val === 'string' ? JSON.parse(val) : val;
       validate(params);
-      return {
-        mintAccount: new PublicKey(params.mintAccount),
-        price: +params.price,
-        seller: new PublicKey(params.seller),
-      };
+      return format(params);
     });
   }
 
@@ -40,4 +30,12 @@ const validate = (param: InstantBuyParams) => {
     throw new BadRequestException('Seller must be a Solana address');
   if (param.price < 0)
     throw new BadRequestException('price should be greater than or equal to 0');
+};
+
+const format = (param: InstantBuyParams): BuyArgs => {
+  return {
+    mintAccount: new PublicKey(param.mintAccount),
+    price: +param.price,
+    seller: new PublicKey(param.seller),
+  };
 };
