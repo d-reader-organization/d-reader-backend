@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -14,7 +14,8 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
-import { InstantBuyParams, InstantBuyParamsArray } from './dto/instant-buy-params.dto';
+import { BuyParamsArray, InstantBuyParams } from './dto/instant-buy-params.dto';
+import { SilentQuery } from 'src/decorators/silent-query.decorator';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -85,14 +86,24 @@ export class AuctionHouseController {
 
   @Throttle(5, 30)
   @Get('/transactions/instant-buy')
+  @ApiQuery({
+    name: 'query',
+    type: BuyParamsArray,
+  })
   async constructInstantBuy(
     @WalletEntity() wallet: Wallet,
-    @Query() query: InstantBuyParamsArray,
+    @SilentQuery() query: BuyParamsArray,
   ) {
+    let buyParams: InstantBuyParams[];
+    if (typeof query.instantBuyParams === 'string') {
+      buyParams = [JSON.parse(query.instantBuyParams)];
+    } else {
+      buyParams = query.instantBuyParams.map((val: any) => JSON.parse(val));
+    }
     const publicKey = new PublicKey(wallet.address);
     return await this.auctionHouseService.constructMultipleBuys(
       publicKey,
-      query.instantBuyParams
+      buyParams,
     );
   }
 

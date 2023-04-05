@@ -117,16 +117,19 @@ export class AuctionHouseService {
     }
   }
 
-  async constructMultipleBuys(buyer:PublicKey,buyArgs:BuyArgs[]): Promise<string[]>{
-    const transactions = buyArgs.map((args) =>{
-      return this.constructInstantBuyTransaction(buyer,args)
-    })
+  async constructMultipleBuys(
+    buyer: PublicKey,
+    buyArgs: BuyArgs[],
+  ): Promise<string[]> {
+    const transactions = buyArgs.map((args) => {
+      return this.constructInstantBuyTransaction(buyer, args);
+    });
     return await Promise.all(transactions);
   }
 
-  async constructInstantBuyTransaction(buyer:PublicKey,buyArgs:BuyArgs) {
+  async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
     try {
-      const {mintAccount,seller,tokenAccount,price} = buyArgs;
+      const { mintAccount, seller, tokenAccount, price } = buyArgs;
 
       const listingModel = await this.prisma.listing.findUnique({
         where: {
