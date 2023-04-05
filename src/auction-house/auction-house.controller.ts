@@ -98,7 +98,15 @@ export class AuctionHouseController {
     if (typeof query.instantBuyParams === 'string') {
       buyParams = [JSON.parse(query.instantBuyParams)];
     } else {
-      buyParams = query.instantBuyParams.map((val: any) => JSON.parse(val));
+      buyParams = query.instantBuyParams.map((val: any) => {
+        const params: InstantBuyParams =
+          typeof val === 'string' ? JSON.parse(val) : val;
+        return {
+          mintAccount: new PublicKey(params.mintAccount),
+          price: +params.price,
+          seller: new PublicKey(params.seller),
+        };
+      });
     }
     const publicKey = new PublicKey(wallet.address);
     return await this.auctionHouseService.constructMultipleBuys(
