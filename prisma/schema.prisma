@@ -229,17 +229,19 @@ model ComicPage {
 }
 
 model CarouselSlide {
-  id          Int              @id @default(autoincrement())
-  image       String
-  title       String           @default("")
-  subtitle    String           @default("")
-  priority    Int
-  link        String
-  // comicIssueSlug String?
-  // comicSlug      String?
-  publishedAt DateTime         @default(now())
-  expiredAt   DateTime
-  location    CarouselLocation @default(Home)
+  id           Int              @id @default(autoincrement())
+  image        String
+  title        String           @default("")
+  subtitle     String           @default("")
+  priority     Int
+  link         String
+  comicIssueId Int?
+  comicSlug    String?
+  creatorSlug  String?
+  externalLink String?
+  publishedAt  DateTime         @default(now())
+  expiredAt    DateTime
+  location     CarouselLocation @default(Home)
 }
 
 enum CarouselLocation {

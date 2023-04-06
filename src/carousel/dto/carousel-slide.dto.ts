@@ -1,6 +1,7 @@
 import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -41,6 +42,22 @@ export class CarouselSlideDto {
   @IsEnum(CarouselLocation)
   @ApiProperty({ enum: CarouselLocation })
   location: CarouselLocation;
+
+  @IsOptional()
+  @IsInt()
+  comicIssueId?: number;
+
+  @IsOptional()
+  @IsString()
+  comicSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  creatorSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  externalLink?: string;
 }
 
 export async function toCarouselSlideDto(slide: CarouselSlide) {
@@ -54,6 +71,10 @@ export async function toCarouselSlideDto(slide: CarouselSlide) {
     isPublished: !!slide.publishedAt,
     isExpired: !!slide.expiredAt,
     location: slide.location,
+    comicIssueId: slide.comicIssueId,
+    comicSlug: slide.comicSlug,
+    creatorSlug: slide.creatorSlug,
+    externalLink: slide.externalLink,
   };
 
   const slideDto = plainToInstance(CarouselSlideDto, plainSlideDto);
