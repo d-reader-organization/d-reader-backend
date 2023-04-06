@@ -62,6 +62,7 @@
     "date-fns": "^2.29.3",
     "geoip-lite": "^1.4.7",
     "helius-sdk": "^1.0.1",
+    "jdenticon": "^3.2.0",
     "lodash": "^4.17.21",
     "nest-commander": "^3.6.1",
     "nestjs-prisma": "^0.20.0",
