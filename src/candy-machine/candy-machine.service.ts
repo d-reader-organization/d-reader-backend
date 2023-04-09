@@ -44,7 +44,7 @@ import {
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
   D_PUBLISHER_SECONDARY_SALE_SHARE,
 } from '../constants';
-import { solFromLamports } from 'src/utils/helpers';
+import { solFromLamports } from '../utils/helpers';
 
 @Injectable()
 export class CandyMachineService {

@@ -29,6 +29,22 @@ export class CreateCarouselSlideDto {
   @IsEnum(CarouselLocation)
   @ApiProperty({ enum: CarouselLocation })
   location: CarouselLocation;
+
+  @IsOptional()
+  @IsNumber()
+  comicIssueId?: number;
+
+  @IsOptional()
+  @IsString()
+  comicSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  creatorSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  externalLink?: string;
 }
 
 export class CreateCarouselSlideFilesDto {
