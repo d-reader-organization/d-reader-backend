@@ -352,16 +352,33 @@ export class AuctionHouseService {
     }
   }
 
-  async findCollectionStats(
-    comicIssueId: number,
-  ): Promise<CollectonMarketplaceStats> {
-    const aggregate = this.prisma.listing.aggregate({
+  async getTotalVolume(comicIssueId: number) {
+    const sellAggregate = this.prisma.listing.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
         soldAt: { not: null },
       },
       _sum: { price: true },
     });
+
+    const mintAggregate = this.prisma.candyMachineReceipt.aggregate({
+      where: {
+        nft: { collectionNft: { comicIssueId } },
+      },
+      _sum: { price: true },
+    });
+
+    const [sellVolume, mintVolume] = await Promise.all([
+      sellAggregate,
+      mintAggregate,
+    ]);
+    return (sellVolume._sum?.price || 0) + (mintVolume._sum?.price || 0);
+  }
+
+  async findCollectionStats(
+    comicIssueId: number,
+  ): Promise<CollectonMarketplaceStats> {
+    const aggregate = this.getTotalVolume(comicIssueId);
     const countListed = this.prisma.listing.count({
       where: {
         nft: { collectionNft: { comicIssueId } },
@@ -383,7 +400,7 @@ export class AuctionHouseService {
         getCheapestItem,
       ]);
       return {
-        totalVolume: aggregations._sum?.price || 0,
+        totalVolume: aggregations,
         itemsListed: itemsListed || 0,
         floorPrice: cheapestItem?.price || 0,
       };
