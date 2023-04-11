@@ -9,6 +9,7 @@ import {
   CandyMachineReceiptInput,
   toCMReceiptDto,
 } from '../candy-machine/dto/candy-machine-receipt.dto';
+import { Listing } from '@prisma/client';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -24,5 +25,10 @@ export class WebSocketGateway {
   async handleMintReceipt(receipt: CandyMachineReceiptInput): Promise<boolean> {
     const receiptDto = await toCMReceiptDto(receipt);
     return this.server.sockets.emit('candyMachineReceiptCreated', receiptDto);
+  }
+
+  async handleListings(comicIssue: number, listing: Listing) {
+    console.log(comicIssue, listing);
+    return this.server.sockets.emit(`issue/${comicIssue}`, listing);
   }
 }
