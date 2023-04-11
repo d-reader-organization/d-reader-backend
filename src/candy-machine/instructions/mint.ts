@@ -12,12 +12,12 @@ import {
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
 
 import {
-  createMintInstruction,
-  MintInstructionAccounts,
+  createMintV2Instruction,
   MintInstructionArgs,
+  MintV2InstructionAccounts,
 } from '@metaplex-foundation/mpl-candy-guard';
 
-import { CandyMachine, Metaplex } from '@metaplex-foundation/js';
+import { CandyMachine, Metaplex, Pda } from '@metaplex-foundation/js';
 import {
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
@@ -59,12 +59,19 @@ export async function constructMintInstruction(
     mint: mint.publicKey,
   });
 
-  const nftTokenAccount = metaplex
+  const token = metaplex
     .tokens()
     .pdas()
     .associatedTokenAccount({ mint: mint.publicKey, owner: payer });
 
-  // collection PDAs
+  const tokenRecord = Pda.find(METAPLEX_PROGRAM_ID, [
+    Buffer.from('metadata', 'utf8'),
+    METAPLEX_PROGRAM_ID.toBuffer(),
+    mint.publicKey.toBuffer(),
+    Buffer.from('token_record', 'utf8'),
+    token.toBuffer(),
+  ]);
+
   const collectionMetadata = metaplex.nfts().pdas().metadata({
     mint: candyMachineObject.collectionMintAddress,
   });
@@ -81,7 +88,6 @@ export async function constructMintInstruction(
     });
 
   const collectionMint = candyMachineObject.collectionMintAddress;
-  // Retrieves the collection nft
   const collectionNft = await metaplex
     .nfts()
     .findByMint({ mintAddress: collectionMint });
@@ -89,26 +95,40 @@ export async function constructMintInstruction(
     console.error('no associated candyguard !');
     return;
   }
-  const accounts: MintInstructionAccounts = {
+
+  const collectionDelegateRecord = metaplex
+    .nfts()
+    .pdas()
+    .metadataDelegateRecord({
+      mint: mint.publicKey,
+      type: 'ProgrammableConfigV1',
+      updateAuthority: collectionNft.updateAuthorityAddress,
+      delegate: authorityPda,
+    });
+
+  const accounts: MintV2InstructionAccounts = {
     candyGuard: candyMachineObject.candyGuard?.address,
     candyMachineProgram: CANDY_MACHINE_PROGRAM_ID,
     candyMachine,
     payer: payer,
+    minter: payer,
     candyMachineAuthorityPda: authorityPda,
     nftMasterEdition: nftMasterEdition,
     nftMetadata,
     nftMint: mint.publicKey,
+    token,
+    tokenRecord,
     nftMintAuthority: payer,
     collectionUpdateAuthority: collectionNft.updateAuthorityAddress,
-    collectionAuthorityRecord,
+    collectionDelegateRecord,
     collectionMasterEdition,
     collectionMetadata,
     collectionMint,
     tokenMetadataProgram: METAPLEX_PROGRAM_ID,
-    tokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
     recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
-    instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
   };
 
   if (!mintArgs) {
@@ -139,16 +159,22 @@ export async function constructMintInstruction(
   instructions.push(
     createAssociatedTokenAccountInstruction(
       payer,
-      nftTokenAccount,
+      token,
       payer,
       mint.publicKey,
     ),
   );
   instructions.push(
-    createMintToInstruction(mint.publicKey, nftTokenAccount, payer, 1, []),
+    createMintToInstruction(mint.publicKey, token, payer, 1, []),
   );
 
-  const mintInstruction = createMintInstruction(accounts, args);
+  const mintInstruction = createMintV2Instruction(accounts, args);
+
+  const mintIndex = mintInstruction.keys.findIndex((key) =>
+    key.pubkey.equals(mint.publicKey),
+  );
+  mintInstruction.keys[mintIndex].isSigner = true;
+  mintInstruction.keys[mintIndex].isWritable = true;
 
   if (remainingAccounts) {
     mintInstruction.keys.push(...remainingAccounts);
