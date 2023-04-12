@@ -203,6 +203,7 @@ export class CandyMachineService {
       },
       payer: authorityKey.publicKey,
     };
+
     const comicCreator = new PublicKey(creatorAddress);
     const candyMachineData: CandyMachineCreateData = {
       creators: [{ address: comicCreator, share: HUNDRED }],
@@ -213,7 +214,6 @@ export class CandyMachineService {
       isMutable: true,
     };
     const guards = {
-      botTax: undefined,
       solPayment: {
         amount: solFromLamports(comicIssue.mintPrice),
         destination: this.metaplex.identity().publicKey,

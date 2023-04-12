@@ -3,7 +3,7 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Wallet, Role } from '@prisma/client';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 
 export class WalletDto {
   @IsSolanaAddress()

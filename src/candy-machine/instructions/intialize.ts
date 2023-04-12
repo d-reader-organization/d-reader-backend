@@ -27,7 +27,6 @@ export async function createCandyMachine(
   guards: Partial<DefaultCandyGuardSettings>,
 ) {
   const { payer, candyMachine, collection } = candyMachineObject;
-
   const itemSettings: CandyMachineConfigLineSettings = {
     type: 'configLines',
     prefixName: '',
@@ -36,7 +35,6 @@ export async function createCandyMachine(
     uriLength: 200,
     isSequential: false,
   };
-
   const authorityPda = metaplex.candyMachines().pdas().authority({
     candyMachine: candyMachine.address,
   });
@@ -49,11 +47,9 @@ export async function createCandyMachine(
 
   const candyMachineProgram = metaplex.programs().getCandyMachine();
   const tokenMetadataProgram = metaplex.programs().getTokenMetadata();
-
   const candyMachineData = toCandyMachineData({ ...data, itemSettings });
 
   const instructions: TransactionInstruction[] = [];
-
   const candyGuardProgram = metaplex.programs().getCandyGuard();
   const candyGuard = metaplex.candyMachines().pdas().candyGuard({
     base: candyMachine.address,
@@ -81,7 +77,7 @@ export async function createCandyMachine(
     newAccountPubkey: candyMachine.address,
     space,
     lamports: (await metaplex.rpc().getRent(space)).basisPoints.toNumber(),
-    programId: SystemProgram.programId,
+    programId: candyMachineProgram.address,
   });
 
   const collectionDelegateRecord = metaplex
@@ -89,7 +85,7 @@ export async function createCandyMachine(
     .pdas()
     .metadataDelegateRecord({
       mint: collection.mint,
-      type: 'ProgrammableConfigV1',
+      type: 'CollectionV1',
       updateAuthority: collection.updateAuthority,
       delegate: authorityPda,
     });
@@ -98,8 +94,8 @@ export async function createCandyMachine(
     {
       candyMachine: candyMachine.address,
       authorityPda,
-      authority: candyGuard,
-      payer: payer,
+      authority: candyMachine.authority,
+      payer,
       collectionMetadata,
       collectionMint: collection.mint,
       collectionMasterEdition,
@@ -107,12 +103,12 @@ export async function createCandyMachine(
       collectionDelegateRecord,
       tokenMetadataProgram: tokenMetadataProgram.address,
       sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+      systemProgram: SystemProgram.programId,
     },
     {
       data: candyMachineData,
       tokenStandard: TokenStandard.ProgrammableNonFungible,
     },
-    candyMachineProgram.address,
   );
 
   const wrapCandyGuardInstruction = createWrapCandyGuardInstruction(

@@ -2720,7 +2720,7 @@ async function main() {
   }
 
   const webhooks = await heliusService.findAll();
-  let webhookURL = 'https://replace.me';
+  let webhookURL =  `${process.env.HELIUS_WEBHOOK_URL}/helius/handle`;
   for (const webhook of webhooks) {
     webhookURL = webhook.webhookURL;
     await heliusService.deleteWebhook(webhook.webhookID);
@@ -2764,6 +2764,7 @@ async function main() {
     }
   }
 
+  await heliusService.subscribeTo(process.env.AUCTION_HOUSE_ADDRESS)
   await heliusService.removeSubscription(placeholderAccount);
 }
 

@@ -10,7 +10,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';

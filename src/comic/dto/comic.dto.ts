@@ -13,7 +13,7 @@ import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
 import { round } from 'lodash';
