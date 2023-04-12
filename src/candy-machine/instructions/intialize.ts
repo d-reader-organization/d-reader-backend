@@ -1,11 +1,12 @@
 import {
+  CandyMachineConfigLineSettings,
   DefaultCandyGuardSettings,
   Metaplex,
   Pda,
   getCandyMachineSize,
   toCandyMachineData,
 } from '@metaplex-foundation/js';
-import { Keypair, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { SystemProgram, TransactionInstruction } from '@solana/web3.js';
 import { CandyMachineCreateData } from '../dto/types/candyMachineData';
 import {
   createInitializeInstruction as createInitializeCandyGuardInstruction,
@@ -17,11 +18,12 @@ import { createInitializeInstruction as createInitializeCandyMachineInstruction 
 export async function createCandyMachine(
   metaplex: Metaplex,
   candyMachineObject: candyMachineCreateObject,
-  collection: PublicKey,
   data: CandyMachineCreateData,
   guards: Partial<DefaultCandyGuardSettings>,
 ) {
-  const itemSettings = {
+  const { payer, candyMachine, collection } = candyMachineObject;
+
+  const itemSettings: CandyMachineConfigLineSettings = {
     type: 'configLines',
     prefixName: '',
     nameLength: 32,
@@ -29,35 +31,34 @@ export async function createCandyMachine(
     uriLength: 200,
     isSequential: false,
   };
-  const payer = candyMachineObject.payer ?? metaplex.identity();
 
   const authorityPda = metaplex.candyMachines().pdas().authority({
-    candyMachine: candyMachineObject.candyMachine.key.publicKey,
+    candyMachine: candyMachine.address,
   });
   const collectionMetadata = metaplex.nfts().pdas().metadata({
-    mint: collection,
+    mint: collection.mint,
   });
   const collectionMasterEdition = metaplex.nfts().pdas().masterEdition({
-    mint: collection,
+    mint: collection.mint,
   });
   const collectionAuthorityRecord = metaplex
     .nfts()
     .pdas()
     .collectionAuthorityRecord({
-      mint: collection,
+      mint: collection.mint,
       collectionAuthority: authorityPda,
     });
 
   const candyMachineProgram = metaplex.programs().getCandyMachine();
   const tokenMetadataProgram = metaplex.programs().getTokenMetadata();
 
-  const candyMachineData = toCandyMachineData(data);
+  const candyMachineData = toCandyMachineData({ ...data, itemSettings });
 
   const instructions: TransactionInstruction[] = [];
 
   const candyGuardProgram = metaplex.programs().getCandyGuard();
   const candyGuard = metaplex.candyMachines().pdas().candyGuard({
-    base: candyMachineObject.candyMachine.key.publicKey,
+    base: candyMachine.address,
   });
 
   const serializedSettings = metaplex
@@ -68,36 +69,33 @@ export async function createCandyMachine(
   const createCandyGuardInstruction = createInitializeCandyGuardInstruction(
     {
       candyGuard,
-      base: candyMachineObject.candyMachine.key.publicKey,
-      authority: candyMachineObject.candyMachine.authority,
-      payer: payer.publicKey,
+      base: candyMachine.address,
+      authority: candyMachine.authority,
+      payer: payer,
     },
     { data: serializedSettings },
     candyGuardProgram.address,
   );
 
-  const createCandyMachineAccountInstruction = metaplex
-    .system()
-    .builders()
-    .createAccount(
-      {
-        space: getCandyMachineSize(candyMachineData),
-        newAccount: candyMachineObject.candyMachine.key,
-        program: candyMachineProgram.address,
-      },
-      { payer },
-    );
+  const space = getCandyMachineSize(candyMachineData);
+  const createCandyMachineAccountInstruction = SystemProgram.createAccount({
+    fromPubkey: payer,
+    newAccountPubkey: candyMachine.address,
+    space,
+    lamports: (await metaplex.rpc().getRent(space)).basisPoints.toNumber(),
+    programId: SystemProgram.programId,
+  });
 
   const createCandyMachineInstruction = createInitializeCandyMachineInstruction(
     {
-      candyMachine: candyMachineObject.candyMachine.key.publicKey,
+      candyMachine: candyMachine.address,
       authorityPda,
       authority: candyGuard,
-      payer: payer.publicKey,
+      payer: payer,
       collectionMetadata,
-      collectionMint: candyMachineObject.collection.mint,
+      collectionMint: collection.mint,
       collectionMasterEdition,
-      collectionUpdateAuthority: candyMachineObject.collection.updateAuthority,
+      collectionUpdateAuthority: collection.updateAuthority,
       collectionAuthorityRecord,
       tokenMetadataProgram: tokenMetadataProgram.address,
     },
@@ -132,7 +130,7 @@ function createWrapCandyGuardInstruction(
     {
       candyGuard,
       authority: candyMachineObject.candyMachine.authority,
-      candyMachine: candyMachineObject.candyMachine.key.publicKey,
+      candyMachine: candyMachineObject.candyMachine.address,
       candyMachineProgram: candyMachineProgram.address,
       candyMachineAuthority: candyMachineObject.candyMachine.authority,
     },

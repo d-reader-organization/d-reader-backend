@@ -79,14 +79,6 @@ export async function constructMintInstruction(
     mint: candyMachineObject.collectionMintAddress,
   });
 
-  const collectionAuthorityRecord = metaplex
-    .nfts()
-    .pdas()
-    .collectionAuthorityRecord({
-      mint: candyMachineObject.collectionMintAddress,
-      collectionAuthority: authorityPda,
-    });
-
   const collectionMint = candyMachineObject.collectionMintAddress;
   const collectionNft = await metaplex
     .nfts()
