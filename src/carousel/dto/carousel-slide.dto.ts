@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { CarouselSlide, CarouselLocation } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 
 export class CarouselSlideDto {
   @IsPositive()

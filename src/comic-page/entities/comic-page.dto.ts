@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 import { ComicPage } from '@prisma/client';
 import { sortBy } from 'lodash';
 

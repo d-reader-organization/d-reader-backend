@@ -1,6 +1,6 @@
 import { plainToInstance, Transform } from 'class-transformer';
 import { IsHexColor, IsNumber, IsString } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Genre } from '@prisma/client';
 
