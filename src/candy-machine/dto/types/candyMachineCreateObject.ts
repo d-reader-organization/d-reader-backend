@@ -1,13 +1,13 @@
-import { Keypair, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 export type candyMachineCreateObject = {
   candyMachine: {
-    key: Keypair;
+    address: PublicKey;
     authority: PublicKey;
   };
   collection: {
     updateAuthority: PublicKey;
     mint: PublicKey;
   };
-  payer?: Keypair;
+  payer: PublicKey;
 };

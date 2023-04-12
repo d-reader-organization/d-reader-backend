@@ -8,5 +8,4 @@ export type CandyMachineCreateData = Pick<
   | 'maxEditionSupply'
   | 'isMutable'
   | 'creators'
-  | 'itemSettings'
 >;
