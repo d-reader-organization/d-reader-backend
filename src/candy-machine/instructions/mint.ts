@@ -40,14 +40,11 @@ export async function constructMintInstruction(
   mintArgs?: Uint8Array | null,
   label?: string | null,
 ): Promise<TransactionInstruction[]> {
-  // candy machine object
   const candyMachineObject: CandyMachine = await metaplex
     .candyMachines()
     .findByAddress({
       address: candyMachine,
     });
-
-  // PDAs
   const authorityPda = metaplex.candyMachines().pdas().authority({
     candyMachine: candyMachine,
   });
@@ -71,6 +68,14 @@ export async function constructMintInstruction(
     Buffer.from('token_record', 'utf8'),
     token.toBuffer(),
   ]);
+  const collectionMint = candyMachineObject.collectionMintAddress;
+  const collectionNft = await metaplex
+    .nfts()
+    .findByMint({ mintAddress: collectionMint });
+  if (!candyMachineObject.candyGuard) {
+    console.error('No associated candyguard found!');
+    return;
+  }
 
   const collectionMetadata = metaplex.nfts().pdas().metadata({
     mint: candyMachineObject.collectionMintAddress,
@@ -79,20 +84,11 @@ export async function constructMintInstruction(
     mint: candyMachineObject.collectionMintAddress,
   });
 
-  const collectionMint = candyMachineObject.collectionMintAddress;
-  const collectionNft = await metaplex
-    .nfts()
-    .findByMint({ mintAddress: collectionMint });
-  if (!candyMachineObject.candyGuard) {
-    console.error('no associated candyguard !');
-    return;
-  }
-
   const collectionDelegateRecord = metaplex
     .nfts()
     .pdas()
     .metadataDelegateRecord({
-      mint: mint.publicKey,
+      mint: collectionMint,
       type: 'ProgrammableConfigV1',
       updateAuthority: collectionNft.updateAuthorityAddress,
       delegate: authorityPda,

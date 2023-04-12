@@ -6,14 +6,19 @@ import {
   getCandyMachineSize,
   toCandyMachineData,
 } from '@metaplex-foundation/js';
-import { SystemProgram, TransactionInstruction } from '@solana/web3.js';
+import {
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+  SystemProgram,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import { CandyMachineCreateData } from '../dto/types/candyMachineData';
 import {
   createInitializeInstruction as createInitializeCandyGuardInstruction,
   createWrapInstruction,
 } from '@metaplex-foundation/mpl-candy-guard';
 import { candyMachineCreateObject } from '../dto/types/candyMachineCreateObject';
-import { createInitializeInstruction as createInitializeCandyMachineInstruction } from '@metaplex-foundation/mpl-candy-machine-core';
+import { createInitializeV2Instruction as createInitializeCandyMachineInstruction } from '@metaplex-foundation/mpl-candy-machine-core';
+import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
 
 export async function createCandyMachine(
   metaplex: Metaplex,
@@ -41,13 +46,6 @@ export async function createCandyMachine(
   const collectionMasterEdition = metaplex.nfts().pdas().masterEdition({
     mint: collection.mint,
   });
-  const collectionAuthorityRecord = metaplex
-    .nfts()
-    .pdas()
-    .collectionAuthorityRecord({
-      mint: collection.mint,
-      collectionAuthority: authorityPda,
-    });
 
   const candyMachineProgram = metaplex.programs().getCandyMachine();
   const tokenMetadataProgram = metaplex.programs().getTokenMetadata();
@@ -86,6 +84,16 @@ export async function createCandyMachine(
     programId: SystemProgram.programId,
   });
 
+  const collectionDelegateRecord = metaplex
+    .nfts()
+    .pdas()
+    .metadataDelegateRecord({
+      mint: collection.mint,
+      type: 'ProgrammableConfigV1',
+      updateAuthority: collection.updateAuthority,
+      delegate: authorityPda,
+    });
+
   const createCandyMachineInstruction = createInitializeCandyMachineInstruction(
     {
       candyMachine: candyMachine.address,
@@ -96,10 +104,14 @@ export async function createCandyMachine(
       collectionMint: collection.mint,
       collectionMasterEdition,
       collectionUpdateAuthority: collection.updateAuthority,
-      collectionAuthorityRecord,
+      collectionDelegateRecord,
       tokenMetadataProgram: tokenMetadataProgram.address,
+      sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
     },
-    { data: candyMachineData },
+    {
+      data: candyMachineData,
+      tokenStandard: TokenStandard.ProgrammableNonFungible,
+    },
     candyMachineProgram.address,
   );
 
