@@ -353,7 +353,6 @@ export class CandyMachineService {
       candyMachine.address,
       feePayer,
       mint,
-      this.metaplex.connection,
       [
         {
           pubkey: candyMachine.candyGuard.guards.solPayment.destination,
@@ -370,7 +369,6 @@ export class CandyMachineService {
     }).add(...mintInstructions);
 
     mintTransaction.sign(mint);
-
     const rawTransaction = mintTransaction.serialize({
       requireAllSignatures: false,
       verifySignatures: false,
