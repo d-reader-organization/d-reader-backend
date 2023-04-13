@@ -1,5 +1,4 @@
 import {
-  Connection,
   Keypair,
   PublicKey,
   SystemProgram,
@@ -13,15 +12,15 @@ import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl
 
 import {
   createMintV2Instruction,
-  MintInstructionArgs,
   MintV2InstructionAccounts,
+  MintV2InstructionArgs,
 } from '@metaplex-foundation/mpl-candy-guard';
 
-import { CandyMachine, Metaplex, Pda } from '@metaplex-foundation/js';
+import { CandyMachine, Metaplex } from '@metaplex-foundation/js';
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
-  createMintToInstruction,
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
@@ -35,7 +34,6 @@ export async function constructMintInstruction(
   candyMachine: PublicKey,
   payer: PublicKey,
   mint: Keypair,
-  connection: Connection,
   remainingAccounts?: AccountMeta[] | null,
   mintArgs?: Uint8Array | null,
   label?: string | null,
@@ -61,14 +59,12 @@ export async function constructMintInstruction(
     .pdas()
     .associatedTokenAccount({ mint: mint.publicKey, owner: payer });
 
-  const tokenRecord = Pda.find(METAPLEX_PROGRAM_ID, [
-    Buffer.from('metadata', 'utf8'),
-    METAPLEX_PROGRAM_ID.toBuffer(),
-    mint.publicKey.toBuffer(),
-    Buffer.from('token_record', 'utf8'),
-    token.toBuffer(),
-  ]);
   const collectionMint = candyMachineObject.collectionMintAddress;
+  const tokenRecord = metaplex
+    .nfts()
+    .pdas()
+    .tokenRecord({ mint: mint.publicKey, token });
+
   const collectionNft = await metaplex
     .nfts()
     .findByMint({ mintAddress: collectionMint });
@@ -78,10 +74,10 @@ export async function constructMintInstruction(
   }
 
   const collectionMetadata = metaplex.nfts().pdas().metadata({
-    mint: candyMachineObject.collectionMintAddress,
+    mint: collectionMint,
   });
   const collectionMasterEdition = metaplex.nfts().pdas().masterEdition({
-    mint: candyMachineObject.collectionMintAddress,
+    mint: collectionMint,
   });
 
   const collectionDelegateRecord = metaplex
@@ -89,41 +85,42 @@ export async function constructMintInstruction(
     .pdas()
     .metadataDelegateRecord({
       mint: collectionMint,
-      type: 'ProgrammableConfigV1',
+      type: 'CollectionV1',
       updateAuthority: collectionNft.updateAuthorityAddress,
       delegate: authorityPda,
     });
 
   const accounts: MintV2InstructionAccounts = {
-    candyGuard: candyMachineObject.candyGuard?.address,
+    candyGuard: candyMachineObject.candyGuard.address,
     candyMachineProgram: CANDY_MACHINE_PROGRAM_ID,
     candyMachine,
-    payer: payer,
-    minter: payer,
     candyMachineAuthorityPda: authorityPda,
-    nftMasterEdition: nftMasterEdition,
+    nftMasterEdition,
     nftMetadata,
     nftMint: mint.publicKey,
     token,
     tokenRecord,
     nftMintAuthority: payer,
+    payer,
+    minter: payer,
     collectionUpdateAuthority: collectionNft.updateAuthorityAddress,
     collectionDelegateRecord,
     collectionMasterEdition,
     collectionMetadata,
     collectionMint,
     tokenMetadataProgram: METAPLEX_PROGRAM_ID,
-    splTokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
-    recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
     sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+    splTokenProgram: TOKEN_PROGRAM_ID,
+    splAtaProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+    recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
   };
 
   if (!mintArgs) {
     mintArgs = new Uint8Array();
   }
 
-  const args: MintInstructionArgs = {
+  const args: MintV2InstructionArgs = {
     mintArgs,
     label: label ?? null,
   };
@@ -133,7 +130,7 @@ export async function constructMintInstruction(
     SystemProgram.createAccount({
       fromPubkey: payer,
       newAccountPubkey: mint.publicKey,
-      lamports: await connection.getMinimumBalanceForRentExemption(
+      lamports: await metaplex.connection.getMinimumBalanceForRentExemption(
         MintLayout.span,
       ),
       space: MintLayout.span,
@@ -152,10 +149,6 @@ export async function constructMintInstruction(
       mint.publicKey,
     ),
   );
-  instructions.push(
-    createMintToInstruction(mint.publicKey, token, payer, 1, []),
-  );
-
   const mintInstruction = createMintV2Instruction(accounts, args);
 
   const mintIndex = mintInstruction.keys.findIndex((key) =>
@@ -167,7 +160,6 @@ export async function constructMintInstruction(
   if (remainingAccounts) {
     mintInstruction.keys.push(...remainingAccounts);
   }
-
   instructions.push(mintInstruction);
 
   return instructions;
