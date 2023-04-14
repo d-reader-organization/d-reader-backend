@@ -48,3 +48,6 @@ export const USED_TRAIT = 'used';
 export const SIGNED_TRAIT = 'signed';
 export const DEFAULT_COMIC_ISSUE_USED = 'false';
 export const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
+
+export const LOW_VALUE = 127;
+export const HIGH_VALUE = 16383;

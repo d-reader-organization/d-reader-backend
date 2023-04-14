@@ -1,7 +1,8 @@
 import { sol } from '@metaplex-foundation/js';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import * as jdenticon from 'jdenticon';
 import { uploadFile } from '../aws/s3client';
+import { HIGH_VALUE, LOW_VALUE } from '../constants';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -54,4 +55,34 @@ export async function getRandomAvatar(address: string) {
   };
   const prefix = `wallets/${address}/`;
   return await uploadFile(prefix, file);
+}
+
+const compactHeader = (n: number) =>
+  n <= LOW_VALUE ? 1 : n <= HIGH_VALUE ? 2 : 3;
+const compactArraySize = (n: number, size: number) =>
+  compactHeader(n) + n * size;
+
+export function getComputeUnits(instructions: TransactionInstruction[]) {
+  const signers = new Set<string>();
+  const accounts = new Set<string>();
+
+  const size = instructions.reduce((acc, ix) => {
+    ix.keys.forEach(({ pubkey, isSigner }) => {
+      const pk = pubkey.toBase58();
+      if (isSigner) signers.add(pk);
+      accounts.add(pk);
+    });
+    accounts.add(ix.programId.toBase58());
+    const nIndexes = ix.keys.length;
+    const opaqueData = ix.data.length;
+
+    return (
+      acc +
+      1 + // PID index
+      compactArraySize(nIndexes, 1) +
+      compactArraySize(opaqueData, 1)
+    );
+  }, 0);
+
+  return 200000 + 100000 * instructions.length + 100 * size;
 }
