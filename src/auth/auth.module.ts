@@ -5,9 +5,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SecurityConfig, ThrottleConfig } from 'src/configs/config.interface';
+import { SecurityConfig, ThrottleConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { WalletService } from '../wallet/wallet.service';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, JwtStrategy],
+  providers: [AuthService, PasswordService, WalletService, JwtStrategy],
   exports: [AuthService, PasswordService, JwtStrategy],
 })
 export class AuthModule {}

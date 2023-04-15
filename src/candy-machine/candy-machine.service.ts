@@ -22,7 +22,6 @@ import {
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
-import { s3Client } from '../aws/s3client';
 import { ComicIssue } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction } from './instructions';
@@ -42,9 +41,9 @@ import {
   DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
-  D_PUBLISHER_SECONDARY_SALE_SHARE,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class CandyMachineService {
@@ -53,6 +52,7 @@ export class CandyMachineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
+    private readonly s3: s3Service,
   ) {
     const endpoint = heliusClusterApiUrl(
       process.env.HELIUS_API_KEY,
@@ -72,7 +72,7 @@ export class CandyMachineService {
 
     this.metaplex
       .use(keypairIdentity(treasuryKeypair))
-      .use(awsStorage(s3Client, process.env.AWS_BUCKET_NAME + '-metadata'));
+      .use(awsStorage(this.s3.client, this.s3.metadataBucket));
   }
 
   async findMintedNfts(candyMachineAddress: string) {
@@ -255,16 +255,7 @@ export class CandyMachineService {
           },
         ],
         properties: {
-          creators: [
-            {
-              address: this.metaplex.identity().publicKey.toBase58(),
-              share: D_PUBLISHER_SECONDARY_SALE_SHARE,
-            },
-            {
-              address: creatorAddress,
-              share: HUNDRED - D_PUBLISHER_SECONDARY_SALE_SHARE,
-            },
-          ],
+          creators: [{ address: creatorAddress, share: HUNDRED }],
           files: this.writeFiles(coverImage),
         },
         collection: {

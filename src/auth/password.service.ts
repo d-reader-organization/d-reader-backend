@@ -9,7 +9,6 @@ import { PrismaService } from 'nestjs-prisma';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
-import { getRandomAvatar } from 'src/utils/helpers';
 
 @Injectable()
 export class PasswordService {
@@ -22,7 +21,7 @@ export class PasswordService {
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },
-      create: { address, nonce, avatar: await getRandomAvatar(address) },
+      create: { address, nonce },
     });
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;

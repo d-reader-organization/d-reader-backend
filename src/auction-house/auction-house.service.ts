@@ -1,11 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Cluster,
-  Connection,
-  Keypair,
-  PublicKey,
-  Transaction,
-} from '@solana/web3.js';
+import { Cluster, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
   keypairIdentity,
@@ -22,7 +16,7 @@ import {
   constructListInstruction,
   constructPrivateBidInstruction,
 } from './instructions';
-import { heliusClusterApiUrl } from 'helius-sdk';
+import { Helius } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
@@ -37,15 +31,14 @@ import { solFromLamports } from '../utils/helpers';
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
-  private auctionHouseAddress: PublicKey;
+  private readonly auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    const endpoint = heliusClusterApiUrl(
+    const helius = new Helius(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    const connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(connection);
+    this.metaplex = new Metaplex(helius.connection);
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
 
     const treasuryWallet = AES.decrypt(

@@ -9,23 +9,18 @@ import {
   CreateCreatorFilesDto,
 } from '../creator/dto/create-creator.dto';
 import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
-import {
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  uploadFile,
-} from '../aws/s3client';
-import { isEmpty } from 'lodash';
 import { Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class CreatorService {
   constructor(
-    private prisma: PrismaService,
+    private readonly s3: s3Service,
+    private readonly prisma: PrismaService,
     private readonly walletCreatorService: WalletCreatorService,
   ) {}
 
@@ -52,9 +47,9 @@ export class CreatorService {
     let avatarKey: string, bannerKey: string, logoKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (avatar) avatarKey = await uploadFile(prefix, avatar);
-      if (banner) bannerKey = await uploadFile(prefix, banner);
-      if (logo) logoKey = await uploadFile(prefix, logo);
+      if (avatar) avatarKey = await this.s3.uploadFile(prefix, avatar);
+      if (banner) bannerKey = await this.s3.uploadFile(prefix, banner);
+      if (logo) logoKey = await this.s3.uploadFile(prefix, logo);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -137,7 +132,7 @@ export class CreatorService {
 
     const oldFileKey = creator[file.fieldname];
     const prefix = await this.getS3FilePrefix(slug);
-    const newFileKey = await uploadFile(prefix, file);
+    const newFileKey = await this.s3.uploadFile(prefix, file);
 
     try {
       creator = await this.prisma.creator.update({
@@ -145,12 +140,12 @@ export class CreatorService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await deleteS3Object({ Key: newFileKey });
+      await this.s3.deleteObject({ Key: newFileKey });
       throw new BadRequestException('Malformed file upload');
     }
 
     if (oldFileKey !== newFileKey) {
-      await deleteS3Object({ Key: oldFileKey });
+      await this.s3.deleteObject({ Key: oldFileKey });
     }
 
     return creator;
@@ -181,13 +176,8 @@ export class CreatorService {
   async remove(slug: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(slug);
-    const keys = await listS3FolderKeys({ Prefix: prefix });
-
-    if (!isEmpty(keys)) {
-      await deleteS3Objects({
-        Delete: { Objects: keys.map((Key) => ({ Key })) },
-      });
-    }
+    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
+    await this.s3.deleteObjects(keys);
 
     try {
       await this.prisma.creator.delete({ where: { slug } });

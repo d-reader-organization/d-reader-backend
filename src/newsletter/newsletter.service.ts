@@ -7,8 +7,8 @@ import { UpsertNewsletterDto } from './dto/upsert-newsletter.dto';
 @Injectable()
 export class NewsletterService {
   constructor(
-    private prisma: PrismaService,
-    private mailService: MailService,
+    private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
   ) {}
 
   async subscribe(

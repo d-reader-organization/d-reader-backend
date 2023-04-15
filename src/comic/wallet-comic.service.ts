@@ -6,7 +6,7 @@ import { PickByType } from '../types/shared';
 
 @Injectable()
 export class WalletComicService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async aggregateComicStats(slug: string): Promise<ComicStats> {
     const aggregate = this.prisma.walletComic.aggregate({

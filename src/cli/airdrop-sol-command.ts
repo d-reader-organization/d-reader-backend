@@ -30,10 +30,10 @@ export class AirdropSolCommand extends CommandRunner {
     const metaplex = new Metaplex(connection);
 
     try {
-      log(cb('🪂  Airdropping SOL'));
+      log(cb('🪂 Airdropping SOL'));
       await metaplex.rpc().airdrop(options.address, sol(options.dropAmount));
       await sleep(1000);
-      log(`✅  Airdropped ${cuy(options.dropAmount + ' Sol')} successfully!`);
+      log(`✅ Airdropped ${cuy(options.dropAmount + ' Sol')} successfully!`);
     } catch (e) {
       logErr(`Failed to drop ${options.dropAmount} Sol`);
       log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));

@@ -1,7 +1,5 @@
 import { sol } from '@metaplex-foundation/js';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import * as jdenticon from 'jdenticon';
-import { uploadFile } from 'src/aws/s3client';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -44,14 +42,4 @@ export const formatCurrency = (value?: number, currency = '') => {
   return currencyFormat.format(value) + suffix;
 };
 
-export async function getRandomAvatar(address: string) {
-  const buffer = jdenticon.toPng(address, 200);
-  const file: any = {
-    fieldname: 'avatar.png',
-    originalname: 'icon',
-    mimetype: 'image/png',
-    buffer,
-  };
-  const prefix = `wallets/${address}/`;
-  return await uploadFile(prefix, file);
-}
+export type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;

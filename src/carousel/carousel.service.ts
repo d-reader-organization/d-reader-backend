@@ -9,14 +9,17 @@ import {
   CreateCarouselSlideFilesDto,
 } from '../carousel/dto/create-carousel-slide.dto';
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
-import { deleteS3Object, uploadFile } from '../aws/s3client';
 import { CarouselSlide } from '@prisma/client';
 import { addDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class CarouselService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly s3: s3Service,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async create(
     createCarouselSlideDto: CreateCarouselSlideDto,
@@ -27,7 +30,7 @@ export class CarouselService {
     let imageKey: string;
     try {
       const prefix = await this.getS3FilePrefix();
-      imageKey = await uploadFile(prefix, image, uuidv4());
+      imageKey = await this.s3.uploadFile(prefix, image, uuidv4());
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -90,7 +93,7 @@ export class CarouselService {
     let carouselSlide = await this.findOne(id);
     const oldFileKey = carouselSlide[file.fieldname];
     const prefix = await this.getS3FilePrefix();
-    const newFileKey = await uploadFile(prefix, file, uuidv4());
+    const newFileKey = await this.s3.uploadFile(prefix, file, uuidv4());
 
     try {
       carouselSlide = await this.prisma.carouselSlide.update({
@@ -98,13 +101,13 @@ export class CarouselService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await deleteS3Object({ Key: newFileKey });
+      await this.s3.deleteObject({ Key: newFileKey });
       throw new BadRequestException('Malformed file upload');
     }
 
     // carousel slides use uuid for s3 keys so we will always
     // have to garbage collect the old file
-    await deleteS3Object({ Key: oldFileKey });
+    await this.s3.deleteObject({ Key: oldFileKey });
 
     return carouselSlide;
   }
