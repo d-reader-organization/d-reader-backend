@@ -143,6 +143,12 @@ export class HeliusService {
           },
         },
       });
+      this.websocketGateway.handleSale(
+        nft.collectionNft.comicIssueId,
+        nft.listing[0],
+      );
+      this.websocketGateway.handleWalletSale(nft.ownerAddress, nft.listing[0]);
+      this.websocketGateway.handleWalletBuy(nft.ownerAddress, nft);
     } catch (error) {
       console.log(error);
     }
@@ -159,6 +165,15 @@ export class HeliusService {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
       });
+      this.websocketGateway.handleCancleListing(
+        listing.nft.collectionNft.comicIssueId,
+        listing,
+      );
+      this,
+        this.websocketGateway.handleWalletCancleListing(
+          listing.nft.ownerAddress,
+          listing,
+        );
     } catch (error) {
       console.log(error);
     }
@@ -221,6 +236,15 @@ export class HeliusService {
           },
         },
       });
+
+      this.websocketGateway.handleListing(
+        nft.collectionNft.comicIssueId,
+        nft.listing[0],
+      );
+      this.websocketGateway.handleWalletListing(
+        nft.ownerAddress,
+        nft.listing[0],
+      );
     } catch (error) {
       console.log(error);
     }
@@ -235,7 +259,7 @@ export class HeliusService {
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
 
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: { address },
         data: { ownerAddress },
       });
@@ -265,6 +289,8 @@ export class HeliusService {
             canceledAt: new Date(enrichedTransaction.timestamp * 1000),
           },
         });
+        this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
+        this.websocketGateway.handleWalletNftSent(previousOwner, nft);
       }
     } catch (e) {
       console.log(e);
@@ -370,6 +396,7 @@ export class HeliusService {
       }
 
       this.websocketGateway.handleMintReceipt(receipt);
+      this.websocketGateway.handleWalletMint(receipt);
     } catch (e) {
       console.error(e);
     }
