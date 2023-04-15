@@ -1,7 +1,7 @@
 import { PublicKey } from '@metaplex-foundation/js';
 import { InstantBuyParams } from '../auction-house/dto/instant-buy-params.dto';
 import { BadRequestException } from '@nestjs/common';
-import { BuyArgs } from '../auction-house/dto/types/buyArgs';
+import { BuyArgs } from '../auction-house/dto/types/buy-args';
 
 export const validateAndFormatParams = (
   instantBuyParams: InstantBuyParams[],

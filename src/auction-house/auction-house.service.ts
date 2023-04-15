@@ -25,7 +25,7 @@ import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
 import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
-import { BuyArgs } from './dto/types/buyArgs';
+import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 
 @Injectable()
