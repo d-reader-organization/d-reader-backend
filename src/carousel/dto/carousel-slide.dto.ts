@@ -23,9 +23,6 @@ export class CarouselSlideDto {
   priority: number;
 
   @IsString()
-  link: string;
-
-  @IsString()
   @IsOptional()
   title?: string;
 
@@ -65,7 +62,6 @@ export async function toCarouselSlideDto(slide: CarouselSlide) {
     id: slide.id,
     image: await getReadUrl(slide.image),
     priority: slide.priority,
-    link: slide.link,
     title: slide.title,
     subtitle: slide.subtitle,
     isPublished: !!slide.publishedAt,

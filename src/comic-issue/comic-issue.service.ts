@@ -323,9 +323,11 @@ export class ComicIssueService {
 
     this.validatePrice(publishOnChainDto);
 
+    const { sellerFee, ...updatePayload } = publishOnChainDto;
+    const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
-      data: { publishedAt: new Date(), ...publishOnChainDto },
+      data: { publishedAt: new Date(), sellerFeeBasisPoints, ...updatePayload },
       include: { comic: { include: { creator: true } }, collectionNft: true },
     });
 
@@ -344,6 +346,7 @@ export class ComicIssueService {
           supply: comicIssue.supply,
           mintPrice: comicIssue.mintPrice,
           discountMintPrice: comicIssue.discountMintPrice,
+          sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         },
       });
       throw e;

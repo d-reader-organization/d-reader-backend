@@ -114,7 +114,7 @@ async function main() {
           title: 'Art of Niko - new episode',
           subtitle: 'release: March 26th, 10am UTC',
           priority: 1,
-          link: 'https://dreader.app/comics/niko-and-the-sword',
+          externalLink: 'https://dreader.app/comics/niko-and-the-sword',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -124,7 +124,7 @@ async function main() {
           title: 'Gooneytoons - AMA',
           subtitle: 'release: March 28th, 8am UTC',
           priority: 2,
-          link: 'https://dreader.app/comics/gooneytoons',
+          externalLink: 'https://dreader.app/comics/gooneytoons',
           publishedAt: subDays(new Date(), 1),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -134,7 +134,7 @@ async function main() {
           title: 'The Heist - Reveal',
           subtitle: 'release: April 7th, 10am UTC',
           priority: 3,
-          link: 'https://dreader.app/comics/the-heist',
+          externalLink: 'https://dreader.app/comics/the-heist',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -144,7 +144,7 @@ async function main() {
           title: 'Explore new worlds - Lupers',
           subtitle: 'release: April 14th, 10am UTC',
           priority: 4,
-          link: 'https://dreader.app/comics/lupers',
+          externalLink: 'https://dreader.app/comics/lupers',
           publishedAt: subDays(new Date(), 2),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -154,7 +154,7 @@ async function main() {
           title: 'The Narentines: Origin',
           subtitle: 'release: May 1st, 8am UTC',
           priority: 5,
-          link: 'https://dreader.app/comics/narentines',
+          externalLink: 'https://dreader.app/comics/narentines',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -2758,8 +2758,9 @@ async function main() {
     }
   }
 
-  // Initialize correct webhook address listeners
-  await heliusService.onModuleInit();
+  console.log(
+    "⚠️ Please make sure to run 'yarn sync-webhook' command in order to set Helius webhooks correctly",
+  );
 }
 
 main()

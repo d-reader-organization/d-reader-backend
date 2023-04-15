@@ -14,9 +14,6 @@ export class CreateCarouselSlideDto {
   priority: number;
 
   @IsString()
-  link: string;
-
-  @IsString()
   @IsOptional()
   @MaxLength(26)
   title?: string;

@@ -234,7 +234,6 @@ model CarouselSlide {
   title        String           @default("")
   subtitle     String           @default("")
   priority     Int
-  link         String
   comicIssueId Int?
   comicSlug    String?
   creatorSlug  String?
@@ -293,7 +292,7 @@ model WalletCreator {
 }
 
 model Metadata {
-  uri            String    @id
+  uri            String  @id
   nft            Nft[]
   collectionName String
   isUsed         Boolean
@@ -301,16 +300,16 @@ model Metadata {
 }
 
 model Listing {
-  id            Int      @id @default(autoincrement())
-  nftAddress    String
-  nft           Nft      @relation(fields: [nftAddress], references: [address])
-  price         Int
-  feePayer      String
-  signature     String
-  symbol        String
-  createdAt     DateTime
-  canceledAt    DateTime
-  soldAt        DateTime?
+  id         Int       @id @default(autoincrement())
+  nftAddress String
+  nft        Nft       @relation(fields: [nftAddress], references: [address])
+  price      Int
+  feePayer   String
+  signature  String
+  symbol     String
+  createdAt  DateTime
+  canceledAt DateTime
+  soldAt     DateTime?
 
   @@unique([nftAddress, canceledAt])
 }
