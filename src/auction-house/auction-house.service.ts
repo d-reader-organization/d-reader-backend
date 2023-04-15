@@ -10,7 +10,6 @@ import {
   AuctionHouse,
   keypairIdentity,
   Metaplex,
-  sol,
   token,
   toMetadata,
   toMetadataAccount,

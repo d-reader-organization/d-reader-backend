@@ -45,9 +45,7 @@ import {
   D_PUBLISHER_SECONDARY_SALE_SHARE,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
-import { candyMachineCreateObject } from './dto/types/candyMachineCreateObject';
 import { createCandyMachine } from './instructions';
-import { CandyMachineCreateData } from './dto/types/candyMachineData';
 
 @Injectable()
 export class CandyMachineService {
@@ -192,38 +190,34 @@ export class CandyMachineService {
     }
     const candyMachineKey = Keypair.generate();
     const authorityKey = this.metaplex.identity();
-    const candyMachineObject: candyMachineCreateObject = {
-      candyMachine: {
-        address: candyMachineKey.publicKey,
-        authority: authorityKey.publicKey,
-      },
-      collection: {
-        updateAuthority: authorityKey.publicKey,
-        mint: collectionNftAddress,
-      },
-      payer: authorityKey.publicKey,
-    };
-
     const comicCreator = new PublicKey(creatorAddress);
-    const candyMachineData: CandyMachineCreateData = {
-      creators: [{ address: comicCreator, share: HUNDRED }],
-      itemsAvailable: toBigNumber(comicIssue.supply),
-      sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-      maxEditionSupply: toBigNumber(0),
-      symbol: D_PUBLISHER_SYMBOL,
-      isMutable: true,
-    };
-    const guards = {
-      solPayment: {
-        amount: solFromLamports(comicIssue.mintPrice),
-        destination: this.metaplex.identity().publicKey,
-      },
-    };
     const createCandyMachineInstruction = await createCandyMachine(
       this.metaplex,
-      candyMachineObject,
-      candyMachineData,
-      guards,
+      {
+        candyMachine: {
+          address: candyMachineKey.publicKey,
+          authority: authorityKey.publicKey,
+        },
+        collection: {
+          updateAuthority: authorityKey.publicKey,
+          mint: collectionNftAddress,
+        },
+        payer: authorityKey.publicKey,
+      },
+      {
+        creators: [{ address: comicCreator, share: HUNDRED }],
+        itemsAvailable: toBigNumber(comicIssue.supply),
+        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
+        maxEditionSupply: toBigNumber(0),
+        symbol: D_PUBLISHER_SYMBOL,
+        isMutable: true,
+      },
+      {
+        solPayment: {
+          amount: solFromLamports(comicIssue.mintPrice),
+          destination: this.metaplex.identity().publicKey,
+        },
+      },
     );
     const createCandyMachineTransaction = new Transaction().add(
       ...createCandyMachineInstruction,

@@ -1,7 +1,5 @@
 import { sol } from '@metaplex-foundation/js';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import * as jdenticon from 'jdenticon';
-import { uploadFile } from '../aws/s3client';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
