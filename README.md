@@ -23,29 +23,29 @@ To test webhooks we recommend creating a reverse proxy to your local machine on 
 Install dependencies and copy the `.env.example` content into `.env`:
 
 ```bash
-npm install & cp .env.example .env
+yarn add & cp .env.example .env
 ```
 
 Next run the command for generating env variables and replace placeholder values from `.env` as per instructions in the terminal. Fill in any remaining variables by following notes from the [.env section](#🌱-env):
 
 ```bash
-npm run generate-env
+yarn generate-env
 ```
 
 Then run migrations and seed the database:
 
 ```bash
-npm run migrate:dev
+yarn migrate:dev
 ```
 
 ```bash
-npm run seed
+yarn seed
 ```
 
 Once steps above completed, run the following command to start the project in watch mode:
 
 ```bash
-npm run start:dev
+yarn start:dev
 ```
 
 Open [http://localhost:3005](http://localhost:3005) with your browser to see the result. API documentation is available on the [/api](http://localhost:3005/api) route
@@ -53,12 +53,12 @@ Open [http://localhost:3005](http://localhost:3005) with your browser to see the
 ## ⚙️ Setup
 For airdropping Sol to a specified wallet use the following command
 ```bash
-npm run airdrop-sol
+yarn airdrop-sol
 ```
 
 To authorize your treasury wallet (sign a message and generate a JWT token):
 ```bash
-npm run authorize-wallet
+yarn authorize-wallet
 ```
 
 ## 🌱 .env

@@ -5,10 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
-import { deleteS3Objects, uploadFile } from '../aws/s3client';
 import { Prisma } from '@prisma/client';
-import { isEmpty } from 'lodash';
 import { ComicPage } from '@prisma/client';
+import { s3Service } from '../aws/s3.service';
 
 export type ComicPageWhereInput = {
   comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
@@ -17,7 +16,10 @@ export type ComicPageWhereInput = {
 
 @Injectable()
 export class ComicPageService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly s3: s3Service,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
     const comicPagesData = await Promise.all(
@@ -28,7 +30,7 @@ export class ComicPageService {
         let imageKey: string;
         try {
           const prefix = await this.getS3FilePrefix(pageNumber, comicIssueId);
-          imageKey = await uploadFile(prefix, image);
+          imageKey = await this.s3.uploadFile(prefix, image);
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
@@ -82,12 +84,7 @@ export class ComicPageService {
 
     // Remove s3 assets
     const keys = pagesToDelete.map((page) => page.image);
-
-    if (!isEmpty(keys)) {
-      await deleteS3Objects({
-        Delete: { Objects: keys.map((Key) => ({ Key })) },
-      });
-    }
+    await this.s3.deleteObjects(keys);
 
     try {
       await this.prisma.comicPage.deleteMany({ where });

@@ -12,10 +12,6 @@ export class PrivateBidParams {
   @IsOptional()
   seller?: string;
 
-  @IsSolanaAddress()
-  @IsOptional()
-  tokenAccount?: string;
-
   @IsBooleanString()
   @IsOptional()
   printReceipt?: string;

@@ -32,22 +32,22 @@ export class AuthorizeWalletCommand extends CommandRunner {
       process.env.TREASURY_SECRET,
     );
 
-    const keypair = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(wallet.toString(Utf8))),
-    );
-    const address = keypair.publicKey.toBase58();
-    const otp = await this.passwordService.generateOneTimePassword(address);
-    const messageBytes = decodeUTF8(otp);
-    const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
-    const encoding = bs58.encode(signature);
-    const authorization = await this.authService.connect(address, encoding);
-
-    log(cg('✅  Authorization successful!'));
-    log(cg('👛  Wallet: ') + address);
-    log(cb('🔐  JWT token: '), authorization.accessToken);
     try {
+      const keypair = Keypair.fromSecretKey(
+        Buffer.from(JSON.parse(wallet.toString(Utf8))),
+      );
+      const address = keypair.publicKey.toBase58();
+      const otp = await this.passwordService.generateOneTimePassword(address);
+      const messageBytes = decodeUTF8(otp);
+      const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
+      const encoding = bs58.encode(signature);
+      const authorization = await this.authService.connect(address, encoding);
+
+      log(cg('✅ Authorization successful!'));
+      log(cg('👛  Wallet: ') + address);
+      log(cb('🔐  JWT token: '), authorization.accessToken);
     } catch (e) {
-      logErr('Failed to authorize the walet');
+      logErr('Failed to authorize the wallet\n' + e);
     }
   }
 }

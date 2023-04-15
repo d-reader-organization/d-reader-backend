@@ -34,7 +34,6 @@ export const constructPrivateBidInstruction = async (
   tokens: SplTokenAmount,
   printReceipt: boolean,
   seller?: PublicKey,
-  associatedTokenAccount?: PublicKey,
 ): Promise<TransactionInstruction[]> => {
   const priceBasisPoint = priceObject?.basisPoints ?? 0;
   const price = auctionHouse.isNative
@@ -51,14 +50,12 @@ export const constructPrivateBidInstruction = async (
     buyer,
   });
 
-  const tokenAccount =
-    associatedTokenAccount ??
-    (seller
-      ? metaplex.tokens().pdas().associatedTokenAccount({
-          mint: mintAccount,
-          owner: seller,
-        })
-      : null);
+  const tokenAccount = seller
+    ? metaplex
+        .tokens()
+        .pdas()
+        .associatedTokenAccount({ mint: mintAccount, owner: seller })
+    : null;
 
   const buyerTokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
     mint: mintAccount,

@@ -1,12 +1,4 @@
 import { addDays, subDays } from 'date-fns';
-import { isEmpty } from 'lodash';
-import {
-  Bucket,
-  copyS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  SeedBucket,
-} from '../src/aws/s3client';
 import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
@@ -25,19 +17,23 @@ import { WebSocketGateway } from '../src/websockets/websocket.gateway';
 import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
 import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
-import { TransactionType, WebhookType } from 'helius-sdk';
+import { s3Service } from '../src/aws/s3.service';
+import { Metaplex, PublicKey, sol } from '@metaplex-foundation/js';
 
+const s3 = new s3Service();
 const prisma = new PrismaClient();
 const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
 const heliusService = new HeliusService(prismaService, webSocketGateway);
-const comicPageService = new ComicPageService(prismaService);
+const comicPageService = new ComicPageService(s3, prismaService);
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,
+  s3,
 );
 const walletComicIssueService = new WalletComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(
+  s3,
   prismaService,
   comicPageService,
   candyMachineService,
@@ -64,6 +60,12 @@ const generatePages = (
 };
 
 async function main() {
+  if (!process.env.WEBHOOK_ID) {
+    throw new Error(
+      'Webhook ID necessary in order to execute the seed command',
+    );
+  }
+
   console.log('⛏️ Emptying the database...');
   await prisma.candyMachineReceipt.deleteMany();
   await prisma.nft.deleteMany();
@@ -81,30 +83,27 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
+  let treasuryPubKey = PublicKey.default;
   const skipS3Seed = true;
   if (!skipS3Seed) {
-    console.log(`⛏️ Emptying '${Bucket}' s3 bucket...`);
-    const keysToDelete = await listS3FolderKeys({ Prefix: '' });
-    if (!isEmpty(keysToDelete)) {
-      await deleteS3Objects({
-        Delete: { Objects: keysToDelete.map((Key) => ({ Key })) },
-      });
-    }
-    console.log(`✅ Emptied '${Bucket}' s3 bucket!`);
+    console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
+    const keysToDelete = await s3.listFolderKeys({ Prefix: '' });
+    await s3.deleteObjects(keysToDelete);
+    console.log(`✅ Emptied '${s3.bucket}' s3 bucket!`);
 
-    console.log(`⛏️ Cloning files from '${SeedBucket}' bucket...`);
+    console.log(`⛏️ Cloning files from '${s3.seedBucket}' bucket...`);
 
-    const seedFileKeys = await listS3FolderKeys({
-      Bucket: SeedBucket,
+    const seedFileKeys = await s3.listFolderKeys({
+      Bucket: s3.seedBucket,
       Prefix: '',
     });
 
     for (const seedFileKey of seedFileKeys) {
-      const copySource = `/${SeedBucket}/${seedFileKey}`;
-      await copyS3Object({ CopySource: copySource, Key: seedFileKey });
+      const copySource = `/${s3.seedBucket}/${seedFileKey}`;
+      await s3.copyObject({ CopySource: copySource, Key: seedFileKey });
       console.log(`🪧 Copied seed file from ${copySource}`);
     }
-    console.log(`✅ Cloned files from '${SeedBucket}' s3 bucket!`);
+    console.log(`✅ Cloned files from '${s3.seedBucket}' s3 bucket!`);
   }
 
   try {
@@ -115,7 +114,7 @@ async function main() {
           title: 'Art of Niko - new episode',
           subtitle: 'release: March 26th, 10am UTC',
           priority: 1,
-          link: 'https://dreader.app/comics/niko-and-the-sword',
+          externalLink: 'https://dreader.app/comics/niko-and-the-sword',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -125,7 +124,7 @@ async function main() {
           title: 'Gooneytoons - AMA',
           subtitle: 'release: March 28th, 8am UTC',
           priority: 2,
-          link: 'https://dreader.app/comics/gooneytoons',
+          externalLink: 'https://dreader.app/comics/gooneytoons',
           publishedAt: subDays(new Date(), 1),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -135,7 +134,7 @@ async function main() {
           title: 'The Heist - Reveal',
           subtitle: 'release: April 7th, 10am UTC',
           priority: 3,
-          link: 'https://dreader.app/comics/the-heist',
+          externalLink: 'https://dreader.app/comics/the-heist',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -145,7 +144,7 @@ async function main() {
           title: 'Explore new worlds - Lupers',
           subtitle: 'release: April 14th, 10am UTC',
           priority: 4,
-          link: 'https://dreader.app/comics/lupers',
+          externalLink: 'https://dreader.app/comics/lupers',
           publishedAt: subDays(new Date(), 2),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -155,7 +154,7 @@ async function main() {
           title: 'The Narentines: Origin',
           subtitle: 'release: May 1st, 8am UTC',
           priority: 5,
-          link: 'https://dreader.app/comics/narentines',
+          externalLink: 'https://dreader.app/comics/narentines',
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
           location: CarouselLocation.Home,
@@ -285,6 +284,7 @@ async function main() {
     const keypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
+    treasuryPubKey = keypair.publicKey;
     const address = keypair.publicKey.toBase58();
 
     await prisma.wallet.create({
@@ -2719,28 +2719,21 @@ async function main() {
     );
   }
 
-  const webhooks = await heliusService.findAll();
-  let webhookURL = 'https://replace.me';
-  for (const webhook of webhooks) {
-    webhookURL = webhook.webhookURL;
-    await heliusService.deleteWebhook(webhook.webhookID);
-  }
-
   await sleep(2000);
 
-  const placeholderAccount = '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD';
-  await heliusService.createWebhook({
-    accountAddresses: [placeholderAccount],
-    transactionTypes: [TransactionType.ANY],
-    webhookURL,
-    webhookType: 'enhancedDevnet' as WebhookType,
-    authHeader: undefined,
-  });
-
   const comicIssues = await prisma.comicIssue.findMany();
+  const metaplex = new Metaplex(heliusService.helius.connection);
 
   let i = 1;
   for (const comicIssue of comicIssues) {
+    if (i % 10 === 0) {
+      try {
+        await metaplex.rpc().airdrop(treasuryPubKey, sol(1));
+      } catch (e) {
+        console.log('Failed to airdrop 1 sol to the treasury wallet');
+      }
+    }
+
     if (
       (comicIssue.comicSlug === 'the-dark-portal' &&
         comicIssue.slug === 'concept-art') ||
@@ -2759,12 +2752,15 @@ async function main() {
         supply: getRandomInt(2, 6) * 10,
         mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL,
         discountMintPrice: 0.05 * LAMPORTS_PER_SOL,
+        sellerFee: 0.05, // 5%
       });
       i++;
     }
   }
 
-  await heliusService.removeSubscription(placeholderAccount);
+  console.log(
+    "⚠️ Please make sure to run 'yarn sync-webhook' command in order to set Helius webhooks correctly",
+  );
 }
 
 main()

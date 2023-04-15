@@ -6,11 +6,10 @@ import {
   Param,
   Delete,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { EnrichedTransaction } from 'helius-sdk';
-import { CreateHeliusCollectionWebhookDto } from './dto/create-helius-collection-webhook.dto';
-import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import {
   HeliusWebhookDto,
   toHeliusWebhookDto,
@@ -18,33 +17,17 @@ import {
 } from './dto/helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
+import { Roles, RolesGuard } from 'src/guards/roles.guard';
+import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { WebhookGuard } from 'src/guards/webhook.guard';
+import { Role } from '@prisma/client';
 
-// TODO: add authHeaders property handling for webhooks
-// add SuperAdmin and Admin RoleGuards in helius.guard.ts
+@UseGuards(RestAuthGuard, RolesGuard)
+@ApiBearerAuth('JWT-auth')
 @ApiTags('Helius')
 @Controller('helius')
 export class HeliusController {
   constructor(private readonly heliusService: HeliusService) {}
-
-  /* Create a new Helius webhook */
-  @Post('create')
-  async create(
-    @Body() createWebhookDto: CreateHeliusWebhookDto,
-  ): Promise<HeliusWebhookDto> {
-    const webhook = await this.heliusService.createWebhook(createWebhookDto);
-    return toHeliusWebhookDto(webhook);
-  }
-
-  /* Create a new Helius collection webhook */
-  @Post('create-collection')
-  async createCollectionWebhook(
-    @Body() createWebhookDto: CreateHeliusCollectionWebhookDto,
-  ): Promise<HeliusWebhookDto> {
-    const webhook = await this.heliusService.createCollectionWebhook(
-      createWebhookDto,
-    );
-    return toHeliusWebhookDto(webhook);
-  }
 
   /* Get all webhooks */
   @Get('get')
@@ -53,21 +36,15 @@ export class HeliusController {
     return toHeliusWebhookDtoArray(webhooks);
   }
 
-  /* Get first webhook */
-  @Get('get/first')
-  async findFirst(): Promise<HeliusWebhookDto> {
-    const webhook = await this.heliusService.findFirst();
-    return toHeliusWebhookDto(webhook);
-  }
-
-  /* Get specific webhook by unique id */
-  @Get('get/:id')
-  async findOne(@Param('id') id: string): Promise<UpdateHeliusWebhookDto> {
-    const webhook = await this.heliusService.findOne(id);
+  /* Get main webhook by unique id */
+  @Get('get-main')
+  async findOne(): Promise<UpdateHeliusWebhookDto> {
+    const webhook = await this.heliusService.findOne();
     return toHeliusWebhookDto(webhook);
   }
 
   /* Update specific webhook */
+  @Roles(Role.Superadmin, Role.Admin)
   @Patch('update/:id')
   async updateWebhook(
     @Param('id') id: string,
@@ -81,12 +58,14 @@ export class HeliusController {
   }
 
   /* Receive data from webhooks */
+  @UseGuards(WebhookGuard)
   @Post('handle')
   async handle(@Body() enrichedTransactions: EnrichedTransaction[]) {
     await this.heliusService.handleWebhookEvent(enrichedTransactions);
   }
 
   /* Delete specific webhook */
+  @Roles(Role.Superadmin, Role.Admin)
   @Delete('delete/:id')
   async remove(@Param('id') id: string): Promise<boolean> {
     return await this.heliusService.deleteWebhook(id);

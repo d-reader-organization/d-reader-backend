@@ -18,7 +18,6 @@ export class PasswordService {
     const nonce = uuidv4();
 
     validateEd25519Address(address);
-
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },

@@ -10,12 +10,6 @@ import {
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
-import {
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  uploadFile,
-} from '../aws/s3client';
 import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
@@ -25,10 +19,12 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class ComicIssueService {
   constructor(
+    private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
     private readonly candyMachineService: CandyMachineService,
@@ -83,11 +79,12 @@ export class ComicIssueService {
       usedSignedCoverKey: string;
     try {
       const prefix = await this.getS3FilePrefix(comicIssue.id);
-      if (cover) coverKey = await uploadFile(prefix, cover);
-      if (signedCover) signedCoverKey = await uploadFile(prefix, signedCover);
-      if (usedCover) usedCoverKey = await uploadFile(prefix, usedCover);
+      if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
+      if (signedCover)
+        signedCoverKey = await this.s3.uploadFile(prefix, signedCover);
+      if (usedCover) usedCoverKey = await this.s3.uploadFile(prefix, usedCover);
       if (usedSignedCover)
-        usedSignedCoverKey = await uploadFile(prefix, usedSignedCover);
+        usedSignedCoverKey = await this.s3.uploadFile(prefix, usedSignedCover);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -281,7 +278,7 @@ export class ComicIssueService {
 
     const oldFileKey = comicIssue[file.fieldname];
     const prefix = await this.getS3FilePrefix(id);
-    const newFileKey = await uploadFile(prefix, file);
+    const newFileKey = await this.s3.uploadFile(prefix, file);
 
     try {
       comicIssue = await this.prisma.comicIssue.update({
@@ -290,14 +287,14 @@ export class ComicIssueService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await deleteS3Object({ Key: newFileKey });
+      await this.s3.deleteObject({ Key: newFileKey });
       throw new BadRequestException(
         'Malformed file upload or Comic issue already published',
       );
     }
 
     if (oldFileKey !== newFileKey) {
-      await deleteS3Object({ Key: oldFileKey });
+      await this.s3.deleteObject({ Key: oldFileKey });
     }
 
     return comicIssue;
@@ -317,13 +314,20 @@ export class ComicIssueService {
       throw new BadRequestException('Comic issue already on chain');
     } else if (publishOnChainDto.supply < 1) {
       throw new BadRequestException('Supply must be greater than 0');
+    } else if (
+      publishOnChainDto.sellerFee <= 0 ||
+      publishOnChainDto.sellerFee >= 1
+    ) {
+      throw new BadRequestException('Seller fee must be in range of 0-100%');
     }
 
     this.validatePrice(publishOnChainDto);
 
+    const { sellerFee, ...updatePayload } = publishOnChainDto;
+    const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
-      data: { publishedAt: new Date(), ...publishOnChainDto },
+      data: { publishedAt: new Date(), sellerFeeBasisPoints, ...updatePayload },
       include: { comic: { include: { creator: true } }, collectionNft: true },
     });
 
@@ -342,6 +346,7 @@ export class ComicIssueService {
           supply: comicIssue.supply,
           mintPrice: comicIssue.mintPrice,
           discountMintPrice: comicIssue.discountMintPrice,
+          sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         },
       });
       throw e;
@@ -421,13 +426,8 @@ export class ComicIssueService {
   async remove(id: number) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(id);
-    const keys = await listS3FolderKeys({ Prefix: prefix });
-
-    if (!isEmpty(keys)) {
-      await deleteS3Objects({
-        Delete: { Objects: keys.map((Key) => ({ Key })) },
-      });
-    }
+    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
+    await this.s3.deleteObjects(keys);
 
     try {
       await this.prisma.comicIssue.delete({ where: { id, publishedAt: null } });

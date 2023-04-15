@@ -9,21 +9,18 @@ import {
   CreateGenreFilesDto,
 } from '../genre/dto/create-genre.dto';
 import { UpdateGenreDto } from '../genre/dto/update-genre.dto';
-import {
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  uploadFile,
-} from '../aws/s3client';
-import { isEmpty } from 'lodash';
 import { Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { GenreFilterParams } from './dto/genre-filter-params.dto';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class GenreService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly s3: s3Service,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async create(
     createGenreDto: CreateGenreDto,
@@ -45,7 +42,7 @@ export class GenreService {
     let iconKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (icon) iconKey = await uploadFile(prefix, icon);
+      if (icon) iconKey = await this.s3.uploadFile(prefix, icon);
     } catch {
       await this.prisma.genre.delete({ where: { slug } });
       throw new BadRequestException('Malformed file upload');
@@ -97,7 +94,7 @@ export class GenreService {
     let genre = await this.findOne(slug);
     const oldFileKey = genre[file.fieldname];
     const prefix = await this.getS3FilePrefix(slug);
-    const newFileKey = await uploadFile(prefix, file);
+    const newFileKey = await this.s3.uploadFile(prefix, file);
 
     try {
       genre = await this.prisma.genre.update({
@@ -105,12 +102,12 @@ export class GenreService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await deleteS3Object({ Key: newFileKey });
+      await this.s3.deleteObject({ Key: newFileKey });
       throw new BadRequestException('Malformed file upload');
     }
 
     if (oldFileKey !== newFileKey) {
-      await deleteS3Object({ Key: oldFileKey });
+      await this.s3.deleteObject({ Key: oldFileKey });
     }
 
     return genre;
@@ -141,13 +138,8 @@ export class GenreService {
   async remove(slug: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(slug);
-    const keys = await listS3FolderKeys({ Prefix: prefix });
-
-    if (!isEmpty(keys)) {
-      await deleteS3Objects({
-        Delete: { Objects: keys.map((Key) => ({ Key })) },
-      });
-    }
+    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
+    await this.s3.deleteObjects(keys);
 
     try {
       await this.prisma.genre.delete({ where: { slug } });

@@ -7,7 +7,7 @@ import { ComicIssue } from '@prisma/client';
 
 @Injectable()
 export class WalletComicIssueService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async aggregateComicIssueStats(
     issue: ComicIssue & { collectionNft: { address: string } },
@@ -93,7 +93,6 @@ export class WalletComicIssueService {
     if (activeCandyMachine) return activeCandyMachine.baseMintPrice;
 
     // if there is no active candy machine, look for cheapest price on the marketplace
-    // TODO: double check this
     const cheapestItem = await this.prisma.listing.findFirst({
       where: {
         nft: { collectionNft: { comicIssueId: issue.id } },

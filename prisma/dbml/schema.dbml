@@ -208,7 +208,10 @@ Table CarouselSlide {
   title String [not null, default: '']
   subtitle String [not null, default: '']
   priority Int [not null]
-  link String [not null]
+  comicIssueId Int
+  comicSlug String
+  creatorSlug String
+  externalLink String
   publishedAt DateTime [default: `now()`, not null]
   expiredAt DateTime [not null]
   location CarouselLocation [not null, default: 'Home']
