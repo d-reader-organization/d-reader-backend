@@ -17,9 +17,9 @@ import {
 } from './dto/helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import { WebhookGuard } from 'src/guards/webhook.guard';
+import { Roles, RolesGuard } from '../../guards/roles.guard';
+import { RestAuthGuard } from '../../guards/rest-auth.guard';
+import { WebhookGuard } from '../../guards/webhook.guard';
 import { Role } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, RolesGuard)

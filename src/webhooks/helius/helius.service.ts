@@ -126,8 +126,17 @@ export class HeliusService {
         throw new Error('Sale transaction failed to finalize');
       }
       const nftAddress = transaction.events.nft.nfts[0].mint;
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: { address: nftAddress },
+        include: {
+          collectionNft: true,
+          listing: {
+            where: {
+              nftAddress,
+              canceledAt: new Date(transaction.timestamp * 1000),
+            },
+          },
+        },
         data: {
           ownerAddress: transaction.tokenTransfers[0].toUserAccount,
           listing: {
@@ -157,10 +166,11 @@ export class HeliusService {
   private async handleCancelListing(transaction: EnrichedTransaction) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
-      await this.prisma.listing.update({
+      const listing = await this.prisma.listing.update({
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
         },
+        include: { nft: { include: { collectionNft: true } } },
         data: {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
@@ -208,9 +218,13 @@ export class HeliusService {
         );
       }
 
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: {
           address: mint,
+        },
+        include: {
+          collectionNft: true,
+          listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
         },
         data: {
           listing: {

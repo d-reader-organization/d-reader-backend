@@ -49,6 +49,7 @@ const compactHeader = (n: number) =>
 const compactArraySize = (n: number, size: number) =>
   compactHeader(n) + n * size;
 
+// need more research for better calculation of computeUnits
 export function getComputeUnits(instructions: TransactionInstruction[]) {
   const signers = new Set<string>();
   const accounts = new Set<string>();
@@ -64,10 +65,7 @@ export function getComputeUnits(instructions: TransactionInstruction[]) {
     const opaqueData = ix.data.length;
 
     return (
-      acc +
-      1 + // PID index
-      compactArraySize(nIndexes, 1) +
-      compactArraySize(opaqueData, 1)
+      1 + acc + compactArraySize(nIndexes, 1) + compactArraySize(opaqueData, 1)
     );
   }, 0);
 
