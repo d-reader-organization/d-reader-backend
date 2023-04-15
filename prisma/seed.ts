@@ -67,6 +67,7 @@ async function main() {
   }
 
   console.log('⛏️ Emptying the database...');
+  await prisma.listing.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
   await prisma.nft.deleteMany();
   await prisma.candyMachine.deleteMany();
