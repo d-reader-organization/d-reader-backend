@@ -1,16 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Cluster,
-  Connection,
-  Keypair,
-  PublicKey,
-  Transaction,
-} from '@solana/web3.js';
+import { Cluster, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
   keypairIdentity,
   Metaplex,
-  sol,
   token,
   toMetadata,
   toMetadataAccount,
@@ -23,7 +16,7 @@ import {
   constructListInstruction,
   constructPrivateBidInstruction,
 } from './instructions';
-import { heliusClusterApiUrl } from 'helius-sdk';
+import { Helius } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
@@ -32,20 +25,20 @@ import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
 import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
+import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
-  private auctionHouseAddress: PublicKey;
+  private readonly auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    const endpoint = heliusClusterApiUrl(
+    const helius = new Helius(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    const connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(connection);
+    this.metaplex = new Metaplex(helius.connection);
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
 
     const treasuryWallet = AES.decrypt(
@@ -116,14 +109,23 @@ export class AuctionHouseService {
     }
   }
 
-  async constructInstantBuyTransaction(
+  async constructMultipleBuys(
     buyer: PublicKey,
-    mintAccount: PublicKey,
-    price: number,
-    seller?: PublicKey,
-    tokenAccount?: PublicKey,
-  ) {
+    buyArgs: BuyArgs[],
+  ): Promise<string[]> {
     try {
+      const transactions = buyArgs.map((args) => {
+        return this.constructInstantBuyTransaction(buyer, args);
+      });
+      return await Promise.all(transactions);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
+    try {
+      const { mintAccount, seller, price } = buyArgs;
       const listingModel = await this.prisma.listing.findUnique({
         where: {
           nftAddress_canceledAt: {
@@ -149,7 +151,6 @@ export class AuctionHouseService {
         token(1),
         false,
         seller,
-        tokenAccount,
       );
       const listing = await this.toListing(auctionHouse, listingModel);
       const bid = this.toBid(
@@ -249,7 +250,6 @@ export class AuctionHouseService {
         token(1),
         printReceipt,
         seller,
-        tokenAccount,
       );
       const latestBlockhash =
         await this.metaplex.connection.getLatestBlockhash();
@@ -345,16 +345,33 @@ export class AuctionHouseService {
     }
   }
 
-  async findCollectionStats(
-    comicIssueId: number,
-  ): Promise<CollectonMarketplaceStats> {
-    const aggregate = this.prisma.listing.aggregate({
+  async getTotalVolume(comicIssueId: number) {
+    const sellAggregate = this.prisma.listing.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
         soldAt: { not: null },
       },
       _sum: { price: true },
     });
+
+    const mintAggregate = this.prisma.candyMachineReceipt.aggregate({
+      where: {
+        nft: { collectionNft: { comicIssueId } },
+      },
+      _sum: { price: true },
+    });
+
+    const [sellVolume, mintVolume] = await Promise.all([
+      sellAggregate,
+      mintAggregate,
+    ]);
+    return (sellVolume._sum?.price || 0) + (mintVolume._sum?.price || 0);
+  }
+
+  async findCollectionStats(
+    comicIssueId: number,
+  ): Promise<CollectonMarketplaceStats> {
+    const aggregate = this.getTotalVolume(comicIssueId);
     const countListed = this.prisma.listing.count({
       where: {
         nft: { collectionNft: { comicIssueId } },
@@ -376,7 +393,7 @@ export class AuctionHouseService {
         getCheapestItem,
       ]);
       return {
-        totalVolume: aggregations._sum?.price || 0,
+        totalVolume: aggregations,
         itemsListed: itemsListed || 0,
         floorPrice: cheapestItem?.price || 0,
       };

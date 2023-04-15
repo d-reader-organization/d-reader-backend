@@ -41,3 +41,5 @@ export const formatCurrency = (value?: number, currency = '') => {
   if (!value) return '-.--' + suffix;
   return currencyFormat.format(value) + suffix;
 };
+
+export type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;

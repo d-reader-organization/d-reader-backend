@@ -43,17 +43,22 @@ export class GenerateEnvironmentCommand extends CommandRunner {
 
     if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
       try {
-        log(cb('🪂  Airdropping SOL'));
+        log(cb('🪂 Airdropping SOL'));
         await metaplex.rpc().airdrop(treasury.keypair.publicKey, sol(1));
         await sleep(2000);
-        log(`✅  Airdropped ${cuy('1 Sol')} to the treasury...`);
+        log(`✅ Airdropped ${cuy('1 Sol')} to the treasury...`);
       } catch (e) {
         logErr('Failed to airdrop Sol to the treasury!');
         log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
       }
     }
 
-    const auctionHouseAddress = await this.createAuctionHouse(metaplex);
+    let auctionHouseAddress = 'REPLACE_THIS';
+    // on mainnet we cannot airdrop sol and thus create the Auction House
+    if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
+      auctionHouseAddress = await this.createAuctionHouse(metaplex);
+    }
+
     const treasurySecretKey = `[${treasury.keypair.secretKey.toString()}]`;
     const signMessagePrompt =
       'Sign this message for authenticating with your wallet: ';
@@ -68,11 +73,26 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     logEnv('JWT_ACCESS_SECRET', generateSecret(42));
     logEnv('JWT_REFRESH_SECRET', generateSecret(42));
     logEnv('SOLANA_CLUSTER', metaplex.cluster);
-    logEnv('HELIUS_API_KEY', options.heliusApiKey);
-    logEnv('SIGN_MESSAGE', signMessagePrompt);
     logEnv('TREASURY_PRIVATE_KEY', treasury.encryptedPrivateKey);
     logEnv('TREASURY_SECRET', treasury.secret);
     logEnv('AUCTION_HOUSE_ADDRESS', auctionHouseAddress);
+    logEnv('SIGN_MESSAGE', signMessagePrompt);
+    logEnv('HELIUS_API_KEY', options.heliusApiKey);
+    logEnv('WEBHOOK_ID', 'REPLACE_THIS');
+
+    if (metaplex.cluster === ClusterEnum.MainnetBeta) {
+      logErr(
+        `Please run the ${cg(
+          "'yarn create-ah'",
+        )} command in order to create an auction house.\nMake sure to top up the treasury wallet with a small amount of Sol`,
+      );
+    }
+
+    log(
+      `\n⚠️  Don't forget to run the ${cg(
+        "'yarn sync-webhook'",
+      )} command to create a new webhook`,
+    );
 
     log(cg('\n💻 Happy hacking! \n'));
     return;
@@ -101,10 +121,10 @@ export class GenerateEnvironmentCommand extends CommandRunner {
 
       if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
         try {
-          log(cb('🪂  Airdropping SOL'));
+          log(cb('🪂 Airdropping SOL'));
           await sleep(8000);
           await metaplex.rpc().airdrop(auctionHouse.address, sol(1));
-          log(`✅  Airdropped ${cuy('1 Sol')} to the auction house...`);
+          log(`✅ Airdropped ${cuy('1 Sol')} to the auction house...`);
         } catch (e) {
           logErr('Failed to airdrop Sol to the auction house!');
           log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));

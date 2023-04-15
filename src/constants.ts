@@ -37,11 +37,6 @@ export const D_READER_FRONTEND_URL = 'https://dreader.app';
 export const HUNDRED = 100;
 export const HUNDRED_PERCENT_TAX = 10000;
 
-// TODO v2: in the future this will vary 10-20% depending on the type of comic
-// we will have to create a simple function with a switch case `calculatePublisherCut`
-export const D_PUBLISHER_PRIMARY_SALE_SHARE = 10;
-export const D_PUBLISHER_SECONDARY_SALE_SHARE = 25;
-
 // export const GLOBAL_BOT_TAX = 0.01;
 
 export const USED_TRAIT = 'used';

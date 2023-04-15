@@ -4,7 +4,7 @@ import { NftFilterParams } from './dto/nft-filter-params.dto';
 
 @Injectable()
 export class NftService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: NftFilterParams) {
     const nfts = await this.prisma.nft.findMany({

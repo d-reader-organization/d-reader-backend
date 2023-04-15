@@ -104,8 +104,8 @@ CREATE TABLE "ComicIssue" (
     "id" SERIAL NOT NULL,
     "number" INTEGER NOT NULL,
     "supply" INTEGER NOT NULL,
-    "discountMintPrice" DOUBLE PRECISION NOT NULL,
-    "mintPrice" DOUBLE PRECISION NOT NULL,
+    "discountMintPrice" INTEGER NOT NULL,
+    "mintPrice" INTEGER NOT NULL,
     "sellerFeeBasisPoints" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -150,7 +150,7 @@ CREATE TABLE "CandyMachine" (
     "itemsLoaded" INTEGER NOT NULL,
     "isFullyLoaded" BOOLEAN NOT NULL,
     "endsAt" TIMESTAMP(3),
-    "baseMintPrice" DOUBLE PRECISION NOT NULL,
+    "baseMintPrice" INTEGER NOT NULL,
     "collectionNftAddress" TEXT NOT NULL,
 
     CONSTRAINT "CandyMachine_pkey" PRIMARY KEY ("address")
@@ -196,7 +196,10 @@ CREATE TABLE "CarouselSlide" (
     "title" TEXT NOT NULL DEFAULT '',
     "subtitle" TEXT NOT NULL DEFAULT '',
     "priority" INTEGER NOT NULL,
-    "link" TEXT NOT NULL,
+    "comicIssueId" INTEGER,
+    "comicSlug" TEXT,
+    "creatorSlug" TEXT,
+    "externalLink" TEXT,
     "publishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiredAt" TIMESTAMP(3) NOT NULL,
     "location" "CarouselLocation" NOT NULL DEFAULT 'Home',
@@ -247,6 +250,31 @@ CREATE TABLE "WalletCreator" (
 );
 
 -- CreateTable
+CREATE TABLE "Metadata" (
+    "uri" TEXT NOT NULL,
+    "collectionName" TEXT NOT NULL,
+    "isUsed" BOOLEAN NOT NULL,
+    "isSigned" BOOLEAN NOT NULL,
+
+    CONSTRAINT "Metadata_pkey" PRIMARY KEY ("uri")
+);
+
+-- CreateTable
+CREATE TABLE "Listing" (
+    "id" SERIAL NOT NULL,
+    "nftAddress" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "feePayer" TEXT NOT NULL,
+    "signature" TEXT NOT NULL,
+    "symbol" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL,
+    "canceledAt" TIMESTAMP(3) NOT NULL,
+    "soldAt" TIMESTAMP(3),
+
+    CONSTRAINT "Listing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "_ComicToGenre" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
@@ -289,6 +317,9 @@ CREATE UNIQUE INDEX "ComicPage_pageNumber_comicIssueId_key" ON "ComicPage"("page
 CREATE UNIQUE INDEX "Newsletter_email_key" ON "Newsletter"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Listing_nftAddress_canceledAt_key" ON "Listing"("nftAddress", "canceledAt");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_ComicToGenre_AB_unique" ON "_ComicToGenre"("A", "B");
 
 -- CreateIndex
@@ -308,6 +339,9 @@ ALTER TABLE "WalletComic" ADD CONSTRAINT "WalletComic_walletAddress_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "ComicIssue" ADD CONSTRAINT "ComicIssue_comicSlug_fkey" FOREIGN KEY ("comicSlug") REFERENCES "Comic"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Nft" ADD CONSTRAINT "Nft_uri_fkey" FOREIGN KEY ("uri") REFERENCES "Metadata"("uri") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Nft" ADD CONSTRAINT "Nft_ownerAddress_fkey" FOREIGN KEY ("ownerAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -350,6 +384,9 @@ ALTER TABLE "WalletCreator" ADD CONSTRAINT "WalletCreator_creatorSlug_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "WalletCreator" ADD CONSTRAINT "WalletCreator_walletAddress_fkey" FOREIGN KEY ("walletAddress") REFERENCES "Wallet"("address") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Listing" ADD CONSTRAINT "Listing_nftAddress_fkey" FOREIGN KEY ("nftAddress") REFERENCES "Nft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ComicToGenre" ADD CONSTRAINT "_ComicToGenre_A_fkey" FOREIGN KEY ("A") REFERENCES "Comic"("slug") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   ArrayNotEmpty,
+  IsEnum,
 } from 'class-validator';
 
 export class HeliusWebhookDto {
@@ -31,9 +32,9 @@ export class HeliusWebhookDto {
   @IsUrl()
   webhookURL: string;
 
-  // @IsEnum(WebhookType)
-  // @ApiProperty({ enum: WebhookType })
   @IsOptional()
+  @IsEnum(WebhookType)
+  @ApiProperty({ enum: WebhookType })
   webhookType?: WebhookType;
 
   @IsString()

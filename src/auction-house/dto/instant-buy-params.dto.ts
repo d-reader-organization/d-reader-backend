@@ -1,18 +1,22 @@
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumberString } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class InstantBuyParams {
-  @IsString()
-  mint: string;
+  @IsSolanaAddress()
+  mintAccount: string;
 
   @IsNumberString()
   price: number;
 
   @IsSolanaAddress()
-  @IsOptional()
-  seller?: string;
+  seller: string;
+}
 
-  @IsString()
-  @IsOptional()
-  tokenAccount?: string;
+export class BuyParamsArray {
+  @ApiProperty({
+    isArray: true,
+    type: InstantBuyParams,
+  })
+  instantBuyParams: InstantBuyParams[];
 }

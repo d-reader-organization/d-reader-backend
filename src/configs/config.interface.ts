@@ -1,3 +1,5 @@
+import { AwsCredentialIdentity } from '@aws-sdk/types';
+
 export interface Config {
   nest: NestConfig;
   cors: CorsConfig;
@@ -32,6 +34,10 @@ export interface SecurityConfig {
 
 export interface S3Config {
   region: string;
+  bucket: string;
+  seedBucket: string;
+  metadataBucket: string;
+  credentials: AwsCredentialIdentity;
 }
 
 export interface ThrottleConfig {

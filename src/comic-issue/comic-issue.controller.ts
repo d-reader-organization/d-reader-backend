@@ -47,9 +47,9 @@ import {
 } from 'src/comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Roles } from 'src/guards/roles.guard';
+import { Roles, RolesGuard } from 'src/guards/roles.guard';
 
-@UseGuards(RestAuthGuard, ComicIssueUpdateGuard, ThrottlerGuard)
+@UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')

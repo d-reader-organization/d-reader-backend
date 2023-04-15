@@ -37,9 +37,9 @@ import { WalletComicService } from './wallet-comic.service';
 import { Creator, Wallet, Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { Roles } from 'src/guards/roles.guard';
+import { Roles, RolesGuard } from 'src/guards/roles.guard';
 
-@UseGuards(RestAuthGuard, ComicUpdateGuard, ThrottlerGuard)
+@UseGuards(RestAuthGuard, RolesGuard, ComicUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic')
 @Controller('comic')
@@ -244,7 +244,6 @@ export class ComicController {
    * - finish email services
    * - comicPages @ApiBody
    * - move all cron jobs to task.service.ts ?
-   * - [s3] Move s3client.ts to s3.service.ts
    * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
    * - [password] Simulate message creation: const message = Message.from(signatureBytes);
    * - [auth] bcrypt.hash wallet.nonce

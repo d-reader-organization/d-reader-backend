@@ -5,7 +5,6 @@ import {
   Pda,
   SolAmount,
   SplTokenAmount,
-  amount,
   lamports,
 } from '@metaplex-foundation/js';
 import {
@@ -28,26 +27,19 @@ export function constructListInstruction(
   seller: PublicKey,
   priceObject: SolAmount | SplTokenAmount,
   printReceipt: boolean,
-  tokens?: SplTokenAmount,
-  associatedTokenAccount?: PublicKey,
+  tokens: SplTokenAmount,
 ): TransactionInstruction[] {
   const priceBasisPoint = priceObject.basisPoints ?? 0;
 
-  const price = auctionHouse.isNative
-    ? lamports(priceBasisPoint)
-    : amount(priceBasisPoint, auctionHouse.treasuryMint.currency);
-
-  // Accounts.
+  const price = lamports(priceBasisPoint);
   const metadata = metaplex.nfts().pdas().metadata({
     mint: mintAccount,
   });
 
-  const tokenAccount =
-    associatedTokenAccount ??
-    metaplex.tokens().pdas().associatedTokenAccount({
-      mint: mintAccount,
-      owner: seller,
-    });
+  const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
+    mint: mintAccount,
+    owner: seller,
+  });
 
   const sellerTradeState = metaplex.auctionHouse().pdas().tradeState({
     auctionHouse: auctionHouse.address,
@@ -86,7 +78,6 @@ export function constructListInstruction(
     programAsSigner,
   };
 
-  // Args.
   const args = {
     tradeStateBump: sellerTradeState.bump,
     freeTradeStateBump: freeSellerTradeState.bump,

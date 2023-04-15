@@ -61,7 +61,7 @@ export class MintOneCommand extends CommandRunner {
       const signature = await connection.sendRawTransaction(
         transaction.serialize(),
       );
-      log('✅  Minted successfully');
+      log('✅ Minted successfully');
       log(`✍️  Signature: ${cuy(signature)}`);
     } catch (e) {
       logErr(`Failed to mint from ${options.candyMachineAddress.toBase58()}`);

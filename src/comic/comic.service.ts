@@ -9,24 +9,19 @@ import {
   CreateComicFilesDto,
 } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto } from '../comic/dto/update-comic.dto';
-import {
-  deleteS3Object,
-  deleteS3Objects,
-  listS3FolderKeys,
-  uploadFile,
-} from '../aws/s3client';
 import { WalletComicService } from './wallet-comic.service';
 import { Comic } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
-import { isEmpty } from 'lodash';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class ComicService {
   constructor(
-    private prisma: PrismaService,
-    private walletComicService: WalletComicService,
+    private readonly s3: s3Service,
+    private readonly prisma: PrismaService,
+    private readonly walletComicService: WalletComicService,
   ) {}
 
   async create(
@@ -61,10 +56,10 @@ export class ComicService {
     let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
       const prefix = await this.getS3FilePrefix(slug);
-      if (cover) coverKey = await uploadFile(prefix, cover);
-      if (banner) bannerKey = await uploadFile(prefix, pfp);
-      if (pfp) pfpKey = await uploadFile(prefix, pfp);
-      if (logo) logoKey = await uploadFile(prefix, logo);
+      if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
+      if (banner) bannerKey = await this.s3.uploadFile(prefix, pfp);
+      if (pfp) pfpKey = await this.s3.uploadFile(prefix, pfp);
+      if (logo) logoKey = await this.s3.uploadFile(prefix, logo);
     } catch {
       await this.prisma.comic.delete({ where: { slug: comic.slug } });
       throw new BadRequestException('Malformed file upload');
@@ -174,7 +169,7 @@ export class ComicService {
 
     const oldFileKey = comic[file.fieldname];
     const prefix = await this.getS3FilePrefix(slug);
-    const newFileKey = await uploadFile(prefix, file);
+    const newFileKey = await this.s3.uploadFile(prefix, file);
 
     try {
       comic = await this.prisma.comic.update({
@@ -182,14 +177,14 @@ export class ComicService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await deleteS3Object({ Key: newFileKey });
+      await this.s3.deleteObject({ Key: newFileKey });
       throw new BadRequestException('Malformed file upload');
     }
 
     // If all went well with the new file upload and it didn't
     // override the old one, make sure to garbage collect it
     if (oldFileKey !== newFileKey) {
-      await deleteS3Object({ Key: oldFileKey });
+      await this.s3.deleteObject({ Key: oldFileKey });
     }
 
     return comic;
@@ -246,13 +241,8 @@ export class ComicService {
   async remove(slug: string) {
     // Remove s3 assets
     const prefix = await this.getS3FilePrefix(slug);
-    const keys = await listS3FolderKeys({ Prefix: prefix });
-
-    if (!isEmpty(keys)) {
-      await deleteS3Objects({
-        Delete: { Objects: keys.map((Key) => ({ Key })) },
-      });
-    }
+    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
+    await this.s3.deleteObjects(keys);
 
     try {
       await this.prisma.comic.delete({ where: { slug, publishedAt: null } });

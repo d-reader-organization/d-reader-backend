@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -14,7 +14,9 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
-import { InstantBuyParams } from './dto/instant-buy-params.dto';
+import { BuyParamsArray } from './dto/instant-buy-params.dto';
+import { SilentQuery } from 'src/decorators/silent-query.decorator';
+import { validateAndFormatParams } from '../utils/validate-params';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -48,9 +50,6 @@ export class AuctionHouseController {
   ) {
     const publicKey = new PublicKey(wallet.address);
     const seller = query.seller ? new PublicKey(query.seller) : null;
-    const tokenAccount = query.tokenAccount
-      ? new PublicKey(query.tokenAccount)
-      : null;
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
@@ -60,7 +59,6 @@ export class AuctionHouseController {
       query.price,
       printReceipt,
       seller,
-      tokenAccount,
     );
   }
 
@@ -85,23 +83,19 @@ export class AuctionHouseController {
 
   @Throttle(5, 30)
   @Get('/transactions/instant-buy')
+  @ApiQuery({
+    name: 'query',
+    type: BuyParamsArray,
+  })
   async constructInstantBuy(
     @WalletEntity() wallet: Wallet,
-    @Query() query: InstantBuyParams,
+    @SilentQuery() query: BuyParamsArray,
   ) {
+    const buyParams = validateAndFormatParams(query.instantBuyParams);
     const publicKey = new PublicKey(wallet.address);
-    const mintAccount = new PublicKey(query.mint);
-    const seller = query.seller ? new PublicKey(query.seller) : undefined;
-    const tokenAccount = query.tokenAccount
-      ? new PublicKey(query.tokenAccount)
-      : undefined;
-
-    return await this.auctionHouseService.constructInstantBuyTransaction(
+    return await this.auctionHouseService.constructMultipleBuys(
       publicKey,
-      mintAccount,
-      query.price,
-      seller,
-      tokenAccount,
+      buyParams,
     );
   }
 

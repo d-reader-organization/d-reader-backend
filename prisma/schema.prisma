@@ -229,17 +229,18 @@ model ComicPage {
 }
 
 model CarouselSlide {
-  id          Int              @id @default(autoincrement())
-  image       String
-  title       String           @default("")
-  subtitle    String           @default("")
-  priority    Int
-  link        String
-  // comicIssueSlug String?
-  // comicSlug      String?
-  publishedAt DateTime         @default(now())
-  expiredAt   DateTime
-  location    CarouselLocation @default(Home)
+  id           Int              @id @default(autoincrement())
+  image        String
+  title        String           @default("")
+  subtitle     String           @default("")
+  priority     Int
+  comicIssueId Int?
+  comicSlug    String?
+  creatorSlug  String?
+  externalLink String?
+  publishedAt  DateTime         @default(now())
+  expiredAt    DateTime
+  location     CarouselLocation @default(Home)
 }
 
 enum CarouselLocation {
@@ -291,7 +292,7 @@ model WalletCreator {
 }
 
 model Metadata {
-  uri            String    @id
+  uri            String  @id
   nft            Nft[]
   collectionName String
   isUsed         Boolean
@@ -299,16 +300,16 @@ model Metadata {
 }
 
 model Listing {
-  id            Int      @id @default(autoincrement())
-  nftAddress    String
-  nft           Nft      @relation(fields: [nftAddress], references: [address])
-  price         Int
-  feePayer      String
-  signature     String
-  symbol        String
-  createdAt     DateTime
-  canceledAt    DateTime
-  soldAt        DateTime?
+  id         Int       @id @default(autoincrement())
+  nftAddress String
+  nft        Nft       @relation(fields: [nftAddress], references: [address])
+  price      Int
+  feePayer   String
+  signature  String
+  symbol     String
+  createdAt  DateTime
+  canceledAt DateTime
+  soldAt     DateTime?
 
   @@unique([nftAddress, canceledAt])
 }

@@ -11,6 +11,7 @@ import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Wallet, Creator } from '@prisma/client';
 import { Cluster } from '../types/cluster';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class AuthService {
@@ -19,13 +20,21 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly passwordService: PasswordService,
+    private readonly walletService: WalletService,
   ) {}
 
   async connect(address: string, encoding: string): Promise<Authorization> {
     const wallet = await this.passwordService.validateWallet(address, encoding);
+
+    let avatar = wallet.avatar || '';
+    // If wallet has no avatar, generate a random one
+    if (!avatar) {
+      avatar = await this.walletService.generateAvatar(address);
+    }
+
     await this.prisma.wallet.update({
       where: { address: wallet.address },
-      data: { lastLogin: new Date() },
+      data: { lastLogin: new Date(), avatar },
     });
 
     return {

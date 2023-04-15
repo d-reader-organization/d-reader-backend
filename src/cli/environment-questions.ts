@@ -35,8 +35,9 @@ export class EnvironmentQuestions {
     default: process.env.HELIUS_API_KEY,
     message: "What's your Helius API key? (empty if already present)",
     validate: async function (value: string) {
-      if (!value && !process.env.HELIUS_API_KEY)
+      if (!value && !process.env.HELIUS_API_KEY) {
         return 'Helius API key missing';
+      }
 
       const endpoint = clusterHeliusApiUrl(value, 'devnet');
       const connection = new Connection(endpoint, 'confirmed');
