@@ -10,8 +10,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
 import { Role } from '@prisma/client';
 
-/** Protects non 'GET' and 'POST' Creator endpoints from anyone besides
- * Superadmin users and owner of relevant entities */
+/** Protects 'PUT' Creator endpoints from anyone
+ * besides Superadmin users and creator itself */
 @Injectable()
 export class CreatorUpdateGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma: PrismaService) {}
@@ -39,6 +39,9 @@ export class CreatorUpdateGuard implements CanActivate {
     if (!user) return false;
     else if (user.role === Role.Superadmin) return true;
     else if (creator.id === user.creator?.id) return true;
-    else throw new ForbiddenException("You don't own this creator");
+    else
+      throw new ForbiddenException(
+        'You are trying to update a Creator profile which is not owned by you',
+      );
   }
 }

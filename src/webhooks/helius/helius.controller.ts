@@ -22,7 +22,6 @@ import { RestAuthGuard } from '../../guards/rest-auth.guard';
 import { WebhookGuard } from '../../guards/webhook.guard';
 import { Role } from '@prisma/client';
 
-@UseGuards(RestAuthGuard, RolesGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Helius')
 @Controller('helius')
@@ -30,6 +29,7 @@ export class HeliusController {
   constructor(private readonly heliusService: HeliusService) {}
 
   /* Get all webhooks */
+  @UseGuards(RestAuthGuard)
   @Get('get')
   async findAll(): Promise<HeliusWebhookDto[]> {
     const webhooks = await this.heliusService.findAll();
@@ -37,6 +37,7 @@ export class HeliusController {
   }
 
   /* Get main webhook by unique id */
+  @UseGuards(RestAuthGuard)
   @Get('get-main')
   async findOne(): Promise<UpdateHeliusWebhookDto> {
     const webhook = await this.heliusService.findOne();
@@ -44,6 +45,7 @@ export class HeliusController {
   }
 
   /* Update specific webhook */
+  @UseGuards(RestAuthGuard, RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
   @Patch('update/:id')
   async updateWebhook(
@@ -65,6 +67,7 @@ export class HeliusController {
   }
 
   /* Delete specific webhook */
+  @UseGuards(RestAuthGuard, RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
   @Delete('delete/:id')
   async remove(@Param('id') id: string): Promise<boolean> {

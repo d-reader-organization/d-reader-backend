@@ -48,6 +48,7 @@ import {
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
+import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -134,6 +135,7 @@ export class ComicIssueController {
   }
 
   /* Favouritise/unfavouritise a specific comic issue */
+  @SkipUpdateGuard()
   @Patch('favouritise/:id')
   async favouritise(
     @Param('id') id: string,
@@ -148,6 +150,7 @@ export class ComicIssueController {
   }
 
   /* Rate specific comic issue */
+  @SkipUpdateGuard()
   @Patch('rate/:id')
   async rate(
     @Param('id') id: string,
@@ -163,6 +166,7 @@ export class ComicIssueController {
   }
 
   /* Reads a specific comic issue */
+  @SkipUpdateGuard()
   @Patch('read/:id')
   async read(
     @Param('id') id: string,
