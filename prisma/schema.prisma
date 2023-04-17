@@ -15,20 +15,23 @@ generator dbml {
 }
 
 model Wallet {
-  address       String                @id
-  label         String                @default("")
-  avatar        String                @default("")
-  createdAt     DateTime              @default(now())
-  lastLogin     DateTime?
-  nonce         String                @unique @default(uuid())
-  role          Role                  @default(User)
-  creator       Creator?
-  comics        WalletComic[]
-  comicIssues   WalletComicIssue[]
-  newsletter    Newsletter?
-  walletCreator WalletCreator[]
-  mintReceipts  CandyMachineReceipt[]
-  nfts          Nft[]
+  address         String                @id
+  label           String                @unique
+  avatar          String                @default("")
+  createdAt       DateTime              @default(now())
+  lastLogin       DateTime?
+  nonce           String                @unique @default(uuid())
+  role            Role                  @default(User)
+  creator         Creator?
+  comics          WalletComic[]
+  comicIssues     WalletComicIssue[]
+  newsletter      Newsletter?
+  walletCreator   WalletCreator[]
+  mintReceipts    CandyMachineReceipt[]
+  nfts            Nft[]
+  refereeAddress  String
+  referee         Wallet?               @relation("ReferrerToReferral", fields: [refereeAddress], references: [address])
+  referrals       Wallet[]              @relation("ReferrerToReferral")
 }
 
 enum Role {
