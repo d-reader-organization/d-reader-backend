@@ -334,7 +334,6 @@ export class CandyMachineService {
         },
       ],
     );
-
     const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
     const mintTransaction = new Transaction({
       feePayer,

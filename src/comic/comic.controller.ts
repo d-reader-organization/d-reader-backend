@@ -38,6 +38,7 @@ import { Creator, Wallet, Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
+import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -161,6 +162,7 @@ export class ComicController {
   }
 
   /* Rate specific comic */
+  @SkipUpdateGuard()
   @Patch('rate/:slug')
   async rate(
     @Param('slug') slug: string,
@@ -176,6 +178,7 @@ export class ComicController {
   }
 
   /* Subscribe/unsubscribe from specific comic */
+  @SkipUpdateGuard()
   @Patch('subscribe/:slug')
   async subscribe(
     @Param('slug') slug: string,
@@ -190,6 +193,7 @@ export class ComicController {
   }
 
   /* Favouritise/unfavouritise a specific comic */
+  @SkipUpdateGuard()
   @Patch('favouritise/:slug')
   async favouritise(
     @Param('slug') slug: string,

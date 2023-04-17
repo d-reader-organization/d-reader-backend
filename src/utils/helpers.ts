@@ -1,5 +1,6 @@
 import { sol } from '@metaplex-foundation/js';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
+import { HIGH_VALUE, LOW_VALUE } from '../constants';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -43,3 +44,30 @@ export const formatCurrency = (value?: number, currency = '') => {
 };
 
 export type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+const compactHeader = (n: number) =>
+  n <= LOW_VALUE ? 1 : n <= HIGH_VALUE ? 2 : 3;
+const compactArraySize = (n: number, size: number) =>
+  compactHeader(n) + n * size;
+
+// need more research for better calculation of computeUnits
+export function getComputeUnits(instructions: TransactionInstruction[]) {
+  const signers = new Set<string>();
+  const accounts = new Set<string>();
+
+  const size = instructions.reduce((acc, ix) => {
+    ix.keys.forEach(({ pubkey, isSigner }) => {
+      const pk = pubkey.toBase58();
+      if (isSigner) signers.add(pk);
+      accounts.add(pk);
+    });
+    accounts.add(ix.programId.toBase58());
+    const nIndexes = ix.keys.length;
+    const opaqueData = ix.data.length;
+
+    return (
+      1 + acc + compactArraySize(nIndexes, 1) + compactArraySize(opaqueData, 1)
+    );
+  }, 0);
+
+  return 200000 + 100000 * instructions.length + 100 * size;
+}
