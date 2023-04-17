@@ -126,8 +126,17 @@ export class HeliusService {
         throw new Error('Sale transaction failed to finalize');
       }
       const nftAddress = transaction.events.nft.nfts[0].mint;
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: { address: nftAddress },
+        include: {
+          collectionNft: true,
+          listing: {
+            where: {
+              nftAddress,
+              canceledAt: new Date(transaction.timestamp * 1000),
+            },
+          },
+        },
         data: {
           ownerAddress: transaction.tokenTransfers[0].toUserAccount,
           listing: {
@@ -143,6 +152,15 @@ export class HeliusService {
           },
         },
       });
+      this.websocketGateway.handleNftSold(
+        nft.collectionNft.comicIssueId,
+        nft.listing[0],
+      );
+      this.websocketGateway.handleWalletNftSold(
+        nft.ownerAddress,
+        nft.listing[0],
+      );
+      this.websocketGateway.handleWalletNftBought(nft.ownerAddress, nft);
     } catch (error) {
       console.log(error);
     }
@@ -151,14 +169,24 @@ export class HeliusService {
   private async handleCancelListing(transaction: EnrichedTransaction) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
-      await this.prisma.listing.update({
+      const listing = await this.prisma.listing.update({
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
         },
+        include: { nft: { include: { collectionNft: true } } },
         data: {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
       });
+      this.websocketGateway.handleNftDelisted(
+        listing.nft.collectionNft.comicIssueId,
+        listing,
+      );
+      this,
+        this.websocketGateway.handleWalletNftDelisted(
+          listing.nft.ownerAddress,
+          listing,
+        );
     } catch (error) {
       console.log(error);
     }
@@ -193,9 +221,13 @@ export class HeliusService {
         );
       }
 
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: {
           address: mint,
+        },
+        include: {
+          collectionNft: true,
+          listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
         },
         data: {
           listing: {
@@ -221,6 +253,15 @@ export class HeliusService {
           },
         },
       });
+
+      this.websocketGateway.handleNftListed(
+        nft.collectionNft.comicIssueId,
+        nft.listing[0],
+      );
+      this.websocketGateway.handleWalletNftListed(
+        nft.ownerAddress,
+        nft.listing[0],
+      );
     } catch (error) {
       console.log(error);
     }
@@ -235,7 +276,7 @@ export class HeliusService {
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
 
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: { address },
         data: { ownerAddress },
       });
@@ -265,6 +306,8 @@ export class HeliusService {
             canceledAt: new Date(enrichedTransaction.timestamp * 1000),
           },
         });
+        this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
+        this.websocketGateway.handleWalletNftSent(previousOwner, nft);
       }
     } catch (e) {
       console.log(e);
@@ -304,8 +347,13 @@ export class HeliusService {
       );
     }
 
+    let comicIssueId: number = undefined;
     try {
       const comicIssueNft = await this.prisma.nft.create({
+        select: {
+          address: true,
+          collectionNft: { select: { comicIssueId: true } },
+        },
         data: {
           owner: {
             connectOrCreate: {
@@ -332,6 +380,8 @@ export class HeliusService {
           },
         },
       });
+
+      comicIssueId = comicIssueNft.collectionNft.comicIssueId;
       this.subscribeTo(comicIssueNft.address);
     } catch (e) {
       console.error(e);
@@ -369,7 +419,8 @@ export class HeliusService {
         this.removeSubscription(candyMachine.address);
       }
 
-      this.websocketGateway.handleMintReceipt(receipt);
+      this.websocketGateway.handleNftMinted(comicIssueId, receipt);
+      this.websocketGateway.handleWalletNftMinted(receipt);
     } catch (e) {
       console.error(e);
     }
