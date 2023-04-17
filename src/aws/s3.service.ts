@@ -31,14 +31,12 @@ type s3File = {
 export class s3Service {
   readonly region: string;
   readonly bucket: string;
-  readonly seedBucket: string;
   readonly metadataBucket: string;
   readonly client: S3Client;
 
   constructor() {
     this.region = config().s3.region;
     this.bucket = config().s3.bucket;
-    this.seedBucket = config().s3.seedBucket;
     this.metadataBucket = config().s3.metadataBucket;
 
     this.client = new S3Client({

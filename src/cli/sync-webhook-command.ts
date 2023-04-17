@@ -55,7 +55,7 @@ export class SyncWebhookCommand extends CommandRunner {
       log(`⛓️  WebhookURL is: ${cb(updatedWebhook.webhookURL)}`);
     } catch (e) {
       logErr(`Couldn't find the webhook with ID: ${webhookURL}`);
-      await this.createNewWebhook(webhookID, accountAddresses);
+      await this.createNewWebhook(webhookURL, accountAddresses);
     }
     log('\n');
   };

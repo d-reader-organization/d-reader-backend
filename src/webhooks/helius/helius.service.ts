@@ -38,10 +38,6 @@ export class HeliusService {
     );
     this.metaplex = new Metaplex(this.helius.connection);
     this.webhookID = process.env.WEBHOOK_ID;
-
-    if (!this.webhookID) {
-      throw new Error('WEBHOOK_ID not provided');
-    }
   }
 
   createWebhook(payload: CreateHeliusWebhookDto) {
