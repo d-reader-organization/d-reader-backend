@@ -39,6 +39,7 @@ const comicIssueService = new ComicIssueService(
   candyMachineService,
   walletComicIssueService,
 );
+const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
 
 const generatePages = (
   imagePath: string,
@@ -92,19 +93,19 @@ async function main() {
     await s3.deleteObjects(keysToDelete);
     console.log(`✅ Emptied '${s3.bucket}' s3 bucket!`);
 
-    console.log(`⛏️ Cloning files from '${s3.seedBucket}' bucket...`);
+    console.log(`⛏️ Cloning files from '${seedBucket}' bucket...`);
 
     const seedFileKeys = await s3.listFolderKeys({
-      Bucket: s3.seedBucket,
+      Bucket: seedBucket,
       Prefix: '',
     });
 
     for (const seedFileKey of seedFileKeys) {
-      const copySource = `/${s3.seedBucket}/${seedFileKey}`;
+      const copySource = `/${seedBucket}/${seedFileKey}`;
       await s3.copyObject({ CopySource: copySource, Key: seedFileKey });
       console.log(`🪧 Copied seed file from ${copySource}`);
     }
-    console.log(`✅ Cloned files from '${s3.seedBucket}' s3 bucket!`);
+    console.log(`✅ Cloned files from '${seedBucket}' s3 bucket!`);
   }
 
   try {
