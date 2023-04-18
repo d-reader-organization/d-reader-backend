@@ -135,7 +135,7 @@ export async function toListingDto(listing: ListingInput) {
     seller: {
       address: listing.nft.owner.address,
       avatar: listing.nft.owner.avatar,
-      label: listing.nft.owner.label,
+      name: listing.nft.owner.name,
     },
     tokenAddress,
     price: listing.price,

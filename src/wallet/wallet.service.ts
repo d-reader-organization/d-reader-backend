@@ -111,6 +111,16 @@ export class WalletService {
     return;
   }
 
+  async validateName(name: string) {
+    const exist = await this.prisma.wallet.findFirst({ where: { name } });
+    return !exist;
+  }
+
+  async validateReferrals(address: string) {
+    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    return wallet.referralsLeft > 0;
+  }
+
   async generateAvatar(address: string) {
     const buffer = jdenticon.toPng(address, 200);
     const file = {
