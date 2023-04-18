@@ -48,7 +48,6 @@ export class WebSocketGateway {
 
   async handleNftListed(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
-    console.log(listingDto);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-listed`,
       listingDto,

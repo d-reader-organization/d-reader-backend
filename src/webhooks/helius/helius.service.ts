@@ -153,8 +153,7 @@ export class HeliusService {
         ...nft.listing[0],
         nft,
       });
-      this.websocketGateway.handleWalletNftSold(nft.ownerAddress, {
-        // note : get the old owener address
+      this.websocketGateway.handleWalletNftSold(transaction.events.nft.seller, {
         ...nft.listing[0],
         nft,
       });
