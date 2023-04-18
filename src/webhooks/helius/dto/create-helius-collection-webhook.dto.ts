@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { ArrayNotEmpty, IsArray } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../../decorators/IsSolanaAddress';
 import { CreateHeliusWebhookDto } from './create-helius-webhook.dto';
 
 export class CreateHeliusCollectionWebhookDto extends OmitType(
