@@ -1,8 +1,8 @@
 import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { CandyMachine } from '@prisma/client';
-import { IsLamport } from 'src/decorators/IsLamport';
+import { IsLamport } from '../../decorators/IsLamport';
 
 export class CandyMachineDto {
   @IsSolanaAddress()

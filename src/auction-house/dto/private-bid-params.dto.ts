@@ -1,5 +1,5 @@
 import { IsBooleanString, IsNumberString, IsOptional } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class PrivateBidParams {
   @IsSolanaAddress()
