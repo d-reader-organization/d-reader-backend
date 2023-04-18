@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { plainToInstance, Type } from 'class-transformer';
 import { TransactionType, Webhook, WebhookType } from 'helius-sdk';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../../decorators/IsSolanaAddress';
 import {
   IsArray,
   // IsEnum,

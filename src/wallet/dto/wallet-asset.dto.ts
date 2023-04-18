@@ -1,5 +1,5 @@
 import { IsString, IsUrl } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { JsonMetadata } from '@metaplex-foundation/js';
 import { Nft } from '@prisma/client';

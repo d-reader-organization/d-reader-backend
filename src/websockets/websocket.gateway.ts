@@ -8,7 +8,10 @@ import {
   CandyMachineReceiptInput,
   toCMReceiptDto,
 } from '../candy-machine/dto/candy-machine-receipt.dto';
-import { Listing, Nft } from '@prisma/client';
+import { Nft } from '@prisma/client';
+import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
+import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
+import { toNftDto } from '../nft/dto/nft.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -35,27 +38,28 @@ export class WebSocketGateway {
     );
   }
 
-  // TODO: return ListingDto objects
-  async handleNftSold(comicIssueId: number, listing: Listing) {
+  async handleNftSold(comicIssueId: number, listing: ListingInput) {
+    const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-sold`,
-      listing,
+      listingDto,
     );
   }
 
-  // TODO: return ListingDto objects
-  async handleNftListed(comicIssueId: number, listing: Listing) {
+  async handleNftListed(comicIssueId: number, listing: ListingInput) {
+    const listingDto = await toListingDto(listing);
+    console.log(listingDto);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-listed`,
-      listing,
+      listingDto,
     );
   }
 
-  // TODO: return ListingDto objects
-  async handleNftDelisted(comicIssueId: number, listing: Listing) {
+  async handleNftDelisted(comicIssueId: number, listing: ListingInput) {
+    const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-delisted`,
-      listing,
+      listingDto,
     );
   }
 
@@ -67,32 +71,52 @@ export class WebSocketGateway {
     );
   }
 
-  // TODO: this should also emit WalletAssetDto & NftDto? Check with @Luka
-  async handleWalletNftListed(owner: string, listing: Listing) {
-    return this.server.sockets.emit(`wallet/${owner}/item-listed`, listing);
+  async handleWalletNftListed(owner: string, nft: Nft) {
+    const walletAssetDto = await toWalletAssetDto(nft);
+    const nftDto = toNftDto(nft);
+    return this.server.sockets.emit(
+      `wallet/${owner}/item-listed`,
+      walletAssetDto,
+      nftDto,
+    );
   }
 
-  // TODO: this should also emit WalletAssetDto & NftDto? Check with @Luka
-  async handleWalletNftDelisted(owner: string, listing: Listing) {
-    return this.server.sockets.emit(`wallet/${owner}/item-delisted`, listing);
+  async handleWalletNftDelisted(owner: string, nft: Nft) {
+    const walletAssetDto = await toWalletAssetDto(nft);
+    const nftDto = toNftDto(nft);
+    return this.server.sockets.emit(
+      `wallet/${owner}/item-delisted`,
+      walletAssetDto,
+      nftDto,
+    );
   }
 
-  // TODO: this should emit WalletAssetDto? Check with @Luka
   async handleWalletNftBought(buyer: string, nft: Nft) {
-    return this.server.sockets.emit(`wallet/${buyer}/item-bought`, nft);
+    const walletAssetDto = await toWalletAssetDto(nft);
+    return this.server.sockets.emit(
+      `wallet/${buyer}/item-bought`,
+      walletAssetDto,
+    );
   }
 
-  async handleWalletNftSold(seller: string, listing: Listing) {
-    return this.server.sockets.emit(`wallet/${seller}/item-sold`, listing);
+  async handleWalletNftSold(seller: string, listing: ListingInput) {
+    const listingDto = await toListingDto(listing);
+    return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
   }
 
-  // TODO: this should emit WalletAssetDto? Check with @Luka
   async handleWalletNftReceived(receiver: string, nft: Nft) {
-    return this.server.sockets.emit(`wallet/${receiver}/item-received`, nft);
+    const walletAssetDto = await toWalletAssetDto(nft);
+    return this.server.sockets.emit(
+      `wallet/${receiver}/item-received`,
+      walletAssetDto,
+    );
   }
 
-  // TODO: this should emit WalletAssetDto? Check with @Luka
   async handleWalletNftSent(sender: string, nft: Nft) {
-    return this.server.sockets.emit(`wallet/${sender}/item-sent`, nft);
+    const walletAssetDto = await toWalletAssetDto(nft);
+    return this.server.sockets.emit(
+      `wallet/${sender}/item-sent`,
+      walletAssetDto,
+    );
   }
 }
