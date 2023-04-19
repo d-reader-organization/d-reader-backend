@@ -1,7 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsEmail } from 'class-validator';
 import { Newsletter } from '@prisma/client';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class NewsletterDto {
   @IsSolanaAddress()

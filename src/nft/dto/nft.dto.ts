@@ -1,7 +1,7 @@
 import { IsArray, IsBoolean, IsNumber, IsString, IsUrl } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
-import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
+import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import { JsonMetadata } from '@metaplex-foundation/js';
 import { ApiProperty } from '@nestjs/swagger';
 import { Nft, Listing } from '@prisma/client';

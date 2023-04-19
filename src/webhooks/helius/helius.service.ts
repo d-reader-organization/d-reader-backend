@@ -132,6 +132,7 @@ export class HeliusService {
               canceledAt: new Date(transaction.timestamp * 1000),
             },
           },
+          owner: true,
         },
         data: {
           ownerAddress: transaction.tokenTransfers[0].toUserAccount,
@@ -148,14 +149,14 @@ export class HeliusService {
           },
         },
       });
-      this.websocketGateway.handleNftSold(
-        nft.collectionNft.comicIssueId,
-        nft.listing[0],
-      );
-      this.websocketGateway.handleWalletNftSold(
-        nft.ownerAddress,
-        nft.listing[0],
-      );
+      this.websocketGateway.handleNftSold(nft.collectionNft.comicIssueId, {
+        ...nft.listing[0],
+        nft,
+      });
+      this.websocketGateway.handleWalletNftSold(transaction.events.nft.seller, {
+        ...nft.listing[0],
+        nft,
+      });
       this.websocketGateway.handleWalletNftBought(nft.ownerAddress, nft);
     } catch (error) {
       console.log(error);
@@ -169,7 +170,7 @@ export class HeliusService {
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
         },
-        include: { nft: { include: { collectionNft: true } } },
+        include: { nft: { include: { collectionNft: true, owner: true } } },
         data: {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
@@ -181,7 +182,7 @@ export class HeliusService {
       this,
         this.websocketGateway.handleWalletNftDelisted(
           listing.nft.ownerAddress,
-          listing,
+          listing.nft,
         );
     } catch (error) {
       console.log(error);
@@ -224,6 +225,7 @@ export class HeliusService {
         include: {
           collectionNft: true,
           listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
+          owner: true,
         },
         data: {
           listing: {
@@ -250,14 +252,11 @@ export class HeliusService {
         },
       });
 
-      this.websocketGateway.handleNftListed(
-        nft.collectionNft.comicIssueId,
-        nft.listing[0],
-      );
-      this.websocketGateway.handleWalletNftListed(
-        nft.ownerAddress,
-        nft.listing[0],
-      );
+      this.websocketGateway.handleNftListed(nft.collectionNft.comicIssueId, {
+        ...nft.listing[0],
+        nft,
+      });
+      this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
     } catch (error) {
       console.log(error);
     }

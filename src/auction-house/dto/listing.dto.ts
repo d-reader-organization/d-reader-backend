@@ -9,7 +9,7 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import {
   JsonMetadata,
   Pda,
@@ -17,9 +17,9 @@ import {
   tokenProgram,
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
-import { BasicWalletDto } from 'src/candy-machine/dto/candy-machine-receipt.dto';
-import { SIGNED_TRAIT, USED_TRAIT } from 'src/constants';
-import { NftAttributeDto } from 'src/nft/dto/nft.dto';
+import { BasicWalletDto } from '../../candy-machine/dto/candy-machine-receipt.dto';
+import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
+import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { isNil } from 'lodash';
@@ -105,7 +105,7 @@ export class CreatorsDto {
   share?: number;
 }
 
-type ListingInput = Listing & {
+export type ListingInput = Listing & {
   nft: Nft & {
     owner: Wallet;
   };
