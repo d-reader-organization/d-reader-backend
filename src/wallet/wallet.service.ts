@@ -116,9 +116,36 @@ export class WalletService {
     return !exist;
   }
 
-  async validateReferrals(address: string) {
-    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
-    return wallet.referralsLeft > 0;
+  async redeemReferral(referee: string, address: string) {
+    const refereeWallet = await this.prisma.wallet.findUnique({
+      where: { name: referee },
+    });
+    if (!refereeWallet) {
+      throw new BadRequestException(`user ${referee} don't exist`);
+    }
+    if (refereeWallet.referralsLeft == 0) {
+      throw new BadRequestException(
+        `user ${refereeWallet.name} don't have referrals left`,
+      );
+    }
+    const user = await this.prisma.wallet.findUnique({ where: { address } });
+    if (!!user.referredAt) {
+      throw new BadRequestException(`user ${user.name} is already referred`);
+    }
+
+    await this.prisma.wallet.update({
+      where: { address },
+      data: {
+        referredAt: new Date(Date.now()),
+        referee: {
+          connect: { address: refereeWallet.address },
+          update: { referralsLeft: refereeWallet.referralsLeft - 1 },
+        },
+        referralsLeft: 3, // default value of referrals you get after accessing beta
+      },
+    });
+
+    return;
   }
 
   async generateAvatar(address: string) {

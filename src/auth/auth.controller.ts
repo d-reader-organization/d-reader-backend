@@ -23,11 +23,6 @@ export class AuthController {
     return await this.walletService.validateName(name);
   }
 
-  @Get('validate/referrals')
-  async validateReferrals(@WalletEntity() wallet: Wallet): Promise<boolean> {
-    return await this.walletService.validateReferrals(wallet.address);
-  }
-
   @Throttle(2, 10)
   /* Request a new one time password for your wallet to sign */
   @Get('wallet/request-password/:address')

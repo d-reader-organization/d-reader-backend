@@ -22,7 +22,7 @@ import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
@@ -31,6 +31,15 @@ import { Wallet } from '@prisma/client';
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
+
+  @Throttle(5, 30)
+  @Get('redeem/referral/:referee')
+  async redeemReferral(
+    @Param('referee') referee: string,
+    @WalletEntity() wallet: Wallet,
+  ) {
+    return await this.walletService.redeemReferral(referee, wallet.address);
+  }
 
   /* Create a new wallet */
   @Post('create')
