@@ -33,12 +33,12 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Throttle(5, 30)
-  @Get('redeem/referral/:referee')
+  @Get('redeem/referral/:referrer')
   async redeemReferral(
-    @Param('referee') referee: string,
+    @Param('referrer') referrer: string,
     @WalletEntity() wallet: Wallet,
   ) {
-    return await this.walletService.redeemReferral(referee, wallet.address);
+    return await this.walletService.redeemReferral(referrer, wallet.address);
   }
 
   /* Create a new wallet */

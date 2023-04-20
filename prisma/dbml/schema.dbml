@@ -17,9 +17,9 @@ Table Wallet {
   walletCreator WalletCreator [not null]
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
-  refereeAddress String
-  referralsLeft Int [not null, default: 0]
-  referee Wallet
+  referrerAddress String
+  referralsRemaining Int [not null, default: 0]
+  referrer Wallet
   referrals Wallet [not null]
   referredAt DateTime
 }
@@ -310,7 +310,7 @@ Enum CarouselLocation {
   Home
 }
 
-Ref: Wallet.refereeAddress - Wallet.address
+Ref: Wallet.referrerAddress - Wallet.address
 
 Ref: Creator.walletAddress - Wallet.address [delete: Cascade]
 

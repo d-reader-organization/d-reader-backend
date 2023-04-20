@@ -9,12 +9,12 @@
 -- AlterTable
 ALTER TABLE "Wallet" DROP COLUMN "label",
 ADD COLUMN     "name" TEXT NOT NULL,
-ADD COLUMN     "refereeAddress" TEXT,
-ADD COLUMN     "referralsLeft" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN     "referredAt" TIMESTAMP(3);
+ADD COLUMN     "referralsRemaining" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "referredAt" TIMESTAMP(3),
+ADD COLUMN     "referrerAddress" TEXT;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Wallet_name_key" ON "Wallet"("name");
 
 -- AddForeignKey
-ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_refereeAddress_fkey" FOREIGN KEY ("refereeAddress") REFERENCES "Wallet"("address") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_referrerAddress_fkey" FOREIGN KEY ("referrerAddress") REFERENCES "Wallet"("address") ON DELETE SET NULL ON UPDATE CASCADE;

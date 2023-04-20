@@ -291,7 +291,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address:'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f',
-        name: 'Josip',
+        name: 'Luka',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -307,12 +307,12 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-        name: 'Luka',
+        name: 'Josip',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
-        referee:{
+        referrer:{
           connect:{address:'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f'}
         },
         referredAt: new Date(Date.now())

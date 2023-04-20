@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
-import { WalletService } from '../wallet/wallet.service';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -15,12 +14,11 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly passwordService: PasswordService,
-    private readonly walletService: WalletService,
   ) {}
 
   @Get('validate/name/:name')
   async validateName(@Param('name') name: string): Promise<boolean> {
-    return await this.walletService.validateName(name);
+    return await this.authService.validateName(name);
   }
 
   @Throttle(2, 10)

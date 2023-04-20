@@ -111,37 +111,31 @@ export class WalletService {
     return;
   }
 
-  async validateName(name: string) {
-    const exist = await this.prisma.wallet.findFirst({ where: { name } });
-    return !exist;
-  }
-
-  async redeemReferral(referee: string, address: string) {
-    const refereeWallet = await this.prisma.wallet.findUnique({
-      where: { name: referee },
+  async redeemReferral(referrer: string, address: string) {
+    const referrerWallet = await this.prisma.wallet.findUnique({
+      where: { name: referrer },
     });
-    if (!refereeWallet) {
-      throw new BadRequestException(`user ${referee} don't exist`);
+    if (!referrerWallet) {
+      throw new BadRequestException(`user ${referrer} doesn't exist`);
     }
-    if (refereeWallet.referralsLeft == 0) {
+    if (referrerWallet.referralsRemaining == 0) {
       throw new BadRequestException(
-        `user ${refereeWallet.name} don't have referrals left`,
+        `user ${referrerWallet.name} doesn't have referrals left`,
       );
     }
-    const user = await this.prisma.wallet.findUnique({ where: { address } });
-    if (!!user.referredAt) {
-      throw new BadRequestException(`user ${user.name} is already referred`);
+    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    if (!!wallet.referredAt) {
+      throw new BadRequestException(`user ${wallet.name} is already referred`);
     }
 
     await this.prisma.wallet.update({
       where: { address },
       data: {
-        referredAt: new Date(Date.now()),
-        referee: {
-          connect: { address: refereeWallet.address },
-          update: { referralsLeft: refereeWallet.referralsLeft - 1 },
+        referredAt: new Date(),
+        referrer: {
+          connect: { address: referrerWallet.address },
+          update: { referralsRemaining: referrerWallet.referralsRemaining - 1 },
         },
-        referralsLeft: 3, // default value of referrals you get after accessing beta
       },
     });
 
