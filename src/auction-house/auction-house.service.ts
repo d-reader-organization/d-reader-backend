@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Cluster, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
@@ -197,7 +197,7 @@ export class AuctionHouseService {
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
-
+      await this.validateMint(mintAccount);
       const listInstruction = constructListInstruction(
         this.metaplex,
         auctionHouse,
@@ -421,6 +421,23 @@ export class AuctionHouseService {
       take: query.take,
       skip: query.skip,
     });
+  }
+
+  async validateMint(mint: PublicKey) {
+    const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
+    const info = await this.metaplex.rpc().getAccount(metadataPda);
+    if (!info) {
+      throw new BadRequestException(`Nft ${mint} doesn't have any metadata`);
+    }
+    const metadata = toMetadata(toMetadataAccount(info));
+    if (
+      !metadata.collection.verified ||
+      !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
+    ) {
+      throw new BadRequestException(
+        `Nft ${mint} is not from a verified collection`,
+      );
+    }
   }
 
   async toListing(
