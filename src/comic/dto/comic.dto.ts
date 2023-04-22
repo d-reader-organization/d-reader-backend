@@ -13,7 +13,7 @@ import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { getReadUrl } from 'src/aws/s3client';
+import { getCachedReadUrl } from 'src/aws/s3client';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
 import { round } from 'lodash';
@@ -136,10 +136,10 @@ export async function toComicDto(comic: ComicInput) {
     isVerified: !!comic.verifiedAt,
     isPublished: !!comic.publishedAt,
     isPopular: !!comic.popularizedAt,
-    cover: await getReadUrl(comic.cover),
-    banner: await getReadUrl(comic.banner),
-    pfp: await getReadUrl(comic.pfp),
-    logo: await getReadUrl(comic.logo),
+    cover: await getCachedReadUrl(comic.cover),
+    banner: await getCachedReadUrl(comic.banner),
+    pfp: await getCachedReadUrl(comic.pfp),
+    logo: await getCachedReadUrl(comic.logo),
     description: comic.description,
     flavorText: comic.flavorText,
     website: comic.website,
@@ -173,7 +173,7 @@ export async function toComicDto(comic: ComicInput) {
           name: genre.name,
           slug: genre.slug,
           color: genre.color,
-          icon: await getReadUrl(genre.icon),
+          icon: await getCachedReadUrl(genre.icon),
         };
       }),
     ),
@@ -182,7 +182,7 @@ export async function toComicDto(comic: ComicInput) {
           name: comic.creator.name,
           slug: comic.creator.slug,
           isVerified: !!comic.creator.verifiedAt,
-          avatar: await getReadUrl(comic.creator.avatar),
+          avatar: await getCachedReadUrl(comic.creator.avatar),
         }
       : undefined,
   };

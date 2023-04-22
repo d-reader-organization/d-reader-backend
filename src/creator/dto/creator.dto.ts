@@ -13,7 +13,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator } from '@prisma/client';
-import { getReadUrl } from 'src/aws/s3client';
+import { getCachedReadUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { WalletCreatorStats } from '../types/my-stats';
 import { WalletCreatorStatsDto } from './wallet-creator.dto';
@@ -81,9 +81,9 @@ export async function toCreatorDto(creator: CreatorInput) {
     slug: creator.slug,
     isDeleted: !!creator.deletedAt,
     isVerified: !!creator.verifiedAt,
-    avatar: await getReadUrl(creator.avatar),
-    banner: await getReadUrl(creator.banner),
-    logo: await getReadUrl(creator.logo),
+    avatar: await getCachedReadUrl(creator.avatar),
+    banner: await getCachedReadUrl(creator.banner),
+    logo: await getCachedReadUrl(creator.logo),
     description: creator.description,
     flavorText: creator.flavorText,
     website: creator.website,

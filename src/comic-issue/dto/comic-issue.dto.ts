@@ -10,7 +10,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getCachedReadUrl } from 'src/aws/s3client';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -144,10 +144,10 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    cover: await getReadUrl(issue.cover),
-    // signedCover: await getReadUrl(issue.signedCover),
-    // usedCover: await getReadUrl(issue.usedCover),
-    // usedSignedCover: await getReadUrl(issue.usedSignedCover),
+    cover: await getCachedReadUrl(issue.cover),
+    // signedCover: await getCachedReadUrl(issue.signedCover),
+    // usedCover: await getCachedReadUrl(issue.usedCover),
+    // usedSignedCover: await getCachedReadUrl(issue.usedSignedCover),
     releaseDate: issue.releaseDate.toISOString(),
     // if supply is 0 it's not an NFT collection and therefore it's free
     isFree: issue.supply === 0,
@@ -160,7 +160,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           name: issue.comic.creator.name,
           slug: issue.comic.creator.slug,
           isVerified: !!issue.comic.creator.verifiedAt,
-          avatar: await getReadUrl(issue.comic.creator.avatar),
+          avatar: await getCachedReadUrl(issue.comic.creator.avatar),
         }
       : undefined,
     comic: issue?.comic
