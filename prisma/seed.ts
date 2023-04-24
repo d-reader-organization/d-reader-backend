@@ -2737,6 +2737,8 @@ async function main() {
     }
 
     if (
+      // skip publishing comics on mainnet-beta
+      process.env.SOLANA_CLUSTER === 'mainnet-beta' ||
       (comicIssue.comicSlug === 'the-dark-portal' &&
         comicIssue.slug === 'concept-art') ||
       (comicIssue.comicSlug === 'knockturn-county' &&
