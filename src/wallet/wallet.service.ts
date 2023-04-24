@@ -8,6 +8,7 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
+import { PublicKey } from '@solana/web3.js';
 
 @Injectable()
 export class WalletService {
@@ -112,20 +113,28 @@ export class WalletService {
   }
 
   async redeemReferral(referrer: string, address: string) {
+    // if the search string is of type Solana address, search by address
+    // otherwise search by wallet name
+    const where = PublicKey.isOnCurve(referrer)
+      ? { address: referrer }
+      : { name: referrer };
     const referrerWallet = await this.prisma.wallet.findUnique({
-      where: { name: referrer },
+      where,
     });
+
     if (!referrerWallet) {
-      throw new BadRequestException(`user ${referrer} doesn't exist`);
-    }
-    if (referrerWallet.referralsRemaining == 0) {
+      throw new BadRequestException(`Account ${referrer} doesn't exist`);
+    } else if (referrerWallet.referralsRemaining == 0) {
       throw new BadRequestException(
-        `user ${referrerWallet.name} doesn't have referrals left`,
+        `Account ${referrerWallet.name} doesn't have referrals left`,
       );
     }
+
     const wallet = await this.prisma.wallet.findUnique({ where: { address } });
     if (!!wallet.referredAt) {
-      throw new BadRequestException(`user ${wallet.name} is already referred`);
+      throw new BadRequestException(
+        `Account ${wallet.name} is already referred`,
+      );
     }
 
     await this.prisma.wallet.update({
@@ -134,7 +143,7 @@ export class WalletService {
         referredAt: new Date(),
         referrer: {
           connect: { address: referrerWallet.address },
-          update: { referralsRemaining: referrerWallet.referralsRemaining - 1 },
+          update: { referralsRemaining: { decrement: 1 } },
         },
       },
     });
