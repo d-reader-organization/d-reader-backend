@@ -266,7 +266,7 @@ Table WalletCreator {
 Table Metadata {
   uri String [pk]
   nft Nft [not null]
-  collectionName String [not null]
+  collectionName String
   isUsed Boolean [not null]
   isSigned Boolean [not null]
 }

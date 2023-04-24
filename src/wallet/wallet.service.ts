@@ -8,13 +8,74 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
+import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+import { Cluster, Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { heliusClusterApiUrl } from 'helius-sdk';
+import * as AES from 'crypto-js/aes';
+import * as Utf8 from 'crypto-js/enc-utf8';
 
 @Injectable()
 export class WalletService {
+  private readonly metaplex: Metaplex;
+
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
-  ) {}
+  ) {
+    const endpoint = heliusClusterApiUrl(
+      process.env.HELIUS_API_KEY,
+      process.env.SOLANA_CLUSTER as Cluster,
+    );
+    const connection = new Connection(endpoint, 'confirmed');
+    this.metaplex = new Metaplex(connection);
+    const treasuryWallet = AES.decrypt(
+      process.env.TREASURY_PRIVATE_KEY,
+      process.env.TREASURY_SECRET,
+    );
+    const treasuryKeypair = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
+    );
+    this.metaplex.use(keypairIdentity(treasuryKeypair));
+  }
+
+  async syncWallet(owner: PublicKey) {
+    const onChainNfts = await this.metaplex.nfts().findAllByOwner({ owner });
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { address: owner.toString() },
+      include: { nfts: true },
+    });
+    const unSyncedNfts = onChainNfts.filter(
+      (nft) =>
+        nft.updateAuthorityAddress.equals(this.metaplex.identity().publicKey) &&
+        !wallet.nfts.find(
+          (walletNft) => walletNft.address === nft.address.toString(),
+        ),
+    );
+    const walletSync = unSyncedNfts.map((nft) => {
+      return this.prisma.nft.create({
+        data: {
+          address: nft.address.toString(),
+          name: nft.name,
+          metadata: {
+            connectOrCreate: {
+              where: { uri: nft.uri },
+              create: { uri: nft.uri, isSigned: false, isUsed: false },
+            },
+          },
+          owner: {
+            connect: { address: wallet.address },
+          },
+          candyMachine: {
+            connect: { address: nft.creators[1].address.toString() },
+          },
+          collectionNft: {
+            connect: { address: nft.collection.address.toString() },
+          },
+        },
+      });
+    });
+    await Promise.all(walletSync);
+  }
 
   async create(createWalletDto: CreateWalletDto) {
     try {

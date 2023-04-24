@@ -30,6 +30,7 @@
     "generate-env": "npx ts-node src/cli/main.ts generate-env",
     "create-ah": "npx ts-node src/cli/main.ts create-ah",
     "sync-webhook": "npx ts-node src/cli/main.ts sync-webhook",
+    "sync-wallet": "npx ts-node src/cli/main.ts sync-wallet",
     "airdrop-sol": "npx ts-node src/cli/main.ts airdrop-sol",
     "authorize-wallet": "npx ts-node src/cli/main.ts authorize-wallet",
     "mint-one": "npx ts-node src/cli/main.ts mint-one"

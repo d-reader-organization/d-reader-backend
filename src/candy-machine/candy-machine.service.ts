@@ -140,6 +140,8 @@ export class CandyMachineService {
       where: { comicIssueId: comicIssue.id },
     });
 
+    const candyMachineKey = Keypair.generate();
+
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
@@ -191,7 +193,7 @@ export class CandyMachineService {
     const comicCreator = new PublicKey(creatorAddress);
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
-        candyMachine: Keypair.generate(),
+        candyMachine: candyMachineKey,
         authority: this.metaplex.identity(),
         collection: {
           address: collectionNftAddress,
@@ -203,7 +205,10 @@ export class CandyMachineService {
         sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         itemsAvailable: toBigNumber(comicIssue.supply),
         guards: {
-          botTax: undefined,
+          botTax: {
+            lamports: solFromLamports(10000),
+            lastInstruction: true,
+          },
           solPayment: {
             amount: solFromLamports(comicIssue.mintPrice),
             destination: this.metaplex.identity().publicKey,

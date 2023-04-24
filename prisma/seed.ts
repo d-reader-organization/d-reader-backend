@@ -307,7 +307,7 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
+        address: '4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS',
         label: 'Superadmin',
         avatar: '',
         createdAt: new Date(),
