@@ -287,12 +287,11 @@ async function main() {
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
     treasuryPubKey = keypair.publicKey;
-    const address = keypair.publicKey.toBase58();
 
     await prisma.wallet.create({
       data: {
-        address,
-        label: 'Superadmin',
+        address:'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f',
+        name: 'Luka',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -308,11 +307,15 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-        label: 'Superadmin',
+        name: 'Josip',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
+        referrer:{
+          connect:{address:'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f'}
+        },
+        referredAt: new Date(Date.now())
       },
     });
     console.log('➕ Added Superadmin wallet');
@@ -324,7 +327,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '3v2V2hBNxxevfyS3J3z6DrPUa7UTi3Ve4y6rByCPqTyP',
-        label: 'Superadmin',
+        name: 'Athar',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -340,7 +343,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: 'HuZ6UtdfeXgicEpukAU6BCZxAoWpeFNPSgf9yBqwCgRY',
-        label: 'Superadmin',
+        name: 'Mattan',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -356,7 +359,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
-        label: 'Admin',
+        name: 'Karlo',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -372,7 +375,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'StudioNX',
+        name: 'StudioNX',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -813,7 +816,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Swamplabs',
+        name: 'Swamplabs',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1106,7 +1109,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Longwood Labs',
+        name: 'Longwood Labs',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1290,7 +1293,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Gooneytoons',
+        name: 'Gooneytoons',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1507,7 +1510,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Saucerpen',
+        name: 'Saucerpen',
         avatar: 'creators/saucerpen/avatar.jpg',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1908,7 +1911,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Roach Writes',
+        name: 'Roach Writes',
         avatar: 'creators/roach-writes/avatar.png',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -2648,7 +2651,7 @@ async function main() {
     let i = 1;
     for (const walletAddress of walletArray) {
       console.log(i, ' ➕ Adding wallet ' + walletAddress);
-      await prisma.wallet.create({ data: { address: walletAddress } });
+      await prisma.wallet.create({ data: { address: walletAddress, name: `comic${i}`} });
 
       // await Promise.all(
       //   comicSlugs.map(async (comicSlug) => {
