@@ -100,6 +100,7 @@ model Comic {
   wallets       WalletComic[]
   creator       Creator       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
+  collaborator  Collaborator[]
 }
 
 model WalletComic {
@@ -140,9 +141,8 @@ model ComicIssue {
   description          String             @default("")
   flavorText           String             @default("")
   cover                String             @default("")
-  signedCover          String             @default("")
-  usedCover            String             @default("")
-  usedSignedCover      String             @default("")
+  featuredCover        FeaturedCover[]
+  stateFullCover       StateFullCover[]                
   releaseDate          DateTime
   updatedAt            DateTime           @updatedAt
   createdAt            DateTime           @default(now())
@@ -156,10 +156,62 @@ model ComicIssue {
   collectionNft        CollectionNft?
   pages                ComicPage[]
   wallets              WalletComicIssue[]
+  collaborator         Collaborator[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
   @@unique([title, comicSlug])
+}
+
+enum CollaboratorRole {
+  Writer
+  Artist
+  Colorist
+  Editor
+  Letterer
+  CoverArtist
+}
+
+model Collaborator {
+  id                Int         @id @default(autoincrement())
+  role              CollaboratorRole
+  name              String
+  comicIssueId      Int?
+  comicIssue        ComicIssue? @relation(fields: [comicIssueId], references: [id])
+  comicSlug         String?
+  comic             Comic?      @relation(fields: [comicSlug], references: [slug])
+  featuredCover     FeaturedCover?
+  stateFullCover    StateFullCover?         
+}
+
+model FeaturedCover {
+  id             Int          @id @default(autoincrement())
+  image          String
+  rarity         ComicRarity
+  comicIssue     ComicIssue   @relation(fields: [comicIssueId], references: [id])
+  comicIssueId   Int
+  collaborator   Collaborator @relation(fields: [id], references: [id])
+}
+
+model StateFullCover {
+  id            Int          @id @default(autoincrement())
+  image         String       @default("")
+  isSigned      Boolean
+  isUsed        Boolean
+  rarity        ComicRarity
+  comicIssue    ComicIssue   @relation(fields: [comicIssueId], references: [id])
+  comicIssueId  Int
+  collaborator  Collaborator @relation(fields: [id], references: [id])
+
+  @@unique([comicIssueId,isSigned,isUsed,rarity])
+}
+
+enum ComicRarity {
+  Common
+  Uncommon
+  Rare
+  Epic
+  Legendary
 }
 
 model Nft {
@@ -297,6 +349,7 @@ model Metadata {
   collectionName String
   isUsed         Boolean
   isSigned       Boolean
+  rarity         ComicRarity
 }
 
 model Listing {
