@@ -442,12 +442,111 @@ async function main() {
                     flavorText: 'Jesus these cats are so gore',
                     cover:
                       'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
-                    signedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
-                    usedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
-                    usedSignedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                      stateFulCovers : {
+                        create:[
+                          {
+                            image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
+                            isSigned: true,
+                            isUsed: false,
+                            artist: 'James',
+                            rarity: 'Legendary'
+                          },
+                          {
+                            image:    'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
+                            isSigned: false,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Legendary'
+                          },
+                          {
+                            image: 'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                            isSigned: true,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Legendary'
+                          },
+                          {
+                            image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
+                            isSigned: true,
+                            isUsed: false,
+                            artist: 'James',
+                            rarity: 'Common'
+                          },
+                          {
+                            image:    'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
+                            isSigned: false,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Common'
+                          },
+                          {
+                            image: 'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                            isSigned: true,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Common'
+                          },
+                          {
+                            image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
+                            isSigned: true,
+                            isUsed: false,
+                            artist: 'James',
+                            rarity: 'Rare'
+                          },
+                          {
+                            image:    'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
+                            isSigned: false,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Rare'
+                          },
+                          {
+                            image: 'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                            isSigned: true,
+                            isUsed:  true,
+                            artist: 'James',
+                            rarity: 'Rare'
+                          }
+                        ]
+                      },
+                      stateLessCovers:{
+                        create:[{
+                          image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
+                          rarity:'Legendary',
+                          artist: 'James'
+                        },
+                        {
+                          image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
+                          rarity:'Common',
+                          artist: 'James'
+                        },
+                        {
+                          image:  'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
+                          rarity:'Rare',
+                          artist: 'James'
+                        }
+                      ]
+                      },
+                      collaborators:{
+                        create:[
+                          {
+                            role: 'Colorist',
+                            name: 'Josip'
+                          },
+                          {
+                            role: 'CoverArtist',
+                            name: 'James'
+                          },
+                          {
+                            role: 'Editor',
+                            name: 'Mattan'
+                          },
+                          {
+                            role: 'Writer',
+                            name: 'Adam'
+                          }
+                        ]
+                      },
                     releaseDate: subDays(new Date(), 21),
                     deletedAt: null,
                     featuredAt: null,
@@ -498,6 +597,26 @@ async function main() {
         completedAt: null,
         cover: 'creators/studio-nx/comics/barbabyans/cover.jpg',
         pfp: 'creators/studio-nx/comics/barbabyans/pfp.jpg',
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'StudioNx'
+            },
+            {
+              role: 'Editor',
+              name: 'Mattan'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         banner: '',
         logo: '',
         website: '',
@@ -522,12 +641,109 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
-              signedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
-              usedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
-              usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:   'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James',
+                      rarity: 'Common'
+                    },
+                    {
+                      image:   'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James',
+                      rarity: 'Common'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James',
+                      rarity: 'Common'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James',
+                      rarity: 'Rare'
+                    },
+                    {
+                      image:   'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James',
+                      rarity: 'Rare'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James',
+                      rarity: 'Rare'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[
+                    {
+                    image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
+                    rarity:'Legendary',
+                    artist: 'James'
+                  },
+                  {
+                    image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
+                    rarity:'Common',
+                    artist: 'James'
+                  },
+                  {
+                    image:  'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
+                    rarity:'Rare',
+                    artist: 'James'
+                  }
+                ]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 23),
               deletedAt: null,
               featuredAt: null,
@@ -557,12 +773,54 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/cover.jpg',
-              signedCover:
-                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/signed-cover.jpg',
-              usedCover:
-                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-cover.jpg',
-              usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James',
+                    },
+                    {
+                      image:   'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James',
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James',
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:  'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -592,12 +850,54 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/cover.jpg',
-              signedCover:
-                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/signed-cover.jpg',
-              usedCover:
-                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-cover.jpg',
-              usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James',
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James',
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James',
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -627,12 +927,54 @@ async function main() {
               flavorText: '“Chubby babies are so cute” - New York Times',
               cover:
                 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/cover.jpg',
-              signedCover:
-                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/signed-cover.jpg',
-              usedCover:
-                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-cover.jpg',
-              usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -670,6 +1012,26 @@ async function main() {
             { slug: 'action' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'StudioNx'
+            },
+            {
+              role: 'Editor',
+              name: 'Mattan'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -702,12 +1064,54 @@ async function main() {
             flavorText: "“I'm just getting started!” - Niko",
             cover:
               'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/cover.png',
-            signedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/signed-cover.png',
-            usedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-cover.png',
-            usedSignedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-signed-cover.png',
+              stateFulCovers : {
+                create:[
+                  {
+                    image:   'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/signed-cover.png',
+                    isSigned: true,
+                    isUsed: false,
+                    artist: 'James'
+                  },
+                  {
+                    image:'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-cover.png',
+                    isSigned: false,
+                    isUsed:  true,
+                    artist: 'James'
+                  },
+                  {
+                    image:  'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/used-signed-cover.png',
+                    isSigned: true,
+                    isUsed:  true,
+                    artist: 'James'
+                  }
+                ]
+              },
+              stateLessCovers:{
+                create:[{
+                  image:'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/cover.png',
+                  artist: 'James'
+                }]
+              },
+              collaborators:{
+                create:[
+                  {
+                    role: 'Colorist',
+                    name: 'Josip'
+                  },
+                  {
+                    role: 'CoverArtist',
+                    name: 'James'
+                  },
+                  {
+                    role: 'Editor',
+                    name: 'Mattan'
+                  },
+                  {
+                    role: 'Writer',
+                    name: 'Adam'
+                  }
+                ]
+              },
             releaseDate: subDays(new Date(), 17),
             deletedAt: null,
             featuredAt: null,
@@ -746,6 +1150,26 @@ async function main() {
             { slug: 'romance' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'StudioNx'
+            },
+            {
+              role: 'Editor',
+              name: 'Mattan'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -778,12 +1202,54 @@ async function main() {
             flavorText: 'Lovely pieces put by Jim Bryson',
             cover:
               'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
-            signedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
-            usedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
-            usedSignedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
+              stateFulCovers : {
+                create:[
+                  {
+                    image:   'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
+                    isSigned: true,
+                    isUsed: false,
+                    artist: 'James'
+                  },
+                  {
+                    image: 'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
+                    isSigned: false,
+                    isUsed:  true,
+                    artist: 'James'
+                  },
+                  {
+                    image:   'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
+                    isSigned: true,
+                    isUsed:  true,
+                    artist: 'James'
+                  }
+                ]
+              },
+              stateLessCovers:{
+                create:[{
+                  image: 'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
+                  artist: 'James'
+                }]
+              },
+              collaborators:{
+                create:[
+                  {
+                    role: 'Colorist',
+                    name: 'Josip'
+                  },
+                  {
+                    role: 'CoverArtist',
+                    name: 'James'
+                  },
+                  {
+                    role: 'Editor',
+                    name: 'Mattan'
+                  },
+                  {
+                    role: 'Writer',
+                    name: 'Adam'
+                  }
+                ]
+              },
             releaseDate: subDays(new Date(), 15),
             deletedAt: null,
             featuredAt: null,
@@ -886,12 +1352,54 @@ async function main() {
                       'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
                     cover:
                       'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
-                    signedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/signed-cover.png',
-                    usedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-cover.png',
-                    usedSignedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed-cover.png',
+                      stateFulCovers : {
+                        create:[
+                          {
+                            image:  'creators/swamplabs/comics/narentines/issues/narentines-the-purge/signed-cover.png',
+                            isSigned: true,
+                            isUsed: false,
+                            artist: 'James'
+                          },
+                          {
+                            image: 'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-cover.png',
+                            isSigned: false,
+                            isUsed:  true,
+                            artist: 'James'
+                          },
+                          {
+                            image:    'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed-cover.png',
+                            isSigned: true,
+                            isUsed:  true,
+                            artist: 'James'
+                          }
+                        ]
+                      },
+                      stateLessCovers:{
+                        create:[{
+                          image:'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
+                          artist: 'James'
+                        }]
+                      },
+                      collaborators:{
+                        create:[
+                          {
+                            role: 'Colorist',
+                            name: 'Josip'
+                          },
+                          {
+                            role: 'CoverArtist',
+                            name: 'James'
+                          },
+                          {
+                            role: 'Editor',
+                            name: 'Mattan'
+                          },
+                          {
+                            role: 'Writer',
+                            name: 'Adam'
+                          }
+                        ]
+                      },
                     releaseDate: subDays(new Date(), 17),
                     deletedAt: null,
                     featuredAt: null,
@@ -932,6 +1440,26 @@ async function main() {
             { slug: 'romance' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'SwampLabs'
+            },
+            {
+              role: 'Editor',
+              name: 'Mattan'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.TeenPlus,
         deletedAt: null,
         featuredAt: null,
@@ -965,12 +1493,54 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/canis-lupers/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:   'creators/swamplabs/comics/lupers/issues/canis-lupers/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image: 'creators/swamplabs/comics/lupers/issues/canis-lupers/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/swamplabs/comics/lupers/issues/canis-lupers/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -1000,12 +1570,54 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-ionus/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:   'creators/swamplabs/comics/lupers/issues/godiary-ionus/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/swamplabs/comics/lupers/issues/godiary-ionus/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1035,12 +1647,54 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-diluna/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/godiary-diluna/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/swamplabs/comics/lupers/issues/godiary-diluna/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -1070,12 +1724,54 @@ async function main() {
               flavorText: 'Placeholder flavor text',
               cover:
                 'creators/swamplabs/comics/lupers/issues/godiary-nuptus/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/swamplabs/comics/lupers/issues/godiary-nuptus/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:   'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image: 'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:'creators/swamplabs/comics/lupers/issues/godiary-nuptus/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -1177,12 +1873,54 @@ async function main() {
 
                     cover:
                       'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/cover.jpg',
-                    signedCover:
-                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/signed-cover.jpg',
-                    usedCover:
-                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-cover.jpg',
-                    usedSignedCover:
-                      'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed-cover.jpg',
+                      stateFulCovers : {
+                        create:[
+                          {
+                            image: 'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/signed-cover.jpg',
+                            isSigned: true,
+                            isUsed: false,
+                            artist: 'James'
+                          },
+                          {
+                            image:  'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-cover.jpg',
+                            isSigned: false,
+                            isUsed:  true,
+                            artist: 'James'
+                          },
+                          {
+                            image: 'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed-cover.jpg',
+                            isSigned: true,
+                            isUsed:  true,
+                            artist: 'James'
+                          }
+                        ]
+                      },
+                      stateLessCovers:{
+                        create:[{
+                          image:'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/cover.jpg',
+                          artist: 'James'
+                        }]
+                      },
+                      collaborators:{
+                        create:[
+                          {
+                            role: 'Colorist',
+                            name: 'Josip'
+                          },
+                          {
+                            role: 'CoverArtist',
+                            name: 'James'
+                          },
+                          {
+                            role: 'Editor',
+                            name: 'Mattan'
+                          },
+                          {
+                            role: 'Writer',
+                            name: 'Adam'
+                          }
+                        ]
+                      },
                     releaseDate: subDays(new Date(), 14),
                     deletedAt: null,
                     featuredAt: null,
@@ -1221,6 +1959,26 @@ async function main() {
             { slug: 'romance' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'LongwoodLabs'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -1254,12 +2012,54 @@ async function main() {
               flavorText: '“I wonder what I can do with these bolt cutters”',
               cover:
                 'creators/longwood-labs/comics/the-remnants/issues/all-alone/cover.png',
-              signedCover:
-                'creators/longwood-labs/comics/the-remnants/issues/all-alone/signed-cover.png',
-              usedCover:
-                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-cover.png',
-              usedSignedCover:
-                'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed-cover.png',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:'creators/longwood-labs/comics/the-remnants/issues/all-alone/signed-cover.png',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'James'
+                    },
+                    {
+                      image:  'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-cover.png',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'James'
+                    },
+                    {
+                      image:'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed-cover.png',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'James'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/longwood-labs/comics/the-remnants/issues/all-alone/cover.png',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Josip'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 22),
               deletedAt: null,
               featuredAt: null,
@@ -1362,12 +2162,54 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/cover.png',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/signed-cover.png',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-cover.png',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed-cover.png',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/signed-cover.png',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'James'
+                            },
+                            {
+                              image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-cover.png',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'James'
+                            },
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed-cover.png',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'James'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/cover.png',
+                            artist: 'James'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Josip'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -1397,12 +2239,54 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'James'
+                            },
+                            {
+                              image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'James'
+                            },
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'James'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/cover.jpg',
+                            artist: 'James'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Josip'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -1432,12 +2316,54 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'James'
+                            },
+                            {
+                              image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'James'
+                            },
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'James'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/cover.jpg',
+                            artist: 'James'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Josip'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 17),
                       deletedAt: null,
                       featuredAt: null,
@@ -1467,12 +2393,54 @@ async function main() {
                       flavorText: '“Such nasty little creatures” - My dad',
                       cover:
                         'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'James'
+                            },
+                            {
+                              image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'James'
+                            },
+                            {
+                              image:'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'James'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/cover.jpg',
+                            artist: 'James'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Josip'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -1577,12 +2545,54 @@ async function main() {
                       '“This story will fill you with hate and sorrow” - NYT',
                     cover:
                       'creators/saucerpen/comics/animosities/issues/episode-1/cover.jpeg',
-                    signedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/signed-cover.jpeg',
-                    usedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/used-cover.jpeg',
-                    usedSignedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/used-signed-cover.jpeg',
+                    stateFulCovers : {
+                      create:[
+                        {
+                          image:'creators/saucerpen/comics/animosities/issues/episode-1/signed-cover.jpeg',
+                          isSigned: true,
+                          isUsed: false,
+                          artist: 'James'
+                        },
+                        {
+                          image:'creators/saucerpen/comics/animosities/issues/episode-1/used-cover.jpeg',
+                          isSigned: false,
+                          isUsed:  true,
+                          artist: 'James'
+                        },
+                        {
+                          image:'creators/saucerpen/comics/animosities/issues/episode-1/used-signed-cover.jpeg',
+                          isSigned: true,
+                          isUsed:  true,
+                          artist: 'James'
+                        }
+                      ]
+                    },
+                    stateLessCovers:{
+                      create:[{
+                        image:'creators/saucerpen/comics/animosities/issues/episode-1/cover.jpeg',
+                        artist: 'James'
+                      }]
+                    },
+                    collaborators:{
+                      create:[
+                        {
+                          role: 'Colorist',
+                          name: 'Josip'
+                        },
+                        {
+                          role: 'CoverArtist',
+                          name: 'James'
+                        },
+                        {
+                          role: 'Editor',
+                          name: 'Mattan'
+                        },
+                        {
+                          role: 'Writer',
+                          name: 'Adam'
+                        }
+                      ]
+                    },
                     releaseDate: subDays(new Date(), 20),
                     deletedAt: null,
                     featuredAt: null,
@@ -1617,6 +2627,26 @@ async function main() {
         genres: {
           connect: [{ slug: 'romance' }],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'SaucerPen'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -1648,14 +2678,55 @@ async function main() {
               description:
                 'A short comic that got published in KOMIKAZE #54 webzine',
               flavorText: '“So lovely” - my mom',
-              cover:
-                'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/birthday/issues/episode-1/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/birthday/issues/episode-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/birthday/issues/episode-1/used-signed-cover.jpg',
+                cover:'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
+                    stateFulCovers : {
+                      create:[
+                        {
+                          image:'creators/saucerpen/comics/birthday/issues/episode-1/signed-cover.jpg',
+                          isSigned: true,
+                          isUsed: false,
+                          artist: 'James'
+                        },
+                        {
+                          image:'creators/saucerpen/comics/birthday/issues/episode-1/used-cover.jpg',
+                          isSigned: false,
+                          isUsed:  true,
+                          artist: 'James'
+                        },
+                        {
+                          image:'creators/saucerpen/comics/birthday/issues/episode-1/used-signed-cover.jpg',
+                          isSigned: true,
+                          isUsed:  true,
+                          artist: 'James'
+                        }
+                      ]
+                    },
+                    stateLessCovers:{
+                      create:[{
+                        image:'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
+                        artist: 'James'
+                      }]
+                    },
+                    collaborators:{
+                      create:[
+                        {
+                          role: 'Colorist',
+                          name: 'Luka'
+                        },
+                        {
+                          role: 'CoverArtist',
+                          name: 'James'
+                        },
+                        {
+                          role: 'Editor',
+                          name: 'Mattan'
+                        },
+                        {
+                          role: 'Writer',
+                          name: 'Adam'
+                        }
+                      ]
+                    },
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -1692,6 +2763,26 @@ async function main() {
             { slug: 'adventure' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'SaucerPen'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Mature,
         deletedAt: null,
         featuredAt: null,
@@ -1723,14 +2814,55 @@ async function main() {
               description:
                 'lady Kuga (the Plague) goes from village to village and likes being clean',
               flavorText: '',
-              cover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed-cover.jpg',
+                  cover:'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
+                    stateFulCovers : {
+                      create:[
+                        {
+                          image:'creators/saucerpen/comics/immaculate-taint/issues/episode-1/signed-cover.jpg',
+                          isSigned: true,
+                          isUsed: false,
+                          artist: 'Adam'
+                        },
+                        {
+                          image:'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-cover.jpg',
+                          isSigned: false,
+                          isUsed:  true,
+                          artist: 'Adam'
+                        },
+                        {
+                          image: 'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed-cover.jpg',
+                          isSigned: true,
+                          isUsed:  true,
+                          artist: 'Adam'
+                        }
+                      ]
+                    },
+                    stateLessCovers:{
+                      create:[{
+                        image:'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
+                        artist: 'James'
+                      }]
+                    },
+                    collaborators:{
+                      create:[
+                        {
+                          role: 'Colorist',
+                          name: 'Luka'
+                        },
+                        {
+                          role: 'CoverArtist',
+                          name: 'James'
+                        },
+                        {
+                          role: 'Editor',
+                          name: 'Mattan'
+                        },
+                        {
+                          role: 'Writer',
+                          name: 'Adam'
+                        }
+                      ]
+                    },
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1766,6 +2898,26 @@ async function main() {
             { slug: 'non-fiction' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'SaucerPen'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Mature,
         deletedAt: null,
         featuredAt: null,
@@ -1798,12 +2950,54 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/saucerpen/comics/island/issues/episode-1/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:'creators/saucerpen/comics/island/issues/episode-1/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/saucerpen/comics/island/issues/episode-1/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/saucerpen/comics/island/issues/episode-1/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:'creators/saucerpen/comics/island/issues/episode-1/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 14),
               deletedAt: null,
               featuredAt: null,
@@ -1839,6 +3033,26 @@ async function main() {
             { slug: 'history' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'SaucerPen'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -1872,12 +3086,54 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/saucerpen/comics/lamia/issues/true-love/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/lamia/issues/true-love/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/lamia/issues/true-love/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/lamia/issues/true-love/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:'creators/saucerpen/comics/lamia/issues/true-love/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/saucerpen/comics/lamia/issues/true-love/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/saucerpen/comics/lamia/issues/true-love/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:'creators/saucerpen/comics/lamia/issues/true-love/cover.jpg',
+                    artist: 'Adam'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -1979,12 +3235,54 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-1/cover.jpg',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-1/signed-cover.jpg',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-1/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-1/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-1/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-1/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-1/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-1/cover.jpg',
+                            artist: 'Adam'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -2014,12 +3312,54 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-2/cover.jpg',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-2/signed-cover.jpg',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-2/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-2/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-2/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-2/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-2/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-2/cover.jpg',
+                            artist: 'Adam'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -2049,12 +3389,54 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-3/cover.jpg',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-3/signed-cover.jpg',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-3/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-3/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-3/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-3/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-3/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-3/cover.jpg',
+                            artist: 'Adam'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -2084,12 +3466,54 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-4/cover.png',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-4/signed-cover.png',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-4/used-cover.png',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-4/used-signed-cover.png',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-4/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-4/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-4/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-4/cover.jpg',
+                            artist: 'Adam'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -2119,12 +3543,108 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-5/cover.jpg',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-5/signed-cover.jpg',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam',
+                              rarity: 'Common'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Roach',
+                              rarity: 'Common'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam',
+                              rarity: 'Common'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam',
+                              rarity: 'Rare'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-5/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Roach',
+                              rarity: 'Rare'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam',
+                              rarity: 'Rare'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-5/cover.jpg',
+                            rarity: 'Rare',
+                            artist: 'James'
+                          },
+                          {
+                            image:'creators/roach-writes/comics/wretches/issues/issue-5/cover.jpg',
+                            rarity: 'Common',
+                            artist: 'James'
+                          },
+                          {
+                            image:'creators/roach-writes/comics/wretches/issues/issue-5/cover.jpg',
+                            rarity: 'Legendary',
+                            artist: 'James'
+                          }
+                        ]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 15),
                       deletedAt: null,
                       featuredAt: null,
@@ -2154,12 +3674,54 @@ async function main() {
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/roach-writes/comics/wretches/issues/issue-6/cover.jpg',
-                      signedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-6/signed-cover.jpg',
-                      usedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-6/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/roach-writes/comics/wretches/issues/issue-6/used-signed-cover.jpg',
+                        stateFulCovers : {
+                          create:[
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-6/signed-cover.jpg',
+                              isSigned: true,
+                              isUsed: false,
+                              artist: 'Adam'
+                            },
+                            {
+                              image: 'creators/roach-writes/comics/wretches/issues/issue-6/used-cover.jpg',
+                              isSigned: false,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            },
+                            {
+                              image:'creators/roach-writes/comics/wretches/issues/issue-6/used-signed-cover.jpg',
+                              isSigned: true,
+                              isUsed:  true,
+                              artist: 'Adam'
+                            }
+                          ]
+                        },
+                        stateLessCovers:{
+                          create:[{
+                            image:'creators/roach-writes/comics/wretches/issues/issue-6/cover.jpg',
+                            artist: 'James'
+                          }]
+                        },
+                        collaborators:{
+                          create:[
+                            {
+                              role: 'Colorist',
+                              name: 'Luka'
+                            },
+                            {
+                              role: 'CoverArtist',
+                              name: 'James'
+                            },
+                            {
+                              role: 'Editor',
+                              name: 'Mattan'
+                            },
+                            {
+                              role: 'Writer',
+                              name: 'Adam'
+                            }
+                          ]
+                        },
                       releaseDate: subDays(new Date(), 12),
                       deletedAt: null,
                       featuredAt: null,
@@ -2199,6 +3761,26 @@ async function main() {
             { slug: 'fantasy' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'RoachWrites'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -2231,12 +3813,54 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/roach-writes/comics/jana/issues/issue-1/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/jana/issues/issue-1/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/jana/issues/issue-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/jana/issues/issue-1/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/jana/issues/issue-1/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/jana/issues/issue-1/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/jana/issues/issue-1/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:'creators/roach-writes/comics/jana/issues/issue-1/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
               featuredAt: null,
@@ -2265,12 +3889,54 @@ async function main() {
               flavorText: '',
               cover:
                 'creators/roach-writes/comics/jana/issues/issue-2/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/jana/issues/issue-2/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/jana/issues/issue-2/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/jana/issues/issue-2/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/jana/issues/issue-2/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/jana/issues/issue-2/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/jana/issues/issue-2/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:'creators/roach-writes/comics/jana/issues/issue-2/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -2309,6 +3975,26 @@ async function main() {
             { slug: 'adventure' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'RoachWrites'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -2343,12 +4029,54 @@ async function main() {
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               cover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-1/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-1/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/knockturn-county/issues/issue-1/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/knockturn-county/issues/issue-1/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/roach-writes/comics/knockturn-county/issues/issue-1/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -2379,12 +4107,54 @@ async function main() {
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               cover:
                 'creators/roach-writes/comics/knockturn-county/issues/issue-2/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/roach-writes/comics/knockturn-county/issues/issue-2/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 16),
               deletedAt: null,
               featuredAt: null,
@@ -2415,6 +4185,26 @@ async function main() {
         flavorText: 'Amazing and inspiring story! - IDW',
         genres: {
           connect: [{ slug: 'non-fiction' }],
+        },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'RoachWrites'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
         },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
@@ -2448,12 +4238,54 @@ async function main() {
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/painted-pray/issues/issue-1/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/painted-pray/issues/issue-1/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/painted-pray/issues/issue-1/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/painted-pray/issues/issue-1/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/painted-pray/issues/issue-1/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/painted-pray/issues/issue-1/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image: 'creators/roach-writes/comics/painted-pray/issues/issue-1/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -2489,6 +4321,26 @@ async function main() {
             { slug: 'romance' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'RoachWrites'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -2521,12 +4373,54 @@ async function main() {
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/cover.jpg',
-              signedCover:
-                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/signed-cover.jpg',
-              usedCover:
-                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-cover.jpg',
-              usedSignedCover:
-                'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-signed-cover.jpg',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image: 'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/signed-cover.jpg',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-cover.jpg',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/used-signed-cover.jpg',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:  'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/cover.jpg',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -2565,6 +4459,26 @@ async function main() {
             { slug: 'comedy' },
           ],
         },
+        collaborators:{
+          create:[
+            {
+              role: 'Colorist',
+              name: 'Josip'
+            },
+            {
+              role: 'CoverArtist',
+              name: 'Athar'
+            },
+            {
+              role: 'Editor',
+              name: 'RoachWrites'
+            },
+            {
+              role: 'Writer',
+              name: 'Adam'
+            }
+          ]
+        },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
@@ -2598,12 +4512,54 @@ async function main() {
               flavorText: 'Amazing and inspiring story! - IDW',
               cover:
                 'creators/roach-writes/comics/multi-versus/issues/episode-1/cover.png',
-              signedCover:
-                'creators/roach-writes/comics/multi-versus/issues/episode-1/signed-cover.png',
-              usedCover:
-                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-cover.png',
-              usedSignedCover:
-                'creators/roach-writes/comics/multi-versus/issues/episode-1/used-signed-cover.png',
+                stateFulCovers : {
+                  create:[
+                    {
+                      image:  'creators/roach-writes/comics/multi-versus/issues/episode-1/signed-cover.png',
+                      isSigned: true,
+                      isUsed: false,
+                      artist: 'Adam'
+                    },
+                    {
+                      image: 'creators/roach-writes/comics/multi-versus/issues/episode-1/used-cover.png',
+                      isSigned: false,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    },
+                    {
+                      image:'creators/roach-writes/comics/multi-versus/issues/episode-1/used-signed-cover.png',
+                      isSigned: true,
+                      isUsed:  true,
+                      artist: 'Adam'
+                    }
+                  ]
+                },
+                stateLessCovers:{
+                  create:[{
+                    image:  'creators/roach-writes/comics/multi-versus/issues/episode-1/cover.png',
+                    artist: 'James'
+                  }]
+                },
+                collaborators:{
+                  create:[
+                    {
+                      role: 'Colorist',
+                      name: 'Luka'
+                    },
+                    {
+                      role: 'CoverArtist',
+                      name: 'James'
+                    },
+                    {
+                      role: 'Editor',
+                      name: 'Mattan'
+                    },
+                    {
+                      role: 'Writer',
+                      name: 'Adam'
+                    }
+                  ]
+                },
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
