@@ -2,6 +2,7 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { validateEd25519Address } from '../utils/solana';
 import { Transaction } from '@solana/web3.js';
@@ -9,20 +10,50 @@ import { PrismaService } from 'nestjs-prisma';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
+import { RequestPasswordDto } from './dto/request-password.dto';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class PasswordService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly walletService: WalletService,
+  ) {}
 
-  async generateOneTimePassword(address: string): Promise<string> {
+  async generateOneTimePassword(
+    requestPasswordDto: RequestPasswordDto,
+  ): Promise<string> {
     const nonce = uuidv4();
+    const { address, name, referrer } = requestPasswordDto;
 
     validateEd25519Address(address);
-    await this.prisma.wallet.upsert({
-      where: { address },
-      update: { nonce },
-      create: { address, nonce, name: address },
-    });
+
+    try {
+      await this.prisma.wallet.update({
+        where: { address },
+        data: { nonce },
+      });
+    } catch (e) {
+      // if wallet does not exist
+      if (referrer) validateEd25519Address(referrer);
+      if (!name) {
+        throw new BadRequestException('Account name is missing');
+      }
+
+      // create a new one
+      await this.prisma.wallet.create({
+        data: {
+          address,
+          name,
+          nonce,
+          referrer: { connect: { address: referrer } },
+          referredAt: new Date(),
+        },
+      });
+
+      // and redeem the referral
+      await this.walletService.redeemReferral(referrer, address);
+    }
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;
   }

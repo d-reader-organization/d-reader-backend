@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -12,7 +11,6 @@ import {
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -22,7 +20,7 @@ import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
@@ -31,22 +29,6 @@ import { Wallet } from '@prisma/client';
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
-
-  @Throttle(5, 30)
-  @Get('redeem/referral/:referrer')
-  async redeemReferral(
-    @Param('referrer') referrer: string,
-    @WalletEntity() wallet: Wallet,
-  ) {
-    return await this.walletService.redeemReferral(referrer, wallet.address);
-  }
-
-  /* Create a new wallet */
-  @Post('create')
-  async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
-    const wallet = await this.walletService.create(createWalletDto);
-    return await toWalletDto(wallet);
-  }
 
   /* Get all wallets */
   @UseInterceptors(ClassSerializerInterceptor)
@@ -99,6 +81,18 @@ export class WalletController {
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<WalletDto> {
     const updatedWallet = await this.walletService.updateFile(address, avatar);
+    return await toWalletDto(updatedWallet);
+  }
+
+  @Patch('redeem-referral/:referrer')
+  async redeemReferral(
+    @Param('referrer') referrer: string,
+    @WalletEntity() wallet: Wallet,
+  ) {
+    const updatedWallet = await this.walletService.redeemReferral(
+      referrer,
+      wallet.address,
+    );
     return await toWalletDto(updatedWallet);
   }
 

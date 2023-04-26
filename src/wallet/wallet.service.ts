@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
@@ -16,18 +15,6 @@ export class WalletService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
   ) {}
-
-  async create(createWalletDto: CreateWalletDto) {
-    try {
-      const wallet = await this.prisma.wallet.create({
-        data: createWalletDto,
-      });
-
-      return wallet;
-    } catch {
-      throw new BadRequestException('Bad wallet data');
-    }
-  }
 
   async findAll() {
     const wallets = await this.prisma.wallet.findMany();
@@ -130,13 +117,14 @@ export class WalletService {
       );
     }
 
-    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    let wallet = await this.prisma.wallet.findUnique({ where: { address } });
     if (!!wallet.referredAt) {
       throw new BadRequestException(
         `Account ${wallet.name} is already referred`,
       );
     }
 
+    // update referrer wallet
     await this.prisma.wallet.update({
       where: { address },
       data: {
@@ -148,7 +136,9 @@ export class WalletService {
       },
     });
 
-    return;
+    // refresh referred wallet state
+    wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    return wallet;
   }
 
   async generateAvatar(address: string) {
