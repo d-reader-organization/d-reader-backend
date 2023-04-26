@@ -9,7 +9,7 @@ import { PrivateBidParams } from './dto/private-bid-params.dto';
 import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
@@ -25,7 +25,6 @@ import { BuyArgs } from './dto/types/buy-args';
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
-  @Throttle(5, 30)
   @Get('/transactions/list')
   async constructListTransaction(
     @WalletEntity() wallet: Wallet,
@@ -42,7 +41,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/private-bid')
   async constructPrivateBidTransaction(
     @WalletEntity() wallet: Wallet,
@@ -62,7 +60,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/instant-buy')
   async constructInstantBuyTransaction(
     @WalletEntity() wallet: Wallet,
@@ -80,7 +77,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/multiple-buy')
   @ApiQuery({
     name: 'query',
@@ -98,7 +94,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/cancel-bid')
   async constructCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
@@ -107,7 +102,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = query.receiptAddress
@@ -120,7 +114,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/get/listings/:comicIssueId')
   async findAllListings(
     @Query() query: ListingFilterParams,
@@ -133,7 +126,6 @@ export class AuctionHouseController {
     return await toListingDtoArray(listings);
   }
 
-  @Throttle(5, 30)
   @Get('/get/collection-stats/:comicIssueId')
   async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
     const stats = await this.auctionHouseService.findCollectionStats(
