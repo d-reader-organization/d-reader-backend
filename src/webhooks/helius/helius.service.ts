@@ -353,7 +353,7 @@ export class HeliusService {
           owner: {
             connectOrCreate: {
               where: { address: ownerAddress },
-              create: { address: ownerAddress },
+              create: { address: ownerAddress, name: ownerAddress },
             },
           },
           address: mint.toBase58(),
@@ -393,7 +393,7 @@ export class HeliusService {
           buyer: {
             connectOrCreate: {
               where: { address: nftTransactionInfo.buyer },
-              create: { address: nftTransactionInfo.buyer },
+              create: { address: nftTransactionInfo.buyer, name: ownerAddress },
             },
           },
           price: nftTransactionInfo.amount,

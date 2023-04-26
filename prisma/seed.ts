@@ -2,7 +2,7 @@ import { addDays, subDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
-import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getRandomInt, sleep } from '../src/utils/helpers';
 import {
   PrismaClient,
@@ -18,7 +18,14 @@ import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
 import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
-import { Metaplex, PublicKey, sol } from '@metaplex-foundation/js';
+import {
+  BundlrStorageDriver,
+  sol,
+  keypairIdentity,
+  Metaplex,
+  bundlrStorage,
+} from '@metaplex-foundation/js';
+import { BUNDLR_ADDRESS } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -277,22 +284,20 @@ async function main() {
     console.log('❌ Failed to add comic genres', e);
   }
 
+  const wallet = AES.decrypt(
+    process.env.TREASURY_PRIVATE_KEY,
+    process.env.TREASURY_SECRET,
+  );
+
+  const treasuryKeypair = Keypair.fromSecretKey(
+    Buffer.from(JSON.parse(wallet.toString(Utf8))),
+  );
+  treasuryPubKey = treasuryKeypair.publicKey;
   try {
-    const wallet = AES.decrypt(
-      process.env.TREASURY_PRIVATE_KEY,
-      process.env.TREASURY_SECRET,
-    );
-
-    const keypair = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(wallet.toString(Utf8))),
-    );
-    treasuryPubKey = keypair.publicKey;
-    const address = keypair.publicKey.toBase58();
-
     await prisma.wallet.create({
       data: {
-        address,
-        label: 'Superadmin',
+        address: 'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f',
+        name: 'Luka',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -308,11 +313,15 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-        label: 'Superadmin',
+        name: 'Josip',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
+        referrer: {
+          connect: { address: 'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f' },
+        },
+        referredAt: new Date(Date.now()),
       },
     });
     console.log('➕ Added Superadmin wallet');
@@ -324,7 +333,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '3v2V2hBNxxevfyS3J3z6DrPUa7UTi3Ve4y6rByCPqTyP',
-        label: 'Superadmin',
+        name: 'Athar',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -340,7 +349,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: 'HuZ6UtdfeXgicEpukAU6BCZxAoWpeFNPSgf9yBqwCgRY',
-        label: 'Superadmin',
+        name: 'Mattan',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -356,7 +365,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
-        label: 'Admin',
+        name: 'Karlo',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -372,7 +381,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'StudioNX',
+        name: 'StudioNX',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -813,7 +822,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Swamplabs',
+        name: 'Swamplabs',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1106,7 +1115,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Longwood Labs',
+        name: 'Longwood Labs',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1290,7 +1299,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Gooneytoons',
+        name: 'Gooneytoons',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1507,7 +1516,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Saucerpen',
+        name: 'Saucerpen',
         avatar: 'creators/saucerpen/avatar.jpg',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -1908,7 +1917,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: Keypair.generate().publicKey.toBase58(),
-        label: 'Roach Writes',
+        name: 'Roach Writes',
         avatar: 'creators/roach-writes/avatar.png',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -2648,7 +2657,9 @@ async function main() {
     let i = 1;
     for (const walletAddress of walletArray) {
       console.log(i, ' ➕ Adding wallet ' + walletAddress);
-      await prisma.wallet.create({ data: { address: walletAddress } });
+      await prisma.wallet.create({
+        data: { address: walletAddress, name: `comic${i}` },
+      });
 
       // await Promise.all(
       //   comicSlugs.map(async (comicSlug) => {
@@ -2725,18 +2736,35 @@ async function main() {
 
   const comicIssues = await prisma.comicIssue.findMany();
   const metaplex = new Metaplex(heliusService.helius.connection);
+  metaplex.use(keypairIdentity(treasuryKeypair)).use(
+    bundlrStorage({
+      address: BUNDLR_ADDRESS,
+      timeout: 60000,
+    }),
+  );
+  const storage = metaplex.storage().driver() as BundlrStorageDriver;
 
   let i = 1;
   for (const comicIssue of comicIssues) {
+    try {
+      (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
+      console.log('Funded bundlr storage');
+    } catch (e) {
+      console.log('Failed to fund bundlr storage');
+    }
+
     if (i % 10 === 0) {
       try {
         await metaplex.rpc().airdrop(treasuryPubKey, sol(1));
+        console.log('Airdropped 1 sol');
       } catch (e) {
         console.log('Failed to airdrop 1 sol to the treasury wallet');
       }
     }
 
     if (
+      // skip publishing comics on mainnet-beta
+      process.env.SOLANA_CLUSTER === 'mainnet-beta' ||
       (comicIssue.comicSlug === 'the-dark-portal' &&
         comicIssue.slug === 'concept-art') ||
       (comicIssue.comicSlug === 'knockturn-county' &&

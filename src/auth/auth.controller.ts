@@ -16,6 +16,11 @@ export class AuthController {
     private readonly passwordService: PasswordService,
   ) {}
 
+  @Get('validate/name/:name')
+  async validateName(@Param('name') name: string): Promise<boolean> {
+    return await this.authService.validateName(name);
+  }
+
   @Throttle(2, 10)
   /* Request a new one time password for your wallet to sign */
   @Get('wallet/request-password/:address')

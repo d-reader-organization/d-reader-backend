@@ -178,11 +178,6 @@ export class s3Service {
       const fileKey =
         prefix + (name ?? file.fieldname) + path.extname(file.originalname);
 
-      console.log(
-        'BUCKET s3Service: ',
-        this.bucket,
-        process.env.AWS_BUCKET_NAME,
-      );
       await this.putObject({
         ContentType: file.mimetype,
         Key: fileKey,

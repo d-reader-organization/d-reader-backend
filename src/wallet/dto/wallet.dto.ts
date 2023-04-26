@@ -10,7 +10,7 @@ export class WalletDto {
   address: string;
 
   @IsString()
-  label: string;
+  name: string;
 
   @IsUrl()
   avatar: string;
@@ -23,7 +23,7 @@ export class WalletDto {
 export async function toWalletDto(wallet: Wallet) {
   const plainWalletDto: WalletDto = {
     address: wallet.address,
-    label: wallet.label,
+    name: wallet.name,
     avatar: await getCachedReadUrl(wallet.avatar),
     role: wallet.role,
   };
