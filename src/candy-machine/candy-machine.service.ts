@@ -41,6 +41,7 @@ import {
   DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
+  BUNDLR_ADDRESS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { s3Service } from '../aws/s3.service';
@@ -69,10 +70,6 @@ export class CandyMachineService {
     const treasuryKeypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
     );
-    const BUNDLR_ADDRESS =
-      process.env.cluster === 'devnet'
-        ? 'https://devnet.bundlr.network'
-        : 'https://node1.bundlr.network';
     this.metaplex.use(keypairIdentity(treasuryKeypair)).use(
       bundlrStorage({
         address: BUNDLR_ADDRESS,
