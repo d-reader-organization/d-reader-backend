@@ -19,6 +19,8 @@ import config from '../configs/config';
 import { Optional } from '../utils/helpers';
 import * as path from 'path';
 import { isEmpty } from 'lodash';
+import { getTruncatedTime } from './s3client';
+import timekeeper from 'timekeeper';
 
 type s3File = {
   fieldname: Express.Multer.File['fieldname'];
@@ -76,7 +78,26 @@ export class s3Service {
     const getCommand = new GetObjectCommand({ Bucket: this.bucket, Key: key });
 
     const signedUrl = await getSignedUrl(this.client, getCommand, {
-      expiresIn: 3600,
+      expiresIn: 86400, // 24 hours
+    });
+
+    return signedUrl;
+  };
+
+  /**
+   * This is a cache-friendly variant of s3.getSignedUrl
+   * Every 12 hours a new presigned URL will be generated,
+   * in between the same URL will be reused
+   */
+  getCachedReadUrl = async (key: string) => {
+    // If key is an empty string, return it
+    if (!key) return key;
+
+    const getCommand = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const signedUrl = await timekeeper.withFreeze(getTruncatedTime(), () => {
+      return getSignedUrl(this.client, getCommand, {
+        expiresIn: 86400, // 24 hours
+      });
     });
 
     return signedUrl;
