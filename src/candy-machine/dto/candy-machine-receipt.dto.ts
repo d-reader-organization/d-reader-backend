@@ -20,7 +20,7 @@ export class BasicWalletDto {
   avatar: string;
 
   @IsString()
-  label: string;
+  name: string;
 }
 
 export class CandyMachineReceiptDto {
@@ -54,7 +54,7 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
     buyer: {
       address: receipt.buyer.address,
       avatar: await getReadUrl(receipt.buyer.avatar),
-      label: receipt.buyer.label,
+      name: receipt.buyer.name,
     },
     candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,

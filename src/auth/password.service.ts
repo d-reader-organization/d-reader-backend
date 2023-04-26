@@ -21,7 +21,7 @@ export class PasswordService {
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },
-      create: { address, nonce },
+      create: { address, nonce, name: address },
     });
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;
