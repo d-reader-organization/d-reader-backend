@@ -46,3 +46,8 @@ export const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
 
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
+
+export const BUNDLR_ADDRESS =
+  process.env.SOLANA_CLUSTER === 'devnet'
+    ? 'https://devnet.bundlr.network'
+    : 'https://node1.bundlr.network';

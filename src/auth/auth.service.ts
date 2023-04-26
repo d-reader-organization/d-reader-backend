@@ -100,4 +100,9 @@ export class AuthService {
       throw new NotFoundException(`Expired nonce token`);
     } else return wallet;
   }
+
+  async validateName(name: string) {
+    const exist = await this.prisma.wallet.findFirst({ where: { name } });
+    return !exist;
+  }
 }

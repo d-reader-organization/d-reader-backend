@@ -8,6 +8,7 @@ import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
+import { PublicKey } from '@solana/web3.js';
 
 @Injectable()
 export class WalletService {
@@ -108,6 +109,45 @@ export class WalletService {
         `Wallet with address ${address} does not exist`,
       );
     }
+    return;
+  }
+
+  async redeemReferral(referrer: string, address: string) {
+    // if the search string is of type Solana address, search by address
+    // otherwise search by wallet name
+    const where = PublicKey.isOnCurve(referrer)
+      ? { address: referrer }
+      : { name: referrer };
+    const referrerWallet = await this.prisma.wallet.findUnique({
+      where,
+    });
+
+    if (!referrerWallet) {
+      throw new BadRequestException(`Account ${referrer} doesn't exist`);
+    } else if (referrerWallet.referralsRemaining == 0) {
+      throw new BadRequestException(
+        `Account ${referrerWallet.name} doesn't have referrals left`,
+      );
+    }
+
+    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    if (!!wallet.referredAt) {
+      throw new BadRequestException(
+        `Account ${wallet.name} is already referred`,
+      );
+    }
+
+    await this.prisma.wallet.update({
+      where: { address },
+      data: {
+        referredAt: new Date(),
+        referrer: {
+          connect: { address: referrerWallet.address },
+          update: { referralsRemaining: { decrement: 1 } },
+        },
+      },
+    });
+
     return;
   }
 
