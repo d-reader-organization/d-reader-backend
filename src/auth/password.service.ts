@@ -28,6 +28,7 @@ export class PasswordService {
 
     validateEd25519Address(address);
 
+    let createNewWallet = false;
     try {
       await this.prisma.wallet.update({
         where: { address },
@@ -35,24 +36,22 @@ export class PasswordService {
       });
     } catch (e) {
       // if wallet does not exist
-      if (referrer) validateEd25519Address(referrer);
+      createNewWallet = true;
+    }
+
+    if (createNewWallet) {
       if (!name) {
         throw new BadRequestException('Account name is missing');
       }
 
-      // create a new one
       await this.prisma.wallet.create({
-        data: {
-          address,
-          name,
-          nonce,
-          referrer: { connect: { address: referrer } },
-          referredAt: new Date(),
-        },
+        data: { address, name, nonce },
       });
 
-      // and redeem the referral
-      await this.walletService.redeemReferral(referrer, address);
+      if (referrer) {
+        // and redeem the referral
+        await this.walletService.redeemReferral(referrer, address);
+      }
     }
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;

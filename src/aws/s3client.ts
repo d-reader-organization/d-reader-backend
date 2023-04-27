@@ -5,8 +5,9 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../configs/config';
-import timekeeper from 'timekeeper';
 import { subHours } from 'date-fns';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const timekeeper = require('timekeeper');
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
