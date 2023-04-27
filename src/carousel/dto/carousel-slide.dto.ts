@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { CarouselSlide, CarouselLocation } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { getCachedReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from 'src/aws/s3client';
 
 export class CarouselSlideDto {
   @IsPositive()
@@ -60,7 +60,7 @@ export class CarouselSlideDto {
 export async function toCarouselSlideDto(slide: CarouselSlide) {
   const plainSlideDto: CarouselSlideDto = {
     id: slide.id,
-    image: await getCachedReadUrl(slide.image),
+    image: await getReadUrl(slide.image),
     priority: slide.priority,
     title: slide.title,
     subtitle: slide.subtitle,

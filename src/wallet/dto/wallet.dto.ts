@@ -3,7 +3,7 @@ import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Wallet, Role } from '@prisma/client';
-import { getCachedReadUrl } from '../../aws/s3client';
+import { getReadUrl } from '../../aws/s3client';
 
 export class WalletDto {
   @IsSolanaAddress()
@@ -27,7 +27,7 @@ export async function toWalletDto(wallet: Wallet) {
   const plainWalletDto: WalletDto = {
     address: wallet.address,
     name: wallet.name,
-    avatar: await getCachedReadUrl(wallet.avatar),
+    avatar: await getReadUrl(wallet.avatar),
     role: wallet.role,
     hasBetaAccess: !!wallet.referredAt,
   };
