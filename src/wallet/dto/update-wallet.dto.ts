@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class UpdateWalletDto {
   @IsOptional()
   @MaxLength(24)
-  label?: string;
+  name?: string;
 
   @IsEnum(Role)
   @IsOptional()

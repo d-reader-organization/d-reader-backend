@@ -2,6 +2,7 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
@@ -99,5 +100,15 @@ export class AuthService {
     ) {
       throw new NotFoundException(`Expired nonce token`);
     } else return wallet;
+  }
+
+  async validateName(name: string) {
+    const wallet = await this.prisma.wallet.findUnique({ where: { name } });
+
+    if (wallet) {
+      throw new BadRequestException('Account name already taken');
+    }
+
+    return true;
   }
 }

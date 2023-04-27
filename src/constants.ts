@@ -86,3 +86,7 @@ export const FIVE_RARITIES_SHARE: RarityConstant[] = [
     value: 2,
   },
 ];
+export const BUNDLR_ADDRESS =
+  process.env.SOLANA_CLUSTER === 'devnet'
+    ? 'https://devnet.bundlr.network'
+    : 'https://node1.bundlr.network';

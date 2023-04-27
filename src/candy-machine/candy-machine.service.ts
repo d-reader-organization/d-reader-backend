@@ -18,6 +18,7 @@ import {
   toBigNumber,
   TransactionBuilder,
   MetaplexFile,
+  bundlrStorage,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
@@ -43,6 +44,7 @@ import {
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
+  BUNDLR_ADDRESS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { s3Service } from '../aws/s3.service';
@@ -72,10 +74,12 @@ export class CandyMachineService {
     const treasuryKeypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
     );
-
-    this.metaplex
-      .use(keypairIdentity(treasuryKeypair))
-      .use(awsStorage(this.s3.client, this.s3.metadataBucket));
+    this.metaplex.use(keypairIdentity(treasuryKeypair)).use(
+      bundlrStorage({
+        address: BUNDLR_ADDRESS,
+        timeout: 60000,
+      }),
+    );
   }
 
   async findMintedNfts(candyMachineAddress: string) {

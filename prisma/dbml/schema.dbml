@@ -4,7 +4,7 @@
 
 Table Wallet {
   address String [pk]
-  label String [not null, default: '']
+  name String [unique, not null]
   avatar String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   lastLogin DateTime
@@ -17,6 +17,11 @@ Table Wallet {
   walletCreator WalletCreator [not null]
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
+  referrerAddress String
+  referralsRemaining Int [not null, default: 0]
+  referrer Wallet
+  referrals Wallet [not null]
+  referredAt DateTime
 }
 
 Table Creator {
@@ -367,6 +372,8 @@ Enum ComicRarity {
 Enum CarouselLocation {
   Home
 }
+
+Ref: Wallet.referrerAddress - Wallet.address
 
 Ref: Creator.walletAddress - Wallet.address [delete: Cascade]
 

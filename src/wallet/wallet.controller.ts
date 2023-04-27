@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -12,7 +11,6 @@ import {
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -31,13 +29,6 @@ import { Wallet } from '@prisma/client';
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
-
-  /* Create a new wallet */
-  @Post('create')
-  async create(@Body() createWalletDto: CreateWalletDto): Promise<WalletDto> {
-    const wallet = await this.walletService.create(createWalletDto);
-    return await toWalletDto(wallet);
-  }
 
   /* Get all wallets */
   @UseInterceptors(ClassSerializerInterceptor)
@@ -90,6 +81,18 @@ export class WalletController {
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<WalletDto> {
     const updatedWallet = await this.walletService.updateFile(address, avatar);
+    return await toWalletDto(updatedWallet);
+  }
+
+  @Patch('redeem-referral/:referrer')
+  async redeemReferral(
+    @Param('referrer') referrer: string,
+    @WalletEntity() wallet: Wallet,
+  ) {
+    const updatedWallet = await this.walletService.redeemReferral(
+      referrer,
+      wallet.address,
+    );
     return await toWalletDto(updatedWallet);
   }
 
