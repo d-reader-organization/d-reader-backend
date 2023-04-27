@@ -65,6 +65,12 @@ CREATE TABLE "StateFulCover" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ComicCollaborator_role_name_comicSlug_key" ON "ComicCollaborator"("role", "name", "comicSlug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ComicIssueCollaborator_role_name_comicIssueId_key" ON "ComicIssueCollaborator"("role", "name", "comicIssueId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "StateLessCover_comicIssueId_rarity_key" ON "StateLessCover"("comicIssueId", "rarity");
 
 -- CreateIndex

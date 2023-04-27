@@ -183,6 +183,7 @@ model ComicCollaborator {
   name              String
   comicSlug         String
   comic             Comic      @relation(fields: [comicSlug], references: [slug])  
+  @@unique([role,name,comicSlug])
 }
 
 model ComicIssueCollaborator {
@@ -191,6 +192,7 @@ model ComicIssueCollaborator {
   name              String
   comicIssueId      Int
   comicIssue        ComicIssue @relation(fields: [comicIssueId], references: [id])
+  @@unique([role,name,comicIssueId])
 }
 
 model StateLessCover {

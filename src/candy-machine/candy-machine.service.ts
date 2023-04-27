@@ -22,8 +22,7 @@ import {
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
-import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
-import { ComicIssue, ComicRarity, StateFulCover } from '@prisma/client';
+import { ComicRarity, StateFulCover } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
@@ -48,7 +47,7 @@ import {
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { s3Service } from '../aws/s3.service';
-import { ComicIssueInput, RarityConstant } from 'src/comic-issue/dto/types';
+import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
 
 @Injectable()
 export class CandyMachineService {
@@ -122,7 +121,7 @@ export class CandyMachineService {
     );
   }
 
-  async getComicIssueCovers(comicIssue: ComicIssueInput) {
+  async getComicIssueCovers(comicIssue: CandyMachineIssue) {
     // this.validateInput(comicIssue); /* Note: Validate the new input */
 
     let stateLessCovers: MetaplexFile[];
@@ -157,7 +156,7 @@ export class CandyMachineService {
   }
 
   async uploadItemMetadata(
-    comicIssue: ComicIssueInput,
+    comicIssue: CandyMachineIssue,
     comicName: string,
     coverImage: MetaplexFile,
     creatorAddress: string,
@@ -280,7 +279,7 @@ export class CandyMachineService {
   }
 
   async createComicIssueCM(
-    comicIssue: ComicIssueInput,
+    comicIssue: CandyMachineIssue,
     comicName: string,
     creatorAddress: string,
   ) {

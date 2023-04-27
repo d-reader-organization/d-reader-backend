@@ -8,7 +8,6 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateComicIssueDto,
   CreateComicIssueFilesDto,
-  StateLessCover,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
@@ -66,6 +65,9 @@ export class ComicIssueService {
           sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
           pages: { createMany: { data: pagesData } },
+          collaborators: {
+            createMany: { data: createComicIssueDto.collaborators },
+          },
         },
       });
     } catch {
@@ -98,9 +100,9 @@ export class ComicIssueService {
       });
     });
     // Update Comic Issue with s3 file keys
-    comicIssue = await this.prisma.comicIssue.update({
+    return await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
-      include: { pages: true },
+      include: { pages: true, collaborators: true },
       data: {
         cover: coverKey,
         stateLessCovers: {
@@ -110,8 +112,6 @@ export class ComicIssueService {
         },
       },
     });
-
-    return comicIssue;
   }
 
   async findActiveCandyMachine(
@@ -136,6 +136,7 @@ export class ComicIssueService {
       include: {
         comic: { include: { creator: true } },
         collectionNft: { select: { address: true } },
+        collaborators: true,
       },
       skip: query.skip,
       take: query.take,
@@ -183,6 +184,7 @@ export class ComicIssueService {
       include: {
         comic: { include: { creator: true } },
         collectionNft: { select: { address: true } },
+        collaborators: true,
       },
     });
 
@@ -266,6 +268,7 @@ export class ComicIssueService {
           sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
           // TODO v2: check if pagesData = undefined will destroy all previous relations
           pages: { createMany: { data: pagesData } },
+          collaborators: undefined,
         },
       });
     } catch {
@@ -400,6 +403,7 @@ export class ComicIssueService {
 
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
+      include: { collaborators: true },
       data: { publishedAt: new Date() },
     });
 

@@ -1,5 +1,6 @@
 import { plainToInstance, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsNotEmpty,
@@ -17,7 +18,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
 import { WalletComicIssueDto } from './wallet-comic-issue.dto';
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import {
   ComicIssue,
   Creator,
@@ -27,6 +28,7 @@ import {
 } from '@prisma/client';
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
+import { ComicIssueCollaboratorDto } from './create-comic-issue.dto';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -122,6 +124,12 @@ export class ComicIssueDto {
   @IsOptional()
   @IsString()
   candyMachineAddress?: string;
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => ComicIssueCollaboratorDto)
+  @ApiProperty({ type: [ComicIssueCollaboratorDto] })
+  collaborators: ComicIssueCollaboratorDto[];
 }
 
 type ComicIssueInput = ComicIssue & {
@@ -130,6 +138,7 @@ type ComicIssueInput = ComicIssue & {
   stats?: ComicIssueStats;
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
+  collaborators?: ComicIssueCollaboratorDto[];
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
@@ -192,6 +201,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
         }
       : undefined,
     candyMachineAddress: issue.candyMachineAddress ?? undefined,
+    collaborators: issue.collaborators,
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);

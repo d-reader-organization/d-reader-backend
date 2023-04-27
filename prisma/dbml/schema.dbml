@@ -148,6 +148,10 @@ Table ComicCollaborator {
   name String [not null]
   comicSlug String [not null]
   comic Comic [not null]
+
+  indexes {
+    (role, name, comicSlug) [unique]
+  }
 }
 
 Table ComicIssueCollaborator {
@@ -156,6 +160,10 @@ Table ComicIssueCollaborator {
   name String [not null]
   comicIssueId Int [not null]
   comicIssue ComicIssue [not null]
+
+  indexes {
+    (role, name, comicIssueId) [unique]
+  }
 }
 
 Table StateLessCover {

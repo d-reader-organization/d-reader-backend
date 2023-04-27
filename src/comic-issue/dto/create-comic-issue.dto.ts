@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { ComicRarity } from '@prisma/client';
+import { CollaboratorRole, ComicRarity } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -17,6 +17,15 @@ import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
+
+export class ComicIssueCollaboratorDto {
+  @IsEnum(CollaboratorRole)
+  @ApiProperty({ enum: CollaboratorRole })
+  role: CollaboratorRole;
+
+  @IsString()
+  name: string;
+}
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -79,6 +88,11 @@ export class CreateComicIssueDto {
   @Type(() => CreateComicPageDto)
   @ApiProperty({ type: [CreateComicPageDto] })
   pages: CreateComicPageDto[];
+
+  @IsArray()
+  @Type(() => ComicIssueCollaboratorDto)
+  @ApiProperty({ type: [ComicIssueCollaboratorDto] })
+  collaborators: ComicIssueCollaboratorDto[];
 }
 
 export class StateLessCover {

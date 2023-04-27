@@ -12,7 +12,7 @@ export class StateLessCoverInput {
   rarity: ComicRarity;
 }
 
-export type ComicIssueInput = ComicIssue & {
+export type CandyMachineIssue = ComicIssue & {
   stateLessCovers: StateLessCover[];
   stateFulCovers: StateFulCover[];
   collaborators: ComicIssueCollaborator[];
