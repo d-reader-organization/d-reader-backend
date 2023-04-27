@@ -1,3 +1,5 @@
+import { RarityConstant } from './comic-issue/dto/types';
+
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;
@@ -46,3 +48,41 @@ export const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
 
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
+
+export const THREE_RARITIES_SHARE: RarityConstant[] = [
+  {
+    rarity: 'Common',
+    value: 70,
+  },
+  {
+    rarity: 'Rare',
+    value: 25,
+  },
+  {
+    rarity: 'Legendary',
+    value: 5,
+  },
+];
+
+export const FIVE_RARITIES_SHARE: RarityConstant[] = [
+  {
+    rarity: 'Common',
+    value: 60,
+  },
+  {
+    rarity: 'Rare',
+    value: 10,
+  },
+  {
+    rarity: 'Epic',
+    value: 8,
+  },
+  {
+    rarity: 'Uncommon',
+    value: 20,
+  },
+  {
+    rarity: 'Legendary',
+    value: 2,
+  },
+];

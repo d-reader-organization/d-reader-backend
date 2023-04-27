@@ -8,6 +8,7 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateComicIssueDto,
   CreateComicIssueFilesDto,
+  StateLessCover,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
@@ -20,6 +21,7 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
+import { StateLessCoverInput } from './dto/types';
 
 @Injectable()
 export class ComicIssueService {
@@ -70,34 +72,42 @@ export class ComicIssueService {
       throw new BadRequestException('Bad comic issue data');
     }
 
-    const { cover, signedCover, usedCover, usedSignedCover } =
+    const { cover, stateLessCovers: stateLessCoversDto } =
       createComicIssueFilesDto;
     // Upload files if any
-    let coverKey: string,
-      signedCoverKey: string,
-      usedCoverKey: string,
-      usedSignedCoverKey: string;
+    let coverKey: string;
+    let stateLessCoverKeys: string[];
     try {
       const prefix = await this.getS3FilePrefix(comicIssue.id);
       if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
-      if (signedCover)
-        signedCoverKey = await this.s3.uploadFile(prefix, signedCover);
-      if (usedCover) usedCoverKey = await this.s3.uploadFile(prefix, usedCover);
-      if (usedSignedCover)
-        usedSignedCoverKey = await this.s3.uploadFile(prefix, usedSignedCover);
+      if (stateLessCoversDto && stateLessCoversDto.length > 0) {
+        const keys = stateLessCoversDto.map((val) =>
+          this.s3.uploadFile(prefix, val.image),
+        );
+        stateLessCoverKeys = await Promise.all(keys);
+      }
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
-
+    const stateLessCovers: StateLessCoverInput[] = [];
+    stateLessCoverKeys.forEach((val, i) => {
+      stateLessCovers.push({
+        image: val,
+        rarity: stateLessCoversDto[i].rarity,
+        artist: stateLessCoversDto[i].artist,
+      });
+    });
     // Update Comic Issue with s3 file keys
     comicIssue = await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
       include: { pages: true },
       data: {
         cover: coverKey,
-        signedCover: signedCoverKey,
-        usedCover: usedCoverKey,
-        usedSignedCover: usedSignedCoverKey,
+        stateLessCovers: {
+          createMany: {
+            data: stateLessCovers,
+          },
+        },
       },
     });
 
@@ -328,7 +338,13 @@ export class ComicIssueService {
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       data: { publishedAt: new Date(), sellerFeeBasisPoints, ...updatePayload },
-      include: { comic: { include: { creator: true } }, collectionNft: true },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        stateFulCovers: true,
+        stateLessCovers: true,
+        collaborators: true,
+      },
     });
 
     try {
@@ -358,7 +374,13 @@ export class ComicIssueService {
   async publish(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
-      include: { comic: { include: { creator: true } }, collectionNft: true },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        stateFulCovers: true,
+        stateLessCovers: true,
+        collaborators: true,
+      },
     });
 
     if (!comicIssue) {

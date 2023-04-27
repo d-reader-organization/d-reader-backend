@@ -1,11 +1,14 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
+import { ComicRarity } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  IsString,
   Max,
   MaxLength,
   Min,
@@ -78,25 +81,28 @@ export class CreateComicIssueDto {
   pages: CreateComicPageDto[];
 }
 
+export class StateLessCover {
+  @IsString()
+  artist: string;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  image: Express.Multer.File | null;
+
+  @IsEnum(ComicRarity)
+  @ApiProperty({ enum: ComicRarity })
+  rarity: ComicRarity;
+}
+
 export class CreateComicIssueFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   cover?: Express.Multer.File | null;
 
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  signedCover?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  usedCover?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  usedSignedCover?: Express.Multer.File | null;
+  @IsArray()
+  @Type(() => StateLessCover)
+  @ApiProperty({ type: [StateLessCover] })
+  stateLessCovers?: StateLessCover[];
 }
 
 export class CreateComicIssueSwaggerDto extends IntersectionType(

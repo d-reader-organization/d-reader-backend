@@ -795,12 +795,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image:  'creators/studio-nx/comics/barbabyans/issues/red-hawk-down/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -872,12 +866,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/studio-nx/comics/barbabyans/issues/let-s-get-outta-here/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -948,12 +936,6 @@ async function main() {
                       artist: 'James'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/studio-nx/comics/barbabyans/issues/a-cheesy-quest-for-good-food/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -1086,12 +1068,6 @@ async function main() {
                   }
                 ]
               },
-              stateLessCovers:{
-                create:[{
-                  image:'creators/studio-nx/comics/niko-and-the-sword/issues/introduction/cover.png',
-                  artist: 'James'
-                }]
-              },
               collaborators:{
                 create:[
                   {
@@ -1223,12 +1199,6 @@ async function main() {
                     artist: 'James'
                   }
                 ]
-              },
-              stateLessCovers:{
-                create:[{
-                  image: 'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
-                  artist: 'James'
-                }]
               },
               collaborators:{
                 create:[
@@ -1374,12 +1344,6 @@ async function main() {
                           }
                         ]
                       },
-                      stateLessCovers:{
-                        create:[{
-                          image:'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
-                          artist: 'James'
-                        }]
-                      },
                       collaborators:{
                         create:[
                           {
@@ -1515,12 +1479,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/swamplabs/comics/lupers/issues/canis-lupers/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -1591,12 +1549,6 @@ async function main() {
                       artist: 'James'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/swamplabs/comics/lupers/issues/godiary-ionus/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -1669,12 +1621,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/swamplabs/comics/lupers/issues/godiary-diluna/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -1745,12 +1691,6 @@ async function main() {
                       artist: 'James'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:'creators/swamplabs/comics/lupers/issues/godiary-nuptus/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -1895,12 +1835,6 @@ async function main() {
                           }
                         ]
                       },
-                      stateLessCovers:{
-                        create:[{
-                          image:'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/cover.jpg',
-                          artist: 'James'
-                        }]
-                      },
                       collaborators:{
                         create:[
                           {
@@ -2033,12 +1967,6 @@ async function main() {
                       artist: 'James'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/longwood-labs/comics/the-remnants/issues/all-alone/cover.png',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -2184,12 +2112,6 @@ async function main() {
                             }
                           ]
                         },
-                        stateLessCovers:{
-                          create:[{
-                            image: 'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/cover.png',
-                            artist: 'James'
-                          }]
-                        },
                         collaborators:{
                           create:[
                             {
@@ -2260,12 +2182,6 @@ async function main() {
                               artist: 'James'
                             }
                           ]
-                        },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/cover.jpg',
-                            artist: 'James'
-                          }]
                         },
                         collaborators:{
                           create:[
@@ -2338,12 +2254,6 @@ async function main() {
                             }
                           ]
                         },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/cover.jpg',
-                            artist: 'James'
-                          }]
-                        },
                         collaborators:{
                           create:[
                             {
@@ -2414,12 +2324,6 @@ async function main() {
                               artist: 'James'
                             }
                           ]
-                        },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/cover.jpg',
-                            artist: 'James'
-                          }]
                         },
                         collaborators:{
                           create:[
@@ -2567,12 +2471,6 @@ async function main() {
                         }
                       ]
                     },
-                    stateLessCovers:{
-                      create:[{
-                        image:'creators/saucerpen/comics/animosities/issues/episode-1/cover.jpeg',
-                        artist: 'James'
-                      }]
-                    },
                     collaborators:{
                       create:[
                         {
@@ -2700,12 +2598,6 @@ async function main() {
                           artist: 'James'
                         }
                       ]
-                    },
-                    stateLessCovers:{
-                      create:[{
-                        image:'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
-                        artist: 'James'
-                      }]
                     },
                     collaborators:{
                       create:[
@@ -2837,12 +2729,6 @@ async function main() {
                         }
                       ]
                     },
-                    stateLessCovers:{
-                      create:[{
-                        image:'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
-                        artist: 'James'
-                      }]
-                    },
                     collaborators:{
                       create:[
                         {
@@ -2971,12 +2857,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:'creators/saucerpen/comics/island/issues/episode-1/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -3107,12 +2987,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:'creators/saucerpen/comics/lamia/issues/true-love/cover.jpg',
-                    artist: 'Adam'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -3257,12 +3131,6 @@ async function main() {
                             }
                           ]
                         },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/roach-writes/comics/wretches/issues/issue-1/cover.jpg',
-                            artist: 'Adam'
-                          }]
-                        },
                         collaborators:{
                           create:[
                             {
@@ -3333,12 +3201,6 @@ async function main() {
                               artist: 'Adam'
                             }
                           ]
-                        },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/roach-writes/comics/wretches/issues/issue-2/cover.jpg',
-                            artist: 'Adam'
-                          }]
                         },
                         collaborators:{
                           create:[
@@ -3411,12 +3273,6 @@ async function main() {
                             }
                           ]
                         },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/roach-writes/comics/wretches/issues/issue-3/cover.jpg',
-                            artist: 'Adam'
-                          }]
-                        },
                         collaborators:{
                           create:[
                             {
@@ -3487,12 +3343,6 @@ async function main() {
                               artist: 'Adam'
                             }
                           ]
-                        },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/roach-writes/comics/wretches/issues/issue-4/cover.jpg',
-                            artist: 'Adam'
-                          }]
                         },
                         collaborators:{
                           create:[
@@ -3696,12 +3546,6 @@ async function main() {
                             }
                           ]
                         },
-                        stateLessCovers:{
-                          create:[{
-                            image:'creators/roach-writes/comics/wretches/issues/issue-6/cover.jpg',
-                            artist: 'James'
-                          }]
-                        },
                         collaborators:{
                           create:[
                             {
@@ -3835,12 +3679,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image:'creators/roach-writes/comics/jana/issues/issue-1/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -3910,12 +3748,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:'creators/roach-writes/comics/jana/issues/issue-2/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -4051,12 +3883,6 @@ async function main() {
                     }
                   ]
                 },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/roach-writes/comics/knockturn-county/issues/issue-1/cover.jpg',
-                    artist: 'James'
-                  }]
-                },
                 collaborators:{
                   create:[
                     {
@@ -4128,12 +3954,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/roach-writes/comics/knockturn-county/issues/issue-2/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -4259,12 +4079,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image: 'creators/roach-writes/comics/painted-pray/issues/issue-1/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -4394,12 +4208,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:  'creators/roach-writes/comics/dark-waters/issues/treacherous-seas/cover.jpg',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
@@ -4533,12 +4341,6 @@ async function main() {
                       artist: 'Adam'
                     }
                   ]
-                },
-                stateLessCovers:{
-                  create:[{
-                    image:  'creators/roach-writes/comics/multi-versus/issues/episode-1/cover.png',
-                    artist: 'James'
-                  }]
                 },
                 collaborators:{
                   create:[
