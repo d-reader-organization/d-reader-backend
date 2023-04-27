@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
-import { getCachedReadUrl } from 'src/aws/s3client';
+import { getReadUrl } from 'src/aws/s3client';
 import { ComicPage } from '@prisma/client';
 import { sortBy } from 'lodash';
 
@@ -24,7 +24,7 @@ export async function toComicPageDto(page: ComicPage) {
     id: page.id,
     pageNumber: page.pageNumber,
     isPreviewable: page.isPreviewable,
-    image: await getCachedReadUrl(page.image),
+    image: await getReadUrl(page.image),
   };
 
   const pageDto = plainToInstance(ComicPageDto, plainPageDto);
