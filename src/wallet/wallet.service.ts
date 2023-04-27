@@ -7,7 +7,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
-import { PublicKey } from '@solana/web3.js';
+import { isSolanaAddress } from '../decorators/IsSolanaAddress';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WalletService {
@@ -99,10 +100,16 @@ export class WalletService {
     return;
   }
 
-  async redeemReferral(referrer: string, address: string) {
+  async redeemReferral(referrer: string, referee: string) {
+    if (!referrer) {
+      throw new BadRequestException('Referrer username or address not defined');
+    } else if (!referee) {
+      throw new BadRequestException('Referee address missing');
+    }
+
     // if the search string is of type Solana address, search by address
     // otherwise search by wallet name
-    const where = PublicKey.isOnCurve(referrer)
+    const where: Prisma.WalletWhereUniqueInput = isSolanaAddress(referrer)
       ? { address: referrer }
       : { name: referrer };
     const referrerWallet = await this.prisma.wallet.findUnique({
@@ -117,7 +124,9 @@ export class WalletService {
       );
     }
 
-    let wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    let wallet = await this.prisma.wallet.findUnique({
+      where: { address: referee },
+    });
     if (!!wallet.referredAt) {
       throw new BadRequestException(
         `Account ${wallet.name} is already referred`,
@@ -126,7 +135,7 @@ export class WalletService {
 
     // update referrer wallet
     await this.prisma.wallet.update({
-      where: { address },
+      where: { address: referee },
       data: {
         referredAt: new Date(),
         referrer: {
@@ -137,7 +146,10 @@ export class WalletService {
     });
 
     // refresh referred wallet state
-    wallet = await this.prisma.wallet.findUnique({ where: { address } });
+    wallet = await this.prisma.wallet.findUnique({
+      where: { address: referee },
+    });
+
     return wallet;
   }
 

@@ -20,7 +20,8 @@ import { Optional } from '../utils/helpers';
 import * as path from 'path';
 import { isEmpty } from 'lodash';
 import { getTruncatedTime } from './s3client';
-import timekeeper from 'timekeeper';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const timekeeper = require('timekeeper');
 
 type s3File = {
   fieldname: Express.Multer.File['fieldname'];
