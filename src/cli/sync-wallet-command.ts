@@ -2,6 +2,7 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { WalletService } from '../wallet/wallet.service';
 import { PublicKey } from '@metaplex-foundation/js';
+import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
   wallet: string;
@@ -15,6 +16,7 @@ export class SyncWalletCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly walletService: WalletService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -29,8 +31,22 @@ export class SyncWalletCommand extends CommandRunner {
 
     const { wallet } = options;
     try {
-      const owner = new PublicKey(wallet);
-      await this.walletService.syncWallet(owner);
+      let wallets: { address: string }[] = [];
+      if (!wallet) {
+        wallets = await this.prisma.wallet.findMany({
+          select: {
+            address: true,
+          },
+        });
+      } else {
+        wallets = [{ address: wallet }];
+      }
+
+      await Promise.all(
+        wallets.map((owner) =>
+          this.walletService.syncWallet(new PublicKey(owner.address)),
+        ),
+      );
     } catch (error) {
       logErr(`Error syncing wallet ${wallet} : ${error}`);
     }

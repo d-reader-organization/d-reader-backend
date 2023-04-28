@@ -7,9 +7,9 @@ export class SyncWalletQuestions {
     type: 'input',
     name: 'wallet',
     default: '',
-    message: 'Address of the wallet to sync',
+    message: 'Address of the wallet to sync (empty to sync all wallets)',
     validate: async function (value: string) {
-      if (!value || !PublicKey.isOnCurve(value)) {
+      if (value && !PublicKey.isOnCurve(value)) {
         return 'wallet must be a solana address';
       }
       return true;

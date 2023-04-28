@@ -64,7 +64,13 @@ export class WalletService {
             },
           },
           owner: {
-            connect: { address: wallet.address },
+            connectOrCreate: {
+              where: { address: wallet.address },
+              create: {
+                address: wallet.address,
+                name: wallet.address,
+              },
+            },
           },
           candyMachine: {
             connect: { address: nft.creators[1].address.toString() },
