@@ -1,6 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { PrismaService } from 'nestjs-prisma';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { CandyMachineService } from './candy-machine.service';
@@ -14,24 +13,20 @@ import {
   toCMReceiptDtoArray,
 } from './dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from './dto/candy-machine.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(RestAuthGuard, CandyMachineUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
 export class CandyMachineController {
-  constructor(
-    private readonly candyMachineService: CandyMachineService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly candyMachineService: CandyMachineService) {}
 
   @Get('find-minted-nfts')
   findMintedNfts(@Query() query: MintOneParams) {
     return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/mint-one')
   constructMintOneTransaction(
     @WalletEntity() wallet: Wallet,

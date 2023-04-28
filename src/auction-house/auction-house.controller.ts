@@ -6,17 +6,17 @@ import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { ListParams } from './dto/list-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { PrivateBidParams } from './dto/private-bid-params.dto';
-import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
 import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
-import { BuyParamsArray } from './dto/instant-buy-params.dto';
+import { BuyParamsArray, InstantBuyParams } from './dto/instant-buy-params.dto';
 import { SilentQuery } from 'src/decorators/silent-query.decorator';
 import { validateAndFormatParams } from '../utils/validate-params';
+import { BuyArgs } from './dto/types/buy-args';
 
 @UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -25,7 +25,6 @@ import { validateAndFormatParams } from '../utils/validate-params';
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
-  @Throttle(5, 30)
   @Get('/transactions/list')
   async constructListTransaction(
     @WalletEntity() wallet: Wallet,
@@ -42,7 +41,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/private-bid')
   async constructPrivateBidTransaction(
     @WalletEntity() wallet: Wallet,
@@ -62,32 +60,29 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
-  @Get('/transactions/execute-sale')
-  async constructExecutelistedSale(
+  @Get('/transactions/instant-buy')
+  async constructInstantBuyTransaction(
     @WalletEntity() wallet: Wallet,
-    @Query() query: ExecuteSaleParams,
+    @Query() query: InstantBuyParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
-    const bidReceipt = new PublicKey(query.bidReceipt);
-    const listReceipt = new PublicKey(query.listReceipt);
-    const printReceipt = query.printReceipt == 'false' ? false : true;
-
-    return await this.auctionHouseService.constructExecutelistedSale(
+    const buyArgs: BuyArgs = {
+      mintAccount: new PublicKey(query.mintAccount),
+      price: query.price,
+      seller: new PublicKey(query.seller),
+    };
+    return await this.auctionHouseService.constructInstantBuyTransaction(
       publicKey,
-      listReceipt,
-      bidReceipt,
-      printReceipt,
+      buyArgs,
     );
   }
 
-  @Throttle(5, 30)
-  @Get('/transactions/instant-buy')
+  @Get('/transactions/multiple-buy')
   @ApiQuery({
     name: 'query',
     type: BuyParamsArray,
   })
-  async constructInstantBuy(
+  async constructMultipleBuys(
     @WalletEntity() wallet: Wallet,
     @SilentQuery() query: BuyParamsArray,
   ) {
@@ -99,7 +94,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/cancel-bid')
   async constructCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
@@ -108,7 +102,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/transactions/cancel-listing')
   async constructCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = query.receiptAddress
@@ -121,7 +114,6 @@ export class AuctionHouseController {
     );
   }
 
-  @Throttle(5, 30)
   @Get('/get/listings/:comicIssueId')
   async findAllListings(
     @Query() query: ListingFilterParams,
@@ -134,7 +126,6 @@ export class AuctionHouseController {
     return await toListingDtoArray(listings);
   }
 
-  @Throttle(5, 30)
   @Get('/get/collection-stats/:comicIssueId')
   async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
     const stats = await this.auctionHouseService.findCollectionStats(

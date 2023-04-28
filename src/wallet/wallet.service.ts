@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
@@ -13,6 +12,8 @@ import { Cluster, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
+import { isSolanaAddress } from '../decorators/IsSolanaAddress';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WalletService {
@@ -75,18 +76,6 @@ export class WalletService {
       });
     });
     await Promise.all(walletSync);
-  }
-
-  async create(createWalletDto: CreateWalletDto) {
-    try {
-      const wallet = await this.prisma.wallet.create({
-        data: createWalletDto,
-      });
-
-      return wallet;
-    } catch {
-      throw new BadRequestException('Bad wallet data');
-    }
   }
 
   async findAll() {
@@ -170,6 +159,59 @@ export class WalletService {
       );
     }
     return;
+  }
+
+  async redeemReferral(referrer: string, referee: string) {
+    if (!referrer) {
+      throw new BadRequestException('Referrer username or address not defined');
+    } else if (!referee) {
+      throw new BadRequestException('Referee address missing');
+    }
+
+    // if the search string is of type Solana address, search by address
+    // otherwise search by wallet name
+    const where: Prisma.WalletWhereUniqueInput = isSolanaAddress(referrer)
+      ? { address: referrer }
+      : { name: referrer };
+    const referrerWallet = await this.prisma.wallet.findUnique({
+      where,
+    });
+
+    if (!referrerWallet) {
+      throw new BadRequestException(`Account ${referrer} doesn't exist`);
+    } else if (referrerWallet.referralsRemaining == 0) {
+      throw new BadRequestException(
+        `Account ${referrerWallet.name} doesn't have referrals left`,
+      );
+    }
+
+    let wallet = await this.prisma.wallet.findUnique({
+      where: { address: referee },
+    });
+    if (!!wallet.referredAt) {
+      throw new BadRequestException(
+        `Account ${wallet.name} is already referred`,
+      );
+    }
+
+    // update referrer wallet
+    await this.prisma.wallet.update({
+      where: { address: referee },
+      data: {
+        referredAt: new Date(),
+        referrer: {
+          connect: { address: referrerWallet.address },
+          update: { referralsRemaining: { decrement: 1 } },
+        },
+      },
+    });
+
+    // refresh referred wallet state
+    wallet = await this.prisma.wallet.findUnique({
+      where: { address: referee },
+    });
+
+    return wallet;
   }
 
   async generateAvatar(address: string) {

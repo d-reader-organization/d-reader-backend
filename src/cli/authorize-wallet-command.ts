@@ -37,7 +37,9 @@ export class AuthorizeWalletCommand extends CommandRunner {
         Buffer.from(JSON.parse(wallet.toString(Utf8))),
       );
       const address = keypair.publicKey.toBase58();
-      const otp = await this.passwordService.generateOneTimePassword(address);
+      const otp = await this.passwordService.generateOneTimePassword({
+        address,
+      });
       const messageBytes = decodeUTF8(otp);
       const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
       const encoding = bs58.encode(signature);

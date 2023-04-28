@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsEnum, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -10,7 +10,7 @@ export class WalletDto {
   address: string;
 
   @IsString()
-  label: string;
+  name: string;
 
   @IsUrl()
   avatar: string;
@@ -18,14 +18,18 @@ export class WalletDto {
   @IsEnum(Role)
   @ApiProperty({ enum: Role })
   role: Role;
+
+  @IsBoolean()
+  hasBetaAccess: boolean;
 }
 
 export async function toWalletDto(wallet: Wallet) {
   const plainWalletDto: WalletDto = {
     address: wallet.address,
-    label: wallet.label,
+    name: wallet.name,
     avatar: await getReadUrl(wallet.avatar),
     role: wallet.role,
+    hasBetaAccess: !!wallet.referredAt,
   };
 
   const walletDto = plainToInstance(WalletDto, plainWalletDto);

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Cluster, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
@@ -136,8 +140,8 @@ export class AuctionHouseService {
         include: { nft: true },
       });
       if (!listingModel) {
-        throw new Error(
-          `cannot find any listing with mint ${mintAccount.toString()}`,
+        throw new NotFoundException(
+          `Cannot find listing with address ${mintAccount.toString()}`,
         );
       }
 
@@ -236,8 +240,8 @@ export class AuctionHouseService {
   ) {
     try {
       if (!seller && !tokenAccount) {
-        throw new Error(
-          'seller or associated token account must be provided !',
+        throw new BadRequestException(
+          'Seller or associated token account must be provided!',
         );
       }
       const auctionHouse = await this.findOurAuctionHouse();

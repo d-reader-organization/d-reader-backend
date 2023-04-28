@@ -18,10 +18,10 @@ import {
   toBigNumber,
   TransactionBuilder,
   MetaplexFile,
+  bundlrStorage,
 } from '@metaplex-foundation/js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
-import { awsStorage } from '@metaplex-foundation/js-plugin-aws';
 import { ComicIssue } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction } from './instructions';
@@ -41,6 +41,7 @@ import {
   DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
+  BUNDLR_ADDRESS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { s3Service } from '../aws/s3.service';
@@ -69,10 +70,12 @@ export class CandyMachineService {
     const treasuryKeypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
     );
-
-    this.metaplex
-      .use(keypairIdentity(treasuryKeypair))
-      .use(awsStorage(this.s3.client, this.s3.metadataBucket));
+    this.metaplex.use(keypairIdentity(treasuryKeypair)).use(
+      bundlrStorage({
+        address: BUNDLR_ADDRESS,
+        timeout: 60000,
+      }),
+    );
   }
 
   async findMintedNfts(candyMachineAddress: string) {
