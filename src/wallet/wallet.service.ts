@@ -45,9 +45,15 @@ export class WalletService {
       where: { address: owner.toString() },
       include: { nfts: true },
     });
+    const candyMachines = await this.prisma.candyMachine.findMany({
+      select: { address: true },
+    });
     const unSyncedNfts = onChainNfts.filter(
       (nft) =>
-        nft.updateAuthorityAddress.equals(this.metaplex.identity().publicKey) &&
+        nft.creators.length > 1 &&
+        candyMachines.find(
+          (cm) => cm.address === nft.creators[1].address.toString(),
+        ) &&
         !wallet.nfts.find(
           (walletNft) => walletNft.address === nft.address.toString(),
         ),

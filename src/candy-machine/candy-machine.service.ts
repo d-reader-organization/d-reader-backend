@@ -219,6 +219,10 @@ export class CandyMachineService {
         },
         creators: [
           {
+            address: candyMachineKey.publicKey,
+            share: 0,
+          },
+          {
             address: comicCreator,
             share: HUNDRED,
           },
