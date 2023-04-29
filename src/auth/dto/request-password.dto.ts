@@ -1,5 +1,6 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { WALLET_NAME_SIZE } from '../../constants';
 
 export class RequestPasswordDto {
   @IsSolanaAddress()
@@ -7,7 +8,7 @@ export class RequestPasswordDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(40)
+  @MaxLength(WALLET_NAME_SIZE)
   name?: string;
 
   @IsSolanaAddress()
