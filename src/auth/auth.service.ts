@@ -13,7 +13,7 @@ import { PasswordService } from './password.service';
 import { Wallet, Creator } from '@prisma/client';
 import { Cluster } from '../types/cluster';
 import { WalletService } from '../wallet/wallet.service';
-import { WALLET_NAME_SIZE } from 'src/constants';
+import { WALLET_NAME_SIZE } from '../constants';
 
 @Injectable()
 export class AuthService {

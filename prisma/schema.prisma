@@ -299,7 +299,7 @@ model WalletCreator {
 model Metadata {
   uri            String  @id
   nft            Nft[]
-  collectionName String?
+  collectionName String
   isUsed         Boolean
   isSigned       Boolean
 }

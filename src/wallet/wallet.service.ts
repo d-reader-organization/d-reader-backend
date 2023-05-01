@@ -7,13 +7,19 @@ import { PrismaService } from 'nestjs-prisma';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
-import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
+import {
+  JsonMetadata,
+  Metaplex,
+  keypairIdentity,
+} from '@metaplex-foundation/js';
 import { Cluster, Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { heliusClusterApiUrl } from 'helius-sdk';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { Prisma } from '@prisma/client';
+import axios from 'axios';
+import { SIGNED_TRAIT, USED_TRAIT } from '../constants';
 
 @Injectable()
 export class WalletService {
@@ -58,36 +64,54 @@ export class WalletService {
           (walletNft) => walletNft.address === nft.address.toString(),
         ),
     );
-    const walletSync = unSyncedNfts.map((nft) => {
-      return this.prisma.nft.create({
-        data: {
-          address: nft.address.toString(),
-          name: nft.name,
-          metadata: {
-            connectOrCreate: {
-              where: { uri: nft.uri },
-              create: { uri: nft.uri, isSigned: false, isUsed: false },
-            },
-          },
-          owner: {
-            connectOrCreate: {
-              where: { address: wallet.address },
-              create: {
-                address: wallet.address,
-                name: wallet.address,
+    try {
+      const walletSync = unSyncedNfts.map(async (nft) => {
+        const { data: collectionMetadata } = await axios.get<JsonMetadata>(
+          nft.uri,
+        );
+        const usedTrait = collectionMetadata.attributes.find(
+          (a) => a.trait_type === USED_TRAIT,
+        );
+        const signedTrait = collectionMetadata.attributes.find(
+          (a) => a.trait_type === SIGNED_TRAIT,
+        );
+        return this.prisma.nft.create({
+          data: {
+            address: nft.address.toString(),
+            name: nft.name,
+            metadata: {
+              connectOrCreate: {
+                where: { uri: nft.uri },
+                create: {
+                  collectionName: collectionMetadata.collection.name,
+                  uri: nft.uri,
+                  isUsed: usedTrait.value === 'true',
+                  isSigned: signedTrait.value === 'true',
+                },
               },
             },
+            owner: {
+              connectOrCreate: {
+                where: { address: wallet.address },
+                create: {
+                  address: wallet.address,
+                  name: wallet.address,
+                },
+              },
+            },
+            candyMachine: {
+              connect: { address: nft.creators[1].address.toString() },
+            },
+            collectionNft: {
+              connect: { address: nft.collection.address.toString() },
+            },
           },
-          candyMachine: {
-            connect: { address: nft.creators[1].address.toString() },
-          },
-          collectionNft: {
-            connect: { address: nft.collection.address.toString() },
-          },
-        },
+        });
       });
-    });
-    await Promise.all(walletSync);
+      await Promise.all(walletSync);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async findAll() {
