@@ -427,11 +427,16 @@ export class AuctionHouseService {
     });
   }
 
-  async validateMint(mint: PublicKey) {
-    const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
+  async validateMint(nftAddress: PublicKey) {
+    const metadataPda = this.metaplex
+      .nfts()
+      .pdas()
+      .metadata({ mint: nftAddress });
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     if (!info) {
-      throw new BadRequestException(`Nft ${mint} doesn't have any metadata`);
+      throw new BadRequestException(
+        `Nft ${nftAddress} doesn't have any metadata`,
+      );
     }
     const metadata = toMetadata(toMetadataAccount(info));
     if (
@@ -439,7 +444,7 @@ export class AuctionHouseService {
       !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
     ) {
       throw new BadRequestException(
-        `Nft ${mint} is not from a verified collection`,
+        `Nft ${nftAddress} is not from a verified collection`,
       );
     }
   }
