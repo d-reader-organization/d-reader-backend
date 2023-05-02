@@ -13,6 +13,7 @@ import { PasswordService } from './password.service';
 import { Wallet, Creator } from '@prisma/client';
 import { Cluster } from '../types/cluster';
 import { WalletService } from '../wallet/wallet.service';
+import { WALLET_NAME_SIZE } from '../constants';
 
 @Injectable()
 export class AuthService {
@@ -103,6 +104,11 @@ export class AuthService {
   }
 
   async validateName(name: string) {
+    if (!name || name.length > WALLET_NAME_SIZE) {
+      throw new BadRequestException(
+        `Account name can have maximum of ${WALLET_NAME_SIZE} characters`,
+      );
+    }
     const wallet = await this.prisma.wallet.findUnique({ where: { name } });
 
     if (wallet) {

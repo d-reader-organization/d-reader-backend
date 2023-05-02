@@ -2,7 +2,12 @@ import { addDays, subDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
-import { Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import {
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  clusterApiUrl,
+} from '@solana/web3.js';
 import { getRandomInt, sleep } from '../src/utils/helpers';
 import {
   PrismaClient,
@@ -18,14 +23,8 @@ import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
 import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
-import {
-  BundlrStorageDriver,
-  sol,
-  keypairIdentity,
-  Metaplex,
-  bundlrStorage,
-} from '@metaplex-foundation/js';
-import { BUNDLR_ADDRESS } from '../src/constants';
+import { BundlrStorageDriver, Metaplex, sol } from '@metaplex-foundation/js';
+import { initMetaplex } from '../src/utils/metaplex';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -36,7 +35,6 @@ const comicPageService = new ComicPageService(s3, prismaService);
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,
-  s3,
 );
 const walletComicIssueService = new WalletComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(
@@ -296,12 +294,30 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: 'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f',
-        name: 'Luka',
+        address: treasuryPubKey.toBase58(),
+        name: 'Superadmin',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+      },
+    });
+    console.log('➕ Added Treasury wallet');
+  } catch (e) {
+    console.log('❌ Failed to add Treasury wallet', e);
+  }
+
+  try {
+    await prisma.wallet.create({
+      data: {
+        address: 'DXvYRNGBZmvEcefKSsNh7EcjEw1YgoiHaUtt2HLaX6yL',
+        name: 'Saga',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.User,
+        referralsRemaining: 20000,
       },
     });
     console.log('➕ Added Treasury wallet');
@@ -319,9 +335,10 @@ async function main() {
         nonce: uuidv4(),
         role: Role.Superadmin,
         referrer: {
-          connect: { address: 'DaCf9D68TCJyJDGuuPa6L3ACsqmAhyByzzZ9Tv58EQ4f' },
+          connect: { address: treasuryPubKey.toBase58() },
         },
         referredAt: new Date(Date.now()),
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
       },
     });
     console.log('➕ Added Superadmin wallet');
@@ -332,44 +349,47 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: '3v2V2hBNxxevfyS3J3z6DrPUa7UTi3Ve4y6rByCPqTyP',
+        address: '3i8mZjkWboj8bSSgoqASTCx5mhkJEhb7Ta6rwWpu3KBL',
         name: 'Athar',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
       },
     });
-    console.log('➕ Added Superadmin wallet');
+    console.log('➕ Added Athar wallet');
   } catch (e) {
-    console.log('❌ Failed to add Superadmin wallet', e);
+    console.log('❌ Failed to add Athar wallet', e);
   }
 
   try {
     await prisma.wallet.create({
       data: {
-        address: 'HuZ6UtdfeXgicEpukAU6BCZxAoWpeFNPSgf9yBqwCgRY',
-        name: 'Mattan',
+        address: 'HyPFNtmwtSEjwPWch1a9juvZ9wERemXzDgtymGn2KUh7',
+        name: 'Luka',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
       },
     });
-    console.log('➕ Added Superadmin wallet');
+    console.log('➕ Added Luka wallet');
   } catch (e) {
-    console.log('❌ Failed to add Superadmin wallet', e);
+    console.log('❌ Failed to add Luka wallet', e);
   }
 
   try {
     await prisma.wallet.create({
       data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
-        name: 'Karlo',
+        name: 'Admin',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Admin,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
       },
     });
     console.log('➕ Added Admin wallet');
@@ -2735,30 +2755,40 @@ async function main() {
   await sleep(2000);
 
   const comicIssues = await prisma.comicIssue.findMany();
-  const metaplex = new Metaplex(heliusService.helius.connection);
-  metaplex.use(keypairIdentity(treasuryKeypair)).use(
-    bundlrStorage({
-      address: BUNDLR_ADDRESS,
-      timeout: 60000,
-    }),
-  );
+  const metaplex = initMetaplex(heliusService.helius.endpoint);
+  const endpoint = clusterApiUrl('devnet');
+  const solanaMetaplex = initMetaplex(endpoint);
   const storage = metaplex.storage().driver() as BundlrStorageDriver;
+
+  try {
+    await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
+    console.log('Airdropped 2 sol');
+  } catch (e) {
+    console.log('Failed to airdrop 2 sol to the treasury wallet', e);
+  }
 
   let i = 1;
   for (const comicIssue of comicIssues) {
     try {
-      (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
-      console.log('Funded bundlr storage');
+      const balance = await (
+        await storage.bundlr()
+      ).getBalance(treasuryPubKey.toBase58());
+      const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
+      console.log('Bundlr balance: ', solBalance);
+      if (solBalance < 0.4) {
+        (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
+        console.log('Funded bundlr storage');
+      }
     } catch (e) {
       console.log('Failed to fund bundlr storage');
     }
 
-    if (i % 10 === 0) {
+    if (i % 5 === 0) {
       try {
-        await metaplex.rpc().airdrop(treasuryPubKey, sol(1));
-        console.log('Airdropped 1 sol');
+        await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
+        console.log('Airdropped 2 sol');
       } catch (e) {
-        console.log('Failed to airdrop 1 sol to the treasury wallet');
+        console.log('Failed to airdrop 2 sol to the treasury wallet', e);
       }
     }
 
@@ -2779,9 +2809,9 @@ async function main() {
       console.log(i, ' ➕ Publishing comic issue ' + comicIssue.id);
 
       await comicIssueService.publishOnChain(comicIssue.id, {
-        supply: getRandomInt(2, 6) * 10,
-        mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL,
-        discountMintPrice: 0.05 * LAMPORTS_PER_SOL,
+        supply: getRandomInt(1, 4) * 10, // 10-40 supply
+        mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
+        discountMintPrice: 0.05 * LAMPORTS_PER_SOL, // 0.05 discount price
         sellerFee: 0.05, // 5%
       });
       i++;

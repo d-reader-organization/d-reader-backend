@@ -1,8 +1,9 @@
-import { Cluster, clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import { Cluster, clusterApiUrl, PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import { Metaplex, sol } from '@metaplex-foundation/js';
+import { sol } from '@metaplex-foundation/js';
 import { cb, cuy, log, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
+import { initMetaplex } from '../utils/metaplex';
 
 interface Options {
   cluster: Cluster;
@@ -26,8 +27,7 @@ export class AirdropSolCommand extends CommandRunner {
 
   async airdropSol(options: Options) {
     const endpoint = clusterApiUrl(options.cluster);
-    const connection = new Connection(endpoint, 'confirmed');
-    const metaplex = new Metaplex(connection);
+    const metaplex = initMetaplex(endpoint);
 
     try {
       log(cb('🪂 Airdropping SOL'));
