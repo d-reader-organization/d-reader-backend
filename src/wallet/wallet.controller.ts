@@ -41,7 +41,7 @@ export class WalletController {
   /* Get wallet data from auth token */
   @Get('get/me')
   async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
-    const me = await this.walletService.findOne(wallet.address);
+    const me = await this.walletService.findMe(wallet.address);
     return await toWalletDto(me);
   }
 
