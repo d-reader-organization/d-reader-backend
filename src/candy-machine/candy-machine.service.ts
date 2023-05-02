@@ -4,8 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  Cluster,
-  Connection,
   Keypair,
   PublicKey,
   Transaction,
@@ -13,21 +11,16 @@ import {
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  keypairIdentity,
   Metaplex,
   toBigNumber,
   TransactionBuilder,
   MetaplexFile,
-  bundlrStorage,
 } from '@metaplex-foundation/js';
-import * as AES from 'crypto-js/aes';
-import * as Utf8 from 'crypto-js/enc-utf8';
 import { ComicIssue } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
-import { heliusClusterApiUrl } from 'helius-sdk';
 import { chunk } from 'lodash';
 import * as bs58 from 'bs58';
 import {
@@ -41,10 +34,9 @@ import {
   DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
-  BUNDLR_ADDRESS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
-import { s3Service } from '../aws/s3.service';
+import { initMetaplex } from '../utils/metaplex';
 
 @Injectable()
 export class CandyMachineService {
@@ -53,29 +45,8 @@ export class CandyMachineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
-    private readonly s3: s3Service,
   ) {
-    const endpoint = heliusClusterApiUrl(
-      process.env.HELIUS_API_KEY,
-      process.env.SOLANA_CLUSTER as Cluster,
-    );
-    const connection = new Connection(endpoint, 'confirmed');
-    this.metaplex = new Metaplex(connection);
-
-    const treasuryWallet = AES.decrypt(
-      process.env.TREASURY_PRIVATE_KEY,
-      process.env.TREASURY_SECRET,
-    );
-
-    const treasuryKeypair = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
-    );
-    this.metaplex.use(keypairIdentity(treasuryKeypair)).use(
-      bundlrStorage({
-        address: BUNDLR_ADDRESS,
-        timeout: 60000,
-      }),
-    );
+    this.metaplex = initMetaplex();
   }
 
   async findMintedNfts(candyMachineAddress: string) {

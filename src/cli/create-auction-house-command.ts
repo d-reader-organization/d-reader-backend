@@ -1,17 +1,10 @@
-import { Cluster, clusterApiUrl, Connection, Keypair } from '@solana/web3.js';
+import { Cluster, clusterApiUrl } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import {
-  keypairIdentity,
-  Metaplex,
-  MetaplexError,
-  sol,
-  WRAPPED_SOL_MINT,
-} from '@metaplex-foundation/js';
+import { MetaplexError, sol, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
-import * as Utf8 from 'crypto-js/enc-utf8';
-import * as AES from 'crypto-js/aes';
+import { initMetaplex } from '../utils/metaplex';
 
 interface Options {
   cluster: Cluster;
@@ -37,23 +30,14 @@ export class CreateAuctionHouseCommand extends CommandRunner {
     log('\n🏗️  Creating new auction house...');
 
     const endpoint = clusterApiUrl(options.cluster);
-    const connection = new Connection(endpoint, 'confirmed');
-    const treasuryWallet = AES.decrypt(
-      process.env.TREASURY_PRIVATE_KEY,
-      process.env.TREASURY_SECRET,
-    );
-    const treasuryKeypair = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
-    );
-    const metaplex = new Metaplex(connection);
-    metaplex.use(keypairIdentity(treasuryKeypair));
+    const metaplex = initMetaplex(endpoint);
 
     if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
       try {
         log(cb('🪂 Airdropping SOL'));
-        await metaplex.rpc().airdrop(treasuryKeypair.publicKey, sol(1));
+        await metaplex.rpc().airdrop(metaplex.identity().publicKey, sol(2));
         await sleep(2000);
-        log(`✅ Airdropped ${cuy('1 Sol')} to the treasury...`);
+        log(`✅ Airdropped ${cuy('2 Sol')} to the treasury...`);
       } catch (e) {
         logErr('Failed to airdrop Sol to the treasury!');
         log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
@@ -81,8 +65,8 @@ export class CreateAuctionHouseCommand extends CommandRunner {
         try {
           log(cb('🪂 Airdropping SOL'));
           await sleep(8000);
-          await metaplex.rpc().airdrop(auctionHouse.address, sol(1));
-          log(`✅ Airdropped ${cuy('1 Sol')} to the auction house...`);
+          await metaplex.rpc().airdrop(auctionHouse.address, sol(2));
+          log(`✅ Airdropped ${cuy('2 Sol')} to the auction house...`);
         } catch (e) {
           logErr('Failed to airdrop Sol to the auction house!');
           log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));

@@ -1,16 +1,15 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { WalletService } from '../wallet/wallet.service';
-import { PublicKey } from '@metaplex-foundation/js';
 import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
-  wallet: string;
+  address: string;
 }
 
 @Command({
   name: 'sync-wallet',
-  description: 'sync the provided wallet with onchain nft data',
+  description: 'sync the provided wallet with onchain NFT data',
 })
 export class SyncWalletCommand extends CommandRunner {
   constructor(
@@ -22,33 +21,31 @@ export class SyncWalletCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('wallet', options);
+    options = await this.inquirerService.ask('sync-wallet', options);
     await this.syncWallet(options);
   }
 
   syncWallet = async (options: Options) => {
     log('\n🏗️  Syncing wallet...');
 
-    const { wallet } = options;
+    const { address } = options;
+
+    let addresses: string[] = [];
     try {
-      let wallets: { address: string }[] = [];
-      if (!wallet) {
-        wallets = await this.prisma.wallet.findMany({
+      if (!address) {
+        const wallets = await this.prisma.wallet.findMany({
           select: {
             address: true,
           },
         });
+        addresses = wallets.map((w) => w.address);
       } else {
-        wallets = [{ address: wallet }];
+        addresses = [address];
       }
 
-      await Promise.all(
-        wallets.map((owner) =>
-          this.walletService.syncWallet(new PublicKey(owner.address)),
-        ),
-      );
+      await Promise.all(addresses.map(this.walletService.syncWallet));
     } catch (error) {
-      logErr(`Error syncing wallet ${wallet} : ${error}`);
+      logErr(`Error syncing wallet ${address}: ${error}`);
     }
     log('\n');
   };

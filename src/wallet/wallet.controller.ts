@@ -22,7 +22,6 @@ import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
-import { PublicKey } from '@solana/web3.js';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -105,7 +104,7 @@ export class WalletController {
 
   @Throttle(1, 60)
   @Get('sync')
-  async syncWallet(@WalletEntity() wallet: Wallet) {
-    return await this.walletService.syncWallet(new PublicKey(wallet.address));
+  syncWallet(@WalletEntity() wallet: Wallet) {
+    return this.walletService.syncWallet(wallet.address);
   }
 }
