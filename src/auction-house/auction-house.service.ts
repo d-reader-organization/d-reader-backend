@@ -201,7 +201,7 @@ export class AuctionHouseService {
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
-
+      await this.validateMint(mintAccount);
       const listInstruction = constructListInstruction(
         this.metaplex,
         auctionHouse,
@@ -425,6 +425,28 @@ export class AuctionHouseService {
       take: query.take,
       skip: query.skip,
     });
+  }
+
+  async validateMint(nftAddress: PublicKey) {
+    const metadataPda = this.metaplex
+      .nfts()
+      .pdas()
+      .metadata({ mint: nftAddress });
+    const info = await this.metaplex.rpc().getAccount(metadataPda);
+    if (!info) {
+      throw new BadRequestException(
+        `Nft ${nftAddress} doesn't have any metadata`,
+      );
+    }
+    const metadata = toMetadata(toMetadataAccount(info));
+    if (
+      !metadata.collection.verified ||
+      !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
+    ) {
+      throw new BadRequestException(
+        `Nft ${nftAddress} is not from a verified collection`,
+      );
+    }
   }
 
   async toListing(

@@ -21,6 +21,9 @@ import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
+import { WalletService } from '../wallet/wallet.service';
+import { SyncWalletCommand } from './sync-wallet-command';
+import { SyncWalletQuestions } from './sync-wallet-questions';
 
 @Module({
   imports: [
@@ -55,6 +58,9 @@ import config from '../configs/config';
     CandyMachineService,
     HeliusService,
     WebSocketGateway,
+    SyncWalletQuestions,
+    SyncWalletCommand,
+    WalletService,
   ],
 })
 export class CLIModule {}
