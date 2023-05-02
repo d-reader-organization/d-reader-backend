@@ -123,18 +123,21 @@ export class WalletService {
   }
 
   async update(address: string, updateWalletDto: UpdateWalletDto) {
+    const { referrer, ...data } = updateWalletDto;
     try {
       const updatedWallet = await this.prisma.wallet.update({
         where: { address },
-        data: updateWalletDto,
+        data,
       });
 
-      return updatedWallet;
+      if (!referrer) return updatedWallet;
     } catch {
       throw new NotFoundException(
         `Wallet with address ${address} does not exist`,
       );
     }
+
+    return await this.redeemReferral(address, referrer);
   }
 
   async updateFile(address: string, file: Express.Multer.File) {
