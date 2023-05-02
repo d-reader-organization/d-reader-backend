@@ -1,7 +1,6 @@
-import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
+import { Cluster, clusterApiUrl } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import {
-  keypairIdentity,
   Metaplex,
   MetaplexError,
   sol,
@@ -11,6 +10,7 @@ import { generateSecret, createWallet } from '../utils/wallets';
 import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cg, cgray, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
+import { initMetaplex } from '../utils/metaplex';
 
 interface Options {
   cluster: Cluster;
@@ -35,18 +35,15 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     log('\n🏗️  Generating new .env values...\n');
 
     const endpoint = clusterApiUrl(options.cluster);
-    const connection = new Connection(endpoint, 'confirmed');
-    // Proposal: create a wallet with starting characters 'trsy...'
     const treasury = createWallet();
-    const metaplex = new Metaplex(connection);
-    metaplex.use(keypairIdentity(treasury.keypair));
+    const metaplex = initMetaplex(endpoint);
 
     if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
       try {
         log(cb('🪂 Airdropping SOL'));
-        await metaplex.rpc().airdrop(treasury.keypair.publicKey, sol(1));
+        await metaplex.rpc().airdrop(treasury.keypair.publicKey, sol(2));
         await sleep(2000);
-        log(`✅ Airdropped ${cuy('1 Sol')} to the treasury...`);
+        log(`✅ Airdropped ${cuy('2 Sol')} to the treasury...`);
       } catch (e) {
         logErr('Failed to airdrop Sol to the treasury!');
         log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
@@ -123,8 +120,8 @@ export class GenerateEnvironmentCommand extends CommandRunner {
         try {
           log(cb('🪂 Airdropping SOL'));
           await sleep(8000);
-          await metaplex.rpc().airdrop(auctionHouse.address, sol(1));
-          log(`✅ Airdropped ${cuy('1 Sol')} to the auction house...`);
+          await metaplex.rpc().airdrop(auctionHouse.address, sol(2));
+          log(`✅ Airdropped ${cuy('2 Sol')} to the auction house...`);
         } catch (e) {
           logErr('Failed to airdrop Sol to the auction house!');
           log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));

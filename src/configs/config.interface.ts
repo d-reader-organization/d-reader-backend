@@ -36,7 +36,6 @@ export interface S3Config {
   region: string;
   bucket: string;
   seedBucket: string;
-  metadataBucket: string;
   credentials: AwsCredentialIdentity;
 }
 

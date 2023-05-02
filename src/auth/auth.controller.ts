@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { WalletEntity } from '../decorators/wallet.decorator';
 import { RestAuthGuard } from '../guards/rest-auth.guard';
@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
-import { RequestPasswordDto } from './dto/request-password.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -24,11 +23,9 @@ export class AuthController {
 
   @Throttle(2, 30)
   /* Request a new one time password for your wallet to sign */
-  @Patch('wallet/request-password')
-  async requestPassword(@Body() requestPasswordDto: RequestPasswordDto) {
-    return await this.passwordService.generateOneTimePassword(
-      requestPasswordDto,
-    );
+  @Patch('wallet/request-password/:address')
+  async requestPassword(@Param('address') address: string) {
+    return await this.passwordService.generateOneTimePassword(address);
   }
 
   /* Connect your wallet with a signed and encoded one time password */

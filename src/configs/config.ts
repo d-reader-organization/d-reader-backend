@@ -24,7 +24,6 @@ const config: Config = {
     region: process.env.AWS_BUCKET_REGION,
     bucket: process.env.AWS_BUCKET_NAME,
     seedBucket: process.env.AWS_SEED_BUCKET_NAME,
-    metadataBucket: process.env.AWS_BUCKET_NAME + '-metadata',
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,

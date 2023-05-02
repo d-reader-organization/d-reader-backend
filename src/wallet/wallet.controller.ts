@@ -20,7 +20,7 @@ import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
@@ -100,5 +100,11 @@ export class WalletController {
   @Delete('delete/:address')
   remove(@Param('address') address: string) {
     return this.walletService.remove(address);
+  }
+
+  @Throttle(1, 60)
+  @Get('sync')
+  syncWallet(@WalletEntity() wallet: Wallet) {
+    return this.walletService.syncWallet(wallet.address);
   }
 }

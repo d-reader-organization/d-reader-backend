@@ -21,6 +21,7 @@ import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import * as jwt from 'jsonwebtoken';
 import { isNil } from 'lodash';
 import axios from 'axios';
+import { initMetaplex } from '../../utils/metaplex';
 
 @Injectable()
 export class HeliusService {
@@ -36,7 +37,7 @@ export class HeliusService {
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    this.metaplex = new Metaplex(this.helius.connection);
+    this.metaplex = initMetaplex();
     this.webhookID = process.env.WEBHOOK_ID;
   }
 

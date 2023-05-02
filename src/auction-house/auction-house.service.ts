@@ -3,24 +3,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Cluster, Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
-  keypairIdentity,
   Metaplex,
   token,
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
-import * as AES from 'crypto-js/aes';
-import * as Utf8 from 'crypto-js/enc-utf8';
 import {
   constructCancelBidInstruction,
   constructCancelListingInstruction,
   constructListInstruction,
   constructPrivateBidInstruction,
 } from './instructions';
-import { Helius } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
@@ -31,6 +27,7 @@ import { ListingModel } from './dto/types/listing-model';
 import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
+import { initMetaplex } from '../utils/metaplex';
 
 @Injectable()
 export class AuctionHouseService {
@@ -38,23 +35,8 @@ export class AuctionHouseService {
   private readonly auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    const helius = new Helius(
-      process.env.HELIUS_API_KEY,
-      process.env.SOLANA_CLUSTER as Cluster,
-    );
-    this.metaplex = new Metaplex(helius.connection);
+    this.metaplex = initMetaplex();
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
-
-    const treasuryWallet = AES.decrypt(
-      process.env.TREASURY_PRIVATE_KEY,
-      process.env.TREASURY_SECRET,
-    );
-
-    const treasuryKeypair = Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
-    );
-
-    this.metaplex.use(keypairIdentity(treasuryKeypair));
   }
 
   async findOurAuctionHouse() {
@@ -201,7 +183,7 @@ export class AuctionHouseService {
   ) {
     try {
       const auctionHouse = await this.findOurAuctionHouse();
-
+      await this.validateMint(mintAccount);
       const listInstruction = constructListInstruction(
         this.metaplex,
         auctionHouse,
@@ -425,6 +407,28 @@ export class AuctionHouseService {
       take: query.take,
       skip: query.skip,
     });
+  }
+
+  async validateMint(nftAddress: PublicKey) {
+    const metadataPda = this.metaplex
+      .nfts()
+      .pdas()
+      .metadata({ mint: nftAddress });
+    const info = await this.metaplex.rpc().getAccount(metadataPda);
+    if (!info) {
+      throw new BadRequestException(
+        `NFT ${nftAddress} doesn't have any metadata`,
+      );
+    }
+    const metadata = toMetadata(toMetadataAccount(info));
+    if (
+      !metadata.collection.verified ||
+      !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
+    ) {
+      throw new BadRequestException(
+        `NFT ${nftAddress} is not from a verified collection`,
+      );
+    }
   }
 
   async toListing(

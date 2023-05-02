@@ -51,3 +51,5 @@ export const BUNDLR_ADDRESS =
   process.env.SOLANA_CLUSTER === 'devnet'
     ? 'https://devnet.bundlr.network'
     : 'https://node1.bundlr.network';
+
+export const WALLET_NAME_SIZE = 40;
