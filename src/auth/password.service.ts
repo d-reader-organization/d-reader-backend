@@ -4,12 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { validateEd25519Address } from '../utils/solana';
+import { getTreasuryPublicKey } from '../utils/metaplex';
 import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
+import { Cluster } from '../types/cluster';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
-import { IDENTITY_KEY } from '../constants';
+
 @Injectable()
 export class PasswordService {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,13 +20,16 @@ export class PasswordService {
     const nonce = uuidv4();
 
     validateEd25519Address(address);
-    let referrer = undefined,
-      referredAt = undefined;
 
-    if (process.env.SOLANA_CLUSTER === 'devnet') {
-      referrer = { connect: { address: IDENTITY_KEY().publicKey.toString() } };
-      referredAt = new Date();
-    }
+    // auto referrer users on non mainnet-beta environments
+    const isMainnet = process.env.SOLANA_CLUSTER !== Cluster.MainnetBeta;
+    const referral = isMainnet
+      ? undefined
+      : {
+          referrer: { connect: { address: getTreasuryPublicKey() } },
+          referredAt: new Date(),
+        };
+
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },
@@ -32,8 +37,7 @@ export class PasswordService {
         address,
         nonce,
         name: address,
-        referrer,
-        referredAt,
+        ...referral,
       },
     });
 

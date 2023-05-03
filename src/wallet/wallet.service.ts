@@ -135,31 +135,32 @@ export class WalletService {
   }
 
   async update(address: string, updateWalletDto: UpdateWalletDto) {
-    const { referrer, ...data } = updateWalletDto;
-    if (data.name) {
+    const { referrer, name } = updateWalletDto;
+
+    if (referrer) await this.redeemReferral(address, referrer);
+
+    if (name) {
       const exists = await this.prisma.wallet.findFirst({
-        where: { name: { equals: data.name, mode: 'insensitive' } },
+        where: { name: { equals: name, mode: 'insensitive' } },
       });
+
       if (exists) {
+        throw new NotFoundException(`Account with name ${name} already exists`);
+      }
+
+      try {
+        const updatedWallet = await this.prisma.wallet.update({
+          where: { address },
+          data: { name },
+        });
+
+        return updatedWallet;
+      } catch {
         throw new NotFoundException(
-          `Account with name ${data.name} already exists`,
+          `Wallet with address ${address} does not exist`,
         );
       }
     }
-    try {
-      const updatedWallet = await this.prisma.wallet.update({
-        where: { address },
-        data,
-      });
-
-      if (!referrer) return updatedWallet;
-    } catch {
-      throw new NotFoundException(
-        `Wallet with address ${address} does not exist`,
-      );
-    }
-
-    return await this.redeemReferral(address, referrer);
   }
 
   async updateFile(address: string, file: Express.Multer.File) {
@@ -256,10 +257,10 @@ export class WalletService {
     return wallet;
   }
 
-  async validateSagaUser(user: string) {
+  async validateSagaUser(address: string) {
     const nfts = await this.metaplex
       .nfts()
-      .findAllByOwner({ owner: new PublicKey(user) });
+      .findAllByOwner({ owner: new PublicKey(address) });
     const sagaToken = nfts.find(
       (nft) =>
         nft.collection &&
@@ -267,7 +268,9 @@ export class WalletService {
         nft.collection.verified,
     );
     if (!sagaToken) {
-      throw new BadRequestException(`Account ${user} is not a SAGA user`);
+      throw new BadRequestException(
+        `No Saga Genesis Token found for wallet ${address}`,
+      );
     }
   }
 

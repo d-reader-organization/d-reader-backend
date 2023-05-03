@@ -25,7 +25,6 @@ import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.s
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
-import { IDENTITY_KEY } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -46,6 +45,7 @@ const comicIssueService = new ComicIssueService(
   walletComicIssueService,
 );
 const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
+const metaplex = initMetaplex(heliusService.helius.endpoint);
 
 const generatePages = (
   imagePath: string,
@@ -91,7 +91,6 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  let treasuryPubKey = PublicKey.default;
   const skipS3Seed = true;
   if (!skipS3Seed) {
     console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
@@ -283,9 +282,7 @@ async function main() {
     console.log('❌ Failed to add comic genres', e);
   }
 
-
-  const treasuryKeypair = IDENTITY_KEY();
-  treasuryPubKey = treasuryKeypair.publicKey;
+  const treasuryPubKey = metaplex.identity().publicKey;
   try {
     await prisma.wallet.create({
       data: {
@@ -2750,7 +2747,6 @@ async function main() {
   await sleep(2000);
 
   const comicIssues = await prisma.comicIssue.findMany();
-  const metaplex = initMetaplex(heliusService.helius.endpoint);
   const endpoint = clusterApiUrl('devnet');
   const solanaMetaplex = initMetaplex(endpoint);
   const storage = metaplex.storage().driver() as BundlrStorageDriver;
