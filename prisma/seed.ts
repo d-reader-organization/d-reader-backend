@@ -23,7 +23,7 @@ import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
 import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
-import { BundlrStorageDriver, Metaplex, sol } from '@metaplex-foundation/js';
+import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 
 const s3 = new s3Service();
@@ -2769,18 +2769,21 @@ async function main() {
 
   let i = 1;
   for (const comicIssue of comicIssues) {
-    try {
-      const balance = await (
-        await storage.bundlr()
-      ).getBalance(treasuryPubKey.toBase58());
-      const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
-      console.log('Bundlr balance: ', solBalance);
-      if (solBalance < 0.4) {
-        (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
-        console.log('Funded bundlr storage');
+    (await storage.bundlr()).withdrawBalance(1);
+    if (process.env.SOLANA_CLUSTER !== 'mainnet-beta') {
+      try {
+        const balance = await (
+          await storage.bundlr()
+        ).getBalance(treasuryPubKey.toBase58());
+        const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
+        console.log('Bundlr balance: ', solBalance);
+        if (solBalance < 0.4) {
+          (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
+          console.log('Funded bundlr storage');
+        }
+      } catch (e) {
+        console.log('Failed to fund bundlr storage');
       }
-    } catch (e) {
-      console.log('Failed to fund bundlr storage');
     }
 
     if (i % 5 === 0) {

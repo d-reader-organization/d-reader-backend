@@ -99,12 +99,9 @@ export class WalletService {
   }
 
   async findMe(address: string) {
-    const wallet = await this.findOne(address);
-    await this.prisma.wallet.update({
+    const wallet = await this.prisma.wallet.update({
       where: { address },
-      data: {
-        lastActiveAt: new Date(),
-      },
+      data: { lastActiveAt: new Date() },
     });
     return wallet;
   }
