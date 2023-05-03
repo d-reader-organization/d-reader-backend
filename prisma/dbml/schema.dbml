@@ -22,6 +22,7 @@ Table Wallet {
   referrer Wallet
   referrals Wallet [not null]
   referredAt DateTime
+  lastActiveAt DateTime
 }
 
 Table Creator {
