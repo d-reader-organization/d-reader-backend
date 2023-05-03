@@ -67,3 +67,5 @@ export const IDENTITY_KEY = () => {
   );
   return treasuryKeypair;
 };
+export const SAGA_COLLECTION_ADDRESS =
+  '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
