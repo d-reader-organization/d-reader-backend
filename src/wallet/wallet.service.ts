@@ -12,7 +12,11 @@ import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { Prisma } from '@prisma/client';
 import axios from 'axios';
-import { SIGNED_TRAIT, USED_TRAIT } from '../constants';
+import {
+  SAGA_COLLECTION_ADDRESS,
+  SIGNED_TRAIT,
+  USED_TRAIT,
+} from '../constants';
 import { initMetaplex } from '../utils/metaplex';
 
 @Injectable()
@@ -132,6 +136,16 @@ export class WalletService {
 
   async update(address: string, updateWalletDto: UpdateWalletDto) {
     const { referrer, ...data } = updateWalletDto;
+    if (data.name) {
+      const exists = await this.prisma.wallet.findFirst({
+        where: { name: { equals: data.name, mode: 'insensitive' } },
+      });
+      if (exists) {
+        throw new NotFoundException(
+          `Account with name ${data.name} already exists`,
+        );
+      }
+    }
     try {
       const updatedWallet = await this.prisma.wallet.update({
         where: { address },
@@ -192,8 +206,10 @@ export class WalletService {
       throw new BadRequestException('Referrer username or address not defined');
     } else if (!referee) {
       throw new BadRequestException('Referee address missing');
+    } else if (referrer.toLowerCase() === 'saga') {
+      await this.validateSagaUser(referee);
+      referrer = 'Saga';
     }
-
     // if the search string is of type Solana address, search by address
     // otherwise search by wallet name
     const where: Prisma.WalletWhereUniqueInput = isSolanaAddress(referrer)
@@ -238,6 +254,21 @@ export class WalletService {
     });
 
     return wallet;
+  }
+
+  async validateSagaUser(user: string) {
+    const nfts = await this.metaplex
+      .nfts()
+      .findAllByOwner({ owner: new PublicKey(user) });
+    const sagaToken = nfts.find(
+      (nft) =>
+        nft.collection &&
+        nft.collection.address.toString() === SAGA_COLLECTION_ADDRESS &&
+        nft.collection.verified,
+    );
+    if (!sagaToken) {
+      throw new BadRequestException(`Account ${user} is not a SAGA user`);
+    }
   }
 
   async generateAvatar(address: string) {

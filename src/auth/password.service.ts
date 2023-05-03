@@ -9,6 +9,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
+import { IDENTITY_KEY } from '../constants';
 @Injectable()
 export class PasswordService {
   constructor(private readonly prisma: PrismaService) {}
@@ -17,10 +18,23 @@ export class PasswordService {
     const nonce = uuidv4();
 
     validateEd25519Address(address);
+    let referrer = undefined,
+      referredAt = undefined;
+
+    if (process.env.SOLANA_CLUSTER === 'devnet') {
+      referrer = { connect: { address: IDENTITY_KEY().publicKey.toString() } };
+      referredAt = new Date();
+    }
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },
-      create: { address, nonce, name: address },
+      create: {
+        address,
+        nonce,
+        name: address,
+        referrer,
+        referredAt,
+      },
     });
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;

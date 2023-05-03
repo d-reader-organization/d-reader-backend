@@ -1,3 +1,7 @@
+import { Keypair } from '@solana/web3.js';
+import * as AES from 'crypto-js/aes';
+import * as Utf8 from 'crypto-js/enc-utf8';
+
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;
@@ -53,3 +57,15 @@ export const BUNDLR_ADDRESS =
     : 'https://node1.bundlr.network';
 
 export const WALLET_NAME_SIZE = 40;
+export const IDENTITY_KEY = () => {
+  const treasuryWallet = AES.decrypt(
+    process.env.TREASURY_PRIVATE_KEY,
+    process.env.TREASURY_SECRET,
+  );
+  const treasuryKeypair = Keypair.fromSecretKey(
+    Buffer.from(JSON.parse(treasuryWallet.toString(Utf8))),
+  );
+  return treasuryKeypair;
+};
+export const SAGA_COLLECTION_ADDRESS =
+  '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
