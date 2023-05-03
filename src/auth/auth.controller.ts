@@ -24,28 +24,28 @@ export class AuthController {
   @Throttle(2, 30)
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
-  async requestPassword(@Param('address') address: string) {
-    return await this.passwordService.generateOneTimePassword(address);
+  requestPassword(@Param('address') address: string) {
+    return this.passwordService.generateOneTimePassword(address);
   }
 
   /* Connect your wallet with a signed and encoded one time password */
   @Get('wallet/connect/:address/:encoding')
-  async connect(
+  connect(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
   ) {
-    return await this.authService.connect(address, encoding);
+    return this.authService.connect(address, encoding);
   }
 
   /* Refresh your wallets access token */
   @UseGuards(RestAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('wallet/refresh-token/:refreshToken')
-  async reauthorize(
+  reauthorize(
     @Param('refreshToken') refreshToken: string,
     @WalletEntity()
     wallet: Wallet,
   ) {
-    return await this.authService.refreshAccessToken(wallet, refreshToken);
+    return this.authService.refreshAccessToken(wallet, refreshToken);
   }
 }
