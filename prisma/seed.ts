@@ -23,7 +23,7 @@ import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
 import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
-import { BundlrStorageDriver, Metaplex, sol } from '@metaplex-foundation/js';
+import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 
 const s3 = new s3Service();
@@ -45,6 +45,7 @@ const comicIssueService = new ComicIssueService(
   walletComicIssueService,
 );
 const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
+const metaplex = initMetaplex(heliusService.helius.endpoint);
 
 const generatePages = (
   imagePath: string,
@@ -90,7 +91,6 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  let treasuryPubKey = PublicKey.default;
   const skipS3Seed = true;
   if (!skipS3Seed) {
     console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
@@ -282,15 +282,7 @@ async function main() {
     console.log('❌ Failed to add comic genres', e);
   }
 
-  const wallet = AES.decrypt(
-    process.env.TREASURY_PRIVATE_KEY,
-    process.env.TREASURY_SECRET,
-  );
-
-  const treasuryKeypair = Keypair.fromSecretKey(
-    Buffer.from(JSON.parse(wallet.toString(Utf8))),
-  );
-  treasuryPubKey = treasuryKeypair.publicKey;
+  const treasuryPubKey = metaplex.identity().publicKey;
   try {
     await prisma.wallet.create({
       data: {
@@ -349,7 +341,7 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: '3i8mZjkWboj8bSSgoqASTCx5mhkJEhb7Ta6rwWpu3KBL',
+        address: '4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS',
         name: 'Athar',
         avatar: '',
         createdAt: new Date(),
@@ -2755,7 +2747,6 @@ async function main() {
   await sleep(2000);
 
   const comicIssues = await prisma.comicIssue.findMany();
-  const metaplex = initMetaplex(heliusService.helius.endpoint);
   const endpoint = clusterApiUrl('devnet');
   const solanaMetaplex = initMetaplex(endpoint);
   const storage = metaplex.storage().driver() as BundlrStorageDriver;
@@ -2769,18 +2760,21 @@ async function main() {
 
   let i = 1;
   for (const comicIssue of comicIssues) {
-    try {
-      const balance = await (
-        await storage.bundlr()
-      ).getBalance(treasuryPubKey.toBase58());
-      const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
-      console.log('Bundlr balance: ', solBalance);
-      if (solBalance < 0.4) {
-        (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
-        console.log('Funded bundlr storage');
+    (await storage.bundlr()).withdrawBalance(1);
+    if (process.env.SOLANA_CLUSTER !== 'mainnet-beta') {
+      try {
+        const balance = await (
+          await storage.bundlr()
+        ).getBalance(treasuryPubKey.toBase58());
+        const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
+        console.log('Bundlr balance: ', solBalance);
+        if (solBalance < 0.4) {
+          (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
+          console.log('Funded bundlr storage');
+        }
+      } catch (e) {
+        console.log('Failed to fund bundlr storage');
       }
-    } catch (e) {
-      console.log('Failed to fund bundlr storage');
     }
 
     if (i % 5 === 0) {

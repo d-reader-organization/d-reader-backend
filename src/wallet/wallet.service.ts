@@ -12,7 +12,11 @@ import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { Prisma } from '@prisma/client';
 import axios from 'axios';
-import { SIGNED_TRAIT, USED_TRAIT } from '../constants';
+import {
+  SAGA_COLLECTION_ADDRESS,
+  SIGNED_TRAIT,
+  USED_TRAIT,
+} from '../constants';
 import { initMetaplex } from '../utils/metaplex';
 
 @Injectable()
@@ -98,6 +102,14 @@ export class WalletService {
     return wallets;
   }
 
+  async findMe(address: string) {
+    const wallet = await this.prisma.wallet.update({
+      where: { address },
+      data: { lastActiveAt: new Date() },
+    });
+    return wallet;
+  }
+
   async findOne(address: string) {
     const wallet = await this.prisma.wallet.findUnique({
       where: { address },
@@ -123,21 +135,32 @@ export class WalletService {
   }
 
   async update(address: string, updateWalletDto: UpdateWalletDto) {
-    const { referrer, ...data } = updateWalletDto;
-    try {
-      const updatedWallet = await this.prisma.wallet.update({
-        where: { address },
-        data,
+    const { referrer, name } = updateWalletDto;
+
+    if (referrer) await this.redeemReferral(address, referrer);
+
+    if (name) {
+      const exists = await this.prisma.wallet.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' } },
       });
 
-      if (!referrer) return updatedWallet;
-    } catch {
-      throw new NotFoundException(
-        `Wallet with address ${address} does not exist`,
-      );
-    }
+      if (exists) {
+        throw new NotFoundException(`Account with name ${name} already exists`);
+      }
 
-    return await this.redeemReferral(address, referrer);
+      try {
+        const updatedWallet = await this.prisma.wallet.update({
+          where: { address },
+          data: { name },
+        });
+
+        return updatedWallet;
+      } catch {
+        throw new NotFoundException(
+          `Wallet with address ${address} does not exist`,
+        );
+      }
+    }
   }
 
   async updateFile(address: string, file: Express.Multer.File) {
@@ -184,8 +207,10 @@ export class WalletService {
       throw new BadRequestException('Referrer username or address not defined');
     } else if (!referee) {
       throw new BadRequestException('Referee address missing');
+    } else if (referrer.toLowerCase() === 'saga') {
+      await this.validateSagaUser(referee);
+      referrer = 'Saga';
     }
-
     // if the search string is of type Solana address, search by address
     // otherwise search by wallet name
     const where: Prisma.WalletWhereUniqueInput = isSolanaAddress(referrer)
@@ -230,6 +255,23 @@ export class WalletService {
     });
 
     return wallet;
+  }
+
+  async validateSagaUser(address: string) {
+    const nfts = await this.metaplex
+      .nfts()
+      .findAllByOwner({ owner: new PublicKey(address) });
+    const sagaToken = nfts.find(
+      (nft) =>
+        nft.collection &&
+        nft.collection.address.toString() === SAGA_COLLECTION_ADDRESS &&
+        nft.collection.verified,
+    );
+    if (!sagaToken) {
+      throw new BadRequestException(
+        `No Saga Genesis Token found for wallet ${address}`,
+      );
+    }
   }
 
   async generateAvatar(address: string) {

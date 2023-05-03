@@ -109,7 +109,9 @@ export class AuthService {
         `Account name can have maximum of ${WALLET_NAME_SIZE} characters`,
       );
     }
-    const wallet = await this.prisma.wallet.findUnique({ where: { name } });
+    const wallet = await this.prisma.wallet.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+    });
 
     if (wallet) {
       throw new BadRequestException('Account name already taken');
