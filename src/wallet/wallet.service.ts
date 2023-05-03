@@ -98,6 +98,17 @@ export class WalletService {
     return wallets;
   }
 
+  async findMe(address: string) {
+    const wallet = await this.findOne(address);
+    await this.prisma.wallet.update({
+      where: { address },
+      data: {
+        lastActiveAt: new Date(),
+      },
+    });
+    return wallet;
+  }
+
   async findOne(address: string) {
     const wallet = await this.prisma.wallet.findUnique({
       where: { address },
