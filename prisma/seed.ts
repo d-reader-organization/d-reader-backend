@@ -25,6 +25,7 @@ import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.s
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, Metaplex, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
+import { IDENTITY_KEY } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -282,14 +283,8 @@ async function main() {
     console.log('❌ Failed to add comic genres', e);
   }
 
-  const wallet = AES.decrypt(
-    process.env.TREASURY_PRIVATE_KEY,
-    process.env.TREASURY_SECRET,
-  );
 
-  const treasuryKeypair = Keypair.fromSecretKey(
-    Buffer.from(JSON.parse(wallet.toString(Utf8))),
-  );
+  const treasuryKeypair = IDENTITY_KEY();
   treasuryPubKey = treasuryKeypair.publicKey;
   try {
     await prisma.wallet.create({
@@ -349,7 +344,7 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: '3i8mZjkWboj8bSSgoqASTCx5mhkJEhb7Ta6rwWpu3KBL',
+        address: '4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS',
         name: 'Athar',
         avatar: '',
         createdAt: new Date(),
