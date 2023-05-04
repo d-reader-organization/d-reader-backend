@@ -137,7 +137,7 @@ export class WalletService {
   async update(address: string, updateWalletDto: UpdateWalletDto) {
     const { referrer, name } = updateWalletDto;
 
-    if (referrer) await this.redeemReferral(address, referrer);
+    if (referrer) await this.redeemReferral(referrer, address);
 
     if (name) {
       const exists = await this.prisma.wallet.findFirst({
