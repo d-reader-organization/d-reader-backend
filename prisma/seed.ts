@@ -2762,7 +2762,6 @@ async function main() {
 
   let i = 1;
   for (const comicIssue of comicIssues) {
-    (await storage.bundlr()).withdrawBalance(1);
     if (process.env.SOLANA_CLUSTER !== 'mainnet-beta') {
       try {
         const balance = await (
@@ -2770,8 +2769,8 @@ async function main() {
         ).getBalance(treasuryPubKey.toBase58());
         const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
         console.log('Bundlr balance: ', solBalance);
-        if (solBalance < 0.4) {
-          (await storage.bundlr()).fund(0.1 * LAMPORTS_PER_SOL);
+        if (solBalance < 0.3) {
+          (await storage.bundlr()).fund(0.2 * LAMPORTS_PER_SOL);
           console.log('Funded bundlr storage');
         }
       } catch (e) {
