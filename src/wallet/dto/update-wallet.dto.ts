@@ -1,5 +1,4 @@
-import { IsOptional, MaxLength } from 'class-validator';
-import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateWalletDto {
   @IsOptional()
@@ -11,7 +10,7 @@ export class UpdateWalletDto {
   // @ApiProperty({ enum: Role })
   // role?: Role;
 
-  @IsSolanaAddress()
+  @IsString()
   @IsOptional()
   referrer?: string;
 }
