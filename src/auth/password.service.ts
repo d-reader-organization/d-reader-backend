@@ -22,7 +22,7 @@ export class PasswordService {
     validateEd25519Address(address);
 
     // auto referrer users on non mainnet-beta environments
-    const isMainnet = process.env.SOLANA_CLUSTER !== Cluster.MainnetBeta;
+    const isMainnet = process.env.SOLANA_CLUSTER === Cluster.MainnetBeta;
     const referral = isMainnet
       ? undefined
       : {

@@ -292,7 +292,7 @@ async function main() {
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
     console.log('➕ Added Treasury wallet');
@@ -330,7 +330,7 @@ async function main() {
           connect: { address: treasuryPubKey.toBase58() },
         },
         referredAt: new Date(Date.now()),
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
     console.log('➕ Added Superadmin wallet');
@@ -347,7 +347,7 @@ async function main() {
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
     console.log('➕ Added Athar wallet');
@@ -364,7 +364,7 @@ async function main() {
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
     console.log('➕ Added Luka wallet');
@@ -381,7 +381,7 @@ async function main() {
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Admin,
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 0,
+        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
     console.log('➕ Added Admin wallet');
@@ -2651,9 +2651,11 @@ async function main() {
     console.log('❌ Failed to add "Roach Writes" creator', e);
   }
 
+  const dummyWalletCount =
+    process.env.SOLANA_CLUSTER === 'mainnet-beta' ? 20 : 100;
   try {
-    // 100 dummy wallets
-    const indexArray = [...Array(100).keys()];
+    // dummy wallets
+    const indexArray = [...Array(dummyWalletCount).keys()];
     const walletArray = indexArray.map(() =>
       Keypair.generate().publicKey.toBase58(),
     );
@@ -2670,7 +2672,7 @@ async function main() {
     for (const walletAddress of walletArray) {
       console.log(i, ' ➕ Adding wallet ' + walletAddress);
       await prisma.wallet.create({
-        data: { address: walletAddress, name: `comic${i}` },
+        data: { address: walletAddress, name: `dummy-${i}` },
       });
 
       // await Promise.all(
