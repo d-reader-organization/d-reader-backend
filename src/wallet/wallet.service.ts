@@ -145,7 +145,7 @@ export class WalletService {
       });
 
       if (exists) {
-        throw new NotFoundException(`Account with name ${name} already exists`);
+        throw new NotFoundException(`'${name}' already taken`);
       }
 
       try {
