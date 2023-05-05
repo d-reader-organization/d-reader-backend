@@ -18,7 +18,6 @@ export class PasswordService {
 
   async generateOneTimePassword(address: string): Promise<string> {
     const nonce = uuidv4();
-
     validateEd25519Address(address);
 
     // auto referrer users on non mainnet-beta environments
@@ -30,6 +29,7 @@ export class PasswordService {
           referredAt: new Date(),
         };
 
+    console.log(address, process.env.SOLANA_CLUSTER, isMainnet, referral);
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },
@@ -52,7 +52,6 @@ export class PasswordService {
     }
 
     const match = this.matchPassword(wallet.nonce, address, encoding);
-
     if (match) return wallet;
   }
 

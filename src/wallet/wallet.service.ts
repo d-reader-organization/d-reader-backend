@@ -10,7 +10,7 @@ import { s3Service } from '../aws/s3.service';
 import { JsonMetadata, Metaplex } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
-import { Prisma } from '@prisma/client';
+import { Prisma, Wallet } from '@prisma/client';
 import axios from 'axios';
 import {
   SAGA_COLLECTION_ADDRESS,
@@ -211,14 +211,19 @@ export class WalletService {
       await this.validateSagaUser(referee);
       referrer = 'Saga';
     }
+
     // if the search string is of type Solana address, search by address
     // otherwise search by wallet name
-    const where: Prisma.WalletWhereUniqueInput = isSolanaAddress(referrer)
-      ? { address: referrer }
-      : { name: referrer };
-    const referrerWallet = await this.prisma.wallet.findUnique({
-      where,
-    });
+    let referrerWallet: Wallet;
+    if (isSolanaAddress(referrer)) {
+      referrerWallet = await this.prisma.wallet.findUnique({
+        where: { address: referrer },
+      });
+    } else {
+      referrerWallet = await this.prisma.wallet.findUnique({
+        where: { name: referrer },
+      });
+    }
 
     if (!referrerWallet) {
       throw new BadRequestException(`Account ${referrer} doesn't exist`);
@@ -226,6 +231,8 @@ export class WalletService {
       throw new BadRequestException(
         `Account ${referrerWallet.name} doesn't have referrals left`,
       );
+    } else if (referrerWallet.address === referee) {
+      throw new BadRequestException('Cannot refer yourself');
     }
 
     let wallet = await this.prisma.wallet.findUnique({
