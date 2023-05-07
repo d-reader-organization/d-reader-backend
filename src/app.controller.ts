@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { WalletEntity } from './decorators/wallet.decorator';
 import { RestAuthGuard } from './guards/rest-auth.guard';
 import { Wallet } from '@prisma/client';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('App')
@@ -26,6 +26,7 @@ export class AppController {
     return this.appService.getAuth(wallet.address);
   }
 
+  @SkipThrottle()
   @Get('healthcheck')
   async healthCheck(): Promise<string> {
     return this.appService.healthCheck();
