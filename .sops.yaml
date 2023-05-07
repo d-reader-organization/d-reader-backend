@@ -1,0 +1,18 @@
+creation_rules:
+  - path_regex: dev-devnet\.enc
+    age: >-
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: main-devnet\.enc
+    age: >-
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: dev-mainnet\.enc
+    age: >-
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: main-mainnet\.enc
+    age: >-
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+# bartol      mmc..dpn
