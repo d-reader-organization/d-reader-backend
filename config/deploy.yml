@@ -1,0 +1,67 @@
+service: d-reader-backend
+image: bdeak4/d-reader-backend
+
+registry:
+  server: ghcr.io
+  username: bdeak4
+  password:
+    - MRSK_REGISTRY_PASSWORD
+
+builder:
+  multiarch: false
+
+env:
+  clear:
+    PORT: 3005
+  secret:
+    - DATABASE_URL
+    # Mail
+    - MAIL_SERVICE
+    - MAIL_PORT
+    - MAIL_HOST
+    - MAIL_USER
+    - MAIL_PASS
+    - MAIL_FROM
+    # Security
+    - JWT_ACCESS_SECRET
+    - JWT_REFRESH_SECRET
+    # AWS S3
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_BUCKET_NAME
+    - AWS_BUCKET_REGION
+    # Solana
+    - TREASURY_PRIVATE_KEY
+    - TREASURY_SECRET
+    - AUCTION_HOUSE_ADDRESS
+    - SIGN_MESSAGE
+    # Helius
+    - HELIUS_API_KEY
+    - WEBHOOK_ID
+
+traefik:
+  args:
+    accesslog: true
+    accesslog.format: json
+    accesslog.fields.headers.defaultmode: keep
+    accesslog.fields.headers.names.Authorization: drop
+    accesslog.fields.headers.names.Cookie: drop
+    metrics.prometheus: true
+    api.dashboard: true
+  options:
+    publish:
+      - 8080:8080
+  labels:
+    traefik.http.routers.dashboard.entrypoints: traefik
+    traefik.http.routers.dashboard.rule: PathPrefix(`/api`, `/dashboard`)
+    traefik.http.routers.dashboard.service: api@internal
+    traefik.http.routers.dashboard.middlewares: auth
+    # command to generate new password: htpasswd -n admin
+    traefik.http.middlewares.auth.basicauth.users: admin:$apr1$2/e6tSjl$.HG5HkmaVl5QWmszLZk/b1
+
+healthcheck:
+  path: /app/healthcheck
+  port: 3005
+  max_attempts: 10
+
+audit_broadcast_cmd: config/scripts/audit-broadcast.sh

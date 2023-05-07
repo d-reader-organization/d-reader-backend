@@ -1,0 +1,7 @@
+servers:
+  - 23.88.51.146
+
+env:
+  clear:
+    NODE_ENV: dev
+    SOLANA_CLUSTER: devnet
