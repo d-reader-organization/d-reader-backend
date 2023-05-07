@@ -25,4 +25,9 @@ export class AppController {
   getAuth(@WalletEntity() wallet: Wallet): string {
     return this.appService.getAuth(wallet.address);
   }
+
+  @Get('healthcheck')
+  async healthCheck(): Promise<string> {
+    return this.appService.healthCheck();
+  }
 }
