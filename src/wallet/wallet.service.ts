@@ -275,9 +275,7 @@ export class WalletService {
         nft.collection.verified,
     );
     if (!sagaToken) {
-      throw new BadRequestException(
-        `No Saga Genesis Token found for wallet ${address}`,
-      );
+      throw new BadRequestException('Saga Genesis Token not found');
     }
   }
 
