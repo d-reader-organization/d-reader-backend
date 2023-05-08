@@ -71,3 +71,8 @@ export function getComputeUnits(instructions: TransactionInstruction[]) {
 
   return 200000 + 100000 * instructions.length + 100 * size;
 }
+
+export const shortenString = (string: string, chars = 3): string => {
+  if (string.length < chars * 2 + 3) return string;
+  return `${string.slice(0, chars)}..${string.slice(-chars)}`;
+};
