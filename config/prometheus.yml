@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  # - job_name: grafana
+  #   static_configs:
+  #     - targets:
+  #         - grafana-dreader.bdeak.net
+
+  # - job_name: loki
+  #   static_configs:
+  #     - targets:
+  #         - loki-dreader.bdeak.net
+
+  - job_name: traefik
+    static_configs:
+      - targets:
+          - 23.88.51.146:8080 # dev-devnet
+          - 94.130.231.39:8080 # monitoring
+
+  - job_name: node
+    static_configs:
+      - targets:
+          - 23.88.51.146:9100 # dev-devnet
+          - 94.130.231.39:9100 # monitoring

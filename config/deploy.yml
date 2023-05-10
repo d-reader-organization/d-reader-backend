@@ -1,6 +1,12 @@
 service: d-reader-backend
 image: bdeak4/d-reader-backend
 
+servers:
+  monitoring:
+    traefik: true
+    hosts:
+      - 94.130.231.39
+
 registry:
   server: ghcr.io
   username: bdeak4
@@ -39,6 +45,42 @@ env:
     - HELIUS_API_KEY
     - WEBHOOK_ID
 
+accessories:
+  prometheus:
+    image: prom/prometheus:latest
+    roles:
+      - monitoring
+    cmd: |
+      --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - /var/lib/prometheus:/prometheus
+    files:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    options:
+      user: root
+    labels:
+      traefik.http.routers.d-reader-backend-prometheus.rule: Host(`prometheus-dreader.bdeak.net`)
+      traefik.http.routers.d-reader-backend-prometheus.middlewares: prometheus-auth
+      traefik.http.routers.d-reader-backend-prometheus-metrics.rule: Host(`prometheus-dreader.bdeak.net`) && PathPrefix(`/metrics`)
+      traefik.http.middlewares.prometheus-auth.basicauth.users: admin:$apr1$UvJWlU7j$f/dutPyM47ffowAhW8t1n/
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    roles:
+      - web
+      - monitoring
+    cmd: |
+      --path.procfs=/host/proc \
+      --path.sysfs=/host/sys \
+      --path.rootfs=/rootfs \
+      --collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)" \
+      --collector.processes
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    port: 9100
+
 traefik:
   args:
     accesslog: true
@@ -55,9 +97,9 @@ traefik:
     traefik.http.routers.dashboard.entrypoints: traefik
     traefik.http.routers.dashboard.rule: PathPrefix(`/api`, `/dashboard`)
     traefik.http.routers.dashboard.service: api@internal
-    traefik.http.routers.dashboard.middlewares: auth
+    traefik.http.routers.dashboard.middlewares: traefik-auth
+    traefik.http.middlewares.traefik-auth.basicauth.users: admin:$apr1$MmIhxigx$PFHwq/Sm1an1Bzosw1sIL1
     # command to generate new password: htpasswd -n admin
-    traefik.http.middlewares.auth.basicauth.users: admin:$apr1$2/e6tSjl$.HG5HkmaVl5QWmszLZk/b1
 
 healthcheck:
   path: /app/healthcheck

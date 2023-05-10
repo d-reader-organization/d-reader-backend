@@ -1,5 +1,7 @@
 servers:
-  - 23.88.51.146
+  web:
+    hosts:
+      - 23.88.51.146
 
 env:
   clear:
