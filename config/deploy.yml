@@ -106,4 +106,4 @@ healthcheck:
   port: 3005
   max_attempts: 10
 
-audit_broadcast_cmd: config/scripts/audit-broadcast.sh
+audit_broadcast_cmd: config/scripts/mrsk-audit-broadcast.sh
