@@ -7,10 +7,10 @@ scrape_configs:
       - targets:
           - localhost:9090
 
-  # - job_name: grafana
-  #   static_configs:
-  #     - targets:
-  #         - grafana-dreader.bdeak.net
+  - job_name: grafana
+    static_configs:
+      - targets:
+          - grafana-dreader.bdeak.net
 
   # - job_name: loki
   #   static_configs:

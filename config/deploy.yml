@@ -84,6 +84,17 @@ accessories:
       - /:/rootfs:ro
     port: 9100
 
+  grafana:
+    image: grafana/grafana:latest
+    roles:
+      - monitoring
+    volumes:
+      - /var/lib/grafana:/var/lib/grafana
+    options:
+      user: root
+    labels:
+      traefik.http.routers.d-reader-backend-grafana.rule: Host(`grafana-dreader.bdeak.net`)
+
 traefik:
   args:
     accesslog: true
