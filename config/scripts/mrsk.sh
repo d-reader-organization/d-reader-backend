@@ -27,5 +27,7 @@ quote() {
 }
 
 "$scripts/ssh-agent.sh" load "$env" 2>&1 | grep -v "^Identity added"
-sops exec-env "config/$env.enc.env" "$bin $(quote "$@") -d $env"
+sops -d --output ".env.$env" "config/$env.enc.env"
+eval "$bin $(quote "$@") -d $env"
+rm -f ".env.$env"
 "$scripts/ssh-agent.sh" unload "$env" 2>&1 | grep -v "^Identity removed"
