@@ -20,11 +20,11 @@ scrape_configs:
   - job_name: traefik
     static_configs:
       - targets:
-          - 23.88.51.146:8080 # dev-devnet
-          - 94.130.231.39:8080 # monitoring
+          - 94.130.231.39:8080 # dev-devnet
+          - 5.75.167.62:8080 # monitoring
 
   - job_name: node
     static_configs:
       - targets:
-          - 23.88.51.146:9100 # dev-devnet
-          - 94.130.231.39:9100 # monitoring
+          - 94.130.231.39:9100 # dev-devnet
+          - 5.75.167.62:9100 # monitoring

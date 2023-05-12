@@ -5,7 +5,10 @@ servers:
   monitoring:
     traefik: true
     hosts:
-      - 94.130.231.39
+      - 5.75.167.62
+    healthcheck:
+      cmd: exit 0
+    cmd: tail -f /dev/null
 
 registry:
   server: ghcr.io
