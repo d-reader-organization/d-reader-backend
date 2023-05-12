@@ -10,10 +10,6 @@ import { heliusClusterApiUrl } from 'helius-sdk';
 import { BUNDLR_ADDRESS } from '../constants';
 
 const getTreasuryKeypair = () => {
-  console.log({
-    TREASURY_PRIVATE_KEY: process.env.TREASURY_PRIVATE_KEY,
-    TREASURY_SECRET: process.env.TREASURY_SECRET,
-  });
   const treasuryWallet = AES.decrypt(
     process.env.TREASURY_PRIVATE_KEY,
     process.env.TREASURY_SECRET,
