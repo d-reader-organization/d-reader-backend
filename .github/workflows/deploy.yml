@@ -8,13 +8,14 @@ on:
 
   workflow_dispatch:
 
-env:
-  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
-
 jobs:
-  deploy-devnet:
-    name: Deploy devnet
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        solana-cluster: [devnet, mainnet]
 
     steps:
       - name: Setup ruby
@@ -48,6 +49,7 @@ jobs:
 
       - name: Run mrsk
         run: |
-          ./config/scripts/mrsk.sh $GIT_BRANCH-devnet deploy --roles web
+          ./config/scripts/mrsk.sh $ENV deploy --roles web
         env:
+          ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
