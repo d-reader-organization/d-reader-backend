@@ -37,7 +37,7 @@ jobs:
         env:
           AGE_SECRET_KEY: ${{ secrets.AGE_SECRET_KEY }}
 
-      - name: Setup ssh
+      - name: Setup ssh-agent
         run: |
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         env:
