@@ -1,0 +1,21 @@
+name: Backend deploy
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+  workflow_dispatch:
+
+env:
+  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  deploy-devnet:
+    name: Deploy devnet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git branch
+        run: echo "$GIT_BRANCH"
