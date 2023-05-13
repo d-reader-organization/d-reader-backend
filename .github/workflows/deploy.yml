@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+  workflow_dispatch:
+
+env:
+  GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  deploy-devnet:
+    name: Deploy devnet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+
+      - name: Setup mrsk
+        run: |
+          gem install mrsk
+
+      - name: Setup sops
+        uses: mdgreenwald/mozilla-sops-action@v1.4.1
+
+      - name: Setup age
+        run: |
+          mkdir -p ~/.config/sops/age
+          echo "$AGE_SECRET_KEY" > ~/.config/sops/age/keys.txt
+        env:
+          AGE_SECRET_KEY: ${{ secrets.AGE_SECRET_KEY }}
+
+      - name: Setup ssh
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run mrsk
+        run: |
+          ./config/scripts/mrsk.sh $GIT_BRANCH-devnet deploy --roles web
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
