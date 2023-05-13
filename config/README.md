@@ -35,8 +35,8 @@ pull and then you will be able to edit environment variables. See how in
 If you don't have environment access up and running, take a look at
 [this](#environment-access-setup) section.
 
-> **Warning** Docker does not support quotes around environment variable values,
-> so any quotes added in *.enc.env files will be sent with value to app 
+> **Warning** Environment variable that contain special characters like `#` or
+> `$` need to be wrapped in single quotes to prevent shell expansion
 
 Edit encrypted .env file (it will be saved when you exit vscode tab):
 ```
