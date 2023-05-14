@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        solana-cluster: [devnet, mainnet]
+        solana-cluster: [devnet]
 
     environment:
       name: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
@@ -26,6 +26,9 @@ jobs:
       cancel-in-progress: true
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Set environment
         id: environment
         run: |
@@ -59,9 +62,6 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
       - name: Run mrsk
         run: |
