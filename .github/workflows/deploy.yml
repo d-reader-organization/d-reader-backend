@@ -17,7 +17,24 @@ jobs:
       matrix:
         solana-cluster: [devnet, mainnet]
 
+    environment:
+      name: ${{ steps.environment.outputs.name }}
+      url: ${{ steps.environment.outputs.url }}
+
+    concurrency:
+      group: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
+      cancel-in-progress: true
+
     steps:
+      - name: Set environment
+        id: environment
+        run: |
+          echo "name=$GIT_BRANCH-$SOLANA_CLUSTER" >> $GITHUB_OUTPUT
+          echo "url=$(./config/scripts/api-url.sh $GIT_BRANCH $SOLANA_CLUSTER)" >> $GITHUB_OUTPUT
+        env:
+          GIT_BRANCH: ${{ github.ref_name }}
+          SOLANA_CLUSTER: ${{ matrix.solana-cluster }}
+
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -51,5 +68,5 @@ jobs:
         run: |
           ./config/scripts/mrsk.sh $ENV deploy --roles web
         env:
-          ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
+          ENV: ${{ steps.environment.outputs.name }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
