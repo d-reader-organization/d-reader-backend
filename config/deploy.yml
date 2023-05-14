@@ -95,6 +95,43 @@ accessories:
     labels:
       traefik.http.routers.d-reader-backend-grafana.rule: Host(`grafana-dreader.bdeak.net`)
 
+  loki:
+    image: grafana/loki:latest
+    roles:
+      - monitoring
+    cmd: |
+      -config.file=/etc/loki/config.yaml \
+      -config.expand-env=true
+    volumes:
+      - /var/lib/loki:/data/loki
+    files:
+      - ./config/loki.yml:/etc/loki/config.yaml
+    options:
+      user: root
+    labels:
+      traefik.http.routers.d-reader-backend-loki.rule: Host(`loki-dreader.bdeak.net`)
+      traefik.http.routers.d-reader-backend-loki.middlewares: loki-auth
+      traefik.http.routers.d-reader-backend-loki-metrics.rule: Host(`loki-dreader.bdeak.net`) && PathPrefix(`/metrics`)
+      traefik.http.middlewares.loki-auth.basicauth.users: admin:$apr1$VYEoR4vN$xuHqBa.x9wMiGdC5h9YKW1
+
+  promtail:
+    image: grafana/promtail:latest
+    roles:
+      - web
+    cmd: |
+      -config.file=/etc/promtail/config.yml \
+      -config.expand-env=true
+    env:
+      clear:
+        LOKI_HOST: loki-dreader.bdeak.net
+        LOKI_USERNAME: admin
+      secret:
+        - LOKI_PASSWORD
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    files:
+      - ./config/promtail.yml:/etc/promtail/config.yml
+
 traefik:
   args:
     accesslog: true
