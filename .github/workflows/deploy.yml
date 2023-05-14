@@ -32,7 +32,7 @@ jobs:
       - name: Set environment
         id: environment
         run: |
-          echo "url=$(./config/scripts/api-url.sh $GIT_BRANCH $SOLANA_CLUSTER)" >> $GITHUB_OUTPUT
+          echo "url=https://api.$GIT_BRANCH.$SOLANA_CLUSTER.dreader.io" | sed 's/mainnet\.//g' | sed 's/main\.//g' >> $GITHUB_OUTPUT
         env:
           GIT_BRANCH: ${{ github.ref_name }}
           SOLANA_CLUSTER: ${{ matrix.solana-cluster }}
