@@ -40,7 +40,7 @@ jobs:
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.0'
+          ruby-version: '3'
           bundler-cache: true
 
       - name: Setup mrsk
@@ -62,6 +62,16 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build cached docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run mrsk
         run: |
