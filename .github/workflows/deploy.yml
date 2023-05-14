@@ -63,15 +63,14 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
-      - name: Setup docker buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build cached docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Warmup docker cache
+        run: |
+          docker login ghcr.io -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+          docker pull ghcr.io/bdeak4/d-reader-backend:latest
+          docker build -t ghcr.io/bdeak4/d-reader-backend:latest --cache-from ghcr.io/bdeak4/d-reader-backend:latest --label service="d-reader-backend" --file Dockerfile .
+        env:
+          DOCKER_USERNAME: bdeak4
+          DOCKER_PASSWORD: ${{ secrets.MRSK_REGISTRY_PASSWORD }}
 
       - name: Run mrsk
         run: |
