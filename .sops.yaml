@@ -19,5 +19,10 @@ creation_rules:
       age19et6kq6nrx2245xt2kp7uec9ced5thump64gaevmgk2phq8t8u2scn5nj2,
       age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
 
+  - path_regex: monitoring\.enc
+    age: >-
+      age19et6kq6nrx2245xt2kp7uec9ced5thump64gaevmgk2phq8t8u2scn5nj2,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
 # gh-actions  19e..nj2
 # bartol      mmc..dpn

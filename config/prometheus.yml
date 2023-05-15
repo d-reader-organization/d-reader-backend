@@ -12,19 +12,21 @@ scrape_configs:
       - targets:
           - grafana-dreader.bdeak.net
 
-  # - job_name: loki
-  #   static_configs:
-  #     - targets:
-  #         - loki-dreader.bdeak.net
+  - job_name: loki
+    static_configs:
+      - targets:
+          - loki-dreader.bdeak.net
 
   - job_name: traefik
     static_configs:
       - targets:
-          - 94.130.231.39:8080 # dev-devnet
-          - 5.75.167.62:8080 # monitoring
+          - 49.12.3.58:8080 # dev-devnet
+          - 91.107.218.131:8080 # dev-mainnet
+          - 168.119.158.168:8080 # monitoring
 
   - job_name: node
     static_configs:
       - targets:
-          - 94.130.231.39:9100 # dev-devnet
-          - 5.75.167.62:9100 # monitoring
+          - 49.12.3.58:9100 # dev-devnet
+          - 91.107.218.131:9100 # dev-mainnet
+          - 168.119.158.168:9100 # monitoring

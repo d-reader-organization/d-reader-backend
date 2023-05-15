@@ -1,15 +1,6 @@
 service: d-reader-backend
 image: bdeak4/d-reader-backend
 
-servers:
-  monitoring:
-    traefik: true
-    hosts:
-      - 5.75.167.62
-    healthcheck:
-      cmd: exit 0
-    cmd: tail -f /dev/null
-
 registry:
   server: ghcr.io
   username: bdeak4
@@ -49,29 +40,10 @@ env:
     - WEBHOOK_ID
 
 accessories:
-  prometheus:
-    image: prom/prometheus:latest
-    roles:
-      - monitoring
-    cmd: |
-      --config.file=/etc/prometheus/prometheus.yml
-    volumes:
-      - /var/lib/prometheus:/prometheus
-    files:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    options:
-      user: root
-    labels:
-      traefik.http.routers.d-reader-backend-prometheus.rule: Host(`prometheus-dreader.bdeak.net`)
-      traefik.http.routers.d-reader-backend-prometheus.middlewares: prometheus-auth
-      traefik.http.routers.d-reader-backend-prometheus-metrics.rule: Host(`prometheus-dreader.bdeak.net`) && PathPrefix(`/metrics`)
-      traefik.http.middlewares.prometheus-auth.basicauth.users: admin:$apr1$UvJWlU7j$f/dutPyM47ffowAhW8t1n/
-
   node-exporter:
     image: prom/node-exporter:latest
     roles:
       - web
-      - monitoring
     cmd: |
       --path.procfs=/host/proc \
       --path.sysfs=/host/sys \
@@ -83,36 +55,6 @@ accessories:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
     port: 9100
-
-  grafana:
-    image: grafana/grafana:latest
-    roles:
-      - monitoring
-    volumes:
-      - /var/lib/grafana:/var/lib/grafana
-    options:
-      user: root
-    labels:
-      traefik.http.routers.d-reader-backend-grafana.rule: Host(`grafana-dreader.bdeak.net`)
-
-  loki:
-    image: grafana/loki:latest
-    roles:
-      - monitoring
-    cmd: |
-      -config.file=/etc/loki/config.yaml \
-      -config.expand-env=true
-    volumes:
-      - /var/lib/loki:/data/loki
-    files:
-      - ./config/loki.yml:/etc/loki/config.yaml
-    options:
-      user: root
-    labels:
-      traefik.http.routers.d-reader-backend-loki.rule: Host(`loki-dreader.bdeak.net`)
-      traefik.http.routers.d-reader-backend-loki.middlewares: loki-auth
-      traefik.http.routers.d-reader-backend-loki-metrics.rule: Host(`loki-dreader.bdeak.net`) && PathPrefix(`/metrics`)
-      traefik.http.middlewares.loki-auth.basicauth.users: admin:$apr1$VYEoR4vN$xuHqBa.x9wMiGdC5h9YKW1
 
   promtail:
     image: grafana/promtail:latest

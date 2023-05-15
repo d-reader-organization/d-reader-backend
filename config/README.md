@@ -40,7 +40,7 @@ If you don't have environment access up and running, take a look at
 
 Edit encrypted .env file (it will be saved when you exit vscode tab):
 ```
-EDITOR="code --wait" sops config/dev-devnet.enc.env
+EDITOR="code --wait" sops config/env/dev-devnet.enc.env
 ```
 
 Edit `env:` in `config/deploy.yml` if secrets were removed or new ones were
