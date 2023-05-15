@@ -14,7 +14,7 @@ lerna-debug.log*
 # Env
 .env*
 *.env
-!config/env
+!config/env/*.env
 !.env.example
 
 # OS

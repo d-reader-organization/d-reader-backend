@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        solana-cluster: [devnet]
+        solana-cluster: [devnet, mainnet]
 
     environment:
       name: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
