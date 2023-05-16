@@ -1,7 +1,7 @@
 servers:
   web:
     hosts:
-      - 168.119.158.168
+      - 18.208.225.125
     cmd: tail -f /dev/null
 
 env:
@@ -13,7 +13,7 @@ healthcheck:
 accessories:
   prometheus:
     image: prom/prometheus:latest
-    host: 168.119.158.168
+    host: 18.208.225.125
     cmd: |
       --config.file=/etc/prometheus/prometheus.yml
     volumes:
@@ -30,7 +30,7 @@ accessories:
 
   grafana:
     image: grafana/grafana:latest
-    host: 168.119.158.168
+    host: 18.208.225.125
     volumes:
       - /var/lib/grafana:/var/lib/grafana
     options:
@@ -40,7 +40,7 @@ accessories:
 
   loki:
     image: grafana/loki:latest
-    host: 168.119.158.168
+    host: 18.208.225.125
     cmd: |
       -config.file=/etc/loki/config.yaml \
       -config.expand-env=true
