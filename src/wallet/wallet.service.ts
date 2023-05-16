@@ -226,10 +226,10 @@ export class WalletService {
     }
 
     if (!referrerWallet) {
-      throw new BadRequestException(`Account ${referrer} doesn't exist`);
+      throw new BadRequestException(`User ${referrer} doesn't exist`);
     } else if (referrerWallet.referralsRemaining == 0) {
       throw new BadRequestException(
-        `Account ${referrerWallet.name} doesn't have referrals left`,
+        `User ${referrerWallet.name} doesn't have referrals left`,
       );
     } else if (referrerWallet.address === referee) {
       throw new BadRequestException('Cannot refer yourself');
@@ -239,9 +239,7 @@ export class WalletService {
       where: { address: referee },
     });
     if (!!wallet.referredAt) {
-      throw new BadRequestException(
-        `Account ${wallet.name} is already referred`,
-      );
+      throw new BadRequestException(`User ${wallet.name} is already referred`);
     }
 
     // update referrer wallet
