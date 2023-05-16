@@ -104,10 +104,13 @@ export class AuthService {
   }
 
   async validateName(name: string) {
+    const usernameRegex = RegExp(/^[a-zA-Z0-9]/g);
     if (!name || name.length > WALLET_NAME_SIZE) {
       throw new BadRequestException(
         `Account name can have maximum of ${WALLET_NAME_SIZE} characters`,
       );
+    } else if (!usernameRegex.test(name)) {
+      throw new BadRequestException(`Account name should be alpha numeric.`);
     }
     const wallet = await this.prisma.wallet.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
