@@ -105,7 +105,7 @@ export class AuthService {
   }
 
   async validateName(name: string) {
-    if (!name || maxLength(name, WALLET_NAME_SIZE)) {
+    if (!name || !maxLength(name, WALLET_NAME_SIZE)) {
       throw new BadRequestException(
         `Username max size ${WALLET_NAME_SIZE} characters`,
       );
