@@ -120,7 +120,7 @@ your existing infrastructure components and configures itself automatically and
 dynamically.
 
 It also provides read-only dashboard for each server instance that is used to
-see current configuration state of traefik instance.
+see current traefik configuration state.
 
 Accessible on http://server_ip:8080/dashboard/ (auth required).
 

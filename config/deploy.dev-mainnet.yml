@@ -5,5 +5,5 @@ servers:
 
 env:
   clear:
-    NODE_ENV: dev
-    SOLANA_CLUSTER: devnet
+    NODE_ENV: production
+    SOLANA_CLUSTER: mainnet-beta
