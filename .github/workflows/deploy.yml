@@ -16,10 +16,11 @@ jobs:
     strategy:
       matrix:
         solana-cluster: [devnet, mainnet]
+      fail-fast: false
 
     environment:
       name: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
-      url: ${{ steps.environment.outputs.url }}
+      url: https://api-${{ github.ref_name }}-${{ matrix.solana-cluster }}.dreader.io
 
     concurrency:
       group: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
@@ -28,14 +29,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Set environment
-        id: environment
-        run: |
-          echo "url=https://api.$GIT_BRANCH.$SOLANA_CLUSTER.dreader.io" | sed 's/mainnet\.//g' | sed 's/main\.//g' >> $GITHUB_OUTPUT
-        env:
-          GIT_BRANCH: ${{ github.ref_name }}
-          SOLANA_CLUSTER: ${{ matrix.solana-cluster }}
 
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
@@ -66,7 +59,7 @@ jobs:
       - name: Run mrsk
         run: |
           ./config/scripts/mrsk.sh $ENV lock release
-          ./config/scripts/mrsk.sh $ENV deploy -r web
+          ./config/scripts/mrsk.sh $ENV deploy --roles web
         env:
           ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
