@@ -23,9 +23,9 @@ accessories:
     options:
       user: root
     labels:
-      traefik.http.routers.d-reader-backend-prometheus.rule: Host(`prometheus-dreader.bdeak.net`)
+      traefik.http.routers.d-reader-backend-prometheus.rule: Host(`prometheus.dreader.io`)
       traefik.http.routers.d-reader-backend-prometheus.middlewares: prometheus-auth
-      traefik.http.routers.d-reader-backend-prometheus-metrics.rule: Host(`prometheus-dreader.bdeak.net`) && PathPrefix(`/metrics`)
+      traefik.http.routers.d-reader-backend-prometheus-metrics.rule: Host(`prometheus.dreader.io`) && PathPrefix(`/metrics`)
       traefik.http.middlewares.prometheus-auth.basicauth.users: admin:$apr1$UvJWlU7j$f/dutPyM47ffowAhW8t1n/
 
   grafana:
@@ -36,7 +36,7 @@ accessories:
     options:
       user: root
     labels:
-      traefik.http.routers.d-reader-backend-grafana.rule: Host(`grafana-dreader.bdeak.net`)
+      traefik.http.routers.d-reader-backend-grafana.rule: Host(`grafana.dreader.io`)
 
   loki:
     image: grafana/loki:latest
@@ -51,7 +51,7 @@ accessories:
     options:
       user: root
     labels:
-      traefik.http.routers.d-reader-backend-loki.rule: Host(`loki-dreader.bdeak.net`)
+      traefik.http.routers.d-reader-backend-loki.rule: Host(`loki.dreader.io`)
       traefik.http.routers.d-reader-backend-loki.middlewares: loki-auth
-      traefik.http.routers.d-reader-backend-loki-metrics.rule: Host(`loki-dreader.bdeak.net`) && PathPrefix(`/metrics`)
+      traefik.http.routers.d-reader-backend-loki-metrics.rule: Host(`loki.dreader.io`) && PathPrefix(`/metrics`)
       traefik.http.middlewares.loki-auth.basicauth.users: admin:$apr1$VYEoR4vN$xuHqBa.x9wMiGdC5h9YKW1

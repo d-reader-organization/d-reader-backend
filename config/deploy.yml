@@ -65,7 +65,7 @@ accessories:
       -config.expand-env=true
     env:
       clear:
-        LOKI_HOST: loki-dreader.bdeak.net
+        LOKI_HOST: loki.dreader.io
         LOKI_USERNAME: admin
       secret:
         - LOKI_PASSWORD
