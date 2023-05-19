@@ -321,7 +321,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-        name: 'Josip',
+        name: 'sa1',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -342,7 +342,7 @@ async function main() {
     await prisma.wallet.create({
       data: {
         address: '4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS',
-        name: 'Athar',
+        name: 'sa2',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
@@ -350,26 +350,27 @@ async function main() {
         referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
       },
     });
-    console.log('➕ Added Athar wallet');
+    console.log('➕ Added s2 wallet');
   } catch (e) {
-    console.log('❌ Failed to add Athar wallet', e);
+    console.log('❌ Failed to add s2 wallet', e);
   }
 
   try {
     await prisma.wallet.create({
       data: {
         address: 'HyPFNtmwtSEjwPWch1a9juvZ9wERemXzDgtymGn2KUh7',
-        name: 'Luka',
+        name: 'alpha',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
-        role: Role.Superadmin,
-        referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
+        role: Role.User,
+        referralsRemaining:
+          process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 100,
       },
     });
-    console.log('➕ Added Luka wallet');
+    console.log('➕ Added alpha wallet');
   } catch (e) {
-    console.log('❌ Failed to add Luka wallet', e);
+    console.log('❌ Failed to add alpha wallet', e);
   }
 
   try {
@@ -2652,7 +2653,7 @@ async function main() {
   }
 
   const dummyWalletCount =
-    process.env.SOLANA_CLUSTER === 'mainnet-beta' ? 20 : 100;
+    process.env.SOLANA_CLUSTER === 'mainnet-beta' ? 10 : 20;
   try {
     // dummy wallets
     const indexArray = [...Array(dummyWalletCount).keys()];
