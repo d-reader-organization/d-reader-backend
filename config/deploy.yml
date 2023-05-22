@@ -1,9 +1,9 @@
 service: d-reader-backend
-image: bdeak4/d-reader-backend
+image: d-reader-organization/d-reader-backend
 
 registry:
   server: ghcr.io
-  username: bdeak4
+  username: d-reader-josip
   password:
     - MRSK_REGISTRY_PASSWORD
 
