@@ -91,7 +91,7 @@ ssh root@new_server_ip
 After you've verified that ssh connection is working, edit ip address list
 section `servers.web.hosts:` in `config.<env>.yml`.
 
-## Monitoring dashboards
+## Monitoring
 
 ### Grafana
 
@@ -100,7 +100,41 @@ alert on and understand your metrics no matter where they are stored.
 
 Accessible on [grafana.dreader.io](https://grafana.dreader.io) (auth required).
 
-TODO: more docs
+<details>
+  <summary>Dashboards</summary>
+
+  <https://grafana.dreader.io/dashboards>
+
+  ![Grafana dashboards](./img/grafana_dashboards.png)
+</details>
+<details>
+  <summary>Logs dashboard</summary>
+
+  <https://grafana.dreader.io/d/f67ab2d6-1497-4290-b318-b902a799f30e/logs>
+
+  ![Grafana logs dashboard](./img/grafana_dashboard_logs.png)
+</details>
+<details>
+  <summary>System stats (node) dashboard</summary>
+
+  <https://grafana.dreader.io/d/rYdddlPWk/node>
+
+  ![Grafana node dashboard](./img/grafana_dashboard_node.png)
+</details>
+<details>
+  <summary>Prometheus dashboard</summary>
+
+  <https://grafana.dreader.io/d/c450b3e5-139e-4766-b3b8-dcd8e03fc553/prometheus>
+
+  ![Grafana prometheus dashboard](./img/grafana_dashboard_prometheus.png)
+</details>
+<details>
+  <summary>Traefik dashboard</summary>
+
+  <https://grafana.dreader.io/d/n5bu_kv45/traefik>
+
+  ![Grafana traefik dashboard](./img/grafana_dashboard_traefik.png)
+</details>
 
 ### Prometheus
 
@@ -110,7 +144,20 @@ intervals.
 
 Accessible on [prometheus.dreader.io](https://prometheus.dreader.io) (auth required).
 
-TODO: more docs
+<details>
+  <summary>Data Explorer</summary>
+
+  <https://prometheus.dreader.io/graph>
+
+  ![Prometheus data Explorer](./img/prometheus_explorer.png)
+</details>
+<details>
+  <summary>Targets</summary>
+
+  <https://prometheus.dreader.io/targets>
+
+  ![Prometheus targets](./img/prometheus_targets.png)
+</details>
 
 ### Traefik
 
@@ -124,4 +171,25 @@ see current traefik configuration state.
 
 Accessible on http://server_ip:8080/dashboard/ (auth required).
 
-TODO: more docs
+<details>
+  <summary>Dashboard</summary>
+
+  - <http://54.91.186.17:8080/dashboard/> (dev-devnet)
+  - <http://174.129.59.220:8080/dashboard/> (dev-mainnet)
+  - <http://3.239.214.202:8080/dashboard/> (main-devnet)
+  - <http://44.203.11.167:8080/dashboard/> (main-mainnet)
+  - <http://18.208.225.125:8080/dashboard/> (monitoring)
+
+  ![Traefik dashboard](./img/traefik_dashboard.png)  
+</details>
+<details>
+  <summary>Routers</summary>
+
+  - <http://54.91.186.17:8080/dashboard/#/http/routers> (dev-devnet)
+  - <http://174.129.59.220:8080/dashboard/#/http/routers> (dev-mainnet)
+  - <http://3.239.214.202:8080/dashboard/#/http/routers> (main-devnet)
+  - <http://44.203.11.167:8080/dashboard/#/http/routers> (main-mainnet)
+  - <http://18.208.225.125:8080/dashboard/#/http/routers> (monitoring)
+
+  ![Traefik routers](./img/traefik_routers.png)
+</details>
