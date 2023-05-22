@@ -13,6 +13,9 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
 
+    permissions:
+      packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -32,7 +35,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/bdeak4/d-reader-backend:latest,ghcr.io/bdeak4/d-reader-backend:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
