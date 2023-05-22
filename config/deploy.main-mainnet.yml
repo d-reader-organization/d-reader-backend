@@ -1,0 +1,9 @@
+servers:
+  web:
+    hosts:
+      - 44.203.11.167
+
+env:
+  clear:
+    NODE_ENV: production
+    SOLANA_CLUSTER: mainnet-beta

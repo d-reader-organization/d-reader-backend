@@ -1,0 +1,24 @@
+{
+	"data": "ENC[AES256_GCM,data:jMR1xL4BcgoCkWXFl+mbPFlkpb4pI2WnIe3rlmunUQcYx4sKhkma9W4R6/jZ5Ws1Y3w2/cddWURk403dugmTNzKIkxv/9mHEGon84p35HT/glTIiNVJ71e0SXeE2/Iq4TTx3IDH3R54pUxXeUg2Duu71whMUVXWPMfoyvlj5GH1xqG2ovVYtnhRTyrV+CKIJGr8aqWJcsklFH628WM4AINPAkOrOh3FCkeAWvcJIYpcOpOwkne4b0fuRul4Z6UJsJN7C5XEpXUdyhgs7Vr/PRe5vQNBfwT8sA/B1tONPEz3svZQp528X+KkITM0yqI1tRD6b9z/5QmS04ziLGQzeoJhiFvsnJsRA/TbmCMdWWVnF7rRySdeW1hDLhOjbepkOv5ChFnt7nxvi9JgQk9MfBsa0nt/0HEW195DUImVd52dXpRrPWYLv+vABDFkGr8GeUphrSqD3n4GFZIxLmVG8moYGyyuF7xHUitzW5v4gtoZ1Vp9zxLkVpvSsXhESiJFZV2vQ4IOQ/B/cEgMH/vdzfQigUTgNaImjEh+Tdbbve7BDk7o=,iv:8nPFCZssywT+6y+KPzBbAYYMRYVlttCGhOZ5taaKHjg=,tag:8KPTwdoZ8h/nNo8hQbettQ==,type:str]",
+	"sops": {
+		"kms": null,
+		"gcp_kms": null,
+		"azure_kv": null,
+		"hc_vault": null,
+		"age": [
+			{
+				"recipient": "age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBXQzc3SUw5ZCtTRFVVUGQ0\nMFhBd3VleXZaQ2tELzJleVA2Z0hJWVNFRGgwCkNkWkgzRW5zQXNUeHRyTFFzSE13\nVnpDMDF0Vmd6MEhrZ2twVjVyM1hnN3cKLS0tIGRrbW4zbVphN3d2RmY0SW5NQXNM\nUEtJS0huQkFlL0E2S2lxKzdYM3dmMVkKhlWtugTHBLJTRTcRcbz5it7FLwaQXaZv\nCBnsXxJNaerxkCEOGZ7IDj9fdIVaaCPaOt4yq7l4WzMqLEiLpxgXqA==\n-----END AGE ENCRYPTED FILE-----\n"
+			},
+			{
+				"recipient": "age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBQbmpIV0hMMHIwN3ZpR0RM\nV2pCZHJaenlSMHJSTEtDQmxOOGhXME5USEFjCmhPK1p6RUppSjhrRnRaeDZyWmhR\nUWMrY3JlakNweVAwVEFBWTFZMzZpSncKLS0tIGNoMlo0ZithcXlDbkl2MlBXREpk\nRFE2NjNTTXd6cy9jelhoNkV4R2JKejQKOdSu8FEKO1AdlzRGiuoCwMwzQO6Wpq4C\nhscTPjvZWkUWd1/nE9mf/xIFBjH8pRo3QEnSQfO0AFbD9h6wA6zQMw==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2023-05-15T21:53:46Z",
+		"mac": "ENC[AES256_GCM,data:TrBN9t8X/k3hm2oSyLie2sfRryumqKSAXHK2WrcnCq7BPj7VlQ8IcoV41vbx1H/iqkpz5Bk5cd/RwsInwXeB0/CGUJu83Eo87mqAIZOW7ZzL/5hPNvj3dsUkkMk5X+pC329p6/nvQ57PgvFN9AFCvXtIUVXCLKcE2IF8s8xn9xU=,iv:w8AHVtTWvOKKLGx2lAlS3vejTTFHxTMKSaHPdwGNWog=,tag:QDBshBcLIrvK1SWFIRU2Ng==,type:str]",
+		"pgp": null,
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.7.3"
+	}
+}

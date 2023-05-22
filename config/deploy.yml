@@ -1,0 +1,103 @@
+service: d-reader-backend
+image: d-reader-organization/d-reader-backend
+
+registry:
+  server: ghcr.io
+  username: d-reader-josip
+  password:
+    - MRSK_REGISTRY_PASSWORD
+
+builder:
+  multiarch: false
+
+env:
+  clear:
+    PORT: 3005
+  secret:
+    - DATABASE_URL
+    # Mail
+    - MAIL_SERVICE
+    - MAIL_PORT
+    - MAIL_HOST
+    - MAIL_USER
+    - MAIL_PASS
+    - MAIL_FROM
+    # Security
+    - JWT_ACCESS_SECRET
+    - JWT_REFRESH_SECRET
+    # AWS S3
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_BUCKET_NAME
+    - AWS_BUCKET_REGION
+    # Solana
+    - TREASURY_PRIVATE_KEY
+    - TREASURY_SECRET
+    - AUCTION_HOUSE_ADDRESS
+    - SIGN_MESSAGE
+    # Helius
+    - HELIUS_API_KEY
+    - WEBHOOK_ID
+
+accessories:
+  node-exporter:
+    image: prom/node-exporter:latest
+    roles:
+      - web
+    cmd: |
+      --path.procfs=/host/proc \
+      --path.sysfs=/host/sys \
+      --path.rootfs=/rootfs \
+      --collector.filesystem.mount-points-exclude="^/(sys|proc|dev|host|etc)($$|/)" \
+      --collector.processes
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    port: 9100
+
+  promtail:
+    image: grafana/promtail:latest
+    roles:
+      - web
+    cmd: |
+      -config.file=/etc/promtail/config.yml \
+      -config.expand-env=true
+    env:
+      clear:
+        LOKI_HOST: loki.dreader.io
+        LOKI_USERNAME: admin
+      secret:
+        - LOKI_PASSWORD
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    files:
+      - ./config/promtail.yml:/etc/promtail/config.yml
+
+traefik:
+  args:
+    accesslog: true
+    accesslog.format: json
+    accesslog.fields.headers.defaultmode: keep
+    accesslog.fields.headers.names.Authorization: drop
+    accesslog.fields.headers.names.Cookie: drop
+    metrics.prometheus: true
+    api.dashboard: true
+  options:
+    publish:
+      - 8080:8080
+  labels:
+    traefik.http.routers.dashboard.entrypoints: traefik
+    traefik.http.routers.dashboard.rule: PathPrefix(`/api`, `/dashboard`)
+    traefik.http.routers.dashboard.service: api@internal
+    traefik.http.routers.dashboard.middlewares: traefik-auth
+    traefik.http.middlewares.traefik-auth.basicauth.users: admin:$apr1$MmIhxigx$PFHwq/Sm1an1Bzosw1sIL1
+    # command to generate new password: htpasswd -n admin
+
+healthcheck:
+  path: /app/healthcheck
+  port: 3005
+  max_attempts: 10
+  # interval: 3s # waiting for new mrsk release
+
+audit_broadcast_cmd: config/scripts/mrsk-audit-broadcast.sh

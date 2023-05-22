@@ -1,0 +1,28 @@
+creation_rules:
+  - path_regex: dev-devnet\.enc
+    age: >-
+      age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: main-devnet\.enc
+    age: >-
+      age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: dev-mainnet\.enc
+    age: >-
+      age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: main-mainnet\.enc
+    age: >-
+      age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+  - path_regex: monitoring\.enc
+    age: >-
+      age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
+      age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn
+
+# gh-actions  1ls..ym7
+# bartol      mmc..dpn

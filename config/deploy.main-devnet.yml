@@ -1,0 +1,9 @@
+servers:
+  web:
+    hosts:
+      - 3.239.214.202
+
+env:
+  clear:
+    NODE_ENV: production
+    SOLANA_CLUSTER: devnet
