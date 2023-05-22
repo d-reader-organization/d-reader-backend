@@ -29,7 +29,6 @@ export class PasswordService {
           referredAt: new Date(),
         };
 
-    console.log(address, process.env.SOLANA_CLUSTER, isMainnet, referral);
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },

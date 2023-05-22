@@ -1,8 +1,14 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsAlphanumeric,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateWalletDto {
   @IsOptional()
-  @MaxLength(24)
+  @IsAlphanumeric()
+  @MaxLength(40)
   name?: string;
 
   // @IsEnum(Role)

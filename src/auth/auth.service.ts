@@ -14,6 +14,7 @@ import { Wallet, Creator } from '@prisma/client';
 import { Cluster } from '../types/cluster';
 import { WalletService } from '../wallet/wallet.service';
 import { WALLET_NAME_SIZE } from '../constants';
+import { isAlphanumeric, maxLength } from 'class-validator';
 
 @Injectable()
 export class AuthService {
@@ -104,9 +105,13 @@ export class AuthService {
   }
 
   async validateName(name: string) {
-    if (!name || name.length > WALLET_NAME_SIZE) {
+    if (!name || !maxLength(name, WALLET_NAME_SIZE)) {
       throw new BadRequestException(
-        `Account name can have maximum of ${WALLET_NAME_SIZE} characters`,
+        `Username max size ${WALLET_NAME_SIZE} characters`,
+      );
+    } else if (!isAlphanumeric(name)) {
+      throw new BadRequestException(
+        `Username can only have a-z and 0-9 characters.`,
       );
     }
     const wallet = await this.prisma.wallet.findFirst({
@@ -114,7 +119,7 @@ export class AuthService {
     });
 
     if (wallet) {
-      throw new BadRequestException('Account name already taken');
+      throw new BadRequestException('Username already taken');
     }
 
     return true;
