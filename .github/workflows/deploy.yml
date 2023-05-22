@@ -9,9 +9,37 @@ on:
   workflow_dispatch:
 
 jobs:
+  docker_build:
+    name: Docker build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/bdeak4/d-reader-backend:latest,ghcr.io/bdeak4/d-reader-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    needs: docker_build
 
     strategy:
       matrix:
@@ -27,7 +55,7 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Setup ruby
@@ -59,7 +87,7 @@ jobs:
       - name: Run mrsk
         run: |
           ./config/scripts/mrsk.sh $ENV lock release
-          ./config/scripts/mrsk.sh $ENV deploy --roles web
+          ./config/scripts/mrsk.sh $ENV deploy --roles web --skip-push
         env:
           ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
