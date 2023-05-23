@@ -98,6 +98,6 @@ healthcheck:
   path: /app/healthcheck
   port: 3005
   max_attempts: 10
-  # interval: 3s # waiting for new mrsk release
+  interval: 10s
 
 audit_broadcast_cmd: config/scripts/mrsk-audit-broadcast.sh
