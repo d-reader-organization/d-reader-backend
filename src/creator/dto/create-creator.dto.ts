@@ -39,6 +39,15 @@ export class CreateCreatorDto {
   @IsOptionalUrl()
   website?: string;
 
+  @IsOptionalUrl()
+  twitter?: string;
+
+  @IsOptionalUrl()
+  instagram?: string;
+
+  @IsOptionalUrl()
+  lynkfire?: string;
+
   // @MinLength(8)
   // @MaxLength(54)
   // password: string;
