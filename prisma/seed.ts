@@ -1,13 +1,6 @@
 import { addDays, subDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-import * as Utf8 from 'crypto-js/enc-utf8';
-import * as AES from 'crypto-js/aes';
-import {
-  Keypair,
-  LAMPORTS_PER_SOL,
-  PublicKey,
-  clusterApiUrl,
-} from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
 import { getRandomInt, sleep } from '../src/utils/helpers';
 import {
   PrismaClient,

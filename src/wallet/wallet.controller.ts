@@ -21,9 +21,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { shortenString } from 'src/utils/helpers';
+import { memoizeThrottle } from 'src/utils/lodash';
 import { Wallet } from '@prisma/client';
-import { throttle } from 'lodash';
 
 @UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -104,19 +103,19 @@ export class WalletController {
     return this.walletService.remove(address);
   }
 
-  private syncWallet(address: string) {
-    console.log("I'm SYNCED!!! ", shortenString(address));
+  private syncWallet = (address: string) => {
     return this.walletService.syncWallet(address);
-  }
+  };
 
-  private throttledSyncWallet = throttle(this.syncWallet, 10000); // 10 seconds
+  private throttledSyncWallet = memoizeThrottle(
+    this.syncWallet,
+    10 * 60 * 1000, // 10 minutes
+    {},
+    (address: string) => address,
+  );
 
-  @Get('sync/:address')
-  publicSyncWallet(
-    @WalletEntity() wallet: Wallet,
-    @Param('address') address: string,
-  ) {
-    console.log("I'm called! ");
-    return this.throttledSyncWallet(address);
+  @Get('sync')
+  publicSyncWallet(@WalletEntity() wallet: Wallet) {
+    return this.throttledSyncWallet(wallet.address);
   }
 }
