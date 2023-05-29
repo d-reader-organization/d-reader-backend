@@ -34,7 +34,7 @@ model Wallet {
   referrer           Wallet?               @relation("ReferrerToReferral", fields: [referrerAddress], references: [address])
   referrals          Wallet[]              @relation("ReferrerToReferral")
   referredAt         DateTime?
-  lastActiveAt       DateTime?           
+  lastActiveAt       DateTime?
 }
 
 enum Role {
@@ -55,8 +55,9 @@ model Creator {
   description      String          @default("")
   flavorText       String          @default("")
   website          String          @default("")
-  // twitter          String    @default("")
-  // instagram        String    @default("")
+  twitter          String          @default("")
+  instagram        String          @default("")
+  lynkfire         String          @default("")
   createdAt        DateTime        @default(now())
   deletedAt        DateTime?
   featuredAt       DateTime?
