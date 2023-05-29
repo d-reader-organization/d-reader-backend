@@ -59,6 +59,15 @@ export class CreatorDto {
   @IsOptionalUrl()
   website: string;
 
+  @IsOptionalUrl()
+  twitter: string;
+
+  @IsOptionalUrl()
+  instagram: string;
+
+  @IsOptionalUrl()
+  lynkfire: string;
+
   @IsOptional()
   @Type(() => CreatorStatsDto)
   stats?: CreatorStatsDto;
@@ -87,6 +96,9 @@ export async function toCreatorDto(creator: CreatorInput) {
     description: creator.description,
     flavorText: creator.flavorText,
     website: creator.website,
+    twitter: creator.twitter,
+    instagram: creator.instagram,
+    lynkfire: creator.lynkfire,
     stats: creator.stats
       ? {
           comicIssuesCount: creator.stats.comicIssuesCount,
