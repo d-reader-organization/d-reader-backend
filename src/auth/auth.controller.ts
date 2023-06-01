@@ -4,7 +4,7 @@ import { WalletEntity } from '../decorators/wallet.decorator';
 import { RestAuthGuard } from '../guards/rest-auth.guard';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Wallet } from '@prisma/client';
 
 @UseGuards(ThrottlerGuard)
@@ -16,6 +16,7 @@ export class AuthController {
     private readonly passwordService: PasswordService,
   ) {}
 
+  @SkipThrottle()
   @Get('wallet/validate-name/:name')
   validateName(@Param('name') name: string): Promise<boolean> {
     return this.authService.validateName(name);
