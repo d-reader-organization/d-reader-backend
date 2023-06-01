@@ -2210,7 +2210,7 @@ async function main() {
                 },
               },
             },
-            process.env.SOLANA_CLUSTER === 'devnet' || true
+            process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
                   number: 2,
                   supply: 0,
@@ -2327,7 +2327,7 @@ async function main() {
                 },
               },
             },
-            process.env.SOLANA_CLUSTER === 'devnet' || true
+            process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
                   number: 2,
                   supply: 0,
@@ -2770,7 +2770,7 @@ async function main() {
         console.log('Failed to fund bundlr storage');
       }
 
-      if (i % 5 === 0) {
+      if (i % 10 === 0) {
         try {
           await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
           console.log('Airdropped 2 sol');
