@@ -17,7 +17,7 @@ import { IsLamport } from 'src/decorators/IsLamport';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
-  @MaxLength(54)
+  @MaxLength(48)
   title: string;
 
   @IsKebabCase()

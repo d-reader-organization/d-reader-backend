@@ -10,7 +10,7 @@ import { s3Service } from '../aws/s3.service';
 import { JsonMetadata, Metaplex } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
-import { Prisma, Wallet } from '@prisma/client';
+import { Wallet } from '@prisma/client';
 import axios from 'axios';
 import {
   SAGA_COLLECTION_ADDRESS,

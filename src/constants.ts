@@ -1,7 +1,3 @@
-import { Keypair } from '@solana/web3.js';
-import * as AES from 'crypto-js/aes';
-import * as Utf8 from 'crypto-js/enc-utf8';
-
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;
