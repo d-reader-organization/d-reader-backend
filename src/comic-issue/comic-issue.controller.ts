@@ -40,7 +40,6 @@ import { Creator, Wallet, Role } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
-import { ComicPageService } from 'src/comic-page/comic-page.service';
 import {
   ComicPageDto,
   toComicPageDtoArray,
@@ -58,7 +57,6 @@ export class ComicIssueController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
     private readonly walletComicIssueService: WalletComicIssueService,
-    private readonly comicPageService: ComicPageService,
   ) {}
 
   // https://github.com/swagger-api/swagger-ui/issues/7625

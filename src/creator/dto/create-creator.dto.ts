@@ -17,7 +17,7 @@ export class CreateCreatorDto {
   email: string;
 
   @IsNotEmpty()
-  @MaxLength(54)
+  @MaxLength(48)
   name: string;
 
   @Expose()
