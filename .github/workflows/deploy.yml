@@ -89,6 +89,7 @@ jobs:
 
       - name: Run mrsk
         run: |
+          ./config/scripts/mrsk.sh $ENV lock release
           ./config/scripts/mrsk.sh $ENV deploy --roles web --skip-push
         env:
           ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
