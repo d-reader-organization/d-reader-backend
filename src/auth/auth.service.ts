@@ -109,11 +109,12 @@ export class AuthService {
       throw new BadRequestException(
         `Username max size ${WALLET_NAME_SIZE} characters`,
       );
-    } else if (!isAlphanumeric(name)) {
-      throw new BadRequestException(
-        `Username can only have a-z and 0-9 characters.`,
-      );
     }
+    // else if (!isAlphanumeric(name)) {
+    //   throw new BadRequestException(
+    //     `Username can only have a-z and 0-9 characters.`,
+    //   );
+    // }
     const wallet = await this.prisma.wallet.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
     });
