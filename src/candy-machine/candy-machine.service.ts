@@ -15,13 +15,14 @@ import {
   toBigNumber,
   TransactionBuilder,
   MetaplexFile,
+  DefaultCandyGuardSettings,
 } from '@metaplex-foundation/js';
 import { ComicIssue } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
-import { constructMintInstruction } from './instructions';
+import { constructMintInstruction, getRemainingAccounts } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
-import { chunk } from 'lodash';
+import { chunk, some } from 'lodash';
 import * as bs58 from 'bs58';
 import {
   MAX_METADATA_LEN,
@@ -93,6 +94,12 @@ export class CandyMachineService {
     comicIssue: ComicIssue,
     comicName: string,
     creatorAddress: string,
+    groups?: [
+      {
+        label: string;
+        guards: Partial<DefaultCandyGuardSettings>;
+      },
+    ],
   ) {
     this.validateInput(comicIssue);
 
@@ -183,11 +190,8 @@ export class CandyMachineService {
             lamports: solFromLamports(10000),
             lastInstruction: true,
           },
-          solPayment: {
-            amount: solFromLamports(comicIssue.mintPrice),
-            destination: this.metaplex.identity().publicKey,
-          },
         },
+        groups,
         creators: [
           {
             address: candyMachineKey.publicKey,
@@ -298,39 +302,47 @@ export class CandyMachineService {
   async constructMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
+    label?: string,
   ) {
-    const mint = Keypair.generate();
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
-    const mintInstructions = await constructMintInstruction(
-      this.metaplex,
-      candyMachine.address,
-      feePayer,
-      mint,
-      this.metaplex.connection,
-      [
-        {
-          pubkey: candyMachine.candyGuard.guards.solPayment.destination,
-          isSigner: false,
-          isWritable: true,
-        },
-      ],
-    );
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
-    const mintTransaction = new Transaction({
-      feePayer,
-      ...latestBlockhash,
-    }).add(...mintInstructions);
+    try {
+      const mint = Keypair.generate();
+      const candyMachine = await this.metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachineAddress });
+      const remainingAccounts = getRemainingAccounts(
+        this.metaplex,
+        candyMachine,
+        feePayer,
+        mint.publicKey,
+      );
 
-    mintTransaction.sign(mint);
+      const mintInstructions = await constructMintInstruction(
+        this.metaplex,
+        candyMachine.address,
+        feePayer,
+        mint,
+        this.metaplex.connection,
+        remainingAccounts,
+        undefined,
+        label,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const mintTransaction = new Transaction({
+        feePayer,
+        ...latestBlockhash,
+      }).add(...mintInstructions);
 
-    const rawTransaction = mintTransaction.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
-    });
+      mintTransaction.sign(mint);
 
-    return rawTransaction.toString('base64');
+      const rawTransaction = mintTransaction.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      return rawTransaction.toString('base64');
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async findByAddress(address: string) {

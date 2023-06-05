@@ -17,7 +17,13 @@ import {
   MintInstructionArgs,
 } from '@metaplex-foundation/mpl-candy-guard';
 
-import { CandyMachine, Metaplex } from '@metaplex-foundation/js';
+import {
+  CandyMachine,
+  DefaultCandyGuardSettings,
+  Metaplex,
+  SolPaymentGuardSettings,
+  TokenPaymentGuardSettings,
+} from '@metaplex-foundation/js';
 import {
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
@@ -157,4 +163,77 @@ export async function constructMintInstruction(
   instructions.push(mintInstruction);
 
   return instructions;
+}
+
+export const allGuards: string[] = ['tokenPayment', 'solPayment', 'nftGate'];
+
+export function getRemainingAccounts(
+  metaplex: Metaplex,
+  candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+  feePayer: PublicKey,
+  mint: PublicKey,
+  label?: string,
+): AccountMeta[] {
+  const group = candyMachine.candyGuard.groups.find(
+    (group) => group.label === label,
+  );
+  const initialAccounts: AccountMeta[] = [];
+
+  const remainingAccounts = allGuards.reduce((_, curr) => {
+    if (group.guards[curr]) {
+      switch (curr) {
+        case 'tokenPayment':
+          initialAccounts.push(
+            ...getTokenPaymentAccounts(
+              metaplex,
+              group.guards.tokenPayment,
+              feePayer,
+              mint,
+            ),
+          );
+        case 'solPayment':
+          initialAccounts.push(
+            ...getSolPaymentAccounts(group.guards.solPayment),
+          );
+      }
+    }
+    return initialAccounts;
+  }, initialAccounts);
+
+  console.log(remainingAccounts);
+  return remainingAccounts;
+}
+
+function getTokenPaymentAccounts(
+  metaplex: Metaplex,
+  tokenPayment: TokenPaymentGuardSettings,
+  feepayer: PublicKey,
+  mint: PublicKey,
+) {
+  const payerTokenAccount = metaplex
+    .tokens()
+    .pdas()
+    .associatedTokenAccount({ mint: mint, owner: feepayer });
+  return [
+    {
+      pubkey: tokenPayment.destinationAta,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: payerTokenAccount,
+      isSigner: false,
+      isWritable: true,
+    },
+  ];
+}
+
+function getSolPaymentAccounts(solPayment: SolPaymentGuardSettings) {
+  return [
+    {
+      pubkey: solPayment.destination,
+      isSigner: false,
+      isWritable: true,
+    },
+  ];
 }

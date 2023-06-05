@@ -10,7 +10,7 @@ import {
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
-import { isEmpty, isNil } from 'lodash';
+import { isEmpty, isNil, some } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -20,6 +20,14 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
+import { Keypair } from '@solana/web3.js';
+import {
+  Pda,
+  PublicKey,
+  associatedTokenProgram,
+  token,
+  tokenProgram,
+} from '@metaplex-foundation/js';
 
 @Injectable()
 export class ComicIssueService {
@@ -332,10 +340,32 @@ export class ComicIssueService {
     });
 
     try {
+      const mint = new PublicKey('JpdcnJ5wDFpACGMb52zqG8W49VG9RKKDGhZfdWMycbP');
+      const owner = new PublicKey(
+        '3i8mZjkWboj8bSSgoqASTCx5mhkJEhb7Ta6rwWpu3KBL',
+      );
+      const destination = Pda.find(associatedTokenProgram.address, [
+        owner.toBuffer(),
+        tokenProgram.address.toBuffer(),
+        mint.toBuffer(),
+      ]);
+      console.log('destination', destination);
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.name,
         updatedComicIssue.comic.creator.walletAddress,
+        [
+          {
+            label: 'token',
+            guards: {
+              tokenPayment: {
+                destinationAta: destination,
+                mint: mint,
+                amount: token(2000000000),
+              },
+            },
+          },
+        ],
       );
     } catch (e) {
       // revert in case of failure
