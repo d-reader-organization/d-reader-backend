@@ -1,6 +1,6 @@
 import { IsOptional, MaxLength } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { IsValidUsername } from 'src/decorators/IsValidUsername';
+import { IsValidUsername } from '../../decorators/IsValidUsername';
 
 export class UpsertWalletDto {
   @IsSolanaAddress()

@@ -219,6 +219,9 @@ export class ComicIssueService {
       walletAddress,
     );
 
+    // TODO: make this a non-blocking query
+    await this.read(comicIssueId, walletAddress);
+
     return this.comicPageService.findAll(comicIssueId, showPreviews);
   }
 

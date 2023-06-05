@@ -1,5 +1,5 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { IsValidUsername } from 'src/decorators/IsValidUsername';
+import { IsValidUsername } from '../../decorators/IsValidUsername';
 
 export class UpdateWalletDto {
   @IsOptional()
