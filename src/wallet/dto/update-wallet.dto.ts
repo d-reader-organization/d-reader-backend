@@ -1,5 +1,5 @@
 import {
-  IsAlphanumeric,
+  // IsAlphanumeric,
   IsOptional,
   IsString,
   MaxLength,
@@ -7,7 +7,7 @@ import {
 
 export class UpdateWalletDto {
   @IsOptional()
-  @IsAlphanumeric()
+  // @IsAlphanumeric()
   @MaxLength(40)
   name?: string;
 
