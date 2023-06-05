@@ -1,3 +1,5 @@
+import { RarityConstant } from './comic-issue/dto/types';
+
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;
@@ -56,3 +58,41 @@ export const WALLET_NAME_SIZE = 32;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);
+
+export const THREE_RARITIES_SHARE: RarityConstant[] = [
+  {
+    rarity: 'Common',
+    value: 70,
+  },
+  {
+    rarity: 'Rare',
+    value: 25,
+  },
+  {
+    rarity: 'Legendary',
+    value: 5,
+  },
+];
+
+export const FIVE_RARITIES_SHARE: RarityConstant[] = [
+  {
+    rarity: 'Common',
+    value: 60,
+  },
+  {
+    rarity: 'Uncommon',
+    value: 25,
+  },
+  {
+    rarity: 'Rare',
+    value: 10,
+  },
+  {
+    rarity: 'Epic',
+    value: 3,
+  },
+  {
+    rarity: 'Legendary',
+    value: 2,
+  },
+];
