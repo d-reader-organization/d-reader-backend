@@ -52,6 +52,7 @@ export const BUNDLR_ADDRESS =
     ? 'https://devnet.bundlr.network'
     : 'https://node1.bundlr.network';
 
-export const WALLET_NAME_SIZE = 40;
+export const WALLET_NAME_SIZE = 32;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
+export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9_-]{1,32}$/g);
