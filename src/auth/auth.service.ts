@@ -110,7 +110,7 @@ export class AuthService {
         `Username max size ${WALLET_NAME_SIZE} characters`,
       );
     }
-    // else if (!isAlphanumeric(name)) {
+    // TODO: else if (!isAlphanumeric(name)) {
     //   throw new BadRequestException(
     //     `Username can only have a-z and 0-9 characters.`,
     //   );

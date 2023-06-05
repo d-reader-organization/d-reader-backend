@@ -143,7 +143,7 @@ async function main() {
           priority: 3,
           comicIssueId: null,
           comicSlug: null,
-          creatorSlug: 'goose-0x',
+          creatorSlug: 'goose-0-x',
           externalLink: null,
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
@@ -648,9 +648,9 @@ async function main() {
               createMany: {
                 data: generatePages(
                   'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/pages',
-                  5,
+                  3,
                   'png',
-                  5,
+                  3,
                 ),
               },
             },
@@ -2541,10 +2541,10 @@ async function main() {
           create: {
             email: 'creators@dreader.io', // TODO: change this,
             name: 'Goose0x',
-            slug: 'goose-0x',
-            avatar: 'creators/goose-0x/avatar.jpg',
-            banner: 'creators/goose-0x/banner.jpg',
-            logo: 'creators/goose-0x/logo.png',
+            slug: 'goose-0-x',
+            avatar: 'creators/goose-0-x/avatar.jpg',
+            banner: 'creators/goose-0-x/banner.jpg',
+            logo: 'creators/goose-0-x/logo.png',
             description:
               'We are an Art first, story-driven project, with a unique nostalgic feel to make the collection and our brand stand out - all with your support as a loving community',
             flavorText:
@@ -2579,10 +2579,10 @@ async function main() {
                 publishedAt: subDays(new Date(), 11),
                 popularizedAt: null,
                 completedAt: null,
-                cover: 'creators/goose-0x/comics/tsukiverse/cover.jpg',
-                pfp: 'creators/goose-0x/comics/tsukiverse/pfp.jpg',
+                cover: 'creators/goose-0-x/comics/tsukiverse/cover.jpg',
+                pfp: 'creators/goose-0-x/comics/tsukiverse/pfp.jpg',
                 banner: '',
-                logo: 'creators/goose-0x/comics/tsukiverse/logo.png',
+                logo: 'creators/goose-0-x/comics/tsukiverse/logo.png',
                 website: '',
                 twitter: '',
                 discord: '',
@@ -2604,13 +2604,13 @@ async function main() {
                         'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
                       flavorText: 'Only the worthy shall be chosen!',
                       cover:
-                        'creators/goose-0x/comics/tsukiverse/issues/issue-1/cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/cover.jpg',
                       signedCover:
-                        'creators/goose-0x/comics/tsukiverse/issues/issue-1/signed-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/signed-cover.jpg',
                       usedCover:
-                        'creators/goose-0x/comics/tsukiverse/issues/issue-1/used-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-cover.jpg',
                       usedSignedCover:
-                        'creators/goose-0x/comics/tsukiverse/issues/issue-1/used-signed-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -2620,7 +2620,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/goose-0x/comics/tsukiverse/issues/issue-1/pages',
+                            'creators/goose-0-x/comics/tsukiverse/issues/issue-1/pages',
                             1,
                             'jpg',
                             1,
