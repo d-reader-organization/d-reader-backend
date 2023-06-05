@@ -41,6 +41,7 @@ import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
 import { ComicRarity, StateFulCover } from '@prisma/client';
 import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
+import { RarityCoverFiles } from 'src/types/shared';
 
 @Injectable()
 export class CandyMachineService {
@@ -105,18 +106,27 @@ export class CandyMachineService {
       );
       stateLessCovers = await Promise.all(stateLessCoverPromises);
     }
-
-    const stateFulCoverPromises = comicIssue.stateFulCovers.map((cover) => {
-      const name =
-        (cover.isUsed ? 'used-' : 'unused-') +
-        (cover.isSigned ? 'signed' : 'unsigned') +
-        (haveRarities ? '-' + cover.rarity : '') +
-        '-cover';
-      return s3toMxFile(cover.image, name);
-    });
+    const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
+    const stateFulCoverPromises = comicIssue.stateFulCovers.map(
+      async (cover) => {
+        const name =
+          (cover.isUsed ? 'used-' : 'unused-') +
+          (cover.isSigned ? 'signed' : 'unsigned') +
+          (haveRarities ? '-' + cover.rarity : '') +
+          '-cover';
+        const file = await s3toMxFile(cover.image, name);
+        if (haveRarities) {
+          const property =
+            (cover.isUsed ? 'used' : 'unused') +
+            (cover.isSigned ? 'Signed' : 'Unsigned');
+          rarityCoverFiles[cover.rarity][property] = file;
+        }
+        return file;
+      },
+    );
     const stateFulCovers = await Promise.all(stateFulCoverPromises);
 
-    return { stateFulCovers, stateLessCovers };
+    return { stateFulCovers, stateLessCovers, rarityCoverFiles };
   }
 
   findCover(covers: StateFulCover[], rarity: ComicRarity) {
@@ -165,6 +175,7 @@ export class CandyMachineService {
     coverImage: MetaplexFile,
     creatorAddress: string,
     haveRarity: boolean,
+    rarityCoverFiles?: RarityCoverFiles,
   ) {
     // this.validateInput(comicIssue); : TODO
     let items: { uri: string; name: string }[];
@@ -192,7 +203,7 @@ export class CandyMachineService {
 
       for (const shareObject of rarityShare) {
         const { rarity, value } = shareObject;
-        const image = await s3toMxFile(rarityCovers[rarity].image, rarity); // use the previous fetch : TODO
+        const image = rarityCoverFiles[rarity].unusedUnsigned;
         const { uri, metadata } = await this.uploadMetadata(
           comicIssue,
           comicName,
@@ -206,7 +217,7 @@ export class CandyMachineService {
       for (const metadata of itemMetadatas) {
         let supply: number;
 
-        const { rarity, value } = rarityShare[index];
+        const { rarity: _, value } = rarityShare[index];
         if (index == rarityShare.length - 1) {
           supply = comicIssue.supply - supplyLeft;
         } else {
@@ -253,7 +264,8 @@ export class CandyMachineService {
     // this.validateInput(comicIssue);
 
     // we can do this in parallel
-    const coverFiles = await this.getComicIssueCovers(comicIssue);
+    const { stateFulCovers, stateLessCovers, rarityCoverFiles } =
+      await this.getComicIssueCovers(comicIssue);
     const coverImage = await s3toMxFile(comicIssue.cover, 'cover');
 
     // if Collection NFT already exists - use it, otherwise create a fresh one
@@ -285,8 +297,8 @@ export class CandyMachineService {
             ],
             files: this.writeFiles(
               coverImage,
-              ...coverFiles.stateFulCovers,
-              ...coverFiles.stateLessCovers,
+              ...stateFulCovers,
+              ...stateLessCovers,
             ),
           },
         });
@@ -364,37 +376,6 @@ export class CandyMachineService {
       },
     });
 
-    // Upload collection item metadata
-    const { uri: metadataUri, metadata } = await this.metaplex
-      .nfts()
-      .uploadMetadata({
-        name: comicIssue.title,
-        symbol: D_PUBLISHER_SYMBOL,
-        description: comicIssue.description,
-        seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
-        image: coverImage,
-        external_url: D_READER_FRONTEND_URL,
-        attributes: [
-          {
-            trait_type: USED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_USED,
-          },
-          {
-            trait_type: SIGNED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
-          },
-        ],
-        properties: {
-          creators: [{ address: creatorAddress, share: HUNDRED }],
-          files: this.writeFiles(coverImage),
-        },
-        collection: {
-          name: comicIssue.title,
-          family: comicName,
-        },
-      });
-
-    const indexArray = Array.from(Array(comicIssue.supply).keys());
     // TODO: start indices from previous highest index
     // e.g. if existing collection has #999 items, continue with #1000
     const items = await this.uploadItemMetadata(
@@ -402,7 +383,8 @@ export class CandyMachineService {
       comicName,
       coverImage,
       creatorAddress,
-      coverFiles.stateLessCovers.length > 0,
+      stateLessCovers.length > 0,
+      rarityCoverFiles,
     );
 
     const INSERT_CHUNK_SIZE = 8;
