@@ -143,7 +143,7 @@ async function main() {
           priority: 3,
           comicIssueId: null,
           comicSlug: null,
-          creatorSlug: 'goose0x',
+          creatorSlug: 'goose-0-x',
           externalLink: null,
           publishedAt: new Date(),
           expiredAt: addDays(new Date(), 90),
@@ -648,9 +648,9 @@ async function main() {
               createMany: {
                 data: generatePages(
                   'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/pages',
-                  5,
+                  3,
                   'png',
-                  5,
+                  3,
                 ),
               },
             },
@@ -659,84 +659,84 @@ async function main() {
       },
     });
 
-    if (process.env.SOLANA_CLUSTER) {
-      await prisma.comic.create({
-        data: {
-          creator: { connect: { slug: 'studio-nx' } },
-          name: 'The Dark Portal',
-          slug: 'the-dark-portal',
-          description:
-            ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
-          flavorText: 'Nothing more exciting than frog pirates!',
-          genres: {
-            connect: [
-              { slug: 'adventure' },
-              { slug: 'fantasy' },
-              { slug: 'superhero' },
-              { slug: 'action' },
-              { slug: 'sci-fi' },
-              { slug: 'romance' },
-            ],
-          },
-          audienceType: AudienceType.Everyone,
-          deletedAt: null,
-          featuredAt: null,
-          verifiedAt: new Date(),
-          publishedAt: subDays(new Date(), 18),
-          popularizedAt: null,
-          completedAt: new Date(),
-          cover: 'creators/studio-nx/comics/the-dark-portal/cover.jpg',
-          pfp: 'creators/studio-nx/comics/the-dark-portal/pfp.jpg',
-          banner: '',
-          logo: 'creators/studio-nx/comics/the-dark-portal/logo.jpg',
-          website: 'https://www.studionx.com/',
-          twitter: 'https://twitter.com/StudioNX',
-          discord: '',
-          telegram: '',
-          instagram: 'https://www.instagram.com/jim_bryson/',
-          tikTok: '',
-          youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
-          issues: {
-            create: {
-              number: 1,
-              supply: 0,
-              discountMintPrice: 0,
-              mintPrice: 0,
-              sellerFeeBasisPoints: 0,
-              title: 'Concept Art',
-              slug: 'concept-art',
-              description:
-                ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
-              flavorText: 'Lovely pieces put by Jim Bryson',
-              cover:
-                'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
-              signedCover:
-                'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
-              usedCover:
-                'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
-              usedSignedCover:
-                'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
-              releaseDate: subDays(new Date(), 15),
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              publishedAt: new Date(),
-              popularizedAt: new Date(),
-              pages: {
-                createMany: {
-                  data: generatePages(
-                    'creators/studio-nx/comics/the-dark-portal/issues/concept-art/pages',
-                    9,
-                    'jpg',
-                    9,
-                  ),
-                },
+    // if (process.env.SOLANA_CLUSTER === 'devnet') {
+    await prisma.comic.create({
+      data: {
+        creator: { connect: { slug: 'studio-nx' } },
+        name: 'The Dark Portal',
+        slug: 'the-dark-portal',
+        description:
+          ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
+        flavorText: 'Nothing more exciting than frog pirates!',
+        genres: {
+          connect: [
+            { slug: 'adventure' },
+            { slug: 'fantasy' },
+            { slug: 'superhero' },
+            { slug: 'action' },
+            { slug: 'sci-fi' },
+            { slug: 'romance' },
+          ],
+        },
+        audienceType: AudienceType.Everyone,
+        deletedAt: null,
+        featuredAt: null,
+        verifiedAt: new Date(),
+        publishedAt: subDays(new Date(), 18),
+        popularizedAt: null,
+        completedAt: new Date(),
+        cover: 'creators/studio-nx/comics/the-dark-portal/cover.jpg',
+        pfp: 'creators/studio-nx/comics/the-dark-portal/pfp.jpg',
+        banner: '',
+        logo: 'creators/studio-nx/comics/the-dark-portal/logo.jpg',
+        website: 'https://www.studionx.com/',
+        twitter: 'https://twitter.com/StudioNX',
+        discord: '',
+        telegram: '',
+        instagram: 'https://www.instagram.com/jim_bryson/',
+        tikTok: '',
+        youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
+        issues: {
+          create: {
+            number: 1,
+            supply: 0,
+            discountMintPrice: 0,
+            mintPrice: 0,
+            sellerFeeBasisPoints: 0,
+            title: 'Concept Art',
+            slug: 'concept-art',
+            description:
+              ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
+            flavorText: 'Lovely pieces put by Jim Bryson',
+            cover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
+            signedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
+            usedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
+            usedSignedCover:
+              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
+            releaseDate: subDays(new Date(), 15),
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            publishedAt: new Date(),
+            popularizedAt: new Date(),
+            pages: {
+              createMany: {
+                data: generatePages(
+                  'creators/studio-nx/comics/the-dark-portal/issues/concept-art/pages',
+                  9,
+                  'jpg',
+                  9,
+                ),
               },
             },
           },
         },
-      });
-    }
+      },
+    });
+    // }
 
     console.log('➕ Added "StudioNX" creator');
   } catch (e) {
@@ -2210,7 +2210,7 @@ async function main() {
                 },
               },
             },
-            process.env.SOLANA_CLUSTER === 'devnet' || true
+            process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
                   number: 2,
                   supply: 0,
@@ -2327,7 +2327,7 @@ async function main() {
                 },
               },
             },
-            process.env.SOLANA_CLUSTER === 'devnet' || true
+            process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
                   number: 2,
                   supply: 0,
@@ -2541,10 +2541,10 @@ async function main() {
           create: {
             email: 'creators@dreader.io', // TODO: change this,
             name: 'Goose0x',
-            slug: 'goose0x',
-            avatar: 'creators/goose0x/avatar.jpg',
-            banner: 'creators/goose0x/banner.jpg',
-            logo: 'creators/goose0x/logo.png',
+            slug: 'goose-0-x',
+            avatar: 'creators/goose-0-x/avatar.jpg',
+            banner: 'creators/goose-0-x/banner.jpg',
+            logo: 'creators/goose-0-x/logo.png',
             description:
               'We are an Art first, story-driven project, with a unique nostalgic feel to make the collection and our brand stand out - all with your support as a loving community',
             flavorText:
@@ -2579,10 +2579,10 @@ async function main() {
                 publishedAt: subDays(new Date(), 11),
                 popularizedAt: null,
                 completedAt: null,
-                cover: 'creators/goose0x/comics/tsukiverse/cover.jpg',
-                pfp: 'creators/goose0x/comics/tsukiverse/pfp.jpg',
+                cover: 'creators/goose-0-x/comics/tsukiverse/cover.jpg',
+                pfp: 'creators/goose-0-x/comics/tsukiverse/pfp.jpg',
                 banner: '',
-                logo: 'creators/goose0x/comics/tsukiverse/logo.png',
+                logo: 'creators/goose-0-x/comics/tsukiverse/logo.png',
                 website: '',
                 twitter: '',
                 discord: '',
@@ -2604,13 +2604,13 @@ async function main() {
                         'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
                       flavorText: 'Only the worthy shall be chosen!',
                       cover:
-                        'creators/goose0x/comics/tsukiverse/issues/issue-1/cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/cover.jpg',
                       signedCover:
-                        'creators/goose0x/comics/tsukiverse/issues/issue-1/signed-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/signed-cover.jpg',
                       usedCover:
-                        'creators/goose0x/comics/tsukiverse/issues/issue-1/used-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-cover.jpg',
                       usedSignedCover:
-                        'creators/goose0x/comics/tsukiverse/issues/issue-1/used-signed-cover.jpg',
+                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-signed-cover.jpg',
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -2620,7 +2620,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/goose0x/comics/tsukiverse/issues/issue-1/pages',
+                            'creators/goose-0-x/comics/tsukiverse/issues/issue-1/pages',
                             1,
                             'jpg',
                             1,
@@ -2770,7 +2770,7 @@ async function main() {
         console.log('Failed to fund bundlr storage');
       }
 
-      if (i % 5 === 0) {
+      if (i % 10 === 0) {
         try {
           await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
           console.log('Airdropped 2 sol');
@@ -2800,7 +2800,7 @@ async function main() {
         supply: getRandomInt(1, 4) * 10, // 10-40 supply
         mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
         discountMintPrice: 0.05 * LAMPORTS_PER_SOL, // 0.05 discount price
-        sellerFee: 0.05, // 5%
+        sellerFee: 5, // 5%
       });
       i++;
     }
