@@ -55,4 +55,4 @@ export const BUNDLR_ADDRESS =
 export const WALLET_NAME_SIZE = 32;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
-export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9_-]{1,32}$/g);
+export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);

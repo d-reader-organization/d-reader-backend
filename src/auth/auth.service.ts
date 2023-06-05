@@ -112,7 +112,7 @@ export class AuthService {
       );
     } else if (!isValidUsername(name)) {
       throw new BadRequestException(
-        `Username can only have A-Z, 0-9, -, _ characters`,
+        'Username can only have A-Z, 0-9, -, _ characters',
       );
     }
     const wallet = await this.prisma.wallet.findFirst({

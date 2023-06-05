@@ -1,5 +1,5 @@
 import { ValidationOptions, buildMessage, ValidateBy } from 'class-validator';
-import { USERNAME_VALIDATOR_REGEX } from 'src/constants';
+import { USERNAME_VALIDATOR_REGEX } from '../constants';
 
 export const IS_VALID_USERNAME = 'isValidUsername';
 export function isValidUsername(value: string): boolean {
@@ -15,7 +15,7 @@ export function IsValidUsername(
       validator: {
         validate: (value): boolean => isValidUsername(value),
         defaultMessage: buildMessage(
-          () => 'Username should contain a-zA-Z, -, _ and 0-9 characters.',
+          () => 'Username can only have A-Z, 0-9, -, _ characters',
           validationOptions,
         ),
       },
