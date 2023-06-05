@@ -14,7 +14,8 @@ import { Wallet, Creator } from '@prisma/client';
 import { Cluster } from '../types/cluster';
 import { WalletService } from '../wallet/wallet.service';
 import { WALLET_NAME_SIZE } from '../constants';
-import { isAlphanumeric, maxLength } from 'class-validator';
+import { maxLength } from 'class-validator';
+import { isValidUsername } from 'src/decorators/IsValidUsername';
 
 @Injectable()
 export class AuthService {
@@ -109,9 +110,9 @@ export class AuthService {
       throw new BadRequestException(
         `Username max size ${WALLET_NAME_SIZE} characters`,
       );
-    } else if (!isAlphanumeric(name)) {
+    } else if (!isValidUsername(name)) {
       throw new BadRequestException(
-        `Username can only have a-z and 0-9 characters.`,
+        `Username can only have a-zA-Z, -, _ and 0-9 characters.`,
       );
     }
     const wallet = await this.prisma.wallet.findFirst({
