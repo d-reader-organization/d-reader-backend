@@ -94,8 +94,6 @@ export class CandyMachineService {
   }
 
   async getComicIssueCovers(comicIssue: CandyMachineIssue) {
-    // this.validateInput(comicIssue); /* Note: Validate the new input */
-
     let statelessCovers: MetaplexFile[];
     const haveRarities =
       comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;
@@ -176,7 +174,6 @@ export class CandyMachineService {
     haveRarity: boolean,
     rarityCoverFiles?: RarityCoverFiles,
   ) {
-    // this.validateInput(comicIssue); : TODO
     let items: { uri: string; name: string }[];
     if (haveRarity) {
       const rarityCovers = {
@@ -260,7 +257,7 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
   ) {
-    // this.validateInput(comicIssue);
+    this.validateInput(comicIssue);
 
     // we can do this in parallel
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
