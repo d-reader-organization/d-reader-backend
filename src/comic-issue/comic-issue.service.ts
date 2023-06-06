@@ -20,7 +20,12 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import { StateLessCoverInput } from './dto/types';
+import {
+  RarityConstant,
+  StatefulCoverInput,
+  StatelessCoverInput,
+} from './dto/types';
+import { FIVE_RARITIES_SHARE, THREE_RARITIES_SHARE } from 'src/constants';
 
 @Injectable()
 export class ComicIssueService {
@@ -74,32 +79,62 @@ export class ComicIssueService {
       throw new BadRequestException('Bad comic issue data');
     }
 
-    const { cover, stateLessCovers: stateLessCoversDto } =
-      createComicIssueFilesDto;
+    const {
+      cover,
+      statelessCovers: statelessCoversDto,
+      statefulCovers: statefulCoversDto,
+    } = createComicIssueFilesDto;
     // Upload files if any
     let coverKey: string;
-    let stateLessCoverKeys: string[];
+    let statelessCoverKeys: string[], statefulCoversKeys: string[];
+    const haveRarity = statelessCoversDto && statelessCoversDto.length > 0;
     try {
       const prefix = await this.getS3FilePrefix(comicIssue.id);
       if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
-      if (stateLessCoversDto && stateLessCoversDto.length > 0) {
-        const keys = stateLessCoversDto.map((val) =>
-          this.s3.uploadFile(prefix, val.image),
+      if (haveRarity) {
+        statelessCoverKeys = await Promise.all(
+          statelessCoversDto.map((val) =>
+            this.s3.uploadFile(prefix, val.image),
+          ),
         );
-        stateLessCoverKeys = await Promise.all(keys);
+        statefulCoversKeys = await Promise.all(
+          statefulCoversDto.map((val) => this.s3.uploadFile(prefix, val.image)),
+        );
       }
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
 
-    const stateLessCovers: StateLessCoverInput[] = [];
-    stateLessCoverKeys.forEach((val, i) => {
-      stateLessCovers.push({
-        image: val,
-        rarity: stateLessCoversDto[i].rarity,
-        artist: stateLessCoversDto[i].artist,
+    const statelessCovers: StatelessCoverInput[] = [],
+      statefulCovers: StatefulCoverInput[] = [];
+
+    if (haveRarity) {
+      let rarityShare: RarityConstant[];
+      if (statelessCovers.length == 3) rarityShare = THREE_RARITIES_SHARE;
+      else rarityShare = FIVE_RARITIES_SHARE;
+
+      statelessCoverKeys.forEach((val, i) => {
+        statelessCovers.push({
+          image: val,
+          rarity: statelessCoversDto[i].rarity,
+          artist: statelessCoversDto[i].artist,
+          share:
+            statelessCoversDto[i].share ??
+            rarityShare.find(
+              (share) => share.rarity === statefulCoversDto[i].rarity,
+            ).value,
+        });
       });
-    });
+      statefulCoversKeys.forEach((val, i) => {
+        statefulCovers.push({
+          image: val,
+          rarity: statefulCoversDto[i].rarity,
+          artist: statefulCoversDto[i].artist,
+          isSigned: statefulCoversDto[i].isSigned,
+          isUsed: statefulCoversDto[i].isUsed,
+        });
+      });
+    }
 
     // Update Comic Issue with s3 file keys
     return await this.prisma.comicIssue.update({
@@ -107,9 +142,14 @@ export class ComicIssueService {
       include: { pages: true, collaborators: true },
       data: {
         cover: coverKey,
-        stateLessCovers: {
+        statelessCovers: {
           createMany: {
-            data: stateLessCovers,
+            data: statelessCovers,
+          },
+        },
+        statefulCovers: {
+          createMany: {
+            data: statefulCovers,
           },
         },
       },
@@ -349,8 +389,8 @@ export class ComicIssueService {
       include: {
         comic: { include: { creator: true } },
         collectionNft: true,
-        stateFulCovers: true,
-        stateLessCovers: true,
+        statefulCovers: true,
+        statelessCovers: true,
         collaborators: true,
       },
     });
@@ -385,8 +425,8 @@ export class ComicIssueService {
       include: {
         comic: { include: { creator: true } },
         collectionNft: true,
-        stateFulCovers: true,
-        stateLessCovers: true,
+        statefulCovers: true,
+        statelessCovers: true,
         collaborators: true,
       },
     });

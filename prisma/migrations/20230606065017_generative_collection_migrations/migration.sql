@@ -41,18 +41,19 @@ CREATE TABLE "ComicIssueCollaborator" (
 );
 
 -- CreateTable
-CREATE TABLE "StateLessCover" (
+CREATE TABLE "StatelessCover" (
     "id" SERIAL NOT NULL,
     "image" TEXT NOT NULL,
     "rarity" "ComicRarity",
     "comicIssueId" INTEGER NOT NULL,
     "artist" TEXT NOT NULL,
+    "share" INTEGER NOT NULL,
 
-    CONSTRAINT "StateLessCover_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "StatelessCover_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "StateFulCover" (
+CREATE TABLE "StatefulCover" (
     "id" SERIAL NOT NULL,
     "image" TEXT NOT NULL DEFAULT '',
     "isSigned" BOOLEAN NOT NULL,
@@ -61,7 +62,7 @@ CREATE TABLE "StateFulCover" (
     "comicIssueId" INTEGER NOT NULL,
     "artist" TEXT NOT NULL,
 
-    CONSTRAINT "StateFulCover_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "StatefulCover_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -71,10 +72,10 @@ CREATE UNIQUE INDEX "ComicCollaborator_role_name_comicSlug_key" ON "ComicCollabo
 CREATE UNIQUE INDEX "ComicIssueCollaborator_role_name_comicIssueId_key" ON "ComicIssueCollaborator"("role", "name", "comicIssueId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "StateLessCover_comicIssueId_rarity_key" ON "StateLessCover"("comicIssueId", "rarity");
+CREATE UNIQUE INDEX "StatelessCover_comicIssueId_rarity_key" ON "StatelessCover"("comicIssueId", "rarity");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "StateFulCover_comicIssueId_isSigned_isUsed_rarity_key" ON "StateFulCover"("comicIssueId", "isSigned", "isUsed", "rarity");
+CREATE UNIQUE INDEX "StatefulCover_comicIssueId_isSigned_isUsed_rarity_key" ON "StatefulCover"("comicIssueId", "isSigned", "isUsed", "rarity");
 
 -- AddForeignKey
 ALTER TABLE "ComicCollaborator" ADD CONSTRAINT "ComicCollaborator_comicSlug_fkey" FOREIGN KEY ("comicSlug") REFERENCES "Comic"("slug") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -83,7 +84,7 @@ ALTER TABLE "ComicCollaborator" ADD CONSTRAINT "ComicCollaborator_comicSlug_fkey
 ALTER TABLE "ComicIssueCollaborator" ADD CONSTRAINT "ComicIssueCollaborator_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StateLessCover" ADD CONSTRAINT "StateLessCover_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StatelessCover" ADD CONSTRAINT "StatelessCover_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StateFulCover" ADD CONSTRAINT "StateFulCover_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "StatefulCover" ADD CONSTRAINT "StatefulCover_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

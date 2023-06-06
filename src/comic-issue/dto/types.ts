@@ -2,19 +2,28 @@ import {
   ComicIssue,
   ComicIssueCollaborator,
   ComicRarity,
-  StateFulCover,
-  StateLessCover,
+  StatefulCover,
+  StatelessCover,
 } from '@prisma/client';
 
-export class StateLessCoverInput {
+export class StatelessCoverInput {
   image: string;
   artist: string;
   rarity: ComicRarity;
+  share: number;
+}
+
+export class StatefulCoverInput {
+  image: string;
+  artist: string;
+  rarity: ComicRarity;
+  isSigned: boolean;
+  isUsed: boolean;
 }
 
 export type CandyMachineIssue = ComicIssue & {
-  stateLessCovers: StateLessCover[]; // typos TODODO
-  stateFulCovers: StateFulCover[];
+  statelessCovers: StatelessCover[]; // typos TODODO
+  statefulCovers: StatefulCover[];
   collaborators: ComicIssueCollaborator[];
 };
 

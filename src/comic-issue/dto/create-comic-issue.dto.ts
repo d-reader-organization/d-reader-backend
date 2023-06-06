@@ -11,6 +11,8 @@ import {
   IsEnum,
   IsString,
   Min,
+  IsInt,
+  IsBoolean,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
@@ -95,7 +97,7 @@ export class CreateComicIssueDto {
   collaborators: ComicIssueCollaboratorDto[];
 }
 
-export class StateLessCover {
+export class StatelessCover {
   @IsString()
   artist: string;
   image: Express.Multer.File | null;
@@ -103,6 +105,29 @@ export class StateLessCover {
   @IsEnum(ComicRarity)
   @ApiProperty({ enum: ComicRarity })
   rarity: ComicRarity;
+
+  @IsOptional()
+  @IsInt()
+  share: number;
+}
+
+export class StatefulCover {
+  @IsString()
+  artist: string;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  image: Express.Multer.File | null;
+
+  @IsBoolean()
+  isSigned: boolean;
+
+  @IsBoolean()
+  isUsed: boolean;
+
+  @IsEnum(ComicRarity)
+  @ApiProperty({ enum: ComicRarity })
+  rarity?: ComicRarity;
 }
 
 export class CreateComicIssueFilesDto {
@@ -110,10 +135,17 @@ export class CreateComicIssueFilesDto {
   @Transform(({ value }) => value[0])
   cover?: Express.Multer.File | null;
 
+  @IsOptional()
   @IsArray()
-  @Type(() => StateLessCover)
-  @ApiProperty({ type: [StateLessCover] })
-  stateLessCovers?: StateLessCover[];
+  @Type(() => StatelessCover)
+  @ApiProperty({ type: [StatelessCover] })
+  statelessCovers?: StatelessCover[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCover)
+  @ApiProperty({ type: [StatefulCover] })
+  statefulCovers?: StatefulCover[];
 }
 
 export class CreateComicIssueSwaggerDto extends IntersectionType(

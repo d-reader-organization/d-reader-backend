@@ -122,8 +122,8 @@ Table ComicIssue {
   description String [not null, default: '']
   flavorText String [not null, default: '']
   cover String [not null, default: '']
-  stateLessCovers StateLessCover [not null]
-  stateFulCovers StateFulCover [not null]
+  statelessCovers StatelessCover [not null]
+  statefulCovers StatefulCover [not null]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
@@ -170,7 +170,7 @@ Table ComicIssueCollaborator {
   }
 }
 
-Table StateLessCover {
+Table StatelessCover {
   id Int [pk, increment]
   image String [not null]
   rarity ComicRarity
@@ -184,7 +184,7 @@ Table StateLessCover {
   }
 }
 
-Table StateFulCover {
+Table StatefulCover {
   id Int [pk, increment]
   image String [not null, default: '']
   isSigned Boolean [not null]
@@ -402,9 +402,9 @@ Ref: ComicCollaborator.comicSlug > Comic.slug
 
 Ref: ComicIssueCollaborator.comicIssueId > ComicIssue.id
 
-Ref: StateLessCover.comicIssueId > ComicIssue.id
+Ref: StatelessCover.comicIssueId > ComicIssue.id
 
-Ref: StateFulCover.comicIssueId > ComicIssue.id
+Ref: StatefulCover.comicIssueId > ComicIssue.id
 
 Ref: Nft.uri > Metadata.uri
 
