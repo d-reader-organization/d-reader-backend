@@ -129,7 +129,7 @@ export class ComicIssueService {
       },
       skip: query.skip,
       take: query.take,
-      orderBy: { releaseDate: 'desc' },
+      orderBy: { releaseDate: query.sortOrder ?? 'desc' },
       where: {
         title: { contains: query?.titleSubstring, mode: 'insensitive' },
         comicSlug: { equals: query?.comicSlug },
