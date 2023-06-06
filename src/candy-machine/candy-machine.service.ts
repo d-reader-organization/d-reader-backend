@@ -22,7 +22,7 @@ import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction, getRemainingAccounts } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
-import { chunk, some } from 'lodash';
+import { chunk } from 'lodash';
 import * as bs58 from 'bs58';
 import {
   MAX_METADATA_LEN,
@@ -303,19 +303,21 @@ export class CandyMachineService {
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
     label?: string,
+    nftGateMint?: PublicKey,
   ) {
     try {
       const mint = Keypair.generate();
       const candyMachine = await this.metaplex
         .candyMachines()
         .findByAddress({ address: candyMachineAddress });
-      const remainingAccounts = getRemainingAccounts(
-        this.metaplex,
+
+      const remainingAccounts = getRemainingAccounts(this.metaplex, {
         candyMachine,
         feePayer,
-        mint.publicKey,
-      );
-
+        mint: mint.publicKey,
+        label,
+        nftGateMint,
+      });
       const mintInstructions = await constructMintInstruction(
         this.metaplex,
         candyMachine.address,

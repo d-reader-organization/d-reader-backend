@@ -21,6 +21,7 @@ import {
   CandyMachine,
   DefaultCandyGuardSettings,
   Metaplex,
+  NftGateGuardMintSettings,
   SolPaymentGuardSettings,
   TokenPaymentGuardSettings,
 } from '@metaplex-foundation/js';
@@ -31,6 +32,7 @@ import {
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { MintSettings } from '../dto/types';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -169,31 +171,31 @@ export const allGuards: string[] = ['tokenPayment', 'solPayment', 'nftGate'];
 
 export function getRemainingAccounts(
   metaplex: Metaplex,
-  candyMachine: CandyMachine<DefaultCandyGuardSettings>,
-  feePayer: PublicKey,
-  mint: PublicKey,
-  label?: string,
+  mintSettings: MintSettings,
 ): AccountMeta[] {
-  const group = candyMachine.candyGuard.groups.find(
-    (group) => group.label === label,
-  );
+  const { candyMachine, feePayer, mint } = mintSettings;
   const initialAccounts: AccountMeta[] = [];
 
+  const guards = resolveGuards(candyMachine, mintSettings.label);
   const remainingAccounts = allGuards.reduce((_, curr) => {
-    if (group.guards[curr]) {
+    if (guards[curr]) {
       switch (curr) {
         case 'tokenPayment':
           initialAccounts.push(
             ...getTokenPaymentAccounts(
               metaplex,
-              group.guards.tokenPayment,
+              guards.tokenPayment,
               feePayer,
               mint,
             ),
           );
         case 'solPayment':
+          initialAccounts.push(...getSolPaymentAccounts(guards.solPayment));
+        case 'nftGate':
           initialAccounts.push(
-            ...getSolPaymentAccounts(group.guards.solPayment),
+            ...getNftGateAccounts(metaplex, feePayer, {
+              mint: mintSettings.nftGateMint,
+            }),
           );
       }
     }
@@ -236,4 +238,52 @@ function getSolPaymentAccounts(solPayment: SolPaymentGuardSettings) {
       isWritable: true,
     },
   ];
+}
+
+function getNftGateAccounts(
+  metaplex: Metaplex,
+  feePayer: PublicKey,
+  nftGate: NftGateGuardMintSettings,
+) {
+  const tokenAccount =
+    nftGate.tokenAccount ??
+    metaplex.tokens().pdas().associatedTokenAccount({
+      mint: nftGate.mint,
+      owner: feePayer,
+    });
+
+  const tokenMetadata = metaplex.nfts().pdas().metadata({
+    mint: nftGate.mint,
+  });
+
+  return [
+    {
+      pubkey: tokenAccount,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: tokenMetadata,
+      isSigner: false,
+      isWritable: false,
+    },
+  ];
+}
+
+function resolveGuards(
+  candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+  label?: string,
+) {
+  const defaultGuards = candyMachine.candyGuard.guards;
+
+  if (!label) return defaultGuards;
+
+  const group = candyMachine.candyGuard.groups.find(
+    (group) => group.label === label,
+  );
+  const activeGroupGuards = Object.fromEntries(
+    Object.entries(group).filter(([, v]) => v != null),
+  ) as Partial<DefaultCandyGuardSettings>;
+
+  return { ...defaultGuards, ...activeGroupGuards };
 }

@@ -10,7 +10,7 @@ import {
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
-import { isEmpty, isNil, some } from 'lodash';
+import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -20,7 +20,6 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import { Keypair } from '@solana/web3.js';
 import {
   Pda,
   PublicKey,
