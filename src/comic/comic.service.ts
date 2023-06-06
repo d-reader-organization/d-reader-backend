@@ -84,7 +84,7 @@ export class ComicService {
       include: { genres: true, creator: true },
       skip: query.skip,
       take: query.take,
-      orderBy: { publishedAt: 'desc' },
+      orderBy: { publishedAt: query.sortOrder ?? 'desc' },
       where: {
         name: { contains: query?.nameSubstring, mode: 'insensitive' },
         creator: { slug: query?.creatorSlug },

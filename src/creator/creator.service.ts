@@ -78,6 +78,7 @@ export class CreatorService {
         emailConfirmedAt: { not: null },
         verifiedAt: { not: null },
       },
+      orderBy: { name: query.sortOrder ?? 'asc' },
     });
 
     const aggregatedCreators = await Promise.all(
@@ -93,7 +94,6 @@ export class CreatorService {
 
   async findOne(slug: string, walletAddress: string) {
     const creator = await this.prisma.creator.findUnique({
-      include: { comics: true },
       where: { slug },
     });
 
