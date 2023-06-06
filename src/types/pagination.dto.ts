@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsOptional, Max, Min } from 'class-validator';
 import { SortOrder } from './sort-order';
 
 export class Pagination {
@@ -15,6 +15,8 @@ export class Pagination {
     typeof value === 'string' ? parseInt(value, 10) : value,
   )
   take: number;
+
+  @IsEnum(SortOrder)
   @IsOptional()
   sortOrder?: SortOrder;
 }
