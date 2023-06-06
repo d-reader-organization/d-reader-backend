@@ -1908,7 +1908,7 @@ async function main() {
                       title: 'Issue 1',
                       slug: 'issue-1',
                       description:
-                        'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                       flavorText: 'This is a story about family. About loss.',
                       cover:
                         'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/cover.jpg',
@@ -1945,7 +1945,7 @@ async function main() {
                           title: 'Issue 2',
                           slug: 'issue-2',
                           description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                            'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
                           cover:
@@ -1984,7 +1984,7 @@ async function main() {
                           title: 'Issue 3',
                           slug: 'issue-3',
                           description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                            'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
                           cover:
@@ -2023,7 +2023,7 @@ async function main() {
                           title: 'Issue 4',
                           slug: 'issue-4',
                           description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                            'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
                           cover:
@@ -2062,7 +2062,7 @@ async function main() {
                           title: 'Issue 5',
                           slug: 'issue-5',
                           description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                            'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
                           cover:
@@ -2101,7 +2101,7 @@ async function main() {
                           title: 'Issue 6',
                           slug: 'issue-6',
                           description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                            'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
                           cover:
@@ -2183,7 +2183,7 @@ async function main() {
               title: 'Issue 1',
               slug: 'issue-1',
               description:
-                'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText: 'Jana and the tower of Want',
               cover:
                 'creators/mad-muse-syndicate/comics/jana/issues/issue-1/cover.jpg',
@@ -2220,7 +2220,7 @@ async function main() {
                   title: 'Issue 2',
                   slug: 'issue-2',
                   description:
-                    'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                    'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText: 'Jana and the tower of Want',
                   cover:
                     'creators/mad-muse-syndicate/comics/jana/issues/issue-2/cover.jpg',
@@ -2299,7 +2299,7 @@ async function main() {
               title: 'Issue 1',
               slug: 'issue-1',
               description:
-                'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText:
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               cover:
@@ -2337,7 +2337,7 @@ async function main() {
                   title: 'Issue 2',
                   slug: 'issue-2',
                   description:
-                    'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                    'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText:
                     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
                   cover:
