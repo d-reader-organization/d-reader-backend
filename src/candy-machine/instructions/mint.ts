@@ -13,6 +13,8 @@ import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl
 
 import {
   createMintInstruction,
+  createRouteInstruction,
+  GuardType,
   MintInstructionAccounts,
   MintInstructionArgs,
 } from '@metaplex-foundation/mpl-candy-guard';
@@ -20,6 +22,7 @@ import {
 import {
   CandyMachine,
   DefaultCandyGuardSettings,
+  getMerkleProof,
   Metaplex,
   NftGateGuardMintSettings,
   SolPaymentGuardSettings,
@@ -47,6 +50,7 @@ export async function constructMintInstruction(
   remainingAccounts?: AccountMeta[] | null,
   mintArgs?: Uint8Array | null,
   label?: string | null,
+  allowList?: string[],
 ): Promise<TransactionInstruction[]> {
   // candy machine object
   const candyMachineObject: CandyMachine = await metaplex
@@ -129,6 +133,23 @@ export async function constructMintInstruction(
   };
 
   const instructions: TransactionInstruction[] = [];
+
+  if (label) {
+    const guards = resolveGuards(candyMachineObject, label);
+    if (guards.allowList) {
+      const merkleProof = getMerkleProof(allowList, payer.toString());
+      instructions.push(
+        constructAllowListRouteInstruction(
+          metaplex,
+          candyMachineObject,
+          payer,
+          label,
+          merkleProof,
+        ),
+      );
+    }
+  }
+
   instructions.push(
     SystemProgram.createAccount({
       fromPubkey: payer,
@@ -270,6 +291,73 @@ function getNftGateAccounts(
   ];
 }
 
+function constructAllowListRouteInstruction(
+  metaplex: Metaplex,
+  candyMachine: CandyMachine,
+  feePayer: PublicKey,
+  label: string,
+  merkleProof: Uint8Array[],
+) {
+  const vectorSize = Buffer.alloc(4);
+  vectorSize.writeUInt32LE(merkleProof.length, 0);
+  const args = Buffer.concat([vectorSize, ...merkleProof]);
+  const group = candyMachine.candyGuard.groups.find(
+    (group) => group.label === label,
+  );
+
+  const routeInstruction = createRouteInstruction(
+    {
+      candyGuard: candyMachine.candyGuard.address,
+      candyMachine: candyMachine.address,
+      payer: feePayer,
+    },
+    {
+      args: {
+        guard: GuardType.AllowList, // allow list guard index
+        data: args,
+      },
+      label,
+    },
+    metaplex.programs().getCandyGuard().address,
+  );
+  routeInstruction.keys.push(
+    ...getAllowListRouteAccounts(
+      metaplex,
+      candyMachine.address,
+      candyMachine.candyGuard.address,
+      feePayer,
+      group.guards.allowList.merkleRoot,
+    ),
+  );
+  return routeInstruction;
+}
+
+function getAllowListRouteAccounts(
+  metaplex: Metaplex,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+  feePayer: PublicKey,
+  merkleRoot: Uint8Array,
+): AccountMeta[] {
+  return [
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.candyMachines().pdas().merkleProof({
+        merkleRoot,
+        user: feePayer,
+        candyMachine,
+        candyGuard,
+      }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.programs().getSystem().address,
+    },
+  ];
+}
+
 function resolveGuards(
   candyMachine: CandyMachine<DefaultCandyGuardSettings>,
   label?: string,
@@ -281,6 +369,8 @@ function resolveGuards(
   const group = candyMachine.candyGuard.groups.find(
     (group) => group.label === label,
   );
+
+  // remove null to overwrite default guards with only specified guards in group
   const activeGroupGuards = Object.fromEntries(
     Object.entries(group).filter(([, v]) => v != null),
   ) as Partial<DefaultCandyGuardSettings>;

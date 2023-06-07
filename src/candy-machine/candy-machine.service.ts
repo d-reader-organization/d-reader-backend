@@ -304,6 +304,7 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label?: string,
     nftGateMint?: PublicKey,
+    allowList?: string[],
   ) {
     try {
       const mint = Keypair.generate();
@@ -327,6 +328,7 @@ export class CandyMachineService {
         remainingAccounts,
         undefined,
         label,
+        allowList,
       );
       const latestBlockhash =
         await this.metaplex.connection.getLatestBlockhash();
