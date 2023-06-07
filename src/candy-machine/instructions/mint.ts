@@ -134,20 +134,19 @@ export async function constructMintInstruction(
 
   const instructions: TransactionInstruction[] = [];
 
-  if (label) {
-    const guards = resolveGuards(candyMachineObject, label);
-    if (guards.allowList) {
-      const merkleProof = getMerkleProof(allowList, payer.toString());
-      instructions.push(
-        constructAllowListRouteInstruction(
-          metaplex,
-          candyMachineObject,
-          payer,
-          label,
-          merkleProof,
-        ),
-      );
-    }
+  const guards = resolveGuards(candyMachineObject, label);
+  if (guards.allowList) {
+    const merkleProof = getMerkleProof(allowList, payer.toString());
+    instructions.push(
+      constructAllowListRouteInstruction(
+        metaplex,
+        candyMachineObject,
+        payer,
+        label,
+        merkleProof,
+        guards,
+      ),
+    );
   }
 
   instructions.push(
@@ -188,7 +187,12 @@ export async function constructMintInstruction(
   return instructions;
 }
 
-export const allGuards: string[] = ['tokenPayment', 'solPayment', 'nftGate'];
+export const allGuards: string[] = [
+  'tokenPayment',
+  'solPayment',
+  'nftGate',
+  'allowList',
+];
 
 export function getRemainingAccounts(
   metaplex: Metaplex,
@@ -198,10 +202,12 @@ export function getRemainingAccounts(
   const initialAccounts: AccountMeta[] = [];
 
   const guards = resolveGuards(candyMachine, mintSettings.label);
+  console.log('rm', guards);
   const remainingAccounts = allGuards.reduce((_, curr) => {
+    console.log(guards[curr]);
     if (guards[curr]) {
       switch (curr) {
-        case 'tokenPayment':
+        case 'tokenPayment': {
           initialAccounts.push(
             ...getTokenPaymentAccounts(
               metaplex,
@@ -210,20 +216,38 @@ export function getRemainingAccounts(
               mint,
             ),
           );
-        case 'solPayment':
+          break;
+        }
+        case 'solPayment': {
           initialAccounts.push(...getSolPaymentAccounts(guards.solPayment));
-        case 'nftGate':
+          break;
+        }
+        case 'nftGate': {
           initialAccounts.push(
             ...getNftGateAccounts(metaplex, feePayer, {
               mint: mintSettings.nftGateMint,
             }),
           );
+          break;
+        }
+        case 'allowList': {
+          initialAccounts.push(
+            ...getAllowListAccounts(
+              metaplex,
+              guards.allowList.merkleRoot,
+              feePayer,
+              candyMachine.address,
+              candyMachine.candyGuard.address,
+            ),
+          );
+          break;
+        }
       }
     }
     return initialAccounts;
   }, initialAccounts);
 
-  console.log(remainingAccounts);
+  console.log('remainingAccounts', remainingAccounts);
   return remainingAccounts;
 }
 
@@ -297,13 +321,11 @@ function constructAllowListRouteInstruction(
   feePayer: PublicKey,
   label: string,
   merkleProof: Uint8Array[],
+  guards: DefaultCandyGuardSettings,
 ) {
   const vectorSize = Buffer.alloc(4);
   vectorSize.writeUInt32LE(merkleProof.length, 0);
   const args = Buffer.concat([vectorSize, ...merkleProof]);
-  const group = candyMachine.candyGuard.groups.find(
-    (group) => group.label === label,
-  );
 
   const routeInstruction = createRouteInstruction(
     {
@@ -316,7 +338,7 @@ function constructAllowListRouteInstruction(
         guard: GuardType.AllowList, // allow list guard index
         data: args,
       },
-      label,
+      label: label ?? null,
     },
     metaplex.programs().getCandyGuard().address,
   );
@@ -326,7 +348,7 @@ function constructAllowListRouteInstruction(
       candyMachine.address,
       candyMachine.candyGuard.address,
       feePayer,
-      group.guards.allowList.merkleRoot,
+      guards.allowList.merkleRoot,
     ),
   );
   return routeInstruction;
@@ -358,6 +380,27 @@ function getAllowListRouteAccounts(
   ];
 }
 
+function getAllowListAccounts(
+  metaplex: Metaplex,
+  merkleRoot: Uint8Array,
+  feePayer: PublicKey,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+) {
+  return [
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.candyMachines().pdas().merkleProof({
+        merkleRoot,
+        user: feePayer,
+        candyMachine,
+        candyGuard,
+      }),
+    },
+  ];
+}
+
 function resolveGuards(
   candyMachine: CandyMachine<DefaultCandyGuardSettings>,
   label?: string,
@@ -372,7 +415,7 @@ function resolveGuards(
 
   // remove null to overwrite default guards with only specified guards in group
   const activeGroupGuards = Object.fromEntries(
-    Object.entries(group).filter(([, v]) => v != null),
+    Object.entries(group.guards).filter(([, v]) => v != null),
   ) as Partial<DefaultCandyGuardSettings>;
 
   return { ...defaultGuards, ...activeGroupGuards };

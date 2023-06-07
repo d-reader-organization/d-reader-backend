@@ -1937,198 +1937,198 @@ async function main() {
                     },
                     process.env.SOLANA_CLUSTER === 'devnet'
                       ? {
-                          number: 2,
-                          supply: 0,
-                          discountMintPrice: 0,
-                          mintPrice: 0,
-                          sellerFeeBasisPoints: 0,
-                          title: 'Issue 2',
-                          slug: 'issue-2',
-                          description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                          flavorText:
-                            'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-signed-cover.jpg',
-                          releaseDate: subDays(new Date(), 19),
-                          deletedAt: null,
-                          featuredAt: null,
-                          verifiedAt: new Date(),
-                          publishedAt: new Date(),
-                          popularizedAt: null,
-                          pages: {
-                            createMany: {
-                              data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/pages',
-                                6,
-                                'jpg',
-                                6,
-                              ),
-                            },
+                        number: 2,
+                        supply: 0,
+                        discountMintPrice: 0,
+                        mintPrice: 0,
+                        sellerFeeBasisPoints: 0,
+                        title: 'Issue 2',
+                        slug: 'issue-2',
+                        description:
+                          'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        flavorText:
+                          'This is a story about family. About loss.',
+                        cover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/cover.jpg',
+                        signedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/signed-cover.jpg',
+                        usedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-cover.jpg',
+                        usedSignedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-signed-cover.jpg',
+                        releaseDate: subDays(new Date(), 19),
+                        deletedAt: null,
+                        featuredAt: null,
+                        verifiedAt: new Date(),
+                        publishedAt: new Date(),
+                        popularizedAt: null,
+                        pages: {
+                          createMany: {
+                            data: generatePages(
+                              'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/pages',
+                              6,
+                              'jpg',
+                              6,
+                            ),
                           },
-                        }
+                        },
+                      }
                       : undefined,
                     process.env.SOLANA_CLUSTER === 'devnet'
                       ? {
-                          number: 3,
-                          supply: 0,
-                          discountMintPrice: 0,
-                          mintPrice: 0,
-                          sellerFeeBasisPoints: 0,
-                          title: 'Issue 3',
-                          slug: 'issue-3',
-                          description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                          flavorText:
-                            'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-signed-cover.jpg',
-                          releaseDate: subDays(new Date(), 18),
-                          deletedAt: null,
-                          featuredAt: null,
-                          verifiedAt: new Date(),
-                          publishedAt: new Date(),
-                          popularizedAt: null,
-                          pages: {
-                            createMany: {
-                              data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/pages',
-                                6,
-                                'jpg',
-                                6,
-                              ),
-                            },
+                        number: 3,
+                        supply: 0,
+                        discountMintPrice: 0,
+                        mintPrice: 0,
+                        sellerFeeBasisPoints: 0,
+                        title: 'Issue 3',
+                        slug: 'issue-3',
+                        description:
+                          'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        flavorText:
+                          'This is a story about family. About loss.',
+                        cover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/cover.jpg',
+                        signedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/signed-cover.jpg',
+                        usedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-cover.jpg',
+                        usedSignedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-signed-cover.jpg',
+                        releaseDate: subDays(new Date(), 18),
+                        deletedAt: null,
+                        featuredAt: null,
+                        verifiedAt: new Date(),
+                        publishedAt: new Date(),
+                        popularizedAt: null,
+                        pages: {
+                          createMany: {
+                            data: generatePages(
+                              'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/pages',
+                              6,
+                              'jpg',
+                              6,
+                            ),
                           },
-                        }
+                        },
+                      }
                       : undefined,
                     process.env.SOLANA_CLUSTER === 'devnet'
                       ? {
-                          number: 4,
-                          supply: 0,
-                          discountMintPrice: 0,
-                          mintPrice: 0,
-                          sellerFeeBasisPoints: 0,
-                          title: 'Issue 4',
-                          slug: 'issue-4',
-                          description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                          flavorText:
-                            'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/cover.png',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/signed-cover.png',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-cover.png',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-signed-cover.png',
-                          releaseDate: subDays(new Date(), 16),
-                          deletedAt: null,
-                          featuredAt: null,
-                          verifiedAt: new Date(),
-                          publishedAt: new Date(),
-                          popularizedAt: null,
-                          pages: {
-                            createMany: {
-                              data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/pages',
-                                5,
-                                'jpg',
-                                5,
-                              ),
-                            },
+                        number: 4,
+                        supply: 0,
+                        discountMintPrice: 0,
+                        mintPrice: 0,
+                        sellerFeeBasisPoints: 0,
+                        title: 'Issue 4',
+                        slug: 'issue-4',
+                        description:
+                          'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        flavorText:
+                          'This is a story about family. About loss.',
+                        cover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/cover.png',
+                        signedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/signed-cover.png',
+                        usedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-cover.png',
+                        usedSignedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-signed-cover.png',
+                        releaseDate: subDays(new Date(), 16),
+                        deletedAt: null,
+                        featuredAt: null,
+                        verifiedAt: new Date(),
+                        publishedAt: new Date(),
+                        popularizedAt: null,
+                        pages: {
+                          createMany: {
+                            data: generatePages(
+                              'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/pages',
+                              5,
+                              'jpg',
+                              5,
+                            ),
                           },
-                        }
+                        },
+                      }
                       : undefined,
                     process.env.SOLANA_CLUSTER === 'devnet'
                       ? {
-                          number: 5,
-                          supply: 0,
-                          discountMintPrice: 0,
-                          mintPrice: 0,
-                          sellerFeeBasisPoints: 0,
-                          title: 'Issue 5',
-                          slug: 'issue-5',
-                          description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                          flavorText:
-                            'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-signed-cover.jpg',
-                          releaseDate: subDays(new Date(), 15),
-                          deletedAt: null,
-                          featuredAt: null,
-                          verifiedAt: new Date(),
-                          publishedAt: new Date(),
-                          popularizedAt: null,
-                          pages: {
-                            createMany: {
-                              data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/pages',
-                                6,
-                                'jpg',
-                                6,
-                              ),
-                            },
+                        number: 5,
+                        supply: 0,
+                        discountMintPrice: 0,
+                        mintPrice: 0,
+                        sellerFeeBasisPoints: 0,
+                        title: 'Issue 5',
+                        slug: 'issue-5',
+                        description:
+                          'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        flavorText:
+                          'This is a story about family. About loss.',
+                        cover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/cover.jpg',
+                        signedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/signed-cover.jpg',
+                        usedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-cover.jpg',
+                        usedSignedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                        releaseDate: subDays(new Date(), 15),
+                        deletedAt: null,
+                        featuredAt: null,
+                        verifiedAt: new Date(),
+                        publishedAt: new Date(),
+                        popularizedAt: null,
+                        pages: {
+                          createMany: {
+                            data: generatePages(
+                              'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/pages',
+                              6,
+                              'jpg',
+                              6,
+                            ),
                           },
-                        }
+                        },
+                      }
                       : undefined,
                     process.env.SOLANA_CLUSTER === 'devnet'
                       ? {
-                          number: 6,
-                          supply: 0,
-                          discountMintPrice: 0,
-                          mintPrice: 0,
-                          sellerFeeBasisPoints: 0,
-                          title: 'Issue 6',
-                          slug: 'issue-6',
-                          description:
-                            'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                          flavorText:
-                            'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-signed-cover.jpg',
-                          releaseDate: subDays(new Date(), 12),
-                          deletedAt: null,
-                          featuredAt: null,
-                          verifiedAt: new Date(),
-                          publishedAt: new Date(),
-                          popularizedAt: null,
-                          pages: {
-                            createMany: {
-                              data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/pages',
-                                5,
-                                'jpg',
-                                5,
-                              ),
-                            },
+                        number: 6,
+                        supply: 0,
+                        discountMintPrice: 0,
+                        mintPrice: 0,
+                        sellerFeeBasisPoints: 0,
+                        title: 'Issue 6',
+                        slug: 'issue-6',
+                        description:
+                          'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                        flavorText:
+                          'This is a story about family. About loss.',
+                        cover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/cover.jpg',
+                        signedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/signed-cover.jpg',
+                        usedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-cover.jpg',
+                        usedSignedCover:
+                          'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-signed-cover.jpg',
+                        releaseDate: subDays(new Date(), 12),
+                        deletedAt: null,
+                        featuredAt: null,
+                        verifiedAt: new Date(),
+                        publishedAt: new Date(),
+                        popularizedAt: null,
+                        pages: {
+                          createMany: {
+                            data: generatePages(
+                              'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/pages',
+                              5,
+                              'jpg',
+                              5,
+                            ),
                           },
-                        }
+                        },
+                      }
                       : undefined,
                   ],
                 },
@@ -2212,41 +2212,41 @@ async function main() {
             },
             process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
-                  number: 2,
-                  supply: 0,
-                  discountMintPrice: 0,
-                  mintPrice: 0,
-                  sellerFeeBasisPoints: 0,
-                  title: 'Issue 2',
-                  slug: 'issue-2',
-                  description:
-                    'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                  flavorText: 'Jana and the tower of Want',
-                  cover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/cover.jpg',
-                  signedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/signed-cover.jpg',
-                  usedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-cover.jpg',
-                  usedSignedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-signed-cover.jpg',
-                  releaseDate: subDays(new Date(), 19),
-                  deletedAt: null,
-                  featuredAt: null,
-                  verifiedAt: new Date(),
-                  publishedAt: new Date(),
-                  popularizedAt: new Date(),
-                  pages: {
-                    createMany: {
-                      data: generatePages(
-                        'creators/mad-muse-syndicate/comics/jana/issues/issue-2/pages',
-                        5,
-                        'jpg',
-                        5,
-                      ),
-                    },
+                number: 2,
+                supply: 0,
+                discountMintPrice: 0,
+                mintPrice: 0,
+                sellerFeeBasisPoints: 0,
+                title: 'Issue 2',
+                slug: 'issue-2',
+                description:
+                  'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                flavorText: 'Jana and the tower of Want',
+                cover:
+                  'creators/mad-muse-syndicate/comics/jana/issues/issue-2/cover.jpg',
+                signedCover:
+                  'creators/mad-muse-syndicate/comics/jana/issues/issue-2/signed-cover.jpg',
+                usedCover:
+                  'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-cover.jpg',
+                usedSignedCover:
+                  'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-signed-cover.jpg',
+                releaseDate: subDays(new Date(), 19),
+                deletedAt: null,
+                featuredAt: null,
+                verifiedAt: new Date(),
+                publishedAt: new Date(),
+                popularizedAt: new Date(),
+                pages: {
+                  createMany: {
+                    data: generatePages(
+                      'creators/mad-muse-syndicate/comics/jana/issues/issue-2/pages',
+                      5,
+                      'jpg',
+                      5,
+                    ),
                   },
-                }
+                },
+              }
               : undefined,
           ],
         },
@@ -2329,42 +2329,42 @@ async function main() {
             },
             process.env.SOLANA_CLUSTER === 'devnet' && false
               ? {
-                  number: 2,
-                  supply: 0,
-                  discountMintPrice: 0,
-                  mintPrice: 0,
-                  sellerFeeBasisPoints: 0,
-                  title: 'Issue 2',
-                  slug: 'issue-2',
-                  description:
-                    'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                  flavorText:
-                    '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-                  cover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/cover.jpg',
-                  signedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
-                  usedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-cover.jpg',
-                  usedSignedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
-                  releaseDate: subDays(new Date(), 16),
-                  deletedAt: null,
-                  featuredAt: null,
-                  verifiedAt: new Date(),
-                  publishedAt: new Date(),
-                  popularizedAt: new Date(),
-                  pages: {
-                    createMany: {
-                      data: generatePages(
-                        'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/pages',
-                        5,
-                        'jpg',
-                        5,
-                      ),
-                    },
+                number: 2,
+                supply: 0,
+                discountMintPrice: 0,
+                mintPrice: 0,
+                sellerFeeBasisPoints: 0,
+                title: 'Issue 2',
+                slug: 'issue-2',
+                description:
+                  'PROMOTIONAL PURPOSES ONLY. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                flavorText:
+                  '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
+                cover:
+                  'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/cover.jpg',
+                signedCover:
+                  'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
+                usedCover:
+                  'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-cover.jpg',
+                usedSignedCover:
+                  'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
+                releaseDate: subDays(new Date(), 16),
+                deletedAt: null,
+                featuredAt: null,
+                verifiedAt: new Date(),
+                publishedAt: new Date(),
+                popularizedAt: new Date(),
+                pages: {
+                  createMany: {
+                    data: generatePages(
+                      'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/pages',
+                      5,
+                      'jpg',
+                      5,
+                    ),
                   },
-                }
+                },
+              }
               : undefined,
           ],
         },
