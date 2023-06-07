@@ -202,9 +202,7 @@ export function getRemainingAccounts(
   const initialAccounts: AccountMeta[] = [];
 
   const guards = resolveGuards(candyMachine, mintSettings.label);
-  console.log('rm', guards);
   const remainingAccounts = allGuards.reduce((_, curr) => {
-    console.log(guards[curr]);
     if (guards[curr]) {
       switch (curr) {
         case 'tokenPayment': {
@@ -247,7 +245,6 @@ export function getRemainingAccounts(
     return initialAccounts;
   }, initialAccounts);
 
-  console.log('remainingAccounts', remainingAccounts);
   return remainingAccounts;
 }
 

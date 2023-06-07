@@ -129,7 +129,7 @@ export class ComicIssueService {
       },
       skip: query.skip,
       take: query.take,
-      orderBy: { releaseDate: 'desc' },
+      orderBy: { releaseDate: query.sortOrder ?? 'desc' },
       where: {
         title: { contains: query?.titleSubstring, mode: 'insensitive' },
         comicSlug: { equals: query?.comicSlug },
@@ -218,6 +218,9 @@ export class ComicIssueService {
       comicIssueId,
       walletAddress,
     );
+
+    // TODO: make this a non-blocking query
+    await this.read(comicIssueId, walletAddress);
 
     return this.comicPageService.findAll(comicIssueId, showPreviews);
   }

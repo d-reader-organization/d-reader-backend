@@ -1,14 +1,9 @@
-import {
-  IsAlphanumeric,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
+import { IsValidUsername } from '../../decorators/IsValidUsername';
 
 export class UpdateWalletDto {
   @IsOptional()
-  @IsAlphanumeric()
-  @MaxLength(40)
+  @IsValidUsername()
   name?: string;
 
   // @IsEnum(Role)
