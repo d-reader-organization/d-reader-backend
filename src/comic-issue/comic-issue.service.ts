@@ -20,6 +20,8 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
+import { filterBy } from '../utils/query-helpers';
+import { sortIssuesByTag } from './utils/sort-issues';
 
 @Injectable()
 export class ComicIssueService {
@@ -136,6 +138,7 @@ export class ComicIssueService {
         deletedAt: null,
         publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
+        ...filterBy(query.tag),
         comic: {
           creator: { slug: query?.creatorSlug },
           deletedAt: null,
@@ -154,8 +157,7 @@ export class ComicIssueService {
         },
       },
     });
-
-    return await Promise.all(
+    const aggregatedIssues = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
           ...issue,
@@ -165,6 +167,7 @@ export class ComicIssueService {
         };
       }),
     );
+    return sortIssuesByTag(aggregatedIssues, query.tag);
   }
 
   async findOne(id: number, walletAddress: string) {
