@@ -52,7 +52,6 @@ export class MintOneCommand extends CommandRunner {
         keypair.publicKey,
         options.candyMachineAddress,
       );
-
     const transaction = decodeTransaction(encodedTransaction, 'base64');
     transaction.partialSign(keypair);
 
