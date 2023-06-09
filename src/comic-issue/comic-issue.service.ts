@@ -12,7 +12,7 @@ import {
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
+import { Prisma, ComicIssue, ComicPage, Comic, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -20,8 +20,7 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import { filterBy } from '../utils/query-helpers';
-import { sortIssuesByTag } from './utils/sort-issues';
+import { sortBy } from '../utils/query-helpers';
 
 @Injectable()
 export class ComicIssueService {
@@ -124,50 +123,69 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const comicIssues = await this.prisma.comicIssue.findMany({
-      include: {
-        comic: { include: { creator: true } },
-        collectionNft: { select: { address: true } },
-      },
-      skip: query.skip,
-      take: query.take,
-      orderBy: { releaseDate: query.sortOrder ?? 'desc' },
-      where: {
-        title: { contains: query?.titleSubstring, mode: 'insensitive' },
-        comicSlug: { equals: query?.comicSlug },
-        deletedAt: null,
-        publishedAt: { lt: new Date() },
-        verifiedAt: { not: null },
-        ...filterBy(query.tag),
-        comic: {
-          creator: { slug: query?.creatorSlug },
-          deletedAt: null,
-          AND: query?.genreSlugs?.map((slug) => {
-            return {
-              genres: {
-                some: {
-                  slug: {
-                    equals: slug,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            };
-          }),
-        },
-      },
-    });
-    const aggregatedIssues = await Promise.all(
+    const orderByStatement = `ORDER BY ${sortBy(query.tag)}`;
+    const offsetStatement = `OFFSET ${query.skip}`;
+    const limitStatement = `LIMIT ${query.take}`;
+
+    const comicIssues = await this.prisma.$queryRaw<
+      (ComicIssue & {
+        comic: Comic & { creator: Creator };
+        collectionNft: { address: string };
+        averagerating: number;
+        raterscount: number;
+        favouritescount: number;
+        readerscount: number;
+        viewerscount: number;
+        totalissuescount: number;
+        totalpagescount: number;
+      })[]
+    >(Prisma.sql`select ci.id, ci.number, ci.supply, ci."discountMintPrice", ci."mintPrice", ci."sellerFeeBasisPoints", ci.title, ci.slug, ci.description, ci."flavorText", ci.cover,ci."signedCover", ci."usedCover", ci."usedSignedCover", ci."releaseDate", ci."publishedAt", ci."popularizedAt", ci."verifiedAt", ci."deletedAt", 
+    cr."name", cr.slug, cr."verifiedAt", cr.avatar,
+    c."name",c.slug, c."audienceType",
+    cn.address,
+        AVG(case when wci.rating is not null then wci.rating end) AS averageRating,
+        SUM(case when wci.rating is not null then 1 end) as ratersCount,
+        SUM(case when wci."isFavourite" then 1 end) AS favouritesCount,
+        SUM(case when wci."readAt" is not null then 1 end) AS readersCount,
+        SUM(case when wci."viewedAt" is not null then 1 end) AS viewersCount,
+        (
+          SELECT COUNT(*) as totalIssuesCount
+          FROM "ComicIssue" ci2
+          where ci2."comicSlug"  = ci."comicSlug"
+        ) AS totalIssuesCount,
+            (
+          SELECT COUNT(*) as totalPagesCount
+          FROM "ComicPage" cp
+          where cp."comicIssueId" = ci.id
+        ) AS totalPagesCount
+    from "ComicIssue" ci
+    inner join "Comic" c on c.slug = ci."comicSlug" 
+    inner join "Creator" cr on cr.id = c."creatorId"
+    inner join "WalletComicIssue" wci on wci."comicIssueId" = ci.id
+    left join "CollectionNft" cn on cn."comicIssueId" = ci.id
+    group by ci.id, cr.name, cr.slug, cr."verifiedAt", cr.avatar, c."name" , c.slug, cn.address 
+    ${orderByStatement}
+    ${offsetStatement}
+    ${limitStatement}
+    `);
+    const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
           ...issue,
-          stats: await this.walletComicIssueService.aggregateComicIssueStats(
-            issue,
-          ),
+          stats: {
+            favouritesCount: Number(issue.favouritescount),
+            ratersCount: Number(issue.raterscount),
+            averageRating: Number(issue.averagerating),
+            price: await this.walletComicIssueService.getComicIssuePrice(issue),
+            totalIssuesCount: Number(issue.totalissuescount),
+            readersCount: Number(issue.readerscount),
+            viewersCount: Number(issue.viewerscount),
+            totalPagesCount: Number(issue.totalpagescount),
+          },
         };
       }),
     );
-    return sortIssuesByTag(aggregatedIssues, query.tag);
+    return response;
   }
 
   async findOne(id: number, walletAddress: string) {
