@@ -17,7 +17,6 @@ import {
   MetaplexFile,
   DefaultCandyGuardSettings,
 } from '@metaplex-foundation/js';
-import { ComicIssue } from '@prisma/client';
 import { s3toMxFile } from '../utils/files';
 import { constructMintInstruction, getRemainingAccounts } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
@@ -35,9 +34,14 @@ import {
   DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
   DEFAULT_COMIC_ISSUE_IS_SIGNED,
+  FIVE_RARITIES_SHARE,
+  THREE_RARITIES_SHARE,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import { ComicRarity, StatefulCover } from '@prisma/client';
+import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
+import { RarityCoverFiles } from 'src/types/shared';
 
 @Injectable()
 export class CandyMachineService {
@@ -90,8 +94,167 @@ export class CandyMachineService {
     );
   }
 
+  async getComicIssueCovers(comicIssue: CandyMachineIssue) {
+    let statelessCovers: MetaplexFile[];
+    const haveRarities =
+      comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;
+    if (haveRarities) {
+      const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
+        s3toMxFile(cover.image, cover.rarity),
+      );
+      statelessCovers = await Promise.all(statelessCoverPromises);
+    }
+    const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
+    const statefulCoverPromises = comicIssue.statefulCovers.map(
+      async (cover) => {
+        const name =
+          (cover.isUsed ? 'used-' : 'unused-') +
+          (cover.isSigned ? 'signed' : 'unsigned') +
+          (haveRarities ? '-' + cover.rarity : '') +
+          '-cover';
+        const file = await s3toMxFile(cover.image, name);
+        if (haveRarities) {
+          const property =
+            (cover.isUsed ? 'used' : 'unused') +
+            (cover.isSigned ? 'Signed' : 'Unsigned');
+          rarityCoverFiles[cover.rarity][property] = file;
+        }
+        return file;
+      },
+    );
+    const statefulCovers = await Promise.all(statefulCoverPromises);
+
+    return { statefulCovers, statelessCovers, rarityCoverFiles };
+  }
+
+  findCover(covers: StatefulCover[], rarity: ComicRarity) {
+    return covers.find(
+      (cover) => cover.rarity === rarity && !cover.isUsed && !cover.isSigned,
+    );
+  }
+
+  async uploadMetadata(
+    comicIssue: CandyMachineIssue,
+    comicName: string,
+    creatorAddress: string,
+    image: MetaplexFile,
+  ) {
+    return await this.metaplex.nfts().uploadMetadata({
+      name: comicIssue.title,
+      symbol: D_PUBLISHER_SYMBOL,
+      description: comicIssue.description,
+      seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
+      image,
+      external_url: D_READER_FRONTEND_URL,
+      attributes: [
+        {
+          trait_type: USED_TRAIT,
+          value: DEFAULT_COMIC_ISSUE_USED,
+        },
+        {
+          trait_type: SIGNED_TRAIT,
+          value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
+        },
+      ],
+      properties: {
+        creators: [{ address: creatorAddress, share: HUNDRED }],
+        files: this.writeFiles(image),
+      },
+      collection: {
+        name: comicIssue.title,
+        family: comicName,
+      },
+    });
+  }
+
+  async uploadItemMetadata(
+    comicIssue: CandyMachineIssue,
+    comicName: string,
+    coverImage: MetaplexFile,
+    creatorAddress: string,
+    haveRarity: boolean,
+    rarityCoverFiles?: RarityCoverFiles,
+  ) {
+    let items: { uri: string; name: string }[];
+    if (haveRarity) {
+      const rarityCovers = {
+        Epic: this.findCover(comicIssue.statefulCovers, 'Epic'),
+        Rare: this.findCover(comicIssue.statefulCovers, 'Rare'),
+        Common: this.findCover(comicIssue.statefulCovers, 'Common'),
+        Uncommon: this.findCover(comicIssue.statefulCovers, 'Uncommon'),
+        Legendary: this.findCover(comicIssue.statefulCovers, 'Legendary'),
+      };
+
+      let rarityShare: RarityConstant[];
+      const haveFiveRarities = !!rarityCovers.Epic;
+      if (haveFiveRarities) {
+        rarityShare = FIVE_RARITIES_SHARE;
+      } else {
+        rarityShare = THREE_RARITIES_SHARE;
+      }
+      const itemMetadatas: { uri: string; name: string }[] = [],
+        items = [];
+
+      let supplyLeft = comicIssue.supply;
+      let index = 0;
+
+      for (const shareObject of rarityShare) {
+        const { rarity } = shareObject;
+        const image = rarityCoverFiles[rarity].unusedUnsigned;
+        const { uri, metadata } = await this.uploadMetadata(
+          comicIssue,
+          comicName,
+          creatorAddress,
+          image,
+        );
+        itemMetadatas.push({ uri, name: metadata.name });
+      }
+
+      index = 0;
+      for (const metadata of itemMetadatas) {
+        let supply: number;
+
+        const { value } = rarityShare[index];
+        if (index == rarityShare.length - 1) {
+          supply = comicIssue.supply - supplyLeft;
+        } else {
+          supply = (comicIssue.supply * value) / 100;
+          supplyLeft -= supply;
+        }
+
+        const indexArray = Array.from(Array(supply).keys());
+        const itemsInserted = await Promise.all(
+          indexArray.map((i) => ({
+            uri: metadata.uri,
+            name: `${metadata.name} #${i + 1}`,
+          })),
+        );
+
+        items.push(...itemsInserted);
+        index++;
+      }
+    } else {
+      const { uri: metadataUri, metadata } = await this.uploadMetadata(
+        comicIssue,
+        comicName,
+        creatorAddress,
+        coverImage,
+      );
+      const indexArray = Array.from(Array(comicIssue.supply).keys());
+      // TODO: start indices from previous highest index
+      // e.g. if existing collection has #999 items, continue with #1000
+      items = await Promise.all(
+        indexArray.map((index) => ({
+          uri: metadataUri,
+          name: `${metadata.name} #${index + 1}`,
+        })),
+      );
+    }
+    return items;
+  }
+
   async createComicIssueCM(
-    comicIssue: ComicIssue,
+    comicIssue: CandyMachineIssue,
     comicName: string,
     creatorAddress: string,
     groups?: [
@@ -104,16 +267,9 @@ export class CandyMachineService {
     this.validateInput(comicIssue);
 
     // we can do this in parallel
+    const { statefulCovers, statelessCovers, rarityCoverFiles } =
+      await this.getComicIssueCovers(comicIssue);
     const coverImage = await s3toMxFile(comicIssue.cover, 'cover');
-    const signedCoverImage = await s3toMxFile(
-      comicIssue.signedCover,
-      'signed-cover',
-    );
-    const usedCoverImage = await s3toMxFile(comicIssue.usedCover, 'used-cover');
-    const usedSignedCoverImage = await s3toMxFile(
-      comicIssue.usedSignedCover,
-      'used-signed-cover',
-    );
 
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
@@ -144,9 +300,8 @@ export class CandyMachineService {
             ],
             files: this.writeFiles(
               coverImage,
-              signedCoverImage,
-              usedCoverImage,
-              usedSignedCoverImage,
+              ...statefulCovers,
+              ...statelessCovers,
             ),
           },
         });
@@ -221,44 +376,15 @@ export class CandyMachineService {
       },
     });
 
-    // Upload collection item metadata
-    const { uri: metadataUri, metadata } = await this.metaplex
-      .nfts()
-      .uploadMetadata({
-        name: comicIssue.title,
-        symbol: D_PUBLISHER_SYMBOL,
-        description: comicIssue.description,
-        seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
-        image: coverImage,
-        external_url: D_READER_FRONTEND_URL,
-        attributes: [
-          {
-            trait_type: USED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_USED,
-          },
-          {
-            trait_type: SIGNED_TRAIT,
-            value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
-          },
-        ],
-        properties: {
-          creators: [{ address: creatorAddress, share: HUNDRED }],
-          files: this.writeFiles(coverImage),
-        },
-        collection: {
-          name: comicIssue.title,
-          family: comicName,
-        },
-      });
-
-    const indexArray = Array.from(Array(comicIssue.supply).keys());
     // TODO: start indices from previous highest index
     // e.g. if existing collection has #999 items, continue with #1000
-    const items = await Promise.all(
-      indexArray.map((index) => ({
-        uri: metadataUri,
-        name: `${metadata.name} #${index + 1}`,
-      })),
+    const items = await this.uploadItemMetadata(
+      comicIssue,
+      comicName,
+      coverImage,
+      creatorAddress,
+      statelessCovers.length > 0,
+      rarityCoverFiles,
     );
 
     const INSERT_CHUNK_SIZE = 8;
@@ -375,7 +501,7 @@ export class CandyMachineService {
     return receipts;
   }
 
-  validateInput(comicIssue: ComicIssue) {
+  validateInput(comicIssue: CandyMachineIssue) {
     if (comicIssue.supply <= 0) {
       throw new BadRequestException(
         'Cannot create an NFT collection with supply lower than 1',
@@ -390,23 +516,22 @@ export class CandyMachineService {
         'Mint prices must be greater than or equal to 0',
       );
     }
-    if (!comicIssue.cover) {
-      throw new BadRequestException('Missing cover image');
-    }
-    if (!comicIssue.signedCover) {
-      throw new BadRequestException('Missing signed cover image');
-    }
-    if (!comicIssue.usedCover) {
-      throw new BadRequestException('Missing used cover image');
-    }
-    if (!comicIssue.usedSignedCover) {
-      throw new BadRequestException('Missing used & signed cover image');
-    }
     if (
       comicIssue.sellerFeeBasisPoints < 0 ||
       comicIssue.sellerFeeBasisPoints > 10000
     ) {
       throw new BadRequestException('Invalid seller fee value');
+    }
+
+    if (!comicIssue.cover) {
+      throw new BadRequestException('Missing cover image');
+    }
+    const haveRarities =
+      comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;
+    if (haveRarities) {
+      const len = comicIssue.statelessCovers.length;
+      if (len != 3 && len != 5)
+        throw new BadRequestException('Unsupported rarity count');
     }
   }
 
