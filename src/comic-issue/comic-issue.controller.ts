@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -186,6 +185,7 @@ export class ComicIssueController {
     const updatedComicIssue = await this.comicIssueService.updateFile(
       +id,
       cover,
+      'cover',
     );
     return await toComicIssueDto(updatedComicIssue);
   }
@@ -232,11 +232,5 @@ export class ComicIssueController {
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
     return await toComicIssueDto(recoveredComicIssue);
-  }
-
-  /* Completely remove specific comic issue, including files from s3 bucket */
-  @Delete('remove/:id')
-  remove(@Param('id') id: string) {
-    return this.comicIssueService.remove(+id);
   }
 }

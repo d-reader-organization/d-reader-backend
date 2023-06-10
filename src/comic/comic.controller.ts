@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -118,7 +117,11 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() cover: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, cover);
+    const updatedComic = await this.comicService.updateFile(
+      slug,
+      cover,
+      'cover',
+    );
     return await toComicDto(updatedComic);
   }
 
@@ -131,7 +134,11 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, banner);
+    const updatedComic = await this.comicService.updateFile(
+      slug,
+      banner,
+      'banner',
+    );
     return await toComicDto(updatedComic);
   }
 
@@ -144,7 +151,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() pfp: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, pfp);
+    const updatedComic = await this.comicService.updateFile(slug, pfp, 'pfp');
     return await toComicDto(updatedComic);
   }
 
@@ -157,7 +164,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() logo: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, logo);
+    const updatedComic = await this.comicService.updateFile(slug, logo, 'logo');
     return await toComicDto(updatedComic);
   }
 
@@ -236,28 +243,4 @@ export class ComicController {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
     return await toComicDto(recoveredComic);
   }
-
-  /* Completely remove specific comic, including files from s3 bucket */
-  @Delete('remove/:slug')
-  remove(@Param('slug') slug: string) {
-    return this.comicService.remove(slug);
-  }
-
-  /**
-   * TODO v2:
-   * - finish email services
-   * - comicPages @ApiBody
-   * - move all cron jobs to task.service.ts ?
-   * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
-   * - [password] Simulate message creation: const message = Message.from(signatureBytes);
-   * - [auth] bcrypt.hash wallet.nonce
-   * - [auth] TokenPayload revision
-   */
-
-  /**
-   * TODO v3:
-   * - [auth] Disconnect function to invalidate a token
-   * - [services] Support renaming Creator, Comic, ComicIssue
-   * - [config] Turn on "strictNullChecks" in tsconfig.ts
-   */
 }

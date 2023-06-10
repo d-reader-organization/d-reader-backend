@@ -102,6 +102,7 @@ export class CarouselController {
     const updatedCarouselSlide = await this.carouselService.updateFile(
       +id,
       image,
+      'image',
     );
     return await toCarouselSlideDto(updatedCarouselSlide);
   }

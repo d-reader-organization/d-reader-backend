@@ -135,6 +135,10 @@ export class CreateComicIssueFilesDto {
   @Transform(({ value }) => value[0])
   cover?: Express.Multer.File | null;
 
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  signature?: Express.Multer.File | null;
+
   @IsOptional()
   @IsArray()
   @Type(() => StatelessCover)

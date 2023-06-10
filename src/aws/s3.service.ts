@@ -5,7 +5,6 @@ import {
   GetObjectCommand,
   CopyObjectCommandInput,
   CopyObjectCommand,
-  DeleteObjectCommandInput,
   DeleteObjectCommand,
   DeleteObjectsCommand,
   ListObjectsV2CommandInput,
@@ -20,6 +19,8 @@ import { Optional } from '../utils/helpers';
 import * as path from 'path';
 import { isEmpty } from 'lodash';
 import { getTruncatedTime } from './s3client';
+import { v4 as uuidv4 } from 'uuid';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
 
@@ -102,11 +103,9 @@ export class s3Service {
     return signedUrl;
   };
 
-  deleteObject = async (
-    deleteObjectInput: Optional<DeleteObjectCommandInput, 'Bucket'>,
-  ) => {
+  deleteObject = async (key: string) => {
     return await this.client.send(
-      new DeleteObjectCommand({ Bucket: this.bucket, ...deleteObjectInput }),
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
   };
 
@@ -172,10 +171,14 @@ export class s3Service {
     return await crawlFolderKeys();
   };
 
-  uploadFile = async (prefix: string, file: s3File, name?: string) => {
+  deleteFolder = async (prefix: string) => {
+    const keys = await this.listFolderKeys({ Prefix: prefix });
+    await this.deleteObjects(keys);
+  };
+
+  uploadFile = async (folder: string, file: s3File, fileName = uuidv4()) => {
     if (file) {
-      const fileKey =
-        prefix + (name ?? file.fieldname) + path.extname(file.originalname);
+      const fileKey = folder + fileName + path.extname(file.originalname);
 
       await this.putObject({
         ContentType: file.mimetype,

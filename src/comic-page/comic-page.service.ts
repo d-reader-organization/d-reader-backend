@@ -26,7 +26,6 @@ export class ComicPageService {
       createComicPagesDto.map(async (createComicPageDto) => {
         const { comicIssueId, image, pageNumber, ...rest } = createComicPageDto;
 
-        // Upload files if any
         let imageKey: string;
         try {
           const prefix = await this.getS3FilePrefix(pageNumber, comicIssueId);

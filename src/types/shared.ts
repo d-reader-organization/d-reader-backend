@@ -13,3 +13,5 @@ export type CoverFiles = {
 };
 
 export type RarityCoverFiles = { [rarity in ComicRarity]: CoverFiles };
+
+export type PickFields<T, K extends keyof T> = K;

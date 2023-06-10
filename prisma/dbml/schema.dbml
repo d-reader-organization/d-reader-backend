@@ -121,6 +121,8 @@ Table ComicIssue {
   slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
+  signature String [not null, default: '']
+  pdf String [not null, default: '']
   cover String [not null, default: '']
   statelessCovers StatelessCover [not null]
   statefulCovers StatefulCover [not null]

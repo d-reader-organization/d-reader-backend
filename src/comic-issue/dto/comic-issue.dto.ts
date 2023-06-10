@@ -79,13 +79,7 @@ export class ComicIssueDto {
   cover: string;
 
   // @IsUrl()
-  // signedCover: string;
-
-  // @IsUrl()
-  // usedCover: string;
-
-  // @IsUrl()
-  // usedSignedCover: string;
+  // signature: string;
 
   @IsDateString()
   releaseDate: string;
@@ -154,9 +148,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     description: issue.description,
     flavorText: issue.flavorText,
     cover: await getReadUrl(issue.cover),
-    // signedCover: await getReadUrl(issue.signedCover),
-    // usedCover: await getReadUrl(issue.usedCover),
-    // usedSignedCover: await getReadUrl(issue.usedSignedCover),
+    // signature: await getReadUrl(issue.signature),
+    // TODO: add statelessCovers and statefulCovers
     releaseDate: issue.releaseDate.toISOString(),
     // if supply is 0 it's not an NFT collection and therefore it's free
     isFree: issue.supply === 0,

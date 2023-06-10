@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -112,7 +111,11 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, avatar);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      avatar,
+      'avatar',
+    );
     return await toCreatorDto(updatedCreator);
   }
 
@@ -125,7 +128,11 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, banner);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      banner,
+      'banner',
+    );
     return await toCreatorDto(updatedCreator);
   }
 
@@ -138,7 +145,11 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() logo: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, logo);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      logo,
+      'logo',
+    );
     return await toCreatorDto(updatedCreator);
   }
 
@@ -156,12 +167,7 @@ export class CreatorController {
     return await toCreatorDto(recoveredCreator);
   }
 
-  /* Completely remove specific creator, including files from s3 bucket */
-  @Delete('remove/:slug')
-  remove(@Param('slug') slug: string) {
-    return this.creatorService.remove(slug);
-  }
-
+  /* Follow a creator */
   @Post('follow/:slug')
   async follow(
     @WalletEntity() wallet: Wallet,

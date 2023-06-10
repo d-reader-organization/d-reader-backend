@@ -18,6 +18,10 @@ import {
   USED_TRAIT,
 } from '../constants';
 import { initMetaplex } from '../utils/metaplex';
+import { PickFields } from '../types/shared';
+
+const getS3Folder = (address: string) => `wallets/${address}/`;
+type WalletFileProperty = PickFields<Wallet, 'avatar'>;
 
 @Injectable()
 export class WalletService {
@@ -163,43 +167,32 @@ export class WalletService {
     }
   }
 
-  async updateFile(address: string, file: Express.Multer.File) {
+  async updateFile(
+    address: string,
+    file: Express.Multer.File,
+    field: WalletFileProperty,
+  ) {
     let wallet = await this.findOne(address);
-    const oldFileKey = wallet[file.fieldname];
-    const prefix = await this.getS3FilePrefix(address);
-    const newFileKey = await this.s3.uploadFile(prefix, file);
+
+    const s3Folder = getS3Folder(address);
+    const oldFileKey = wallet[field];
+    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
 
     try {
       wallet = await this.prisma.wallet.update({
         where: { address },
-        data: { [file.fieldname]: newFileKey },
+        data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject({ Key: newFileKey });
+      await this.s3.deleteObject(newFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
     if (oldFileKey && oldFileKey !== newFileKey) {
-      await this.s3.deleteObject({ Key: oldFileKey });
+      await this.s3.deleteObject(oldFileKey);
     }
 
     return wallet;
-  }
-
-  async remove(address: string) {
-    // Remove s3 assets
-    const prefix = await this.getS3FilePrefix(address);
-    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
-    await this.s3.deleteObjects(keys);
-
-    try {
-      await this.prisma.wallet.delete({ where: { address } });
-    } catch {
-      throw new NotFoundException(
-        `Wallet with address ${address} does not exist`,
-      );
-    }
-    return;
   }
 
   async redeemReferral(referrer: string, referee: string) {
@@ -285,23 +278,7 @@ export class WalletService {
       mimetype: 'image/png',
       buffer,
     };
-    const prefix = `wallets/${address}/`;
-    return this.s3.uploadFile(prefix, file);
-  }
-
-  async getS3FilePrefix(address: string) {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { address },
-      select: { address: true },
-    });
-
-    if (!wallet) {
-      throw new NotFoundException(
-        `Wallet with address ${address} does not exist`,
-      );
-    }
-
-    const prefix = `wallets/${wallet.address}/`;
-    return prefix;
+    const s3Folder = getS3Folder(address);
+    return this.s3.uploadFile(s3Folder, file, 'avatar');
   }
 }

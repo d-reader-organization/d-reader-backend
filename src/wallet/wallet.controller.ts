@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -81,7 +80,11 @@ export class WalletController {
     @Param('address') address: string,
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<WalletDto> {
-    const updatedWallet = await this.walletService.updateFile(address, avatar);
+    const updatedWallet = await this.walletService.updateFile(
+      address,
+      avatar,
+      'avatar',
+    );
     return await toWalletDto(updatedWallet);
   }
 
@@ -95,12 +98,6 @@ export class WalletController {
       wallet.address,
     );
     return await toWalletDto(updatedWallet);
-  }
-
-  /* Delete specific wallet */
-  @Delete('delete/:address')
-  remove(@Param('address') address: string) {
-    return this.walletService.remove(address);
   }
 
   private syncWallet = (address: string) => {

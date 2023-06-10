@@ -95,6 +95,7 @@ export class CandyMachineService {
   }
 
   async getComicIssueCovers(comicIssue: CandyMachineIssue) {
+    // TODO: revise this
     let statelessCovers: MetaplexFile[];
     const haveRarities =
       comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;

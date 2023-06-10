@@ -190,7 +190,7 @@ async function main() {
           slug: 'manga',
           deletedAt: null,
           priority: 1,
-          icon: 'genres/manga/icon.svg',
+          icon: 'genres/manga.svg',
           color: '#e85a5b',
         },
         {
@@ -198,7 +198,7 @@ async function main() {
           slug: 'action',
           deletedAt: null,
           priority: 2,
-          icon: 'genres/action/icon.svg',
+          icon: 'genres/action.svg',
           color: '#e9a860',
         },
         {
@@ -206,7 +206,7 @@ async function main() {
           slug: 'adventure',
           deletedAt: null,
           priority: 3,
-          icon: 'genres/adventure/icon.svg',
+          icon: 'genres/adventure.svg',
           color: '#87c7e4',
         },
         {
@@ -214,7 +214,7 @@ async function main() {
           slug: 'romance',
           deletedAt: null,
           priority: 4,
-          icon: 'genres/romance/icon.svg',
+          icon: 'genres/romance.svg',
           color: '#e37c8d',
         },
         {
@@ -222,7 +222,7 @@ async function main() {
           slug: 'non-fiction',
           deletedAt: null,
           priority: 5,
-          icon: 'genres/non-fiction/icon.svg',
+          icon: 'genres/non-fiction.svg',
           color: '#8377f2',
         },
         {
@@ -230,7 +230,7 @@ async function main() {
           slug: 'comedy',
           deletedAt: null,
           priority: 6,
-          icon: 'genres/comedy/icon.svg',
+          icon: 'genres/comedy.svg',
           color: '#49c187',
         },
         {
@@ -238,7 +238,7 @@ async function main() {
           slug: 'superhero',
           deletedAt: null,
           priority: 7,
-          icon: 'genres/superhero/icon.svg',
+          icon: 'genres/superhero.svg',
           color: '#3926b4',
         },
         {
@@ -246,7 +246,7 @@ async function main() {
           slug: 'sci-fi',
           deletedAt: null,
           priority: 8,
-          icon: 'genres/sci-fi/icon.svg',
+          icon: 'genres/sci-fi.svg',
           color: '#8200ea',
         },
         {
@@ -254,7 +254,7 @@ async function main() {
           slug: 'fantasy',
           deletedAt: null,
           priority: 9,
-          icon: 'genres/fantasy/icon.svg',
+          icon: 'genres/fantasy.svg',
           color: '#c413e0',
         },
         {
@@ -262,7 +262,7 @@ async function main() {
           slug: 'history',
           deletedAt: null,
           priority: 10,
-          icon: 'genres/history/icon.svg',
+          icon: 'genres/history.svg',
           color: '#764e4a',
         },
         {
@@ -270,7 +270,7 @@ async function main() {
           slug: 'horror',
           deletedAt: null,
           priority: 11,
-          icon: 'genres/horror/icon.svg',
+          icon: 'genres/horror.svg',
           color: '#9c000e',
         },
         {
@@ -278,7 +278,7 @@ async function main() {
           slug: 'crime',
           deletedAt: null,
           priority: 12,
-          icon: 'genres/crime/icon.svg',
+          icon: 'genres/crime.svg',
           color: '#3d3e60',
         },
       ],
@@ -473,14 +473,59 @@ async function main() {
                     description:
                       'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                     flavorText: 'Geez these cats are so gore',
+                    signature: '',
                     cover:
                       'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
-                    signedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/signed-cover.png',
-                    usedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-cover.png',
-                    usedSignedCover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                    statefulCovers: {
+                      createMany: {
+                        data: [
+                          {
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/unused-unsigned-cover.png',
+                            isSigned: false,
+                            isUsed: false,
+                            rarity: null,
+                            artist: 'John Le',
+                          },
+                          {
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-unsigned-cover.png',
+                            isSigned: false,
+                            isUsed: true,
+                            rarity: null,
+                            artist: 'Laura El',
+                          },
+                          {
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/unused-signed-cover.png',
+                            isSigned: true,
+                            isUsed: false,
+                            rarity: null,
+                            artist: 'SCUM',
+                          },
+                          {
+                            image:
+                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
+                            isSigned: true,
+                            isUsed: true,
+                            rarity: null,
+                            artist: 'Mate Žaja',
+                          },
+                        ],
+                      },
+                    },
+                    statelessCovers: {
+                      createMany: {
+                        data: [
+                          {
+                            image: 'TODO',
+                            rarity: null,
+                            artist: 'John Le',
+                            share: 100,
+                          },
+                        ],
+                      },
+                    },
                     releaseDate: subDays(new Date(), 21),
                     deletedAt: null,
                     featuredAt: null,

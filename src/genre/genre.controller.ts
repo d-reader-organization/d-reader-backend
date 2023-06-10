@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -92,7 +91,7 @@ export class GenreController {
     @Param('slug') slug: string,
     @UploadedFile() icon: Express.Multer.File,
   ): Promise<GenreDto> {
-    const updatedGenre = await this.genreService.updateFile(slug, icon);
+    const updatedGenre = await this.genreService.updateFile(slug, icon, 'icon');
     return await toGenreDto(updatedGenre);
   }
 
@@ -110,12 +109,5 @@ export class GenreController {
   async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
     const recoveredGenre = await this.genreService.pseudoRecover(slug);
     return await toGenreDto(recoveredGenre);
-  }
-
-  /* Completely remove specific genre, including files from s3 bucket */
-  @Delete('remove/:slug')
-  @Roles(Role.Superadmin)
-  remove(@Param('slug') slug: string) {
-    return this.genreService.remove(slug);
   }
 }

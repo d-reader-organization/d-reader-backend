@@ -26,6 +26,11 @@ import {
   StatelessCoverInput,
 } from './dto/types';
 import { FIVE_RARITIES_SHARE, THREE_RARITIES_SHARE } from 'src/constants';
+import { PickFields } from '../types/shared';
+
+const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
+  `comics/${comicSlug}/issues/${comicIssueSlug}/`;
+type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'cover'>;
 
 @Injectable()
 export class ComicIssueService {
@@ -53,13 +58,12 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic ${comicSlug} does not exist`);
     }
 
-    // Make sure creator of the comic issue owns the parent comic as well
+    // make sure creator of the comic issue owns the parent comic as well
     if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
-    // Create ComicIssue without any files uploaded
     let comicIssue: ComicIssue & { pages: ComicPage[] };
 
-    // Upload comic pages and format data for INSERT
+    // upload comic pages to S3 and format data for INSERT
     const pagesData = await this.comicPageService.createMany(pages);
     try {
       comicIssue = await this.prisma.comicIssue.create({
@@ -81,24 +85,34 @@ export class ComicIssueService {
 
     const {
       cover,
+      signature,
       statelessCovers: statelessCoversDto,
       statefulCovers: statefulCoversDto,
     } = createComicIssueFilesDto;
-    // Upload files if any
-    let coverKey: string;
+    // upload files if any
+    let coverKey: string, signatureKey: string;
     let statelessCoverKeys: string[], statefulCoversKeys: string[];
-    const haveRarity = statelessCoversDto && statelessCoversDto.length > 0;
+    const haveRarity = statelessCoversDto && statelessCoversDto.length > 1;
     try {
-      const prefix = await this.getS3FilePrefix(comicIssue.id);
-      if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
+      const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
+      if (signature)
+        signatureKey = await this.s3.uploadFile(
+          s3Folder,
+          signature,
+          'signature',
+        );
+      // TODO: revise this
       if (haveRarity) {
         statelessCoverKeys = await Promise.all(
           statelessCoversDto.map((val) =>
-            this.s3.uploadFile(prefix, val.image),
+            this.s3.uploadFile(s3Folder, val.image),
           ),
         );
         statefulCoversKeys = await Promise.all(
-          statefulCoversDto.map((val) => this.s3.uploadFile(prefix, val.image)),
+          statefulCoversDto.map((val) =>
+            this.s3.uploadFile(s3Folder, val.image),
+          ),
         );
       }
     } catch {
@@ -136,22 +150,14 @@ export class ComicIssueService {
       });
     }
 
-    // Update Comic Issue with s3 file keys
     return await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
       include: { pages: true, collaborators: true },
       data: {
         cover: coverKey,
-        statelessCovers: {
-          createMany: {
-            data: statelessCovers,
-          },
-        },
-        statefulCovers: {
-          createMany: {
-            data: statefulCovers,
-          },
-        },
+        signature: signatureKey,
+        statelessCovers: { createMany: { data: statelessCovers } },
+        statefulCovers: { createMany: { data: statefulCovers } },
       },
     });
   }
@@ -295,12 +301,9 @@ export class ComicIssueService {
       );
     }
 
-    // Delete old comic pages
     let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
     if (!isEmpty(pages)) {
       await this.comicPageService.deleteComicPages({ comicIssue: { id } });
-
-      // Upload new comic pages and format data for nested INSERT
       pagesData = await this.comicPageService.createMany(pages);
     }
 
@@ -323,7 +326,11 @@ export class ComicIssueService {
     return updatedComicIssue;
   }
 
-  async updateFile(id: number, file: Express.Multer.File) {
+  async updateFile(
+    id: number,
+    file: Express.Multer.File,
+    field: ComicIssueFileProperty,
+  ) {
     let comicIssue: ComicIssue & { pages: ComicPage[] };
     try {
       comicIssue = await this.prisma.comicIssue.findUnique({
@@ -334,25 +341,25 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    const oldFileKey = comicIssue[file.fieldname];
-    const prefix = await this.getS3FilePrefix(id);
-    const newFileKey = await this.s3.uploadFile(prefix, file);
+    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const oldFileKey = comicIssue[field];
+    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
 
     try {
       comicIssue = await this.prisma.comicIssue.update({
         where: { id, publishedAt: null },
         include: { pages: true },
-        data: { [file.fieldname]: newFileKey },
+        data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject({ Key: newFileKey });
+      await this.s3.deleteObject(newFileKey);
       throw new BadRequestException(
         'Malformed file upload or Comic issue already published',
       );
     }
 
     if (oldFileKey !== newFileKey) {
-      await this.s3.deleteObject({ Key: oldFileKey });
+      await this.s3.deleteObject(oldFileKey);
     }
 
     return comicIssue;
@@ -494,21 +501,6 @@ export class ComicIssueService {
     }
   }
 
-  async remove(id: number) {
-    // Remove s3 assets
-    const prefix = await this.getS3FilePrefix(id);
-    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
-    await this.s3.deleteObjects(keys);
-
-    try {
-      await this.prisma.comicIssue.delete({ where: { id, publishedAt: null } });
-    } catch {
-      throw new NotFoundException(
-        `Comic issue with id ${id} does not exist or is published`,
-      );
-    }
-  }
-
   validatePrice(
     comicIssue: CreateComicIssueDto | UpdateComicIssueDto | PublishOnChainDto,
   ) {
@@ -531,32 +523,15 @@ export class ComicIssueService {
     }
   }
 
-  async getS3FilePrefix(id: number) {
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id },
-      select: {
-        slug: true,
-        comic: { select: { slug: true, creator: { select: { slug: true } } } },
-      },
-    });
-
-    if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    }
-
-    const prefix = `creators/${comicIssue.comic.creator.slug}/comics/${comicIssue.comic.slug}/issues/${comicIssue.slug}/`;
-    return prefix;
-  }
-
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearComicIssuesQueuedForRemoval() {
-    const comicIssuesToRemove = await this.prisma.comicIssue.findMany({
-      where: { deletedAt: { lte: subDays(new Date(), 30) } }, // 30 days ago
-    });
+    const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
+    const comicIssuesToRemove = await this.prisma.comicIssue.findMany(where);
+    await this.prisma.comicIssue.deleteMany(where);
 
     for (const comicIssue of comicIssuesToRemove) {
-      await this.remove(comicIssue.id);
-      console.log(`Removed comic issue ${comicIssue.id} at ${new Date()}`);
+      const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+      await this.s3.deleteFolder(s3Folder);
     }
   }
 }
