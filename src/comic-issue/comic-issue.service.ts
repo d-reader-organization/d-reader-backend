@@ -123,7 +123,8 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const orderByStatement = `ORDER BY ${sortBy(query.tag)}`;
+    //TO DO fix order by
+    // const orderByStatement = `ORDER BY ${sortBy(query.tag)}`;
     const offsetStatement = `OFFSET ${query.skip}`;
     const limitStatement = `LIMIT ${query.take}`;
 
@@ -164,7 +165,6 @@ export class ComicIssueService {
     inner join "WalletComicIssue" wci on wci."comicIssueId" = ci.id
     left join "CollectionNft" cn on cn."comicIssueId" = ci.id
     group by ci.id, cr.name, cr.slug, cr."verifiedAt", cr.avatar, c."name" , c.slug, cn.address 
-    ${orderByStatement}
     ${offsetStatement}
     ${limitStatement}
     `);
