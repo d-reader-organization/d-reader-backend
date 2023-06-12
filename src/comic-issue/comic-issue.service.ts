@@ -123,11 +123,9 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    //TO DO fix order by
-    // const orderByStatement = `ORDER BY ${sortBy(query.tag)}`;
-    const offsetStatement = `OFFSET ${query.skip}`;
-    const limitStatement = `LIMIT ${query.take}`;
-
+    const creatorWhereCondition = !!query.creatorSlug
+      ? `AND "cr"."slug" = ${query.creatorSlug}`
+      : '';
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
@@ -140,34 +138,37 @@ export class ComicIssueService {
         totalissuescount: number;
         totalpagescount: number;
       })[]
-    >(Prisma.sql`select ci.id, ci.number, ci.supply, ci."discountMintPrice", ci."mintPrice", ci."sellerFeeBasisPoints", ci.title, ci.slug, ci.description, ci."flavorText", ci.cover,ci."signedCover", ci."usedCover", ci."usedSignedCover", ci."releaseDate", ci."publishedAt", ci."popularizedAt", ci."verifiedAt", ci."deletedAt", 
-    cr."name", cr.slug, cr."verifiedAt", cr.avatar,
-    c."name",c.slug, c."audienceType",
-    cn.address,
-        AVG(case when wci.rating is not null then wci.rating end) AS averageRating,
-        SUM(case when wci.rating is not null then 1 end) as ratersCount,
-        SUM(case when wci."isFavourite" then 1 end) AS favouritesCount,
-        SUM(case when wci."readAt" is not null then 1 end) AS readersCount,
-        SUM(case when wci."viewedAt" is not null then 1 end) AS viewersCount,
-        (
-          SELECT COUNT(*) as totalIssuesCount
-          FROM "ComicIssue" ci2
-          where ci2."comicSlug"  = ci."comicSlug"
-        ) AS totalIssuesCount,
-            (
-          SELECT COUNT(*) as totalPagesCount
-          FROM "ComicPage" cp
-          where cp."comicIssueId" = ci.id
-        ) AS totalPagesCount
-    from "ComicIssue" ci
-    inner join "Comic" c on c.slug = ci."comicSlug" 
-    inner join "Creator" cr on cr.id = c."creatorId"
-    inner join "WalletComicIssue" wci on wci."comicIssueId" = ci.id
-    left join "CollectionNft" cn on cn."comicIssueId" = ci.id
-    group by ci.id, cr.name, cr.slug, cr."verifiedAt", cr.avatar, c."name" , c.slug, cn.address 
-    ${offsetStatement}
-    ${limitStatement}
-    `);
+    >(
+      Prisma.sql`SELECT "ci"."id", "ci"."number", "ci"."supply", "ci"."discountMintPrice", "ci"."mintPrice", "ci"."sellerFeeBasisPoints", "ci"."title", "ci"."slug", "ci"."description", "ci"."flavorText", "ci"."cover", "ci"."releaseDate", "ci"."publishedAt", "ci"."popularizedAt", "ci"."verifiedAt", "ci"."deletedAt",
+      AVG(case when "wci"."rating" is not null then "wci"."rating" end) AS averageRating,
+      SUM(case when "wci"."rating" is not null then 1 end) as ratersCount,
+      SUM(case when "wci"."isFavourite" then 1 end) AS favouritesCount,
+      SUM(case when "wci"."readAt" is not null then 1 end) AS readersCount,
+      SUM(case when "wci"."viewedAt" is not null then 1 end) AS viewersCount,
+      (
+        SELECT COUNT(*) as totalIssuesCount
+        FROM "ComicIssue" ci2
+        where "ci2"."comicSlug"  = "ci"."comicSlug"
+      ) AS totalIssuesCount,
+      (
+        SELECT COUNT(*) as totalPagesCount
+        FROM "ComicPage" cp
+        where "cp"."comicIssueId" = "ci"."id"
+      ) AS totalPagesCount
+      FROM "ComicIssue" ci
+      INNER JOIN "Comic" c ON "c"."slug" = "ci"."comicSlug"
+      INNER JOIN "Creator" cr ON "cr"."id" = "c"."creatorId"
+      INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
+      LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
+      WHERE "ci"."title" ILIKE '%' || ${
+        query.titleSubstring ?? ''
+      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL
+      GROUP BY "ci"."id"
+      ORDER BY ${sortBy(query.tag)} 
+      OFFSET ${query.skip}
+      LIMIT ${query.take}
+      ;`,
+    );
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
