@@ -125,13 +125,13 @@ export class ComicIssueService {
   async findAll(query: ComicIssueFilterParams) {
     const comicSlugCondition = !!query.comicSlug
       ? Prisma.sql`AND "ci"."comicSlug" = ${query.comicSlug}`
-      : Prisma.sql``;
+      : Prisma.empty;
     const creatorWhereCondition = !!query.creatorSlug
       ? Prisma.sql`AND "cr"."slug" = ${query.creatorSlug}`
-      : Prisma.sql``;
+      : Prisma.empty;
     const genreSlugsCondition = !!query.genreSlugs
       ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
-      : Prisma.sql``;
+      : Prisma.empty;
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
@@ -169,12 +169,12 @@ export class ComicIssueService {
       LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
       WHERE ${Prisma.sql`"ci"."title" ILIKE '%' || ${
         query.titleSubstring ?? ''
-      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL`} 
+      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL`}
       ${comicSlugCondition}
       ${creatorWhereCondition}
       ${genreSlugsCondition}
       GROUP BY "ci"."id"
-      ORDER BY ${sortBy(query.tag)} 
+      ORDER BY ${sortBy(query.tag)} desc
       OFFSET ${query.skip}
       LIMIT ${query.take}
       ;`,
