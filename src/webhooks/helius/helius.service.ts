@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Cluster, PublicKey } from '@solana/web3.js';
 import {
   EnrichedTransaction,
@@ -8,7 +8,6 @@ import {
 } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  JsonMetadata,
   Metaplex,
   toMetadata,
   toMetadataAccount,
@@ -17,11 +16,13 @@ import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
 import * as jwt from 'jsonwebtoken';
-import { isNil } from 'lodash';
-import axios from 'axios';
 import { initMetaplex } from '../../utils/metaplex';
+import {
+  fetchOffChainMetadata,
+  findSignedTrait,
+  findUsedTrait,
+} from '../../utils/nft-metadata';
 
 @Injectable()
 export class HeliusService {
@@ -202,22 +203,7 @@ export class HeliusService {
         .rpc()
         .getAccount(new PublicKey(tokenMetadata));
       const metadata = toMetadata(toMetadataAccount(info));
-      const { data: collectionMetadata } = await axios.get<JsonMetadata>(
-        metadata.uri,
-      );
-
-      const usedTrait = collectionMetadata.attributes.find(
-        (a) => a.trait_type === USED_TRAIT,
-      );
-      const signedTrait = collectionMetadata.attributes.find(
-        (a) => a.trait_type === SIGNED_TRAIT,
-      );
-
-      if (isNil(usedTrait) || isNil(signedTrait)) {
-        throw new BadRequestException(
-          "Unsupported NFT type, no 'used' or 'signed' traits specified",
-        );
-      }
+      const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
 
       const nft = await this.prisma.nft.update({
         where: {
@@ -245,8 +231,8 @@ export class HeliusService {
               create: {
                 collectionName: collectionMetadata.collection.name,
                 uri: metadata.uri,
-                isUsed: usedTrait.value === 'true',
-                isSigned: signedTrait.value === 'true',
+                isUsed: findUsedTrait(collectionMetadata),
+                isSigned: findSignedTrait(collectionMetadata),
               },
             },
           },
@@ -325,23 +311,13 @@ export class HeliusService {
 
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
-    const { data: json } = await axios.get<JsonMetadata>(metadata.uri);
+    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
 
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
-    const usedTrait = json.attributes.find((a) => a.trait_type === USED_TRAIT);
-    const signedTrait = json.attributes.find(
-      (a) => a.trait_type === SIGNED_TRAIT,
-    );
-
-    if (isNil(usedTrait) || isNil(signedTrait)) {
-      throw new BadRequestException(
-        "Unsupported NFT type, no 'used' or 'signed' traits specified",
-      );
-    }
 
     let comicIssueId: number = undefined;
     try {
@@ -367,10 +343,10 @@ export class HeliusService {
             connectOrCreate: {
               where: { uri: metadata.uri },
               create: {
-                collectionName: json.collection.name,
+                collectionName: offChainMetadata.collection.name,
                 uri: metadata.uri,
-                isUsed: usedTrait.value === 'true',
-                isSigned: signedTrait.value === 'true',
+                isUsed: findUsedTrait(offChainMetadata),
+                isSigned: findSignedTrait(offChainMetadata),
               },
             },
           },

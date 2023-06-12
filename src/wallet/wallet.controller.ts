@@ -106,7 +106,7 @@ export class WalletController {
 
   private throttledSyncWallet = memoizeThrottle(
     this.syncWallet,
-    10 * 60 * 1000, // 10 minutes
+    2 * 60 * 1000, // 2 minutes
     {},
     (address: string) => address,
   );

@@ -508,6 +508,7 @@ export class CandyMachineService {
         'Cannot create an NFT collection with supply lower than 1',
       );
     }
+
     if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
       throw new BadRequestException(
         'Discount mint price should be lower than base mint price',
@@ -517,6 +518,7 @@ export class CandyMachineService {
         'Mint prices must be greater than or equal to 0',
       );
     }
+
     if (
       comicIssue.sellerFeeBasisPoints < 0 ||
       comicIssue.sellerFeeBasisPoints > 10000
@@ -527,13 +529,16 @@ export class CandyMachineService {
     if (!comicIssue.cover) {
       throw new BadRequestException('Missing cover image');
     }
-    const haveRarities =
-      comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;
-    if (haveRarities) {
-      const len = comicIssue.statelessCovers.length;
-      if (len != 3 && len != 5)
-        throw new BadRequestException('Unsupported rarity count');
+
+    if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {
+      throw new BadRequestException('Missing crucial assets');
     }
+
+    const raritiesCount = comicIssue.statelessCovers.length;
+    if (raritiesCount != 1 && raritiesCount != 5 && raritiesCount != 5)
+      throw new BadRequestException(
+        'Unsupported rarity count: ' + raritiesCount,
+      );
   }
 
   writeFiles(...files: MetaplexFile[]) {

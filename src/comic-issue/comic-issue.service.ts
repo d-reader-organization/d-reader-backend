@@ -519,7 +519,7 @@ export class ComicIssueService {
     } else if (comicIssue.discountMintPrice < 0 || comicIssue.mintPrice < 0) {
       throw new BadRequestException(
         'Mint prices must be greater than or equal to 0',
-      );
+      ); // TODO: check if prices are integers
     }
   }
 
