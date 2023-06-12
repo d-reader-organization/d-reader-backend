@@ -123,9 +123,15 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
+    const comicSlugCondition = !!query.comicSlug
+      ? Prisma.sql`AND "ci"."comicSlug" = ${query.comicSlug}`
+      : Prisma.sql``;
     const creatorWhereCondition = !!query.creatorSlug
-      ? `AND "cr"."slug" = ${query.creatorSlug}`
-      : '';
+      ? Prisma.sql`AND "cr"."slug" = ${query.creatorSlug}`
+      : Prisma.sql``;
+    const genreSlugsCondition = !!query.genreSlugs
+      ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
+      : Prisma.sql``;
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
@@ -159,10 +165,14 @@ export class ComicIssueService {
       INNER JOIN "Comic" c ON "c"."slug" = "ci"."comicSlug"
       INNER JOIN "Creator" cr ON "cr"."id" = "c"."creatorId"
       INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
+      INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
       LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
-      WHERE "ci"."title" ILIKE '%' || ${
+      WHERE ${Prisma.sql`"ci"."title" ILIKE '%' || ${
         query.titleSubstring ?? ''
-      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL
+      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL`} 
+      ${comicSlugCondition}
+      ${creatorWhereCondition}
+      ${genreSlugsCondition}
       GROUP BY "ci"."id"
       ORDER BY ${sortBy(query.tag)} 
       OFFSET ${query.skip}
