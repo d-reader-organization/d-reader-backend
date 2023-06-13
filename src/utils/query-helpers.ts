@@ -21,7 +21,7 @@ export const sortBy = (tag: FilterTag): string => {
   } else if (tag === FilterTag.Viewers) {
     return 'viewerscount';
   }
-  return 'ci.releaseDate';
+  return '"ci"."releaseDate"';
 };
 
 // const comicIssues = await this.prisma.$queryRawUnsafe<

@@ -21,6 +21,7 @@ import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
 import { sortBy } from '../utils/query-helpers';
+import { SortOrder } from '../types/sort-order';
 
 @Injectable()
 export class ComicIssueService {
@@ -132,6 +133,9 @@ export class ComicIssueService {
     const genreSlugsCondition = !!query.genreSlugs
       ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
       : Prisma.empty;
+    const desc = Prisma.sql`desc`;
+    const asc = Prisma.sql`asc`;
+    const sortOrder = query?.sortOrder === SortOrder.ASC ? asc : desc;
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
@@ -174,11 +178,12 @@ export class ComicIssueService {
       ${creatorWhereCondition}
       ${genreSlugsCondition}
       GROUP BY "ci"."id"
-      ORDER BY ${sortBy(query.tag)} desc
+      ORDER BY "ci"."releaseDate" ${sortOrder}
       OFFSET ${query.skip}
       LIMIT ${query.take}
       ;`,
     );
+
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
