@@ -12,7 +12,7 @@ import {
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
+import { Prisma, ComicIssue, ComicPage, Comic, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -20,6 +20,8 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
+import { getComicIssuesQuery } from './comic-issue.queries';
+import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 
 @Injectable()
 export class ComicIssueService {
@@ -122,49 +124,31 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const comicIssues = await this.prisma.comicIssue.findMany({
-      include: {
-        comic: { include: { creator: true } },
-        collectionNft: { select: { address: true } },
-      },
-      skip: query.skip,
-      take: query.take,
-      orderBy: { releaseDate: query.sortOrder ?? 'desc' },
-      where: {
-        title: { contains: query?.titleSubstring, mode: 'insensitive' },
-        comicSlug: { equals: query?.comicSlug },
-        deletedAt: null,
-        publishedAt: { lt: new Date() },
-        verifiedAt: { not: null },
-        comic: {
-          creator: { slug: query?.creatorSlug },
-          deletedAt: null,
-          AND: query?.genreSlugs?.map((slug) => {
-            return {
-              genres: {
-                some: {
-                  slug: {
-                    equals: slug,
-                    mode: 'insensitive',
-                  },
-                },
-              },
-            };
-          }),
-        },
-      },
-    });
+    const comicIssues = await this.prisma.$queryRaw<
+      (ComicIssue & {
+        comic: Comic & { creator: Creator };
+        collectionNft: { address: string };
+      } & ComicIssueStats)[]
+    >(getComicIssuesQuery(query));
 
-    return await Promise.all(
+    const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
           ...issue,
-          stats: await this.walletComicIssueService.aggregateComicIssueStats(
-            issue,
-          ),
+          stats: {
+            favouritesCount: Number(issue.favouritesCount),
+            ratersCount: Number(issue.ratersCount),
+            averageRating: Number(issue.averageRating),
+            price: await this.walletComicIssueService.getComicIssuePrice(issue),
+            totalIssuesCount: Number(issue.totalIssuesCount),
+            readersCount: Number(issue.readersCount),
+            viewersCount: Number(issue.viewersCount),
+            totalPagesCount: Number(issue.totalPagesCount),
+          },
         };
       }),
     );
+    return response;
   }
 
   async findOne(id: number, walletAddress: string) {
