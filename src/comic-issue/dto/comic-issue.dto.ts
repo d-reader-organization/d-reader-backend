@@ -124,7 +124,7 @@ export class ComicIssueDto {
   candyMachineAddress?: string;
 }
 
-type ComicIssueInput = ComicIssue & {
+export type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
   stats?: ComicIssueStats;
