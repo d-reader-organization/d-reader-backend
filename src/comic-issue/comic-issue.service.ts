@@ -20,8 +20,7 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import { sortBy } from '../utils/query-helpers';
-import { SortOrder } from '../types/sort-order';
+import { filterBy, getQueryFilters } from '../utils/query-helpers';
 
 @Injectable()
 export class ComicIssueService {
@@ -124,18 +123,15 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const comicSlugCondition = !!query.comicSlug
-      ? Prisma.sql`AND "ci"."comicSlug" = ${query.comicSlug}`
-      : Prisma.empty;
-    const creatorWhereCondition = !!query.creatorSlug
-      ? Prisma.sql`AND "cr"."slug" = ${query.creatorSlug}`
-      : Prisma.empty;
-    const genreSlugsCondition = !!query.genreSlugs
-      ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
-      : Prisma.empty;
-    const desc = Prisma.sql`desc`;
-    const asc = Prisma.sql`asc`;
-    const sortOrder = query?.sortOrder === SortOrder.ASC ? asc : desc;
+    const {
+      titleCondition,
+      comicSlugCondition,
+      creatorWhereCondition,
+      genreSlugsCondition,
+      sortColumn,
+      sortOrder,
+    } = getQueryFilters(query);
+
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
@@ -150,7 +146,7 @@ export class ComicIssueService {
       })[]
     >(
       Prisma.sql`SELECT "ci"."id", "ci"."number", "ci"."supply", "ci"."discountMintPrice", "ci"."mintPrice", "ci"."sellerFeeBasisPoints", "ci"."title", "ci"."slug", "ci"."description", "ci"."flavorText", "ci"."cover", "ci"."releaseDate", "ci"."publishedAt", "ci"."popularizedAt", "ci"."verifiedAt", "ci"."deletedAt",
-      AVG(case when "wci"."rating" is not null then "wci"."rating" end) AS averageRating,
+      AVG("wci"."rating") AS averageRating,
       SUM(case when "wci"."rating" is not null then 1 end) as ratersCount,
       SUM(case when "wci"."isFavourite" then 1 end) AS favouritesCount,
       SUM(case when "wci"."readAt" is not null then 1 end) AS readersCount,
@@ -171,14 +167,14 @@ export class ComicIssueService {
       INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
       INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
       LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
-      WHERE ${Prisma.sql`"ci"."title" ILIKE '%' || ${
-        query.titleSubstring ?? ''
-      } || '%' AND "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL`}
+      WHERE "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL
+      ${filterBy(query.tag)}
+      ${titleCondition}
       ${comicSlugCondition}
       ${creatorWhereCondition}
       ${genreSlugsCondition}
       GROUP BY "ci"."id"
-      ORDER BY "ci"."releaseDate" ${sortOrder}
+      ORDER BY ${sortColumn} ${sortOrder}
       OFFSET ${query.skip}
       LIMIT ${query.take}
       ;`,
