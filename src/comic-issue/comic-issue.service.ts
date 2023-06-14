@@ -20,7 +20,8 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import { filterBy, getQueryFilters } from '../utils/query-helpers';
+import { getComicIssuesQuery } from './comic-issue.queries';
+import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 
 @Injectable()
 export class ComicIssueService {
@@ -123,76 +124,26 @@ export class ComicIssueService {
   }
 
   async findAll(query: ComicIssueFilterParams) {
-    const {
-      titleCondition,
-      comicSlugCondition,
-      creatorWhereCondition,
-      genreSlugsCondition,
-      sortColumn,
-      sortOrder,
-    } = getQueryFilters(query);
-
     const comicIssues = await this.prisma.$queryRaw<
       (ComicIssue & {
         comic: Comic & { creator: Creator };
         collectionNft: { address: string };
-        averagerating: number;
-        raterscount: number;
-        favouritescount: number;
-        readerscount: number;
-        viewerscount: number;
-        totalissuescount: number;
-        totalpagescount: number;
-      })[]
-    >(
-      Prisma.sql`SELECT "ci"."id", "ci"."number", "ci"."supply", "ci"."discountMintPrice", "ci"."mintPrice", "ci"."sellerFeeBasisPoints", "ci"."title", "ci"."slug", "ci"."description", "ci"."flavorText", "ci"."cover", "ci"."releaseDate", "ci"."publishedAt", "ci"."popularizedAt", "ci"."verifiedAt", "ci"."deletedAt",
-      AVG("wci"."rating") AS averageRating,
-      SUM(case when "wci"."rating" is not null then 1 end) as ratersCount,
-      SUM(case when "wci"."isFavourite" then 1 end) AS favouritesCount,
-      SUM(case when "wci"."readAt" is not null then 1 end) AS readersCount,
-      SUM(case when "wci"."viewedAt" is not null then 1 end) AS viewersCount,
-      (
-        SELECT COUNT(*) as totalIssuesCount
-        FROM "ComicIssue" ci2
-        where "ci2"."comicSlug"  = "ci"."comicSlug"
-      ) AS totalIssuesCount,
-      (
-        SELECT COUNT(*) as totalPagesCount
-        FROM "ComicPage" cp
-        where "cp"."comicIssueId" = "ci"."id"
-      ) AS totalPagesCount
-      FROM "ComicIssue" ci
-      INNER JOIN "Comic" c ON "c"."slug" = "ci"."comicSlug"
-      INNER JOIN "Creator" cr ON "cr"."id" = "c"."creatorId"
-      INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
-      INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
-      LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
-      WHERE "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL
-      ${filterBy(query.tag)}
-      ${titleCondition}
-      ${comicSlugCondition}
-      ${creatorWhereCondition}
-      ${genreSlugsCondition}
-      GROUP BY "ci"."id"
-      ORDER BY ${sortColumn} ${sortOrder}
-      OFFSET ${query.skip}
-      LIMIT ${query.take}
-      ;`,
-    );
+      } & ComicIssueStats)[]
+    >(getComicIssuesQuery(query));
 
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
           ...issue,
           stats: {
-            favouritesCount: Number(issue.favouritescount),
-            ratersCount: Number(issue.raterscount),
-            averageRating: Number(issue.averagerating),
+            favouritesCount: Number(issue.favouritesCount),
+            ratersCount: Number(issue.ratersCount),
+            averageRating: Number(issue.averageRating),
             price: await this.walletComicIssueService.getComicIssuePrice(issue),
-            totalIssuesCount: Number(issue.totalissuescount),
-            readersCount: Number(issue.readerscount),
-            viewersCount: Number(issue.viewerscount),
-            totalPagesCount: Number(issue.totalpagescount),
+            totalIssuesCount: Number(issue.totalIssuesCount),
+            readersCount: Number(issue.readersCount),
+            viewersCount: Number(issue.viewersCount),
+            totalPagesCount: Number(issue.totalPagesCount),
           },
         };
       }),
