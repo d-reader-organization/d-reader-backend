@@ -12,7 +12,13 @@ import {
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage, Comic, Creator } from '@prisma/client';
+import {
+  Prisma,
+  ComicIssue,
+  ComicPage,
+  Comic,
+  AudienceType,
+} from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -22,6 +28,7 @@ import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
 import { getComicIssuesQuery } from './comic-issue.queries';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
+import { getReadUrl } from 'src/aws/s3client';
 
 @Injectable()
 export class ComicIssueService {
@@ -125,15 +132,30 @@ export class ComicIssueService {
 
   async findAll(query: ComicIssueFilterParams) {
     const comicIssues = await this.prisma.$queryRaw<
-      (ComicIssue & {
-        comic: Comic & { creator: Creator };
-        collectionNft: { address: string };
-      } & ComicIssueStats)[]
+      (ComicIssue & { comic: Comic } & {
+        comicName: string;
+        audienceType: AudienceType;
+        creatorName: string;
+        creatorSlug: string;
+        creatorVerifiedAt?: string;
+        creatorAvatar?: string;
+      } & { cnAddress: string } & ComicIssueStats)[]
     >(getComicIssuesQuery(query));
 
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
         return {
+          comic: {
+            name: issue.comicName,
+            slug: issue.comicSlug,
+            audienceType: issue.audienceType,
+            creator: {
+              name: issue.creatorName,
+              slug: issue.creatorSlug,
+              isVerified: !!issue.verifiedAt,
+              avatar: await getReadUrl(issue.creatorAvatar),
+            },
+          },
           ...issue,
           stats: {
             favouritesCount: Number(issue.favouritesCount),
