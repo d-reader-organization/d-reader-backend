@@ -144,7 +144,6 @@ export class ComicIssueService {
 
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
-        console.log(issue);
         return {
           comic: {
             name: issue.comicName,
