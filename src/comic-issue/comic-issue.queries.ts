@@ -77,7 +77,7 @@ export const getComicIssuesQuery = (
     sortColumn,
     sortOrder,
   } = getQueryFilters(query);
-  return Prisma.sql`SELECT "ci".*,
+  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar", "cn"."address" as "cnAddress",
 AVG("wci"."rating") AS "averageRating",
 SUM(case when "wci"."rating" is not null then 1 end) as "ratersCount",
 SUM(case when "wci"."isFavourite" then 1 end) AS "favouritesCount",
@@ -105,7 +105,7 @@ ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-GROUP BY "ci"."id"
+GROUP BY "ci"."id", "c"."name", "c"."audienceType", "cr"."name", "cr"."slug", "cr"."verifiedAt","cr"."avatar", "cn"."address"
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take}
