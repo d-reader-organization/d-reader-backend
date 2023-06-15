@@ -35,8 +35,6 @@ export class ComicService {
   ) {
     const { slug, genres, isOngoing, ...rest } = createComicDto;
 
-    // TODO v2: allow custom slugs
-
     let comic: Comic;
     try {
       comic = await this.prisma.comic.create({

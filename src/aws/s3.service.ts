@@ -96,6 +96,7 @@ export class s3Service {
    * This is a cache-friendly variant of s3.getSignedUrl
    * Every 12 hours a new presigned URL will be generated,
    * in between the same URL will be reused
+   * @deprecated
    */
   getCachedReadUrl = async (key: string) => {
     // If key is an empty string, return it

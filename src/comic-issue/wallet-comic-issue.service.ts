@@ -189,9 +189,6 @@ export class WalletComicIssueService {
           },
         });
 
-        // TODO: if there is not a single page that is not previewable
-        // set shouldShowPreviews to false
-
         // if wallet is still not allowed to view the full content of the issue
         // make sure to show only preview pages of the comic
         if (!walletComic) return true;

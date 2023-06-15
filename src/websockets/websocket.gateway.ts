@@ -18,10 +18,9 @@ import { toNftDto } from '../nft/dto/nft.dto';
 export class WebSocketGateway {
   @WebSocketServer() server: Server;
 
-  // TODO: add new client and/or comic-issue whenever someone starts listening?
+  // TODO v2: add new client and/or comic-issue whenever someone starts listening?
   // @SubscribeMessage('comic-issue/${id}')
   // https://wanago.io/2021/01/25/api-nestjs-chat-websockets/
-  // @josip ChatGPT input
 
   handleWave() {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));

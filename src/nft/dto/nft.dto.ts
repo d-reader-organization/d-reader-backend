@@ -10,11 +10,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Nft, Listing } from '@prisma/client';
 import { isNil } from 'lodash';
 
-// TODO v2: extend JsonMetadata to formats which we use
-// type ComicIssueJsonMetadata = JsonMetadata & {
-//   attributes: ...
-// }
-
 export class NftAttributeDto {
   trait: string;
   value: string;

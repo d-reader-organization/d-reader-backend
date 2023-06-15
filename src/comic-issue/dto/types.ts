@@ -11,6 +11,7 @@ export class StatelessCoverInput {
   artist: string;
   rarity: ComicRarity;
   share: number;
+  isDefault: boolean;
 }
 
 export class StatefulCoverInput {
@@ -22,7 +23,7 @@ export class StatefulCoverInput {
 }
 
 export type CandyMachineIssue = ComicIssue & {
-  statelessCovers: StatelessCover[]; // typos TODODO
+  statelessCovers: StatelessCover[];
   statefulCovers: StatefulCover[];
   collaborators: ComicIssueCollaborator[];
 };

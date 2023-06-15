@@ -37,7 +37,11 @@ import {
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
 } from '../constants';
-import { solFromLamports } from '../utils/helpers';
+import {
+  findDefaultCover,
+  generateStatefulCoverName,
+  solFromLamports,
+} from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
@@ -108,11 +112,7 @@ export class CandyMachineService {
     const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
     const statefulCoverPromises = comicIssue.statefulCovers.map(
       async (cover) => {
-        const name =
-          (cover.isUsed ? 'used-' : 'unused-') +
-          (cover.isSigned ? 'signed' : 'unsigned') +
-          (haveRarities ? '-' + cover.rarity : '') +
-          '-cover';
+        const name = generateStatefulCoverName(cover, haveRarities);
         const file = await s3toMxFile(cover.image, name);
         if (haveRarities) {
           const property =
@@ -242,8 +242,6 @@ export class CandyMachineService {
         coverImage,
       );
       const indexArray = Array.from(Array(comicIssue.supply).keys());
-      // TODO: start indices from previous highest index
-      // e.g. if existing collection has #999 items, continue with #1000
       items = await Promise.all(
         indexArray.map((index) => ({
           uri: metadataUri,
@@ -270,7 +268,8 @@ export class CandyMachineService {
     // we can do this in parallel
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
-    const coverImage = await s3toMxFile(comicIssue.cover, 'cover');
+    const cover = findDefaultCover(comicIssue.statelessCovers);
+    const coverImage = await s3toMxFile(cover.image, cover.rarity ?? 'cover');
 
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
@@ -377,8 +376,6 @@ export class CandyMachineService {
       },
     });
 
-    // TODO: start indices from previous highest index
-    // e.g. if existing collection has #999 items, continue with #1000
     const items = await this.uploadItemMetadata(
       comicIssue,
       comicName,
@@ -524,10 +521,6 @@ export class CandyMachineService {
       comicIssue.sellerFeeBasisPoints > 10000
     ) {
       throw new BadRequestException('Invalid seller fee value');
-    }
-
-    if (!comicIssue.cover) {
-      throw new BadRequestException('Missing cover image');
     }
 
     if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {

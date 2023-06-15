@@ -64,6 +64,7 @@ export const getPresignedUrl = async (key: string) => {
  * This is a cache-friendly variant of s3.getSignedUrl
  * Every 12 hours a new presigned URL will be generated,
  * in between the same URL will be reused
+ * @deprecated
  */
 export const getCachedReadUrl = async (key: string) => {
   // If key is an empty string, return it

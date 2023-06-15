@@ -11,7 +11,7 @@ export class WalletCreatorService {
     walletAddress: string,
     creatorSlug: string,
   ): Promise<boolean> {
-    // TODO v3: https://github.com/prisma/prisma/discussions/2531
+    // TODO: https://github.com/prisma/prisma/discussions/2531
     let walletCreator = await this.prisma.walletCreator.findUnique({
       where: {
         creatorSlug_walletAddress: { walletAddress, creatorSlug },

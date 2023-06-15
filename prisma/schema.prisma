@@ -46,7 +46,6 @@ enum Role {
 model Creator {
   id               Int             @id @default(autoincrement())
   email            String          @unique
-  // password         String
   name             String          @unique
   slug             String          @unique
   avatar           String          @default("")
@@ -120,8 +119,6 @@ model WalletComic {
   isFavourite   Boolean   @default(false)
   isWhitelisted Boolean   @default(false)
   viewedAt      DateTime?
-  // isReported Boolean @default(false)
-  // isLiked    Boolean @default(false)
 
   @@id([comicSlug, walletAddress])
 }
@@ -149,7 +146,6 @@ model ComicIssue {
   flavorText           String                   @default("")
   signature            String                   @default("")
   pdf                  String                   @default("")
-  cover                String                   @default("")
   statelessCovers      StatelessCover[]
   statefulCovers       StatefulCover[]
   releaseDate          DateTime
@@ -204,11 +200,12 @@ model ComicIssueCollaborator {
 model StatelessCover {
   id           Int          @id @default(autoincrement())
   image        String
-  rarity       ComicRarity? // TODO -> add isDisplay boolean flag, remove comicIssue.cover
+  rarity       ComicRarity?
   comicIssue   ComicIssue   @relation(fields: [comicIssueId], references: [id])
   comicIssueId Int
   artist       String
-  share        Int // constant if not from client
+  share        Int
+  isDefault    Boolean
 
   @@unique([comicIssueId, rarity])
 }
@@ -276,8 +273,6 @@ model CandyMachineReceipt {
   candyMachine        CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
   candyMachineAddress String
 }
-
-// ComicCollectionNft
 
 model CollectionNft {
   address         String         @id
@@ -347,8 +342,6 @@ model WalletComicIssue {
   isWhitelisted Boolean    @default(false)
   viewedAt      DateTime?
   readAt        DateTime?
-  // isReported Boolean @default(false)
-  // isLiked    Boolean @default(false)
 
   @@id([comicIssueId, walletAddress])
 }

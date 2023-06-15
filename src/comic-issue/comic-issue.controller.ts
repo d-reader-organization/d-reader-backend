@@ -8,9 +8,9 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
-  UploadedFile,
   Query,
   ForbiddenException,
+  UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -22,6 +22,7 @@ import {
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import {
+  AnyFilesInterceptor,
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
@@ -31,7 +32,6 @@ import {
   toComicIssueDtoArray,
 } from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
-import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
@@ -44,9 +44,18 @@ import {
   toComicPageDtoArray,
 } from 'src/comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
+import {
+  CoverDto,
+  CreateStatefulCoverBodyDto,
+  CreateStatefulCoverDto,
+  CreateStatelessCoverBodyDto,
+  CreateStatelessCoverDto,
+} from './dto/create-comic-covers.dto';
+import { ApiFileArray } from '../decorators/api-file-array.decorator';
+import { ApiFile } from 'src/decorators/api-file.decorator';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -95,7 +104,6 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  // TODO v2: get by comicSlug & (comic issue) slug
   /* Get specific comic issue by unique id */
   @Get('get/:id')
   async findOne(
@@ -175,17 +183,17 @@ export class ComicIssueController {
 
   /* Update specific comic issues cover file */
   @ApiConsumes('multipart/form-data')
-  @ApiFile('cover')
-  @UseInterceptors(FileInterceptor('cover'))
-  @Patch('update/:id/cover')
+  @ApiFile('signature')
+  @UseInterceptors(FileInterceptor('signature'))
+  @Patch('update/:id/signature')
   async updateCover(
     @Param('id') id: string,
-    @UploadedFile() cover: Express.Multer.File,
+    @UploadedFile() signature: Express.Multer.File,
   ): Promise<ComicIssueDto> {
     const updatedComicIssue = await this.comicIssueService.updateFile(
       +id,
-      cover,
-      'cover',
+      signature,
+      'signature',
     );
     return toComicIssueDto(updatedComicIssue);
   }
@@ -232,5 +240,89 @@ export class ComicIssueController {
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
     return toComicIssueDto(recoveredComicIssue);
+  }
+
+  /* Upload Stateless covers */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('upload-covers/stateless/:id')
+  async uploadStatelessCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'cover',
+      bodyType: CreateStatelessCoverBodyDto,
+      fileType: CoverDto,
+    })
+    statelessCoverDto: CreateStatelessCoverDto[],
+  ) {
+    const comicIssue = await this.comicIssueService.uploadStatelessCovers(
+      statelessCoverDto,
+      +id,
+    );
+    return toComicIssueDto(comicIssue);
+  }
+
+  /* Upload Stateful covers */
+  @Post('upload-covers/stateful/:id')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  async uploadStatefulCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'cover',
+      bodyType: CreateStatefulCoverBodyDto,
+      fileType: CoverDto,
+    })
+    statefulCoverDto: [CreateStatefulCoverDto],
+  ) {
+    const comicIssue = await this.comicIssueService.uploadStatefulCovers(
+      statefulCoverDto,
+      +id,
+    );
+    return toComicIssueDto(comicIssue);
+  }
+
+  /* Update Stateless covers */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Patch('update-covers/stateless/:id')
+  async updateStatelessCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'cover',
+      bodyType: CreateStatelessCoverBodyDto,
+      fileType: CoverDto,
+    })
+    statelessCoverDto: CreateStatelessCoverDto[],
+  ) {
+    const comicIssue = await this.comicIssueService.updateStatelessCovers(
+      statelessCoverDto,
+      +id,
+    );
+    return toComicIssueDto(comicIssue);
+  }
+
+  /* Update Stateful covers */
+  @Patch('update-covers/stateful/:id')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  async updateStatefulCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'cover',
+      bodyType: CreateStatefulCoverBodyDto,
+      fileType: CoverDto,
+    })
+    statefulCoverDto: [CreateStatefulCoverDto],
+  ) {
+    const comicIssue = await this.comicIssueService.updateStatefulCovers(
+      statefulCoverDto,
+      +id,
+    );
+    return toComicIssueDto(comicIssue);
   }
 }

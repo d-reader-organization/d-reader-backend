@@ -68,6 +68,7 @@ const generateStatelessCovers = (
         rarity: null,
         artist: 'John Le',
         share: 100,
+        isDefault: true,
       },
     ],
   },
@@ -1581,7 +1582,7 @@ async function main() {
                       createMany: {
                         data: generatePages(
                           'creators/saucerpen/comics/animosities/issues/episode-1/pages',
-                          6, // TODO: change this (add remaining pages)
+                          6,
                           'jpg',
                           6,
                         ),
@@ -2591,7 +2592,7 @@ async function main() {
         role: Role.User,
         creator: {
           create: {
-            email: 'creators@dreader.io', // TODO: change this,
+            email: 'creators@dreader.io',
             name: 'Goose0x',
             slug: 'goose-0-x',
             avatar: 'creators/goose-0-x/avatar.jpg',
