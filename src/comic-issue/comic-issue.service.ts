@@ -358,10 +358,7 @@ export class ComicIssueService {
       );
     }
 
-    if (oldFileKey !== newFileKey) {
-      await this.s3.deleteObject(oldFileKey);
-    }
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return comicIssue;
   }
 

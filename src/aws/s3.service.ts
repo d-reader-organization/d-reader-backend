@@ -109,6 +109,13 @@ export class s3Service {
     );
   };
 
+  /** Clean up old files when uploading new ones, in case there was an old file and it wasn't overwriten by the new file */
+  garbageCollectOldFile = async (newFileKey: string, oldFileKey?: string) => {
+    if (oldFileKey && oldFileKey !== newFileKey) {
+      await this.deleteObject(oldFileKey);
+    }
+  };
+
   deleteObjects = async (keys: string[]) => {
     if (isEmpty(keys)) return;
 

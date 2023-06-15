@@ -110,10 +110,7 @@ export class GenreService {
       throw new BadRequestException('Malformed file upload');
     }
 
-    if (oldFileKey !== newFileKey) {
-      await this.s3.deleteObject(oldFileKey);
-    }
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return genre;
   }
 

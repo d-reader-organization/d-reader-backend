@@ -193,10 +193,7 @@ export class WalletService {
       throw new BadRequestException('Malformed file upload');
     }
 
-    if (oldFileKey && oldFileKey !== newFileKey) {
-      await this.s3.deleteObject(oldFileKey);
-    }
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return wallet;
   }
 
