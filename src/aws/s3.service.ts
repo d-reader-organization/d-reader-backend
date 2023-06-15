@@ -71,7 +71,15 @@ export class s3Service {
     );
   };
 
-  getReadUrl = async (key: string) => {
+  getPublicUrl = (key: string) => {
+    // If key is an empty string, return it
+    if (!key) return key;
+
+    const publicUrl = `https://${this.bucket}.s3.amazonaws.com/${key}`;
+    return publicUrl;
+  };
+
+  getPresignedUrl = async (key: string) => {
     // If key is an empty string, return it
     if (!key) return key;
 

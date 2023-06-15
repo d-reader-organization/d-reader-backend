@@ -69,14 +69,14 @@ export class CreatorController {
       createCreatorDto,
       files,
     );
-    return await toCreatorDto(creator);
+    return toCreatorDto(creator);
   }
 
   /* Get all creators */
   @Get('get')
   async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
-    return await toCreatorDtoArray(creators);
+    return toCreatorDtoArray(creators);
   }
 
   /* Get specific creator by unique slug */
@@ -86,7 +86,7 @@ export class CreatorController {
     @Param('slug') slug: string,
   ): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug, wallet.address);
-    return await toCreatorDto(creator);
+    return toCreatorDto(creator);
   }
 
   /* Update specific creator */
@@ -99,7 +99,7 @@ export class CreatorController {
       slug,
       updateCreatorDto,
     );
-    return await toCreatorDto(updatedCreator);
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators avatar file */
@@ -116,7 +116,7 @@ export class CreatorController {
       avatar,
       'avatar',
     );
-    return await toCreatorDto(updatedCreator);
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators banner file */
@@ -133,7 +133,7 @@ export class CreatorController {
       banner,
       'banner',
     );
-    return await toCreatorDto(updatedCreator);
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators logo file */
@@ -150,21 +150,21 @@ export class CreatorController {
       logo,
       'logo',
     );
-    return await toCreatorDto(updatedCreator);
+    return toCreatorDto(updatedCreator);
   }
 
   /* Queue creator for deletion */
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
-    return await toCreatorDto(deletedCreator);
+    return toCreatorDto(deletedCreator);
   }
 
   /* Remove creator for deletion queue */
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
-    return await toCreatorDto(recoveredCreator);
+    return toCreatorDto(recoveredCreator);
   }
 
   /* Follow a creator */

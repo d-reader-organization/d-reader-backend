@@ -83,7 +83,7 @@ export class ComicIssueController {
       files,
     );
 
-    return await toComicIssueDto(comicIssue);
+    return toComicIssueDto(comicIssue);
   }
 
   /* Get all comic issues */
@@ -92,7 +92,7 @@ export class ComicIssueController {
     @Query() query: ComicIssueFilterParams,
   ): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
-    return await toComicIssueDtoArray(comicIssues);
+    return toComicIssueDtoArray(comicIssues);
   }
 
   // TODO v2: get by comicSlug & (comic issue) slug
@@ -106,7 +106,7 @@ export class ComicIssueController {
       +id,
       wallet.address,
     );
-    return await toComicIssueDto(comicIssue);
+    return toComicIssueDto(comicIssue);
   }
 
   @Get('get/:id/pages')
@@ -128,7 +128,7 @@ export class ComicIssueController {
       +id,
       updateComicIssueDto,
     );
-    return await toComicIssueDto(updatedComicIssue);
+    return toComicIssueDto(updatedComicIssue);
   }
 
   /* Favouritise/unfavouritise a specific comic issue */
@@ -187,7 +187,7 @@ export class ComicIssueController {
       cover,
       'cover',
     );
-    return await toComicIssueDto(updatedComicIssue);
+    return toComicIssueDto(updatedComicIssue);
   }
 
   /* Publish an off-chain comic issue on chain */
@@ -201,7 +201,7 @@ export class ComicIssueController {
       +id,
       publishOnChainDto,
     );
-    return await toComicIssueDto(publishedComicIssue);
+    return toComicIssueDto(publishedComicIssue);
   }
 
   /* Publish comic issue */
@@ -209,7 +209,7 @@ export class ComicIssueController {
   @Patch('publish/:id')
   async publish(@Param('id') id: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(+id);
-    return await toComicIssueDto(publishedComicIssue);
+    return toComicIssueDto(publishedComicIssue);
   }
 
   /* Unpublish comic issue */
@@ -217,20 +217,20 @@ export class ComicIssueController {
   async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${id}`);
     // const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    // return await toComicIssueDto(unpublishedComicIssue);
+    // return toComicIssueDto(unpublishedComicIssue);
   }
 
   /* Queue comic issue for deletion */
   @Patch('delete/:id')
   async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
-    return await toComicIssueDto(deletedComicIssue);
+    return toComicIssueDto(deletedComicIssue);
   }
 
   /* Remove comic issue for deletion queue */
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
-    return await toComicIssueDto(recoveredComicIssue);
+    return toComicIssueDto(recoveredComicIssue);
   }
 }

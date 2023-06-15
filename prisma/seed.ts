@@ -19,6 +19,60 @@ import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 
+const generateStatefulCovers = (
+  creatorSlug: string,
+  comicIssueSlug: string,
+) => ({
+  createMany: {
+    data: [
+      {
+        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.png`,
+        isSigned: false,
+        isUsed: false,
+        rarity: null,
+        artist: 'John Le',
+      },
+      {
+        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-unsigned-cover.png`,
+        isSigned: false,
+        isUsed: true,
+        rarity: null,
+        artist: 'Laura El',
+      },
+      {
+        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-signed-cover.png`,
+        isSigned: true,
+        isUsed: false,
+        rarity: null,
+        artist: 'SCUM',
+      },
+      {
+        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-signed-cover.png`,
+        isSigned: true,
+        isUsed: true,
+        rarity: null,
+        artist: 'Mate Žaja',
+      },
+    ],
+  },
+});
+
+const generateStatelessCovers = (
+  creatorSlug: string,
+  comicIssueSlug: string,
+) => ({
+  createMany: {
+    data: [
+      {
+        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/cover.png`,
+        rarity: null,
+        artist: 'John Le',
+        share: 100,
+      },
+    ],
+  },
+});
+
 const s3 = new s3Service();
 const prisma = new PrismaClient();
 const prismaService = new PrismaService();
@@ -474,58 +528,14 @@ async function main() {
                       'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                     flavorText: 'Geez these cats are so gore',
                     signature: '',
-                    cover:
-                      'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/cover.png',
-                    statefulCovers: {
-                      createMany: {
-                        data: [
-                          {
-                            image:
-                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/unused-unsigned-cover.png',
-                            isSigned: false,
-                            isUsed: false,
-                            rarity: null,
-                            artist: 'John Le',
-                          },
-                          {
-                            image:
-                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-unsigned-cover.png',
-                            isSigned: false,
-                            isUsed: true,
-                            rarity: null,
-                            artist: 'Laura El',
-                          },
-                          {
-                            image:
-                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/unused-signed-cover.png',
-                            isSigned: true,
-                            isUsed: false,
-                            rarity: null,
-                            artist: 'SCUM',
-                          },
-                          {
-                            image:
-                              'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/used-signed-cover.png',
-                            isSigned: true,
-                            isUsed: true,
-                            rarity: null,
-                            artist: 'Mate Žaja',
-                          },
-                        ],
-                      },
-                    },
-                    statelessCovers: {
-                      createMany: {
-                        data: [
-                          {
-                            image: 'TODO',
-                            rarity: null,
-                            artist: 'John Le',
-                            share: 100,
-                          },
-                        ],
-                      },
-                    },
+                    statefulCovers: generateStatefulCovers(
+                      'gorecats',
+                      'rise-of-the-gorecats',
+                    ),
+                    statelessCovers: generateStatelessCovers(
+                      'gorecats',
+                      'rise-of-the-gorecats',
+                    ),
                     releaseDate: subDays(new Date(), 21),
                     deletedAt: null,
                     featuredAt: null,
@@ -535,7 +545,7 @@ async function main() {
                     pages: {
                       createMany: {
                         data: generatePages(
-                          'creators/studio-nx/comics/gorecats/issues/rise-of-the-gorecats/pages',
+                          'comics/gorecats/issues/rise-of-the-gorecats/pages',
                           6,
                           'png',
                           6,
@@ -599,14 +609,15 @@ async function main() {
               description:
                 '3 chubby siblings embark on their first adventure. They discover a magical land and encounter various obstacles.',
               flavorText: '“Chubby babies are so cute” - grandma',
-              cover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/cover.jpg',
-              signedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/signed-cover.jpg',
-              usedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-cover.jpg',
-              usedSignedCover:
-                'creators/studio-nx/comics/barbabyans/issues/adventure-begins/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'barbabyans',
+                'adventure-begins',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'barbabyans',
+                'adventure-begins',
+              ),
               releaseDate: subDays(new Date(), 23),
               deletedAt: null,
               featuredAt: null,
@@ -675,14 +686,15 @@ async function main() {
             description:
               'His people gone. His kingdom a smouldering ruin. Follow the perilous adventures of Niko',
             flavorText: "“I'm just getting started!” - Niko",
-            cover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/cover.jpg',
-            signedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/signed-cover.jpg',
-            usedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/used-cover.jpg',
-            usedSignedCover:
-              'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/used-signed-cover.jpg',
+            signature: '',
+            statefulCovers: generateStatefulCovers(
+              'niko-and-the-sword',
+              'many-moons-ago',
+            ),
+            statelessCovers: generateStatelessCovers(
+              'niko-and-the-sword',
+              'many-moons-ago',
+            ),
             releaseDate: subDays(new Date(), 17),
             deletedAt: null,
             featuredAt: null,
@@ -753,14 +765,15 @@ async function main() {
             description:
               ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
             flavorText: 'Lovely pieces put by Jim Bryson',
-            cover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/cover.png',
-            signedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/signed-cover.png',
-            usedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-cover.png',
-            usedSignedCover:
-              'creators/studio-nx/comics/the-dark-portal/issues/concept-art/used-signed-cover.png',
+            signature: '',
+            statefulCovers: generateStatefulCovers(
+              'the-dark-portal',
+              'concept-art',
+            ),
+            statelessCovers: generateStatelessCovers(
+              'the-dark-portal',
+              'concept-art',
+            ),
             releaseDate: subDays(new Date(), 15),
             deletedAt: null,
             featuredAt: null,
@@ -865,14 +878,15 @@ async function main() {
                       "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs. A new age would start for Narentines, as the great Purge pawes it's path to the Valley",
                     flavorText:
                       'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
-                    cover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/cover.png',
-                    signedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/signed-cover.png',
-                    usedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-cover.png',
-                    usedSignedCover:
-                      'creators/swamplabs/comics/narentines/issues/narentines-the-purge/used-signed-cover.png',
+                    signature: '',
+                    statefulCovers: generateStatefulCovers(
+                      'narentines',
+                      'narentines-the-purge',
+                    ),
+                    statelessCovers: generateStatelessCovers(
+                      'narentines',
+                      'narentines-the-purge',
+                    ),
                     releaseDate: subDays(new Date(), 17),
                     deletedAt: null,
                     featuredAt: null,
@@ -945,14 +959,12 @@ async function main() {
               description:
                 'The Lupers of Arx Urbis are a proud and noble race of wolves descended from the she-wolf of Lupercal, who raised Romulus and Remus',
               flavorText: 'Placeholder flavor text',
-              cover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/canis-lupers/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers('lupers', 'canis-lupers'),
+              statelessCovers: generateStatelessCovers(
+                'lupers',
+                'canis-lupers',
+              ),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -981,14 +993,12 @@ async function main() {
               description:
                 'Ionus is the god of sky and thunder. He is also the god of the city, order, and oaths.',
               flavorText: 'Placeholder flavor text',
-              cover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-ionus/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers('lupers', 'godiary-ionus'),
+              statelessCovers: generateStatelessCovers(
+                'lupers',
+                'godiary-ionus',
+              ),
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1017,14 +1027,15 @@ async function main() {
               description:
                 'The most important deity is Diluna, the goddess of the hunt and the moon',
               flavorText: 'Placeholder flavor text',
-              cover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-diluna/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'lupers',
+                'godiary-diluna',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'lupers',
+                'godiary-diluna',
+              ),
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -1053,14 +1064,15 @@ async function main() {
               description:
                 'Nuptus is god of rivers, springs and waters. He is the patron of fishermen, and protector of rivers',
               flavorText: 'Placeholder flavor text',
-              cover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/cover.jpg',
-              signedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/signed-cover.jpg',
-              usedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-cover.jpg',
-              usedSignedCover:
-                'creators/swamplabs/comics/lupers/issues/godiary-nuptus/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'lupers',
+                'godiary-nuptus',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'lupers',
+                'godiary-nuptus',
+              ),
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -1163,15 +1175,15 @@ async function main() {
                       description:
                         'A high-stakes, risk-based adventure of crime, corruption...and bananas.',
                       flavorText: 'Bananas 🍌',
-
-                      cover:
-                        'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/cover.jpg',
-                      signedCover:
-                        'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/signed-cover.jpg',
-                      usedCover:
-                        'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'the-heist',
+                        'how-it-all-began',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'the-heist',
+                        'how-it-all-began',
+                      ),
                       releaseDate: subDays(new Date(), 14),
                       deletedAt: null,
                       featuredAt: null,
@@ -1243,14 +1255,15 @@ async function main() {
                 description:
                   'Matija finds himself knocked down & locked in the prison all alone.',
                 flavorText: '“I wonder what I can do with these bolt cutters”',
-                cover:
-                  'creators/longwood-labs/comics/the-remnants/issues/all-alone/cover.png',
-                signedCover:
-                  'creators/longwood-labs/comics/the-remnants/issues/all-alone/signed-cover.png',
-                usedCover:
-                  'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-cover.png',
-                usedSignedCover:
-                  'creators/longwood-labs/comics/the-remnants/issues/all-alone/used-signed-cover.png',
+                signature: '',
+                statefulCovers: generateStatefulCovers(
+                  'the-remnants',
+                  'all-alone',
+                ),
+                statelessCovers: generateStatelessCovers(
+                  'the-remnants',
+                  'all-alone',
+                ),
                 releaseDate: subDays(new Date(), 22),
                 deletedAt: null,
                 featuredAt: null,
@@ -1355,14 +1368,15 @@ async function main() {
                       description:
                         'In an underground lab located somewhere in the frigid tundra of Alaska, an unnamed and highly intoxicated scientist is on a quest to genetically engineer The Gooney Toons.',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      cover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/cover.png',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/signed-cover.png',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-cover.png',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/used-signed-cover.png',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'gooneytoons',
+                        'birth-of-the-gooneys',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'gooneytoons',
+                        'birth-of-the-gooneys',
+                      ),
                       releaseDate: subDays(new Date(), 19),
                       deletedAt: null,
                       featuredAt: null,
@@ -1391,14 +1405,15 @@ async function main() {
                       description:
                         'For what is the purpose of creating 2 meter tall upright walking beast?',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      cover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/carnage-of-the-gooneys/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'gooneytoons',
+                        'carnage-of-the-gooneys',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'gooneytoons',
+                        'carnage-of-the-gooneys',
+                      ),
                       releaseDate: subDays(new Date(), 18),
                       deletedAt: null,
                       featuredAt: null,
@@ -1417,14 +1432,15 @@ async function main() {
                       description:
                         'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      cover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/mutation-of-the-gooneys/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'gooneytoons',
+                        'mutation-of-the-gooneys',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'gooneytoons',
+                        'mutation-of-the-gooneys',
+                      ),
                       releaseDate: subDays(new Date(), 17),
                       deletedAt: null,
                       featuredAt: null,
@@ -1443,14 +1459,15 @@ async function main() {
                       description:
                         'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      cover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/cover.jpg',
-                      signedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/signed-cover.jpg',
-                      usedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/gooneytoons-studio/comics/gooneytoons/issues/release-of-the-gooneys/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'gooneytoons',
+                        'release-of-the-gooneys',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'gooneytoons',
+                        'release-of-the-gooneys',
+                      ),
                       releaseDate: subDays(new Date(), 16),
                       deletedAt: null,
                       featuredAt: null,
@@ -1545,14 +1562,15 @@ async function main() {
                     description: 'Short comic about love, anger, and treachery',
                     flavorText:
                       'Prepare to get overwhelmed with hate and sorrow',
-                    cover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/cover.jpeg',
-                    signedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/signed-cover.jpeg',
-                    usedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/used-cover.jpeg',
-                    usedSignedCover:
-                      'creators/saucerpen/comics/animosities/issues/episode-1/used-signed-cover.jpeg',
+                    signature: '',
+                    statefulCovers: generateStatefulCovers(
+                      'animosities',
+                      'episode-1',
+                    ),
+                    statelessCovers: generateStatelessCovers(
+                      'animosities',
+                      'episode-1',
+                    ),
                     releaseDate: subDays(new Date(), 20),
                     deletedAt: null,
                     featuredAt: null,
@@ -1621,14 +1639,12 @@ async function main() {
                 description:
                   'A short comic that got published in KOMIKAZE #54 webzine',
                 flavorText: '“So lovely” - my mom',
-                cover:
-                  'creators/saucerpen/comics/birthday/issues/episode-1/cover.jpg',
-                signedCover:
-                  'creators/saucerpen/comics/birthday/issues/episode-1/signed-cover.jpg',
-                usedCover:
-                  'creators/saucerpen/comics/birthday/issues/episode-1/used-cover.jpg',
-                usedSignedCover:
-                  'creators/saucerpen/comics/birthday/issues/episode-1/used-signed-cover.jpg',
+                signature: '',
+                statefulCovers: generateStatefulCovers('birthday', 'episode-1'),
+                statelessCovers: generateStatelessCovers(
+                  'birthday',
+                  'episode-1',
+                ),
                 releaseDate: subDays(new Date(), 16),
                 deletedAt: null,
                 featuredAt: null,
@@ -1694,14 +1710,15 @@ async function main() {
               description:
                 'lady Kuga (the Plague) goes from village to village and likes being clean',
               flavorText: '',
-              cover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/immaculate-taint/issues/episode-1/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'immaculate-taint',
+                'episode-1',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'immaculate-taint',
+                'episode-1',
+              ),
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1768,14 +1785,9 @@ async function main() {
               slug: 'episode-1',
               description: 'Summer vacation spent on the island of Susak',
               flavorText: '',
-              cover:
-                'creators/saucerpen/comics/island/issues/episode-1/cover.jpg',
-              signedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/signed-cover.jpg',
-              usedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/saucerpen/comics/island/issues/episode-1/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers('island', 'episode-1'),
+              statelessCovers: generateStatelessCovers('island', 'episode-1'),
               releaseDate: subDays(new Date(), 14),
               deletedAt: null,
               featuredAt: null,
@@ -1844,14 +1856,9 @@ async function main() {
                 description:
                   'Compositinal study of a preraphaelite painting "Lamia"',
                 flavorText: '',
-                cover:
-                  'creators/saucerpen/comics/lamia/issues/true-love/cover.jpg',
-                signedCover:
-                  'creators/saucerpen/comics/lamia/issues/true-love/signed-cover.jpg',
-                usedCover:
-                  'creators/saucerpen/comics/lamia/issues/true-love/used-cover.jpg',
-                usedSignedCover:
-                  'creators/saucerpen/comics/lamia/issues/true-love/used-signed-cover.jpg',
+                signature: '',
+                statefulCovers: generateStatefulCovers('lamia', 'true-love'),
+                statelessCovers: generateStatelessCovers('lamia', 'true-love'),
                 releaseDate: subDays(new Date(), 17),
                 deletedAt: null,
                 featuredAt: null,
@@ -1955,14 +1962,15 @@ async function main() {
                       description:
                         'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                       flavorText: 'This is a story about family. About loss.',
-                      cover:
-                        'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/cover.jpg',
-                      signedCover:
-                        'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/signed-cover.jpg',
-                      usedCover:
-                        'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'wretches',
+                        'issue-1',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'wretches',
+                        'issue-1',
+                      ),
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -1993,14 +2001,15 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/used-signed-cover.jpg',
+                          signature: '',
+                          statefulCovers: generateStatefulCovers(
+                            'wretches',
+                            'issue-1',
+                          ),
+                          statelessCovers: generateStatelessCovers(
+                            'wretches',
+                            'issue-1',
+                          ),
                           releaseDate: subDays(new Date(), 19),
                           deletedAt: null,
                           featuredAt: null,
@@ -2032,14 +2041,15 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/used-signed-cover.jpg',
+                          signature: '',
+                          statefulCovers: generateStatefulCovers(
+                            'wretches',
+                            'issue-3',
+                          ),
+                          statelessCovers: generateStatelessCovers(
+                            'wretches',
+                            'issue-3',
+                          ),
                           releaseDate: subDays(new Date(), 18),
                           deletedAt: null,
                           featuredAt: null,
@@ -2071,14 +2081,15 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/cover.png',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/signed-cover.png',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-cover.png',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/used-signed-cover.png',
+                          signature: '',
+                          statefulCovers: generateStatefulCovers(
+                            'wretches',
+                            'issue-4',
+                          ),
+                          statelessCovers: generateStatelessCovers(
+                            'wretches',
+                            'issue-4',
+                          ),
                           releaseDate: subDays(new Date(), 16),
                           deletedAt: null,
                           featuredAt: null,
@@ -2110,14 +2121,15 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/used-signed-cover.jpg',
+                          signature: '',
+                          statefulCovers: generateStatefulCovers(
+                            'wretches',
+                            'issue-5',
+                          ),
+                          statelessCovers: generateStatelessCovers(
+                            'wretches',
+                            'issue-5',
+                          ),
                           releaseDate: subDays(new Date(), 15),
                           deletedAt: null,
                           featuredAt: null,
@@ -2149,14 +2161,15 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          cover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/cover.jpg',
-                          signedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/signed-cover.jpg',
-                          usedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-cover.jpg',
-                          usedSignedCover:
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/used-signed-cover.jpg',
+                          signature: '',
+                          statefulCovers: generateStatefulCovers(
+                            'wretches',
+                            'issue-6',
+                          ),
+                          statelessCovers: generateStatelessCovers(
+                            'wretches',
+                            'issue-6',
+                          ),
                           releaseDate: subDays(new Date(), 12),
                           deletedAt: null,
                           featuredAt: null,
@@ -2230,14 +2243,9 @@ async function main() {
               description:
                 'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText: 'Jana and the tower of Want',
-              cover:
-                'creators/mad-muse-syndicate/comics/jana/issues/issue-1/cover.jpg',
-              signedCover:
-                'creators/mad-muse-syndicate/comics/jana/issues/issue-1/signed-cover.jpg',
-              usedCover:
-                'creators/mad-muse-syndicate/comics/jana/issues/issue-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/mad-muse-syndicate/comics/jana/issues/issue-1/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers('jana', 'issue-1'),
+              statelessCovers: generateStatelessCovers('jana', 'issue-1'),
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
               featuredAt: null,
@@ -2267,14 +2275,9 @@ async function main() {
                   description:
                     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText: 'Jana and the tower of Want',
-                  cover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/cover.jpg',
-                  signedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/signed-cover.jpg',
-                  usedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-cover.jpg',
-                  usedSignedCover:
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-2/used-signed-cover.jpg',
+                  signature: '',
+                  statefulCovers: generateStatefulCovers('jana', 'issue-2'),
+                  statelessCovers: generateStatelessCovers('jana', 'issue-2'),
                   releaseDate: subDays(new Date(), 19),
                   deletedAt: null,
                   featuredAt: null,
@@ -2347,14 +2350,15 @@ async function main() {
                 'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText:
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-              cover:
-                'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-1/cover.jpg',
-              signedCover:
-                'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-1/signed-cover.jpg',
-              usedCover:
-                'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-1/used-cover.jpg',
-              usedSignedCover:
-                'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-1/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'knockturn-county',
+                'issue-1',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'knockturn-county',
+                'issue-1',
+              ),
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -2385,14 +2389,15 @@ async function main() {
                     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText:
                     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-                  cover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/cover.jpg',
-                  signedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/signed-cover.jpg',
-                  usedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-cover.jpg',
-                  usedSignedCover:
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/used-signed-cover.jpg',
+                  signature: '',
+                  statefulCovers: generateStatefulCovers(
+                    'knockturn-county',
+                    'issue-2',
+                  ),
+                  statelessCovers: generateStatelessCovers(
+                    'knockturn-county',
+                    'issue-2',
+                  ),
                   releaseDate: subDays(new Date(), 16),
                   deletedAt: null,
                   featuredAt: null,
@@ -2460,14 +2465,15 @@ async function main() {
               slug: 'treacherous-seas',
               description: 'Proceeds go to the Ronald McDonald House charity',
               flavorText: 'Amazing and inspiring story! - IDW',
-              cover:
-                'creators/mad-muse-syndicate/comics/dark-waters/issues/treacherous-seas/cover.jpg',
-              signedCover:
-                'creators/mad-muse-syndicate/comics/dark-waters/issues/treacherous-seas/signed-cover.jpg',
-              usedCover:
-                'creators/mad-muse-syndicate/comics/dark-waters/issues/treacherous-seas/used-cover.jpg',
-              usedSignedCover:
-                'creators/mad-muse-syndicate/comics/dark-waters/issues/treacherous-seas/used-signed-cover.jpg',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'dark-waters',
+                'treacherous-seas',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'dark-waters',
+                'treacherous-seas',
+              ),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -2538,14 +2544,15 @@ async function main() {
               description:
                 'A group of skilled warriors travel across parallel universes, battling powerful enemies and uncovering the mysteries of the multiverse.',
               flavorText: 'Amazing and inspiring story! - IDW',
-              cover:
-                'creators/mad-muse-syndicate/comics/multi-versus/issues/episode-1/cover.png',
-              signedCover:
-                'creators/mad-muse-syndicate/comics/multi-versus/issues/episode-1/signed-cover.png',
-              usedCover:
-                'creators/mad-muse-syndicate/comics/multi-versus/issues/episode-1/used-cover.png',
-              usedSignedCover:
-                'creators/mad-muse-syndicate/comics/multi-versus/issues/episode-1/used-signed-cover.png',
+              signature: '',
+              statefulCovers: generateStatefulCovers(
+                'multi-versus',
+                'episode-1',
+              ),
+              statelessCovers: generateStatelessCovers(
+                'multi-versus',
+                'episode-1',
+              ),
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -2648,14 +2655,15 @@ async function main() {
                       description:
                         'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
                       flavorText: 'Only the worthy shall be chosen!',
-                      cover:
-                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/cover.jpg',
-                      signedCover:
-                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/signed-cover.jpg',
-                      usedCover:
-                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-cover.jpg',
-                      usedSignedCover:
-                        'creators/goose-0-x/comics/tsukiverse/issues/issue-1/used-signed-cover.jpg',
+                      signature: '',
+                      statefulCovers: generateStatefulCovers(
+                        'tsukiverse',
+                        'issue-1',
+                      ),
+                      statelessCovers: generateStatelessCovers(
+                        'tsukiverse',
+                        'issue-1',
+                      ),
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,

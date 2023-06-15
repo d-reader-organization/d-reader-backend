@@ -2,7 +2,7 @@ import { IsDateString, IsNumber, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
-import { getReadUrl } from '../../aws/s3client';
+import { getPublicUrl } from '../../aws/s3client';
 
 class ReceiptNftDto {
   @IsSolanaAddress()
@@ -45,7 +45,7 @@ export type CandyMachineReceiptInput = CandyMachineReceipt & {
   buyer: Wallet;
 };
 
-export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
+export function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
   const plainReceiptDto: CandyMachineReceiptDto = {
     nft: {
       address: receipt.nft.address,
@@ -53,7 +53,7 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
     },
     buyer: {
       address: receipt.buyer.address,
-      avatar: await getReadUrl(receipt.buyer.avatar),
+      avatar: getPublicUrl(receipt.buyer.avatar),
       name: receipt.buyer.name,
     },
     candyMachineAddress: receipt.candyMachineAddress,
@@ -66,5 +66,5 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
 }
 
 export const toCMReceiptDtoArray = (receipts: CandyMachineReceiptInput[]) => {
-  return Promise.all(receipts.map(toCMReceiptDto));
+  return receipts.map(toCMReceiptDto);
 };

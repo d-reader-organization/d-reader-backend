@@ -13,7 +13,7 @@ import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { getReadUrl } from 'src/aws/s3client';
+import { getPublicUrl } from 'src/aws/s3client';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
 import { round } from 'lodash';
@@ -126,7 +126,7 @@ type ComicInput = Comic & {
   myStats?: WalletComic;
 };
 
-export async function toComicDto(comic: ComicInput) {
+export function toComicDto(comic: ComicInput) {
   const plainComicDto: ComicDto = {
     name: comic.name,
     slug: comic.slug,
@@ -136,10 +136,10 @@ export async function toComicDto(comic: ComicInput) {
     isVerified: !!comic.verifiedAt,
     isPublished: !!comic.publishedAt,
     isPopular: !!comic.popularizedAt,
-    cover: await getReadUrl(comic.cover),
-    banner: await getReadUrl(comic.banner),
-    pfp: await getReadUrl(comic.pfp),
-    logo: await getReadUrl(comic.logo),
+    cover: getPublicUrl(comic.cover),
+    banner: getPublicUrl(comic.banner),
+    pfp: getPublicUrl(comic.pfp),
+    logo: getPublicUrl(comic.logo),
     description: comic.description,
     flavorText: comic.flavorText,
     website: comic.website,
@@ -167,22 +167,20 @@ export async function toComicDto(comic: ComicInput) {
           isFavourite: comic.myStats.isFavourite,
         }
       : undefined,
-    genres: await Promise.all(
-      comic.genres?.map(async (genre) => {
-        return {
-          name: genre.name,
-          slug: genre.slug,
-          color: genre.color,
-          icon: await getReadUrl(genre.icon),
-        };
-      }),
-    ),
+    genres: comic.genres?.map((genre) => {
+      return {
+        name: genre.name,
+        slug: genre.slug,
+        color: genre.color,
+        icon: getPublicUrl(genre.icon),
+      };
+    }),
     creator: comic?.creator
       ? {
           name: comic.creator.name,
           slug: comic.creator.slug,
           isVerified: !!comic.creator.verifiedAt,
-          avatar: await getReadUrl(comic.creator.avatar),
+          avatar: getPublicUrl(comic.creator.avatar),
         }
       : undefined,
   };
@@ -192,5 +190,5 @@ export async function toComicDto(comic: ComicInput) {
 }
 
 export const toComicDtoArray = (comics: ComicInput[]) => {
-  return Promise.all(comics.map(toComicDto));
+  return comics.map(toComicDto);
 };

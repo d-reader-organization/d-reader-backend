@@ -11,7 +11,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getPublicUrl } from 'src/aws/s3client';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -78,8 +78,8 @@ export class ComicIssueDto {
   @IsUrl()
   cover: string;
 
-  // @IsUrl()
-  // signature: string;
+  @IsUrl()
+  signature: string;
 
   @IsDateString()
   releaseDate: string;
@@ -135,7 +135,7 @@ type ComicIssueInput = ComicIssue & {
   collaborators?: ComicIssueCollaboratorDto[];
 };
 
-export async function toComicIssueDto(issue: ComicIssueInput) {
+export function toComicIssueDto(issue: ComicIssueInput) {
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
     number: issue.number,
@@ -147,8 +147,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    cover: await getReadUrl(issue.cover),
-    // signature: await getReadUrl(issue.signature),
+    cover: getPublicUrl(issue.cover),
+    signature: getPublicUrl(issue.signature),
     // TODO: add statelessCovers and statefulCovers
     releaseDate: issue.releaseDate.toISOString(),
     // if supply is 0 it's not an NFT collection and therefore it's free
@@ -162,7 +162,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           name: issue.comic.creator.name,
           slug: issue.comic.creator.slug,
           isVerified: !!issue.comic.creator.verifiedAt,
-          avatar: await getReadUrl(issue.comic.creator.avatar),
+          avatar: getPublicUrl(issue.comic.creator.avatar),
         }
       : undefined,
     comic: issue?.comic
@@ -202,5 +202,5 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
 }
 
 export const toComicIssueDtoArray = (issues: ComicIssueInput[]) => {
-  return Promise.all(issues.map(toComicIssueDto));
+  return issues.map(toComicIssueDto);
 };

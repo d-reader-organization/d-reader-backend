@@ -36,7 +36,15 @@ export const getS3Object = async (
   );
 };
 
-export const getReadUrl = async (key: string) => {
+export const getPublicUrl = (key: string) => {
+  // If key is an empty string, return it
+  if (!key) return key;
+
+  const publicUrl = `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
+  return publicUrl;
+};
+
+export const getPresignedUrl = async (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
 

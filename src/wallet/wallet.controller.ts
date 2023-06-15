@@ -35,14 +35,14 @@ export class WalletController {
   @Get('get')
   async findAll(): Promise<WalletDto[]> {
     const wallets = await this.walletService.findAll();
-    return await toWalletDtoArray(wallets);
+    return toWalletDtoArray(wallets);
   }
 
   /* Get wallet data from auth token */
   @Get('get/me')
   async findMe(@WalletEntity() wallet: Wallet): Promise<WalletDto> {
     const me = await this.walletService.findMe(wallet.address);
-    return await toWalletDto(me);
+    return toWalletDto(me);
   }
 
   /* Get all NFTs owned by the authorized wallet */
@@ -58,7 +58,7 @@ export class WalletController {
   @Get('get/:address')
   async findOne(@Param('address') address: string): Promise<WalletDto> {
     const wallet = await this.walletService.findOne(address);
-    return await toWalletDto(wallet);
+    return toWalletDto(wallet);
   }
 
   /* Update specific wallet */
@@ -68,7 +68,7 @@ export class WalletController {
     @Body() updateWalletDto: UpdateWalletDto,
   ): Promise<WalletDto> {
     const wallet = await this.walletService.update(address, updateWalletDto);
-    return await toWalletDto(wallet);
+    return toWalletDto(wallet);
   }
 
   /* Update specific wallets avatar file */
@@ -85,9 +85,10 @@ export class WalletController {
       avatar,
       'avatar',
     );
-    return await toWalletDto(updatedWallet);
+    return toWalletDto(updatedWallet);
   }
 
+  /* Redeem a referral by wallet address or username */
   @Patch('redeem-referral/:referrer')
   async redeemReferral(
     @Param('referrer') referrer: string,
@@ -97,22 +98,22 @@ export class WalletController {
       referrer,
       wallet.address,
     );
-    return await toWalletDto(updatedWallet);
+    return toWalletDto(updatedWallet);
   }
 
   private syncWallet = (address: string) => {
     return this.walletService.syncWallet(address);
   };
 
-  private throttledSyncWallet = memoizeThrottle(
-    this.syncWallet,
-    2 * 60 * 1000, // 2 minutes
-    {},
-    (address: string) => address,
-  );
-
   @Get('sync')
   publicSyncWallet(@WalletEntity() wallet: Wallet) {
-    return this.throttledSyncWallet(wallet.address);
+    const throttledSyncWallet = memoizeThrottle(
+      this.syncWallet,
+      2 * 60 * 1000, // 2 minutes
+      {},
+      (address: string) => address,
+    );
+
+    return throttledSyncWallet(wallet.address);
   }
 }
