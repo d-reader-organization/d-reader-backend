@@ -28,6 +28,7 @@ import {
 import { RarityConstant, StatelessCoverInput } from './dto/types';
 import { FIVE_RARITIES_SHARE, THREE_RARITIES_SHARE } from 'src/constants';
 import { StatefulCoverInput } from './dto/types';
+import { generateStatefulCoverName } from 'src/utils/helpers';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -447,9 +448,13 @@ export class ComicIssueService {
     }
   }
 
-  async uploadCover(cover: Express.Multer.File, comicIssue: ComicIssue) {
+  async uploadCover(
+    cover: Express.Multer.File,
+    comicIssue: ComicIssue,
+    filename: string,
+  ) {
     const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
-    return await this.s3.uploadFile(s3Folder, cover);
+    return await this.s3.uploadFile(s3Folder, cover, filename);
   }
 
   async saveStatelessCoversToAws(
@@ -458,7 +463,15 @@ export class ComicIssueService {
   ) {
     return await Promise.all(
       covers.map(async (cover): Promise<StatelessCoverInput> => {
-        const fileKey = await this.uploadCover(cover.cover, comicIssue);
+        let filename: string;
+        if (covers.length > 1) filename = 'cover';
+        filename = cover.rarity;
+
+        const fileKey = await this.uploadCover(
+          cover.cover,
+          comicIssue,
+          filename,
+        );
         return {
           image: fileKey,
           rarity: cover.rarity,
@@ -476,7 +489,12 @@ export class ComicIssueService {
   ) {
     return await Promise.all(
       covers.map(async (cover): Promise<StatefulCoverInput> => {
-        const fileKey = await this.uploadCover(cover.cover, comicIssue);
+        const filename = generateStatefulCoverName(cover, !!cover.rarity);
+        const fileKey = await this.uploadCover(
+          cover.cover,
+          comicIssue,
+          filename,
+        );
         return {
           image: fileKey,
           rarity: cover.rarity,

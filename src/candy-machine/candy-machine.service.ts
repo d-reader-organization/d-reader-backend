@@ -37,7 +37,11 @@ import {
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
 } from '../constants';
-import { findDefaultCover, solFromLamports } from '../utils/helpers';
+import {
+  findDefaultCover,
+  generateStatefulCoverName,
+  solFromLamports,
+} from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
@@ -108,11 +112,7 @@ export class CandyMachineService {
     const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
     const statefulCoverPromises = comicIssue.statefulCovers.map(
       async (cover) => {
-        const name =
-          (cover.isUsed ? 'used-' : 'unused-') +
-          (cover.isSigned ? 'signed' : 'unsigned') +
-          (haveRarities ? '-' + cover.rarity : '') +
-          '-cover';
+        const name = generateStatefulCoverName(cover, haveRarities);
         const file = await s3toMxFile(cover.image, name);
         if (haveRarities) {
           const property =
