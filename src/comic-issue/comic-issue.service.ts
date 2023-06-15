@@ -516,7 +516,7 @@ export class ComicIssueService {
       where: { id: comicIssueId },
       data: {
         statelessCovers: {
-          create: statelessCovers,
+          createMany: { data: statelessCovers },
         },
       },
       include: {
@@ -573,7 +573,7 @@ export class ComicIssueService {
       where: { id: comicIssueId },
       data: {
         statefulCovers: {
-          create: statefulCovers,
+          createMany: { data: statefulCovers },
         },
       },
       include: {

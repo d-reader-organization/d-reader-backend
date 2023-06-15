@@ -79,5 +79,5 @@ export const shortenString = (string: string, chars = 3): string => {
 };
 
 export const findDefaultCover = (statelessCovers: StatelessCoverDto[]) => {
-  return statelessCovers.find((cover) => cover.isDefault)?.image;
+  return statelessCovers.find((cover) => cover.isDefault);
 };

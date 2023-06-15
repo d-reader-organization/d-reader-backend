@@ -165,7 +165,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     description: issue.description,
     flavorText: issue.flavorText,
     cover: issue.statelessCovers
-      ? await getReadUrl(findDefaultCover(issue.statelessCovers))
+      ? await getReadUrl(findDefaultCover(issue.statelessCovers).image)
       : undefined,
     // signature: await getReadUrl(issue.signature),
     // TODO: add statelessCovers and statefulCovers

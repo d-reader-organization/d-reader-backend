@@ -37,7 +37,7 @@ import {
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
 } from '../constants';
-import { solFromLamports } from '../utils/helpers';
+import { findDefaultCover, solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
@@ -270,7 +270,8 @@ export class CandyMachineService {
     // we can do this in parallel
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
-    const coverImage = await s3toMxFile(comicIssue.cover, 'cover');
+    const cover = findDefaultCover(comicIssue.statelessCovers);
+    const coverImage = await s3toMxFile(cover.image, cover.rarity ?? 'cover');
 
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
@@ -524,10 +525,6 @@ export class CandyMachineService {
       comicIssue.sellerFeeBasisPoints > 10000
     ) {
       throw new BadRequestException('Invalid seller fee value');
-    }
-
-    if (!comicIssue.cover) {
-      throw new BadRequestException('Missing cover image');
     }
 
     if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {
