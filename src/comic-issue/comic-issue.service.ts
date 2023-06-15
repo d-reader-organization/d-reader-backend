@@ -12,7 +12,7 @@ import {
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
-import { Prisma, ComicIssue, ComicPage } from '@prisma/client';
+import { Prisma, ComicIssue, ComicPage, ComicRarity } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -20,17 +20,18 @@ import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
-import {
-  RarityConstant,
-  StatefulCoverInput,
-  StatelessCoverInput,
-} from './dto/types';
-import { FIVE_RARITIES_SHARE, THREE_RARITIES_SHARE } from 'src/constants';
 import { PickFields } from '../types/shared';
+import {
+  CreateStatefulCoverDto,
+  CreateStatelessCoverDto,
+} from './dto/create-comic-covers.dto';
+import { RarityConstant, StatelessCoverInput } from './dto/types';
+import { FIVE_RARITIES_SHARE, THREE_RARITIES_SHARE } from 'src/constants';
+import { StatefulCoverInput } from './dto/types';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
-type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'cover'>;
+type ComicIssueFileProperty = PickFields<ComicIssue, 'signature'>;
 
 @Injectable()
 export class ComicIssueService {
@@ -83,81 +84,26 @@ export class ComicIssueService {
       throw new BadRequestException('Bad comic issue data');
     }
 
-    const {
-      cover,
-      signature,
-      statelessCovers: statelessCoversDto,
-      statefulCovers: statefulCoversDto,
-    } = createComicIssueFilesDto;
+    const { signature } = createComicIssueFilesDto;
     // upload files if any
-    let coverKey: string, signatureKey: string;
-    let statelessCoverKeys: string[], statefulCoversKeys: string[];
-    const haveRarity = statelessCoversDto && statelessCoversDto.length > 1;
+    let signatureKey: string;
     try {
       const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
-      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
       if (signature)
         signatureKey = await this.s3.uploadFile(
           s3Folder,
           signature,
           'signature',
         );
-      // TODO: revise this
-      if (haveRarity) {
-        statelessCoverKeys = await Promise.all(
-          statelessCoversDto.map((val) =>
-            this.s3.uploadFile(s3Folder, val.image),
-          ),
-        );
-        statefulCoversKeys = await Promise.all(
-          statefulCoversDto.map((val) =>
-            this.s3.uploadFile(s3Folder, val.image),
-          ),
-        );
-      }
     } catch {
       throw new BadRequestException('Malformed file upload');
-    }
-
-    const statelessCovers: StatelessCoverInput[] = [],
-      statefulCovers: StatefulCoverInput[] = [];
-
-    if (haveRarity) {
-      let rarityShare: RarityConstant[];
-      if (statelessCovers.length == 3) rarityShare = THREE_RARITIES_SHARE;
-      else rarityShare = FIVE_RARITIES_SHARE;
-
-      statelessCoverKeys.forEach((val, i) => {
-        statelessCovers.push({
-          image: val,
-          rarity: statelessCoversDto[i].rarity,
-          artist: statelessCoversDto[i].artist,
-          share:
-            statelessCoversDto[i].share ??
-            rarityShare.find(
-              (share) => share.rarity === statefulCoversDto[i].rarity,
-            ).value,
-        });
-      });
-      statefulCoversKeys.forEach((val, i) => {
-        statefulCovers.push({
-          image: val,
-          rarity: statefulCoversDto[i].rarity,
-          artist: statefulCoversDto[i].artist,
-          isSigned: statefulCoversDto[i].isSigned,
-          isUsed: statefulCoversDto[i].isUsed,
-        });
-      });
     }
 
     return await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
       include: { pages: true, collaborators: true },
       data: {
-        cover: coverKey,
         signature: signatureKey,
-        statelessCovers: { createMany: { data: statelessCovers } },
-        statefulCovers: { createMany: { data: statefulCovers } },
       },
     });
   }
@@ -499,6 +445,173 @@ export class ComicIssueService {
     } catch {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
+  }
+
+  async uploadCover(cover: Express.Multer.File, comicIssue: ComicIssue) {
+    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    return await this.s3.uploadFile(s3Folder, cover);
+  }
+
+  async saveStatelessCoversToAws(
+    covers: CreateStatelessCoverDto[],
+    comicIssue: ComicIssue,
+  ) {
+    return await Promise.all(
+      covers.map(async (cover): Promise<StatelessCoverInput> => {
+        const fileKey = await this.uploadCover(cover.cover, comicIssue);
+        return {
+          image: fileKey,
+          rarity: cover.rarity,
+          artist: cover.artist,
+          isDefault: cover.isDefault,
+          share: cover.share ?? this.constantShare(covers, cover.rarity),
+        };
+      }),
+    );
+  }
+
+  async saveStatefulCoversToAws(
+    covers: CreateStatefulCoverDto[],
+    comicIssue: ComicIssue,
+  ) {
+    return await Promise.all(
+      covers.map(async (cover): Promise<StatefulCoverInput> => {
+        const fileKey = await this.uploadCover(cover.cover, comicIssue);
+        return {
+          image: fileKey,
+          rarity: cover.rarity,
+          artist: cover.artist,
+          isUsed: cover.isUsed,
+          isSigned: cover.isSigned,
+        };
+      }),
+    );
+  }
+
+  constantShare(
+    statelessCoversDto: CreateStatelessCoverDto[],
+    rarity: ComicRarity,
+  ) {
+    let rarityShare: RarityConstant[];
+    if (statelessCoversDto.length == 3) rarityShare = THREE_RARITIES_SHARE;
+    else rarityShare = FIVE_RARITIES_SHARE;
+    return rarityShare.find((share) => share.rarity === rarity).value;
+  }
+
+  async uploadStatelessCovers(
+    statelessCoversDto: CreateStatelessCoverDto[],
+    comicIssueId: number,
+  ) {
+    /* upload to aws and update comic issue with these covers */
+
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { id: comicIssueId },
+    });
+
+    const statelessCovers = await this.saveStatelessCoversToAws(
+      statelessCoversDto,
+      comicIssue,
+    );
+    return await this.prisma.comicIssue.update({
+      where: { id: comicIssueId },
+      data: {
+        statelessCovers: {
+          create: statelessCovers,
+        },
+      },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        statefulCovers: true,
+        statelessCovers: true,
+        collaborators: true,
+      },
+    });
+  }
+
+  async updateStatelessCovers(
+    statelessCoversDto: CreateStatelessCoverDto[],
+    comicIssueId: number,
+  ) {
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { id: comicIssueId },
+    });
+    const statelessCovers = await this.saveStatelessCoversToAws(
+      statelessCoversDto,
+      comicIssue,
+    );
+    return await this.prisma.comicIssue.update({
+      where: { id: comicIssueId },
+      data: {
+        statelessCovers: {
+          set: statelessCovers.map((cover, id) => ({ id, ...cover })),
+        },
+      },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        statefulCovers: true,
+        statelessCovers: true,
+        collaborators: true,
+      },
+    });
+  }
+
+  async uploadStatefulCovers(
+    statefulCoverDto: [CreateStatefulCoverDto],
+    comicIssueId: number,
+  ) {
+    /* upload to aws and update comic issue with these covers */
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { id: comicIssueId },
+    });
+    const statefulCovers = await this.saveStatefulCoversToAws(
+      statefulCoverDto,
+      comicIssue,
+    );
+    return await this.prisma.comicIssue.update({
+      where: { id: comicIssueId },
+      data: {
+        statefulCovers: {
+          create: statefulCovers,
+        },
+      },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        statefulCovers: true,
+        statelessCovers: true,
+        collaborators: true,
+      },
+    });
+  }
+
+  async updateStatefulCovers(
+    statefulCoverDto: [CreateStatefulCoverDto],
+    comicIssueId: number,
+  ) {
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { id: comicIssueId },
+    });
+    const statefulCovers = await this.saveStatefulCoversToAws(
+      statefulCoverDto,
+      comicIssue,
+    );
+    return await this.prisma.comicIssue.update({
+      where: { id: comicIssueId },
+      data: {
+        statefulCovers: {
+          set: statefulCovers.map((cover, id) => ({ id, ...cover })),
+        },
+      },
+      include: {
+        comic: { include: { creator: true } },
+        collectionNft: true,
+        statefulCovers: true,
+        statelessCovers: true,
+        collaborators: true,
+      },
+    });
   }
 
   validatePrice(

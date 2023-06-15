@@ -1,6 +1,7 @@
 import { sol } from '@metaplex-foundation/js';
 import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
+import { StatelessCoverDto } from 'src/comic-issue/dto/comic-issue-cover.dto';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -75,4 +76,8 @@ export function getComputeUnits(instructions: TransactionInstruction[]) {
 export const shortenString = (string: string, chars = 3): string => {
   if (string.length < chars * 2 + 3) return string;
   return `${string.slice(0, chars)}..${string.slice(-chars)}`;
+};
+
+export const findDefaultCover = (statelessCovers: StatelessCoverDto[]) => {
+  return statelessCovers.find((cover) => cover.isDefault)?.image;
 };

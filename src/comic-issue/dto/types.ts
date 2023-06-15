@@ -11,6 +11,7 @@ export class StatelessCoverInput {
   artist: string;
   rarity: ComicRarity;
   share: number;
+  isDefault: boolean;
 }
 
 export class StatefulCoverInput {

@@ -123,7 +123,6 @@ Table ComicIssue {
   flavorText String [not null, default: '']
   signature String [not null, default: '']
   pdf String [not null, default: '']
-  cover String [not null, default: '']
   statelessCovers StatelessCover [not null]
   statefulCovers StatefulCover [not null]
   releaseDate DateTime [not null]
@@ -180,6 +179,7 @@ Table StatelessCover {
   comicIssueId Int [not null]
   artist String [not null]
   share Int [not null]
+  isDefault Boolean [not null]
 
   indexes {
     (comicIssueId, rarity) [unique]

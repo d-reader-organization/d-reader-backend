@@ -29,6 +29,8 @@ import {
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
 import { ComicIssueCollaboratorDto } from './create-comic-issue.dto';
+import { StatefulCoverDto, StatelessCoverDto } from './comic-issue-cover.dto';
+import { findDefaultCover } from 'src/utils/helpers';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -124,6 +126,18 @@ export class ComicIssueDto {
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
   collaborators: ComicIssueCollaboratorDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCoverDto)
+  @ApiProperty({ type: [StatefulCoverDto] })
+  statefulCovers: StatefulCoverDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCoverDto)
+  @ApiProperty({ type: [StatelessCoverDto] })
+  statelessCovers: StatelessCoverDto[];
 }
 
 type ComicIssueInput = ComicIssue & {
@@ -133,6 +147,9 @@ type ComicIssueInput = ComicIssue & {
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
   collaborators?: ComicIssueCollaboratorDto[];
+  cover?: string;
+  statelessCovers?: StatelessCoverDto[];
+  statefulCovers?: StatefulCoverDto[];
 };
 
 export async function toComicIssueDto(issue: ComicIssueInput) {
@@ -147,7 +164,9 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    cover: await getReadUrl(issue.cover),
+    cover: issue.statelessCovers
+      ? await getReadUrl(findDefaultCover(issue.statelessCovers))
+      : undefined,
     // signature: await getReadUrl(issue.signature),
     // TODO: add statelessCovers and statefulCovers
     releaseDate: issue.releaseDate.toISOString(),
@@ -195,6 +214,8 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
       : undefined,
     candyMachineAddress: issue.candyMachineAddress ?? undefined,
     collaborators: issue.collaborators,
+    statefulCovers: issue.statefulCovers,
+    statelessCovers: issue.statelessCovers,
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
