@@ -19,58 +19,57 @@ import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 
-const generateStatefulCovers = (
+const generateCoversAndSignature = (
   creatorSlug: string,
   comicIssueSlug: string,
 ) => ({
-  createMany: {
-    data: [
-      {
-        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.png`,
-        isSigned: false,
-        isUsed: false,
-        rarity: null,
-        artist: 'John Le',
-      },
-      {
-        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-unsigned-cover.png`,
-        isSigned: false,
-        isUsed: true,
-        rarity: null,
-        artist: 'Laura El',
-      },
-      {
-        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-signed-cover.png`,
-        isSigned: true,
-        isUsed: false,
-        rarity: null,
-        artist: 'SCUM',
-      },
-      {
-        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-signed-cover.png`,
-        isSigned: true,
-        isUsed: true,
-        rarity: null,
-        artist: 'Mate Žaja',
-      },
-    ],
+  signature: `comics/${creatorSlug}/issues/${comicIssueSlug}/signature.png`,
+  stateFulCovers: {
+    createMany: {
+      data: [
+        {
+          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.jpg`,
+          isSigned: false,
+          isUsed: false,
+          rarity: null,
+          artist: 'John Le',
+        },
+        {
+          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-unsigned-cover.jpg`,
+          isSigned: false,
+          isUsed: true,
+          rarity: null,
+          artist: 'Laura El',
+        },
+        {
+          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-signed-cover.jpg`,
+          isSigned: true,
+          isUsed: false,
+          rarity: null,
+          artist: 'SCUM',
+        },
+        {
+          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-signed-cover.jpg`,
+          isSigned: true,
+          isUsed: true,
+          rarity: null,
+          artist: 'Mate Žaja',
+        },
+      ],
+    },
   },
-});
-
-const generateStatelessCovers = (
-  creatorSlug: string,
-  comicIssueSlug: string,
-) => ({
-  createMany: {
-    data: [
-      {
-        image: `comics/${creatorSlug}/issues/${comicIssueSlug}/cover.png`,
-        rarity: null,
-        artist: 'John Le',
-        share: 100,
-        isDefault: true,
-      },
-    ],
+  statelessCovers: {
+    createMany: {
+      data: [
+        {
+          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/cover.jpg`,
+          rarity: null,
+          artist: 'John Le',
+          share: 100,
+          isDefault: true,
+        },
+      ],
+    },
   },
 });
 
@@ -528,12 +527,7 @@ async function main() {
                     description:
                       'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                     flavorText: 'Geez these cats are so gore',
-                    signature: '',
-                    statefulCovers: generateStatefulCovers(
-                      'gorecats',
-                      'rise-of-the-gorecats',
-                    ),
-                    statelessCovers: generateStatelessCovers(
+                    ...generateCoversAndSignature(
                       'gorecats',
                       'rise-of-the-gorecats',
                     ),
@@ -610,15 +604,7 @@ async function main() {
               description:
                 '3 chubby siblings embark on their first adventure. They discover a magical land and encounter various obstacles.',
               flavorText: '“Chubby babies are so cute” - grandma',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'barbabyans',
-                'adventure-begins',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'barbabyans',
-                'adventure-begins',
-              ),
+              ...generateCoversAndSignature('barbabyans', 'adventure-begins'),
               releaseDate: subDays(new Date(), 23),
               deletedAt: null,
               featuredAt: null,
@@ -687,12 +673,7 @@ async function main() {
             description:
               'His people gone. His kingdom a smouldering ruin. Follow the perilous adventures of Niko',
             flavorText: "“I'm just getting started!” - Niko",
-            signature: '',
-            statefulCovers: generateStatefulCovers(
-              'niko-and-the-sword',
-              'many-moons-ago',
-            ),
-            statelessCovers: generateStatelessCovers(
+            ...generateCoversAndSignature(
               'niko-and-the-sword',
               'many-moons-ago',
             ),
@@ -766,15 +747,7 @@ async function main() {
             description:
               ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
             flavorText: 'Lovely pieces put by Jim Bryson',
-            signature: '',
-            statefulCovers: generateStatefulCovers(
-              'the-dark-portal',
-              'concept-art',
-            ),
-            statelessCovers: generateStatelessCovers(
-              'the-dark-portal',
-              'concept-art',
-            ),
+            ...generateCoversAndSignature('the-dark-portal', 'concept-art'),
             releaseDate: subDays(new Date(), 15),
             deletedAt: null,
             featuredAt: null,
@@ -879,12 +852,7 @@ async function main() {
                       "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs. A new age would start for Narentines, as the great Purge pawes it's path to the Valley",
                     flavorText:
                       'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
-                    signature: '',
-                    statefulCovers: generateStatefulCovers(
-                      'narentines',
-                      'narentines-the-purge',
-                    ),
-                    statelessCovers: generateStatelessCovers(
+                    ...generateCoversAndSignature(
                       'narentines',
                       'narentines-the-purge',
                     ),
@@ -960,12 +928,7 @@ async function main() {
               description:
                 'The Lupers of Arx Urbis are a proud and noble race of wolves descended from the she-wolf of Lupercal, who raised Romulus and Remus',
               flavorText: 'Placeholder flavor text',
-              signature: '',
-              statefulCovers: generateStatefulCovers('lupers', 'canis-lupers'),
-              statelessCovers: generateStatelessCovers(
-                'lupers',
-                'canis-lupers',
-              ),
+              ...generateCoversAndSignature('lupers', 'canis-lupers'),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -994,12 +957,7 @@ async function main() {
               description:
                 'Ionus is the god of sky and thunder. He is also the god of the city, order, and oaths.',
               flavorText: 'Placeholder flavor text',
-              signature: '',
-              statefulCovers: generateStatefulCovers('lupers', 'godiary-ionus'),
-              statelessCovers: generateStatelessCovers(
-                'lupers',
-                'godiary-ionus',
-              ),
+              ...generateCoversAndSignature('lupers', 'godiary-ionus'),
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1028,15 +986,7 @@ async function main() {
               description:
                 'The most important deity is Diluna, the goddess of the hunt and the moon',
               flavorText: 'Placeholder flavor text',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'lupers',
-                'godiary-diluna',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'lupers',
-                'godiary-diluna',
-              ),
+              ...generateCoversAndSignature('lupers', 'godiary-diluna'),
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -1065,15 +1015,7 @@ async function main() {
               description:
                 'Nuptus is god of rivers, springs and waters. He is the patron of fishermen, and protector of rivers',
               flavorText: 'Placeholder flavor text',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'lupers',
-                'godiary-nuptus',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'lupers',
-                'godiary-nuptus',
-              ),
+              ...generateCoversAndSignature('lupers', 'godiary-nuptus'),
               releaseDate: subDays(new Date(), 15),
               deletedAt: null,
               featuredAt: null,
@@ -1176,12 +1118,7 @@ async function main() {
                       description:
                         'A high-stakes, risk-based adventure of crime, corruption...and bananas.',
                       flavorText: 'Bananas 🍌',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'the-heist',
-                        'how-it-all-began',
-                      ),
-                      statelessCovers: generateStatelessCovers(
+                      ...generateCoversAndSignature(
                         'the-heist',
                         'how-it-all-began',
                       ),
@@ -1256,15 +1193,7 @@ async function main() {
                 description:
                   'Matija finds himself knocked down & locked in the prison all alone.',
                 flavorText: '“I wonder what I can do with these bolt cutters”',
-                signature: '',
-                statefulCovers: generateStatefulCovers(
-                  'the-remnants',
-                  'all-alone',
-                ),
-                statelessCovers: generateStatelessCovers(
-                  'the-remnants',
-                  'all-alone',
-                ),
+                ...generateCoversAndSignature('the-remnants', 'all-alone'),
                 releaseDate: subDays(new Date(), 22),
                 deletedAt: null,
                 featuredAt: null,
@@ -1369,12 +1298,7 @@ async function main() {
                       description:
                         'In an underground lab located somewhere in the frigid tundra of Alaska, an unnamed and highly intoxicated scientist is on a quest to genetically engineer The Gooney Toons.',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'gooneytoons',
-                        'birth-of-the-gooneys',
-                      ),
-                      statelessCovers: generateStatelessCovers(
+                      ...generateCoversAndSignature(
                         'gooneytoons',
                         'birth-of-the-gooneys',
                       ),
@@ -1406,12 +1330,7 @@ async function main() {
                       description:
                         'For what is the purpose of creating 2 meter tall upright walking beast?',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'gooneytoons',
-                        'carnage-of-the-gooneys',
-                      ),
-                      statelessCovers: generateStatelessCovers(
+                      ...generateCoversAndSignature(
                         'gooneytoons',
                         'carnage-of-the-gooneys',
                       ),
@@ -1433,12 +1352,7 @@ async function main() {
                       description:
                         'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'gooneytoons',
-                        'mutation-of-the-gooneys',
-                      ),
-                      statelessCovers: generateStatelessCovers(
+                      ...generateCoversAndSignature(
                         'gooneytoons',
                         'mutation-of-the-gooneys',
                       ),
@@ -1460,12 +1374,7 @@ async function main() {
                       description:
                         'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
                       flavorText: '“Such nasty little creatures these Goons”',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'gooneytoons',
-                        'release-of-the-gooneys',
-                      ),
-                      statelessCovers: generateStatelessCovers(
+                      ...generateCoversAndSignature(
                         'gooneytoons',
                         'release-of-the-gooneys',
                       ),
@@ -1563,15 +1472,7 @@ async function main() {
                     description: 'Short comic about love, anger, and treachery',
                     flavorText:
                       'Prepare to get overwhelmed with hate and sorrow',
-                    signature: '',
-                    statefulCovers: generateStatefulCovers(
-                      'animosities',
-                      'episode-1',
-                    ),
-                    statelessCovers: generateStatelessCovers(
-                      'animosities',
-                      'episode-1',
-                    ),
+                    ...generateCoversAndSignature('animosities', 'episode-1'),
                     releaseDate: subDays(new Date(), 20),
                     deletedAt: null,
                     featuredAt: null,
@@ -1640,12 +1541,7 @@ async function main() {
                 description:
                   'A short comic that got published in KOMIKAZE #54 webzine',
                 flavorText: '“So lovely” - my mom',
-                signature: '',
-                statefulCovers: generateStatefulCovers('birthday', 'episode-1'),
-                statelessCovers: generateStatelessCovers(
-                  'birthday',
-                  'episode-1',
-                ),
+                ...generateCoversAndSignature('birthday', 'episode-1'),
                 releaseDate: subDays(new Date(), 16),
                 deletedAt: null,
                 featuredAt: null,
@@ -1711,15 +1607,7 @@ async function main() {
               description:
                 'lady Kuga (the Plague) goes from village to village and likes being clean',
               flavorText: '',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'immaculate-taint',
-                'episode-1',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'immaculate-taint',
-                'episode-1',
-              ),
+              ...generateCoversAndSignature('immaculate-taint', 'episode-1'),
               releaseDate: subDays(new Date(), 19),
               deletedAt: null,
               featuredAt: null,
@@ -1786,9 +1674,7 @@ async function main() {
               slug: 'episode-1',
               description: 'Summer vacation spent on the island of Susak',
               flavorText: '',
-              signature: '',
-              statefulCovers: generateStatefulCovers('island', 'episode-1'),
-              statelessCovers: generateStatelessCovers('island', 'episode-1'),
+              ...generateCoversAndSignature('island', 'episode-1'),
               releaseDate: subDays(new Date(), 14),
               deletedAt: null,
               featuredAt: null,
@@ -1857,9 +1743,7 @@ async function main() {
                 description:
                   'Compositinal study of a preraphaelite painting "Lamia"',
                 flavorText: '',
-                signature: '',
-                statefulCovers: generateStatefulCovers('lamia', 'true-love'),
-                statelessCovers: generateStatelessCovers('lamia', 'true-love'),
+                ...generateCoversAndSignature('lamia', 'true-love'),
                 releaseDate: subDays(new Date(), 17),
                 deletedAt: null,
                 featuredAt: null,
@@ -1963,15 +1847,7 @@ async function main() {
                       description:
                         'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                       flavorText: 'This is a story about family. About loss.',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'wretches',
-                        'issue-1',
-                      ),
-                      statelessCovers: generateStatelessCovers(
-                        'wretches',
-                        'issue-1',
-                      ),
+                      ...generateCoversAndSignature('wretches', 'issue-1'),
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
@@ -2002,15 +1878,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          signature: '',
-                          statefulCovers: generateStatefulCovers(
-                            'wretches',
-                            'issue-1',
-                          ),
-                          statelessCovers: generateStatelessCovers(
-                            'wretches',
-                            'issue-1',
-                          ),
+                          ...generateCoversAndSignature('wretches', 'issue-1'),
                           releaseDate: subDays(new Date(), 19),
                           deletedAt: null,
                           featuredAt: null,
@@ -2042,15 +1910,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          signature: '',
-                          statefulCovers: generateStatefulCovers(
-                            'wretches',
-                            'issue-3',
-                          ),
-                          statelessCovers: generateStatelessCovers(
-                            'wretches',
-                            'issue-3',
-                          ),
+                          ...generateCoversAndSignature('wretches', 'issue-3'),
                           releaseDate: subDays(new Date(), 18),
                           deletedAt: null,
                           featuredAt: null,
@@ -2082,15 +1942,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          signature: '',
-                          statefulCovers: generateStatefulCovers(
-                            'wretches',
-                            'issue-4',
-                          ),
-                          statelessCovers: generateStatelessCovers(
-                            'wretches',
-                            'issue-4',
-                          ),
+                          ...generateCoversAndSignature('wretches', 'issue-4'),
                           releaseDate: subDays(new Date(), 16),
                           deletedAt: null,
                           featuredAt: null,
@@ -2122,15 +1974,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          signature: '',
-                          statefulCovers: generateStatefulCovers(
-                            'wretches',
-                            'issue-5',
-                          ),
-                          statelessCovers: generateStatelessCovers(
-                            'wretches',
-                            'issue-5',
-                          ),
+                          ...generateCoversAndSignature('wretches', 'issue-5'),
                           releaseDate: subDays(new Date(), 15),
                           deletedAt: null,
                           featuredAt: null,
@@ -2162,15 +2006,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          signature: '',
-                          statefulCovers: generateStatefulCovers(
-                            'wretches',
-                            'issue-6',
-                          ),
-                          statelessCovers: generateStatelessCovers(
-                            'wretches',
-                            'issue-6',
-                          ),
+                          ...generateCoversAndSignature('wretches', 'issue-6'),
                           releaseDate: subDays(new Date(), 12),
                           deletedAt: null,
                           featuredAt: null,
@@ -2244,9 +2080,7 @@ async function main() {
               description:
                 'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText: 'Jana and the tower of Want',
-              signature: '',
-              statefulCovers: generateStatefulCovers('jana', 'issue-1'),
-              statelessCovers: generateStatelessCovers('jana', 'issue-1'),
+              ...generateCoversAndSignature('jana', 'issue-1'),
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
               featuredAt: null,
@@ -2276,9 +2110,7 @@ async function main() {
                   description:
                     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText: 'Jana and the tower of Want',
-                  signature: '',
-                  statefulCovers: generateStatefulCovers('jana', 'issue-2'),
-                  statelessCovers: generateStatelessCovers('jana', 'issue-2'),
+                  ...generateCoversAndSignature('jana', 'issue-2'),
                   releaseDate: subDays(new Date(), 19),
                   deletedAt: null,
                   featuredAt: null,
@@ -2351,15 +2183,7 @@ async function main() {
                 'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
               flavorText:
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'knockturn-county',
-                'issue-1',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'knockturn-county',
-                'issue-1',
-              ),
+              ...generateCoversAndSignature('knockturn-county', 'issue-1'),
               releaseDate: subDays(new Date(), 17),
               deletedAt: null,
               featuredAt: null,
@@ -2390,15 +2214,7 @@ async function main() {
                     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                   flavorText:
                     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-                  signature: '',
-                  statefulCovers: generateStatefulCovers(
-                    'knockturn-county',
-                    'issue-2',
-                  ),
-                  statelessCovers: generateStatelessCovers(
-                    'knockturn-county',
-                    'issue-2',
-                  ),
+                  ...generateCoversAndSignature('knockturn-county', 'issue-2'),
                   releaseDate: subDays(new Date(), 16),
                   deletedAt: null,
                   featuredAt: null,
@@ -2466,15 +2282,7 @@ async function main() {
               slug: 'treacherous-seas',
               description: 'Proceeds go to the Ronald McDonald House charity',
               flavorText: 'Amazing and inspiring story! - IDW',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'dark-waters',
-                'treacherous-seas',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'dark-waters',
-                'treacherous-seas',
-              ),
+              ...generateCoversAndSignature('dark-waters', 'treacherous-seas'),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -2545,15 +2353,7 @@ async function main() {
               description:
                 'A group of skilled warriors travel across parallel universes, battling powerful enemies and uncovering the mysteries of the multiverse.',
               flavorText: 'Amazing and inspiring story! - IDW',
-              signature: '',
-              statefulCovers: generateStatefulCovers(
-                'multi-versus',
-                'episode-1',
-              ),
-              statelessCovers: generateStatelessCovers(
-                'multi-versus',
-                'episode-1',
-              ),
+              ...generateCoversAndSignature('multi-versus', 'episode-1'),
               releaseDate: subDays(new Date(), 18),
               deletedAt: null,
               featuredAt: null,
@@ -2656,15 +2456,7 @@ async function main() {
                       description:
                         'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
                       flavorText: 'Only the worthy shall be chosen!',
-                      signature: '',
-                      statefulCovers: generateStatefulCovers(
-                        'tsukiverse',
-                        'issue-1',
-                      ),
-                      statelessCovers: generateStatelessCovers(
-                        'tsukiverse',
-                        'issue-1',
-                      ),
+                      ...generateCoversAndSignature('tsukiverse', 'issue-1'),
                       releaseDate: subDays(new Date(), 22),
                       deletedAt: null,
                       featuredAt: null,
