@@ -1,4 +1,4 @@
-import { RarityConstant } from './comic-issue/dto/types';
+import { RarityShare } from './comic-issue/dto/types';
 
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
@@ -59,7 +59,7 @@ export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);
 
-export const THREE_RARITIES_SHARE: RarityConstant[] = [
+export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
     rarity: 'Common',
     value: 70,
@@ -74,7 +74,7 @@ export const THREE_RARITIES_SHARE: RarityConstant[] = [
   },
 ];
 
-export const FIVE_RARITIES_SHARE: RarityConstant[] = [
+export const FIVE_RARITIES_SHARE: RarityShare[] = [
   {
     rarity: 'Common',
     value: 60,

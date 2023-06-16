@@ -183,6 +183,7 @@ export function toComicDto(comic: ComicInput) {
           avatar: getPublicUrl(comic.creator.avatar),
         }
       : undefined,
+    // TODO: collaborators: ...
   };
 
   const comicDto = plainToInstance(ComicDto, plainComicDto);

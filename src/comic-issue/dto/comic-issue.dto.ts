@@ -25,12 +25,19 @@ import {
   Comic,
   ComicPage,
   WalletComicIssue,
+  ComicIssueCollaborator,
+  StatelessCover,
+  StatefulCover,
 } from '@prisma/client';
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
 import { ComicIssueCollaboratorDto } from './create-comic-issue.dto';
-import { StatefulCoverDto, StatelessCoverDto } from './comic-issue-cover.dto';
 import { findDefaultCover } from 'src/utils/helpers';
+import {
+  StatelessCoverDto,
+  toStatelessCoverDtoArray,
+} from './covers/stateless-cover.dto';
+import { StatefulCoverDto } from './covers/stateful-cover.dto';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -125,31 +132,30 @@ export class ComicIssueDto {
   @IsArray()
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
-  collaborators: ComicIssueCollaboratorDto[];
+  collaborators?: ComicIssueCollaboratorDto[];
 
   @IsOptional()
   @IsArray()
   @Type(() => StatefulCoverDto)
   @ApiProperty({ type: [StatefulCoverDto] })
-  statefulCovers: StatefulCoverDto[];
+  statefulCovers?: StatefulCoverDto[];
 
   @IsOptional()
   @IsArray()
   @Type(() => StatefulCoverDto)
   @ApiProperty({ type: [StatelessCoverDto] })
-  statelessCovers: StatelessCoverDto[];
+  statelessCovers?: StatelessCoverDto[];
 }
 
-type ComicIssueInput = ComicIssue & {
+export type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
   pages?: ComicPage[];
   stats?: ComicIssueStats;
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
-  collaborators?: ComicIssueCollaboratorDto[];
-  cover?: string;
-  statelessCovers?: StatelessCoverDto[];
-  statefulCovers?: StatefulCoverDto[];
+  collaborators?: ComicIssueCollaborator[];
+  statelessCovers?: StatelessCover[];
+  statefulCovers?: StatefulCover[];
 };
 
 export function toComicIssueDto(issue: ComicIssueInput) {
@@ -165,14 +171,12 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     description: issue.description,
     flavorText: issue.flavorText,
     signature: getPublicUrl(issue.signature),
-    cover: issue.statelessCovers
-      ? getPublicUrl(findDefaultCover(issue.statelessCovers).image)
-      : '',
+    cover: getPublicUrl(findDefaultCover(issue.statelessCovers).image) || '',
     releaseDate: issue.releaseDate.toISOString(),
     candyMachineAddress: issue.candyMachineAddress ?? undefined,
-    collaborators: issue.collaborators,
-    statefulCovers: issue.statefulCovers,
-    statelessCovers: issue.statelessCovers,
+    // collaborators: issue.collaborators,
+    // statefulCovers: toStatefulCoverDtoArray(issue.statefulCovers),
+    statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),
     // if supply is 0 it's not an NFT collection and therefore it's free
     isFree: issue.supply === 0,
     isPublished: !!issue.publishedAt,

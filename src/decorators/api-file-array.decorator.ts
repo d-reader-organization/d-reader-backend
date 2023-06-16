@@ -5,8 +5,14 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { isArray } from 'lodash';
-import { RequestDataDto } from './api-file-array.dto';
 import { validate } from 'class-validator';
+
+export class RequestDataDto {
+  bodyField: string;
+  fileField: string;
+  bodyType: any;
+  fileType: any;
+}
 
 async function validateData(bodyData: object, fileData: object) {
   const errors = await Promise.all([validate(bodyData), validate(fileData)]);

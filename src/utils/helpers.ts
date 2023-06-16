@@ -1,9 +1,9 @@
 import { sol } from '@metaplex-foundation/js';
 import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
-import { StatelessCoverDto } from 'src/comic-issue/dto/comic-issue-cover.dto';
-import { StatefulCoverInput } from 'src/comic-issue/dto/types';
-import { CreateStatefulCoverDto } from 'src/comic-issue/dto/create-comic-covers.dto';
+import { StatefulCoverInput } from '../comic-issue/dto/types';
+import { CreateStatefulCoverDto } from '../comic-issue/dto/covers/create-stateful-cover.dto';
+import { StatelessCover } from '@prisma/client';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -80,7 +80,8 @@ export const shortenString = (string: string, chars = 3): string => {
   return `${string.slice(0, chars)}..${string.slice(-chars)}`;
 };
 
-export const findDefaultCover = (statelessCovers: StatelessCoverDto[]) => {
+// TODO: move these elsewhere
+export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
 };
 

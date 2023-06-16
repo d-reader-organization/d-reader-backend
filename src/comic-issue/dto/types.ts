@@ -14,6 +14,8 @@ export class StatelessCoverInput {
   isDefault: boolean;
 }
 
+// TODO: move these to relevant DTOs ??
+
 export class StatefulCoverInput {
   image: string;
   artist: string;
@@ -22,13 +24,13 @@ export class StatefulCoverInput {
   isUsed: boolean;
 }
 
-export type CandyMachineIssue = ComicIssue & {
+export type ComicIssueCMInput = ComicIssue & {
   statelessCovers: StatelessCover[];
   statefulCovers: StatefulCover[];
   collaborators: ComicIssueCollaborator[];
 };
 
-export class RarityConstant {
+export class RarityShare {
   rarity: ComicRarity;
   value: number;
 }

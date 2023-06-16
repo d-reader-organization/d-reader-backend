@@ -18,6 +18,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
 import { CollaboratorRole } from '@prisma/client';
 
+// TODO: move to comic-issue-collaborator.dto.ts
 export class ComicIssueCollaboratorDto {
   @IsEnum(CollaboratorRole)
   @ApiProperty({ enum: CollaboratorRole })

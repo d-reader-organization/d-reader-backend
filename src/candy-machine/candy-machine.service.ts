@@ -44,7 +44,7 @@ import {
 } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
 import { ComicRarity, StatefulCover } from '@prisma/client';
-import { CandyMachineIssue, RarityConstant } from '../comic-issue/dto/types';
+import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
 
 @Injectable()
@@ -98,7 +98,7 @@ export class CandyMachineService {
     );
   }
 
-  async getComicIssueCovers(comicIssue: CandyMachineIssue) {
+  async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
     // TODO: revise this
     let statelessCovers: MetaplexFile[];
     const haveRarities =
@@ -135,7 +135,7 @@ export class CandyMachineService {
   }
 
   async uploadMetadata(
-    comicIssue: CandyMachineIssue,
+    comicIssue: ComicIssueCMInput,
     comicName: string,
     creatorAddress: string,
     image: MetaplexFile,
@@ -169,7 +169,7 @@ export class CandyMachineService {
   }
 
   async uploadItemMetadata(
-    comicIssue: CandyMachineIssue,
+    comicIssue: ComicIssueCMInput,
     comicName: string,
     coverImage: MetaplexFile,
     creatorAddress: string,
@@ -186,7 +186,7 @@ export class CandyMachineService {
         Legendary: this.findCover(comicIssue.statefulCovers, 'Legendary'),
       };
 
-      let rarityShare: RarityConstant[];
+      let rarityShare: RarityShare[];
       const haveFiveRarities = !!rarityCovers.Epic;
       if (haveFiveRarities) {
         rarityShare = FIVE_RARITIES_SHARE;
@@ -253,7 +253,7 @@ export class CandyMachineService {
   }
 
   async createComicIssueCM(
-    comicIssue: CandyMachineIssue,
+    comicIssue: ComicIssueCMInput,
     comicName: string,
     creatorAddress: string,
     groups?: [
@@ -499,7 +499,7 @@ export class CandyMachineService {
     return receipts;
   }
 
-  validateInput(comicIssue: CandyMachineIssue) {
+  validateInput(comicIssue: ComicIssueCMInput) {
     if (comicIssue.supply <= 0) {
       throw new BadRequestException(
         'Cannot create an NFT collection with supply lower than 1',

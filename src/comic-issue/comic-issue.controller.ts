@@ -38,24 +38,27 @@ import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet, Role } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
-import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
+import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
 import {
   ComicPageDto,
   toComicPageDtoArray,
-} from 'src/comic-page/entities/comic-page.dto';
+} from '../comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
-import {
-  CoverDto,
-  CreateStatefulCoverBodyDto,
-  CreateStatefulCoverDto,
-  CreateStatelessCoverBodyDto,
-  CreateStatelessCoverDto,
-} from './dto/create-comic-covers.dto';
-import { ApiFileArray } from '../decorators/api-file-array.decorator';
+import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import {
+  CreateStatefulCoverBodyDto,
+  CreateStatefulCoverFilesDto,
+  CreateStatefulCoverDto,
+} from './dto/covers/create-stateful-cover.dto';
+import {
+  CreateStatelessCoverBodyDto,
+  CreateStatelessCoverFilesDto,
+  CreateStatelessCoverDto,
+} from './dto/covers/create-stateless-cover.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -125,6 +128,9 @@ export class ComicIssueController {
     const pages = await this.comicIssueService.getPages(+id, wallet.address);
     return await toComicPageDtoArray(pages);
   }
+
+  // TODO: endpoint for uploading the pdf file
+  // TODO: endpoint for uploading pages with @ApiFileArray
 
   /* Update specific comic issue */
   @Patch('update/:id')
@@ -245,14 +251,14 @@ export class ComicIssueController {
   /* Upload Stateless covers */
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
-  @Post('upload-covers/stateless/:id')
+  @Post('upload/stateless-covers/:id')
   async uploadStatelessCovers(
     @Param('id') id: string,
     @ApiFileArray({
       bodyField: 'data',
-      fileField: 'cover',
+      fileField: 'image',
       bodyType: CreateStatelessCoverBodyDto,
-      fileType: CoverDto,
+      fileType: CreateStatelessCoverFilesDto,
     })
     statelessCoverDto: CreateStatelessCoverDto[],
   ) {
@@ -264,16 +270,16 @@ export class ComicIssueController {
   }
 
   /* Upload Stateful covers */
-  @Post('upload-covers/stateful/:id')
+  @Post('upload/stateful-covers/:id')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
   async uploadStatefulCovers(
     @Param('id') id: string,
     @ApiFileArray({
       bodyField: 'data',
-      fileField: 'cover',
+      fileField: 'image',
       bodyType: CreateStatefulCoverBodyDto,
-      fileType: CoverDto,
+      fileType: CreateStatefulCoverFilesDto,
     })
     statefulCoverDto: [CreateStatefulCoverDto],
   ) {
@@ -292,9 +298,9 @@ export class ComicIssueController {
     @Param('id') id: string,
     @ApiFileArray({
       bodyField: 'data',
-      fileField: 'cover',
+      fileField: 'image',
       bodyType: CreateStatelessCoverBodyDto,
-      fileType: CoverDto,
+      fileType: CreateStatelessCoverFilesDto,
     })
     statelessCoverDto: CreateStatelessCoverDto[],
   ) {
@@ -313,9 +319,9 @@ export class ComicIssueController {
     @Param('id') id: string,
     @ApiFileArray({
       bodyField: 'data',
-      fileField: 'cover',
+      fileField: 'image',
       bodyType: CreateStatefulCoverBodyDto,
-      fileType: CoverDto,
+      fileType: CreateStatefulCoverFilesDto,
     })
     statefulCoverDto: [CreateStatefulCoverDto],
   ) {
