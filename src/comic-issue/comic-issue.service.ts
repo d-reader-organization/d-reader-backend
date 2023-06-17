@@ -535,51 +535,25 @@ export class ComicIssueService {
     statelessCoversDto: CreateStatelessCoverDto[],
     comicIssueId: number,
   ) {
-    // TODO: first check if stateless covers are existing, if yes -> set new covers and delete old ones?, if not -> create new covers
     /* upload to aws and update comic issue with these covers */
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id: comicIssueId },
+      include: { statelessCovers: true },
     });
 
     const statelessCovers = await this.saveStatelessCoversToAws(
       statelessCoversDto,
       comicIssue,
     );
-    return await this.prisma.comicIssue.update({
-      where: { id: comicIssueId },
-      data: {
-        statelessCovers: {
-          createMany: { data: statelessCovers },
-        },
-      },
-      include: {
-        comic: { include: { creator: true } },
-        collectionNft: true,
-        statefulCovers: true,
-        statelessCovers: true,
-        collaborators: true,
-      },
-    });
-  }
 
-  async updateStatelessCovers(
-    statelessCoversDto: CreateStatelessCoverDto[],
-    comicIssueId: number,
-  ) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
-      where: { id: comicIssueId },
-    });
-    const statelessCovers = await this.saveStatelessCoversToAws(
-      statelessCoversDto,
-      comicIssue,
-    );
+    let query: Prisma.StatelessCoverUpdateManyWithoutComicIssueNestedInput;
+    if (comicIssue.statelessCovers.length)
+      query = { set: statelessCovers.map((cover, id) => ({ id, ...cover })) };
+    else query = { createMany: { data: statelessCovers } };
+
     return await this.prisma.comicIssue.update({
       where: { id: comicIssueId },
-      data: {
-        statelessCovers: {
-          set: statelessCovers.map((cover, id) => ({ id, ...cover })),
-        },
-      },
+      data: { statelessCovers: query },
       include: {
         comic: { include: { creator: true } },
         collectionNft: true,
@@ -594,50 +568,23 @@ export class ComicIssueService {
     statefulCoverDto: [CreateStatefulCoverDto],
     comicIssueId: number,
   ) {
-    // TODO: first check if stateful covers are existing, if yes -> set new covers and delete old ones?, if not -> create new covers
     /* upload to aws and update comic issue with these covers */
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id: comicIssueId },
+      include: { statefulCovers: true },
     });
     const statefulCovers = await this.saveStatefulCoversToAws(
       statefulCoverDto,
       comicIssue,
     );
-    return await this.prisma.comicIssue.update({
-      where: { id: comicIssueId },
-      data: {
-        statefulCovers: {
-          createMany: { data: statefulCovers },
-        },
-      },
-      include: {
-        comic: { include: { creator: true } },
-        collectionNft: true,
-        statefulCovers: true,
-        statelessCovers: true,
-        collaborators: true,
-      },
-    });
-  }
+    let query: Prisma.StatefulCoverUpdateManyWithoutComicIssueNestedInput;
+    if (comicIssue.statefulCovers.length)
+      query = { set: statefulCovers.map((cover, id) => ({ id, ...cover })) };
+    else query = { createMany: { data: statefulCovers } };
 
-  async updateStatefulCovers(
-    statefulCoverDto: [CreateStatefulCoverDto],
-    comicIssueId: number,
-  ) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
-      where: { id: comicIssueId },
-    });
-    const statefulCovers = await this.saveStatefulCoversToAws(
-      statefulCoverDto,
-      comicIssue,
-    );
     return await this.prisma.comicIssue.update({
       where: { id: comicIssueId },
-      data: {
-        statefulCovers: {
-          set: statefulCovers.map((cover, id) => ({ id, ...cover })),
-        },
-      },
+      data: { statefulCovers: query },
       include: {
         comic: { include: { creator: true } },
         collectionNft: true,

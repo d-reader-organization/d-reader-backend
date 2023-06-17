@@ -289,46 +289,4 @@ export class ComicIssueController {
     );
     return toComicIssueDto(comicIssue);
   }
-
-  /* Update Stateless covers */
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(AnyFilesInterceptor({}))
-  @Patch('update-covers/stateless/:id')
-  async updateStatelessCovers(
-    @Param('id') id: string,
-    @ApiFileArray({
-      bodyField: 'data',
-      fileField: 'image',
-      bodyType: CreateStatelessCoverBodyDto,
-      fileType: CreateStatelessCoverFilesDto,
-    })
-    statelessCoverDto: CreateStatelessCoverDto[],
-  ) {
-    const comicIssue = await this.comicIssueService.updateStatelessCovers(
-      statelessCoverDto,
-      +id,
-    );
-    return toComicIssueDto(comicIssue);
-  }
-
-  /* Update Stateful covers */
-  @Patch('update-covers/stateful/:id')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(AnyFilesInterceptor({}))
-  async updateStatefulCovers(
-    @Param('id') id: string,
-    @ApiFileArray({
-      bodyField: 'data',
-      fileField: 'image',
-      bodyType: CreateStatefulCoverBodyDto,
-      fileType: CreateStatefulCoverFilesDto,
-    })
-    statefulCoverDto: [CreateStatefulCoverDto],
-  ) {
-    const comicIssue = await this.comicIssueService.updateStatefulCovers(
-      statefulCoverDto,
-      +id,
-    );
-    return toComicIssueDto(comicIssue);
-  }
 }
