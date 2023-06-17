@@ -39,10 +39,7 @@ import {
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
-import {
-  generateStatefulCoverName,
-  findDefaultCover,
-} from '../utils/comic-issue';
+import { findDefaultCover } from '../utils/comic-issue';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
