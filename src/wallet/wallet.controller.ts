@@ -7,7 +7,6 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
@@ -31,7 +30,6 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   /* Get all wallets */
-  @UseInterceptors(ClassSerializerInterceptor)
   @Get('get')
   async findAll(): Promise<WalletDto[]> {
     const wallets = await this.walletService.findAll();

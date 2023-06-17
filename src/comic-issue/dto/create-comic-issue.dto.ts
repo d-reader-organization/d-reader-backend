@@ -8,25 +8,13 @@ import {
   IsPositive,
   Max,
   MaxLength,
-  IsEnum,
-  IsString,
   Min,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
+import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
-import { CollaboratorRole } from '@prisma/client';
-
-// TODO: move to comic-issue-collaborator.dto.ts
-export class ComicIssueCollaboratorDto {
-  @IsEnum(CollaboratorRole)
-  @ApiProperty({ enum: CollaboratorRole })
-  role: CollaboratorRole;
-
-  @IsString()
-  name: string;
-}
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -100,6 +88,10 @@ export class CreateComicIssueFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   signature?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  pdf?: Express.Multer.File | null;
 }
 
 export class CreateComicIssueSwaggerDto extends IntersectionType(

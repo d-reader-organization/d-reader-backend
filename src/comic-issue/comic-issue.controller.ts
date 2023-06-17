@@ -129,7 +129,6 @@ export class ComicIssueController {
     return await toComicPageDtoArray(pages);
   }
 
-  // TODO: endpoint for uploading the pdf file
   // TODO: endpoint for uploading pages with @ApiFileArray
 
   /* Update specific comic issue */
@@ -187,12 +186,29 @@ export class ComicIssueController {
     return await this.findOne(id, wallet);
   }
 
-  /* Update specific comic issues cover file */
+  /* Update specific comic issues pdf file */
+  @ApiConsumes('multipart/form-data')
+  @ApiFile('pdf')
+  @UseInterceptors(FileInterceptor('pdf'))
+  @Patch('update/:id/pdf')
+  async updatePdf(
+    @Param('id') id: string,
+    @UploadedFile() pdf: Express.Multer.File,
+  ): Promise<ComicIssueDto> {
+    const updatedComicIssue = await this.comicIssueService.updateFile(
+      +id,
+      pdf,
+      'pdf',
+    );
+    return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update specific comic issues signature file */
   @ApiConsumes('multipart/form-data')
   @ApiFile('signature')
   @UseInterceptors(FileInterceptor('signature'))
   @Patch('update/:id/signature')
-  async updateCover(
+  async updateSignature(
     @Param('id') id: string,
     @UploadedFile() signature: Express.Multer.File,
   ): Promise<ComicIssueDto> {
@@ -202,6 +218,40 @@ export class ComicIssueController {
       'signature',
     );
     return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update Stateless covers */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('update/stateless-covers/:id')
+  async updateStatelessCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateStatelessCoverBodyDto,
+      fileType: CreateStatelessCoverFilesDto,
+    })
+    statelessCoverDto: CreateStatelessCoverDto[],
+  ) {
+    await this.comicIssueService.updateStatelessCovers(statelessCoverDto, +id);
+  }
+
+  /* Update Stateful covers */
+  @Post('update/stateful-covers/:id')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  async updateStatefulCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateStatefulCoverBodyDto,
+      fileType: CreateStatefulCoverFilesDto,
+    })
+    statefulCoverDto: [CreateStatefulCoverDto],
+  ) {
+    await this.comicIssueService.updateStatefulCovers(statefulCoverDto, +id);
   }
 
   /* Publish an off-chain comic issue on chain */
@@ -246,47 +296,5 @@ export class ComicIssueController {
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
     return toComicIssueDto(recoveredComicIssue);
-  }
-
-  /* Upload Stateless covers */
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(AnyFilesInterceptor({}))
-  @Post('upload/stateless-covers/:id')
-  async uploadStatelessCovers(
-    @Param('id') id: string,
-    @ApiFileArray({
-      bodyField: 'data',
-      fileField: 'image',
-      bodyType: CreateStatelessCoverBodyDto,
-      fileType: CreateStatelessCoverFilesDto,
-    })
-    statelessCoverDto: CreateStatelessCoverDto[],
-  ) {
-    const comicIssue = await this.comicIssueService.uploadStatelessCovers(
-      statelessCoverDto,
-      +id,
-    );
-    return toComicIssueDto(comicIssue);
-  }
-
-  /* Upload Stateful covers */
-  @Post('upload/stateful-covers/:id')
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(AnyFilesInterceptor({}))
-  async uploadStatefulCovers(
-    @Param('id') id: string,
-    @ApiFileArray({
-      bodyField: 'data',
-      fileField: 'image',
-      bodyType: CreateStatefulCoverBodyDto,
-      fileType: CreateStatefulCoverFilesDto,
-    })
-    statefulCoverDto: [CreateStatefulCoverDto],
-  ) {
-    const comicIssue = await this.comicIssueService.uploadStatefulCovers(
-      statefulCoverDto,
-      +id,
-    );
-    return toComicIssueDto(comicIssue);
   }
 }

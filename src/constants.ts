@@ -1,3 +1,4 @@
+import { ComicRarity } from '@prisma/client';
 import { RarityShare } from './comic-issue/dto/types';
 
 export const MAX_NAME_LENGTH = 32;
@@ -96,3 +97,14 @@ export const FIVE_RARITIES_SHARE: RarityShare[] = [
     value: 2,
   },
 ];
+
+export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
+  let rarityShare: RarityShare[];
+  if (numberOfCovers === 3) rarityShare = THREE_RARITIES_SHARE;
+  else if (numberOfCovers === 5) rarityShare = FIVE_RARITIES_SHARE;
+  else {
+    throw new Error('Unsupported number of rarities');
+  }
+
+  return rarityShare.find((share) => share.rarity === rarity).value;
+};

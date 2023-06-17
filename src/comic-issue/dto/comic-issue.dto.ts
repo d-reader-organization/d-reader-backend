@@ -31,13 +31,13 @@ import {
 } from '@prisma/client';
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
-import { ComicIssueCollaboratorDto } from './create-comic-issue.dto';
-import { findDefaultCover } from 'src/utils/helpers';
+import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import {
   StatelessCoverDto,
   toStatelessCoverDtoArray,
 } from './covers/stateless-cover.dto';
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
+import { findDefaultCover } from 'src/utils/comic-issue';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',

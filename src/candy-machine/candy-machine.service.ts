@@ -37,12 +37,12 @@ import {
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
 } from '../constants';
-import {
-  findDefaultCover,
-  generateStatefulCoverName,
-  solFromLamports,
-} from '../utils/helpers';
+import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import {
+  generateStatefulCoverName,
+  findDefaultCover,
+} from '../utils/comic-issue';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
@@ -100,21 +100,20 @@ export class CandyMachineService {
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
     // TODO: revise this
-    let statelessCovers: MetaplexFile[];
-    const haveRarities =
-      comicIssue.statelessCovers && comicIssue.statelessCovers.length > 0;
-    if (haveRarities) {
-      const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
-        s3toMxFile(cover.image, cover.rarity),
-      );
-      statelessCovers = await Promise.all(statelessCoverPromises);
-    }
+    const hasRarities = comicIssue.statelessCovers.length > 0;
+    // TODO: getFilenameFromKey from file path /pages/page-1.jpg -> page-1
+    const fileName = '';
+
+    const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
+      s3toMxFile(cover.image, fileName),
+    );
+    const statelessCovers = await Promise.all(statelessCoverPromises);
+
     const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
     const statefulCoverPromises = comicIssue.statefulCovers.map(
       async (cover) => {
-        const name = generateStatefulCoverName(cover, haveRarities);
-        const file = await s3toMxFile(cover.image, name);
-        if (haveRarities) {
+        const file = await s3toMxFile(cover.image, fileName);
+        if (hasRarities) {
           const property =
             (cover.isUsed ? 'used' : 'unused') +
             (cover.isSigned ? 'Signed' : 'Unsigned');
@@ -201,6 +200,7 @@ export class CandyMachineService {
 
       for (const shareObject of rarityShare) {
         const { rarity } = shareObject;
+        // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
         const image = rarityCoverFiles[rarity].unusedUnsigned;
         const { uri, metadata } = await this.uploadMetadata(
           comicIssue,

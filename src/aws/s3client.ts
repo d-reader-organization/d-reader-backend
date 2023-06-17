@@ -6,6 +6,8 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../configs/config';
 import { subHours } from 'date-fns';
+import { TransformFnParams } from 'class-transformer';
+import { isNil } from 'lodash';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
 
@@ -42,6 +44,13 @@ export const getPublicUrl = (key: string) => {
 
   const publicUrl = `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
   return publicUrl;
+};
+
+export const transformToUrl = (params: TransformFnParams) => {
+  if (isNil(params.value)) return '';
+  else if (typeof params.value !== 'string') {
+    throw new Error('S3 Key must be of type string');
+  } else return getPublicUrl(params.value);
 };
 
 export const getPresignedUrl = async (key: string) => {

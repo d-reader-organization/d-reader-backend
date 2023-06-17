@@ -6,5 +6,5 @@ export class CreatorFilterParams extends Pagination {
   @IsString()
   nameSubstring?: string;
 
-  // TODO: add filtering by creator genres?
+  // TODO v1: add filtering by creator genres?
 }

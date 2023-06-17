@@ -7,8 +7,8 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicRarity, StatelessCover } from '@prisma/client';
-import { plainToInstance } from 'class-transformer';
-import { getPublicUrl } from '../../../aws/s3client';
+import { Transform, plainToInstance } from 'class-transformer';
+import { transformToUrl } from '../../../aws/s3client';
 
 export class StatelessCoverDto {
   @IsString()
@@ -26,21 +26,13 @@ export class StatelessCoverDto {
   isDefault: boolean;
 
   @IsString()
+  // TODO v1: check if this is working, if yes, apply everywhere
+  @Transform(transformToUrl, { toClassOnly: true })
   image: string;
 }
 
 export function toStatelessCoverDto(cover: StatelessCover) {
-  const plainStatelessCoverDto: StatelessCoverDto = {
-    artist: cover.artist,
-    rarity: cover.rarity,
-    share: cover.share,
-    isDefault: cover.isDefault,
-    image: getPublicUrl(cover.image),
-  };
-
-  // TODO: we don't need manual mapping anymore now that we don't have async getReadUrl()
-  const issueDto = plainToInstance(StatelessCoverDto, plainStatelessCoverDto);
-  return issueDto;
+  return plainToInstance(StatelessCoverDto, cover);
 }
 
 export const toStatelessCoverDtoArray = (covers: StatelessCover[]) => {

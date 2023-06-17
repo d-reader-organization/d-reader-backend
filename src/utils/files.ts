@@ -15,6 +15,7 @@ export const streamToString = (stream: Readable) => {
 export const s3toMxFile = async (key: string, fileName: string) => {
   const getFileFromS3 = await getS3Object({ Key: key });
   const file = await streamToString(getFileFromS3.Body as Readable);
+  // TODO: exclude the extname if fileName already has an extension
   const coverImageFileName = fileName + path.extname(key);
   return toMetaplexFile(file, coverImageFileName);
 };

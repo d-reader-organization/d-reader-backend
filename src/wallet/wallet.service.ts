@@ -53,7 +53,7 @@ export class WalletService {
     function usesOurCandyMachine(metadata: Metadata) {
       return candyMachines.find(
         (cm) => cm.address === metadata.creators[1].address.toString(),
-        // && nft.creators[1].verified, TODO: verify our Candy Machines as creators
+        // && nft.creators[1].verified, TODO v1: verify our Candy Machines as creators
       );
     }
 
