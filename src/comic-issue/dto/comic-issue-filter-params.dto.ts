@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { FilterTag } from 'src/types/filter-tags';
+import { FilterTag, SortTag } from 'src/types/query-tags';
 import { Pagination } from 'src/types/pagination.dto';
 
 export class ComicIssueFilterParams extends Pagination {
@@ -31,5 +31,9 @@ export class ComicIssueFilterParams extends Pagination {
 
   @IsEnum(FilterTag)
   @IsOptional()
-  tag?: FilterTag;
+  filterTag?: FilterTag;
+
+  @IsEnum(SortTag)
+  @IsOptional()
+  sortTag?: SortTag;
 }
