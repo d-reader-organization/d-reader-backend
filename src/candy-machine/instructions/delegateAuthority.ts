@@ -10,8 +10,6 @@ import {
 export async function delegateAuthority(
   metaplex: Metaplex,
   collectionMint: PublicKey,
-  candyMachineAddress: PublicKey,
-  owner: PublicKey,
   rarity: ComicRarity,
   mint: PublicKey,
 ) {
