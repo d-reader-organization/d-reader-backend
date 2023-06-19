@@ -31,9 +31,7 @@ import {
   HUNDRED_PERCENT_TAX,
   D_READER_FRONTEND_URL,
   USED_TRAIT,
-  DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
-  DEFAULT_COMIC_ISSUE_IS_SIGNED,
   FIVE_RARITIES_SHARE,
   THREE_RARITIES_SHARE,
 } from '../constants';
@@ -42,7 +40,14 @@ import { initMetaplex } from '../utils/metaplex';
 import { findDefaultCover } from '../utils/comic-issue';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
-import { RarityCoverFiles } from 'src/types/shared';
+import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
+import { getS3Object } from '../aws/s3client';
+import axios from 'axios';
+import * as FormData from 'form-data';
+import {
+  generateComicAttributes,
+  generatePropertyName,
+} from '../utils/nft-metadata';
 
 @Injectable()
 export class CandyMachineService {
@@ -95,6 +100,42 @@ export class CandyMachineService {
     );
   }
 
+  async mintDarkblock(
+    comicIssue: ComicIssueCMInput,
+    creatorAddress: string,
+  ): Promise<string> {
+    try {
+      const query = new URLSearchParams({
+        apikey: process.env.DARKBLOCK_API_KEY,
+      }).toString();
+
+      const form = new FormData();
+      const getFileFromS3 = await getS3Object({ Key: comicIssue.pdf });
+      const nftPlatform =
+        process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
+      const data = {
+        file: getFileFromS3.Body,
+        creator_address: this.metaplex.identity().publicKey.toString(),
+        nft_platform: nftPlatform,
+        nft_standard: 'Metaplex',
+        darkblock_description: comicIssue.description,
+        publisher_address: creatorAddress,
+      };
+      Object.entries(data).forEach((val) => {
+        form.append(val[0], val[1]);
+      });
+
+      const response = await axios.post(
+        `${process.env.DARKBLOCK_API}/darkblock/mint?${query}`,
+        form,
+      );
+
+      return response.data.tx_id;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
     // TODO: revise this
     const hasRarities = comicIssue.statelessCovers.length > 0;
@@ -111,9 +152,7 @@ export class CandyMachineService {
       async (cover) => {
         const file = await s3toMxFile(cover.image, fileName);
         if (hasRarities) {
-          const property =
-            (cover.isUsed ? 'used' : 'unused') +
-            (cover.isSigned ? 'Signed' : 'Unsigned');
+          const property = generatePropertyName(cover.isUsed, cover.isSigned);
           rarityCoverFiles[cover.rarity][property] = file;
         }
         return file;
@@ -135,6 +174,10 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
     image: MetaplexFile,
+    isUsed: string,
+    isSigned: string,
+    rarity: ComicRarity,
+    darkblockId?: string,
   ) {
     return await this.metaplex.nfts().uploadMetadata({
       name: comicIssue.title,
@@ -146,16 +189,28 @@ export class CandyMachineService {
       attributes: [
         {
           trait_type: USED_TRAIT,
-          value: DEFAULT_COMIC_ISSUE_USED,
+          value: isUsed,
         },
         {
           trait_type: SIGNED_TRAIT,
-          value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
+          value: isSigned,
+        },
+        {
+          trait_type: rarity.toString(),
+          value: 'true',
         },
       ],
       properties: {
         creators: [{ address: creatorAddress, share: HUNDRED }],
-        files: this.writeFiles(image),
+        files: [
+          ...this.writeFiles(image),
+          darkblockId
+            ? {
+                type: 'Darkblock',
+                uri: darkblockId,
+              }
+            : undefined,
+        ],
       },
       collection: {
         name: comicIssue.title,
@@ -164,87 +219,102 @@ export class CandyMachineService {
     });
   }
 
+  async uploadAllMetadata(
+    comicIssue: ComicIssueCMInput,
+    comicName: string,
+    creatorAddress: string,
+    rarityCoverFiles: CoverFiles,
+    darkblockId: string,
+    rarity: ComicRarity,
+  ) {
+    const itemMetadata: ItemMedata = {} as ItemMedata;
+
+    await Promise.all(
+      generateComicAttributes().map(async ([isUsed, isSigned]) => {
+        const property = generatePropertyName(isUsed, isSigned);
+        const darkblock = isUsed ? darkblockId : undefined;
+        itemMetadata[property] = await this.uploadMetadata(
+          comicIssue,
+          comicName,
+          creatorAddress,
+          rarityCoverFiles[property],
+          isUsed.toString(),
+          isSigned.toString(),
+          rarity,
+          darkblock,
+        );
+      }),
+    );
+    return itemMetadata;
+  }
+
   async uploadItemMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
     coverImage: MetaplexFile,
     creatorAddress: string,
     haveRarity: boolean,
+    darkblockId: string,
     rarityCoverFiles?: RarityCoverFiles,
   ) {
     let items: { uri: string; name: string }[];
-    if (haveRarity) {
-      const rarityCovers = {
-        Epic: this.findCover(comicIssue.statefulCovers, 'Epic'),
-        Rare: this.findCover(comicIssue.statefulCovers, 'Rare'),
-        Common: this.findCover(comicIssue.statefulCovers, 'Common'),
-        Uncommon: this.findCover(comicIssue.statefulCovers, 'Uncommon'),
-        Legendary: this.findCover(comicIssue.statefulCovers, 'Legendary'),
-      };
+    const rarityCovers = {
+      Epic: this.findCover(comicIssue.statefulCovers, 'Epic'),
+      Rare: this.findCover(comicIssue.statefulCovers, 'Rare'),
+      Common: this.findCover(comicIssue.statefulCovers, 'Common'),
+      Uncommon: this.findCover(comicIssue.statefulCovers, 'Uncommon'),
+      Legendary: this.findCover(comicIssue.statefulCovers, 'Legendary'),
+    };
 
-      let rarityShare: RarityShare[];
-      const haveFiveRarities = !!rarityCovers.Epic;
-      if (haveFiveRarities) {
-        rarityShare = FIVE_RARITIES_SHARE;
-      } else {
-        rarityShare = THREE_RARITIES_SHARE;
-      }
-      const itemMetadatas: { uri: string; name: string }[] = [],
-        items = [];
-
-      let supplyLeft = comicIssue.supply;
-      let index = 0;
-
-      for (const shareObject of rarityShare) {
-        const { rarity } = shareObject;
-        // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
-        const image = rarityCoverFiles[rarity].unusedUnsigned;
-        const { uri, metadata } = await this.uploadMetadata(
-          comicIssue,
-          comicName,
-          creatorAddress,
-          image,
-        );
-        itemMetadatas.push({ uri, name: metadata.name });
-      }
-
-      index = 0;
-      for (const metadata of itemMetadatas) {
-        let supply: number;
-
-        const { value } = rarityShare[index];
-        if (index == rarityShare.length - 1) {
-          supply = comicIssue.supply - supplyLeft;
-        } else {
-          supply = (comicIssue.supply * value) / 100;
-          supplyLeft -= supply;
-        }
-
-        const indexArray = Array.from(Array(supply).keys());
-        const itemsInserted = await Promise.all(
-          indexArray.map((i) => ({
-            uri: metadata.uri,
-            name: `${metadata.name} #${i + 1}`,
-          })),
-        );
-
-        items.push(...itemsInserted);
-        index++;
-      }
+    let rarityShare: RarityShare[];
+    const haveFiveRarities = !!rarityCovers.Epic;
+    if (haveFiveRarities) {
+      rarityShare = FIVE_RARITIES_SHARE;
     } else {
-      const { uri: metadataUri, metadata } = await this.uploadMetadata(
+      rarityShare = THREE_RARITIES_SHARE;
+    }
+    const itemMetadatas: { uri: string; name: string }[] = [];
+    let supplyLeft = comicIssue.supply;
+
+    for (const shareObject of rarityShare) {
+      const { rarity } = shareObject;
+      // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
+      const { unusedUnsigned } = await this.uploadAllMetadata(
         comicIssue,
         comicName,
         creatorAddress,
-        coverImage,
+        rarityCoverFiles[rarity],
+        darkblockId,
+        rarity,
       );
-      const indexArray = Array.from(Array(comicIssue.supply).keys());
-      items = await Promise.all(
-        indexArray.map((index) => ({
-          uri: metadataUri,
-          name: `${metadata.name} #${index + 1}`,
+      itemMetadatas.push({
+        uri: unusedUnsigned.uri,
+        name: unusedUnsigned.metadata.name,
+      });
+    }
+
+    let index = 0;
+    for (const metadata of itemMetadatas) {
+      let supply: number;
+
+      const { value } = rarityShare[index];
+      if (index == rarityShare.length - 1) {
+        supply = comicIssue.supply - supplyLeft;
+      } else {
+        supply = (comicIssue.supply * value) / 100;
+        supplyLeft -= supply;
+      }
+
+      const indexArray = Array.from(Array(supply).keys());
+      const itemsInserted = await Promise.all(
+        indexArray.map((i) => ({
+          uri: metadata.uri,
+          name: `${metadata.name} #${i + 1}`,
         })),
       );
+
+      items.push(...itemsInserted);
+      index++;
     }
     return items;
   }
@@ -276,9 +346,11 @@ export class CandyMachineService {
 
     const candyMachineKey = Keypair.generate();
 
+    let darkblockId: string;
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
+      darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
@@ -295,11 +367,17 @@ export class CandyMachineService {
                 share: HUNDRED_PERCENT_TAX,
               },
             ],
-            files: this.writeFiles(
-              coverImage,
-              ...statefulCovers,
-              ...statelessCovers,
-            ),
+            files: [
+              ...this.writeFiles(
+                coverImage,
+                ...statefulCovers,
+                ...statelessCovers,
+              ),
+              {
+                type: 'Darkblock',
+                uri: darkblockId,
+              },
+            ],
           },
         });
 
@@ -379,6 +457,7 @@ export class CandyMachineService {
       coverImage,
       creatorAddress,
       statelessCovers.length > 0,
+      darkblockId,
       rarityCoverFiles,
     );
 

@@ -25,3 +25,22 @@ export const findSignedTrait = (jsonMetadata: JsonMetadata) =>
 export const fetchOffChainMetadata = async (uri: string) => {
   return (await axios.get<JsonMetadata>(uri)).data;
 };
+
+export function generateComicAttributes(): [boolean, boolean][] {
+  const combinations: [boolean, boolean][] = [];
+
+  for (const i of [false, true]) {
+    for (const j of [false, true]) {
+      combinations.push([i, j]);
+    }
+  }
+
+  return combinations;
+}
+
+export function generatePropertyName(
+  isUsed: boolean,
+  isSigned: boolean,
+): string {
+  return (isUsed ? 'used' : 'unused') + (isSigned ? 'Signed' : 'Unsigned');
+}
