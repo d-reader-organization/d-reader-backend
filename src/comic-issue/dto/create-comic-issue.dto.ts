@@ -11,7 +11,6 @@ import {
   Min,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
-import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
@@ -72,11 +71,6 @@ export class CreateComicIssueDto {
 
   @IsKebabCase()
   comicSlug: string;
-
-  @IsArray()
-  @Type(() => CreateComicPageDto)
-  @ApiProperty({ type: [CreateComicPageDto] })
-  pages: CreateComicPageDto[];
 
   @IsArray()
   @Type(() => ComicIssueCollaboratorDto)

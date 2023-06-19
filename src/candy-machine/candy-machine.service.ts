@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   Keypair,
   PublicKey,
@@ -32,14 +28,17 @@ import {
   D_READER_FRONTEND_URL,
   USED_TRAIT,
   SIGNED_TRAIT,
-  FIVE_RARITIES_SHARE,
-  THREE_RARITIES_SHARE,
+  getRarityShareTable,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
-import { findDefaultCover } from '../utils/comic-issue';
+import {
+  findDefaultCover,
+  generateStatefulCoverName,
+  validateComicIssueCMInput,
+} from '../utils/comic-issue';
 import { ComicRarity, StatefulCover } from '@prisma/client';
-import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
+import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
 import { getS3Object } from '../aws/s3client';
 import axios from 'axios';
@@ -137,20 +136,19 @@ export class CandyMachineService {
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
-    // TODO: revise this
-    const hasRarities = comicIssue.statelessCovers.length > 0;
-    // TODO: getFilenameFromKey from file path /pages/page-1.jpg -> page-1
-    const fileName = '';
-
+    const hasRarities = comicIssue.statelessCovers.length > 1;
     const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
-      s3toMxFile(cover.image, fileName),
+      s3toMxFile(cover.image),
     );
     const statelessCovers = await Promise.all(statelessCoverPromises);
 
     const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
     const statefulCoverPromises = comicIssue.statefulCovers.map(
       async (cover) => {
-        const file = await s3toMxFile(cover.image, fileName);
+        const file = await s3toMxFile(
+          cover.image,
+          generateStatefulCoverName(cover),
+        );
         if (hasRarities) {
           const property = generatePropertyName(cover.isUsed, cover.isSigned);
           rarityCoverFiles[cover.rarity][property] = file;
@@ -251,33 +249,19 @@ export class CandyMachineService {
   async uploadItemMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    coverImage: MetaplexFile,
     creatorAddress: string,
-    haveRarity: boolean,
+    numberOfRarities: number,
     darkblockId: string,
     rarityCoverFiles?: RarityCoverFiles,
   ) {
     let items: { uri: string; name: string }[];
-    const rarityCovers = {
-      Epic: this.findCover(comicIssue.statefulCovers, 'Epic'),
-      Rare: this.findCover(comicIssue.statefulCovers, 'Rare'),
-      Common: this.findCover(comicIssue.statefulCovers, 'Common'),
-      Uncommon: this.findCover(comicIssue.statefulCovers, 'Uncommon'),
-      Legendary: this.findCover(comicIssue.statefulCovers, 'Legendary'),
-    };
 
-    let rarityShare: RarityShare[];
-    const haveFiveRarities = !!rarityCovers.Epic;
-    if (haveFiveRarities) {
-      rarityShare = FIVE_RARITIES_SHARE;
-    } else {
-      rarityShare = THREE_RARITIES_SHARE;
-    }
+    const rarityShares = getRarityShareTable(numberOfRarities);
     const itemMetadatas: { uri: string; name: string }[] = [];
     let supplyLeft = comicIssue.supply;
 
-    for (const shareObject of rarityShare) {
-      const { rarity } = shareObject;
+    for (const rarityShare of rarityShares) {
+      const { rarity } = rarityShare;
       // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
       const { unusedUnsigned } = await this.uploadAllMetadata(
         comicIssue,
@@ -297,8 +281,8 @@ export class CandyMachineService {
     for (const metadata of itemMetadatas) {
       let supply: number;
 
-      const { value } = rarityShare[index];
-      if (index == rarityShare.length - 1) {
+      const { value } = rarityShares[index];
+      if (index == rarityShares.length - 1) {
         supply = comicIssue.supply - supplyLeft;
       } else {
         supply = (comicIssue.supply * value) / 100;
@@ -330,13 +314,13 @@ export class CandyMachineService {
       },
     ],
   ) {
-    this.validateInput(comicIssue);
+    validateComicIssueCMInput(comicIssue);
 
-    // we can do this in parallel
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
+
     const cover = findDefaultCover(comicIssue.statelessCovers);
-    const coverImage = await s3toMxFile(cover.image, cover.rarity ?? 'cover');
+    const coverImage = await s3toMxFile(cover.image);
 
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
@@ -454,9 +438,8 @@ export class CandyMachineService {
     const items = await this.uploadItemMetadata(
       comicIssue,
       comicName,
-      coverImage,
       creatorAddress,
-      statelessCovers.length > 0,
+      statelessCovers.length,
       darkblockId,
       rarityCoverFiles,
     );
@@ -573,41 +556,6 @@ export class CandyMachineService {
     });
 
     return receipts;
-  }
-
-  validateInput(comicIssue: ComicIssueCMInput) {
-    if (comicIssue.supply <= 0) {
-      throw new BadRequestException(
-        'Cannot create an NFT collection with supply lower than 1',
-      );
-    }
-
-    if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
-      throw new BadRequestException(
-        'Discount mint price should be lower than base mint price',
-      );
-    } else if (comicIssue.discountMintPrice < 0 || comicIssue.mintPrice < 0) {
-      throw new BadRequestException(
-        'Mint prices must be greater than or equal to 0',
-      );
-    }
-
-    if (
-      comicIssue.sellerFeeBasisPoints < 0 ||
-      comicIssue.sellerFeeBasisPoints > 10000
-    ) {
-      throw new BadRequestException('Invalid seller fee value');
-    }
-
-    if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {
-      throw new BadRequestException('Missing crucial assets');
-    }
-
-    const raritiesCount = comicIssue.statelessCovers.length;
-    if (raritiesCount != 1 && raritiesCount != 5 && raritiesCount != 5)
-      throw new BadRequestException(
-        'Unsupported rarity count: ' + raritiesCount,
-      );
   }
 
   writeFiles(...files: MetaplexFile[]) {

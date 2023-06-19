@@ -20,36 +20,36 @@ import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 
 const generateCoversAndSignature = (
-  creatorSlug: string,
+  comicSlug: string,
   comicIssueSlug: string,
 ) => ({
-  signature: `comics/${creatorSlug}/issues/${comicIssueSlug}/signature.png`,
-  stateFulCovers: {
+  signature: `comics/${comicSlug}/issues/${comicIssueSlug}/signature.png`,
+  statefulCovers: {
     createMany: {
       data: [
         {
-          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.jpg`,
+          image: `comics/${comicSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.jpg`,
           isSigned: false,
           isUsed: false,
           rarity: null,
           artist: 'John Le',
         },
         {
-          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-unsigned-cover.jpg`,
+          image: `comics/${comicSlug}/issues/${comicIssueSlug}/used-unsigned-cover.jpg`,
           isSigned: false,
           isUsed: true,
           rarity: null,
           artist: 'Laura El',
         },
         {
-          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/unused-signed-cover.jpg`,
+          image: `comics/${comicSlug}/issues/${comicIssueSlug}/unused-signed-cover.jpg`,
           isSigned: true,
           isUsed: false,
           rarity: null,
           artist: 'SCUM',
         },
         {
-          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/used-signed-cover.jpg`,
+          image: `comics/${comicSlug}/issues/${comicIssueSlug}/used-signed-cover.jpg`,
           isSigned: true,
           isUsed: true,
           rarity: null,
@@ -62,7 +62,7 @@ const generateCoversAndSignature = (
     createMany: {
       data: [
         {
-          image: `comics/${creatorSlug}/issues/${comicIssueSlug}/cover.jpg`,
+          image: `comics/${comicSlug}/issues/${comicIssueSlug}/cover.jpg`,
           rarity: null,
           artist: 'John Le',
           share: 100,
@@ -122,6 +122,10 @@ async function main() {
   }
 
   console.log('⛏️ Emptying the database...');
+  await prisma.statefulCover.deleteMany();
+  await prisma.statelessCover.deleteMany();
+  await prisma.comicCollaborator.deleteMany();
+  await prisma.comicIssueCollaborator.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
   await prisma.nft.deleteMany();
@@ -139,7 +143,7 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  const skipS3Seed = false;
+  const skipS3Seed = true;
   if (!skipS3Seed) {
     console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
     const keysToDelete = await s3.listFolderKeys({ Prefix: '' });
@@ -2616,7 +2620,7 @@ async function main() {
         console.log('Failed to fund bundlr storage');
       }
 
-      if (i % 10 === 0) {
+      if (i % 20 === 0) {
         try {
           await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
           console.log('Airdropped 2 sol');

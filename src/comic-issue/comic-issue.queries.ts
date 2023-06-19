@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { ComicIssueFilterParams } from 'src/comic-issue/dto/comic-issue-filter-params.dto';
-import { FilterTag } from 'src/types/filter-tags';
-import { SortOrder } from 'src/types/sort-order';
+import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
+import { FilterTag } from '../types/filter-tags';
+import { SortOrder } from '../types/sort-order';
 
 const filterBy = (tag: FilterTag): Prisma.Sql => {
   if (tag === FilterTag.Free) {
