@@ -60,7 +60,7 @@ export const validateWeb3PublishInfo = (
     throw new BadRequestException('Supply must be greater than 0');
   } else if (
     publishOnChainDto.sellerFee <= 0 ||
-    publishOnChainDto.sellerFee >= 1
+    publishOnChainDto.sellerFee >= 100
   ) {
     throw new BadRequestException('Seller fee must be in range of 0-100%');
   }
