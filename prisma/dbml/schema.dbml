@@ -377,6 +377,7 @@ Enum CollaboratorRole {
 }
 
 Enum ComicRarity {
+  None
   Common
   Uncommon
   Rare

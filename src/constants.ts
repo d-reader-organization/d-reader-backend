@@ -98,12 +98,21 @@ export const FIVE_RARITIES_SHARE: RarityShare[] = [
   },
 ];
 
+export const ONE_RARITY_SHARE: RarityShare[] = [
+  {
+    rarity: 'None',
+    value: 100,
+  },
+];
+
 export const getRarityShareTable = (numberOfCovers: number) => {
   switch (numberOfCovers) {
     case 3:
       return THREE_RARITIES_SHARE;
     case 5:
       return FIVE_RARITIES_SHARE;
+    case 1:
+      return ONE_RARITY_SHARE;
     default:
       throw new Error('Unsupported number of rarities');
   }

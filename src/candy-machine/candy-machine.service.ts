@@ -136,7 +136,6 @@ export class CandyMachineService {
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
-    const hasRarities = comicIssue.statelessCovers.length > 1;
     const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
       s3toMxFile(cover.image),
     );
@@ -149,10 +148,8 @@ export class CandyMachineService {
           cover.image,
           generateStatefulCoverName(cover),
         );
-        if (hasRarities) {
-          const property = generatePropertyName(cover.isUsed, cover.isSigned);
-          rarityCoverFiles[cover.rarity][property] = file;
-        }
+        const property = generatePropertyName(cover.isUsed, cover.isSigned);
+        rarityCoverFiles[cover.rarity][property] = file;
         return file;
       },
     );

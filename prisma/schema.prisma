@@ -224,6 +224,7 @@ model StatefulCover {
 }
 
 enum ComicRarity {
+  None
   Common
   Uncommon
   Rare
