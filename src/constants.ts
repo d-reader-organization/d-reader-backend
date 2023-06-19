@@ -98,13 +98,18 @@ export const FIVE_RARITIES_SHARE: RarityShare[] = [
   },
 ];
 
-export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
-  let rarityShare: RarityShare[];
-  if (numberOfCovers === 3) rarityShare = THREE_RARITIES_SHARE;
-  else if (numberOfCovers === 5) rarityShare = FIVE_RARITIES_SHARE;
-  else {
-    throw new Error('Unsupported number of rarities');
+export const getRarityShareTable = (numberOfCovers: number) => {
+  switch (numberOfCovers) {
+    case 3:
+      return THREE_RARITIES_SHARE;
+    case 5:
+      return FIVE_RARITIES_SHARE;
+    default:
+      throw new Error('Unsupported number of rarities');
   }
+};
 
-  return rarityShare.find((share) => share.rarity === rarity).value;
+export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
+  const shareTable = getRarityShareTable(numberOfCovers);
+  return shareTable.find((share) => share.rarity === rarity).value;
 };

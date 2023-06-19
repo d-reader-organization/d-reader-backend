@@ -23,7 +23,6 @@ import {
   ComicIssue,
   Creator,
   Comic,
-  ComicPage,
   WalletComicIssue,
   ComicIssueCollaborator,
   StatelessCover,
@@ -149,7 +148,6 @@ export class ComicIssueDto {
 
 export type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
-  pages?: ComicPage[];
   stats?: ComicIssueStats;
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;

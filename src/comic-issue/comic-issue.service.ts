@@ -10,7 +10,7 @@ import {
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
-import { isEmpty, isNil } from 'lodash';
+import { isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import {
   Prisma,
@@ -34,6 +34,7 @@ import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssueInput } from './dto/comic-issue.dto';
+import { validatePrice, validateWeb3PublishInfo } from '../utils/comic-issue';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -54,8 +55,8 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicSlug, sellerFee, pages, ...rest } = createComicIssueDto;
-    this.validatePrice(createComicIssueDto);
+    const { slug, comicSlug, sellerFee, ...rest } = createComicIssueDto;
+    validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
@@ -70,8 +71,6 @@ export class ComicIssueService {
 
     let comicIssue: ComicIssue & { pages: ComicPage[] };
 
-    // upload comic pages to S3 and format data for INSERT
-    const pagesData = await this.comicPageService.createMany(pages);
     try {
       comicIssue = await this.prisma.comicIssue.create({
         include: { pages: true },
@@ -80,7 +79,6 @@ export class ComicIssueService {
           slug,
           sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
-          pages: { createMany: { data: pagesData } },
           collaborators: {
             createMany: { data: createComicIssueDto.collaborators },
           },
@@ -246,43 +244,25 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { pages, sellerFee, ...rest } = updateComicIssueDto;
-    this.validatePrice(updateComicIssueDto);
+    const { sellerFee, ...rest } = updateComicIssueDto;
+    validatePrice(updateComicIssueDto);
 
-    let updatedComicIssue: ComicIssue & { pages: ComicPage[] };
     try {
-      updatedComicIssue = await this.prisma.comicIssue.findUnique({
+      const updatedComicIssue = await this.prisma.comicIssue.update({
         where: { id, publishedAt: null },
-        include: { pages: true },
+        data: {
+          ...rest,
+          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
+          collaborators: undefined, // TODO v1: replace current collaborators (meditate on this one)
+        },
       });
+
+      return updatedComicIssue;
     } catch {
       throw new NotFoundException(
         `Comic issue with id ${id} does not exist or is published`,
       );
     }
-
-    let pagesData: Prisma.ComicPageCreateManyComicIssueInput[];
-    if (!isEmpty(pages)) {
-      await this.comicPageService.deleteComicPages({ comicIssue: { id } });
-      pagesData = await this.comicPageService.createMany(pages);
-    }
-
-    try {
-      updatedComicIssue = await this.prisma.comicIssue.update({
-        where: { id },
-        include: { pages: true },
-        data: {
-          ...rest,
-          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
-          pages: { createMany: { data: pagesData } },
-          collaborators: undefined, // TODO v1: replace current collaborators (meditate on this one)
-        },
-      });
-    } catch {
-      throw new BadRequestException('Bad comic issue data');
-    }
-
-    return updatedComicIssue;
   }
 
   async updateFile(
@@ -333,16 +313,10 @@ export class ComicIssueService {
       throw new BadRequestException('Comic issue already published');
     } else if (!!comicIssue.collectionNft) {
       throw new BadRequestException('Comic issue already on chain');
-    } else if (publishOnChainDto.supply < 1) {
-      throw new BadRequestException('Supply must be greater than 0');
-    } else if (
-      publishOnChainDto.sellerFee <= 0 ||
-      publishOnChainDto.sellerFee >= 1
-    ) {
-      throw new BadRequestException('Seller fee must be in range of 0-100%');
     }
 
-    this.validatePrice(publishOnChainDto);
+    validateWeb3PublishInfo(publishOnChainDto);
+    validatePrice(publishOnChainDto);
 
     const { sellerFee, ...updatePayload } = publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
@@ -564,28 +538,6 @@ export class ComicIssueService {
     if (!!oldStatefulCovers.length) {
       const keys = oldStatefulCovers.map((cover) => cover.image);
       await this.s3.deleteObjects(keys);
-    }
-  }
-
-  validatePrice(
-    comicIssue: CreateComicIssueDto | UpdateComicIssueDto | PublishOnChainDto,
-  ) {
-    // if supply is 0, it's a web2 comic which must be FREE
-    if (
-      (comicIssue.supply === 0 && comicIssue.mintPrice !== 0) ||
-      (comicIssue.supply === 0 && comicIssue.discountMintPrice !== 0)
-    ) {
-      throw new BadRequestException('Offchain Comic issues must be free');
-    }
-
-    if (comicIssue.discountMintPrice > comicIssue.mintPrice) {
-      throw new BadRequestException(
-        'Discount mint price should be lower than base mint price',
-      );
-    } else if (comicIssue.discountMintPrice < 0 || comicIssue.mintPrice < 0) {
-      throw new BadRequestException(
-        'Mint prices must be greater than or equal to 0',
-      );
     }
   }
 

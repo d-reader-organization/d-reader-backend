@@ -10,6 +10,7 @@ import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 
 export type ComicPageWhereInput = {
+  comicIssueId?: Prisma.ComicPageWhereInput['comicIssueId'];
   comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
   id?: Prisma.ComicPageWhereInput['id'];
 };
@@ -21,10 +22,13 @@ export class ComicPageService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
+  async createMany(
+    createComicPagesDto: CreateComicPageDto[],
+    comicIssueId: number,
+  ) {
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
-        const { comicIssueId, image, pageNumber, ...rest } = createComicPageDto;
+        const { image, pageNumber, ...rest } = createComicPageDto;
 
         let imageKey: string;
         try {
@@ -57,19 +61,30 @@ export class ComicPageService {
     });
   }
 
-  // update
-  async replace(
-    where: ComicPageWhereInput,
-    createComicPagesDto: CreateComicPageDto[],
-  ) {
-    await this.deleteComicPages(where);
-    const comicPagesData = await this.createMany(createComicPagesDto);
-
-    const comicPages = await this.prisma.comicPage.createMany({
-      data: comicPagesData,
+  async updateMany(pagesDto: CreateComicPageDto[], comicIssueId: number) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id: comicIssueId },
+      include: { pages: true },
     });
+    const oldComicPages = comicIssue.pages;
 
-    return comicPages;
+    // upload comic pages to S3 and format data for INSERT
+    const newComicPages = await this.createMany(pagesDto, comicIssueId);
+
+    try {
+      await this.prisma.comicPage.createMany({
+        data: newComicPages,
+      });
+    } catch (e) {
+      const keys = newComicPages.map((page) => page.image);
+      await this.s3.deleteObjects(keys);
+      throw e;
+    }
+
+    if (!!oldComicPages.length) {
+      const keys = oldComicPages.map((page) => page.image);
+      await this.s3.deleteObjects(keys);
+    }
   }
 
   async deleteComicPages(where: ComicPageWhereInput) {

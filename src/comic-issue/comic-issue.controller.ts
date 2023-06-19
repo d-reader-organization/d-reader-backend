@@ -59,6 +59,12 @@ import {
   CreateStatelessCoverFilesDto,
   CreateStatelessCoverDto,
 } from './dto/covers/create-stateless-cover.dto';
+import {
+  CreateComicPageBodyDto,
+  CreateComicPageDto,
+  CreateComicPageFilesDto,
+} from '../comic-page/dto/create-comic-page.dto';
+import { ComicPageService } from '../comic-page/comic-page.service';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -67,6 +73,7 @@ import {
 export class ComicIssueController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
+    private readonly comicPageService: ComicPageService,
     private readonly walletComicIssueService: WalletComicIssueService,
   ) {}
 
@@ -128,8 +135,6 @@ export class ComicIssueController {
     const pages = await this.comicIssueService.getPages(+id, wallet.address);
     return await toComicPageDtoArray(pages);
   }
-
-  // TODO: endpoint for uploading pages with @ApiFileArray
 
   /* Update specific comic issue */
   @Patch('update/:id')
@@ -218,6 +223,23 @@ export class ComicIssueController {
       'signature',
     );
     return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update comic issue pages */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('update/pages/:id')
+  async updatePages(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateComicPageBodyDto,
+      fileType: CreateComicPageFilesDto,
+    })
+    pagesDto: CreateComicPageDto[],
+  ) {
+    await this.comicPageService.updateMany(pagesDto, +id);
   }
 
   /* Update Stateless covers */
