@@ -9,6 +9,8 @@ import { SecurityConfig, ThrottleConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { WalletService } from '../wallet/wallet.service';
+import { HeliusService } from '../webhooks/helius/helius.service';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
 
 @Module({
   imports: [
@@ -37,7 +39,14 @@ import { WalletService } from '../wallet/wallet.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, WalletService, JwtStrategy],
+  providers: [
+    AuthService,
+    PasswordService,
+    WalletService,
+    JwtStrategy,
+    HeliusService,
+    WebSocketGateway,
+  ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })
 export class AuthModule {}

@@ -3,7 +3,7 @@ import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Wallet, Role } from '@prisma/client';
-import { getReadUrl } from '../../aws/s3client';
+import { getPublicUrl } from '../../aws/s3client';
 
 export class WalletDto {
   @IsSolanaAddress()
@@ -23,11 +23,11 @@ export class WalletDto {
   hasBetaAccess: boolean;
 }
 
-export async function toWalletDto(wallet: Wallet) {
+export function toWalletDto(wallet: Wallet) {
   const plainWalletDto: WalletDto = {
     address: wallet.address,
     name: wallet.name,
-    avatar: await getReadUrl(wallet.avatar),
+    avatar: getPublicUrl(wallet.avatar),
     role: wallet.role,
     hasBetaAccess: !!wallet.referredAt,
   };
@@ -37,5 +37,5 @@ export async function toWalletDto(wallet: Wallet) {
 }
 
 export const toWalletDtoArray = (wallets: Wallet[]) => {
-  return Promise.all(wallets.map(toWalletDto));
+  return wallets.map(toWalletDto);
 };

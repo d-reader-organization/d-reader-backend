@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { ComicIssueFilterParams } from 'src/comic-issue/dto/comic-issue-filter-params.dto';
-import { FilterTag, SortTag } from 'src/types/query-tags';
-import { SortOrder } from 'src/types/sort-order';
+import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
+import { FilterTag, SortTag } from '../types/query-tags';
+import { SortOrder } from '../types/sort-order';
 
 const filterBy = (tag: FilterTag): Prisma.Sql => {
   if (tag === FilterTag.Free) {
@@ -81,7 +81,7 @@ export const getComicIssuesQuery = (
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar", "cn"."address" as "cnAddress",
+  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar",
 AVG("wci"."rating") AS "averageRating",
 SUM(case when "wci"."rating" is not null then 1 end) as "ratersCount",
 SUM(case when "wci"."isFavourite" then 1 end) AS "favouritesCount",

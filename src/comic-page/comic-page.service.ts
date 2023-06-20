@@ -10,6 +10,7 @@ import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 
 export type ComicPageWhereInput = {
+  comicIssueId?: Prisma.ComicPageWhereInput['comicIssueId'];
   comicIssue?: Prisma.ComicPageWhereInput['comicIssue'];
   id?: Prisma.ComicPageWhereInput['id'];
 };
@@ -21,16 +22,18 @@ export class ComicPageService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async createMany(createComicPagesDto: CreateComicPageDto[] = []) {
+  async createMany(
+    createComicPagesDto: CreateComicPageDto[],
+    comicIssueId: number,
+  ) {
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
-        const { comicIssueId, image, pageNumber, ...rest } = createComicPageDto;
+        const { image, pageNumber, ...rest } = createComicPageDto;
 
-        // Upload files if any
         let imageKey: string;
         try {
-          const prefix = await this.getS3FilePrefix(pageNumber, comicIssueId);
-          imageKey = await this.s3.uploadFile(prefix, image);
+          const s3Folder = await this.getS3Folder(pageNumber, comicIssueId);
+          imageKey = await this.s3.uploadFile(s3Folder, image);
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
@@ -46,12 +49,6 @@ export class ComicPageService {
       }),
     );
 
-    // const comicPages = await this.prisma.comicPage.createMany({
-    //   data: comicPagesData,
-    // });
-
-    // return comicPages;
-
     return comicPagesData;
   }
 
@@ -64,19 +61,30 @@ export class ComicPageService {
     });
   }
 
-  // update
-  async replace(
-    where: ComicPageWhereInput,
-    createComicPagesDto: CreateComicPageDto[],
-  ) {
-    await this.deleteComicPages(where);
-    const comicPagesData = await this.createMany(createComicPagesDto);
-
-    const comicPages = await this.prisma.comicPage.createMany({
-      data: comicPagesData,
+  async updateMany(pagesDto: CreateComicPageDto[], comicIssueId: number) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id: comicIssueId },
+      include: { pages: true },
     });
+    const oldComicPages = comicIssue.pages;
 
-    return comicPages;
+    // upload comic pages to S3 and format data for INSERT
+    const newComicPages = await this.createMany(pagesDto, comicIssueId);
+
+    try {
+      await this.prisma.comicPage.createMany({
+        data: newComicPages,
+      });
+    } catch (e) {
+      const keys = newComicPages.map((page) => page.image);
+      await this.s3.deleteObjects(keys);
+      throw e;
+    }
+
+    if (!!oldComicPages.length) {
+      const keys = oldComicPages.map((page) => page.image);
+      await this.s3.deleteObjects(keys);
+    }
   }
 
   async deleteComicPages(where: ComicPageWhereInput) {
@@ -98,24 +106,12 @@ export class ComicPageService {
     return;
   }
 
-  async getS3FilePrefix(pageNumber: number, comicIssueId: number) {
+  async getS3Folder(pageNumber: number, comicIssueId: number) {
     const comicPage = await this.prisma.comicPage.findUnique({
-      where: {
-        pageNumber_comicIssueId: {
-          pageNumber,
-          comicIssueId,
-        },
-      },
+      where: { pageNumber_comicIssueId: { pageNumber, comicIssueId } },
       select: {
         pageNumber: true,
-        comicIssue: {
-          select: {
-            slug: true,
-            comic: {
-              select: { slug: true, creator: { select: { slug: true } } },
-            },
-          },
-        },
+        comicIssue: { select: { slug: true, comicSlug: true } },
       },
     });
 
@@ -125,7 +121,6 @@ export class ComicPageService {
       );
     }
 
-    const prefix = `creators/${comicPage.comicIssue.comic.creator.slug}/comics/${comicPage.comicIssue.comic.slug}/issues/${comicPage.comicIssue.slug}/pages/`;
-    return prefix;
+    return `comics/${comicPage.comicIssue.comicSlug}/issues/${comicPage.comicIssue.slug}/pages/`;
   }
 }

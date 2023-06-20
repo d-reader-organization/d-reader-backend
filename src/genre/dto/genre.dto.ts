@@ -1,6 +1,6 @@
 import { plainToInstance, Transform } from 'class-transformer';
 import { IsHexColor, IsNumber, IsString } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Genre } from '@prisma/client';
 
@@ -24,11 +24,11 @@ export class GenreDto {
   isDeleted: boolean;
 }
 
-export async function toGenreDto(genre: Genre) {
+export function toGenreDto(genre: Genre) {
   const plainGenreDto: GenreDto = {
     name: genre.name,
     slug: genre.slug,
-    icon: await getReadUrl(genre.icon),
+    icon: getPublicUrl(genre.icon),
     color: genre.color,
     priority: genre.priority,
     isDeleted: !!genre.deletedAt,
@@ -39,5 +39,5 @@ export async function toGenreDto(genre: Genre) {
 }
 
 export const toGenreDtoArray = (genres: Genre[]) => {
-  return Promise.all(genres.map(toGenreDto));
+  return genres.map(toGenreDto);
 };

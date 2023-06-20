@@ -1,17 +1,14 @@
 import { IsArray, IsBoolean, IsNumber, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
-import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
-import { JsonMetadata } from '@metaplex-foundation/js';
+import {
+  fetchOffChainMetadata,
+  findSignedTrait,
+  findUsedTrait,
+} from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
 import { Nft, Listing } from '@prisma/client';
 import { isNil } from 'lodash';
-import axios from 'axios';
-
-// TODO v2: extend JsonMetadata to formats which we use
-// type ComicIssueJsonMetadata = JsonMetadata & {
-//   attributes: ...
-// }
 
 export class NftAttributeDto {
   trait: string;
@@ -72,32 +69,24 @@ type NftInput = Nft & {
 };
 
 export async function toNftDto(nft: NftInput) {
-  const getNftResponse = await axios.get<JsonMetadata>(nft.uri);
-  const { data: offChainMetadataJson } = getNftResponse;
-
-  const usedTrait = offChainMetadataJson.attributes.find(
-    (a) => a.trait_type === USED_TRAIT,
-  );
-  const signedTrait = offChainMetadataJson.attributes.find(
-    (a) => a.trait_type === SIGNED_TRAIT,
-  );
+  const offChainMetadata = await fetchOffChainMetadata(nft.uri);
 
   const plainNftDto: NftDto = {
     address: nft.address,
     uri: nft.uri,
-    image: offChainMetadataJson.image,
+    image: offChainMetadata.image,
     name: nft.name,
-    description: offChainMetadataJson.description,
+    description: offChainMetadata.description,
     owner: nft.ownerAddress,
-    royalties: offChainMetadataJson.seller_fee_basis_points / 100,
+    royalties: offChainMetadata.seller_fee_basis_points / 100,
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
-    isUsed: isNil(usedTrait) ? undefined : usedTrait.value === 'true',
-    isSigned: isNil(signedTrait) ? undefined : signedTrait.value === 'true',
-    comicName: offChainMetadataJson.collection.family,
-    comicIssueName: offChainMetadataJson.collection.name,
+    isUsed: findUsedTrait(offChainMetadata),
+    isSigned: findSignedTrait(offChainMetadata),
+    comicName: offChainMetadata.collection.family,
+    comicIssueName: offChainMetadata.collection.name,
     comicIssueId: nft.collectionNft.comicIssueId,
-    attributes: offChainMetadataJson.attributes.map((a) => ({
+    attributes: offChainMetadata.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,
     })),

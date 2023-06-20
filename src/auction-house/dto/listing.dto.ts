@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { Type, plainToInstance } from 'class-transformer';
 import {
   IsArray,
@@ -11,18 +10,20 @@ import {
 } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import {
-  JsonMetadata,
   Pda,
   associatedTokenProgram,
   tokenProgram,
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { BasicWalletDto } from '../../candy-machine/dto/candy-machine-receipt.dto';
-import { SIGNED_TRAIT, USED_TRAIT } from '../../constants';
+import {
+  fetchOffChainMetadata,
+  findSignedTrait,
+  findUsedTrait,
+} from '../../utils/nft-metadata';
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
-import { isNil } from 'lodash';
 
 export class ListingDto {
   @IsPositive()
@@ -112,20 +113,12 @@ export type ListingInput = Listing & {
 };
 
 export async function toListingDto(listing: ListingInput) {
-  const response = await axios.get<JsonMetadata>(listing.nft.uri);
-  const collectionMetadata: JsonMetadata = response.data;
+  const collectionMetadata = await fetchOffChainMetadata(listing.nft.uri);
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     new PublicKey(listing.nft.owner.address).toBuffer(),
     tokenProgram.address.toBuffer(),
     new PublicKey(listing.nftAddress).toBuffer(),
   ]).toString();
-
-  const usedTrait = collectionMetadata.attributes.find(
-    (a) => a.trait_type === USED_TRAIT,
-  );
-  const signedTrait = collectionMetadata.attributes.find(
-    (a) => a.trait_type === SIGNED_TRAIT,
-  );
 
   const plainListingDto: ListingDto = {
     id: listing.id,
@@ -143,8 +136,8 @@ export async function toListingDto(listing: ListingInput) {
       trait: a.trait_type,
       value: a.value,
     })),
-    isUsed: isNil(usedTrait) ? undefined : usedTrait.value === 'true',
-    isSigned: isNil(signedTrait) ? undefined : signedTrait.value === 'true',
+    isUsed: findUsedTrait(collectionMetadata),
+    isSigned: findSignedTrait(collectionMetadata),
     // description: collectionMetadata.description, // hide this in array?
     // symbol: listing.symbol, // hide this in array?
     // createdAt: listing.createdAt.toISOString(), // hide this in array?

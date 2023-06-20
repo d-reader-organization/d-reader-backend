@@ -33,6 +33,7 @@ import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Role } from '@prisma/client';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { throttle } from 'lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -58,21 +59,25 @@ export class CarouselController {
       createCarouselSlideDto,
       files,
     );
-    return await toCarouselSlideDto(carouselSlide);
+    return toCarouselSlideDto(carouselSlide);
   }
 
-  /* Get all carousel slides */
+  private throttledFindAll = throttle(
+    () => this.carouselService.findAll(),
+    24 * 60 * 60 * 1000, // 24 hours
+  );
+
+  /* Get all genres */
   @Get('slides/get')
-  async findAll(): Promise<CarouselSlideDto[]> {
-    const carouselSlides = await this.carouselService.findAll();
-    return await toCarouselSlideDtoArray(carouselSlides);
+  findAll() {
+    return this.throttledFindAll();
   }
 
   /* Get specific carousel slide by unique id */
   @Get('slides/get/:id')
   async findOne(@Param('id') id: string): Promise<CarouselSlideDto> {
     const carouselSlide = await this.carouselService.findOne(+id);
-    return await toCarouselSlideDto(carouselSlide);
+    return toCarouselSlideDto(carouselSlide);
   }
 
   /* Update specific carousel slide */
@@ -86,7 +91,7 @@ export class CarouselController {
       +id,
       updateCarouselSlideDto,
     );
-    return await toCarouselSlideDto(updatedCarouselSlide);
+    return toCarouselSlideDto(updatedCarouselSlide);
   }
 
   /* Update specific carousel slides image file */
@@ -102,8 +107,9 @@ export class CarouselController {
     const updatedCarouselSlide = await this.carouselService.updateFile(
       +id,
       image,
+      'image',
     );
-    return await toCarouselSlideDto(updatedCarouselSlide);
+    return toCarouselSlideDto(updatedCarouselSlide);
   }
 
   /* Make carousel slide expire */
@@ -111,6 +117,6 @@ export class CarouselController {
   @Patch('slides/expire/:id')
   async expire(@Param('id') id: string): Promise<CarouselSlideDto> {
     const expiredCarouselSlide = await this.carouselService.expire(+id);
-    return await toCarouselSlideDto(expiredCarouselSlide);
+    return toCarouselSlideDto(expiredCarouselSlide);
   }
 }

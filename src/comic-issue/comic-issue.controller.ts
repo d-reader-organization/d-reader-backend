@@ -5,13 +5,12 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
-  UploadedFile,
   Query,
   ForbiddenException,
+  UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -23,6 +22,7 @@ import {
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import {
+  AnyFilesInterceptor,
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
@@ -32,22 +32,39 @@ import {
   toComicIssueDtoArray,
 } from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
-import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet, Role } from '@prisma/client';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
-import { RateComicDto } from 'src/comic/dto/rate-comic.dto'; // rename or put into shared? @josi
+import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
 import {
   ComicPageDto,
   toComicPageDtoArray,
-} from 'src/comic-page/entities/comic-page.dto';
+} from '../comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
+import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
+import { ApiFile } from 'src/decorators/api-file.decorator';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import {
+  CreateStatefulCoverBodyDto,
+  CreateStatefulCoverFilesDto,
+  CreateStatefulCoverDto,
+} from './dto/covers/create-stateful-cover.dto';
+import {
+  CreateStatelessCoverBodyDto,
+  CreateStatelessCoverFilesDto,
+  CreateStatelessCoverDto,
+} from './dto/covers/create-stateless-cover.dto';
+import {
+  CreateComicPageBodyDto,
+  CreateComicPageDto,
+  CreateComicPageFilesDto,
+} from '../comic-page/dto/create-comic-page.dto';
+import { ComicPageService } from '../comic-page/comic-page.service';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -56,6 +73,7 @@ import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
 export class ComicIssueController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
+    private readonly comicPageService: ComicPageService,
     private readonly walletComicIssueService: WalletComicIssueService,
   ) {}
 
@@ -84,7 +102,7 @@ export class ComicIssueController {
       files,
     );
 
-    return await toComicIssueDto(comicIssue);
+    return toComicIssueDto(comicIssue);
   }
 
   /* Get all comic issues */
@@ -93,10 +111,9 @@ export class ComicIssueController {
     @Query() query: ComicIssueFilterParams,
   ): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
-    return await toComicIssueDtoArray(comicIssues);
+    return toComicIssueDtoArray(comicIssues);
   }
 
-  // TODO v2: get by comicSlug & (comic issue) slug
   /* Get specific comic issue by unique id */
   @Get('get/:id')
   async findOne(
@@ -107,7 +124,7 @@ export class ComicIssueController {
       +id,
       wallet.address,
     );
-    return await toComicIssueDto(comicIssue);
+    return toComicIssueDto(comicIssue);
   }
 
   @Get('get/:id/pages')
@@ -116,7 +133,7 @@ export class ComicIssueController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
     const pages = await this.comicIssueService.getPages(+id, wallet.address);
-    return await toComicPageDtoArray(pages);
+    return toComicPageDtoArray(pages);
   }
 
   /* Update specific comic issue */
@@ -129,7 +146,7 @@ export class ComicIssueController {
       +id,
       updateComicIssueDto,
     );
-    return await toComicIssueDto(updatedComicIssue);
+    return toComicIssueDto(updatedComicIssue);
   }
 
   /* Favouritise/unfavouritise a specific comic issue */
@@ -144,7 +161,7 @@ export class ComicIssueController {
       +id,
       'isFavourite',
     );
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
   /* Rate specific comic issue */
@@ -160,7 +177,7 @@ export class ComicIssueController {
       +id,
       rateComicDto.rating,
     );
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
   /* Reads a specific comic issue */
@@ -171,23 +188,92 @@ export class ComicIssueController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicIssueDto> {
     await this.comicIssueService.read(+id, wallet.address);
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
-  /* Update specific comic issues cover file */
+  /* Update specific comic issues pdf file */
   @ApiConsumes('multipart/form-data')
-  @ApiFile('cover')
-  @UseInterceptors(FileInterceptor('cover'))
-  @Patch('update/:id/cover')
-  async updateCover(
+  @ApiFile('pdf')
+  @UseInterceptors(FileInterceptor('pdf'))
+  @Patch('update/:id/pdf')
+  async updatePdf(
     @Param('id') id: string,
-    @UploadedFile() cover: Express.Multer.File,
+    @UploadedFile() pdf: Express.Multer.File,
   ): Promise<ComicIssueDto> {
     const updatedComicIssue = await this.comicIssueService.updateFile(
       +id,
-      cover,
+      pdf,
+      'pdf',
     );
-    return await toComicIssueDto(updatedComicIssue);
+    return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update specific comic issues signature file */
+  @ApiConsumes('multipart/form-data')
+  @ApiFile('signature')
+  @UseInterceptors(FileInterceptor('signature'))
+  @Patch('update/:id/signature')
+  async updateSignature(
+    @Param('id') id: string,
+    @UploadedFile() signature: Express.Multer.File,
+  ): Promise<ComicIssueDto> {
+    const updatedComicIssue = await this.comicIssueService.updateFile(
+      +id,
+      signature,
+      'signature',
+    );
+    return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update comic issue pages */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('update/pages/:id')
+  async updatePages(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateComicPageBodyDto,
+      fileType: CreateComicPageFilesDto,
+    })
+    pagesDto: CreateComicPageDto[],
+  ) {
+    await this.comicPageService.updateMany(pagesDto, +id);
+  }
+
+  /* Update Stateless covers */
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('update/stateless-covers/:id')
+  async updateStatelessCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateStatelessCoverBodyDto,
+      fileType: CreateStatelessCoverFilesDto,
+    })
+    statelessCoverDto: CreateStatelessCoverDto[],
+  ) {
+    await this.comicIssueService.updateStatelessCovers(statelessCoverDto, +id);
+  }
+
+  /* Update Stateful covers */
+  @Post('update/stateful-covers/:id')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  async updateStatefulCovers(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'data',
+      fileField: 'image',
+      bodyType: CreateStatefulCoverBodyDto,
+      fileType: CreateStatefulCoverFilesDto,
+    })
+    statefulCoverDto: [CreateStatefulCoverDto],
+  ) {
+    await this.comicIssueService.updateStatefulCovers(statefulCoverDto, +id);
   }
 
   /* Publish an off-chain comic issue on chain */
@@ -201,7 +287,7 @@ export class ComicIssueController {
       +id,
       publishOnChainDto,
     );
-    return await toComicIssueDto(publishedComicIssue);
+    return toComicIssueDto(publishedComicIssue);
   }
 
   /* Publish comic issue */
@@ -209,7 +295,7 @@ export class ComicIssueController {
   @Patch('publish/:id')
   async publish(@Param('id') id: string): Promise<ComicIssueDto> {
     const publishedComicIssue = await this.comicIssueService.publish(+id);
-    return await toComicIssueDto(publishedComicIssue);
+    return toComicIssueDto(publishedComicIssue);
   }
 
   /* Unpublish comic issue */
@@ -217,26 +303,20 @@ export class ComicIssueController {
   async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${id}`);
     // const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    // return await toComicIssueDto(unpublishedComicIssue);
+    // return toComicIssueDto(unpublishedComicIssue);
   }
 
   /* Queue comic issue for deletion */
   @Patch('delete/:id')
   async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
     const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
-    return await toComicIssueDto(deletedComicIssue);
+    return toComicIssueDto(deletedComicIssue);
   }
 
   /* Remove comic issue for deletion queue */
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
     const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
-    return await toComicIssueDto(recoveredComicIssue);
-  }
-
-  /* Completely remove specific comic issue, including files from s3 bucket */
-  @Delete('remove/:id')
-  remove(@Param('id') id: string) {
-    return this.comicIssueService.remove(+id);
+    return toComicIssueDto(recoveredComicIssue);
   }
 }

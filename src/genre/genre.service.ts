@@ -14,6 +14,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { GenreFilterParams } from './dto/genre-filter-params.dto';
 import { s3Service } from '../aws/s3.service';
+import { PickFields } from '../types/shared';
+
+const S3_FOLDER = 'genres/';
+type GenreFileProperty = PickFields<Genre, 'icon'>;
 
 @Injectable()
 export class GenreService {
@@ -28,7 +32,6 @@ export class GenreService {
   ) {
     const { slug, ...rest } = createGenreDto;
 
-    // Create Genre without any files uploaded
     let genre: Genre;
     try {
       genre = await this.prisma.genre.create({ data: { ...rest, slug } });
@@ -38,17 +41,14 @@ export class GenreService {
 
     const { icon } = createGenreFilesDto;
 
-    // Upload files if any
     let iconKey: string;
     try {
-      const prefix = await this.getS3FilePrefix(slug);
-      if (icon) iconKey = await this.s3.uploadFile(prefix, icon);
+      if (icon) iconKey = await this.s3.uploadFile(S3_FOLDER, icon, slug);
     } catch {
       await this.prisma.genre.delete({ where: { slug } });
       throw new BadRequestException('Malformed file upload');
     }
 
-    // Update Genre with s3 file keys
     genre = await this.prisma.genre.update({
       where: { slug },
       data: { icon: iconKey },
@@ -90,26 +90,27 @@ export class GenreService {
     }
   }
 
-  async updateFile(slug: string, file: Express.Multer.File) {
+  async updateFile(
+    slug: string,
+    file: Express.Multer.File,
+    field: GenreFileProperty,
+  ) {
     let genre = await this.findOne(slug);
-    const oldFileKey = genre[file.fieldname];
-    const prefix = await this.getS3FilePrefix(slug);
-    const newFileKey = await this.s3.uploadFile(prefix, file);
+
+    const oldFileKey = genre[field];
+    const newFileKey = await this.s3.uploadFile(S3_FOLDER, file, slug);
 
     try {
       genre = await this.prisma.genre.update({
         where: { slug },
-        data: { [file.fieldname]: newFileKey },
+        data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject({ Key: newFileKey });
+      await this.s3.deleteObject(newFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
-    if (oldFileKey !== newFileKey) {
-      await this.s3.deleteObject({ Key: oldFileKey });
-    }
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return genre;
   }
 
@@ -135,43 +136,13 @@ export class GenreService {
     }
   }
 
-  async remove(slug: string) {
-    // Remove s3 assets
-    const prefix = await this.getS3FilePrefix(slug);
-    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
-    await this.s3.deleteObjects(keys);
-
-    try {
-      await this.prisma.genre.delete({ where: { slug } });
-    } catch {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
-    }
-    return;
-  }
-
-  async getS3FilePrefix(slug: string) {
-    const genre = await this.prisma.genre.findUnique({
-      where: { slug },
-      select: { slug: true },
-    });
-
-    if (!genre) {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
-    }
-
-    const prefix = `genres/${slug}/`;
-    return prefix;
-  }
-
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearGenresQueuedForRemoval() {
-    const genresToRemove = await this.prisma.genre.findMany({
-      where: { deletedAt: { lte: subDays(new Date(), 90) } }, // 90 days ago
-    });
+    const where = { where: { deletedAt: { lte: subDays(new Date(), 90) } } };
+    const genresToRemove = await this.prisma.genre.findMany(where);
+    await this.prisma.genre.deleteMany(where);
 
-    for (const genre of genresToRemove) {
-      await this.remove(genre.slug);
-      console.log(`Removed genre ${genre.slug} at ${new Date()}`);
-    }
+    const keys = genresToRemove.map((g) => g.icon);
+    await this.s3.deleteObjects(keys);
   }
 }

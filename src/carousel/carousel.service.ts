@@ -11,8 +11,11 @@ import {
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
 import { CarouselSlide } from '@prisma/client';
 import { addDays } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
 import { s3Service } from '../aws/s3.service';
+import { PickFields } from '../types/shared';
+
+const S3_FOLDER = 'carousel/slides/';
+type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
 
 @Injectable()
 export class CarouselService {
@@ -29,8 +32,7 @@ export class CarouselService {
 
     let imageKey: string;
     try {
-      const prefix = await this.getS3FilePrefix();
-      imageKey = await this.s3.uploadFile(prefix, image, uuidv4());
+      imageKey = await this.s3.uploadFile(S3_FOLDER, image);
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -89,26 +91,27 @@ export class CarouselService {
     }
   }
 
-  async updateFile(id: number, file: Express.Multer.File) {
+  async updateFile(
+    id: number,
+    file: Express.Multer.File,
+    field: CarouselSlideFileProperty,
+  ) {
     let carouselSlide = await this.findOne(id);
-    const oldFileKey = carouselSlide[file.fieldname];
-    const prefix = await this.getS3FilePrefix();
-    const newFileKey = await this.s3.uploadFile(prefix, file, uuidv4());
+
+    const oldFileKey = carouselSlide[field];
+    const newFileKey = await this.s3.uploadFile(S3_FOLDER, file);
 
     try {
       carouselSlide = await this.prisma.carouselSlide.update({
         where: { id },
-        data: { [file.fieldname]: newFileKey },
+        data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject({ Key: newFileKey });
+      await this.s3.deleteObject(newFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
-    // carousel slides use uuid for s3 keys so we will always
-    // have to garbage collect the old file
-    await this.s3.deleteObject({ Key: oldFileKey });
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return carouselSlide;
   }
 
@@ -121,9 +124,5 @@ export class CarouselService {
     } catch {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }
-  }
-
-  async getS3FilePrefix() {
-    return `carousel/slides/`;
   }
 }
