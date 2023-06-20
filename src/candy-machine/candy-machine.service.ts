@@ -211,23 +211,6 @@ export class CandyMachineService {
     });
   }
 
-  async initializeAuthority(
-    collectionMint: PublicKey,
-    rarity: ComicRarity,
-    comicStates: ComicStates,
-  ) {
-    const instruction = await constructInitializeComicAuthorityInstruction(
-      this.metaplex,
-      collectionMint,
-      rarity,
-      comicStates,
-    );
-    const tx = new Transaction().add(instruction);
-    await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-      this.metaplex.identity(),
-    ]);
-  }
-
   async uploadAllMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
@@ -325,27 +308,6 @@ export class CandyMachineService {
     return items;
   }
 
-  async constructInitializeRecordAuthorityTransaction(
-    collectionMint: PublicKey,
-    creator: PublicKey,
-    maxSignature: number,
-  ) {
-    try {
-      const instruction = await constructInitializeRecordAuthorityInstruction(
-        this.metaplex,
-        collectionMint,
-        creator,
-        maxSignature,
-      );
-      const tx = new Transaction().add(instruction);
-      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-        this.metaplex.identity(),
-      ]);
-    } catch (e) {
-      console.log('Record Authority account is not initialized : ', e);
-    }
-  }
-
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
@@ -426,7 +388,7 @@ export class CandyMachineService {
       });
       collectionNftAddress = newCollectionNft.address;
     }
-    await this.constructInitializeRecordAuthorityTransaction(
+    await this.initializeRecordAuthority(
       collectionNftAddress,
       new PublicKey(creatorAddress),
       MAX_SIGNATURES_PERCENT,
@@ -577,6 +539,48 @@ export class CandyMachineService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  async initializeRecordAuthority(
+    collectionMint: PublicKey,
+    creator: PublicKey,
+    maxSignature: number,
+  ) {
+    try {
+      const instruction = await constructInitializeRecordAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        creator,
+        maxSignature,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Record Authority account is not initialized : ', e);
+    }
+  }
+
+  async initializeAuthority(
+    collectionMint: PublicKey,
+    rarity: ComicRarity,
+    comicStates: ComicStates,
+  ) {
+    try {
+      const instruction = await constructInitializeComicAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        rarity,
+        comicStates,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Authority account is not initialized : ', e);
     }
   }
 

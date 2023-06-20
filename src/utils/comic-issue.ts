@@ -14,8 +14,7 @@ export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
   else {
     throw new Error('Unsupported number of rarities');
   }
-
-  return rarityShare.find((share) => share.rarity === rarity).value;
+  return rarityShare.find((share) => share.rarity.toString() === rarity).value;
 };
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {

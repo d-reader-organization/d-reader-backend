@@ -7,7 +7,7 @@ import {
   createAssignAuthorityToProgramInstruction,
 } from 'dreader-comic-verse';
 
-export async function delegateAuthority(
+export async function constructDelegateAuthorityInstruction(
   metaplex: Metaplex,
   collectionMint: PublicKey,
   rarity: ComicRarity,
