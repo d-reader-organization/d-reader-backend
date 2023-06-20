@@ -1,5 +1,5 @@
 import { JsonMetadata } from '@metaplex-foundation/js';
-import { SIGNED_TRAIT, USED_TRAIT } from '../constants';
+import { RARITY_TRAIT, SIGNED_TRAIT, USED_TRAIT } from '../constants';
 import { BadRequestException } from '@nestjs/common';
 import { isNil } from 'lodash';
 import axios from 'axios';
@@ -21,6 +21,9 @@ export const findUsedTrait = (jsonMetadata: JsonMetadata) =>
 
 export const findSignedTrait = (jsonMetadata: JsonMetadata) =>
   findTrait(jsonMetadata, SIGNED_TRAIT).value === 'true';
+
+export const findRarityTrait = (jsonMetadata: JsonMetadata) =>
+  findTrait(jsonMetadata, RARITY_TRAIT).value;
 
 export const fetchOffChainMetadata = async (uri: string) => {
   return (await axios.get<JsonMetadata>(uri)).data;

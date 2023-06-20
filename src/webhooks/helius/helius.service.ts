@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Cluster, PublicKey } from '@solana/web3.js';
+import {
+  Cluster,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -20,9 +25,12 @@ import * as jwt from 'jsonwebtoken';
 import { initMetaplex } from '../../utils/metaplex';
 import {
   fetchOffChainMetadata,
+  findRarityTrait,
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
+import { constructDelegateAuthorityInstruction } from 'src/candy-machine/instructions/delegateAuthority';
+import { ComicRarity } from 'dreader-comic-verse';
 
 @Injectable()
 export class HeliusService {
@@ -308,10 +316,18 @@ export class HeliusService {
       },
       'finalized',
     );
-
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+
+    const collectionMint = new PublicKey(
+      enrichedTransaction.instructions[4].accounts[10],
+    );
+    await this.delegateAuthority(
+      collectionMint,
+      findRarityTrait(offChainMetadata),
+      mint,
+    );
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
@@ -404,6 +420,27 @@ export class HeliusService {
     });
 
     return `Bearer ${token}`;
+  }
+
+  async delegateAuthority(
+    collectionMint: PublicKey,
+    rarity: string,
+    mint: PublicKey,
+  ) {
+    try {
+      const instruction = await constructDelegateAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        ComicRarity[rarity],
+        mint,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Error delegating comic authority : ', e);
+    }
   }
 
   // Refresh auth token each day

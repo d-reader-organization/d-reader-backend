@@ -14,7 +14,11 @@ import {
   DefaultCandyGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
-import { constructMintInstruction, getRemainingAccounts } from './instructions';
+import {
+  constructChangeComicStateInstruction,
+  constructMintInstruction,
+  getRemainingAccounts,
+} from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import { chunk } from 'lodash';
@@ -30,6 +34,7 @@ import {
   SIGNED_TRAIT,
   getRarityShareTable,
   MAX_SIGNATURES_PERCENT,
+  RARITY_TRAIT,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -47,7 +52,7 @@ import {
   generateComicAttributes,
   generatePropertyName,
 } from '../utils/nft-metadata';
-import { ComicStates, ComicRarity } from 'dreader-comic-verse';
+import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
 import { constructInitializeComicAuthorityInstruction } from './instructions/intializeAuthority';
 import { constructInitializeRecordAuthorityInstruction } from './instructions/initializeRecordAuthority';
 
@@ -180,16 +185,16 @@ export class CandyMachineService {
       external_url: D_READER_FRONTEND_URL,
       attributes: [
         {
+          trait_type: RARITY_TRAIT,
+          value: rarity.toString(),
+        },
+        {
           trait_type: USED_TRAIT,
           value: isUsed,
         },
         {
           trait_type: SIGNED_TRAIT,
           value: isSigned,
-        },
-        {
-          trait_type: rarity.toString(),
-          value: 'true',
         },
       ],
       properties: {
@@ -539,6 +544,42 @@ export class CandyMachineService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  async constructChangeComicStateTransaction(
+    collectionMint: PublicKey,
+    candyMachineAddress: PublicKey,
+    rarity: ComicRarity,
+    mint: PublicKey,
+    feePayer: PublicKey,
+    newState: ComicStateArgs,
+  ) {
+    try {
+      const instruction = await constructChangeComicStateInstruction(
+        this.metaplex,
+        collectionMint,
+        candyMachineAddress,
+        rarity,
+        mint,
+        feePayer,
+        newState,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+
+      const tx = new Transaction({
+        feePayer,
+        ...latestBlockhash,
+      }).add(instruction);
+
+      const rawTransaction = tx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      return rawTransaction.toString('base64');
+    } catch (e) {
+      console.log('Error processing transaction: ', e);
     }
   }
 
