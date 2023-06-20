@@ -41,16 +41,19 @@ export const getS3Object = async (
 export const getPublicUrl = (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
+  if (key.startsWith('https://')) return key;
 
   const publicUrl = `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
   return publicUrl;
 };
 
 export const transformToUrl = (params: TransformFnParams) => {
-  if (isNil(params.value)) return '';
-  else if (typeof params.value !== 'string') {
+  const key = params.value;
+  if (isNil(key)) return '';
+  if (key.startsWith('https://')) return key;
+  else if (typeof key !== 'string') {
     throw new Error('S3 Key must be of type string');
-  } else return getPublicUrl(params.value);
+  } else return getPublicUrl(key);
 };
 
 export const getPresignedUrl = async (key: string) => {

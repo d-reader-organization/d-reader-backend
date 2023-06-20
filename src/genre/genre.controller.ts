@@ -9,7 +9,6 @@ import {
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
-  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -57,20 +56,18 @@ export class GenreController {
     return toGenreDto(genre);
   }
 
-  private async findAll(query: GenreFilterParams) {
-    const genres = await this.genreService.findAll(query);
-    return toGenreDtoArray(genres);
-  }
+  private throttledFindAll = throttle(
+    async (query: GenreFilterParams) => {
+      const genres = await this.genreService.findAll(query);
+      return toGenreDtoArray(genres);
+    },
+    24 * 60 * 60 * 1000, // 24 hours
+  );
 
   /* Get all genres */
   @Get('get')
-  async publicFindAll(@Query() query: GenreFilterParams): Promise<GenreDto[]> {
-    const throttledFindAll = throttle(
-      this.findAll,
-      24 * 60 * 60 * 1000, // 24 hours
-    );
-
-    return await throttledFindAll(query);
+  findAll(query: GenreFilterParams) {
+    return this.throttledFindAll(query);
   }
 
   /* Get specific genre by unique slug */

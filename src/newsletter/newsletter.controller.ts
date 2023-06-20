@@ -42,7 +42,7 @@ export class NewsletterController {
     @WalletEntity() wallet: Wallet,
     @Req() request: Request,
     @RealIP() ip = '',
-  ): Promise<NewsletterDto> {
+  ) {
     const geo = geoip.lookup(ip);
     const parser = new UAParser(request.headers['user-agent']);
 
@@ -55,12 +55,11 @@ export class NewsletterController {
       os: parser.getOS()?.name,
     };
 
-    const newsletter = await this.newsletterService.subscribe(
+    await this.newsletterService.subscribe(
       wallet.address,
       upsertNewsletterDto,
       requestUserData,
     );
-    return await toNewsletterDto(newsletter);
   }
 
   /* Get all newsletter subscriptions */
@@ -68,7 +67,7 @@ export class NewsletterController {
   @Roles(Role.Superadmin)
   async findAll(): Promise<NewsletterDto[]> {
     const newsletters = await this.newsletterService.findAll();
-    return await toNewsletterDtoArray(newsletters);
+    return toNewsletterDtoArray(newsletters);
   }
 
   /* Get specific newsletter subscription by wallet address */
@@ -76,12 +75,12 @@ export class NewsletterController {
   @Roles(Role.Superadmin)
   async findOne(@Param('address') address: string): Promise<NewsletterDto> {
     const newsletter = await this.newsletterService.findOne(address);
-    return await toNewsletterDto(newsletter);
+    return toNewsletterDto(newsletter);
   }
 
   /* Unsubscribe from newsletter */
   @Delete('unsubscribe')
-  async unsubscribe(@WalletEntity() wallet: Wallet): Promise<NewsletterDto> {
-    return await this.newsletterService.unsubscribe(wallet.address);
+  async unsubscribe(@WalletEntity() wallet: Wallet) {
+    this.newsletterService.unsubscribe(wallet.address);
   }
 }

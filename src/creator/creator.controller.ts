@@ -169,10 +169,10 @@ export class CreatorController {
 
   /* Follow a creator */
   @Post('follow/:slug')
-  async follow(
+  follow(
     @WalletEntity() wallet: Wallet,
     @Param('slug') slug: string,
   ): Promise<boolean> {
-    return await this.walletCreatorService.toggleFollow(wallet.address, slug);
+    return this.walletCreatorService.toggleFollow(wallet.address, slug);
   }
 }

@@ -4,11 +4,12 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicRarity, StatelessCover } from '@prisma/client';
-import { Transform, plainToInstance } from 'class-transformer';
-import { transformToUrl } from '../../../aws/s3client';
+import { getPublicUrl } from '../../../aws/s3client';
+import { plainToInstance } from 'class-transformer';
 
 export class StatelessCoverDto {
   @IsString()
@@ -25,14 +26,22 @@ export class StatelessCoverDto {
   @IsBoolean()
   isDefault: boolean;
 
-  @IsString()
-  // TODO v1: check if this is working, if yes, apply everywhere
-  @Transform(transformToUrl, { toClassOnly: true })
+  @IsUrl()
+  // @Transform(transformToUrl, { toClassOnly: true })
   image: string;
 }
 
 export function toStatelessCoverDto(cover: StatelessCover) {
-  return plainToInstance(StatelessCoverDto, cover);
+  const plainStatelessCoverDto: StatelessCoverDto = {
+    artist: cover.artist,
+    rarity: cover.rarity,
+    share: cover.share,
+    isDefault: cover.isDefault,
+    image: getPublicUrl(cover.image),
+  };
+
+  const coverDto = plainToInstance(StatelessCoverDto, plainStatelessCoverDto);
+  return coverDto;
 }
 
 export const toStatelessCoverDtoArray = (covers: StatelessCover[]) => {

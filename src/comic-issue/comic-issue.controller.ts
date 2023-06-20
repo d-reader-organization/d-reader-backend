@@ -133,7 +133,7 @@ export class ComicIssueController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
     const pages = await this.comicIssueService.getPages(+id, wallet.address);
-    return await toComicPageDtoArray(pages);
+    return toComicPageDtoArray(pages);
   }
 
   /* Update specific comic issue */
@@ -161,7 +161,7 @@ export class ComicIssueController {
       +id,
       'isFavourite',
     );
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
   /* Rate specific comic issue */
@@ -177,7 +177,7 @@ export class ComicIssueController {
       +id,
       rateComicDto.rating,
     );
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
   /* Reads a specific comic issue */
@@ -188,7 +188,7 @@ export class ComicIssueController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicIssueDto> {
     await this.comicIssueService.read(+id, wallet.address);
-    return await this.findOne(id, wallet);
+    return this.findOne(id, wallet);
   }
 
   /* Update specific comic issues pdf file */

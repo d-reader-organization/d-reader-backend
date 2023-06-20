@@ -62,20 +62,18 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
-  private async findAll() {
-    const carouselSlides = await this.carouselService.findAll();
-    return toCarouselSlideDtoArray(carouselSlides);
-  }
+  private throttledFindAll = throttle(
+    async () => {
+      const carouselSlides = await this.carouselService.findAll();
+      return toCarouselSlideDtoArray(carouselSlides);
+    },
+    24 * 60 * 60 * 1000, // 24 hours
+  );
 
-  /* Get all carousel slides */
+  /* Get all genres */
   @Get('slides/get')
-  async publicFindAll(): Promise<CarouselSlideDto[]> {
-    const throttledFindAll = throttle(
-      this.findAll,
-      24 * 60 * 60 * 1000, // 24 hours
-    );
-
-    return await throttledFindAll();
+  async findAll() {
+    return await this.throttledFindAll();
   }
 
   /* Get specific carousel slide by unique id */

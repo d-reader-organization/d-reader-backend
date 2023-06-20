@@ -2,7 +2,7 @@ import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicRarity, StatefulCover } from '@prisma/client';
 import { Transform, plainToInstance } from 'class-transformer';
-import { transformToUrl } from 'src/aws/s3client';
+import { getPublicUrl, transformToUrl } from '../../../aws/s3client';
 
 export class StatefulCoverDto {
   @IsString()
@@ -25,7 +25,16 @@ export class StatefulCoverDto {
 }
 
 export function toStatefulCoverDto(cover: StatefulCover) {
-  return plainToInstance(StatefulCoverDto, cover);
+  const plainStatefulCoverDto: StatefulCoverDto = {
+    artist: cover.artist,
+    rarity: cover.rarity,
+    isSigned: cover.isSigned,
+    isUsed: cover.isUsed,
+    image: getPublicUrl(cover.image),
+  };
+
+  const coverDto = plainToInstance(StatefulCoverDto, plainStatefulCoverDto);
+  return coverDto;
 }
 
 export const toStatefulCoverDtoArray = (covers: StatefulCover[]) => {
