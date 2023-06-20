@@ -2,7 +2,7 @@ import { ComicRarity } from 'dreader-comic-verse';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { IsEnum } from 'class-validator';
 
-export class SignComicParams {
+export class ChangeComicStateParams {
   @IsSolanaAddress()
   candyMachineAddress: string;
 

@@ -14,7 +14,7 @@ import {
 } from './dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from './dto/candy-machine.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { SignComicParams } from './dto/sign-comic-params.dto';
+import { ChangeComicStateParams } from './dto/change-comic-state-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
 
 @UseGuards(RestAuthGuard, CandyMachineUpdateGuard, ThrottlerGuard)
@@ -46,7 +46,7 @@ export class CandyMachineController {
   @Get('/transactions/sign-comic')
   constructSignComicTransaction(
     @WalletEntity() wallet: Wallet,
-    @Query() query: SignComicParams,
+    @Query() query: ChangeComicStateParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
     const collectionMint = new PublicKey(query.collectionNft);
@@ -60,6 +60,26 @@ export class CandyMachineController {
       mint,
       publicKey,
       ComicStateArgs.Sign,
+    );
+  }
+
+  @Get('/transactions/use-comic')
+  constructUseComicTransaction(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: ChangeComicStateParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const collectionMint = new PublicKey(query.collectionNft);
+    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
+    const mint = new PublicKey(query.mint);
+
+    return this.candyMachineService.constructChangeComicStateTransaction(
+      collectionMint,
+      candyMachineAddress,
+      query.rarity,
+      mint,
+      publicKey,
+      ComicStateArgs.Use,
     );
   }
 
