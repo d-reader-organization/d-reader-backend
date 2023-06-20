@@ -1,4 +1,4 @@
-import { ComicRarity } from '@prisma/client';
+import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 
 export const MAX_NAME_LENGTH = 32;
@@ -62,48 +62,50 @@ export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: 'Common',
+    rarity: ComicRarity.Common,
     value: 70,
   },
   {
-    rarity: 'Rare',
+    rarity: ComicRarity.Rare,
     value: 25,
   },
   {
-    rarity: 'Legendary',
+    rarity: ComicRarity.Legendary,
     value: 5,
   },
 ];
 
 export const FIVE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: 'Common',
+    rarity: ComicRarity.Common,
     value: 60,
   },
   {
-    rarity: 'Uncommon',
+    rarity: ComicRarity.Uncommon,
     value: 25,
   },
   {
-    rarity: 'Rare',
+    rarity: ComicRarity.Rare,
     value: 10,
   },
   {
-    rarity: 'Epic',
+    rarity: ComicRarity.Epic,
     value: 3,
   },
   {
-    rarity: 'Legendary',
+    rarity: ComicRarity.Legendary,
     value: 2,
   },
 ];
 
 export const ONE_RARITY_SHARE: RarityShare[] = [
   {
-    rarity: 'None',
+    rarity: ComicRarity.None,
     value: 100,
   },
 ];
+
+export const MAX_SIGNATURES = 10;
 
 export const getRarityShareTable = (numberOfCovers: number) => {
   switch (numberOfCovers) {

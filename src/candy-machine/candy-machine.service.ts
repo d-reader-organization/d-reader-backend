@@ -29,6 +29,7 @@ import {
   USED_TRAIT,
   SIGNED_TRAIT,
   getRarityShareTable,
+  MAX_SIGNATURES_PERCENT,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -37,7 +38,6 @@ import {
   generateStatefulCoverName,
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
-import { ComicRarity, StatefulCover } from '@prisma/client';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
 import { getS3Object } from '../aws/s3client';
@@ -47,6 +47,9 @@ import {
   generateComicAttributes,
   generatePropertyName,
 } from '../utils/nft-metadata';
+import { ComicStates, ComicRarity } from 'dreader-comic-verse';
+import { constructInitializeComicAuthorityInstruction } from './instructions/intializeAuthority';
+import { constructInitializeRecordAuthorityInstruction } from './instructions/initializeRecordAuthority';
 
 @Injectable()
 export class CandyMachineService {
@@ -158,12 +161,6 @@ export class CandyMachineService {
     return { statefulCovers, statelessCovers, rarityCoverFiles };
   }
 
-  findCover(covers: StatefulCover[], rarity: ComicRarity) {
-    return covers.find(
-      (cover) => cover.rarity === rarity && !cover.isUsed && !cover.isSigned,
-    );
-  }
-
   async uploadMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
@@ -214,6 +211,23 @@ export class CandyMachineService {
     });
   }
 
+  async initializeAuthority(
+    collectionMint: PublicKey,
+    rarity: ComicRarity,
+    comicStates: ComicStates,
+  ) {
+    const instruction = await constructInitializeComicAuthorityInstruction(
+      this.metaplex,
+      collectionMint,
+      rarity,
+      comicStates,
+    );
+    const tx = new Transaction().add(instruction);
+    await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+      this.metaplex.identity(),
+    ]);
+  }
+
   async uploadAllMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
@@ -221,9 +235,9 @@ export class CandyMachineService {
     rarityCoverFiles: CoverFiles,
     darkblockId: string,
     rarity: ComicRarity,
+    collectionNftAddress: PublicKey,
   ) {
     const itemMetadata: ItemMedata = {} as ItemMedata;
-
     await Promise.all(
       generateComicAttributes().map(async ([isUsed, isSigned]) => {
         const property = generatePropertyName(isUsed, isSigned);
@@ -240,11 +254,20 @@ export class CandyMachineService {
         );
       }),
     );
+
+    const comicStates: ComicStates = {
+      unusedSigned: itemMetadata.unusedSigned.uri,
+      unusedUnsigned: itemMetadata.unusedUnsigned.uri,
+      usedSigned: itemMetadata.usedSigned.uri,
+      usedUnsigned: itemMetadata.usedUnsigned.uri,
+    };
+    await this.initializeAuthority(collectionNftAddress, rarity, comicStates);
     return itemMetadata;
   }
 
   async uploadItemMetadata(
     comicIssue: ComicIssueCMInput,
+    collectionNftAddress: PublicKey,
     comicName: string,
     creatorAddress: string,
     numberOfRarities: number,
@@ -260,14 +283,16 @@ export class CandyMachineService {
     for (const rarityShare of rarityShares) {
       const { rarity } = rarityShare;
       // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
-      const { unusedUnsigned } = await this.uploadAllMetadata(
+      const itemMetadata = await this.uploadAllMetadata(
         comicIssue,
         comicName,
         creatorAddress,
         rarityCoverFiles[rarity],
         darkblockId,
         rarity,
+        collectionNftAddress,
       );
+      const { unusedUnsigned } = itemMetadata;
       itemMetadatas.push({
         uri: unusedUnsigned.uri,
         name: unusedUnsigned.metadata.name,
@@ -298,6 +323,27 @@ export class CandyMachineService {
       index++;
     }
     return items;
+  }
+
+  async constructInitializeRecordAuthorityTransaction(
+    collectionMint: PublicKey,
+    creator: PublicKey,
+    maxSignature: number,
+  ) {
+    try {
+      const instruction = await constructInitializeRecordAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        creator,
+        maxSignature,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Record Authority account is not initialized : ', e);
+    }
   }
 
   async createComicIssueCM(
@@ -378,9 +424,13 @@ export class CandyMachineService {
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
-
       collectionNftAddress = newCollectionNft.address;
     }
+    await this.constructInitializeRecordAuthorityTransaction(
+      collectionNftAddress,
+      new PublicKey(creatorAddress),
+      MAX_SIGNATURES_PERCENT,
+    );
 
     const comicCreator = new PublicKey(creatorAddress);
     const { candyMachine } = await this.metaplex.candyMachines().create(
@@ -434,6 +484,7 @@ export class CandyMachineService {
 
     const items = await this.uploadItemMetadata(
       comicIssue,
+      collectionNftAddress,
       comicName,
       creatorAddress,
       statelessCovers.length,
