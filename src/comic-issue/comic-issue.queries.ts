@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
-import { FilterTag } from '../types/filter-tags';
+import { FilterTag, SortTag } from '../types/query-tags';
 import { SortOrder } from '../types/sort-order';
 
 const filterBy = (tag: FilterTag): Prisma.Sql => {
@@ -15,16 +15,16 @@ const filterBy = (tag: FilterTag): Prisma.Sql => {
 const getSortOrder = (sortOrder?: SortOrder): Prisma.Sql =>
   sortOrder === SortOrder.ASC ? Prisma.sql`asc` : Prisma.sql`desc`;
 
-const sortBy = (tag: FilterTag): Prisma.Sql => {
-  if (tag === FilterTag.Latest) {
+const sortBy = (tag: SortTag): Prisma.Sql => {
+  if (tag === SortTag.Latest) {
     return Prisma.sql`"ci"."releaseDate"`;
-  } else if (tag === FilterTag.Likes) {
+  } else if (tag === SortTag.Likes) {
     return Prisma.sql`"favouritesCount"`;
-  } else if (tag === FilterTag.Rating) {
+  } else if (tag === SortTag.Rating) {
     return Prisma.sql`"averageRating"`;
-  } else if (tag === FilterTag.Readers) {
+  } else if (tag === SortTag.Readers) {
     return Prisma.sql`"readersCount"`;
-  } else if (tag === FilterTag.Viewers) {
+  } else if (tag === SortTag.Viewers) {
     return Prisma.sql`"viewersCount"`;
   }
   return Prisma.sql`"ci"."releaseDate"`;
@@ -39,6 +39,7 @@ const getQueryFilters = (
   genreSlugsCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
+  filterCondition: Prisma.Sql;
 } => {
   const titleCondition = !!query.titleSubstring
     ? Prisma.sql`AND "ci"."title" ILIKE '%' || ${
@@ -55,7 +56,8 @@ const getQueryFilters = (
     ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
-  const sortColumn = sortBy(query.tag);
+  const sortColumn = sortBy(query.sortTag);
+  const filterCondition = filterBy(query.filterTag);
   return {
     titleCondition,
     comicSlugCondition,
@@ -63,6 +65,7 @@ const getQueryFilters = (
     genreSlugsCondition,
     sortOrder,
     sortColumn,
+    filterCondition,
   };
 };
 
@@ -76,6 +79,7 @@ export const getComicIssuesQuery = (
     genreSlugsCondition,
     sortColumn,
     sortOrder,
+    filterCondition,
   } = getQueryFilters(query);
   return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar",
 AVG("wci"."rating") AS "averageRating",
@@ -100,7 +104,7 @@ INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
 INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
 LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
 WHERE "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL
-${filterBy(query.tag)}
+${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
