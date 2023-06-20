@@ -120,7 +120,12 @@ export const getRarityShareTable = (numberOfCovers: number) => {
   }
 };
 
-export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
+export const getRarityShare = (
+  numberOfCovers: number,
+  rarity: ComicRarity | string,
+) => {
+  let rarityValue: ComicRarity;
+  if (typeof rarity === 'string') rarityValue = ComicRarity[rarity];
   const shareTable = getRarityShareTable(numberOfCovers);
-  return shareTable.find((share) => share.rarity === rarity).value;
+  return shareTable.find((share) => share.rarity === rarityValue).value;
 };
