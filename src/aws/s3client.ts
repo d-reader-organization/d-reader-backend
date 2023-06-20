@@ -6,6 +6,8 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../configs/config';
 import { subHours } from 'date-fns';
+import { TransformFnParams } from 'class-transformer';
+import { isNil } from 'lodash';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
 
@@ -36,7 +38,25 @@ export const getS3Object = async (
   );
 };
 
-export const getReadUrl = async (key: string) => {
+export const getPublicUrl = (key: string) => {
+  // If key is an empty string, return it
+  if (!key) return key;
+  if (key.startsWith('https://')) return key;
+
+  const publicUrl = `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
+  return publicUrl;
+};
+
+export const transformToUrl = (params: TransformFnParams) => {
+  const key = params.value;
+  if (isNil(key)) return '';
+  if (key.startsWith('https://')) return key;
+  else if (typeof key !== 'string') {
+    throw new Error('S3 Key must be of type string');
+  } else return getPublicUrl(key);
+};
+
+export const getPresignedUrl = async (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
 
@@ -56,6 +76,7 @@ export const getReadUrl = async (key: string) => {
  * This is a cache-friendly variant of s3.getSignedUrl
  * Every 12 hours a new presigned URL will be generated,
  * in between the same URL will be reused
+ * @deprecated
  */
 export const getCachedReadUrl = async (key: string) => {
   // If key is an empty string, return it

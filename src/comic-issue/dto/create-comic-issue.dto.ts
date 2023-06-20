@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
-import { CreateComicPageDto } from 'src/comic-page/dto/create-comic-page.dto';
+import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
 
@@ -73,30 +73,19 @@ export class CreateComicIssueDto {
   comicSlug: string;
 
   @IsArray()
-  @Type(() => CreateComicPageDto)
-  @ApiProperty({ type: [CreateComicPageDto] })
-  pages: CreateComicPageDto[];
+  @Type(() => ComicIssueCollaboratorDto)
+  @ApiProperty({ type: [ComicIssueCollaboratorDto] })
+  collaborators: ComicIssueCollaboratorDto[];
 }
 
 export class CreateComicIssueFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  cover?: Express.Multer.File | null;
+  signature?: Express.Multer.File | null;
 
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  @IsOptional()
-  signedCover?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  usedCover?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  usedSignedCover?: Express.Multer.File | null;
+  pdf?: Express.Multer.File | null;
 }
 
 export class CreateComicIssueSwaggerDto extends IntersectionType(

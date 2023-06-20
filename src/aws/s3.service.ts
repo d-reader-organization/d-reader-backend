@@ -5,7 +5,6 @@ import {
   GetObjectCommand,
   CopyObjectCommandInput,
   CopyObjectCommand,
-  DeleteObjectCommandInput,
   DeleteObjectCommand,
   DeleteObjectsCommand,
   ListObjectsV2CommandInput,
@@ -20,6 +19,8 @@ import { Optional } from '../utils/helpers';
 import * as path from 'path';
 import { isEmpty } from 'lodash';
 import { getTruncatedTime } from './s3client';
+import { v4 as uuidv4 } from 'uuid';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
 
@@ -70,7 +71,15 @@ export class s3Service {
     );
   };
 
-  getReadUrl = async (key: string) => {
+  getPublicUrl = (key: string) => {
+    // If key is an empty string, return it
+    if (!key) return key;
+
+    const publicUrl = `https://${this.bucket}.s3.amazonaws.com/${key}`;
+    return publicUrl;
+  };
+
+  getPresignedUrl = async (key: string) => {
     // If key is an empty string, return it
     if (!key) return key;
 
@@ -87,6 +96,7 @@ export class s3Service {
    * This is a cache-friendly variant of s3.getSignedUrl
    * Every 12 hours a new presigned URL will be generated,
    * in between the same URL will be reused
+   * @deprecated
    */
   getCachedReadUrl = async (key: string) => {
     // If key is an empty string, return it
@@ -102,12 +112,17 @@ export class s3Service {
     return signedUrl;
   };
 
-  deleteObject = async (
-    deleteObjectInput: Optional<DeleteObjectCommandInput, 'Bucket'>,
-  ) => {
+  deleteObject = async (key: string) => {
     return await this.client.send(
-      new DeleteObjectCommand({ Bucket: this.bucket, ...deleteObjectInput }),
+      new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
     );
+  };
+
+  /** Clean up old files when uploading new ones, in case there was an old file and it wasn't overwriten by the new file */
+  garbageCollectOldFile = async (newFileKey: string, oldFileKey?: string) => {
+    if (oldFileKey && oldFileKey !== newFileKey) {
+      await this.deleteObject(oldFileKey);
+    }
   };
 
   deleteObjects = async (keys: string[]) => {
@@ -172,10 +187,14 @@ export class s3Service {
     return await crawlFolderKeys();
   };
 
-  uploadFile = async (prefix: string, file: s3File, name?: string) => {
+  deleteFolder = async (prefix: string) => {
+    const keys = await this.listFolderKeys({ Prefix: prefix });
+    await this.deleteObjects(keys);
+  };
+
+  uploadFile = async (folder: string, file: s3File, fileName = uuidv4()) => {
     if (file) {
-      const fileKey =
-        prefix + (name ?? file.fieldname) + path.extname(file.originalname);
+      const fileKey = folder + fileName + path.extname(file.originalname);
 
       await this.putObject({
         ContentType: file.mimetype,

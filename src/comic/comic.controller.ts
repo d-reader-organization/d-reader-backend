@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -76,7 +75,7 @@ export class ComicController {
       files,
     );
 
-    return await toComicDto(comic);
+    return toComicDto(comic);
   }
 
   /* Get all comics */
@@ -86,7 +85,7 @@ export class ComicController {
     @Query() query: ComicFilterParams,
   ): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll(query, wallet.address);
-    return await toComicDtoArray(comics);
+    return toComicDtoArray(comics);
   }
 
   /* Get specific comic by unique slug */
@@ -96,7 +95,7 @@ export class ComicController {
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug, wallet.address);
-    return await toComicDto(comic);
+    return toComicDto(comic);
   }
 
   /* Update specific comic */
@@ -106,7 +105,7 @@ export class ComicController {
     @Body() updateComicDto: UpdateComicDto,
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.update(slug, updateComicDto);
-    return await toComicDto(updatedComic);
+    return toComicDto(updatedComic);
   }
 
   /* Update specific comics cover file */
@@ -118,8 +117,12 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() cover: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, cover);
-    return await toComicDto(updatedComic);
+    const updatedComic = await this.comicService.updateFile(
+      slug,
+      cover,
+      'cover',
+    );
+    return toComicDto(updatedComic);
   }
 
   /* Update specific comics banner file */
@@ -131,8 +134,12 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, banner);
-    return await toComicDto(updatedComic);
+    const updatedComic = await this.comicService.updateFile(
+      slug,
+      banner,
+      'banner',
+    );
+    return toComicDto(updatedComic);
   }
 
   /* Update specific comics pfp file */
@@ -144,8 +151,8 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() pfp: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, pfp);
-    return await toComicDto(updatedComic);
+    const updatedComic = await this.comicService.updateFile(slug, pfp, 'pfp');
+    return toComicDto(updatedComic);
   }
 
   /* Update specific comics logo file */
@@ -157,8 +164,8 @@ export class ComicController {
     @Param('slug') slug: string,
     @UploadedFile() logo: Express.Multer.File,
   ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, logo);
-    return await toComicDto(updatedComic);
+    const updatedComic = await this.comicService.updateFile(slug, logo, 'logo');
+    return toComicDto(updatedComic);
   }
 
   /* Rate specific comic */
@@ -174,7 +181,7 @@ export class ComicController {
       slug,
       rateComicDto.rating,
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Subscribe/unsubscribe from specific comic */
@@ -189,7 +196,7 @@ export class ComicController {
       slug,
       'isSubscribed',
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -204,7 +211,7 @@ export class ComicController {
       slug,
       'isFavourite',
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Publish comic */
@@ -212,7 +219,7 @@ export class ComicController {
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
-    return await toComicDto(publishedComic);
+    return toComicDto(publishedComic);
   }
 
   /* Unpublish comic */
@@ -220,44 +227,20 @@ export class ComicController {
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${slug}`);
     // const unpublishedComic = await this.comicService.unpublish(slug);
-    // return await toComicDto(unpublishedComic);
+    // return toComicDto(unpublishedComic);
   }
 
   /* Queue comic for deletion */
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
     const deletedComic = await this.comicService.pseudoDelete(slug);
-    return await toComicDto(deletedComic);
+    return toComicDto(deletedComic);
   }
 
   /* Remove comic for deletion queue */
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
-    return await toComicDto(recoveredComic);
+    return toComicDto(recoveredComic);
   }
-
-  /* Completely remove specific comic, including files from s3 bucket */
-  @Delete('remove/:slug')
-  remove(@Param('slug') slug: string) {
-    return this.comicService.remove(slug);
-  }
-
-  /**
-   * TODO v2:
-   * - finish email services
-   * - comicPages @ApiBody
-   * - move all cron jobs to task.service.ts ?
-   * - [main.ts] Config validation: https://wanago.io/2020/08/03/api-nestjs-uploading-public-files-to-amazon-s3/
-   * - [password] Simulate message creation: const message = Message.from(signatureBytes);
-   * - [auth] bcrypt.hash wallet.nonce
-   * - [auth] TokenPayload revision
-   */
-
-  /**
-   * TODO v3:
-   * - [auth] Disconnect function to invalidate a token
-   * - [services] Support renaming Creator, Comic, ComicIssue
-   * - [config] Turn on "strictNullChecks" in tsconfig.ts
-   */
 }

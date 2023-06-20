@@ -13,7 +13,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator } from '@prisma/client';
-import { getReadUrl } from 'src/aws/s3client';
+import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { WalletCreatorStats } from '../types/my-stats';
 import { WalletCreatorStatsDto } from './wallet-creator.dto';
@@ -82,7 +82,7 @@ type CreatorInput = Creator & {
   myStats?: WalletCreatorStats;
 };
 
-export async function toCreatorDto(creator: CreatorInput) {
+export function toCreatorDto(creator: CreatorInput) {
   const plainCreatorDto: CreatorDto = {
     id: creator.id,
     email: creator.email,
@@ -90,9 +90,9 @@ export async function toCreatorDto(creator: CreatorInput) {
     slug: creator.slug,
     isDeleted: !!creator.deletedAt,
     isVerified: !!creator.verifiedAt,
-    avatar: await getReadUrl(creator.avatar),
-    banner: await getReadUrl(creator.banner),
-    logo: await getReadUrl(creator.logo),
+    avatar: getPublicUrl(creator.avatar),
+    banner: getPublicUrl(creator.banner),
+    logo: getPublicUrl(creator.logo),
     description: creator.description,
     flavorText: creator.flavorText,
     website: creator.website,
@@ -116,5 +116,5 @@ export async function toCreatorDto(creator: CreatorInput) {
 }
 
 export const toCreatorDtoArray = (creators: CreatorInput[]) => {
-  return Promise.all(creators.map(toCreatorDto));
+  return creators.map(toCreatorDto);
 };

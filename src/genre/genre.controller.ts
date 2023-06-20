@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -32,6 +31,7 @@ import { Role } from '@prisma/client';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-filter-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { throttle } from 'lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -54,21 +54,25 @@ export class GenreController {
     files: CreateGenreFilesDto,
   ): Promise<GenreDto> {
     const genre = await this.genreService.create(createGenreDto, files);
-    return await toGenreDto(genre);
+    return toGenreDto(genre);
   }
+
+  private throttledFindAll = throttle(
+    (query: GenreFilterParams) => this.genreService.findAll(query),
+    24 * 60 * 60 * 1000, // 24 hours
+  );
 
   /* Get all genres */
   @Get('get')
-  async findAll(@Query() query: GenreFilterParams): Promise<GenreDto[]> {
-    const genres = await this.genreService.findAll(query);
-    return await toGenreDtoArray(genres);
+  findAll(query: GenreFilterParams) {
+    return this.throttledFindAll(query);
   }
 
   /* Get specific genre by unique slug */
   @Get('get/:slug')
   async findOne(@Param('slug') slug: string): Promise<GenreDto> {
     const genre = await this.genreService.findOne(slug);
-    return await toGenreDto(genre);
+    return toGenreDto(genre);
   }
 
   /* Update specific genre */
@@ -79,7 +83,7 @@ export class GenreController {
     @Body() updateGenreDto: UpdateGenreDto,
   ): Promise<GenreDto> {
     const updatedGenre = await this.genreService.update(slug, updateGenreDto);
-    return await toGenreDto(updatedGenre);
+    return toGenreDto(updatedGenre);
   }
 
   /* Update specific genres icon file */
@@ -92,8 +96,8 @@ export class GenreController {
     @Param('slug') slug: string,
     @UploadedFile() icon: Express.Multer.File,
   ): Promise<GenreDto> {
-    const updatedGenre = await this.genreService.updateFile(slug, icon);
-    return await toGenreDto(updatedGenre);
+    const updatedGenre = await this.genreService.updateFile(slug, icon, 'icon');
+    return toGenreDto(updatedGenre);
   }
 
   /* Pseudo delete genre */
@@ -101,7 +105,7 @@ export class GenreController {
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<GenreDto> {
     const deletedGenre = await this.genreService.pseudoDelete(slug);
-    return await toGenreDto(deletedGenre);
+    return toGenreDto(deletedGenre);
   }
 
   /* Recover genre */
@@ -109,13 +113,6 @@ export class GenreController {
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
     const recoveredGenre = await this.genreService.pseudoRecover(slug);
-    return await toGenreDto(recoveredGenre);
-  }
-
-  /* Completely remove specific genre, including files from s3 bucket */
-  @Delete('remove/:slug')
-  @Roles(Role.Superadmin)
-  remove(@Param('slug') slug: string) {
-    return this.genreService.remove(slug);
+    return toGenreDto(recoveredGenre);
   }
 }

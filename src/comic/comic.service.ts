@@ -15,6 +15,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
 import { s3Service } from '../aws/s3.service';
+import { PickFields } from '../types/shared';
+
+const getS3Folder = (slug: string) => `comics/${slug}/`;
+type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
 
 @Injectable()
 export class ComicService {
@@ -31,9 +35,6 @@ export class ComicService {
   ) {
     const { slug, genres, isOngoing, ...rest } = createComicDto;
 
-    // TODO v2: allow custom slugs
-
-    // Create Comic without any files uploaded
     let comic: Comic;
     try {
       comic = await this.prisma.comic.create({
@@ -52,20 +53,19 @@ export class ComicService {
 
     const { cover, banner, pfp, logo } = createComicFilesDto;
 
-    // Upload files if any
     let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
-      const prefix = await this.getS3FilePrefix(slug);
-      if (cover) coverKey = await this.s3.uploadFile(prefix, cover);
-      if (banner) bannerKey = await this.s3.uploadFile(prefix, pfp);
-      if (pfp) pfpKey = await this.s3.uploadFile(prefix, pfp);
-      if (logo) logoKey = await this.s3.uploadFile(prefix, logo);
+      const s3Folder = getS3Folder(slug);
+      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
+      if (banner)
+        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
+      if (pfp) pfpKey = await this.s3.uploadFile(s3Folder, pfp, 'pfp');
+      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
     } catch {
       await this.prisma.comic.delete({ where: { slug: comic.slug } });
       throw new BadRequestException('Malformed file upload');
     }
 
-    // Update Comic with s3 file keys
     comic = await this.prisma.comic.update({
       where: { slug: comic.slug },
       data: {
@@ -159,7 +159,11 @@ export class ComicService {
     }
   }
 
-  async updateFile(slug: string, file: Express.Multer.File) {
+  async updateFile(
+    slug: string,
+    file: Express.Multer.File,
+    field: ComicFileProperty,
+  ) {
     let comic: Comic;
     try {
       comic = await this.prisma.comic.findUnique({ where: { slug } });
@@ -167,26 +171,21 @@ export class ComicService {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
-    const oldFileKey = comic[file.fieldname];
-    const prefix = await this.getS3FilePrefix(slug);
-    const newFileKey = await this.s3.uploadFile(prefix, file);
+    const s3Folder = getS3Folder(slug);
+    const oldFileKey = comic[field];
+    const newFileKey = await this.s3.uploadFile(s3Folder, file);
 
     try {
       comic = await this.prisma.comic.update({
         where: { slug },
-        data: { [file.fieldname]: newFileKey },
+        data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject({ Key: newFileKey });
+      await this.s3.deleteObject(newFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
-    // If all went well with the new file upload and it didn't
-    // override the old one, make sure to garbage collect it
-    if (oldFileKey !== newFileKey) {
-      await this.s3.deleteObject({ Key: oldFileKey });
-    }
-
+    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return comic;
   }
 
@@ -238,48 +237,15 @@ export class ComicService {
     }
   }
 
-  async remove(slug: string) {
-    // Remove s3 assets
-    const prefix = await this.getS3FilePrefix(slug);
-    const keys = await this.s3.listFolderKeys({ Prefix: prefix });
-    await this.s3.deleteObjects(keys);
-
-    try {
-      await this.prisma.comic.delete({ where: { slug, publishedAt: null } });
-    } catch {
-      throw new NotFoundException(
-        `Comic ${slug} does not exist or is published`,
-      );
-    }
-    return;
-  }
-
-  async getS3FilePrefix(slug: string) {
-    const comic = await this.prisma.comic.findUnique({
-      where: { slug },
-      select: {
-        slug: true,
-        creator: { select: { slug: true } },
-      },
-    });
-
-    if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
-    }
-
-    const prefix = `creators/${comic.creator.slug}/comics/${comic.slug}/`;
-    return prefix;
-  }
-
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearComicsQueuedForRemoval() {
-    const comicsToRemove = await this.prisma.comic.findMany({
-      where: { deletedAt: { lte: subDays(new Date(), 30) } }, // 30 days ago
-    });
+    const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
+    const comicsToRemove = await this.prisma.comic.findMany(where);
+    await this.prisma.comic.deleteMany(where);
 
     for (const comic of comicsToRemove) {
-      await this.remove(comic.slug);
-      console.log(`Removed comic ${comic.slug} at ${new Date()}`);
+      const s3Folder = getS3Folder(comic.slug);
+      await this.s3.deleteFolder(s3Folder);
     }
   }
 }

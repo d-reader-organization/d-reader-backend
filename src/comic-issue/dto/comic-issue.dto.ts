@@ -1,5 +1,6 @@
 import { plainToInstance, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsNotEmpty,
@@ -10,23 +11,32 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { getReadUrl } from 'src/aws/s3client';
+import { getPublicUrl } from 'src/aws/s3client';
 import { ComicDto } from 'src/comic/dto/comic.dto';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
 import { WalletComicIssueDto } from './wallet-comic-issue.dto';
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import {
   ComicIssue,
   Creator,
   Comic,
-  ComicPage,
   WalletComicIssue,
+  ComicIssueCollaborator,
+  StatelessCover,
+  StatefulCover,
 } from '@prisma/client';
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
+import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
+import {
+  StatelessCoverDto,
+  toStatelessCoverDtoArray,
+} from './covers/stateless-cover.dto';
+import { StatefulCoverDto } from './covers/stateful-cover.dto';
+import { findDefaultCover } from 'src/utils/comic-issue';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -76,14 +86,8 @@ export class ComicIssueDto {
   @IsUrl()
   cover: string;
 
-  // @IsUrl()
-  // signedCover: string;
-
-  // @IsUrl()
-  // usedCover: string;
-
-  // @IsUrl()
-  // usedSignedCover: string;
+  @IsUrl()
+  signature: string;
 
   @IsDateString()
   releaseDate: string;
@@ -122,17 +126,37 @@ export class ComicIssueDto {
   @IsOptional()
   @IsString()
   candyMachineAddress?: string;
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => ComicIssueCollaboratorDto)
+  @ApiProperty({ type: [ComicIssueCollaboratorDto] })
+  collaborators?: ComicIssueCollaboratorDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCoverDto)
+  @ApiProperty({ type: [StatefulCoverDto] })
+  statefulCovers?: StatefulCoverDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCoverDto)
+  @ApiProperty({ type: [StatelessCoverDto] })
+  statelessCovers?: StatelessCoverDto[];
 }
 
 export type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator };
-  pages?: ComicPage[];
   stats?: ComicIssueStats;
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
+  collaborators?: ComicIssueCollaborator[];
+  statelessCovers?: StatelessCover[];
+  statefulCovers?: StatefulCover[];
 };
 
-export async function toComicIssueDto(issue: ComicIssueInput) {
+export function toComicIssueDto(issue: ComicIssueInput) {
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
     number: issue.number,
@@ -144,11 +168,13 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    cover: await getReadUrl(issue.cover),
-    // signedCover: await getReadUrl(issue.signedCover),
-    // usedCover: await getReadUrl(issue.usedCover),
-    // usedSignedCover: await getReadUrl(issue.usedSignedCover),
+    signature: getPublicUrl(issue.signature),
+    cover: getPublicUrl(findDefaultCover(issue.statelessCovers).image) || '',
     releaseDate: issue.releaseDate.toISOString(),
+    candyMachineAddress: issue.candyMachineAddress ?? undefined,
+    // collaborators: issue.collaborators,
+    // statefulCovers: toStatefulCoverDtoArray(issue.statefulCovers),
+    statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),
     // if supply is 0 it's not an NFT collection and therefore it's free
     isFree: issue.supply === 0,
     isPublished: !!issue.publishedAt,
@@ -160,7 +186,7 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           name: issue.comic.creator.name,
           slug: issue.comic.creator.slug,
           isVerified: !!issue.comic.creator.verifiedAt,
-          avatar: await getReadUrl(issue.comic.creator.avatar),
+          avatar: getPublicUrl(issue.comic.creator.avatar),
         }
       : undefined,
     comic: issue?.comic
@@ -191,7 +217,6 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
           viewedAt: issue.myStats.viewedAt,
         }
       : undefined,
-    candyMachineAddress: issue.candyMachineAddress ?? undefined,
   };
 
   const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
@@ -199,5 +224,5 @@ export async function toComicIssueDto(issue: ComicIssueInput) {
 }
 
 export const toComicIssueDtoArray = (issues: ComicIssueInput[]) => {
-  return Promise.all(issues.map(toComicIssueDto));
+  return issues.map(toComicIssueDto);
 };

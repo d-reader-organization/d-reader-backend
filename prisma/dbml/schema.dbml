@@ -81,6 +81,7 @@ Table Comic {
   wallets WalletComic [not null]
   creator Creator [not null]
   creatorId Int [not null]
+  collaborators ComicCollaborator [not null]
 }
 
 Table WalletComic {
@@ -120,10 +121,10 @@ Table ComicIssue {
   slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
-  cover String [not null, default: '']
-  signedCover String [not null, default: '']
-  usedCover String [not null, default: '']
-  usedSignedCover String [not null, default: '']
+  signature String [not null, default: '']
+  pdf String [not null, default: '']
+  statelessCovers StatelessCover [not null]
+  statefulCovers StatefulCover [not null]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
@@ -137,11 +138,66 @@ Table ComicIssue {
   collectionNft CollectionNft
   pages ComicPage [not null]
   wallets WalletComicIssue [not null]
+  collaborators ComicIssueCollaborator [not null]
 
   indexes {
     (number, comicSlug) [unique]
     (slug, comicSlug) [unique]
     (title, comicSlug) [unique]
+  }
+}
+
+Table ComicCollaborator {
+  id Int [pk, increment]
+  role CollaboratorRole [not null]
+  name String [not null]
+  comicSlug String [not null]
+  comic Comic [not null]
+
+  indexes {
+    (role, name, comicSlug) [unique]
+  }
+}
+
+Table ComicIssueCollaborator {
+  id Int [pk, increment]
+  role CollaboratorRole [not null]
+  name String [not null]
+  comicIssueId Int [not null]
+  comicIssue ComicIssue [not null]
+
+  indexes {
+    (role, name, comicIssueId) [unique]
+  }
+}
+
+Table StatelessCover {
+  id Int [pk, increment]
+  image String [not null]
+  rarity ComicRarity
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
+  artist String [not null]
+  share Int [not null]
+  isDefault Boolean [not null]
+
+  indexes {
+    (comicIssueId, rarity) [unique]
+  }
+}
+
+Table StatefulCover {
+  id Int [pk, increment]
+  image String [not null, default: '']
+  isSigned Boolean [not null]
+  isUsed Boolean [not null]
+  rarity ComicRarity
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
+  artist String [not null]
+
+  indexes {
+    (comicIssueId, isSigned, isUsed, rarity) [unique]
   }
 }
 
@@ -278,6 +334,7 @@ Table Metadata {
   collectionName String [not null]
   isUsed Boolean [not null]
   isSigned Boolean [not null]
+  rarity ComicRarity
 }
 
 Table Listing {
@@ -310,6 +367,23 @@ Enum AudienceType {
   Mature
 }
 
+Enum CollaboratorRole {
+  Writer
+  Artist
+  Colorist
+  Editor
+  Letterer
+  CoverArtist
+}
+
+Enum ComicRarity {
+  Common
+  Uncommon
+  Rare
+  Epic
+  Legendary
+}
+
 Enum CarouselLocation {
   Home
 }
@@ -325,6 +399,14 @@ Ref: WalletComic.comicSlug > Comic.slug [delete: Cascade]
 Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
+
+Ref: ComicCollaborator.comicSlug > Comic.slug
+
+Ref: ComicIssueCollaborator.comicIssueId > ComicIssue.id
+
+Ref: StatelessCover.comicIssueId > ComicIssue.id
+
+Ref: StatefulCover.comicIssueId > ComicIssue.id
 
 Ref: Nft.uri > Metadata.uri
 

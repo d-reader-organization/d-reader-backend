@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
@@ -70,14 +69,14 @@ export class CreatorController {
       createCreatorDto,
       files,
     );
-    return await toCreatorDto(creator);
+    return toCreatorDto(creator);
   }
 
   /* Get all creators */
   @Get('get')
   async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
-    return await toCreatorDtoArray(creators);
+    return toCreatorDtoArray(creators);
   }
 
   /* Get specific creator by unique slug */
@@ -87,7 +86,7 @@ export class CreatorController {
     @Param('slug') slug: string,
   ): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug, wallet.address);
-    return await toCreatorDto(creator);
+    return toCreatorDto(creator);
   }
 
   /* Update specific creator */
@@ -100,7 +99,7 @@ export class CreatorController {
       slug,
       updateCreatorDto,
     );
-    return await toCreatorDto(updatedCreator);
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators avatar file */
@@ -112,8 +111,12 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() avatar: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, avatar);
-    return await toCreatorDto(updatedCreator);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      avatar,
+      'avatar',
+    );
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators banner file */
@@ -125,8 +128,12 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, banner);
-    return await toCreatorDto(updatedCreator);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      banner,
+      'banner',
+    );
+    return toCreatorDto(updatedCreator);
   }
 
   /* Update specific creators logo file */
@@ -138,35 +145,34 @@ export class CreatorController {
     @Param('slug') slug: string,
     @UploadedFile() logo: Express.Multer.File,
   ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(slug, logo);
-    return await toCreatorDto(updatedCreator);
+    const updatedCreator = await this.creatorService.updateFile(
+      slug,
+      logo,
+      'logo',
+    );
+    return toCreatorDto(updatedCreator);
   }
 
   /* Queue creator for deletion */
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
-    return await toCreatorDto(deletedCreator);
+    return toCreatorDto(deletedCreator);
   }
 
   /* Remove creator for deletion queue */
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
-    return await toCreatorDto(recoveredCreator);
+    return toCreatorDto(recoveredCreator);
   }
 
-  /* Completely remove specific creator, including files from s3 bucket */
-  @Delete('remove/:slug')
-  remove(@Param('slug') slug: string) {
-    return this.creatorService.remove(slug);
-  }
-
+  /* Follow a creator */
   @Post('follow/:slug')
-  async follow(
+  follow(
     @WalletEntity() wallet: Wallet,
     @Param('slug') slug: string,
   ): Promise<boolean> {
-    return await this.walletCreatorService.toggleFollow(wallet.address, slug);
+    return this.walletCreatorService.toggleFollow(wallet.address, slug);
   }
 }
