@@ -618,7 +618,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/studio-nx/comics/barbabyans/issues/adventure-begins/pages',
+                    'comics/barbabyans/issues/adventure-begins/pages',
                     5,
                     'jpg',
                     5,
@@ -690,7 +690,7 @@ async function main() {
             pages: {
               createMany: {
                 data: generatePages(
-                  'creators/studio-nx/comics/niko-and-the-sword/issues/many-moons-ago/pages',
+                  'comics/niko-and-the-sword/issues/many-moons-ago/pages',
                   3,
                   'png',
                   3,
@@ -761,7 +761,7 @@ async function main() {
             pages: {
               createMany: {
                 data: generatePages(
-                  'creators/studio-nx/comics/the-dark-portal/issues/concept-art/pages',
+                  'comics/the-dark-portal/issues/concept-art/pages',
                   9,
                   'jpg',
                   9,
@@ -869,7 +869,7 @@ async function main() {
                     pages: {
                       createMany: {
                         data: generatePages(
-                          'creators/swamplabs/comics/narentines/issues/narentines-the-purge/pages',
+                          'comics/narentines/issues/narentines-the-purge/pages',
                           1,
                           'jpg',
                           1,
@@ -942,7 +942,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/swamplabs/comics/lupers/issues/tome-of-knowledge/pages',
+                    'comics/lupers/issues/tome-of-knowledge/pages',
                     12,
                     'jpg',
                     12,
@@ -1048,7 +1048,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/longwood-labs/comics/the-heist/issues/how-it-all-began/pages',
+                            'comics/the-heist/issues/how-it-all-began/pages',
                             1,
                             'jpg',
                             1,
@@ -1159,7 +1159,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/gooneytoons-studio/comics/gooneytoons/issues/birth-of-the-gooneys/pages',
+                            'comics/gooneytoons/issues/birth-of-the-gooneys/pages',
                             1,
                             'jpg',
                             1,
@@ -1330,7 +1330,7 @@ async function main() {
                     pages: {
                       createMany: {
                         data: generatePages(
-                          'creators/saucerpen/comics/animosities/issues/episode-1/pages',
+                          'comics/animosities/issues/episode-1/pages',
                           6,
                           'jpg',
                           6,
@@ -1399,7 +1399,7 @@ async function main() {
                 pages: {
                   createMany: {
                     data: generatePages(
-                      'creators/saucerpen/comics/birthday/issues/episode-1/pages',
+                      'comics/birthday/issues/episode-1/pages',
                       4,
                       'jpg',
                       2,
@@ -1465,7 +1465,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/saucerpen/comics/immaculate-taint/issues/episode-1/pages',
+                    'comics/immaculate-taint/issues/episode-1/pages',
                     8,
                     'jpg',
                     8,
@@ -1532,7 +1532,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/saucerpen/comics/island/issues/episode-1/pages',
+                    'comics/island/issues/episode-1/pages',
                     11,
                     'jpg',
                     11,
@@ -1635,7 +1635,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/mad-muse-syndicate/comics/wretches/issues/issue-1/pages',
+                            'comics/wretches/issues/issue-1/pages',
                             7,
                             'jpg',
                             7,
@@ -1666,7 +1666,7 @@ async function main() {
                           pages: {
                             createMany: {
                               data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-2/pages',
+                                'comics/wretches/issues/issue-2/pages',
                                 6,
                                 'jpg',
                                 6,
@@ -1698,7 +1698,7 @@ async function main() {
                           pages: {
                             createMany: {
                               data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-3/pages',
+                                'comics/wretches/issues/issue-3/pages',
                                 6,
                                 'jpg',
                                 6,
@@ -1730,7 +1730,7 @@ async function main() {
                           pages: {
                             createMany: {
                               data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-4/pages',
+                                'comics/wretches/issues/issue-4/pages',
                                 5,
                                 'jpg',
                                 5,
@@ -1762,7 +1762,7 @@ async function main() {
                           pages: {
                             createMany: {
                               data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-5/pages',
+                                'comics/wretches/issues/issue-5/pages',
                                 6,
                                 'jpg',
                                 6,
@@ -1794,7 +1794,7 @@ async function main() {
                           pages: {
                             createMany: {
                               data: generatePages(
-                                'creators/mad-muse-syndicate/comics/wretches/issues/issue-6/pages',
+                                'comics/wretches/issues/issue-6/pages',
                                 5,
                                 'jpg',
                                 5,
@@ -1868,7 +1868,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/mad-muse-syndicate/comics/jana/issues/issue-1/pages',
+                    'comics/jana/issues/issue-1/pages',
                     5,
                     'jpg',
                     5,
@@ -1898,7 +1898,7 @@ async function main() {
                   pages: {
                     createMany: {
                       data: generatePages(
-                        'creators/mad-muse-syndicate/comics/jana/issues/issue-2/pages',
+                        'comics/jana/issues/issue-2/pages',
                         5,
                         'jpg',
                         5,
@@ -1971,7 +1971,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-1/pages',
+                    'comics/knockturn-county/issues/issue-1/pages',
                     14,
                     'jpg',
                     14,
@@ -2002,7 +2002,7 @@ async function main() {
                   pages: {
                     createMany: {
                       data: generatePages(
-                        'creators/mad-muse-syndicate/comics/knockturn-county/issues/issue-2/pages',
+                        'comics/knockturn-county/issues/issue-2/pages',
                         5,
                         'jpg',
                         5,
@@ -2070,7 +2070,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/mad-muse-syndicate/comics/dark-waters/issues/treacherous-seas/pages',
+                    'comics/dark-waters/issues/treacherous-seas/pages',
                     10,
                     'jpg',
                     10,
@@ -2141,7 +2141,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/mad-muse-syndicate/comics/multi-versus/issues/episode-1/pages',
+                    'comics/multi-versus/issues/episode-1/pages',
                     5,
                     'png',
                     5,
@@ -2244,7 +2244,7 @@ async function main() {
                       pages: {
                         createMany: {
                           data: generatePages(
-                            'creators/goose-0-x/comics/tsukiverse/issues/issue-1/pages',
+                            'comics/tsukiverse/issues/issue-1/pages',
                             1,
                             'jpg',
                             1,
