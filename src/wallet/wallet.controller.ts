@@ -102,8 +102,6 @@ export class WalletController {
   private throttledSyncWallet = memoizeThrottle(
     (address: string) => this.walletService.syncWallet(address),
     2 * 60 * 1000, // 2 minutes
-    {},
-    (address: string) => address,
   );
 
   @Get('sync')

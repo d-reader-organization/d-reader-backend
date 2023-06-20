@@ -31,7 +31,7 @@ import { Role } from '@prisma/client';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-filter-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { throttle } from 'lodash';
+import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -57,17 +57,17 @@ export class GenreController {
     return toGenreDto(genre);
   }
 
-  private throttledFindAll = throttle(
+  private throttledFindAll = memoizeThrottle(
     async (query: GenreFilterParams) => {
       const genres = await this.genreService.findAll(query);
       return toGenreDtoArray(genres);
     },
-    24 * 60 * 60 * 1000, // 24 hours
+    24 * 60 * 60 * 1000, // 24 hours,
   );
 
   /* Get all genres */
   @Get('get')
-  findAll(query: GenreFilterParams) {
+  findAll(@Query() query: GenreFilterParams) {
     return this.throttledFindAll(query);
   }
 
