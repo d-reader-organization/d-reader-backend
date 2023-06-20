@@ -15,9 +15,10 @@ export class StatelessCoverDto {
   @IsString()
   artist: string;
 
+  @IsOptional()
   @IsEnum(ComicRarity)
   @ApiProperty({ enum: ComicRarity })
-  rarity: ComicRarity;
+  rarity?: ComicRarity;
 
   @IsOptional()
   @IsInt()
