@@ -509,7 +509,7 @@ async function main() {
                 popularizedAt: null,
                 completedAt: null,
                 cover: 'creators/studio-nx/comics/gorecats/cover.jpg',
-                pfp: 'creators/studio-nx/comics/gorecats/pfp.png',
+                pfp: 'creators/studio-nx/comics/gorecats/pfp.jpg',
                 banner: '',
                 logo: 'creators/studio-nx/comics/gorecats/logo.png',
                 website: 'https://gorecats.io',
@@ -655,7 +655,7 @@ async function main() {
         popularizedAt: null,
         completedAt: new Date(),
         cover: 'creators/studio-nx/comics/niko-and-the-sword/cover.jpg',
-        pfp: 'creators/studio-nx/comics/niko-and-the-sword/pfp.png',
+        pfp: 'creators/studio-nx/comics/niko-and-the-sword/pfp.jpg',
         banner: 'creators/studio-nx/comics/niko-and-the-sword/banner.jpg',
         logo: 'creators/studio-nx/comics/niko-and-the-sword/logo.png',
         website: 'https://www.artofniko.com/',
@@ -731,7 +731,7 @@ async function main() {
         cover: 'creators/studio-nx/comics/the-dark-portal/cover.jpg',
         pfp: 'creators/studio-nx/comics/the-dark-portal/pfp.jpg',
         banner: '',
-        logo: 'creators/studio-nx/comics/the-dark-portal/logo.jpg',
+        logo: 'creators/studio-nx/comics/the-dark-portal/logo.png',
         website: 'https://www.studionx.com/',
         twitter: 'https://twitter.com/StudioNX',
         discord: '',
@@ -832,8 +832,8 @@ async function main() {
                 publishedAt: subDays(new Date(), 17),
                 popularizedAt: null,
                 completedAt: null,
-                cover: 'creators/swamplabs/comics/narentines/cover.png',
-                pfp: 'creators/swamplabs/comics/narentines/pfp.png',
+                cover: 'creators/swamplabs/comics/narentines/cover.jpg',
+                pfp: 'creators/swamplabs/comics/narentines/pfp.jpg',
                 banner: 'creators/swamplabs/comics/narentines/banner.jpg',
                 logo: 'creators/swamplabs/comics/narentines/logo.png',
                 website: 'https://narentines.com',
@@ -927,12 +927,12 @@ async function main() {
               discountMintPrice: 0,
               mintPrice: 0,
               sellerFeeBasisPoints: 0,
-              title: 'Canis Lupers',
-              slug: 'canis-lupers',
+              title: 'Tome of Knowledge',
+              slug: 'tome-of-knowledge',
               description:
                 'The Lupers of Arx Urbis are a proud and noble race of wolves descended from the she-wolf of Lupercal, who raised Romulus and Remus',
               flavorText: 'Placeholder flavor text',
-              ...generateCoversAndSignature('lupers', 'canis-lupers'),
+              ...generateCoversAndSignature('lupers', 'tome-of-knowledge'),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
@@ -942,94 +942,7 @@ async function main() {
               pages: {
                 createMany: {
                   data: generatePages(
-                    'creators/swamplabs/comics/lupers/issues/canis-lupers/pages',
-                    12,
-                    'jpg',
-                    12,
-                  ),
-                },
-              },
-            },
-            {
-              number: 2,
-              supply: 0,
-              discountMintPrice: 0,
-              mintPrice: 0,
-              sellerFeeBasisPoints: 0,
-              title: 'Godiary: Ionus',
-              slug: 'godiary-ionus',
-              description:
-                'Ionus is the god of sky and thunder. He is also the god of the city, order, and oaths.',
-              flavorText: 'Placeholder flavor text',
-              ...generateCoversAndSignature('lupers', 'godiary-ionus'),
-              releaseDate: subDays(new Date(), 19),
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              publishedAt: new Date(),
-              popularizedAt: new Date(),
-              pages: {
-                createMany: {
-                  data: generatePages(
-                    'creators/swamplabs/comics/lupers/issues/godiary-ionus/pages',
-                    12,
-                    'jpg',
-                    12,
-                  ),
-                },
-              },
-            },
-            {
-              number: 3,
-              supply: 0,
-              discountMintPrice: 0,
-              mintPrice: 0,
-              sellerFeeBasisPoints: 0,
-              title: 'Godiary: Diluna',
-              slug: 'godiary-diluna',
-              description:
-                'The most important deity is Diluna, the goddess of the hunt and the moon',
-              flavorText: 'Placeholder flavor text',
-              ...generateCoversAndSignature('lupers', 'godiary-diluna'),
-              releaseDate: subDays(new Date(), 18),
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              publishedAt: new Date(),
-              popularizedAt: new Date(),
-              pages: {
-                createMany: {
-                  data: generatePages(
-                    'creators/swamplabs/comics/lupers/issues/godiary-diluna/pages',
-                    12,
-                    'jpg',
-                    12,
-                  ),
-                },
-              },
-            },
-            {
-              number: 4,
-              supply: 0,
-              discountMintPrice: 0,
-              mintPrice: 0,
-              sellerFeeBasisPoints: 0,
-              title: 'Godiary: Nuptus',
-              slug: 'godiary-nuptus',
-              description:
-                'Nuptus is god of rivers, springs and waters. He is the patron of fishermen, and protector of rivers',
-              flavorText: 'Placeholder flavor text',
-              ...generateCoversAndSignature('lupers', 'godiary-nuptus'),
-              releaseDate: subDays(new Date(), 15),
-              deletedAt: null,
-              featuredAt: null,
-              verifiedAt: new Date(),
-              publishedAt: new Date(),
-              popularizedAt: new Date(),
-              pages: {
-                createMany: {
-                  data: generatePages(
-                    'creators/swamplabs/comics/lupers/issues/godiary-nuptus/pages',
+                    'creators/swamplabs/comics/lupers/issues/tome-of-knowledge/pages',
                     12,
                     'jpg',
                     12,
@@ -1151,75 +1064,6 @@ async function main() {
         },
       });
 
-      await prisma.comic.create({
-        data: {
-          creator: { connect: { slug: 'longwood-labs' } },
-          name: 'The Remnants',
-          slug: 'the-remnants',
-          description:
-            'A short comic that got published in KOMIKAZE #54 webzine',
-          flavorText: '“No matter how many zombies, we keep resisting”',
-          genres: {
-            connect: [
-              { slug: 'fantasy' },
-              { slug: 'action' },
-              { slug: 'romance' },
-            ],
-          },
-          audienceType: AudienceType.Everyone,
-          deletedAt: null,
-          featuredAt: null,
-          verifiedAt: new Date(),
-          publishedAt: subDays(new Date(), 20),
-          popularizedAt: null,
-          completedAt: null,
-          cover: 'creators/longwood-labs/comics/the-remnants/cover.png',
-          pfp: 'creators/longwood-labs/comics/the-remnants/pfp.jpg',
-          banner: '',
-          logo: '',
-          website: 'https://theremnants.app',
-          twitter: 'https://twitter.com/RemnantsNFT',
-          discord: 'https://discord.com/invite/RemnantsNFT',
-          telegram: '',
-          instagram: '',
-          tikTok: '',
-          youTube: '',
-          issues: {
-            create: [
-              {
-                number: 1,
-                supply: 0,
-                discountMintPrice: 0,
-                mintPrice: 0,
-                sellerFeeBasisPoints: 0,
-                title: 'All Alone',
-                slug: 'all-alone',
-                description:
-                  'Matija finds himself knocked down & locked in the prison all alone.',
-                flavorText: '“I wonder what I can do with these bolt cutters”',
-                ...generateCoversAndSignature('the-remnants', 'all-alone'),
-                releaseDate: subDays(new Date(), 22),
-                deletedAt: null,
-                featuredAt: null,
-                verifiedAt: new Date(),
-                publishedAt: new Date(),
-                popularizedAt: new Date(),
-                pages: {
-                  createMany: {
-                    data: generatePages(
-                      'creators/longwood-labs/comics/the-remnants/issues/all-alone/pages',
-                      1,
-                      'png',
-                      1,
-                    ),
-                  },
-                },
-              },
-            ],
-          },
-        },
-      });
-
       console.log('➕ Added "Longwood Labs" creator');
     } catch (e) {
       console.log('❌ Failed to add "Longwood Labs" creator', e);
@@ -1241,7 +1085,7 @@ async function main() {
             name: 'Gooneytoons Studio',
             slug: 'gooneytoons-studio',
             avatar: 'creators/gooneytoons-studio/avatar.png',
-            banner: 'creators/gooneytoons-studio/banner.png',
+            banner: 'creators/gooneytoons-studio/banner.jpg',
             logo: 'creators/gooneytoons-studio/logo.png',
             description:
               'Gooneytoons is a creative studio that breathes life into captivating comics and mesmerizing illustrations, fueling imagination with every stroke of the pen.',
@@ -1277,8 +1121,8 @@ async function main() {
                 popularizedAt: null,
                 completedAt: null,
                 cover:
-                  'creators/gooneytoons-studio/comics/gooneytoons/cover.png',
-                pfp: 'creators/gooneytoons-studio/comics/gooneytoons/pfp.png',
+                  'creators/gooneytoons-studio/comics/gooneytoons/cover.jpg',
+                pfp: 'creators/gooneytoons-studio/comics/gooneytoons/pfp.jpg',
                 banner:
                   'creators/gooneytoons-studio/comics/gooneytoons/banner.png',
                 logo: 'creators/gooneytoons-studio/comics/gooneytoons/logo.png',
@@ -1701,76 +1545,6 @@ async function main() {
       },
     });
 
-    if (process.env.SOLANA_CLUSTER === 'devnet') {
-      await prisma.comic.create({
-        data: {
-          creator: { connect: { slug: 'saucerpen' } },
-          name: 'Lamia',
-          slug: 'lamia',
-          description: 'Compositinal study of a preraphaelite painting "Lamia"',
-          flavorText: '',
-          genres: {
-            connect: [
-              { slug: 'romance' },
-              { slug: 'adventure' },
-              { slug: 'history' },
-            ],
-          },
-          audienceType: AudienceType.Everyone,
-          deletedAt: null,
-          featuredAt: null,
-          verifiedAt: new Date(),
-          publishedAt: subDays(new Date(), 18),
-          popularizedAt: null,
-          completedAt: new Date(),
-          cover: 'creators/saucerpen/comics/lamia/cover.jpg',
-          pfp: 'creators/saucerpen/comics/lamia/pfp.jpg',
-          banner: '',
-          logo: '',
-          website: '',
-          twitter: '',
-          discord: '',
-          telegram: '',
-          instagram: '',
-          tikTok: '',
-          youTube: '',
-          issues: {
-            create: [
-              {
-                number: 1,
-                supply: 0,
-                discountMintPrice: 0,
-                mintPrice: 0,
-                sellerFeeBasisPoints: 0,
-                title: 'True Love',
-                slug: 'true-love',
-                description:
-                  'Compositinal study of a preraphaelite painting "Lamia"',
-                flavorText: '',
-                ...generateCoversAndSignature('lamia', 'true-love'),
-                releaseDate: subDays(new Date(), 17),
-                deletedAt: null,
-                featuredAt: null,
-                verifiedAt: new Date(),
-                publishedAt: new Date(),
-                popularizedAt: new Date(),
-                pages: {
-                  createMany: {
-                    data: generatePages(
-                      'creators/saucerpen/comics/lamia/issues/true-love/pages',
-                      1,
-                      'jpg',
-                      1,
-                    ),
-                  },
-                },
-              },
-            ],
-          },
-        },
-      });
-    }
-
     console.log('➕ Added "Saucerpen" creator');
   } catch (e) {
     console.log('❌ Failed to add "Saucerpen" creator', e);
@@ -1830,7 +1604,7 @@ async function main() {
                 cover: 'creators/mad-muse-syndicate/comics/wretches/cover.jpg',
                 pfp: 'creators/mad-muse-syndicate/comics/wretches/pfp.jpg',
                 banner: '',
-                logo: 'creators/mad-muse-syndicate/comics/wretches/logo.jpg',
+                logo: 'creators/mad-muse-syndicate/comics/wretches/logo.png',
                 website: '',
                 twitter: '',
                 discord: '',
@@ -2063,7 +1837,7 @@ async function main() {
         cover: 'creators/mad-muse-syndicate/comics/jana/cover.jpg',
         pfp: 'creators/mad-muse-syndicate/comics/jana/pfp.jpg',
         banner: '',
-        logo: 'creators/mad-muse-syndicate/comics/jana/logo.jpg',
+        logo: 'creators/mad-muse-syndicate/comics/jana/logo.png',
         website: '',
         twitter: '',
         discord: '',
@@ -2165,7 +1939,7 @@ async function main() {
         cover: 'creators/mad-muse-syndicate/comics/knockturn-county/cover.jpg',
         pfp: 'creators/mad-muse-syndicate/comics/knockturn-county/pfp.jpg',
         banner: '',
-        logo: 'creators/mad-muse-syndicate/comics/knockturn-county/logo.jpg',
+        logo: 'creators/mad-muse-syndicate/comics/knockturn-county/logo.png',
         website: '',
         twitter: '',
         discord: '',
@@ -2266,7 +2040,7 @@ async function main() {
         cover: 'creators/mad-muse-syndicate/comics/dark-waters/cover.jpg',
         pfp: 'creators/mad-muse-syndicate/comics/dark-waters/pfp.jpg',
         banner: '',
-        logo: 'creators/mad-muse-syndicate/comics/dark-waters/logo.jpg',
+        logo: 'creators/mad-muse-syndicate/comics/dark-waters/logo.png',
         website: '',
         twitter: '',
         discord: '',
@@ -2333,7 +2107,7 @@ async function main() {
         publishedAt: subDays(new Date(), 10),
         popularizedAt: null,
         completedAt: new Date(),
-        cover: 'creators/mad-muse-syndicate/comics/multi-versus/cover.png',
+        cover: 'creators/mad-muse-syndicate/comics/multi-versus/cover.jpg',
         pfp: '',
         banner: '',
         logo: '',
@@ -2639,7 +2413,7 @@ async function main() {
         comicIssue.slug === 'issue-2') ||
       comicIssue.comicSlug === 'wretches' ||
       (comicIssue.comicSlug === 'lupers' &&
-        comicIssue.slug === 'godiary-nuptus')
+        comicIssue.slug === 'tome-of-knowledge')
     ) {
       console.log('Skipping comic issue ', comicIssue.id);
       continue;

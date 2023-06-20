@@ -57,7 +57,7 @@ export class GenreController {
     return toGenreDto(genre);
   }
 
-  private async findAll(query: GenreFilterParams) {
+  async findAll(query: GenreFilterParams) {
     const genres = await this.genreService.findAll(query);
     return toGenreDtoArray(genres);
   }
@@ -66,11 +66,11 @@ export class GenreController {
   @Get('get')
   async publicFindAll(@Query() query: GenreFilterParams): Promise<GenreDto[]> {
     const throttledFindAll = throttle(
-      this.findAll,
+      () => this.findAll(query),
       24 * 60 * 60 * 1000, // 24 hours
     );
 
-    return await throttledFindAll(query);
+    return await throttledFindAll();
   }
 
   /* Get specific genre by unique slug */

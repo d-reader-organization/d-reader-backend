@@ -71,7 +71,7 @@ export class CarouselController {
   @Get('slides/get')
   async publicFindAll(): Promise<CarouselSlideDto[]> {
     const throttledFindAll = throttle(
-      this.findAll,
+      () => this.findAll(),
       24 * 60 * 60 * 1000, // 24 hours
     );
 
