@@ -58,7 +58,10 @@ export class GenreController {
   }
 
   private throttledFindAll = throttle(
-    (query: GenreFilterParams) => this.genreService.findAll(query),
+    async (query: GenreFilterParams) => {
+      const genres = await this.genreService.findAll(query);
+      return toGenreDtoArray(genres);
+    },
     24 * 60 * 60 * 1000, // 24 hours
   );
 

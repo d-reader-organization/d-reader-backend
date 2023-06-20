@@ -63,14 +63,17 @@ export class CarouselController {
   }
 
   private throttledFindAll = throttle(
-    () => this.carouselService.findAll(),
+    async () => {
+      const carouselSlides = await this.carouselService.findAll();
+      return toCarouselSlideDtoArray(carouselSlides);
+    },
     24 * 60 * 60 * 1000, // 24 hours
   );
 
   /* Get all genres */
   @Get('slides/get')
-  findAll() {
-    return this.throttledFindAll();
+  async findAll() {
+    return await this.throttledFindAll();
   }
 
   /* Get specific carousel slide by unique id */
