@@ -70,7 +70,7 @@ export class HeliusController {
   @UseGuards(RestAuthGuard, RolesGuard)
   @Roles(Role.Superadmin, Role.Admin)
   @Delete('delete/:id')
-  async remove(@Param('id') id: string): Promise<boolean> {
-    return await this.heliusService.deleteWebhook(id);
+  remove(@Param('id') id: string): Promise<boolean> {
+    return this.heliusService.deleteWebhook(id);
   }
 }

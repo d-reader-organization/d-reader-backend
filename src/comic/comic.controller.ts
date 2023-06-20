@@ -181,7 +181,7 @@ export class ComicController {
       slug,
       rateComicDto.rating,
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Subscribe/unsubscribe from specific comic */
@@ -196,7 +196,7 @@ export class ComicController {
       slug,
       'isSubscribed',
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -211,7 +211,7 @@ export class ComicController {
       slug,
       'isFavourite',
     );
-    return await this.findOne(slug, wallet);
+    return this.findOne(slug, wallet);
   }
 
   /* Publish comic */

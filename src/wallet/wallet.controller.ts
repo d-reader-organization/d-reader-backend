@@ -49,7 +49,7 @@ export class WalletController {
     @WalletEntity() wallet: Wallet,
   ): Promise<WalletAssetDto[]> {
     const assets = await this.walletService.findMyAssets(wallet.address);
-    return await toWalletAssetDtoArray(assets);
+    return toWalletAssetDtoArray(assets);
   }
 
   /* Get specific wallet by unique address */
@@ -99,19 +99,15 @@ export class WalletController {
     return toWalletDto(updatedWallet);
   }
 
-  private syncWallet = (address: string) => {
-    return this.walletService.syncWallet(address);
-  };
+  private throttledSyncWallet = memoizeThrottle(
+    (address: string) => this.walletService.syncWallet(address),
+    2 * 60 * 1000, // 2 minutes
+    {},
+    (address: string) => address,
+  );
 
   @Get('sync')
-  publicSyncWallet(@WalletEntity() wallet: Wallet) {
-    const throttledSyncWallet = memoizeThrottle(
-      this.syncWallet,
-      2 * 60 * 1000, // 2 minutes
-      {},
-      (address: string) => address,
-    );
-
-    return throttledSyncWallet(wallet.address);
+  syncWallet(@WalletEntity() wallet: Wallet) {
+    return this.throttledSyncWallet(wallet.address);
   }
 }

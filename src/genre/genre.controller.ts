@@ -57,20 +57,15 @@ export class GenreController {
     return toGenreDto(genre);
   }
 
-  async findAll(query: GenreFilterParams) {
-    const genres = await this.genreService.findAll(query);
-    return toGenreDtoArray(genres);
-  }
+  private throttledFindAll = throttle(
+    (query: GenreFilterParams) => this.genreService.findAll(query),
+    24 * 60 * 60 * 1000, // 24 hours
+  );
 
   /* Get all genres */
   @Get('get')
-  async publicFindAll(@Query() query: GenreFilterParams): Promise<GenreDto[]> {
-    const throttledFindAll = throttle(
-      () => this.findAll(query),
-      24 * 60 * 60 * 1000, // 24 hours
-    );
-
-    return await throttledFindAll();
+  findAll(query: GenreFilterParams) {
+    return this.throttledFindAll(query);
   }
 
   /* Get specific genre by unique slug */

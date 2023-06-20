@@ -193,6 +193,7 @@ export class ComicIssueService {
         comic: { include: { creator: true } },
         collectionNft: { select: { address: true } },
         collaborators: true,
+        statelessCovers: true,
       },
     });
 

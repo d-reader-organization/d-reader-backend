@@ -17,13 +17,13 @@ export class NftController {
   @Get('get')
   async findAll(@Query() query: NftFilterParams): Promise<NftDto[]> {
     const nfts = await this.nftService.findAll(query);
-    return await toNftDtoArray(nfts);
+    return toNftDtoArray(nfts);
   }
 
   /* Get specific NFT by unique on-chain address */
   @Get('get/:address')
   async findOne(@Param('address') address: string): Promise<NftDto> {
     const nft = await this.nftService.findOne(address);
-    return await toNftDto(nft);
+    return toNftDto(nft);
   }
 }
