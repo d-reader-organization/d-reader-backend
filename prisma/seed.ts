@@ -2266,8 +2266,7 @@ async function main() {
     console.log('❌ Failed to add "Tsukiverse" creator', e);
   }
 
-  const dummyWalletCount =
-    process.env.SOLANA_CLUSTER === 'mainnet-beta' ? 12 : 20;
+  const dummyWalletCount = 10;
   try {
     // dummy wallets
     const indexArray = [...Array(dummyWalletCount).keys()];
