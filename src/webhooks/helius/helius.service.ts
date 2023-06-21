@@ -29,7 +29,7 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
-import { constructDelegateAuthorityInstruction } from 'src/candy-machine/instructions/delegateAuthority';
+import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 
 @Injectable()

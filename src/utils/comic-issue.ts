@@ -25,7 +25,9 @@ export const generateStatefulCoverName = (cover: StatefulCoverDto): string => {
   return (
     (cover.isUsed ? 'used-' : 'unused-') +
     (cover.isSigned ? 'signed' : 'unsigned') +
-    (cover.rarity ? '-' + cover.rarity : '') +
+    (cover.rarity && cover.rarity != ComicRarity.None
+      ? '-' + cover.rarity
+      : '') +
     '-cover'
   );
 };

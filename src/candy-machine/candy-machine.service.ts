@@ -53,8 +53,10 @@ import {
   generatePropertyName,
 } from '../utils/nft-metadata';
 import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
-import { constructInitializeComicAuthorityInstruction } from './instructions/intializeAuthority';
-import { constructInitializeRecordAuthorityInstruction } from './instructions/initializeRecordAuthority';
+import {
+  constructInitializeComicAuthorityInstruction,
+  constructInitializeRecordAuthorityInstruction,
+} from './instructions';
 
 @Injectable()
 export class CandyMachineService {
@@ -157,7 +159,11 @@ export class CandyMachineService {
           generateStatefulCoverName(cover),
         );
         const property = generatePropertyName(cover.isUsed, cover.isSigned);
-        rarityCoverFiles[cover.rarity][property] = file;
+        const value = {
+          ...rarityCoverFiles[cover.rarity],
+          [property]: file,
+        };
+        rarityCoverFiles[cover.rarity] = value;
         return file;
       },
     );
@@ -186,7 +192,7 @@ export class CandyMachineService {
       attributes: [
         {
           trait_type: RARITY_TRAIT,
-          value: rarity.toString(),
+          value: ComicRarity[rarity].toString(),
         },
         {
           trait_type: USED_TRAIT,
@@ -262,7 +268,7 @@ export class CandyMachineService {
     darkblockId: string,
     rarityCoverFiles?: RarityCoverFiles,
   ) {
-    let items: { uri: string; name: string }[];
+    const items: { uri: string; name: string }[] = [];
 
     const rarityShares = getRarityShareTable(numberOfRarities);
     const itemMetadatas: { uri: string; name: string }[] = [];
@@ -275,7 +281,7 @@ export class CandyMachineService {
         comicIssue,
         comicName,
         creatorAddress,
-        rarityCoverFiles[rarity],
+        rarityCoverFiles[ComicRarity[rarity].toString()],
         darkblockId,
         rarity,
         collectionNftAddress,
@@ -293,7 +299,7 @@ export class CandyMachineService {
 
       const { value } = rarityShares[index];
       if (index == rarityShares.length - 1) {
-        supply = comicIssue.supply - supplyLeft;
+        supply = supplyLeft;
       } else {
         supply = (comicIssue.supply * value) / 100;
         supplyLeft -= supply;
@@ -448,7 +454,6 @@ export class CandyMachineService {
         endsAt: undefined,
       },
     });
-
     const items = await this.uploadItemMetadata(
       comicIssue,
       collectionNftAddress,

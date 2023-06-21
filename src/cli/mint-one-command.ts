@@ -64,6 +64,7 @@ export class MintOneCommand extends CommandRunner {
       log(`✍️  Signature: ${cuy(signature)}`);
     } catch (e) {
       logErr(`Failed to mint from ${options.candyMachineAddress.toBase58()}`);
+      console.log(e);
     }
   }
 }
