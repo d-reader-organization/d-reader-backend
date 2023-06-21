@@ -70,7 +70,7 @@ export class CarouselController {
     24 * 60 * 60 * 1000, // 24 hours
   );
 
-  /* Get all genres */
+  /* Get all carousel slides */
   @Get('slides/get')
   async findAll() {
     return await this.throttledFindAll();
