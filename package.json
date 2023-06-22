@@ -75,7 +75,7 @@
     "ejs": "^3.1.2",
     "geoip-lite": "^1.4.7",
     "handlebars": "^4.7.6",
-    "helius-sdk": "^1.0.5",
+    "helius-sdk": "^1.0.8",
     "jdenticon": "^3.2.0",
     "lodash": "^4.17.21",
     "nest-commander": "^3.7.1",
