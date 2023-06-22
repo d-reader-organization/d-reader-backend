@@ -35,6 +35,7 @@ import {
   getRarityShareTable,
   MAX_SIGNATURES_PERCENT,
   RARITY_TRAIT,
+  ATTRIBUTE_COMBINATIONS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -48,10 +49,7 @@ import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
 import { getS3Object } from '../aws/s3client';
 import axios from 'axios';
 import * as FormData from 'form-data';
-import {
-  generateComicAttributes,
-  generatePropertyName,
-} from '../utils/nft-metadata';
+import { generatePropertyName } from '../utils/nft-metadata';
 import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
 import {
   constructInitializeComicAuthorityInstruction,
@@ -233,7 +231,7 @@ export class CandyMachineService {
   ) {
     const itemMetadata: ItemMedata = {} as ItemMedata;
     await Promise.all(
-      generateComicAttributes().map(async ([isUsed, isSigned]) => {
+      ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
         const property = generatePropertyName(isUsed, isSigned);
         const darkblock = isUsed ? darkblockId : undefined;
         itemMetadata[property] = await this.uploadMetadata(

@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsString } from 'class-validator';
 import { ComicRarity } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
@@ -13,10 +13,9 @@ export class CreateStatefulCoverBodyDto {
   @IsBoolean()
   isUsed: boolean;
 
-  @IsOptional()
   @IsEnum(ComicRarity)
   @ApiProperty({ enum: ComicRarity })
-  rarity?: ComicRarity;
+  rarity: ComicRarity;
 }
 
 export class CreateStatefulCoverFilesDto {

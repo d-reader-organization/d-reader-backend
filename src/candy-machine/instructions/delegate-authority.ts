@@ -13,7 +13,7 @@ export async function constructDelegateAuthorityInstruction(
   rarity: ComicRarity,
   mint: PublicKey,
 ) {
-  const rarityString = ComicRarity[rarity].toLowerCase(); //  check
+  const rarityString = ComicRarity[rarity].toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,

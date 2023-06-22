@@ -1,6 +1,7 @@
 import { ComicRarity } from 'dreader-comic-verse';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class ChangeComicStateParams {
   @IsSolanaAddress()
@@ -12,6 +13,7 @@ export class ChangeComicStateParams {
   @IsSolanaAddress()
   mint: string;
 
+  @ApiProperty({ enum: ComicRarity })
   @IsEnum(ComicRarity)
   rarity: ComicRarity;
 }

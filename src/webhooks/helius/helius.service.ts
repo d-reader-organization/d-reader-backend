@@ -241,6 +241,7 @@ export class HeliusService {
                 uri: metadata.uri,
                 isUsed: findUsedTrait(collectionMetadata),
                 isSigned: findSignedTrait(collectionMetadata),
+                rarity: findRarityTrait(collectionMetadata),
               },
             },
           },
@@ -307,7 +308,6 @@ export class HeliusService {
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
-
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
     await this.metaplex.rpc().confirmTransaction(
       enrichedTransaction.signature,
@@ -325,7 +325,7 @@ export class HeliusService {
     );
     await this.delegateAuthority(
       collectionMint,
-      findRarityTrait(offChainMetadata),
+      findRarityTrait(offChainMetadata).toString(),
       mint,
     );
 
@@ -363,6 +363,7 @@ export class HeliusService {
                 uri: metadata.uri,
                 isUsed: findUsedTrait(offChainMetadata),
                 isSigned: findSignedTrait(offChainMetadata),
+                rarity: findRarityTrait(offChainMetadata),
               },
             },
           },

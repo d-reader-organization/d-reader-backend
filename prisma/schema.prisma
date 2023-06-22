@@ -198,10 +198,10 @@ model ComicIssueCollaborator {
 }
 
 model StatelessCover {
-  id           Int          @id @default(autoincrement())
+  id           Int         @id @default(autoincrement())
   image        String
-  rarity       ComicRarity?
-  comicIssue   ComicIssue   @relation(fields: [comicIssueId], references: [id])
+  rarity       ComicRarity
+  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id])
   comicIssueId Int
   artist       String
   share        Int
@@ -211,12 +211,12 @@ model StatelessCover {
 }
 
 model StatefulCover {
-  id           Int          @id @default(autoincrement())
-  image        String       @default("")
+  id           Int         @id @default(autoincrement())
+  image        String      @default("")
   isSigned     Boolean
   isUsed       Boolean
-  rarity       ComicRarity?
-  comicIssue   ComicIssue   @relation(fields: [comicIssueId], references: [id])
+  rarity       ComicRarity
+  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id])
   comicIssueId Int
   artist       String
 
@@ -358,12 +358,12 @@ model WalletCreator {
 }
 
 model Metadata {
-  uri            String       @id
+  uri            String      @id
   nft            Nft[]
   collectionName String
   isUsed         Boolean
   isSigned       Boolean
-  rarity         ComicRarity?
+  rarity         ComicRarity
 }
 
 model Listing {

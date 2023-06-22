@@ -121,6 +121,13 @@ export const getRarityShareTable = (numberOfCovers: number) => {
   }
 };
 
+export const ATTRIBUTE_COMBINATIONS = [
+  [false, false],
+  [false, true],
+  [true, false],
+  [true, true],
+];
+
 export const getRarityShare = (numberOfCovers: number, rarity: string) => {
   const shareTable = getRarityShareTable(numberOfCovers);
   return shareTable.find((share) => share.rarity.toString() === rarity).value;

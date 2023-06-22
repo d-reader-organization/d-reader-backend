@@ -16,6 +16,7 @@ import { initMetaplex } from '../utils/metaplex';
 import { PickFields } from '../types/shared';
 import {
   fetchOffChainMetadata,
+  findRarityTrait,
   findSignedTrait,
   findUsedTrait,
 } from '../utils/nft-metadata';
@@ -86,6 +87,7 @@ export class WalletService {
                 uri: metadata.uri,
                 isUsed: findUsedTrait(collectionMetadata),
                 isSigned: findSignedTrait(collectionMetadata),
+                rarity: findRarityTrait(collectionMetadata),
               },
             },
           },

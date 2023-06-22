@@ -1,21 +1,10 @@
 import { ComicRarity, StatefulCover, StatelessCover } from '@prisma/client';
-import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
-import { THREE_RARITIES_SHARE, FIVE_RARITIES_SHARE } from '../constants';
+import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { CreateComicIssueDto } from '../comic-issue/dto/create-comic-issue.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { UpdateComicIssueDto } from '../comic-issue/dto/update-comic-issue.dto';
 import { BadRequestException } from '@nestjs/common';
-
-export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
-  let rarityShare: RarityShare[];
-  if (numberOfCovers === 3) rarityShare = THREE_RARITIES_SHARE;
-  else if (numberOfCovers === 5) rarityShare = FIVE_RARITIES_SHARE;
-  else {
-    throw new Error('Unsupported number of rarities');
-  }
-  return rarityShare.find((share) => share.rarity.toString() === rarity).value;
-};
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);

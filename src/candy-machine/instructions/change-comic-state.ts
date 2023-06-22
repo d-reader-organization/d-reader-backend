@@ -17,7 +17,7 @@ export async function constructChangeComicStateInstruction(
   owner: PublicKey,
   newState: ComicStateArgs,
 ) {
-  const rarityString = ComicRarity[rarity].toLowerCase(); //  check
+  const rarityString = rarity.toString().toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
