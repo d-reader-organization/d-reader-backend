@@ -98,7 +98,7 @@ export class HeliusService {
 
   handleWebhookEvent(enrichedTransactions: EnrichedTransaction[]) {
     return Promise.all(
-      enrichedTransactions.map(async (transaction) => {
+      enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
           case TransactionType.NFT_MINT:
             return this.handleMintEvent(transaction);
@@ -111,6 +111,10 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
+            if (!transaction.instructions[0]?.innerInstructions[0]?.accounts) {
+              console.log('Unhandled webhook event type: ', transaction.type);
+              return;
+            }
             return this.handleMetadataUpdate(transaction);
         }
       }),
@@ -119,26 +123,24 @@ export class HeliusService {
 
   private async handleMetadataUpdate(transaction: EnrichedTransaction) {
     try {
-      if (!transaction.instructions[0]?.innerInstructions[0]?.accounts) {
-        console.log('Unhandled webhook event type: ', transaction.type);
-        return;
-      }
-
       const metadataAddress =
-        transaction.instructions[0]?.innerInstructions[0]?.accounts[0];
+        transaction.instructions[0].innerInstructions[0].accounts[0];
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
+
       const metadata = toMetadata(toMetadataAccount(info));
       const collection = metadata.collection;
-      const canUpdate = await this.checkIfUpdateMetadata(collection);
-      if (!canUpdate) {
-        console.log('Unverified Metadata');
+      const isVerified = await this.verifyMetadataAccount(collection);
+      if (!isVerified) {
+        console.log(
+          `Invalid or Unverified Metadata Account ${metadataAddress}`,
+        );
         return;
       }
+
       const mint = metadata.mintAddress.toString();
       const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-
       await this.prisma.nft.update({
         where: { address: mint },
         data: {
@@ -466,13 +468,13 @@ export class HeliusService {
     return `Bearer ${token}`;
   }
 
-  async checkIfUpdateMetadata(collection: {
+  async verifyMetadataAccount(collection: {
     address: PublicKey;
     verified: boolean;
   }) {
     return (
       collection.verified &&
-      (await this.prisma.collectionNft.findFirst({
+      !!(await this.prisma.collectionNft.findFirst({
         where: { address: collection.address.toString() },
       }))
     );
