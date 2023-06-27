@@ -107,6 +107,7 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
 ];
 
 export const MAX_SIGNATURES_PERCENT = 10;
+export const MIN_SIGNATURES = 10;
 
 export const getRarityShareTable = (numberOfCovers: number) => {
   switch (numberOfCovers) {

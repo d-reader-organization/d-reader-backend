@@ -277,7 +277,6 @@ model CandyMachineReceipt {
 
 model CollectionNft {
   address         String         @id
-  uri             String
   name            String
   comicIssue      ComicIssue     @relation(fields: [comicIssueId], references: [id])
   comicIssueId    Int            @unique

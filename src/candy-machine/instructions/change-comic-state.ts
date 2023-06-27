@@ -14,6 +14,7 @@ export async function constructChangeComicStateInstruction(
   candyMachineAddress: PublicKey,
   rarity: ComicRarity,
   mint: PublicKey,
+  signer: PublicKey,
   owner: PublicKey,
   newState: ComicStateArgs,
 ) {
@@ -43,7 +44,7 @@ export async function constructChangeComicStateInstruction(
     candyMachine: candyMachineAddress,
     tokenAccount,
     recordAuthority,
-    signer: owner,
+    signer,
   };
 
   return createChangeComicStateInstruction(accounts, {

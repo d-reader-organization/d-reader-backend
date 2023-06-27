@@ -409,7 +409,7 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: '4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS',
+        address: "4csmcoFjQgLWT6Lin1iSLMLCCHRck1UvkGY1VpsGGFSS",
         name: 'sa2',
         avatar: '',
         createdAt: new Date(),
@@ -461,7 +461,7 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
-        address: Keypair.generate().publicKey.toBase58(),
+        address: Keypair.generate().publicKey.toString(),
         name: 'StudioNX',
         avatar: '',
         createdAt: new Date(),

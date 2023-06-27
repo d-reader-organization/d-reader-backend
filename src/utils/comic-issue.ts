@@ -5,6 +5,7 @@ import { CreateComicIssueDto } from '../comic-issue/dto/create-comic-issue.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { UpdateComicIssueDto } from '../comic-issue/dto/update-comic-issue.dto';
 import { BadRequestException } from '@nestjs/common';
+import { MIN_SIGNATURES } from '../constants';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
@@ -63,9 +64,9 @@ export const findCover = (covers: StatefulCover[], rarity: ComicRarity) => {
 };
 
 export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
-  if (comicIssue.supply <= 0) {
+  if (comicIssue.supply < MIN_SIGNATURES) {
     throw new BadRequestException(
-      'Cannot create an NFT collection with supply lower than 1',
+      `Cannot create an NFT collection with supply lower than ${MIN_SIGNATURES}`,
     );
   }
 

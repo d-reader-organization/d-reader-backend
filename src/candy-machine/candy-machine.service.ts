@@ -36,6 +36,7 @@ import {
   MAX_SIGNATURES_PERCENT,
   RARITY_TRAIT,
   ATTRIBUTE_COMBINATIONS,
+  MIN_SIGNATURES,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -390,7 +391,6 @@ export class CandyMachineService {
       await this.prisma.collectionNft.create({
         data: {
           address: newCollectionNft.address.toBase58(),
-          uri: newCollectionNft.uri,
           name: newCollectionNft.name,
           comicIssue: { connect: { id: comicIssue.id } },
         },
@@ -401,6 +401,7 @@ export class CandyMachineService {
       collectionNftAddress,
       new PublicKey(creatorAddress),
       MAX_SIGNATURES_PERCENT,
+      MIN_SIGNATURES,
     );
 
     const comicCreator = new PublicKey(creatorAddress);
@@ -559,6 +560,13 @@ export class CandyMachineService {
     newState: ComicStateArgs,
   ) {
     try {
+      let owner = feePayer;
+      if (newState == ComicStateArgs.Sign) {
+        const { ownerAddress } = await this.prisma.nft.findUnique({
+          where: { address: mint.toString() },
+        });
+        owner = new PublicKey(ownerAddress);
+      }
       const instruction = await constructChangeComicStateInstruction(
         this.metaplex,
         collectionMint,
@@ -566,6 +574,7 @@ export class CandyMachineService {
         rarity,
         mint,
         feePayer,
+        owner,
         newState,
       );
       const latestBlockhash =
@@ -590,6 +599,7 @@ export class CandyMachineService {
     collectionMint: PublicKey,
     creator: PublicKey,
     maxSignature: number,
+    minSignatures: number,
   ) {
     try {
       const instruction = await constructInitializeRecordAuthorityInstruction(
@@ -597,6 +607,7 @@ export class CandyMachineService {
         collectionMint,
         creator,
         maxSignature,
+        minSignatures,
       );
       const tx = new Transaction().add(instruction);
       await sendAndConfirmTransaction(this.metaplex.connection, tx, [

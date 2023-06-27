@@ -246,7 +246,6 @@ Table CandyMachineReceipt {
 
 Table CollectionNft {
   address String [pk]
-  uri String [not null]
   name String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
