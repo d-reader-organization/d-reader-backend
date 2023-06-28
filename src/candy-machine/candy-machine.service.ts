@@ -14,7 +14,11 @@ import {
   DefaultCandyGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
-import { constructMintInstruction, getRemainingAccounts } from './instructions';
+import {
+  constructChangeComicStateInstruction,
+  constructMintInstruction,
+  getRemainingAccounts,
+} from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import { chunk } from 'lodash';
@@ -27,10 +31,12 @@ import {
   HUNDRED_PERCENT_TAX,
   D_READER_FRONTEND_URL,
   USED_TRAIT,
-  DEFAULT_COMIC_ISSUE_USED,
   SIGNED_TRAIT,
-  DEFAULT_COMIC_ISSUE_IS_SIGNED,
   getRarityShareTable,
+  MAX_SIGNATURES_PERCENT,
+  RARITY_TRAIT,
+  ATTRIBUTE_COMBINATIONS,
+  MIN_SIGNATURES,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -39,9 +45,17 @@ import {
   generateStatefulCoverName,
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
-import { ComicRarity, StatefulCover } from '@prisma/client';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
-import { RarityCoverFiles } from 'src/types/shared';
+import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
+import { getS3Object } from '../aws/s3client';
+import axios from 'axios';
+import * as FormData from 'form-data';
+import { generatePropertyName } from '../utils/nft-metadata';
+import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
+import {
+  constructInitializeComicAuthorityInstruction,
+  constructInitializeRecordAuthorityInstruction,
+} from './instructions';
 
 @Injectable()
 export class CandyMachineService {
@@ -94,8 +108,43 @@ export class CandyMachineService {
     );
   }
 
+  async mintDarkblock(
+    comicIssue: ComicIssueCMInput,
+    creatorAddress: string,
+  ): Promise<string> {
+    try {
+      const query = new URLSearchParams({
+        apikey: process.env.DARKBLOCK_API_KEY,
+      }).toString();
+
+      const form = new FormData();
+      const getFileFromS3 = await getS3Object({ Key: comicIssue.pdf });
+      const nftPlatform =
+        process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
+      const data = {
+        file: getFileFromS3.Body,
+        creator_address: this.metaplex.identity().publicKey.toString(),
+        nft_platform: nftPlatform,
+        nft_standard: 'Metaplex',
+        darkblock_description: comicIssue.description,
+        publisher_address: creatorAddress,
+      };
+      Object.entries(data).forEach((val) => {
+        form.append(val[0], val[1]);
+      });
+
+      const response = await axios.post(
+        `${process.env.DARKBLOCK_API}/darkblock/mint?${query}`,
+        form,
+      );
+
+      return response.data.tx_id;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
-    const hasRarities = comicIssue.statelessCovers.length > 1;
     const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
       s3toMxFile(cover.image),
     );
@@ -108,12 +157,12 @@ export class CandyMachineService {
           cover.image,
           generateStatefulCoverName(cover),
         );
-        if (hasRarities) {
-          const property =
-            (cover.isUsed ? 'used' : 'unused') +
-            (cover.isSigned ? 'Signed' : 'Unsigned');
-          rarityCoverFiles[cover.rarity][property] = file;
-        }
+        const property = generatePropertyName(cover.isUsed, cover.isSigned);
+        const value = {
+          ...rarityCoverFiles[cover.rarity],
+          [property]: file,
+        };
+        rarityCoverFiles[cover.rarity] = value;
         return file;
       },
     );
@@ -122,17 +171,15 @@ export class CandyMachineService {
     return { statefulCovers, statelessCovers, rarityCoverFiles };
   }
 
-  findCover(covers: StatefulCover[], rarity: ComicRarity) {
-    return covers.find(
-      (cover) => cover.rarity === rarity && !cover.isUsed && !cover.isSigned,
-    );
-  }
-
   async uploadMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
     creatorAddress: string,
     image: MetaplexFile,
+    isUsed: string,
+    isSigned: string,
+    rarity: ComicRarity,
+    darkblockId?: string,
   ) {
     return await this.metaplex.nfts().uploadMetadata({
       name: comicIssue.title,
@@ -143,17 +190,29 @@ export class CandyMachineService {
       external_url: D_READER_FRONTEND_URL,
       attributes: [
         {
+          trait_type: RARITY_TRAIT,
+          value: ComicRarity[rarity].toString(),
+        },
+        {
           trait_type: USED_TRAIT,
-          value: DEFAULT_COMIC_ISSUE_USED,
+          value: isUsed,
         },
         {
           trait_type: SIGNED_TRAIT,
-          value: DEFAULT_COMIC_ISSUE_IS_SIGNED,
+          value: isSigned,
         },
       ],
       properties: {
         creators: [{ address: creatorAddress, share: HUNDRED }],
-        files: this.writeFiles(image),
+        files: [
+          ...this.writeFiles(image),
+          darkblockId
+            ? {
+                type: 'Darkblock',
+                uri: darkblockId,
+              }
+            : undefined,
+        ],
       },
       collection: {
         name: comicIssue.title,
@@ -162,72 +221,99 @@ export class CandyMachineService {
     });
   }
 
-  async uploadItemMetadata(
+  async uploadAllMetadata(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    coverImage: MetaplexFile,
     creatorAddress: string,
-    numberOfRarities: number,
-    rarityCoverFiles?: RarityCoverFiles,
+    rarityCoverFiles: CoverFiles,
+    darkblockId: string,
+    rarity: ComicRarity,
+    collectionNftAddress: PublicKey,
   ) {
-    const hasRarities = numberOfRarities > 1;
-
-    let items: { uri: string; name: string }[] = [];
-    if (hasRarities) {
-      const rarityShares = getRarityShareTable(numberOfRarities);
-      const itemMetadatas: { uri: string; name: string }[] = [];
-
-      let supplyLeft = comicIssue.supply;
-
-      for (const rarityShare of rarityShares) {
-        const { rarity } = rarityShare;
-        const image = rarityCoverFiles[rarity].unusedUnsigned;
-        const { uri, metadata } = await this.uploadMetadata(
+    const itemMetadata: ItemMedata = {} as ItemMedata;
+    await Promise.all(
+      ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
+        const property = generatePropertyName(isUsed, isSigned);
+        const darkblock = isUsed ? darkblockId : undefined;
+        itemMetadata[property] = await this.uploadMetadata(
           comicIssue,
           comicName,
           creatorAddress,
-          image,
+          rarityCoverFiles[property],
+          isUsed.toString(),
+          isSigned.toString(),
+          rarity,
+          darkblock,
         );
-        itemMetadatas.push({ uri, name: metadata.name });
-      }
+      }),
+    );
 
-      let index = 0;
-      for (const metadata of itemMetadatas) {
-        let supply: number;
+    const comicStates: ComicStates = {
+      unusedSigned: itemMetadata.unusedSigned.uri,
+      unusedUnsigned: itemMetadata.unusedUnsigned.uri,
+      usedSigned: itemMetadata.usedSigned.uri,
+      usedUnsigned: itemMetadata.usedUnsigned.uri,
+    };
+    await this.initializeAuthority(collectionNftAddress, rarity, comicStates);
+    return itemMetadata;
+  }
 
-        const { value } = rarityShares[index];
-        if (index == rarityShares.length - 1) {
-          supply = comicIssue.supply - supplyLeft;
-        } else {
-          supply = (comicIssue.supply * value) / 100;
-          supplyLeft -= supply;
-        }
+  async uploadItemMetadata(
+    comicIssue: ComicIssueCMInput,
+    collectionNftAddress: PublicKey,
+    comicName: string,
+    creatorAddress: string,
+    numberOfRarities: number,
+    darkblockId: string,
+    rarityCoverFiles?: RarityCoverFiles,
+  ) {
+    const items: { uri: string; name: string }[] = [];
 
-        const indexArray = Array.from(Array(supply).keys());
-        const itemsInserted = await Promise.all(
-          indexArray.map((i) => ({
-            uri: metadata.uri,
-            name: `${metadata.name} #${i + 1}`,
-          })),
-        );
+    const rarityShares = getRarityShareTable(numberOfRarities);
+    const itemMetadatas: { uri: string; name: string }[] = [];
+    let supplyLeft = comicIssue.supply;
 
-        items.push(...itemsInserted);
-        index++;
-      }
-    } else {
-      const { uri: metadataUri, metadata } = await this.uploadMetadata(
+    for (const rarityShare of rarityShares) {
+      const { rarity } = rarityShare;
+      // TODO: we should deprecate the rarityCoverFiles and stick with the array of covers format
+      const itemMetadata = await this.uploadAllMetadata(
         comicIssue,
         comicName,
         creatorAddress,
-        coverImage,
+        rarityCoverFiles[ComicRarity[rarity].toString()],
+        darkblockId,
+        rarity,
+        collectionNftAddress,
       );
-      const indexArray = Array.from(Array(comicIssue.supply).keys());
-      items = await Promise.all(
-        indexArray.map((index) => ({
-          uri: metadataUri,
-          name: `${metadata.name} #${index + 1}`,
+      const { unusedUnsigned } = itemMetadata;
+      itemMetadatas.push({
+        uri: unusedUnsigned.uri,
+        name: unusedUnsigned.metadata.name,
+      });
+    }
+
+    let index = 0;
+    for (const metadata of itemMetadatas) {
+      let supply: number;
+
+      const { value } = rarityShares[index];
+      if (index == rarityShares.length - 1) {
+        supply = supplyLeft;
+      } else {
+        supply = (comicIssue.supply * value) / 100;
+        supplyLeft -= supply;
+      }
+
+      const indexArray = Array.from(Array(supply).keys());
+      const itemsInserted = await Promise.all(
+        indexArray.map((i) => ({
+          uri: metadata.uri,
+          name: `${metadata.name} #${i + 1}`,
         })),
       );
+
+      items.push(...itemsInserted);
+      index++;
     }
     return items;
   }
@@ -259,9 +345,11 @@ export class CandyMachineService {
 
     const candyMachineKey = Keypair.generate();
 
+    let darkblockId: string;
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
+      darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
@@ -278,11 +366,17 @@ export class CandyMachineService {
                 share: HUNDRED_PERCENT_TAX,
               },
             ],
-            files: this.writeFiles(
-              coverImage,
-              ...statefulCovers,
-              ...statelessCovers,
-            ),
+            files: [
+              ...this.writeFiles(
+                coverImage,
+                ...statefulCovers,
+                ...statelessCovers,
+              ),
+              {
+                type: 'Darkblock',
+                uri: darkblockId,
+              },
+            ],
           },
         });
 
@@ -297,14 +391,18 @@ export class CandyMachineService {
       await this.prisma.collectionNft.create({
         data: {
           address: newCollectionNft.address.toBase58(),
-          uri: newCollectionNft.uri,
           name: newCollectionNft.name,
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
-
       collectionNftAddress = newCollectionNft.address;
     }
+    await this.initializeRecordAuthority(
+      collectionNftAddress,
+      new PublicKey(creatorAddress),
+      MAX_SIGNATURES_PERCENT,
+      MIN_SIGNATURES,
+    );
 
     const comicCreator = new PublicKey(creatorAddress);
     const { candyMachine } = await this.metaplex.candyMachines().create(
@@ -355,13 +453,13 @@ export class CandyMachineService {
         endsAt: undefined,
       },
     });
-
     const items = await this.uploadItemMetadata(
       comicIssue,
+      collectionNftAddress,
       comicName,
-      coverImage,
       creatorAddress,
       statelessCovers.length,
+      darkblockId,
       rarityCoverFiles,
     );
 
@@ -450,6 +548,94 @@ export class CandyMachineService {
       return rawTransaction.toString('base64');
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  async constructChangeComicStateTransaction(
+    collectionMint: PublicKey,
+    candyMachineAddress: PublicKey,
+    rarity: ComicRarity,
+    mint: PublicKey,
+    feePayer: PublicKey,
+    newState: ComicStateArgs,
+  ) {
+    try {
+      let owner = feePayer;
+      if (newState == ComicStateArgs.Sign) {
+        const { ownerAddress } = await this.prisma.nft.findUnique({
+          where: { address: mint.toString() },
+        });
+        owner = new PublicKey(ownerAddress);
+      }
+      const instruction = await constructChangeComicStateInstruction(
+        this.metaplex,
+        collectionMint,
+        candyMachineAddress,
+        rarity,
+        mint,
+        feePayer,
+        owner,
+        newState,
+      );
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+
+      const tx = new Transaction({
+        feePayer,
+        ...latestBlockhash,
+      }).add(instruction);
+
+      const rawTransaction = tx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      return rawTransaction.toString('base64');
+    } catch (e) {
+      console.log('Error processing transaction: ', e);
+    }
+  }
+
+  async initializeRecordAuthority(
+    collectionMint: PublicKey,
+    creator: PublicKey,
+    maxSignature: number,
+    minSignatures: number,
+  ) {
+    try {
+      const instruction = await constructInitializeRecordAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        creator,
+        maxSignature,
+        minSignatures,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Record Authority account is not initialized : ', e);
+    }
+  }
+
+  async initializeAuthority(
+    collectionMint: PublicKey,
+    rarity: ComicRarity,
+    comicStates: ComicStates,
+  ) {
+    try {
+      const instruction = await constructInitializeComicAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        rarity,
+        comicStates,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Authority account is not initialized : ', e);
     }
   }
 

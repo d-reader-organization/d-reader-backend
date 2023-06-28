@@ -1,4 +1,4 @@
-import { ComicRarity } from '@prisma/client';
+import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 
 export const MAX_NAME_LENGTH = 32;
@@ -46,6 +46,7 @@ export const USED_TRAIT = 'used';
 export const SIGNED_TRAIT = 'signed';
 export const DEFAULT_COMIC_ISSUE_USED = 'false';
 export const DEFAULT_COMIC_ISSUE_IS_SIGNED = 'false';
+export const RARITY_TRAIT = 'rarity';
 
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
@@ -62,41 +63,51 @@ export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: 'Common',
+    rarity: ComicRarity.Common,
     value: 70,
   },
   {
-    rarity: 'Rare',
+    rarity: ComicRarity.Rare,
     value: 25,
   },
   {
-    rarity: 'Legendary',
+    rarity: ComicRarity.Legendary,
     value: 5,
   },
 ];
 
 export const FIVE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: 'Common',
+    rarity: ComicRarity.Common,
     value: 60,
   },
   {
-    rarity: 'Uncommon',
+    rarity: ComicRarity.Uncommon,
     value: 25,
   },
   {
-    rarity: 'Rare',
+    rarity: ComicRarity.Rare,
     value: 10,
   },
   {
-    rarity: 'Epic',
+    rarity: ComicRarity.Epic,
     value: 3,
   },
   {
-    rarity: 'Legendary',
+    rarity: ComicRarity.Legendary,
     value: 2,
   },
 ];
+
+export const ONE_RARITY_SHARE: RarityShare[] = [
+  {
+    rarity: ComicRarity.None,
+    value: 100,
+  },
+];
+
+export const MAX_SIGNATURES_PERCENT = 10;
+export const MIN_SIGNATURES = 10;
 
 export const getRarityShareTable = (numberOfCovers: number) => {
   switch (numberOfCovers) {
@@ -104,12 +115,21 @@ export const getRarityShareTable = (numberOfCovers: number) => {
       return THREE_RARITIES_SHARE;
     case 5:
       return FIVE_RARITIES_SHARE;
+    case 1:
+      return ONE_RARITY_SHARE;
     default:
       throw new Error('Unsupported number of rarities');
   }
 };
 
-export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
+export const ATTRIBUTE_COMBINATIONS = [
+  [false, false],
+  [false, true],
+  [true, false],
+  [true, true],
+];
+
+export const getRarityShare = (numberOfCovers: number, rarity: string) => {
   const shareTable = getRarityShareTable(numberOfCovers);
-  return shareTable.find((share) => share.rarity === rarity).value;
+  return shareTable.find((share) => share.rarity.toString() === rarity).value;
 };

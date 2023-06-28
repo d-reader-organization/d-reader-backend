@@ -7,15 +7,13 @@ import {
   createAssignAuthorityToProgramInstruction,
 } from 'dreader-comic-verse';
 
-export async function delegateAuthority(
+export async function constructDelegateAuthorityInstruction(
   metaplex: Metaplex,
   collectionMint: PublicKey,
-  candyMachineAddress: PublicKey,
-  owner: PublicKey,
   rarity: ComicRarity,
   mint: PublicKey,
 ) {
-  const rarityString = ComicRarity[rarity].toLowerCase(); //  check
+  const rarityString = ComicRarity[rarity].toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
