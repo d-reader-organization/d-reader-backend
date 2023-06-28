@@ -19,6 +19,7 @@ import {
   Comic,
   AudienceType,
   StatelessCover,
+  Genre,
 } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
@@ -143,6 +144,7 @@ export class ComicIssueService {
           creatorSlug: string;
           creatorVerifiedAt?: string;
           creatorAvatar?: string;
+          genres?: Genre[];
         } & ComicIssueStats
       >
     >(getComicIssuesQuery(query));

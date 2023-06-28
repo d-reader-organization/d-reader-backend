@@ -27,6 +27,7 @@ import {
   ComicIssueCollaborator,
   StatelessCover,
   StatefulCover,
+  Genre,
 } from '@prisma/client';
 import { divide, round } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
@@ -37,6 +38,7 @@ import {
 } from './covers/stateless-cover.dto';
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
+import { GenreDto } from 'src/genre/dto/genre.dto';
 
 class PartialComicDto extends PickType(ComicDto, [
   'name',
@@ -116,6 +118,11 @@ export class ComicIssueDto {
   comic?: PartialComicDto;
 
   @IsOptional()
+  @IsArray()
+  @Type(() => GenreDto)
+  genres?: GenreDto[];
+
+  @IsOptional()
   @Type(() => ComicIssueStatsDto)
   stats?: ComicIssueStatsDto;
 
@@ -154,6 +161,7 @@ export type ComicIssueInput = ComicIssue & {
   collaborators?: ComicIssueCollaborator[];
   statelessCovers?: StatelessCover[];
   statefulCovers?: StatefulCover[];
+  genres?: Genre[];
 };
 
 export function toComicIssueDto(issue: ComicIssueInput) {
@@ -196,6 +204,14 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           audienceType: issue.comic.audienceType,
         }
       : undefined,
+    genres: issue?.genres?.map((genre) => ({
+      name: genre.name,
+      slug: genre.slug,
+      icon: genre.icon,
+      color: genre.color,
+      isDeleted: genre.deletedAt !== null,
+      priority: genre.priority,
+    })),
     stats: issue?.stats
       ? {
           favouritesCount: issue.stats.favouritesCount,

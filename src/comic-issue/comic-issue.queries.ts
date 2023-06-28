@@ -81,7 +81,7 @@ export const getComicIssuesQuery = (
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar",
+  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar", json_agg(DISTINCT g.*) AS genres,
 AVG("wci"."rating") AS "averageRating",
 SUM(case when "wci"."rating" is not null then 1 end) as "ratersCount",
 SUM(case when "wci"."isFavourite" then 1 end) AS "favouritesCount",
@@ -102,6 +102,7 @@ INNER JOIN "Comic" c ON "c"."slug" = "ci"."comicSlug"
 INNER JOIN "Creator" cr ON "cr"."id" = "c"."creatorId"
 INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
 INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
+INNER JOIN "Genre" g on "g"."slug" = "ctg"."B"
 LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
 WHERE "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL
 ${filterCondition}
