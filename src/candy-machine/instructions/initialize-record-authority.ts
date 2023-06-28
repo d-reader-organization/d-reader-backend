@@ -3,6 +3,7 @@ import { SystemProgram } from '@solana/web3.js';
 import {
   PROGRAM_ID as COMIC_VERSE_ID,
   InitializeRecordAuthorityInstructionAccounts,
+  InitializeRecordAuthorityInstructionArgs,
   createInitializeRecordAuthorityInstruction,
 } from 'dreader-comic-verse';
 import { PUB_AUTH_TAG, pda } from './pda';
@@ -12,6 +13,7 @@ export async function constructInitializeRecordAuthorityInstruction(
   collectionMint: PublicKey,
   creator: PublicKey,
   maxSignatures: number,
+  minSignatures: number,
 ) {
   const collectionMetadata = metaplex
     .nfts()
@@ -40,7 +42,10 @@ export async function constructInitializeRecordAuthorityInstruction(
     creator,
   };
 
-  return createInitializeRecordAuthorityInstruction(accounts, {
+  const args: InitializeRecordAuthorityInstructionArgs = {
     maxSignatures,
-  });
+    minSignatures,
+  };
+
+  return createInitializeRecordAuthorityInstruction(accounts, args);
 }

@@ -28,7 +28,6 @@ export class PasswordService {
           referrer: { connect: { address: getTreasuryPublicKey() } },
           referredAt: new Date(),
         };
-
     await this.prisma.wallet.upsert({
       where: { address },
       update: { nonce },

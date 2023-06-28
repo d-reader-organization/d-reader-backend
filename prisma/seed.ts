@@ -7,6 +7,7 @@ import {
   Role,
   AudienceType,
   CarouselLocation,
+  ComicRarity,
 } from '@prisma/client';
 import { CandyMachineService } from '../src/candy-machine/candy-machine.service';
 import { HeliusService } from '../src/webhooks/helius/helius.service';
@@ -31,28 +32,28 @@ const generateCoversAndSignature = (
           image: `comics/${comicSlug}/issues/${comicIssueSlug}/unused-unsigned-cover.jpg`,
           isSigned: false,
           isUsed: false,
-          rarity: null,
+          rarity: ComicRarity.None,
           artist: 'John Le',
         },
         {
           image: `comics/${comicSlug}/issues/${comicIssueSlug}/used-unsigned-cover.jpg`,
           isSigned: false,
           isUsed: true,
-          rarity: null,
+          rarity: ComicRarity.None,
           artist: 'Laura El',
         },
         {
           image: `comics/${comicSlug}/issues/${comicIssueSlug}/unused-signed-cover.jpg`,
           isSigned: true,
           isUsed: false,
-          rarity: null,
+          rarity: ComicRarity.None,
           artist: 'SCUM',
         },
         {
           image: `comics/${comicSlug}/issues/${comicIssueSlug}/used-signed-cover.jpg`,
           isSigned: true,
           isUsed: true,
-          rarity: null,
+          rarity: ComicRarity.None,
           artist: 'Mate Žaja',
         },
       ],
@@ -63,7 +64,7 @@ const generateCoversAndSignature = (
       data: [
         {
           image: `comics/${comicSlug}/issues/${comicIssueSlug}/cover.jpg`,
-          rarity: null,
+          rarity: ComicRarity.None,
           artist: 'John Le',
           share: 100,
           isDefault: true,
@@ -528,6 +529,7 @@ async function main() {
                     sellerFeeBasisPoints: 0,
                     title: 'Rise of the Gorecats',
                     slug: 'rise-of-the-gorecats',
+                    pdf: 'comics/gorecats/issues/rise-of-the-gorecats/rise-of-the-gorecats.pdf',
                     description:
                       'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                     flavorText: 'Geez these cats are so gore',

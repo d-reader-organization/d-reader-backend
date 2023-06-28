@@ -1,22 +1,11 @@
 import { ComicRarity, StatefulCover, StatelessCover } from '@prisma/client';
-import { ComicIssueCMInput, RarityShare } from '../comic-issue/dto/types';
-import { THREE_RARITIES_SHARE, FIVE_RARITIES_SHARE } from '../constants';
+import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { CreateComicIssueDto } from '../comic-issue/dto/create-comic-issue.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { UpdateComicIssueDto } from '../comic-issue/dto/update-comic-issue.dto';
 import { BadRequestException } from '@nestjs/common';
-
-export const getRarityShare = (numberOfCovers: number, rarity: ComicRarity) => {
-  let rarityShare: RarityShare[];
-  if (numberOfCovers === 3) rarityShare = THREE_RARITIES_SHARE;
-  else if (numberOfCovers === 5) rarityShare = FIVE_RARITIES_SHARE;
-  else {
-    throw new Error('Unsupported number of rarities');
-  }
-
-  return rarityShare.find((share) => share.rarity === rarity).value;
-};
+import { MIN_SIGNATURES } from '../constants';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
@@ -26,7 +15,9 @@ export const generateStatefulCoverName = (cover: StatefulCoverDto): string => {
   return (
     (cover.isUsed ? 'used-' : 'unused-') +
     (cover.isSigned ? 'signed' : 'unsigned') +
-    (cover.rarity ? '-' + cover.rarity : '') +
+    (cover.rarity && cover.rarity != ComicRarity.None
+      ? '-' + cover.rarity
+      : '') +
     '-cover'
   );
 };
@@ -73,9 +64,9 @@ export const findCover = (covers: StatefulCover[], rarity: ComicRarity) => {
 };
 
 export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
-  if (comicIssue.supply <= 0) {
+  if (comicIssue.supply < MIN_SIGNATURES) {
     throw new BadRequestException(
-      'Cannot create an NFT collection with supply lower than 1',
+      `Cannot create an NFT collection with supply lower than ${MIN_SIGNATURES}`,
     );
   }
 
