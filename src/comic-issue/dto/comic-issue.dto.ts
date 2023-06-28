@@ -51,6 +51,12 @@ class PartialCreatorDto extends PickType(CreatorDto, [
   'isVerified',
   'avatar',
 ]) {}
+class PartialGenreDto extends PickType(GenreDto, [
+  'name',
+  'slug',
+  'color',
+  'icon',
+]) {}
 
 export class ComicIssueDto {
   @IsPositive()
@@ -119,8 +125,8 @@ export class ComicIssueDto {
 
   @IsOptional()
   @IsArray()
-  @Type(() => GenreDto)
-  genres?: GenreDto[];
+  @Type(() => PartialGenreDto)
+  genres?: PartialGenreDto[];
 
   @IsOptional()
   @Type(() => ComicIssueStatsDto)
@@ -204,13 +210,12 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           audienceType: issue.comic.audienceType,
         }
       : undefined,
+    // TODO: order genres by 'priority' and filter out the deleted genres
     genres: issue?.genres?.map((genre) => ({
       name: genre.name,
       slug: genre.slug,
       icon: genre.icon,
       color: genre.color,
-      isDeleted: genre.deletedAt !== null,
-      priority: genre.priority,
     })),
     stats: issue?.stats
       ? {
