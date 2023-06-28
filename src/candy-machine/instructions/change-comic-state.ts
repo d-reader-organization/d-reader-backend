@@ -14,10 +14,11 @@ export async function constructChangeComicStateInstruction(
   candyMachineAddress: PublicKey,
   rarity: ComicRarity,
   mint: PublicKey,
+  signer: PublicKey,
   owner: PublicKey,
   newState: ComicStateArgs,
 ) {
-  const rarityString = ComicRarity[rarity].toLowerCase(); //  check
+  const rarityString = rarity.toString().toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
@@ -43,7 +44,7 @@ export async function constructChangeComicStateInstruction(
     candyMachine: candyMachineAddress,
     tokenAccount,
     recordAuthority,
-    signer: owner,
+    signer,
   };
 
   return createChangeComicStateInstruction(accounts, {

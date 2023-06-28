@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Cluster, PublicKey } from '@solana/web3.js';
+import {
+  Cluster,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -20,9 +25,12 @@ import * as jwt from 'jsonwebtoken';
 import { initMetaplex } from '../../utils/metaplex';
 import {
   fetchOffChainMetadata,
+  findRarityTrait,
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
+import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
+import { ComicRarity } from 'dreader-comic-verse';
 
 @Injectable()
 export class HeliusService {
@@ -103,11 +111,56 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
-            console.log('Unhandled webhook event type: ', transaction.type);
-            return;
+            if (!transaction.instructions[0]?.innerInstructions[0]?.accounts) {
+              console.log('Unhandled webhook event type: ', transaction.type);
+              return;
+            }
+            return this.handleMetadataUpdate(transaction);
         }
       }),
     );
+  }
+
+  private async handleMetadataUpdate(transaction: EnrichedTransaction) {
+    try {
+      const metadataAddress =
+        transaction.instructions[0].innerInstructions[0].accounts[0];
+      const info = await this.metaplex
+        .rpc()
+        .getAccount(new PublicKey(metadataAddress));
+
+      const metadata = toMetadata(toMetadataAccount(info));
+      const collection = metadata.collection;
+      const isVerified = await this.verifyMetadataAccount(collection);
+      if (!isVerified) {
+        console.log(
+          `Invalid or Unverified Metadata Account ${metadataAddress}`,
+        );
+        return;
+      }
+
+      const mint = metadata.mintAddress.toString();
+      const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+      await this.prisma.nft.update({
+        where: { address: mint },
+        data: {
+          metadata: {
+            connectOrCreate: {
+              where: { uri: metadata.uri },
+              create: {
+                collectionName: offChainMetadata.collection.name,
+                uri: metadata.uri,
+                isUsed: findUsedTrait(offChainMetadata),
+                isSigned: findSignedTrait(offChainMetadata),
+                rarity: findRarityTrait(offChainMetadata),
+              },
+            },
+          },
+        },
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private async handleInstantBuy(transaction: EnrichedTransaction) {
@@ -233,6 +286,7 @@ export class HeliusService {
                 uri: metadata.uri,
                 isUsed: findUsedTrait(collectionMetadata),
                 isSigned: findSignedTrait(collectionMetadata),
+                rarity: findRarityTrait(collectionMetadata),
               },
             },
           },
@@ -299,7 +353,6 @@ export class HeliusService {
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
-
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
     await this.metaplex.rpc().confirmTransaction(
       enrichedTransaction.signature,
@@ -308,10 +361,18 @@ export class HeliusService {
       },
       'finalized',
     );
-
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+
+    const collectionMint = new PublicKey(
+      enrichedTransaction.instructions[4].accounts[10],
+    );
+    await this.delegateAuthority(
+      collectionMint,
+      findRarityTrait(offChainMetadata).toString(),
+      mint,
+    );
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
@@ -347,6 +408,7 @@ export class HeliusService {
                 uri: metadata.uri,
                 isUsed: findUsedTrait(offChainMetadata),
                 isSigned: findSignedTrait(offChainMetadata),
+                rarity: findRarityTrait(offChainMetadata),
               },
             },
           },
@@ -404,6 +466,39 @@ export class HeliusService {
     });
 
     return `Bearer ${token}`;
+  }
+
+  async verifyMetadataAccount(collection: {
+    address: PublicKey;
+    verified: boolean;
+  }) {
+    return (
+      collection.verified &&
+      !!(await this.prisma.collectionNft.findFirst({
+        where: { address: collection.address.toString() },
+      }))
+    );
+  }
+
+  async delegateAuthority(
+    collectionMint: PublicKey,
+    rarity: string,
+    mint: PublicKey,
+  ) {
+    try {
+      const instruction = await constructDelegateAuthorityInstruction(
+        this.metaplex,
+        collectionMint,
+        ComicRarity[rarity],
+        mint,
+      );
+      const tx = new Transaction().add(instruction);
+      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+        this.metaplex.identity(),
+      ]);
+    } catch (e) {
+      console.log('Error delegating comic authority : ', e);
+    }
   }
 
   // Refresh auth token each day

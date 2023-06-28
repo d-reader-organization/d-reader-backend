@@ -1,4 +1,4 @@
-import { MetaplexFile } from '@metaplex-foundation/js';
+import { MetaplexFile, UploadMetadataOutput } from '@metaplex-foundation/js';
 import { ComicRarity } from '@prisma/client';
 
 export type PickByType<T, V> = {
@@ -13,5 +13,8 @@ export type CoverFiles = {
 };
 
 export type RarityCoverFiles = { [rarity in ComicRarity]: CoverFiles };
+export type ItemMedata = {
+  [property in keyof CoverFiles]: UploadMetadataOutput;
+};
 
 export type PickFields<T, K extends keyof T> = K;

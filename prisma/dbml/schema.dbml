@@ -174,7 +174,7 @@ Table ComicIssueCollaborator {
 Table StatelessCover {
   id Int [pk, increment]
   image String [not null]
-  rarity ComicRarity
+  rarity ComicRarity [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
   artist String [not null]
@@ -191,7 +191,7 @@ Table StatefulCover {
   image String [not null, default: '']
   isSigned Boolean [not null]
   isUsed Boolean [not null]
-  rarity ComicRarity
+  rarity ComicRarity [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
   artist String [not null]
@@ -246,7 +246,6 @@ Table CandyMachineReceipt {
 
 Table CollectionNft {
   address String [pk]
-  uri String [not null]
   name String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
@@ -334,7 +333,7 @@ Table Metadata {
   collectionName String [not null]
   isUsed Boolean [not null]
   isSigned Boolean [not null]
-  rarity ComicRarity
+  rarity ComicRarity [not null]
 }
 
 Table Listing {
@@ -377,6 +376,7 @@ Enum CollaboratorRole {
 }
 
 Enum ComicRarity {
+  None
   Common
   Uncommon
   Rare

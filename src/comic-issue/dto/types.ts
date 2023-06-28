@@ -1,10 +1,10 @@
 import {
   ComicIssue,
   ComicIssueCollaborator,
-  ComicRarity,
   StatefulCover,
   StatelessCover,
 } from '@prisma/client';
+import { ComicRarity } from 'dreader-comic-verse';
 
 export type ComicIssueCMInput = ComicIssue & {
   statelessCovers: StatelessCover[];
