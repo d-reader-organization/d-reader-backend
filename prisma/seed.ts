@@ -686,7 +686,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             publishedAt: new Date(),
-            popularizedAt: new Date(),
+            popularizedAt: null,
             pages: {
               createMany: {
                 data: generatePages(
@@ -724,7 +724,7 @@ async function main() {
         audienceType: AudienceType.Everyone,
         deletedAt: null,
         featuredAt: null,
-        verifiedAt: new Date(),
+        verifiedAt: null,
         publishedAt: subDays(new Date(), 18),
         popularizedAt: null,
         completedAt: new Date(),
@@ -1393,7 +1393,7 @@ async function main() {
                 featuredAt: null,
                 verifiedAt: new Date(),
                 publishedAt: new Date(),
-                popularizedAt: new Date(),
+                popularizedAt: null,
                 pages: {
                   createMany: {
                     data: generatePages(
@@ -1459,7 +1459,7 @@ async function main() {
               featuredAt: null,
               verifiedAt: new Date(),
               publishedAt: new Date(),
-              popularizedAt: new Date(),
+              popularizedAt: null,
               pages: {
                 createMany: {
                   data: generatePages(
@@ -1566,8 +1566,8 @@ async function main() {
             banner: 'creators/mad-muse-syndicate/banner.jpg',
             logo: 'creators/mad-muse-syndicate/logo.jpg',
             description:
-              'I host "Comic Book Writers on Writing" show, where I get to talk with other writers about everything from their creative process, to writing advise, the business side, crowdfunding, collaborating, and everything in between',
-            flavorText: 'Not your standard storytellers',
+              'A storytelling studio by Roach Writes, bringing worlds to life while crafting character driven stories in web3',
+            flavorText: 'The muse pulls the strings. We are just her puppets.',
             website: 'https://www.jameseroche.com',
             twitter: 'https://twitter.com/RoachWrites_',
             instagram: 'https://www.instagram.com/jameseroche',
@@ -1816,14 +1816,11 @@ async function main() {
         name: 'Jana',
         slug: 'jana',
         description:
-          'In a world where its once magical land, and the wars fought over it, have become nothing more than myth, a young girl is thrown into adventure and forced to seek out an ancient tower’s magic with the hope of bringing back the loved ones she had lost.',
-        flavorText: 'PROMOTIONAL PURPOSES ONLY',
+          "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
+        flavorText:
+          'Two characters set out in search of a mythical tower in the hopes of reaching its peak',
         genres: {
-          connect: [
-            { slug: 'romance' },
-            { slug: 'adventure' },
-            { slug: 'fantasy' },
-          ],
+          connect: [{ slug: 'adventure' }, { slug: 'fantasy' }],
         },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
@@ -1854,8 +1851,9 @@ async function main() {
               title: 'Issue 1',
               slug: 'issue-1',
               description:
-                'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-              flavorText: 'Jana and the tower of Want',
+                "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
+              flavorText:
+                'Two characters set out in search of a mythical tower in the hopes of reaching its peak',
               ...generateCoversAndSignature('jana', 'issue-1'),
               releaseDate: subDays(new Date(), 20),
               deletedAt: null,
@@ -1867,9 +1865,9 @@ async function main() {
                 createMany: {
                   data: generatePages(
                     'comics/jana/issues/issue-1/pages',
-                    5,
+                    10,
                     'jpg',
-                    5,
+                    10,
                   ),
                 },
               },
@@ -1884,15 +1882,16 @@ async function main() {
                   title: 'Issue 2',
                   slug: 'issue-2',
                   description:
-                    'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
-                  flavorText: 'Jana and the tower of Want',
+                    "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
+                  flavorText:
+                    'Two characters set out in search of a mythical tower in the hopes of reaching its peak',
                   ...generateCoversAndSignature('jana', 'issue-2'),
                   releaseDate: subDays(new Date(), 19),
                   deletedAt: null,
                   featuredAt: null,
                   verifiedAt: new Date(),
                   publishedAt: new Date(),
-                  popularizedAt: new Date(),
+                  popularizedAt: null,
                   pages: {
                     createMany: {
                       data: generatePages(
@@ -1956,7 +1955,7 @@ async function main() {
               title: 'Issue 1',
               slug: 'issue-1',
               description:
-                'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                "It's Dr. Seuss meets Sin City.  Knockturn County is a gritty, adult crime noir set in a classic children's book universe. Various tales converge and collide in this county built on crime, as a rhyming narrative leads readers through a tangled web of death, booze, drugs, and betrayal. Good doesn't always win, bad doesn't always pay, and, in true noir fashion, people always die.",
               flavorText:
                 '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
               ...generateCoversAndSignature('knockturn-county', 'issue-1'),
@@ -1965,7 +1964,7 @@ async function main() {
               featuredAt: null,
               verifiedAt: new Date(),
               publishedAt: new Date(),
-              popularizedAt: new Date(),
+              popularizedAt: null,
               pages: {
                 createMany: {
                   data: generatePages(
@@ -1987,7 +1986,7 @@ async function main() {
                   title: 'Issue 2',
                   slug: 'issue-2',
                   description:
-                    'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
+                    "It's Dr. Seuss meets Sin City.  Knockturn County is a gritty, adult crime noir set in a classic children's book universe. Various tales converge and collide in this county built on crime, as a rhyming narrative leads readers through a tangled web of death, booze, drugs, and betrayal. Good doesn't always win, bad doesn't always pay, and, in true noir fashion, people always die.",
                   flavorText:
                     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
                   ...generateCoversAndSignature('knockturn-county', 'issue-2'),
@@ -1996,7 +1995,7 @@ async function main() {
                   featuredAt: null,
                   verifiedAt: new Date(),
                   publishedAt: new Date(),
-                  popularizedAt: new Date(),
+                  popularizedAt: null,
                   pages: {
                     createMany: {
                       data: generatePages(
@@ -2019,14 +2018,12 @@ async function main() {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
         name: 'Dark Waters',
         slug: 'dark-waters',
-        description: 'Proceeds go to the Ronald McDonald House charity',
-        flavorText: 'Amazing and inspiring story! - IDW',
+        description: `Intentionally or not, humans have literally turned our oceans into dumping grounds.
+        There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
+        flavorText:
+          "A cautionary tale about the lengths we'd go to survive after losing everything we'd ever loved.",
         genres: {
-          connect: [
-            { slug: 'non-fiction' },
-            { slug: 'crime' },
-            { slug: 'romance' },
-          ],
+          connect: [{ slug: 'non-fiction' }, { slug: 'crime' }],
         },
         audienceType: AudienceType.Everyone,
         deletedAt: null,
@@ -2056,15 +2053,17 @@ async function main() {
               sellerFeeBasisPoints: 0,
               title: 'Treacherous Seas',
               slug: 'treacherous-seas',
-              description: 'Proceeds go to the Ronald McDonald House charity',
-              flavorText: 'Amazing and inspiring story! - IDW',
+              description: `Intentionally or not, humans have literally turned our oceans into dumping grounds.
+        There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
+              flavorText:
+                "A cautionary tale about the lengths we'd go to survive after losing everything we'd ever loved.",
               ...generateCoversAndSignature('dark-waters', 'treacherous-seas'),
               releaseDate: subDays(new Date(), 21),
               deletedAt: null,
               featuredAt: null,
               verifiedAt: new Date(),
               publishedAt: new Date(),
-              popularizedAt: new Date(),
+              popularizedAt: null,
               pages: {
                 createMany: {
                   data: generatePages(
@@ -2086,9 +2085,10 @@ async function main() {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
         name: 'Multi-Versus',
         slug: 'multi-versus',
-        description:
-          'A group of skilled warriors travel across parallel universes, battling powerful enemies and uncovering the mysteries of the multiverse.',
-        flavorText: 'Amazing and inspiring story! - IDW',
+        description: `Intentionally or not, humans have literally turned our oceans into dumping grounds.
+        There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
+        flavorText:
+          "A cautionary tale about the lengths we'd go to survive after losing everything we'd ever loved.",
         genres: {
           connect: [
             { slug: 'manga' },
