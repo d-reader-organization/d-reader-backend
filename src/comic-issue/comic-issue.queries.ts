@@ -5,9 +5,9 @@ import { SortOrder } from '../types/sort-order';
 
 const filterBy = (tag: FilterTag): Prisma.Sql => {
   if (tag === FilterTag.Free) {
-    return Prisma.sql`AND "ci"."supply" = 0`;
+    return Prisma.sql`AND comicIssue."supply" = 0`;
   } else if (tag === FilterTag.Popular) {
-    return Prisma.sql`AND "ci"."popularizedAt" is not null`;
+    return Prisma.sql`AND comicIssue."popularizedAt" is not null`;
   }
   return Prisma.empty;
 };
@@ -17,7 +17,7 @@ const getSortOrder = (sortOrder?: SortOrder): Prisma.Sql =>
 
 const sortBy = (tag: SortTag): Prisma.Sql => {
   if (tag === SortTag.Latest) {
-    return Prisma.sql`"ci"."releaseDate"`;
+    return Prisma.sql`comicIssue."releaseDate"`;
   } else if (tag === SortTag.Likes) {
     return Prisma.sql`"favouritesCount"`;
   } else if (tag === SortTag.Rating) {
@@ -26,8 +26,8 @@ const sortBy = (tag: SortTag): Prisma.Sql => {
     return Prisma.sql`"readersCount"`;
   } else if (tag === SortTag.Viewers) {
     return Prisma.sql`"viewersCount"`;
-  }
-  return Prisma.sql`"ci"."releaseDate"`;
+  } 
+  return Prisma.sql`comicIssue."releaseDate"`;
 };
 
 const getQueryFilters = (
@@ -42,18 +42,18 @@ const getQueryFilters = (
   filterCondition: Prisma.Sql;
 } => {
   const titleCondition = !!query.titleSubstring
-    ? Prisma.sql`AND "ci"."title" ILIKE '%' || ${
+    ? Prisma.sql`AND comicIssue."title" ILIKE '%' || ${
         query.titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
   const comicSlugCondition = !!query.comicSlug
-    ? Prisma.sql`AND "ci"."comicSlug" = ${query.comicSlug}`
+    ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
     : Prisma.empty;
   const creatorWhereCondition = !!query.creatorSlug
-    ? Prisma.sql`AND "cr"."slug" = ${query.creatorSlug}`
+    ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const genreSlugsCondition = !!query.genreSlugs
-    ? Prisma.sql`AND "ctg"."B" IN (${Prisma.join(query.genreSlugs)})`
+    ? Prisma.sql`AND comicToGenre."B" IN (${Prisma.join(query.genreSlugs)})`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortBy(query.sortTag);
@@ -81,36 +81,56 @@ export const getComicIssuesQuery = (
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`SELECT "ci".*, "c"."name" as "comicName", "c"."audienceType",  "cr"."name" as "creatorName", "cr"."slug" as "creatorSlug", "cr"."verifiedAt" as "creatorVerifiedAt", "cr"."avatar" as "creatorAvatar", json_agg(DISTINCT g.*) AS genres,
-AVG("wci"."rating") AS "averageRating",
-SUM(case when "wci"."rating" is not null then 1 end) as "ratersCount",
-SUM(case when "wci"."isFavourite" then 1 end) AS "favouritesCount",
-SUM(case when "wci"."readAt" is not null then 1 end) AS "readersCount",
-SUM(case when "wci"."viewedAt" is not null then 1 end) AS "viewersCount",
-(
-  SELECT COUNT(*) as totalIssuesCount
-  FROM "ComicIssue" ci2
-  where "ci2"."comicSlug"  = "ci"."comicSlug"
-) AS "totalIssuesCount",
-(
-  SELECT COUNT(*) as totalPagesCount
-  FROM "ComicPage" cp
-  where "cp"."comicIssueId" = "ci"."id"
-) AS "totalPagesCount"
-FROM "ComicIssue" ci
-INNER JOIN "Comic" c ON "c"."slug" = "ci"."comicSlug"
-INNER JOIN "Creator" cr ON "cr"."id" = "c"."creatorId"
-INNER JOIN "WalletComicIssue" wci ON "wci"."comicIssueId" = "ci"."id"
-INNER JOIN "_ComicToGenre" ctg ON "ctg"."A" = "c"."slug"
-INNER JOIN "Genre" g on "g"."slug" = "ctg"."B"
-LEFT JOIN "CollectionNft" cn ON "cn"."comicIssueId" = "ci"."id"
-WHERE "ci"."deletedAt" IS NULL AND "ci"."publishedAt" < NOW() AND "ci"."verifiedAt" IS NOT NULL AND "c"."deletedAt" IS NULL
+  return Prisma.sql`select comicIssue.*, comic."name"  as comicName, comic."audienceType" , creator."name"  as creatorName, creator.slug  as creatorSlug, creator."verifiedAt"  as creatorVerifiedAt, creator.avatar as creatorAvatar, collectionNft."address" as collectionNftAddress, json_agg(distinct genre.*) AS genres,
+  AVG(walletcomicissue.rating) as "averageRating",
+  (select COUNT(*)
+     from (SELECT wci."isFavourite"
+           FROM "WalletComicIssue" wci
+           where wci."comicIssueId" = comicIssue.id and wci."isFavourite"  = true
+          ) wciResult
+    ) as "favouritesCount",
+  (select COUNT(*)
+     from (SELECT wci."rating"
+       FROM "WalletComicIssue" wci
+       where wci."comicIssueId" = comicIssue.id and wci."rating"  is not null
+          ) wciResult
+    ) as "ratersCount",
+  (select COUNT(*)
+   from (SELECT wci."viewedAt"
+     FROM "WalletComicIssue" wci
+     where wci."comicIssueId" = comicIssue.id and wci."viewedAt"  is not null
+        ) wciResult
+  ) as "viewersCount",    
+   (select COUNT(*)
+     from (SELECT wci."readAt"
+       FROM "WalletComicIssue" wci
+       where wci."comicIssueId" = comicIssue.id and wci."readAt"  is not null
+          ) wciResult
+    ) as "readersCount",
+    (
+      SELECT COUNT(*) as totalIssuesCount
+      FROM "ComicIssue" ci2
+      where "ci2"."comicSlug"  = comicIssue."comicSlug"
+    ) AS "totalIssuesCount",
+    (
+      SELECT COUNT(*) as totalPagesCount
+      FROM "ComicPage" comicPage
+      where comicPage."comicIssueId" = comicIssue."id"
+    ) AS "totalPagesCount"    
+  from "ComicIssue" comicIssue
+  inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
+  inner join "Creator" creator on creator.id = comic."creatorId"
+  inner join "WalletComicIssue" walletComicIssue on walletcomicissue."comicIssueId" = comicIssue.id  
+  left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
+  inner join "_ComicToGenre" comicToGenre on comicToGenre."A" = comicIssue."comicSlug"
+  inner join "Genre" genre on comicToGenre."B" = genre.slug
+WHERE comicIssue."deletedAt" IS NULL AND comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL AND comic."deletedAt" IS NULL
 ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-GROUP BY "ci"."id", "c"."name", "c"."audienceType", "cr"."name", "cr"."slug", "cr"."verifiedAt","cr"."avatar", "cn"."address"
+GROUP BY comicIssue.id, comic."name", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take}
