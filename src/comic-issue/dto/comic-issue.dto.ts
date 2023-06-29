@@ -214,7 +214,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     genres: issue?.genres?.map((genre) => ({
       name: genre.name,
       slug: genre.slug,
-      icon: genre.icon,
+      icon: getPublicUrl(genre.icon),
       color: genre.color,
     })),
     stats: issue?.stats
