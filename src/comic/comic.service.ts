@@ -82,7 +82,7 @@ export class ComicService {
   }
 
   async findAll(query: ComicFilterParams, walletAddress?: string) {
-    const comicsQuery = await this.prisma.$queryRaw<
+    const comics = await this.prisma.$queryRaw<
       Array<
         Comic & {
           genres?: Genre[];
@@ -90,15 +90,15 @@ export class ComicService {
         } & ComicStats
       >
     >(getComicsQuery(query));
-    return comicsQuery.map((comicQuery) => {
+    return comics.map((comic) => {
       return {
-        ...comicQuery,
+        ...comic,
         stats: {
-          favouritesCount: Number(comicQuery.favouritesCount),
-          ratersCount: Number(comicQuery.ratersCount),
-          averageRating: Number(comicQuery.averageRating),
-          issuesCount: Number(comicQuery.issuesCount),
-          viewersCount: Number(comicQuery.viewersCount),
+          favouritesCount: Number(comic.favouritesCount),
+          ratersCount: Number(comic.ratersCount),
+          averageRating: Number(comic.averageRating),
+          issuesCount: Number(comic.issuesCount),
+          viewersCount: Number(comic.viewersCount),
         },
       };
     });

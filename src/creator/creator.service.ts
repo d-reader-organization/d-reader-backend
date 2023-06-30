@@ -16,6 +16,9 @@ import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
+import { CreatorStats } from 'src/comic/types/creator-stats';
+import { getCreatorsQuery } from './creator.queries';
+import { getRandomFloatOrInt } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
@@ -71,28 +74,19 @@ export class CreatorService {
   }
 
   async findAll(query: CreatorFilterParams) {
-    const creators = await this.prisma.creator.findMany({
-      include: { comics: true },
-      skip: query.skip,
-      take: query.take,
-      where: {
-        name: { contains: query?.nameSubstring, mode: 'insensitive' },
-        deletedAt: null,
-        emailConfirmedAt: { not: null },
-        verifiedAt: { not: null },
-      },
-      orderBy: { name: query.sortOrder ?? 'asc' },
-    });
-
-    const aggregatedCreators = await Promise.all(
-      creators.map(async (creator) => ({
-        ...creator,
-        stats: await this.walletCreatorService.aggregateCreatorStats(
-          creator.slug,
-        ),
-      })),
+    const creators = await this.prisma.$queryRaw<Array<Creator & CreatorStats>>(
+      getCreatorsQuery(query),
     );
-    return aggregatedCreators;
+    return creators.map((creator) => {
+      return {
+        ...creator,
+        stats: {
+          totalVolume: getRandomFloatOrInt(1, 1000),
+          followersCount: Number(creator.followersCount),
+          comicIssuesCount: Number(creator.comicIssuesCount),
+        },
+      };
+    });
   }
 
   async findOne(slug: string, walletAddress: string) {

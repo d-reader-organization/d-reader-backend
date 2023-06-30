@@ -11,5 +11,6 @@ export enum SortTag {
   Likes = 'likes',
   Readers = 'readers',
   Viewers = 'viewers',
-  Published = 'published'
+  Published = 'published',
+  Followers = 'followers',
 }
