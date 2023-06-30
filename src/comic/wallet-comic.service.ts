@@ -67,9 +67,7 @@ export class WalletComicService {
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
         favouritesCount: favouritesCount,
-        subscribersCount: subscribersCount,
         issuesCount: issuesCount,
-        readersCount: readersCount,
         viewersCount: viewersCount,
       };
     } catch (error) {

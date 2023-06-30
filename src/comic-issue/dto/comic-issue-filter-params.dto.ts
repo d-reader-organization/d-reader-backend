@@ -28,12 +28,4 @@ export class ComicIssueFilterParams extends Pagination {
     } else return value;
   })
   genreSlugs?: string[];
-
-  @IsEnum(FilterTag)
-  @IsOptional()
-  filterTag?: FilterTag;
-
-  @IsEnum(SortTag)
-  @IsOptional()
-  sortTag?: SortTag;
 }

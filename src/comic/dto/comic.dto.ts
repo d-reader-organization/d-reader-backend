@@ -152,11 +152,9 @@ export function toComicDto(comic: ComicInput) {
     stats: comic?.stats
       ? {
           favouritesCount: comic.stats.favouritesCount,
-          subscribersCount: comic.stats.subscribersCount,
           ratersCount: comic.stats.ratersCount,
           averageRating: round(comic.stats.averageRating),
           issuesCount: comic.stats.issuesCount,
-          readersCount: comic.stats.readersCount,
           viewersCount: comic.stats.viewersCount,
         }
       : undefined,

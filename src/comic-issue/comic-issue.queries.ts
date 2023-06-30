@@ -1,34 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
-import { FilterTag, SortTag } from '../types/query-tags';
-import { SortOrder } from '../types/sort-order';
-
-const filterBy = (tag: FilterTag): Prisma.Sql => {
-  if (tag === FilterTag.Free) {
-    return Prisma.sql`AND comicIssue."supply" = 0`;
-  } else if (tag === FilterTag.Popular) {
-    return Prisma.sql`AND comicIssue."popularizedAt" is not null`;
-  }
-  return Prisma.empty;
-};
-
-const getSortOrder = (sortOrder?: SortOrder): Prisma.Sql =>
-  sortOrder === SortOrder.ASC ? Prisma.sql`asc` : Prisma.sql`desc`;
-
-const sortBy = (tag: SortTag): Prisma.Sql => {
-  if (tag === SortTag.Latest) {
-    return Prisma.sql`comicIssue."releaseDate"`;
-  } else if (tag === SortTag.Likes) {
-    return Prisma.sql`"favouritesCount"`;
-  } else if (tag === SortTag.Rating) {
-    return Prisma.sql`"averageRating"`;
-  } else if (tag === SortTag.Readers) {
-    return Prisma.sql`"readersCount"`;
-  } else if (tag === SortTag.Viewers) {
-    return Prisma.sql`"viewersCount"`;
-  } 
-  return Prisma.sql`comicIssue."releaseDate"`;
-};
+import { filterBy, getSortOrder, sortBy } from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
   query: ComicIssueFilterParams,
@@ -53,7 +25,7 @@ const getQueryFilters = (
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const genreSlugsCondition = !!query.genreSlugs
-    ? Prisma.sql`AND comicToGenre."B" IN (${Prisma.join(query.genreSlugs)})`
+    ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortBy(query.sortTag);
@@ -122,8 +94,8 @@ export const getComicIssuesQuery = (
   inner join "Creator" creator on creator.id = comic."creatorId"
   inner join "WalletComicIssue" walletComicIssue on walletcomicissue."comicIssueId" = comicIssue.id  
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
-  inner join "_ComicToGenre" comicToGenre on comicToGenre."A" = comicIssue."comicSlug"
-  inner join "Genre" genre on comicToGenre."B" = genre.slug
+  inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
+  inner join "Genre" genre on "comicToGenre"."B" = genre.slug
 WHERE comicIssue."deletedAt" IS NULL AND comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL AND comic."deletedAt" IS NULL
 ${filterCondition}
 ${titleCondition}
