@@ -55,7 +55,7 @@ FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
 inner join "Genre" genre on genre.slug = "comicToGenre"."B"
 inner join "Creator" creator on creator.id = comic."creatorId"
-inner join "WalletComic" walletComic on walletcomic."comicSlug" = comic.slug
+left join "WalletComic" walletComic on walletcomic."comicSlug" = comic.slug
 where comic."deletedAt" is null and comic."verifiedAt" is not null and comic."publishedAt" < now()
 ${filterCondition}
 ${nameCondition}

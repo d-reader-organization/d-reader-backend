@@ -92,7 +92,7 @@ export const getComicIssuesQuery = (
   from "ComicIssue" comicIssue
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
-  inner join "WalletComicIssue" walletComicIssue on walletcomicissue."comicIssueId" = comicIssue.id  
+  left join "WalletComicIssue" walletComicIssue on walletcomicissue."comicIssueId" = comicIssue.id  
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
