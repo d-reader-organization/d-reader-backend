@@ -26,7 +26,7 @@ const sortBy = (tag: SortTag): Prisma.Sql => {
     return Prisma.sql`"readersCount"`;
   } else if (tag === SortTag.Viewers) {
     return Prisma.sql`"viewersCount"`;
-  } 
+  }
   return Prisma.sql`comicIssue."releaseDate"`;
 };
 

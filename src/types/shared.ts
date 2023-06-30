@@ -1,4 +1,8 @@
-import { MetaplexFile, UploadMetadataOutput } from '@metaplex-foundation/js';
+import {
+  DefaultCandyGuardSettings,
+  MetaplexFile,
+  UploadMetadataOutput,
+} from '@metaplex-foundation/js';
 import { ComicRarity } from '@prisma/client';
 
 export type PickByType<T, V> = {
@@ -18,3 +22,8 @@ export type ItemMedata = {
 };
 
 export type PickFields<T, K extends keyof T> = K;
+
+export type GuardGroup = {
+  label: string;
+  guards: Partial<DefaultCandyGuardSettings>;
+};
