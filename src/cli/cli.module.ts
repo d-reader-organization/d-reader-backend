@@ -24,6 +24,8 @@ import config from '../configs/config';
 import { WalletService } from '../wallet/wallet.service';
 import { SyncWalletCommand } from './sync-wallet-command';
 import { SyncWalletQuestions } from './sync-wallet-questions';
+import { AddAllowList } from './add-allow-list-command';
+import { AddAllowListQuestions } from './add-allow-list-questions';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { SyncWalletQuestions } from './sync-wallet-questions';
     WebSocketGateway,
     SyncWalletQuestions,
     SyncWalletCommand,
+    AddAllowListQuestions,
+    AddAllowList,
     WalletService,
   ],
 })
