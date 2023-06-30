@@ -46,7 +46,12 @@ import {
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
-import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
+import {
+  CoverFiles,
+  GuardGroup,
+  ItemMedata,
+  RarityCoverFiles,
+} from '../types/shared';
 import { getS3Object } from '../aws/s3client';
 import axios from 'axios';
 import * as FormData from 'form-data';
@@ -322,12 +327,7 @@ export class CandyMachineService {
     comicIssue: ComicIssueCMInput,
     comicName: string,
     creatorAddress: string,
-    groups?: [
-      {
-        label: string;
-        guards: Partial<DefaultCandyGuardSettings>;
-      },
-    ],
+    groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
 
@@ -499,6 +499,21 @@ export class CandyMachineService {
 
     this.heliusService.subscribeTo(candyMachine.address.toBase58());
     return await this.metaplex.candyMachines().refresh(candyMachine);
+  }
+
+  async updateCandyMachine(
+    candyMachineAddress: PublicKey,
+    groups?: GuardGroup[],
+    guards?: Partial<DefaultCandyGuardSettings>,
+  ) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
+    await this.metaplex.candyMachines().update({
+      candyMachine,
+      groups,
+      guards,
+    });
   }
 
   async constructMintOneTransaction(
