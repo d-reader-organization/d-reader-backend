@@ -9,7 +9,7 @@ import {
   CreateCreatorFilesDto,
 } from '../creator/dto/create-creator.dto';
 import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
-import { Creator } from '@prisma/client';
+import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
@@ -74,9 +74,9 @@ export class CreatorService {
   }
 
   async findAll(query: CreatorFilterParams) {
-    const creators = await this.prisma.$queryRaw<Array<Creator & CreatorStats>>(
-      getCreatorsQuery(query),
-    );
+    const creators = await this.prisma.$queryRaw<
+      Array<Creator & { genres: Genre[] } & CreatorStats>
+    >(getCreatorsQuery(query));
     return creators.map((creator) => {
       return {
         ...creator,

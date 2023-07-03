@@ -3,6 +3,7 @@ import { IsHexColor, IsNumber, IsString } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { Genre } from '@prisma/client';
+import { PickType } from '@nestjs/swagger';
 
 export class GenreDto {
   @IsString()
@@ -23,6 +24,13 @@ export class GenreDto {
   @Transform(({ obj }) => !!obj.deletedAt)
   isDeleted: boolean;
 }
+
+export class PartialGenreDto extends PickType(GenreDto, [
+  'name',
+  'slug',
+  'color',
+  'icon',
+]) {}
 
 export function toGenreDto(genre: Genre) {
   const plainGenreDto: GenreDto = {

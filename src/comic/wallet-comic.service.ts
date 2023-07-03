@@ -19,10 +19,6 @@ export class WalletComicService {
       where: { comicSlug: slug, isFavourite: true },
     });
 
-    const countSubscribers = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isSubscribed: true },
-    });
-
     const countViewers = this.prisma.walletComic.count({
       where: {
         comicSlug: slug,
@@ -41,27 +37,14 @@ export class WalletComicService {
       },
     });
 
-    const countReaders = this.prisma.walletComicIssue.count({
-      where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
-      // distinct: ['walletAddress'],
-    });
-
     try {
-      const [
-        aggregations,
-        favouritesCount,
-        subscribersCount,
-        issuesCount,
-        readersCount,
-        viewersCount,
-      ] = await Promise.all([
-        aggregate,
-        countFavourites,
-        countSubscribers,
-        countIssues,
-        countReaders,
-        countViewers,
-      ]);
+      const [aggregations, favouritesCount, issuesCount, viewersCount] =
+        await Promise.all([
+          aggregate,
+          countFavourites,
+          countIssues,
+          countViewers,
+        ]);
 
       return {
         averageRating: aggregations._avg.rating,

@@ -8,13 +8,13 @@ import {
   IsUrl,
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { CreatorDto } from 'src/creator/dto/creator.dto';
+import { PartialCreatorDto } from '../../creator/dto/creator.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
-import { ApiProperty, PickType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { getPublicUrl } from 'src/aws/s3client';
-import { GenreDto } from 'src/genre/dto/genre.dto';
+import { PartialGenreDto } from '../../genre/dto/genre.dto';
 import { ComicStats } from '../types/comic-stats';
 import { round } from 'lodash';
 import {
@@ -24,19 +24,6 @@ import {
   Creator,
   AudienceType,
 } from '@prisma/client';
-
-class PartialGenreDto extends PickType(GenreDto, [
-  'name',
-  'slug',
-  'color',
-  'icon',
-]) {}
-class PartialCreatorDto extends PickType(CreatorDto, [
-  'name',
-  'slug',
-  'isVerified',
-  'avatar',
-]) {}
 
 export class ComicDto {
   @IsString()

@@ -81,7 +81,7 @@ export class ComicService {
     return comic;
   }
 
-  async findAll(query: ComicFilterParams, walletAddress?: string) {
+  async findAll(query: ComicFilterParams) {
     const comics = await this.prisma.$queryRaw<
       Array<
         Comic & {
