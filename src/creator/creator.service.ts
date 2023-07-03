@@ -83,7 +83,7 @@ export class CreatorService {
         stats: {
           totalVolume: getRandomFloatOrInt(1, 1000),
           followersCount: Number(creator.followersCount),
-          comicIssuesCount: Number(creator.comicIssuesCount),
+          comicIssuesCount: 0,
         },
       };
     });
