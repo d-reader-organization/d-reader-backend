@@ -50,7 +50,7 @@ AVG(walletcomic.rating) as "averageRating",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc.rating is not null) wcResult) as "ratersCount",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc."viewedAt" is not null) wcResult) as "viewersCount",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc."isFavourite" = true) wcResult) as "favouritesCount",
-(select COUNT(*) from (select * from "WalletComicIssue" wci where wci."comicIssueId" = comicissue.id and wci."readAt" is not null) as wciResult ) as "readersCount",
+(select COUNT(*) from "WalletComicIssue" wci inner join "ComicIssue" ci  on ci.id = wci."comicIssueId" where ci."comicSlug" = comic.slug and wci."readAt" is not null) as "readersCount",
 (select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug) issuesResult) as "issuesCount"
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
@@ -63,7 +63,7 @@ ${filterCondition}
 ${nameCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-group by comic."name", comic.slug, creator.*, comicissue.id
+group by comic."name", comic.slug, creator.*
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take};`;
