@@ -10,12 +10,14 @@ import {
 } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto } from '../comic/dto/update-comic.dto';
 import { WalletComicService } from './wallet-comic.service';
-import { Comic } from '@prisma/client';
+import { Comic, Genre, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
+import { ComicStats } from './types/comic-stats';
+import { getComicsQuery } from './comic.queries';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -79,45 +81,28 @@ export class ComicService {
     return comic;
   }
 
-  async findAll(query: ComicFilterParams, walletAddress?: string) {
-    const comics = await this.prisma.comic.findMany({
-      include: { genres: true, creator: true },
-      skip: query.skip,
-      take: query.take,
-      orderBy: { publishedAt: query.sortOrder ?? 'desc' },
-      where: {
-        name: { contains: query?.nameSubstring, mode: 'insensitive' },
-        creator: { slug: query?.creatorSlug },
-        AND: query?.genreSlugs?.map((slug) => {
-          return {
-            genres: {
-              some: {
-                slug: {
-                  equals: slug,
-                  mode: 'insensitive',
-                },
-              },
-            },
-          };
-        }),
-        deletedAt: null,
-        publishedAt: { lt: new Date() },
-        verifiedAt: { not: null },
-      },
+  async findAll(query: ComicFilterParams) {
+    const comics = await this.prisma.$queryRaw<
+      Array<
+        Comic & {
+          genres?: Genre[];
+          creator?: Creator;
+        } & ComicStats
+      >
+    >(getComicsQuery(query));
+    return comics.map((comic) => {
+      return {
+        ...comic,
+        stats: {
+          favouritesCount: Number(comic.favouritesCount),
+          ratersCount: Number(comic.ratersCount),
+          averageRating: Number(comic.averageRating),
+          issuesCount: Number(comic.issuesCount),
+          readersCount: Number(comic.readersCount),
+          viewersCount: Number(comic.viewersCount),
+        },
+      };
     });
-
-    const aggregatedComics = await Promise.all(
-      comics.map(async (comic) => {
-        const { stats, myStats } = await this.walletComicService.aggregateAll(
-          comic.slug,
-          walletAddress,
-        );
-
-        return { ...comic, stats, myStats };
-      }),
-    );
-
-    return aggregatedComics;
   }
 
   async findOne(slug: string, walletAddress?: string) {
