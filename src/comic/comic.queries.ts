@@ -50,18 +50,20 @@ AVG(walletcomic.rating) as "averageRating",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc.rating is not null) wcResult) as "ratersCount",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc."viewedAt" is not null) wcResult) as "viewersCount",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc."isFavourite" = true) wcResult) as "favouritesCount",
+(select COUNT(*) from (select * from "WalletComicIssue" wci where wci."comicIssueId" = comicissue.id and wci."readAt" is not null) as wciResult ) as "readersCount",
 (select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug) issuesResult) as "issuesCount"
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
 inner join "Genre" genre on genre.slug = "comicToGenre"."B"
 inner join "Creator" creator on creator.id = comic."creatorId"
+left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "WalletComic" walletComic on walletcomic."comicSlug" = comic.slug
 where comic."deletedAt" is null and comic."verifiedAt" is not null and comic."publishedAt" < now()
 ${filterCondition}
 ${nameCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-group by comic."name", comic.slug, creator.*
+group by comic."name", comic.slug, creator.*, comicissue.id
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take};`;

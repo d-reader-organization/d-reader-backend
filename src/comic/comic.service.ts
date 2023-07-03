@@ -98,6 +98,7 @@ export class ComicService {
           ratersCount: Number(comic.ratersCount),
           averageRating: Number(comic.averageRating),
           issuesCount: Number(comic.issuesCount),
+          readersCount: Number(comic.readersCount),
           viewersCount: Number(comic.viewersCount),
         },
       };

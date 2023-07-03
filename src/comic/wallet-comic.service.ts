@@ -37,21 +37,33 @@ export class WalletComicService {
       },
     });
 
+    const countReaders = this.prisma.walletComicIssue.count({
+      where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
+      // distinct: ['walletAddress'],
+    });
+
     try {
-      const [aggregations, favouritesCount, issuesCount, viewersCount] =
-        await Promise.all([
-          aggregate,
-          countFavourites,
-          countIssues,
-          countViewers,
-        ]);
+      const [
+        aggregations,
+        favouritesCount,
+        issuesCount,
+        readersCount,
+        viewersCount,
+      ] = await Promise.all([
+        aggregate,
+        countFavourites,
+        countIssues,
+        countReaders,
+        countViewers,
+      ]);
 
       return {
+        readersCount,
+        favouritesCount,
+        issuesCount,
+        viewersCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        favouritesCount: favouritesCount,
-        issuesCount: issuesCount,
-        viewersCount: viewersCount,
       };
     } catch (error) {
       console.error(error);

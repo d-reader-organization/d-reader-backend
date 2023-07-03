@@ -20,5 +20,9 @@ export class ComicStatsDto {
 
   @Min(0)
   @IsInt()
+  readersCount: number;
+
+  @Min(0)
+  @IsInt()
   viewersCount: number;
 }
