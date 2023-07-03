@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional, Max, Min } from 'class-validator';
 import { SortOrder } from './sort-order';
+import { FilterTag, SortTag } from './query-tags';
 
 export class Pagination {
   @Min(0)
@@ -19,4 +20,12 @@ export class Pagination {
   @IsEnum(SortOrder)
   @IsOptional()
   sortOrder?: SortOrder;
+
+  @IsEnum(FilterTag)
+  @IsOptional()
+  filterTag?: FilterTag;
+
+  @IsEnum(SortTag)
+  @IsOptional()
+  sortTag?: SortTag;
 }

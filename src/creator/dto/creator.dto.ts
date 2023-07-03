@@ -1,5 +1,6 @@
 import { plainToInstance, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsNotEmpty,
@@ -12,11 +13,13 @@ import {
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
-import { Creator } from '@prisma/client';
+import { Creator, Genre } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { WalletCreatorStats } from '../types/my-stats';
 import { WalletCreatorStatsDto } from './wallet-creator.dto';
+import { PickType } from '@nestjs/swagger';
+import { PartialGenreDto } from '../../genre/dto/genre.dto';
 
 export class CreatorDto {
   @IsPositive()
@@ -75,11 +78,23 @@ export class CreatorDto {
   @IsOptional()
   @Type(() => WalletCreatorStatsDto)
   myStats?: WalletCreatorStatsDto;
+
+  @IsArray()
+  @Type(() => PartialGenreDto)
+  genres?: PartialGenreDto[];
 }
+
+export class PartialCreatorDto extends PickType(CreatorDto, [
+  'name',
+  'slug',
+  'isVerified',
+  'avatar',
+]) {}
 
 type CreatorInput = Creator & {
   stats?: CreatorStats;
   myStats?: WalletCreatorStats;
+  genres?: Genre[];
 };
 
 export function toCreatorDto(creator: CreatorInput) {
@@ -109,6 +124,14 @@ export function toCreatorDto(creator: CreatorInput) {
     myStats: creator.myStats
       ? { isFollowing: creator.myStats.isFollowing }
       : undefined,
+    genres: creator.genres?.map((genre) => {
+      return {
+        name: genre.name,
+        slug: genre.slug,
+        color: genre.color,
+        icon: getPublicUrl(genre.icon),
+      };
+    }),
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);

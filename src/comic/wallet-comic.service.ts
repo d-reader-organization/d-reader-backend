@@ -19,10 +19,6 @@ export class WalletComicService {
       where: { comicSlug: slug, isFavourite: true },
     });
 
-    const countSubscribers = this.prisma.walletComic.count({
-      where: { comicSlug: slug, isSubscribed: true },
-    });
-
     const countViewers = this.prisma.walletComic.count({
       where: {
         comicSlug: slug,
@@ -50,27 +46,24 @@ export class WalletComicService {
       const [
         aggregations,
         favouritesCount,
-        subscribersCount,
         issuesCount,
         readersCount,
         viewersCount,
       ] = await Promise.all([
         aggregate,
         countFavourites,
-        countSubscribers,
         countIssues,
         countReaders,
         countViewers,
       ]);
 
       return {
+        readersCount,
+        favouritesCount,
+        issuesCount,
+        viewersCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
-        favouritesCount: favouritesCount,
-        subscribersCount: subscribersCount,
-        issuesCount: issuesCount,
-        readersCount: readersCount,
-        viewersCount: viewersCount,
       };
     } catch (error) {
       console.error(error);
