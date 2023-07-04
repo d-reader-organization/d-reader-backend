@@ -43,7 +43,9 @@ export class SyncWalletCommand extends CommandRunner {
         addresses = [address];
       }
 
-      await Promise.all(addresses.map(this.walletService.syncWallet));
+      await Promise.all(
+        addresses.map((address) => this.walletService.syncWallet(address)),
+      );
     } catch (error) {
       logErr(`Error syncing wallet ${address}: ${error}`);
     }

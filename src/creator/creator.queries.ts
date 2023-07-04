@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 import { getSortOrder } from '../utils/query-tags-helpers';
-import { SortTag } from 'src/types/query-tags';
+import { SortTag } from '../types/query-tags';
 
 const getQueryFilters = (
   query: CreatorFilterParams,
