@@ -34,24 +34,22 @@ export class ThawCollectionCommand extends CommandRunner {
     log('\n🏗️  thaw all nfts of collection');
     try {
       const { candyMachineAddress } = options;
-      const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-      const candyMachine = await this.metaplex
-        .candyMachines()
-        .findByAddress({ address: candyMachinePublicKey });
-
       const nfts = await this.prisma.nft.findMany({
         where: { candyMachineAddress },
       });
+
       await Promise.all(
         nfts.map((nft) =>
           this.candyMachineService.thawFrozenNft(
-            candyMachine,
+            new PublicKey(candyMachineAddress),
             new PublicKey(nft.address),
             new PublicKey(nft.ownerAddress),
           ),
         ),
       );
-      await this.candyMachineService.unlockFunds(candyMachine);
+      await this.candyMachineService.unlockFunds(
+        new PublicKey(candyMachineAddress),
+      );
     } catch (error) {
       logErr(`Error : ${error}`);
     }

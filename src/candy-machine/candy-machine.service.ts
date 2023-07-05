@@ -687,10 +687,13 @@ export class CandyMachineService {
   }
 
   async thawFrozenNft(
-    candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+    candyMachineAddress: PublicKey,
     nftMint: PublicKey,
     nftOwner: PublicKey,
   ) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
     await this.metaplex.candyMachines().callGuardRoute({
       candyMachine,
       guard: 'freezeSolPayment',
@@ -702,7 +705,10 @@ export class CandyMachineService {
     });
   }
 
-  async unlockFunds(candyMachine: CandyMachine<DefaultCandyGuardSettings>) {
+  async unlockFunds(candyMachineAddress: PublicKey) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
     await this.metaplex.candyMachines().callGuardRoute({
       candyMachine,
       guard: 'freezeSolPayment',
