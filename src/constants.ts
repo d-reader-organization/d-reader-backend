@@ -123,6 +123,7 @@ export const getRarityShareTable = (numberOfCovers: number) => {
 };
 
 export const BOT_TAX = 10000;
+export const DAY_SECONDS = 24 * 60 * 60;
 export const FREEZE_NFT_DAYS = 20;
 
 export const ATTRIBUTE_COMBINATIONS = [

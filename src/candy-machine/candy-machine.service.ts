@@ -40,6 +40,7 @@ import {
   MIN_SIGNATURES,
   BOT_TAX,
   FREEZE_NFT_DAYS,
+  DAY_SECONDS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -335,7 +336,7 @@ export class CandyMachineService {
         guard: 'freezeSolPayment',
         settings: {
           path: 'initialize',
-          period: FREEZE_NFT_DAYS * 24 * 60 * 60,
+          period: FREEZE_NFT_DAYS * DAY_SECONDS,
           candyGuardAuthority: this.metaplex.identity(),
         },
       });
@@ -350,186 +351,181 @@ export class CandyMachineService {
     creatorAddress: string,
     groups?: GuardGroup[],
   ) {
-    try {
-      validateComicIssueCMInput(comicIssue);
+    validateComicIssueCMInput(comicIssue);
 
-      const { statefulCovers, statelessCovers, rarityCoverFiles } =
-        await this.getComicIssueCovers(comicIssue);
+    const { statefulCovers, statelessCovers, rarityCoverFiles } =
+      await this.getComicIssueCovers(comicIssue);
 
-      const cover = findDefaultCover(comicIssue.statelessCovers);
-      const coverImage = await s3toMxFile(cover.image);
+    const cover = findDefaultCover(comicIssue.statelessCovers);
+    const coverImage = await s3toMxFile(cover.image);
 
-      // if Collection NFT already exists - use it, otherwise create a fresh one
-      let collectionNftAddress: PublicKey;
-      const collectionNft = await this.prisma.collectionNft.findUnique({
-        where: { comicIssueId: comicIssue.id },
-      });
+    // if Collection NFT already exists - use it, otherwise create a fresh one
+    let collectionNftAddress: PublicKey;
+    const collectionNft = await this.prisma.collectionNft.findUnique({
+      where: { comicIssueId: comicIssue.id },
+    });
 
-      const candyMachineKey = Keypair.generate();
+    const candyMachineKey = Keypair.generate();
 
-      let darkblockId: string;
-      if (collectionNft) {
-        collectionNftAddress = new PublicKey(collectionNft.address);
-      } else {
-        darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
-        const { uri: collectionNftUri } = await this.metaplex
-          .nfts()
-          .uploadMetadata({
-            name: comicIssue.title,
-            symbol: D_PUBLISHER_SYMBOL,
-            description: comicIssue.description,
-            seller_fee_basis_points: HUNDRED_PERCENT_TAX,
-            image: coverImage,
-            external_url: D_READER_FRONTEND_URL,
-            properties: {
-              creators: [
-                {
-                  address: this.metaplex.identity().publicKey.toBase58(),
-                  share: HUNDRED_PERCENT_TAX,
-                },
-              ],
-              files: [
-                ...this.writeFiles(
-                  coverImage,
-                  ...statefulCovers,
-                  ...statelessCovers,
-                ),
-                {
-                  type: 'Darkblock',
-                  uri: darkblockId,
-                },
-              ],
-            },
-          });
-
-        const { nft: newCollectionNft } = await this.metaplex.nfts().create({
-          uri: collectionNftUri,
+    let darkblockId: string;
+    if (collectionNft) {
+      collectionNftAddress = new PublicKey(collectionNft.address);
+    } else {
+      darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
+      const { uri: collectionNftUri } = await this.metaplex
+        .nfts()
+        .uploadMetadata({
           name: comicIssue.title,
-          sellerFeeBasisPoints: HUNDRED_PERCENT_TAX,
           symbol: D_PUBLISHER_SYMBOL,
-          isCollection: true,
+          description: comicIssue.description,
+          seller_fee_basis_points: HUNDRED_PERCENT_TAX,
+          image: coverImage,
+          external_url: D_READER_FRONTEND_URL,
+          properties: {
+            creators: [
+              {
+                address: this.metaplex.identity().publicKey.toBase58(),
+                share: HUNDRED_PERCENT_TAX,
+              },
+            ],
+            files: [
+              ...this.writeFiles(
+                coverImage,
+                ...statefulCovers,
+                ...statelessCovers,
+              ),
+              {
+                type: 'Darkblock',
+                uri: darkblockId,
+              },
+            ],
+          },
         });
 
-        await this.prisma.collectionNft.create({
-          data: {
-            address: newCollectionNft.address.toBase58(),
-            name: newCollectionNft.name,
-            comicIssue: { connect: { id: comicIssue.id } },
-          },
-        });
-        collectionNftAddress = newCollectionNft.address;
-      }
-      await this.initializeRecordAuthority(
-        collectionNftAddress,
-        new PublicKey(creatorAddress),
-        MAX_SIGNATURES_PERCENT,
-        MIN_SIGNATURES,
-      );
+      const { nft: newCollectionNft } = await this.metaplex.nfts().create({
+        uri: collectionNftUri,
+        name: comicIssue.title,
+        sellerFeeBasisPoints: HUNDRED_PERCENT_TAX,
+        symbol: D_PUBLISHER_SYMBOL,
+        isCollection: true,
+      });
 
-      const comicCreator = new PublicKey(creatorAddress);
-      const { candyMachine } = await this.metaplex.candyMachines().create(
-        {
-          candyMachine: candyMachineKey,
-          authority: this.metaplex.identity(),
-          collection: {
-            address: collectionNftAddress,
-            updateAuthority: this.metaplex.identity(),
-          },
-          symbol: D_PUBLISHER_SYMBOL,
-          maxEditionSupply: toBigNumber(0),
-          isMutable: true,
-          sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-          itemsAvailable: toBigNumber(comicIssue.supply),
-          guards: {
-            botTax: {
-              lamports: solFromLamports(BOT_TAX),
-              lastInstruction: true,
-            },
-            freezeSolPayment: {
-              amount: solFromLamports(comicIssue.mintPrice),
-              destination: this.metaplex.identity().publicKey,
-            },
-          },
-          groups,
-          creators: [
-            {
-              address: candyMachineKey.publicKey,
-              share: 0,
-            },
-            {
-              address: comicCreator,
-              share: HUNDRED,
-            },
-          ],
-        },
-        { payer: this.metaplex.identity() },
-      );
-
-      await this.initializeGuardAccounts(candyMachine);
-      await this.prisma.candyMachine.create({
+      await this.prisma.collectionNft.create({
         data: {
-          address: candyMachine.address.toBase58(),
-          mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
-          collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
-          itemsAvailable: candyMachine.itemsAvailable.toNumber(),
-          itemsMinted: candyMachine.itemsMinted.toNumber(),
-          itemsRemaining: candyMachine.itemsRemaining.toNumber(),
-          itemsLoaded: candyMachine.itemsLoaded,
-          isFullyLoaded: candyMachine.isFullyLoaded,
-          baseMintPrice: comicIssue.mintPrice,
-          endsAt: undefined,
+          address: newCollectionNft.address.toBase58(),
+          name: newCollectionNft.name,
+          comicIssue: { connect: { id: comicIssue.id } },
         },
       });
-      const items = await this.uploadItemMetadata(
-        comicIssue,
-        collectionNftAddress,
-        comicName,
-        creatorAddress,
-        statelessCovers.length,
-        darkblockId,
-        rarityCoverFiles,
-      );
-
-      const INSERT_CHUNK_SIZE = 8;
-      const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
-      let iteration = 0;
-      const transactionBuilders: TransactionBuilder[] = [];
-      for (const itemsChunk of itemChunks) {
-        console.log(
-          `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
-            (iteration + 1) * INSERT_CHUNK_SIZE - 1
-          } `,
-        );
-        const transactionBuilder = this.metaplex
-          .candyMachines()
-          .builders()
-          .insertItems({
-            candyMachine,
-            index: iteration * INSERT_CHUNK_SIZE,
-            items: itemsChunk,
-          });
-        transactionBuilders.push(transactionBuilder);
-        iteration = iteration + 1;
-      }
-
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
-      await Promise.all(
-        transactionBuilders.map((transactionBuilder) => {
-          const transaction = transactionBuilder.toTransaction(latestBlockhash);
-          return sendAndConfirmTransaction(
-            this.metaplex.connection,
-            transaction,
-            [this.metaplex.identity()],
-          );
-        }),
-      );
-
-      this.heliusService.subscribeTo(candyMachine.address.toBase58());
-      return await this.metaplex.candyMachines().refresh(candyMachine);
-    } catch (e) {
-      console.log('Error creating candymachine ', e);
+      collectionNftAddress = newCollectionNft.address;
     }
+    await this.initializeRecordAuthority(
+      collectionNftAddress,
+      new PublicKey(creatorAddress),
+      MAX_SIGNATURES_PERCENT,
+      MIN_SIGNATURES,
+    );
+
+    const comicCreator = new PublicKey(creatorAddress);
+    const { candyMachine } = await this.metaplex.candyMachines().create(
+      {
+        candyMachine: candyMachineKey,
+        authority: this.metaplex.identity(),
+        collection: {
+          address: collectionNftAddress,
+          updateAuthority: this.metaplex.identity(),
+        },
+        symbol: D_PUBLISHER_SYMBOL,
+        maxEditionSupply: toBigNumber(0),
+        isMutable: true,
+        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
+        itemsAvailable: toBigNumber(comicIssue.supply),
+        guards: {
+          botTax: {
+            lamports: solFromLamports(BOT_TAX),
+            lastInstruction: true,
+          },
+          freezeSolPayment: {
+            amount: solFromLamports(comicIssue.mintPrice),
+            destination: this.metaplex.identity().publicKey,
+          },
+        },
+        groups,
+        creators: [
+          {
+            address: candyMachineKey.publicKey,
+            share: 0,
+          },
+          {
+            address: comicCreator,
+            share: HUNDRED,
+          },
+        ],
+      },
+      { payer: this.metaplex.identity() },
+    );
+
+    await this.initializeGuardAccounts(candyMachine);
+    await this.prisma.candyMachine.create({
+      data: {
+        address: candyMachine.address.toBase58(),
+        mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
+        collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
+        itemsAvailable: candyMachine.itemsAvailable.toNumber(),
+        itemsMinted: candyMachine.itemsMinted.toNumber(),
+        itemsRemaining: candyMachine.itemsRemaining.toNumber(),
+        itemsLoaded: candyMachine.itemsLoaded,
+        isFullyLoaded: candyMachine.isFullyLoaded,
+        baseMintPrice: comicIssue.mintPrice,
+        endsAt: undefined,
+      },
+    });
+    const items = await this.uploadItemMetadata(
+      comicIssue,
+      collectionNftAddress,
+      comicName,
+      creatorAddress,
+      statelessCovers.length,
+      darkblockId,
+      rarityCoverFiles,
+    );
+
+    const INSERT_CHUNK_SIZE = 8;
+    const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
+    let iteration = 0;
+    const transactionBuilders: TransactionBuilder[] = [];
+    for (const itemsChunk of itemChunks) {
+      console.log(
+        `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
+          (iteration + 1) * INSERT_CHUNK_SIZE - 1
+        } `,
+      );
+      const transactionBuilder = this.metaplex
+        .candyMachines()
+        .builders()
+        .insertItems({
+          candyMachine,
+          index: iteration * INSERT_CHUNK_SIZE,
+          items: itemsChunk,
+        });
+      transactionBuilders.push(transactionBuilder);
+      iteration = iteration + 1;
+    }
+
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
+    await Promise.all(
+      transactionBuilders.map((transactionBuilder) => {
+        const transaction = transactionBuilder.toTransaction(latestBlockhash);
+        return sendAndConfirmTransaction(
+          this.metaplex.connection,
+          transaction,
+          [this.metaplex.identity()],
+        );
+      }),
+    );
+
+    this.heliusService.subscribeTo(candyMachine.address.toBase58());
+    return await this.metaplex.candyMachines().refresh(candyMachine);
   }
 
   async updateCandyMachine(
