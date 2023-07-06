@@ -6,9 +6,9 @@ export function clusterHeliusApiUrl(
 ) {
   switch (cluster) {
     case 'devnet':
-      return `https://rpc-devnet.helius.xyz/?api-key=${apiKey}`;
+      return `http://devnet.helius-rpc.com/?api-key=${apiKey}`;
     case 'mainnet-beta':
-      return `https://rpc.helius.xyz/?api-key=${apiKey}`;
+      return `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
     default:
       return '';
   }

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { FilterTag, SortTag } from 'src/types/query-tags';
-import { SortOrder } from 'src/types/sort-order';
+import { FilterTag, SortTag } from '../types/query-tags';
+import { SortOrder } from '../types/sort-order';
 
 export const filterBy = (tag: FilterTag): Prisma.Sql => {
   if (tag === FilterTag.Free) {
