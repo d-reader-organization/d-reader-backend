@@ -106,10 +106,10 @@ export class ComicDto {
   creator?: PartialCreatorDto;
 }
 
-type ComicInput = Comic & {
+export type ComicInput = Comic & {
   genres?: Genre[];
   creator?: Creator;
-  stats?: ComicStats;
+  stats?: Partial<ComicStats>;
   myStats?: WalletComic;
 };
 

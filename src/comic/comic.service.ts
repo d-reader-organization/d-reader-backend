@@ -18,6 +18,7 @@ import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { ComicStats } from './types/comic-stats';
 import { getComicsQuery } from './comic.queries';
+import { ComicInput } from './dto/comic.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -122,6 +123,49 @@ export class ComicService {
     );
 
     return { ...comic, stats, myStats };
+  }
+
+  async getOwnedComics(
+    query: ComicFilterParams,
+    walletAddress: string,
+  ): Promise<ComicInput[]> {
+    const ownedComics = await this.prisma.comic.findMany({
+      distinct: 'name',
+      orderBy: {
+        name: 'asc',
+      },
+      where: {
+        issues: {
+          every: {
+            collectionNft: {
+              collectionItems: {
+                some: {
+                  ownerAddress: walletAddress,
+                },
+              },
+            },
+          },
+        },
+      },
+      skip: query.skip,
+      take: query.take,
+    });
+
+    return await Promise.all(
+      ownedComics.map(async (ownedComic) => {
+        const issuesCount = await this.prisma.comicIssue.count({
+          where: {
+            comicSlug: ownedComic.slug,
+          },
+        });
+        return {
+          ...ownedComic,
+          stats: {
+            issuesCount,
+          },
+        };
+      }),
+    );
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
