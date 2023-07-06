@@ -103,6 +103,9 @@ export class ComicDto {
   @IsEmptyOrUrl()
   youTube: string;
 
+  // @IsBoolean()
+  // isFree: string;
+
   @IsOptional()
   @Type(() => ComicStatsDto)
   stats?: ComicStatsDto;
@@ -149,6 +152,7 @@ export function toComicDto(comic: ComicInput) {
     instagram: comic.instagram,
     tikTok: comic.tikTok,
     youTube: comic.youTube,
+    // isFree: comic.isFree,
     stats: comic?.stats
       ? {
           favouritesCount: comic.stats.favouritesCount,

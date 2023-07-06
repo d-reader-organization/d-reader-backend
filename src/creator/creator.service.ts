@@ -16,6 +16,7 @@ import { CreatorFilterParams } from './dto/creator-filter-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
+import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
@@ -139,7 +140,8 @@ export class CreatorService {
 
     const s3Folder = getS3Folder(slug);
     const oldFileKey = creator[field];
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, 'field');
+    const fileName = appendTimestamp(field);
+    const newFileKey = await this.s3.uploadFile(s3Folder, file, fileName);
 
     try {
       creator = await this.prisma.creator.update({

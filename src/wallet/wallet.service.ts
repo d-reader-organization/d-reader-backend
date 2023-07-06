@@ -21,6 +21,7 @@ import {
   findUsedTrait,
 } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
+import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (address: string) => `wallets/${address}/`;
 type WalletFileProperty = PickFields<Wallet, 'avatar'>;
@@ -183,7 +184,8 @@ export class WalletService {
 
     const s3Folder = getS3Folder(address);
     const oldFileKey = wallet[field];
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
+    const fileName = appendTimestamp(field);
+    const newFileKey = await this.s3.uploadFile(s3Folder, file, fileName);
 
     try {
       wallet = await this.prisma.wallet.update({
