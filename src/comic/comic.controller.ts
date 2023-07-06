@@ -84,7 +84,7 @@ export class ComicController {
     @WalletEntity() wallet: Wallet,
     @Query() query: ComicFilterParams,
   ): Promise<ComicDto[]> {
-    const comics = await this.comicService.findAll(query, wallet.address);
+    const comics = await this.comicService.findAll(query);
     return toComicDtoArray(comics);
   }
 

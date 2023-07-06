@@ -9,7 +9,7 @@ import {
   CreateCreatorFilesDto,
 } from '../creator/dto/create-creator.dto';
 import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
-import { Creator } from '@prisma/client';
+import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
@@ -17,6 +17,9 @@ import { WalletCreatorService } from './wallet-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { appendTimestamp } from '../utils/helpers';
+import { CreatorStats } from '../comic/types/creator-stats';
+import { getCreatorsQuery } from './creator.queries';
+import { getRandomFloatOrInt } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
@@ -72,28 +75,19 @@ export class CreatorService {
   }
 
   async findAll(query: CreatorFilterParams) {
-    const creators = await this.prisma.creator.findMany({
-      include: { comics: true },
-      skip: query.skip,
-      take: query.take,
-      where: {
-        name: { contains: query?.nameSubstring, mode: 'insensitive' },
-        deletedAt: null,
-        emailConfirmedAt: { not: null },
-        verifiedAt: { not: null },
-      },
-      orderBy: { name: query.sortOrder ?? 'asc' },
-    });
-
-    const aggregatedCreators = await Promise.all(
-      creators.map(async (creator) => ({
+    const creators = await this.prisma.$queryRaw<
+      Array<Creator & { genres: Genre[] } & CreatorStats>
+    >(getCreatorsQuery(query));
+    return creators.map((creator) => {
+      return {
         ...creator,
-        stats: await this.walletCreatorService.aggregateCreatorStats(
-          creator.slug,
-        ),
-      })),
-    );
-    return aggregatedCreators;
+        stats: {
+          totalVolume: getRandomFloatOrInt(1, 1000),
+          followersCount: Number(creator.followersCount),
+          comicIssuesCount: 0,
+        },
+      };
+    });
   }
 
   async findOne(slug: string, walletAddress: string) {
