@@ -12,6 +12,7 @@ import {
   TransactionBuilder,
   MetaplexFile,
   DefaultCandyGuardSettings,
+  CandyMachine,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -37,6 +38,9 @@ import {
   RARITY_TRAIT,
   ATTRIBUTE_COMBINATIONS,
   MIN_SIGNATURES,
+  BOT_TAX,
+  FREEZE_NFT_DAYS,
+  DAY_SECONDS,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -323,6 +327,24 @@ export class CandyMachineService {
     return items;
   }
 
+  async initializeGuardAccounts(
+    candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+  ) {
+    try {
+      await this.metaplex.candyMachines().callGuardRoute({
+        candyMachine,
+        guard: 'freezeSolPayment',
+        settings: {
+          path: 'initialize',
+          period: FREEZE_NFT_DAYS * DAY_SECONDS,
+          candyGuardAuthority: this.metaplex.identity(),
+        },
+      });
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
@@ -420,8 +442,12 @@ export class CandyMachineService {
         itemsAvailable: toBigNumber(comicIssue.supply),
         guards: {
           botTax: {
-            lamports: solFromLamports(10000),
+            lamports: solFromLamports(BOT_TAX),
             lastInstruction: true,
+          },
+          freezeSolPayment: {
+            amount: solFromLamports(comicIssue.mintPrice),
+            destination: this.metaplex.identity().publicKey,
           },
         },
         groups,
@@ -439,6 +465,7 @@ export class CandyMachineService {
       { payer: this.metaplex.identity() },
     );
 
+    await this.initializeGuardAccounts(candyMachine);
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
@@ -533,6 +560,7 @@ export class CandyMachineService {
         candyMachine,
         feePayer,
         mint: mint.publicKey,
+        destinationWallet: this.metaplex.identity().publicKey,
         label,
         nftGateMint,
       });
@@ -652,6 +680,39 @@ export class CandyMachineService {
     } catch (e) {
       console.log('Authority account is not initialized : ', e);
     }
+  }
+
+  async thawFrozenNft(
+    candyMachineAddress: PublicKey,
+    nftMint: PublicKey,
+    nftOwner: PublicKey,
+  ) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
+    await this.metaplex.candyMachines().callGuardRoute({
+      candyMachine,
+      guard: 'freezeSolPayment',
+      settings: {
+        path: 'thaw',
+        nftMint,
+        nftOwner,
+      },
+    });
+  }
+
+  async unlockFunds(candyMachineAddress: PublicKey) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
+    await this.metaplex.candyMachines().callGuardRoute({
+      candyMachine,
+      guard: 'freezeSolPayment',
+      settings: {
+        path: 'unlockFunds',
+        candyGuardAuthority: this.metaplex.identity(),
+      },
+    });
   }
 
   async findByAddress(address: string) {
