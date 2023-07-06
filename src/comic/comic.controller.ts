@@ -98,14 +98,14 @@ export class ComicController {
     return toComicDto(comic);
   }
 
-  @Get('get/owned/nfts')
+  @Get('get/by-owner/:address')
   async ownedComics(
-    @WalletEntity() wallet: Wallet,
+    @Param('address') address: string,
     @Query() query: ComicFilterParams,
   ): Promise<ComicDto[]> {
-    const comics = await this.comicService.getOwnedComics(
+    const comics = await this.comicService.getComicsByOwner(
       query,
-      wallet.address,
+      address,
     );
     return toComicDtoArray(comics);
   }
