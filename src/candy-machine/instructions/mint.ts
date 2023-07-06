@@ -192,13 +192,14 @@ export const allGuards: string[] = [
   'solPayment',
   'nftGate',
   'allowList',
+  'freezeSolPayment',
 ];
 
 export function getRemainingAccounts(
   metaplex: Metaplex,
   mintSettings: MintSettings,
 ): AccountMeta[] {
-  const { candyMachine, feePayer, mint } = mintSettings;
+  const { candyMachine, feePayer, mint, destinationWallet } = mintSettings;
   const initialAccounts: AccountMeta[] = [];
 
   const guards = resolveGuards(candyMachine, mintSettings.label);
@@ -234,6 +235,19 @@ export function getRemainingAccounts(
               metaplex,
               guards.allowList.merkleRoot,
               feePayer,
+              candyMachine.address,
+              candyMachine.candyGuard.address,
+            ),
+          );
+          break;
+        }
+        case 'freezeSolPayment': {
+          initialAccounts.push(
+            ...getFreezeSolPaymentAccounts(
+              metaplex,
+              mint,
+              feePayer,
+              destinationWallet,
               candyMachine.address,
               candyMachine.candyGuard.address,
             ),
@@ -306,6 +320,37 @@ function getNftGateAccounts(
     },
     {
       pubkey: tokenMetadata,
+      isSigner: false,
+      isWritable: false,
+    },
+  ];
+}
+
+function getFreezeSolPaymentAccounts(
+  metaplex: Metaplex,
+  mint: PublicKey,
+  feePayer: PublicKey,
+  destinationWallet: PublicKey,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+) {
+  const freezePda = metaplex
+    .candyMachines()
+    .pdas()
+    .freezeEscrow({ destination: destinationWallet, candyMachine, candyGuard });
+  const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
+    mint: mint,
+    owner: feePayer,
+  });
+
+  return [
+    {
+      pubkey: freezePda,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: tokenAccount,
       isSigner: false,
       isWritable: false,
     },

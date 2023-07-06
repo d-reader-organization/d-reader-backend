@@ -7,10 +7,6 @@ export class ComicStatsDto {
 
   @Min(0)
   @IsInt()
-  subscribersCount: number;
-
-  @Min(0)
-  @IsInt()
   ratersCount: number;
 
   @Min(1)

@@ -6,8 +6,8 @@ import {
 import { Cluster, Connection, Keypair } from '@solana/web3.js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
-import { heliusClusterApiUrl } from 'helius-sdk';
 import { BUNDLR_ADDRESS } from '../constants';
+import { clusterHeliusApiUrl } from './helius';
 
 const getTreasuryKeypair = () => {
   const treasuryWallet = AES.decrypt(
@@ -30,7 +30,7 @@ export const getTreasuryPublicKey = () => {
 export function initMetaplex(customEndpoint?: string) {
   const endpoint =
     customEndpoint ||
-    heliusClusterApiUrl(
+    clusterHeliusApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
