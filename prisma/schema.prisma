@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["extendedWhereUnique", "filteredRelationCount"]
+  previewFeatures = ["extendedWhereUnique"]
   // https://www.prisma.io/docs/concepts/components/prisma-client/full-text-search
   // https://www.prisma.io/docs/reference/api-reference/prisma-client-reference#compare-columns-in-the-same-table
 }
@@ -93,6 +93,7 @@ model Comic {
   instagram     String              @default("")
   tikTok        String              @default("")
   youTube       String              @default("")
+  // isFree        Boolean             @default(false)
   updatedAt     DateTime            @updatedAt
   createdAt     DateTime            @default(now())
   deletedAt     DateTime?
@@ -117,6 +118,7 @@ model WalletComic {
   rating        Int?
   isSubscribed  Boolean   @default(false)
   isFavourite   Boolean   @default(false)
+  // isBookmarked  Boolean   @default(false)
   isWhitelisted Boolean   @default(false)
   viewedAt      DateTime?
 
@@ -146,6 +148,7 @@ model ComicIssue {
   flavorText           String                   @default("")
   signature            String                   @default("")
   pdf                  String                   @default("")
+  // isFullyUploaded      Boolean                  @default(false)
   statelessCovers      StatelessCover[]
   statefulCovers       StatefulCover[]
   releaseDate          DateTime
@@ -298,6 +301,7 @@ model ComicPage {
 model CarouselSlide {
   id           Int              @id @default(autoincrement())
   image        String
+  // secondaryImage String           @default("")
   title        String           @default("")
   subtitle     String           @default("")
   priority     Int

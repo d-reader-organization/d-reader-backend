@@ -231,7 +231,11 @@ export class ComicIssueService {
     return {
       ...comicIssue,
       stats,
-      myStats: { ...myStats, canRead: !showOnlyPreviews },
+      myStats: {
+        ...myStats,
+        canRead: !showOnlyPreviews,
+        // canRead: !showOnlyPreviews && !comicIssue.isWorkInProgress,
+      },
       candyMachineAddress,
     };
   }
