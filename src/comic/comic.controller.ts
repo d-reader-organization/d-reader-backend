@@ -98,6 +98,18 @@ export class ComicController {
     return toComicDto(comic);
   }
 
+  @Get('get/by-owner/:address')
+  async ownedComics(
+    @Param('address') address: string,
+    @Query() query: ComicFilterParams,
+  ): Promise<ComicDto[]> {
+    const comics = await this.comicService.getComicsByOwner(
+      query,
+      address,
+    );
+    return toComicDtoArray(comics);
+  }
+
   /* Update specific comic */
   @Patch('update/:slug')
   async update(
