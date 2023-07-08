@@ -15,7 +15,6 @@ import {
   tokenProgram,
 } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
-import { BasicWalletDto } from '../../candy-machine/dto/candy-machine-receipt.dto';
 import {
   fetchOffChainMetadata,
   findSignedTrait,
@@ -23,7 +22,14 @@ import {
 } from '../../utils/nft-metadata';
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft } from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
+import { WalletDto } from 'src/wallet/dto/wallet.dto';
+
+export class PartialWalletDto extends PickType(WalletDto, [
+  'address',
+  'avatar',
+  'name',
+]) {}
 
 export class ListingDto {
   @IsPositive()
@@ -39,8 +45,8 @@ export class ListingDto {
   @IsString()
   cover: string;
 
-  @Type(() => BasicWalletDto)
-  seller: BasicWalletDto;
+  @Type(() => PartialWalletDto)
+  seller: PartialWalletDto;
 
   @IsString()
   tokenAddress: string;

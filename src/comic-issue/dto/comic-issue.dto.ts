@@ -154,7 +154,7 @@ export class ComicIssueDto {
 
   @IsOptional()
   @IsArray()
-  @Type(() => StatefulCoverDto)
+  @Type(() => StatelessCoverDto)
   @ApiProperty({ type: [StatelessCoverDto] })
   statelessCovers?: StatelessCoverDto[];
 }

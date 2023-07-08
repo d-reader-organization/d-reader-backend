@@ -1,34 +1,25 @@
-import { IsDateString, IsNumber, IsString, IsUrl } from 'class-validator';
-import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
 import { getPublicUrl } from '../../aws/s3client';
+import { WalletDto } from 'src/wallet/dto/wallet.dto';
+import { PickType } from '@nestjs/swagger';
+import { NftDto } from 'src/nft/dto/nft.dto';
 
-class ReceiptNftDto {
-  @IsSolanaAddress()
-  address: string;
+export class PartialWalletDto extends PickType(WalletDto, [
+  'address',
+  'avatar',
+  'name',
+]) {}
 
-  @IsString()
-  name: string;
-}
-
-export class BasicWalletDto {
-  @IsSolanaAddress()
-  address: string;
-
-  @IsUrl()
-  avatar: string;
-
-  @IsString()
-  name: string;
-}
+export class PartialNftDto extends PickType(NftDto, ['address', 'name']) {}
 
 export class CandyMachineReceiptDto {
-  @Type(() => ReceiptNftDto)
-  nft: ReceiptNftDto;
+  @Type(() => PartialNftDto)
+  nft: PartialNftDto;
 
-  @Type(() => BasicWalletDto)
-  buyer: BasicWalletDto;
+  @Type(() => PartialWalletDto)
+  buyer: PartialWalletDto;
 
   @IsString()
   candyMachineAddress: string;
