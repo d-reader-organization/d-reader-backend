@@ -41,10 +41,8 @@ export const getS3Object = async (
 export const getPublicUrl = (key: string) => {
   // If key is an empty string, return it
   if (!key) return key;
-  if (key.startsWith('https://')) return key;
-
-  const publicUrl = `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
-  return publicUrl;
+  else if (key.startsWith('https://')) return key;
+  else return `https://${config().s3.bucket}.s3.amazonaws.com/${key}`;
 };
 
 export const transformToUrl = (params: TransformFnParams) => {

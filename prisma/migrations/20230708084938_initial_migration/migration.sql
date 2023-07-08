@@ -58,7 +58,7 @@ CREATE TABLE "Creator" (
 
 -- CreateTable
 CREATE TABLE "Comic" (
-    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "audienceType" "AudienceType" NOT NULL DEFAULT 'Everyone',
     "cover" TEXT NOT NULL DEFAULT '',

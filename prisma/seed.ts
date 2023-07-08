@@ -496,7 +496,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Gorecats',
+                title: 'Gorecats',
                 slug: 'gorecats',
                 description:
                   'Gorecats are an eclectic breed of treacherous little trouble makers, hell bent on using every single one of their glorious nine lives.',
@@ -573,7 +573,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'studio-nx' } },
-        name: 'Barbabyans',
+        title: 'Barbabyans',
         slug: 'barbabyans',
         description:
           '3 magical siblings must prove themselves as the worthy warriors they were destined to become and lead their horde to victory across the land, or not.',
@@ -644,7 +644,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'studio-nx' } },
-        name: 'Niko and the Sword',
+        title: 'Niko and the Sword',
         slug: 'niko-and-the-sword',
         description:
           'His people gone. His kingdom a smouldering ruin. Follow the perilous adventures of Niko',
@@ -716,7 +716,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'studio-nx' } },
-        name: 'The Dark Portal',
+        title: 'The Dark Portal',
         slug: 'the-dark-portal',
         description:
           ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
@@ -820,7 +820,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Narentines',
+                title: 'Narentines',
                 slug: 'narentines',
                 description:
                   "Hidden from human eyes lived a great nation in the vast valley of Neretva. It's origin and numbers unknown, it's practices a complete mystery. A young boy discovers what seems to be a completely new species.",
@@ -898,7 +898,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'swamplabs' } },
-        name: 'Lupers',
+        title: 'Lupers',
         slug: 'lupers',
         description:
           'The Lupers of Arx Urbis are a proud and noble race of wolves descended from the she-wolf of Lupercal, who raised Romulus and Remus',
@@ -1002,7 +1002,7 @@ async function main() {
               emailConfirmedAt: new Date(),
               comics: {
                 create: {
-                  name: 'The Heist',
+                  title: 'The Heist',
                   slug: 'the-heist',
                   description:
                     'A high-stakes, risk-based adventure of crime, corruption...and bananas.',
@@ -1111,7 +1111,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Gooneytoons',
+                title: 'Gooneytoons',
                 slug: 'gooneytoons',
                 description:
                   "Some say this is a twisted nostalgia trip fuelled by too much LSD, or maybe it's that some men just want to see the world burn...",
@@ -1287,7 +1287,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Animosities',
+                title: 'Animosities',
                 slug: 'animosities',
                 description: 'Short comic about love, anger, and treachery',
                 flavorText: 'Prepare to get overwhelmed with hate and sorrow',
@@ -1358,7 +1358,7 @@ async function main() {
       await prisma.comic.create({
         data: {
           creator: { connect: { slug: 'saucerpen' } },
-          name: 'Birthday',
+          title: 'Birthday',
           slug: 'birthday',
           description:
             'A short comic that got published in KOMIKAZE #54 webzine',
@@ -1424,7 +1424,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'saucerpen' } },
-        name: 'Immaculate Taint',
+        title: 'Immaculate Taint',
         slug: 'immaculate-taint',
         description:
           'lady Kuga (the Plague) goes from village to village and likes being clean',
@@ -1489,7 +1489,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'saucerpen' } },
-        name: 'Island',
+        title: 'Island',
         slug: 'island',
         description: 'Summer vacation spent on the island of Susak',
         flavorText: '🌊',
@@ -1589,7 +1589,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Wretches',
+                title: 'Wretches',
                 slug: 'wretches',
                 description:
                   'Wretches is a gritty sci-fi tale blending the drama of Blade Runner with the wild, action-packed science-fantasy world of The Fifth Element.',
@@ -1823,7 +1823,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
-        name: 'Jana',
+        title: 'Jana',
         slug: 'jana',
         description:
           "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
@@ -1922,7 +1922,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
-        name: 'Knockturn County',
+        title: 'Knockturn County',
         slug: 'knockturn-county',
         description:
           "It's Dr. Seuss meets Sin City.  Knockturn County is a gritty, adult crime noir set in a classic children's book universe. Various tales converge and collide in this county built on crime, as a rhyming narrative leads readers through a tangled web of death, booze, drugs, and betrayal. Good doesn't always win, bad doesn't always pay, and, in true noir fashion, people always die.",
@@ -2026,7 +2026,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
-        name: 'Dark Waters',
+        title: 'Dark Waters',
         slug: 'dark-waters',
         description: `Intentionally or not, humans have literally turned our oceans into dumping grounds.
         There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
@@ -2093,7 +2093,7 @@ async function main() {
     await prisma.comic.create({
       data: {
         creator: { connect: { slug: 'mad-muse-syndicate' } },
-        name: 'Multi-Versus',
+        title: 'Multi-Versus',
         slug: 'multi-versus',
         description: `Intentionally or not, humans have literally turned our oceans into dumping grounds.
         There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
@@ -2199,7 +2199,7 @@ async function main() {
             emailConfirmedAt: new Date(),
             comics: {
               create: {
-                name: 'Tsukiverse',
+                title: 'Tsukiverse',
                 slug: 'tsukiverse',
                 description:
                   'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',

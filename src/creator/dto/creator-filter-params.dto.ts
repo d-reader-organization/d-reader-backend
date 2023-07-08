@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
-import { IsArray, IsOptional, IsString } from 'class-validator';
-import { Pagination } from 'src/types/pagination.dto';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
+import { Pagination } from '../../types/pagination.dto';
+import { SortOrder } from '../../types/sort-order';
+
+export enum CreatorFilterTag {
+  Popular = 'popular',
+}
+
+export enum CreatorSortTag {
+  Followers = 'followers',
+  Name = 'name',
+}
 
 export class CreatorFilterParams extends Pagination {
   @IsOptional()
@@ -18,4 +28,16 @@ export class CreatorFilterParams extends Pagination {
     } else return value;
   })
   genreSlugs?: string[];
+
+  @IsEnum(SortOrder)
+  @IsOptional()
+  sortOrder?: SortOrder;
+
+  @IsEnum(CreatorFilterTag)
+  @IsOptional()
+  filterTag?: CreatorFilterTag;
+
+  @IsEnum(CreatorSortTag)
+  @IsOptional()
+  sortTag?: CreatorSortTag;
 }

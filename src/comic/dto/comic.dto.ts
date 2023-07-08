@@ -27,7 +27,7 @@ import {
 
 export class ComicDto {
   @IsString()
-  name: string;
+  title: string;
 
   @IsKebabCase()
   slug: string;
@@ -118,7 +118,7 @@ type ComicInput = Comic & {
 
 export function toComicDto(comic: ComicInput) {
   const plainComicDto: ComicDto = {
-    name: comic.name,
+    title: comic.title,
     slug: comic.slug,
     audienceType: comic.audienceType,
     isCompleted: !!comic.completedAt,

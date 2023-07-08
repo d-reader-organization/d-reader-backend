@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
-import { filterBy, getSortOrder, sortBy } from '../utils/query-tags-helpers';
+import {
+  filterComicIssueBy,
+  getSortOrder,
+  sortComicIssueBy,
+} from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
   query: ComicIssueFilterParams,
@@ -28,8 +32,8 @@ const getQueryFilters = (
     ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
-  const sortColumn = sortBy(query.sortTag);
-  const filterCondition = filterBy(query.filterTag);
+  const sortColumn = sortComicIssueBy(query.sortTag);
+  const filterCondition = filterComicIssueBy(query.filterTag);
   return {
     titleCondition,
     comicSlugCondition,
@@ -53,7 +57,7 @@ export const getComicIssuesQuery = (
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`select comicIssue.*, comic."name" as "comicName", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
+  return Prisma.sql`select comicIssue.*, comic."title" as "comicName", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
   AVG(walletcomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT wci."isFavourite"
@@ -102,7 +106,7 @@ ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-GROUP BY comicIssue.id, comic."name", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take}
