@@ -103,10 +103,7 @@ export class ComicController {
     @Param('address') address: string,
     @Query() query: ComicFilterParams,
   ): Promise<ComicDto[]> {
-    const comics = await this.comicService.getComicsByOwner(
-      query,
-      address,
-    );
+    const comics = await this.comicService.getComicsByOwner(query, address);
     return toComicDtoArray(comics);
   }
 
