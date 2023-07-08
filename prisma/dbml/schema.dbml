@@ -52,7 +52,7 @@ Table Creator {
 }
 
 Table Comic {
-  name String [not null]
+  title String [not null]
   slug String [pk]
   audienceType AudienceType [not null, default: 'Everyone']
   cover String [not null, default: '']

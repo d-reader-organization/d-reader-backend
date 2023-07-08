@@ -342,7 +342,7 @@ export class ComicIssueService {
     try {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
-        updatedComicIssue.comic.name,
+        updatedComicIssue.comic.title,
         updatedComicIssue.comic.creator.walletAddress,
       );
     } catch (e) {
@@ -385,7 +385,7 @@ export class ComicIssueService {
     if (comicIssue.supply > 0) {
       await this.candyMachineService.createComicIssueCM(
         comicIssue,
-        comicIssue.comic.name,
+        comicIssue.comic.title,
         comicIssue.comic.creator.walletAddress,
       );
     }

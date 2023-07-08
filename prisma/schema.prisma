@@ -77,7 +77,7 @@ enum AudienceType {
 }
 
 model Comic {
-  name          String
+  title         String
   slug          String              @id
   audienceType  AudienceType        @default(Everyone)
   cover         String              @default("")
