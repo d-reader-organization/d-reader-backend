@@ -25,7 +25,7 @@ export class ComicFilterParams extends Pagination {
 
   @IsOptional()
   @IsString()
-  nameSubstring?: string;
+  titleSubstring?: string;
 
   @IsOptional()
   @IsArray()
