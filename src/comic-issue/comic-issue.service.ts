@@ -138,7 +138,7 @@ export class ComicIssueService {
         ComicIssue & {
           comic: Comic;
           statelessCovers: StatelessCover;
-          comicName: string;
+          comicTitle: string;
           audienceType: AudienceType;
           creatorName: string;
           creatorSlug: string;
@@ -160,7 +160,7 @@ export class ComicIssueService {
 
         return {
           comic: {
-            name: issue.comicName,
+            title: issue.comicTitle,
             slug: issue.comicSlug,
             audienceType: issue.audienceType,
             creator: {
