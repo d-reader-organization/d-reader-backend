@@ -2,6 +2,7 @@ import { Type, plainToInstance } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -17,11 +18,12 @@ import {
 import { PublicKey } from '@solana/web3.js';
 import {
   fetchOffChainMetadata,
+  findRarityTrait,
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
-import { Listing, Wallet, Nft } from '@prisma/client';
+import { Listing, Wallet, Nft, ComicRarity } from '@prisma/client';
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { WalletDto } from 'src/wallet/dto/wallet.dto';
 
@@ -64,6 +66,10 @@ export class ListingDto {
 
   @IsBoolean()
   isSigned: boolean;
+
+  @IsEnum(ComicRarity)
+  @ApiProperty({ enum: ComicRarity })
+  rarity: ComicRarity;
 
   // @IsString()
   // description: string;
@@ -144,6 +150,7 @@ export async function toListingDto(listing: ListingInput) {
     })),
     isUsed: findUsedTrait(collectionMetadata),
     isSigned: findSignedTrait(collectionMetadata),
+    rarity: findRarityTrait(collectionMetadata),
     // description: collectionMetadata.description, // hide this in array?
     // symbol: listing.symbol, // hide this in array?
     // createdAt: listing.createdAt.toISOString(), // hide this in array?

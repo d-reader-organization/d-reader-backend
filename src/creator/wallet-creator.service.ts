@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { mockPromise, getRandomFloatOrInt } from '../utils/helpers';
-import { WalletCreatorStats } from './types/my-stats';
+import { WalletCreatorStats } from './types/wallet-creator-my-stats.dto';
 
 @Injectable()
 export class WalletCreatorService {

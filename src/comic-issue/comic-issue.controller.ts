@@ -65,6 +65,10 @@ import {
   CreateComicPageFilesDto,
 } from '../comic-page/dto/create-comic-page.dto';
 import { ComicPageService } from '../comic-page/comic-page.service';
+import {
+  OwnedComicIssueDto,
+  toOwnedComicIssueDtoArray,
+} from './dto/owned-comic-issue.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -106,6 +110,18 @@ export class ComicIssueController {
   ): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
     return toComicIssueDtoArray(comicIssues);
+  }
+
+  @Get('get/by-owner/:address')
+  async findOwnedComicIssues(
+    @Param('address') address: string,
+    @Query() query: ComicIssueFilterParams,
+  ): Promise<OwnedComicIssueDto[]> {
+    const comicIssues = await this.comicIssueService.findAllByOwner(
+      query,
+      address,
+    );
+    return toOwnedComicIssueDtoArray(comicIssues);
   }
 
   /* Get specific comic issue by unique id */

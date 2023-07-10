@@ -398,9 +398,7 @@ export class AuctionHouseService {
             }
           : undefined,
         nft: {
-          collectionNft: {
-            comicIssueId,
-          },
+          collectionNft: { comicIssueId },
         },
       },
       include: { nft: { include: { owner: true } } },

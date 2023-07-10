@@ -80,10 +80,7 @@ export class ComicController {
 
   /* Get all comics */
   @Get('get')
-  async findAll(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: ComicFilterParams,
-  ): Promise<ComicDto[]> {
+  async findAll(@Query() query: ComicFilterParams): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll(query);
     return toComicDtoArray(comics);
   }
@@ -99,11 +96,11 @@ export class ComicController {
   }
 
   @Get('get/by-owner/:address')
-  async ownedComics(
+  async findOwnedComics(
     @Param('address') address: string,
     @Query() query: ComicFilterParams,
   ): Promise<ComicDto[]> {
-    const comics = await this.comicService.getComicsByOwner(query, address);
+    const comics = await this.comicService.findAllByOwner(query, address);
     return toComicDtoArray(comics);
   }
 

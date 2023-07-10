@@ -23,7 +23,6 @@ const config: Config = {
   s3: {
     region: process.env.AWS_BUCKET_REGION,
     bucket: process.env.AWS_BUCKET_NAME,
-    seedBucket: process.env.AWS_SEED_BUCKET_NAME,
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
