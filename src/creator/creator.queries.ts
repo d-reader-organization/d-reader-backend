@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { CreatorFilterParams } from './dto/creator-filter-params.dto';
-import { getSortOrder } from '../utils/query-tags-helpers';
-import { SortTag } from '../types/query-tags';
+import { getSortOrder, sortCreatorBy } from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
   query: CreatorFilterParams,
@@ -9,6 +8,7 @@ const getQueryFilters = (
   genreSlugsCondition: Prisma.Sql;
   nameCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
+  sortColumn: Prisma.Sql;
 } => {
   const nameCondition = !!query.nameSubstring
     ? Prisma.sql`AND creator."name" ILIKE '%' || ${
@@ -20,20 +20,18 @@ const getQueryFilters = (
     : Prisma.empty;
 
   const sortOrder = getSortOrder(query.sortOrder);
+  const sortColumn = sortCreatorBy(query.sortTag);
   return {
     genreSlugsCondition,
     nameCondition,
     sortOrder,
+    sortColumn,
   };
 };
 
 export const getCreatorsQuery = (query: CreatorFilterParams) => {
-  const { genreSlugsCondition, nameCondition, sortOrder } =
+  const { genreSlugsCondition, nameCondition, sortColumn, sortOrder } =
     getQueryFilters(query);
-  const orderByColumn =
-    query.sortTag !== null && query.sortTag === SortTag.Followers
-      ? Prisma.sql`"followersCount"`
-      : Prisma.sql`creator.name`;
   return Prisma.sql`select creator.*, json_agg(distinct genre.*) AS genres,
   SUM(case when walletcreator."isFollowing" = true then 1 else 0 end)  as "followersCount"
   from "Creator" creator
@@ -45,7 +43,7 @@ export const getCreatorsQuery = (query: CreatorFilterParams) => {
   ${nameCondition}
   ${genreSlugsCondition}
   group by creator.id
-  ORDER BY ${orderByColumn} ${sortOrder}
+  ORDER BY ${sortColumn} ${sortOrder}
   OFFSET ${query.skip}
   LIMIT ${query.take};`;
 };

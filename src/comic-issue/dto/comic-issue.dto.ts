@@ -41,7 +41,7 @@ import { findDefaultCover } from 'src/utils/comic-issue';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 
 class PartialComicDto extends PickType(ComicDto, [
-  'name',
+  'title',
   'slug',
   'audienceType',
 ]) {}
@@ -154,7 +154,7 @@ export class ComicIssueDto {
 
   @IsOptional()
   @IsArray()
-  @Type(() => StatefulCoverDto)
+  @Type(() => StatelessCoverDto)
   @ApiProperty({ type: [StatelessCoverDto] })
   statelessCovers?: StatelessCoverDto[];
 }
@@ -205,7 +205,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
       : undefined,
     comic: issue?.comic
       ? {
-          name: issue.comic.name,
+          title: issue.comic.title,
           slug: issue.comic.slug,
           audienceType: issue.comic.audienceType,
         }

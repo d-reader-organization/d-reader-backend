@@ -16,11 +16,11 @@ import { AudienceType } from '@prisma/client';
 export class CreateComicDto {
   @IsNotEmpty()
   @MaxLength(48)
-  name: string;
+  title: string;
 
   @Expose()
   @IsKebabCase()
-  @Transform(({ obj }) => kebabCase(obj.name))
+  @Transform(({ obj }) => kebabCase(obj.title))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 

@@ -8,14 +8,12 @@ import {
   IsUrl,
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { PartialCreatorDto } from '../../creator/dto/creator.dto';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
 import { WalletComicDto } from './wallet-comic.dto';
-import { ApiProperty } from '@nestjs/swagger';
+import { ComicStats } from 'src/comic/types/comic-stats';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { getPublicUrl } from 'src/aws/s3client';
-import { PartialGenreDto } from '../../genre/dto/genre.dto';
-import { ComicStats } from '../types/comic-stats';
 import { round } from 'lodash';
 import {
   Comic,
@@ -24,10 +22,26 @@ import {
   Creator,
   AudienceType,
 } from '@prisma/client';
+import { CreatorDto } from 'src/creator/dto/creator.dto';
+import { GenreDto } from 'src/genre/dto/genre.dto';
+
+export class PartialGenreDto extends PickType(GenreDto, [
+  'name',
+  'slug',
+  'color',
+  'icon',
+]) {}
+
+export class PartialCreatorDto extends PickType(CreatorDto, [
+  'name',
+  'slug',
+  'isVerified',
+  'avatar',
+]) {}
 
 export class ComicDto {
   @IsString()
-  name: string;
+  title: string;
 
   @IsKebabCase()
   slug: string;
@@ -118,7 +132,7 @@ export type ComicInput = Comic & {
 
 export function toComicDto(comic: ComicInput) {
   const plainComicDto: ComicDto = {
-    name: comic.name,
+    title: comic.title,
     slug: comic.slug,
     audienceType: comic.audienceType,
     isCompleted: !!comic.completedAt,

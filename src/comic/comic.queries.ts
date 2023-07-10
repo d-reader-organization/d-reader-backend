@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { ComicFilterParams } from './dto/comic-filter-params.dto';
-import { filterBy, getSortOrder, sortBy } from '../utils/query-tags-helpers';
+import {
+  filterComicBy,
+  getSortOrder,
+  sortComicBy,
+} from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
   query: ComicFilterParams,
@@ -12,9 +16,9 @@ const getQueryFilters = (
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
 } => {
-  const nameCondition = !!query.nameSubstring
-    ? Prisma.sql`AND comic."name" ILIKE '%' || ${
-        query.nameSubstring ?? ''
+  const nameCondition = !!query.titleSubstring
+    ? Prisma.sql`AND comic."title" ILIKE '%' || ${
+        query.titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
   const creatorWhereCondition = !!query.creatorSlug
@@ -24,8 +28,8 @@ const getQueryFilters = (
     ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
-  const sortColumn = sortBy(query.sortTag);
-  const filterCondition = filterBy(query.filterTag);
+  const sortColumn = sortComicBy(query.sortTag);
+  const filterCondition = filterComicBy(query.filterTag);
   return {
     nameCondition,
     creatorWhereCondition,
@@ -45,7 +49,7 @@ export const getComicsQuery = (query: ComicFilterParams) => {
     sortColumn,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`SELECT comic."name", comic.slug, comic."audienceType", comic.cover, comic.banner, comic.pfp, comic.logo, comic.description, comic."flavorText", comic.website, comic.twitter, comic.discord, comic.telegram, comic.instagram, comic."tikTok", comic."youTube", comic."updatedAt", comic."createdAt", comic."deletedAt", comic."featuredAt", comic."verifiedAt", comic."publishedAt", comic."popularizedAt", comic."completedAt",json_agg(distinct genre.*) AS genres, to_jsonb(creator) as creator,
+  return Prisma.sql`SELECT comic."title", comic.slug, comic."audienceType", comic.cover, comic.banner, comic.pfp, comic.logo, comic.description, comic."flavorText", comic.website, comic.twitter, comic.discord, comic.telegram, comic.instagram, comic."tikTok", comic."youTube", comic."updatedAt", comic."createdAt", comic."deletedAt", comic."featuredAt", comic."verifiedAt", comic."publishedAt", comic."popularizedAt", comic."completedAt",json_agg(distinct genre.*) AS genres, to_jsonb(creator) as creator,
 AVG(walletcomic.rating) as "averageRating",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc.rating is not null) wcResult) as "ratersCount",
 (select COUNT(*) from (select * from "WalletComic" wc where wc."comicSlug" = comic.slug and wc."viewedAt" is not null) wcResult) as "viewersCount",
@@ -63,7 +67,7 @@ ${filterCondition}
 ${nameCondition}
 ${creatorWhereCondition}
 ${genreSlugsCondition}
-group by comic."name", comic.slug, creator.*
+group by comic."title", comic.slug, creator.*
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take};`;

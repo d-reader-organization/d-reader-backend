@@ -1,6 +1,8 @@
 import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 
+export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
+
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;

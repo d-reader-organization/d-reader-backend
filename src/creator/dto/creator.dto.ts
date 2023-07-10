@@ -16,10 +16,17 @@ import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator, Genre } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
-import { WalletCreatorStats } from '../types/my-stats';
+import { WalletCreatorStats } from 'src/creator/types/my-stats';
 import { WalletCreatorStatsDto } from './wallet-creator.dto';
+import { GenreDto } from 'src/genre/dto/genre.dto';
 import { PickType } from '@nestjs/swagger';
-import { PartialGenreDto } from '../../genre/dto/genre.dto';
+
+export class PartialGenreDto extends PickType(GenreDto, [
+  'name',
+  'slug',
+  'color',
+  'icon',
+]) {}
 
 export class CreatorDto {
   @IsPositive()
@@ -83,13 +90,6 @@ export class CreatorDto {
   @Type(() => PartialGenreDto)
   genres?: PartialGenreDto[];
 }
-
-export class PartialCreatorDto extends PickType(CreatorDto, [
-  'name',
-  'slug',
-  'isVerified',
-  'avatar',
-]) {}
 
 type CreatorInput = Creator & {
   stats?: CreatorStats;

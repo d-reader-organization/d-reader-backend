@@ -41,6 +41,7 @@ import {
   BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
+  DARKBLOCK_API,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
@@ -143,7 +144,7 @@ export class CandyMachineService {
       });
 
       const response = await axios.post(
-        `${process.env.DARKBLOCK_API}/darkblock/mint?${query}`,
+        `${DARKBLOCK_API}/darkblock/mint?${query}`,
         form,
       );
 

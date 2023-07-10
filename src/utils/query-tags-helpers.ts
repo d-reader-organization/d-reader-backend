@@ -1,34 +1,93 @@
 import { Prisma } from '@prisma/client';
-import { FilterTag, SortTag } from '../types/query-tags';
 import { SortOrder } from '../types/sort-order';
+import {
+  ComicFilterTag,
+  ComicSortTag,
+} from '../comic/dto/comic-filter-params.dto';
+import {
+  ComicIssueFilterTag,
+  ComicIssueSortTag,
+} from '../comic-issue/dto/comic-issue-filter-params.dto';
+import {
+  CreatorFilterTag,
+  CreatorSortTag,
+} from '../creator/dto/creator-filter-params.dto';
 
-export const filterBy = (tag: FilterTag): Prisma.Sql => {
-  if (tag === FilterTag.Free) {
-    return Prisma.sql`AND comicIssue."supply" = 0`;
-  } else if (tag === FilterTag.Popular) {
-    return Prisma.sql`AND "popularizedAt" is not null`;
+export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
+  switch (tag) {
+    case ComicFilterTag.Popular:
+      return Prisma.sql`AND "popularizedAt" is not null`;
+    default:
+      return Prisma.empty;
   }
-  return Prisma.empty;
+};
+
+export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
+  switch (tag) {
+    case ComicIssueFilterTag.Free:
+      return Prisma.sql`AND comicIssue."supply" = 0`;
+    case ComicIssueFilterTag.Popular:
+      return Prisma.sql`AND "popularizedAt" is not null`;
+    default:
+      return Prisma.empty;
+  }
+};
+
+export const filterCreatorBy = (tag: CreatorFilterTag): Prisma.Sql => {
+  switch (tag) {
+    default:
+      return Prisma.empty;
+  }
 };
 
 export const getSortOrder = (sortOrder?: SortOrder): Prisma.Sql =>
   sortOrder === SortOrder.ASC ? Prisma.sql`asc` : Prisma.sql`desc`;
 
-export const sortBy = (tag: SortTag): Prisma.Sql => {
-  if (tag === SortTag.Latest) {
-    return Prisma.sql`comicIssue."releaseDate"`;
-  } else if (tag === SortTag.Likes) {
-    return Prisma.sql`"favouritesCount"`;
-  } else if (tag === SortTag.Rating) {
-    return Prisma.sql`"averageRating"`;
-  } else if (tag === SortTag.Readers) {
-    return Prisma.sql`"readersCount"`;
-  } else if (tag === SortTag.Viewers) {
-    return Prisma.sql`"viewersCount"`;
-  } else if (tag === SortTag.Published) {
-    return Prisma.sql`comic."publishedAt"`;
-  } else if (tag === SortTag.Followers) {
-    return Prisma.sql`"followersCount"`;
+export const sortComicBy = (tag: ComicSortTag): Prisma.Sql => {
+  switch (tag) {
+    case ComicSortTag.Title:
+      return Prisma.sql`comic."title"`;
+    case ComicSortTag.Likes:
+      return Prisma.sql`"favouritesCount"`;
+    case ComicSortTag.Rating:
+      return Prisma.sql`"averageRating"`;
+    case ComicSortTag.Readers:
+      return Prisma.sql`"readersCount"`;
+    case ComicSortTag.Viewers:
+      return Prisma.sql`"viewersCount"`;
+    case ComicSortTag.Published:
+      return Prisma.sql`comic."publishedAt"`;
+    default:
+      return Prisma.sql`comic."title"`;
   }
-  return Prisma.sql`"publishedAt"`;
+};
+
+export const sortComicIssueBy = (tag: ComicIssueSortTag): Prisma.Sql => {
+  switch (tag) {
+    case ComicIssueSortTag.Title:
+      return Prisma.sql`comicIssue."title"`;
+    case ComicIssueSortTag.Latest:
+      return Prisma.sql`comicIssue."releaseDate"`;
+    case ComicIssueSortTag.Likes:
+      return Prisma.sql`"favouritesCount"`;
+    case ComicIssueSortTag.Rating:
+      return Prisma.sql`"averageRating"`;
+    case ComicIssueSortTag.Readers:
+      return Prisma.sql`"readersCount"`;
+    case ComicIssueSortTag.Viewers:
+      return Prisma.sql`"viewersCount"`;
+    default:
+      return Prisma.sql`comicIssue."title"`;
+  }
+};
+
+export const sortCreatorBy = (tag: CreatorSortTag): Prisma.Sql => {
+  switch (tag) {
+    case CreatorSortTag.Followers:
+      return Prisma.sql`"followersCount"`;
+    case CreatorSortTag.Name:
+      return Prisma.sql`creator."name"`;
+    default:
+      return Prisma.sql`creator."name"`;
+  }
 };

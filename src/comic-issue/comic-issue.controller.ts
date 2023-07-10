@@ -77,16 +77,10 @@ export class ComicIssueController {
     private readonly walletComicIssueService: WalletComicIssueService,
   ) {}
 
-  // https://github.com/swagger-api/swagger-ui/issues/7625
   /* Create a new comic issue */
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicIssueSwaggerDto })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'cover', maxCount: 1 },
-      // { name: 'pages', maxCount: 1 },
-    ]),
-  )
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
   @Post('create')
   async create(
     @CreatorEntity() creator: Creator,

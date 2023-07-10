@@ -130,19 +130,13 @@ export class ComicService {
     ownerAddress: string,
   ): Promise<ComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({
-      distinct: 'name',
-      orderBy: {
-        name: 'asc',
-      },
+      distinct: 'title',
+      orderBy: { title: 'asc' },
       where: {
         issues: {
           every: {
             collectionNft: {
-              collectionItems: {
-                some: {
-                  ownerAddress,
-                },
-              },
+              collectionItems: { some: { ownerAddress } },
             },
           },
         },
@@ -154,16 +148,9 @@ export class ComicService {
     return await Promise.all(
       ownedComics.map(async (ownedComic) => {
         const issuesCount = await this.prisma.comicIssue.count({
-          where: {
-            comicSlug: ownedComic.slug,
-          },
+          where: { comicSlug: ownedComic.slug },
         });
-        return {
-          ...ownedComic,
-          stats: {
-            issuesCount,
-          },
-        };
+        return { ...ownedComic, stats: { issuesCount } };
       }),
     );
   }
