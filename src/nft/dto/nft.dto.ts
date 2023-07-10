@@ -1,13 +1,21 @@
-import { IsArray, IsBoolean, IsNumber, IsString, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance, Type } from 'class-transformer';
 import {
   fetchOffChainMetadata,
+  findRarityTrait,
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
-import { Nft, Listing } from '@prisma/client';
+import { Nft, Listing, ComicRarity, CollectionNft } from '@prisma/client';
 import { isNil } from 'lodash';
 
 export class NftAttributeDto {
@@ -43,6 +51,10 @@ export class NftDto {
   @IsBoolean()
   isSigned: boolean;
 
+  @IsEnum(ComicRarity)
+  @ApiProperty({ enum: ComicRarity })
+  rarity: ComicRarity;
+
   @IsString()
   comicName: string;
 
@@ -62,9 +74,7 @@ export class NftDto {
 }
 
 type NftInput = Nft & {
-  collectionNft?: {
-    comicIssueId?: number;
-  };
+  collectionNft?: CollectionNft;
   listing?: Listing[];
 };
 
@@ -83,9 +93,10 @@ export async function toNftDto(nft: NftInput) {
     // collectionNftAddress: nft.collectionNftAddress,
     isUsed: findUsedTrait(offChainMetadata),
     isSigned: findSignedTrait(offChainMetadata),
+    rarity: findRarityTrait(offChainMetadata),
     comicName: offChainMetadata.collection.family,
     comicIssueName: offChainMetadata.collection.name,
-    comicIssueId: nft.collectionNft.comicIssueId,
+    comicIssueId: nft.collectionNft?.comicIssueId,
     attributes: offChainMetadata.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,

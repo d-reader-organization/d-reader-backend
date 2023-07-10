@@ -36,6 +36,7 @@ import { getComicIssuesQuery } from './comic-issue.queries';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssueInput } from './dto/comic-issue.dto';
 import { validatePrice, validateWeb3PublishInfo } from '../utils/comic-issue';
+import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -238,6 +239,39 @@ export class ComicIssueService {
       },
       candyMachineAddress,
     };
+  }
+
+  async findAllByOwner(
+    query: ComicIssueFilterParams,
+    ownerAddress: string,
+  ): Promise<OwnedComicIssueInput[]> {
+    const ownedComicIssues = await this.prisma.comicIssue.findMany({
+      distinct: 'title',
+      orderBy: { title: 'asc' },
+      include: { collectionNft: true, statelessCovers: true },
+      where: {
+        collectionNft: {
+          collectionItems: { some: { ownerAddress } },
+        },
+      },
+      skip: query.skip,
+      take: query.take,
+    });
+
+    return await Promise.all(
+      ownedComicIssues.map(async (comicIssue) => {
+        const collectionNftAddress = comicIssue.collectionNft.address;
+        const ownedCopiesCount = await this.prisma.nft.count({
+          where: { collectionNftAddress },
+        });
+
+        const ownedNft = await this.prisma.nft.findFirst({
+          where: { ownerAddress, collectionNftAddress },
+        });
+
+        return { ...comicIssue, ownedCopiesCount, ownedNft };
+      }),
+    );
   }
 
   async getPages(comicIssueId: number, walletAddress: string) {

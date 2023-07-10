@@ -125,7 +125,7 @@ export class ComicService {
     return { ...comic, stats, myStats };
   }
 
-  async getComicsByOwner(
+  async findAllByOwner(
     query: ComicFilterParams,
     ownerAddress: string,
   ): Promise<ComicInput[]> {
@@ -134,7 +134,7 @@ export class ComicService {
       orderBy: { title: 'asc' },
       where: {
         issues: {
-          every: {
+          some: {
             collectionNft: {
               collectionItems: { some: { ownerAddress } },
             },

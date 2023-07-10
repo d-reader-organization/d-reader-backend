@@ -12,25 +12,13 @@ export class NftService {
         ownerAddress: query?.owner,
         collectionNft: {
           comicIssue: query.comicIssueId
-            ? {
-                id: query.comicIssueId,
-              }
-            : {
-                comic: {
-                  slug: query.comicSlug,
-                },
-              },
+            ? { id: query.comicIssueId }
+            : { comic: { slug: query.comicSlug } },
         },
       },
       skip: query?.skip,
       take: query?.take,
-      include: {
-        collectionNft: {
-          include: {
-            comicIssue: true,
-          },
-        },
-      },
+      include: { collectionNft: true },
       orderBy: { name: 'asc' },
     });
     return nfts;
@@ -40,16 +28,8 @@ export class NftService {
     const nft = await this.prisma.nft.findUnique({
       where: { address },
       include: {
-        collectionNft: {
-          include: {
-            comicIssue: true,
-          },
-        },
-        listing: {
-          where: {
-            canceledAt: new Date(0),
-          },
-        },
+        collectionNft: true,
+        listing: { where: { canceledAt: new Date(0) } },
       },
     });
 

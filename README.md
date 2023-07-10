@@ -50,7 +50,7 @@ yarn start:dev
 
 Open [http://localhost:3005](http://localhost:3005) with your browser to see the result. API documentation is available on the [/api](http://localhost:3005/api) route
 
-## ⚙️ Setup
+## 🫡 Commands
 For airdropping Sol to a specified wallet use the following command
 ```bash
 yarn airdrop-sol
@@ -68,9 +68,10 @@ yarn authorize-wallet
 - **`AWS_BUCKET_NAME`** should be delivered by sysadmin alongside AWS credentials
 - **`TREASURY_PRIVATE_KEY`** is the AES encrypted private key of a wallet used as a Treasury. All royalties will be collected there and all our payments will be done with it.
 - **`TREASURY_SECRET`** is the secret key used for AES encription/decription of the Treasury wallet's private key, preferably 64 byte long
-- **`MAIL_SERVICE`** and other mail related variables are unnecessary unless working on features which rely on email sending. Make sure to [download NodemailerApp](https://nodemailer.com/app) in that case
+- **`MAIL_SERVICE`** and other mail related variables are unnecessary unless working on features which rely on email sending. Make sure to [download NodemailerApp](https://nodemailer.com/app) for local development
 - **`HELIUS_API_KEY`** can be obtained via [Helius Dashboard](https://dev.helius.xyz/dashboard/app)
 - **`AUCTION_HOUSE_ADDRESS`** address of the auction house program over which our treasury wallet has the update authority
+- **`DARKBLOCK_API_KEY`** can be obtained via [Darkblock Docs](https://darkblock.redoc.ly/apikey)
 
 ## 🤝 Contributing
 
