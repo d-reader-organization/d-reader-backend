@@ -11,12 +11,15 @@ export class NftService {
       where: {
         ownerAddress: query?.owner,
         collectionNft: {
-          comicIssue: {
-            id: query.comicIssueId,
-            comic: {
-              slug: query.comicSlug,
-            },
-          },
+          comicIssue: query.comicIssueId
+            ? {
+                id: query.comicIssueId,
+              }
+            : {
+                comic: {
+                  slug: query.comicSlug,
+                },
+              },
         },
       },
       skip: query?.skip,
