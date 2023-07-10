@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { Pagination } from '../../types/pagination.dto';
 
@@ -11,4 +11,8 @@ export class NftFilterParams extends PartialType(Pagination) {
   @IsOptional()
   @IsString()
   comicSlug?: string;
+
+  @IsOptional()
+  @IsInt()
+  comicIssueId?: number;
 }
