@@ -2,9 +2,9 @@ import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
 import { getPublicUrl } from '../../aws/s3client';
-import { WalletDto } from 'src/wallet/dto/wallet.dto';
+import { WalletDto } from '../../wallet/dto/wallet.dto';
 import { PickType } from '@nestjs/swagger';
-import { NftDto } from 'src/nft/dto/nft.dto';
+import { NftDto } from '../../nft/dto/nft.dto';
 
 export class PartialWalletDto extends PickType(WalletDto, [
   'address',
