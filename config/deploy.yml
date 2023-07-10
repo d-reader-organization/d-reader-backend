@@ -38,8 +38,6 @@ env:
     # Helius
     - HELIUS_API_KEY
     - WEBHOOK_ID
-    # Darkblock
-    - DARKBLOCK_API_KEY
 
 accessories:
   node-exporter:
