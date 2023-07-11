@@ -25,7 +25,7 @@ import {
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft, ComicRarity } from '@prisma/client';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { WalletDto } from 'src/wallet/dto/wallet.dto';
+import { WalletDto } from '../../wallet/dto/wallet.dto';
 
 export class PartialWalletDto extends PickType(WalletDto, [
   'address',

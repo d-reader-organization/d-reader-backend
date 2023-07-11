@@ -52,12 +52,15 @@ export class WalletService {
       select: { address: true },
     });
 
-    function usesOurCandyMachine(metadata: Metadata) {
-      return candyMachines.find(
-        (cm) => cm.address === metadata.creators[1].address.toString(),
-        // && nft.creators[1].verified, TODO v1: verify our Candy Machines as creators
-      );
-    }
+    const findOurCandyMachine = (metadata: Metadata) => {
+      return candyMachines.find((cm) => {
+        this.metaplex
+          .candyMachines()
+          .pdas()
+          .authority({ candyMachine: new PublicKey(cm.address) })
+          .equals(metadata.creators[0].address);
+      });
+    };
 
     function doesWalletIndexCorrectly(metadata: Metadata) {
       return wallet.nfts.find(
@@ -68,9 +71,7 @@ export class WalletService {
     const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
     const unsyncedMetadatas = onChainMetadatas.filter(
       (metadata) =>
-        metadata.creators.length > 1 &&
-        usesOurCandyMachine(metadata) &&
-        !doesWalletIndexCorrectly(metadata),
+        findOurCandyMachine(metadata) && !doesWalletIndexCorrectly(metadata),
     );
 
     for (const metadata of unsyncedMetadatas) {
@@ -99,7 +100,7 @@ export class WalletService {
             },
           },
           candyMachine: {
-            connect: { address: metadata.creators[1].address.toString() },
+            connect: { address: findOurCandyMachine(metadata).address },
           },
           collectionNft: {
             connect: { address: metadata.collection.address.toString() },
