@@ -368,11 +368,14 @@ export class HeliusService {
     const collectionMint = new PublicKey(
       enrichedTransaction.instructions[4].accounts[10],
     );
-    await this.delegateAuthority(
-      collectionMint,
-      findRarityTrait(offChainMetadata).toString(),
-      mint,
-    );
+    await Promise.all([
+      this.delegateAuthority(
+        collectionMint,
+        findRarityTrait(offChainMetadata).toString(),
+        mint,
+      ),
+      this.verifyMintCreator(mint),
+    ]);
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
@@ -478,6 +481,13 @@ export class HeliusService {
         where: { address: collection.address.toString() },
       }))
     );
+  }
+
+  async verifyMintCreator(mint: PublicKey) {
+    await this.metaplex.nfts().verifyCreator({
+      mintAddress: mint,
+      creator: this.metaplex.identity(),
+    });
   }
 
   async delegateAuthority(

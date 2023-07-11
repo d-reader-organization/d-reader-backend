@@ -454,7 +454,8 @@ export class CandyMachineService {
         groups,
         creators: [
           {
-            address: candyMachineKey.publicKey,
+            /// treasury as a verified creator
+            address: this.metaplex.identity().publicKey,
             share: 0,
           },
           {
@@ -465,7 +466,6 @@ export class CandyMachineService {
       },
       { payer: this.metaplex.identity() },
     );
-
     await this.initializeGuardAccounts(candyMachine);
     await this.prisma.candyMachine.create({
       data: {
