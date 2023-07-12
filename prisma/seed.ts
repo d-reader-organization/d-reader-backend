@@ -144,8 +144,7 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  const skipS3Seed = false;
-  if (!skipS3Seed) {
+  if (Boolean(process.env.SEED_S3)) { 
     console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
     const keysToDelete = await s3.listFolderKeys({ Prefix: '' });
     await s3.deleteObjects(keysToDelete);
