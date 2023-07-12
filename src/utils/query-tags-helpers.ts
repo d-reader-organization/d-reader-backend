@@ -16,7 +16,7 @@ import {
 export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
   switch (tag) {
     case ComicFilterTag.Popular:
-      return Prisma.sql`AND "popularizedAt" is not null`;
+      return Prisma.sql`AND comic."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }
@@ -27,7 +27,7 @@ export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
     case ComicIssueFilterTag.Free:
       return Prisma.sql`AND comicIssue."supply" = 0`;
     case ComicIssueFilterTag.Popular:
-      return Prisma.sql`AND "popularizedAt" is not null`;
+      return Prisma.sql`AND comicIssue."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }
@@ -35,6 +35,8 @@ export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
 
 export const filterCreatorBy = (tag: CreatorFilterTag): Prisma.Sql => {
   switch (tag) {
+    case CreatorFilterTag.Popular:
+      return Prisma.sql`AND creator."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }

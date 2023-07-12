@@ -322,7 +322,7 @@ async function main() {
           deletedAt: null,
           priority: 10,
           icon: 'genres/drama.svg',
-          color: '#3d3e60',
+          color: '#c5186b',
         },
         {
           name: 'History',
@@ -1664,7 +1664,7 @@ async function main() {
                             'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
                           flavorText:
                             'This is a story about family. About loss.',
-                          ...generateCoversAndSignature('wretches', 'issue-1'),
+                          ...generateCoversAndSignature('wretches', 'issue-2'),
                           releaseDate: subDays(new Date(), 19),
                           deletedAt: null,
                           featuredAt: null,
