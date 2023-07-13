@@ -3,6 +3,7 @@ import { ComicFilterParams } from './dto/comic-filter-params.dto';
 import {
   filterComicBy,
   getSortOrder,
+  havingGenreSlugsCondition,
   sortComicBy,
 } from '../utils/query-tags-helpers';
 
@@ -11,7 +12,6 @@ const getQueryFilters = (
 ): {
   nameCondition: Prisma.Sql;
   creatorWhereCondition: Prisma.Sql;
-  genreSlugsCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
@@ -24,16 +24,12 @@ const getQueryFilters = (
   const creatorWhereCondition = !!query.creatorSlug
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
-  const genreSlugsCondition = !!query.genreSlugs
-    ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
-    : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortComicBy(query.sortTag);
   const filterCondition = filterComicBy(query.filterTag);
   return {
     nameCondition,
     creatorWhereCondition,
-    genreSlugsCondition,
     sortOrder,
     sortColumn,
     filterCondition,
@@ -44,7 +40,6 @@ export const getComicsQuery = (query: ComicFilterParams) => {
   const {
     nameCondition,
     creatorWhereCondition,
-    genreSlugsCondition,
     sortOrder,
     sortColumn,
     filterCondition,
@@ -66,8 +61,8 @@ where comic."deletedAt" is null and comic."verifiedAt" is not null and comic."pu
 ${filterCondition}
 ${nameCondition}
 ${creatorWhereCondition}
-${genreSlugsCondition}
 group by comic."title", comic.slug, creator.*
+${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take};`;

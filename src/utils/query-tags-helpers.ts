@@ -93,3 +93,10 @@ export const sortCreatorBy = (tag: CreatorSortTag): Prisma.Sql => {
       return Prisma.sql`creator."name"`;
   }
 };
+
+export const havingGenreSlugsCondition = (genreSlugs?: string[]) =>
+  !!genreSlugs
+    ? Prisma.sql`HAVING array_agg("genre".slug) @> array[${Prisma.join(
+        genreSlugs,
+      )}]`
+    : Prisma.empty;
