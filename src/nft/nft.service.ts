@@ -12,7 +12,7 @@ export class NftService {
         ownerAddress: query?.owner,
         collectionNft: {
           comicIssue: query.comicIssueId
-            ? { id: query.comicIssueId }
+            ? { id: +query.comicIssueId }
             : { comic: { slug: query.comicSlug } },
         },
       },
