@@ -13,6 +13,6 @@ export class NftFilterParams extends PartialType(Pagination) {
   comicSlug?: string;
 
   @IsOptional()
-  @IsInt()
-  comicIssueId?: number;
+  @IsString()
+  comicIssueId?: string;
 }
