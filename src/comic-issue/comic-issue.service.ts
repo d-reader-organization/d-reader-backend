@@ -250,6 +250,7 @@ export class ComicIssueService {
       orderBy: { title: 'asc' },
       include: { collectionNft: true, statelessCovers: true },
       where: {
+        comicSlug: query.comicSlug,
         collectionNft: {
           collectionItems: { some: { ownerAddress } },
         },
