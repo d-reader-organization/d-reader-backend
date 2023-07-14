@@ -5,28 +5,23 @@ import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
 
-export enum ComicIssueFilterTag {
-  Free = 'free',
+export enum ComicFilterTag {
   Popular = 'popular',
 }
 
-export enum ComicIssueSortTag {
+export enum ComicSortTag {
   Title = 'title',
-  Latest = 'latest',
   Rating = 'rating',
   Likes = 'likes',
   Readers = 'readers',
   Viewers = 'viewers',
+  Published = 'published',
 }
 
-export class ComicIssueFilterParams extends Pagination {
+export class ComicParams extends Pagination {
   @IsOptional()
   @IsKebabCase()
   creatorSlug?: string;
-
-  @IsOptional()
-  @IsString()
-  comicSlug?: string;
 
   @IsOptional()
   @IsString()
@@ -47,11 +42,11 @@ export class ComicIssueFilterParams extends Pagination {
   @IsOptional()
   sortOrder?: SortOrder;
 
-  @IsEnum(ComicIssueFilterTag)
+  @IsEnum(ComicFilterTag)
   @IsOptional()
-  filterTag?: ComicIssueFilterTag;
+  filterTag?: ComicFilterTag;
 
-  @IsEnum(ComicIssueSortTag)
+  @IsEnum(ComicSortTag)
   @IsOptional()
-  sortTag?: ComicIssueSortTag;
+  sortTag?: ComicSortTag;
 }

@@ -1,17 +1,14 @@
 import { Prisma } from '@prisma/client';
 import { SortOrder } from '../types/sort-order';
-import {
-  ComicFilterTag,
-  ComicSortTag,
-} from '../comic/dto/comic-filter-params.dto';
+import { ComicFilterTag, ComicSortTag } from '../comic/dto/comic-params.dto';
 import {
   ComicIssueFilterTag,
   ComicIssueSortTag,
-} from '../comic-issue/dto/comic-issue-filter-params.dto';
+} from '../comic-issue/dto/comic-issue-params.dto';
 import {
   CreatorFilterTag,
   CreatorSortTag,
-} from '../creator/dto/creator-filter-params.dto';
+} from '../creator/dto/creator-params.dto';
 
 export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
   switch (tag) {

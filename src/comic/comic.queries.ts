@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { ComicParams } from './dto/comic-params.dto';
 import {
   filterComicBy,
   getSortOrder,
@@ -8,7 +8,7 @@ import {
 } from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
-  query: ComicFilterParams,
+  query: ComicParams,
 ): {
   nameCondition: Prisma.Sql;
   creatorWhereCondition: Prisma.Sql;
@@ -36,7 +36,7 @@ const getQueryFilters = (
   };
 };
 
-export const getComicsQuery = (query: ComicFilterParams) => {
+export const getComicsQuery = (query: ComicParams) => {
   const {
     nameCondition,
     creatorWhereCondition,

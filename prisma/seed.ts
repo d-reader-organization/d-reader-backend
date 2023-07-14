@@ -144,7 +144,7 @@ async function main() {
 
   console.log('✅ Emptied database!');
 
-  if (Boolean(process.env.SEED_S3)) { 
+  if (Boolean(process.env.SEED_S3)) {
     console.log(`⛏️ Emptying '${s3.bucket}' s3 bucket...`);
     const keysToDelete = await s3.listFolderKeys({ Prefix: '' });
     await s3.deleteObjects(keysToDelete);
@@ -514,7 +514,7 @@ async function main() {
                 featuredAt: null,
                 verifiedAt: new Date(),
                 publishedAt: subDays(new Date(), 9),
-                popularizedAt: null,
+                popularizedAt: new Date(),
                 completedAt: null,
                 cover: 'comics/gorecats/cover.jpg',
                 pfp: 'comics/gorecats/pfp.jpg',
@@ -591,7 +591,7 @@ async function main() {
         featuredAt: null,
         verifiedAt: new Date(),
         publishedAt: subDays(new Date(), 12),
-        popularizedAt: null,
+        popularizedAt: new Date(),
         completedAt: new Date(),
         cover: 'comics/barbabyans/cover.jpg',
         pfp: 'comics/barbabyans/pfp.jpg',
@@ -915,7 +915,7 @@ async function main() {
         featuredAt: null,
         verifiedAt: new Date(),
         publishedAt: subDays(new Date(), 17),
-        popularizedAt: null,
+        popularizedAt: new Date(),
         completedAt: null,
         cover: 'comics/lupers/cover.jpg',
         pfp: 'comics/lupers/pfp.jpg',
@@ -997,7 +997,7 @@ async function main() {
               deletedAt: null,
               featuredAt: null,
               verifiedAt: new Date(),
-              popularizedAt: null,
+              popularizedAt: new Date(),
               emailConfirmedAt: new Date(),
               comics: {
                 create: {
@@ -1606,7 +1606,7 @@ async function main() {
                 featuredAt: null,
                 verifiedAt: new Date(),
                 publishedAt: subDays(new Date(), 11),
-                popularizedAt: null,
+                popularizedAt: new Date(),
                 completedAt: null,
                 cover: 'comics/wretches/cover.jpg',
                 pfp: 'comics/wretches/pfp.jpg',
@@ -1638,7 +1638,7 @@ async function main() {
                       featuredAt: null,
                       verifiedAt: new Date(),
                       publishedAt: new Date(),
-                      popularizedAt: null,
+                      popularizedAt: new Date(),
                       pages: {
                         createMany: {
                           data: generatePages(
@@ -1836,7 +1836,7 @@ async function main() {
         featuredAt: null,
         verifiedAt: new Date(),
         publishedAt: subDays(new Date(), 16),
-        popularizedAt: null,
+        popularizedAt: new Date(),
         completedAt: null,
         cover: 'comics/jana/cover.jpg',
         pfp: 'comics/jana/pfp.jpg',
@@ -2112,7 +2112,7 @@ async function main() {
         featuredAt: null,
         verifiedAt: new Date(),
         publishedAt: subDays(new Date(), 10),
-        popularizedAt: null,
+        popularizedAt: new Date(),
         completedAt: new Date(),
         cover: 'comics/multi-versus/cover.jpg',
         pfp: '',
@@ -2194,7 +2194,7 @@ async function main() {
             deletedAt: null,
             featuredAt: null,
             verifiedAt: new Date(),
-            popularizedAt: null,
+            popularizedAt: new Date(),
             emailConfirmedAt: new Date(),
             comics: {
               create: {
