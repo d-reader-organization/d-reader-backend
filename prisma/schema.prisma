@@ -288,30 +288,53 @@ model CollectionNft {
 }
 
 model ComicPage {
-  id            Int        @id @default(autoincrement())
-  pageNumber    Int        @default(autoincrement())
-  isPreviewable Boolean    @default(false)
-  image         String
-  comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  id            Int                    @id @default(autoincrement())
+  pageNumber    Int                    @default(autoincrement())
+  isPreviewable Boolean                @default(false)
+  translations  ComicPageTranslation[]
+  comicIssue    ComicIssue             @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId  Int
 
   @@unique([pageNumber, comicIssueId])
 }
 
+enum Language {
+  En
+  Fr
+}
+
+model ComicPageTranslation {
+  image    String
+  language Language
+  pageId   Int
+  page     ComicPage @relation(fields: [pageId], references: [id])
+
+  @@unique([pageId, language])
+}
+
+model CarouselSlideTranslation {
+  title    String
+  subtitle String
+  image    String
+  language Language
+  slideId  Int
+  slide    CarouselSlide @relation(fields: [slideId], references: [id])
+
+  @@unique([slideId, language])
+}
+
 model CarouselSlide {
-  id           Int              @id @default(autoincrement())
-  image        String
+  id           Int                        @id @default(autoincrement())
   // secondaryImage String           @default("")
-  title        String           @default("")
-  subtitle     String           @default("")
+  translations CarouselSlideTranslation[]
   priority     Int
   comicIssueId Int?
   comicSlug    String?
   creatorSlug  String?
   externalLink String?
-  publishedAt  DateTime         @default(now())
+  publishedAt  DateTime                   @default(now())
   expiredAt    DateTime
-  location     CarouselLocation @default(Home)
+  location     CarouselLocation           @default(Home)
 }
 
 enum CarouselLocation {

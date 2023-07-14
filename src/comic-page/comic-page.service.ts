@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
-import { Prisma } from '@prisma/client';
-import { ComicPage } from '@prisma/client';
+import { Language, Prisma } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
+import { TranslatedComicPage } from './entities/comic-page.dto';
 
 export type ComicPageWhereInput = {
   comicIssueId?: Prisma.ComicPageWhereInput['comicIssueId'];
@@ -28,7 +28,32 @@ export class ComicPageService {
   ) {
     const comicPagesData = await Promise.all(
       createComicPagesDto.map(async (createComicPageDto) => {
-        const { image, pageNumber, ...rest } = createComicPageDto;
+        const { pageNumber, isPreviewable } = createComicPageDto;
+        const comicPageData: Prisma.ComicPageCreateManyInput = {
+          isPreviewable,
+          comicIssueId,
+          pageNumber,
+        };
+        return comicPageData;
+      }),
+    );
+    await this.prisma.comicPage.createMany({
+      data: comicPagesData,
+    });
+  }
+
+  async createManyTranslations(
+    createComicPagesDto: CreateComicPageDto[],
+    comicIssueId: number,
+    language: Language,
+  ) {
+    const comicPages = await this.prisma.comicPage.findMany({
+      where: { comicIssueId },
+    });
+    const comicPageTranslationsData = await Promise.all(
+      comicPages.map(async (comicPage, index) => {
+        const { id, pageNumber } = comicPage;
+        const { image } = createComicPagesDto[index];
 
         let imageKey: string;
         try {
@@ -37,61 +62,92 @@ export class ComicPageService {
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
+        const comicPageTranslationData: Prisma.ComicPageTranslationCreateManyInput =
+          {
+            pageId: id,
+            language,
+            image: imageKey,
+          };
 
-        const comicPageData: Prisma.ComicPageCreateManyInput = {
-          ...rest,
-          comicIssueId,
-          pageNumber,
-          image: imageKey,
-        };
-
-        return comicPageData;
+        return comicPageTranslationData;
       }),
     );
 
-    return comicPagesData;
+    return comicPageTranslationsData;
   }
 
   async findAll(
     comicIssueId: number,
+    language: Language,
     isPreviewable?: boolean,
-  ): Promise<ComicPage[]> {
+  ): Promise<TranslatedComicPage[]> {
     return await this.prisma.comicPage.findMany({
       where: { comicIssueId, isPreviewable },
+      include: {
+        translations: {
+          where: {
+            OR: [
+              {
+                language: Language.En,
+              },
+              {
+                language,
+              },
+            ],
+          },
+        },
+      },
     });
   }
 
-  async updateMany(pagesDto: CreateComicPageDto[], comicIssueId: number) {
+  async updateMany(
+    pagesDto: CreateComicPageDto[],
+    comicIssueId: number,
+    language: Language,
+  ) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
-      include: { pages: true },
+      include: {
+        pages: { include: { translations: { where: { language } } } },
+      },
     });
-    const oldComicPages = comicIssue.pages;
+    const oldComicTranslationPages = comicIssue.pages;
+    await this.createMany(pagesDto, comicIssueId);
 
     // upload comic pages to S3 and format data for INSERT
-    const newComicPages = await this.createMany(pagesDto, comicIssueId);
-
+    const newComicPageTranslations = await this.createManyTranslations(
+      pagesDto,
+      comicIssueId,
+      language,
+    );
     try {
-      await this.prisma.comicPage.createMany({
-        data: newComicPages,
+      await this.prisma.comicPageTranslation.createMany({
+        data: newComicPageTranslations,
       });
     } catch (e) {
-      const keys = newComicPages.map((page) => page.image);
+      const keys = newComicPageTranslations.map((page) => page.image);
       await this.s3.deleteObjects(keys);
       throw e;
     }
 
-    if (!!oldComicPages.length) {
-      const keys = oldComicPages.map((page) => page.image);
+    if (!!oldComicTranslationPages.length) {
+      const keys = oldComicTranslationPages.map(
+        (page) => page.translations[0]?.image,
+      );
       await this.s3.deleteObjects(keys);
     }
   }
 
   async deleteComicPages(where: ComicPageWhereInput) {
-    const pagesToDelete = await this.prisma.comicPage.findMany({ where });
+    const pagesToDelete = await this.prisma.comicPage.findMany({
+      where,
+      include: { translations: true },
+    });
 
     // Remove s3 assets
-    const keys = pagesToDelete.map((page) => page.image);
+    const keys = pagesToDelete.flatMap((page) =>
+      page.translations.map((translation) => translation.image),
+    );
     await this.s3.deleteObjects(keys);
 
     try {

@@ -20,6 +20,7 @@ import {
   AudienceType,
   StatelessCover,
   Genre,
+  Language,
 } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
@@ -274,14 +275,18 @@ export class ComicIssueService {
     );
   }
 
-  async getPages(comicIssueId: number, walletAddress: string) {
+  async getPages(
+    comicIssueId: number,
+    walletAddress: string,
+    language: Language,
+  ) {
     const showPreviews = await this.walletComicIssueService.shouldShowPreviews(
       comicIssueId,
       walletAddress,
     );
 
     await this.read(comicIssueId, walletAddress);
-    return this.comicPageService.findAll(comicIssueId, showPreviews);
+    return this.comicPageService.findAll(comicIssueId, language, showPreviews);
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
