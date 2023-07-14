@@ -30,7 +30,7 @@ import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Wallet } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
-import { CreatorFilterParams } from './dto/creator-filter-params.dto';
+import { FilterParams } from './dto/creator-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
@@ -74,7 +74,7 @@ export class CreatorController {
 
   /* Get all creators */
   @Get('get')
-  async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
+  async findAll(@Query() query: FilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
     return toCreatorDtoArray(creators);
   }

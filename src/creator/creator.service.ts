@@ -12,7 +12,7 @@ import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
 import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
-import { CreatorFilterParams } from './dto/creator-filter-params.dto';
+import { FilterParams } from './dto/creator-params.dto';
 import { WalletCreatorService } from './wallet-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
@@ -74,7 +74,7 @@ export class CreatorService {
     return creator;
   }
 
-  async findAll(query: CreatorFilterParams) {
+  async findAll(query: FilterParams) {
     const creators = await this.prisma.$queryRaw<
       Array<Creator & { genres: Genre[] } & CreatorStats>
     >(getCreatorsQuery(query));

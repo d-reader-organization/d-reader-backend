@@ -13,7 +13,7 @@ import { WalletComicService } from './wallet-comic.service';
 import { Comic, Genre, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
-import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { ComicStats } from './types/comic-stats';
@@ -82,7 +82,7 @@ export class ComicService {
     return comic;
   }
 
-  async findAll(query: ComicFilterParams) {
+  async findAll(query: ComicParams) {
     const comics = await this.prisma.$queryRaw<
       Array<
         Comic & {
@@ -126,7 +126,7 @@ export class ComicService {
   }
 
   async findAllByOwner(
-    query: ComicFilterParams,
+    query: ComicParams,
     ownerAddress: string,
   ): Promise<ComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({

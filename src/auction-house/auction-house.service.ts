@@ -19,7 +19,7 @@ import {
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
-import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { FilterParams } from './dto/listing-fliter-params.dto';
 import { constructExecuteSaleInstruction } from './instructions/executeSale';
 import { Listing, Nft } from '@prisma/client';
 import { isBoolean } from 'lodash';
@@ -388,7 +388,7 @@ export class AuctionHouseService {
     }
   }
 
-  async findAllListings(query: ListingFilterParams, comicIssueId: number) {
+  async findAllListings(query: FilterParams, comicIssueId: number) {
     return await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
