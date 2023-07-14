@@ -8,8 +8,9 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
+import { LanguageDto } from 'src/types/language.dto';
 
-export class CreateCarouselSlideDto {
+export class CreateCarouselSlideDto extends LanguageDto {
   @IsNumber()
   priority: number;
 
