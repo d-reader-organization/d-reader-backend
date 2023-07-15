@@ -99,7 +99,7 @@ export class CarouselController {
   /* Get all carousel slides */
   @Get('slides/get')
   async findAll(@Query() query: LanguageDto) {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     return this.throttledFindAll(language);
   }
 
@@ -109,7 +109,7 @@ export class CarouselController {
     @Param('id') id: string,
     @Query() query: LanguageDto,
   ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     const carouselSlide = await this.carouselService.findOne(+id, language);
     return toCarouselSlideDto(carouselSlide);
   }
@@ -122,7 +122,7 @@ export class CarouselController {
     @Query() query: LanguageDto,
     @Body() updateCarouselSlideDto: UpdateCarouselSlideDto,
   ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     const updatedCarouselSlide = await this.carouselService.update(
       +id,
       updateCarouselSlideDto,
@@ -142,7 +142,7 @@ export class CarouselController {
     @Query() query: LanguageDto,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     const updatedCarouselSlide = await this.carouselService.updateFile(
       +id,
       image,
@@ -159,7 +159,7 @@ export class CarouselController {
     @Param('id') id: string,
     @Query() query: LanguageDto,
   ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     const expiredCarouselSlide = await this.carouselService.expire(
       +id,
       language,

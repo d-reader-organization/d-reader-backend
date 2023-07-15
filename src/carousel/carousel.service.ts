@@ -32,7 +32,7 @@ export class CarouselService {
   ) {
     const { image } = createCarouselSlideFilesDto;
     const { title, lang, subtitle } = createCarouselSlideDto;
-    const language = lang ?? Language.En;
+    const language = lang ?? Language.English;
 
     let imageKey: string;
     try {
@@ -75,7 +75,7 @@ export class CarouselService {
   ) {
     const { image } = createCarouselSlideFilesDto;
     const { title, subtitle, lang } = createCarouselSlideTranslationDto;
-    const language = lang ?? Language.En;
+    const language = lang ?? Language.English;
 
     let imageKey: string;
     try {

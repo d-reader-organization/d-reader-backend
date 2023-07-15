@@ -142,7 +142,7 @@ export class ComicIssueController {
     @Query() query: LanguageDto,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
-    const lang = query.lang ?? Language.En;
+    const lang = query.lang ?? Language.English;
     const pages = await this.comicIssueService.getPages(
       +id,
       wallet.address,
@@ -255,7 +255,7 @@ export class ComicIssueController {
     })
     pagesDto: CreateComicPageDto[],
   ) {
-    const language = query.lang ?? Language.En;
+    const language = query.lang ?? Language.English;
     await this.comicPageService.updateMany(pagesDto, +id, language);
   }
 

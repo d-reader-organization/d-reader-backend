@@ -299,8 +299,8 @@ model ComicPage {
 }
 
 enum Language {
-  En
-  Fr
+  English
+  French
 }
 
 model ComicPageTranslation {
