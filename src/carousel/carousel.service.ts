@@ -14,7 +14,11 @@ import { CarouselSlideTranslation, Language } from '@prisma/client';
 import { addDays } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { mergeTranslation, mergeTranslationArray } from '../utils/helpers';
+import {
+  flattenTranslations,
+  flattenTranslationsArray,
+} from '../utils/helpers';
+import { TranslatedCarouselSlide } from './dto/carousel-slide.dto';
 
 const S3_FOLDER = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlideTranslation, 'image'>;
@@ -29,7 +33,7 @@ export class CarouselService {
   async create(
     createCarouselSlideDto: CreateCarouselSlideDto,
     createCarouselSlideFilesDto: CreateCarouselSlideFilesDto,
-  ) {
+  ): Promise<TranslatedCarouselSlide> {
     const { image } = createCarouselSlideFilesDto;
     const { title, lang, subtitle } = createCarouselSlideDto;
     const language = lang ?? Language.English;
@@ -62,7 +66,7 @@ export class CarouselService {
             translations: { where: { language: lang } },
           },
         })
-        .then(mergeTranslation);
+        .then(flattenTranslations);
     } catch {
       throw new BadRequestException('Bad carousel slide data');
     }
@@ -100,7 +104,7 @@ export class CarouselService {
     }
   }
 
-  async findAll(language: Language) {
+  async findAll(language: Language): Promise<TranslatedCarouselSlide[]> {
     return await this.prisma.carouselSlide
       .findMany({
         where: {
@@ -112,16 +116,19 @@ export class CarouselService {
           translations: { where: { language } },
         },
       })
-      .then(mergeTranslationArray);
+      .then(flattenTranslationsArray);
   }
 
-  async findOne(id: number, language: Language) {
+  async findOne(
+    id: number,
+    language: Language,
+  ): Promise<TranslatedCarouselSlide> {
     const carouselSlide = await this.prisma.carouselSlide
       .findUnique({
         where: { id },
         include: { translations: { where: { language } } },
       })
-      .then(mergeTranslation);
+      .then(flattenTranslations);
 
     if (!carouselSlide) {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
@@ -129,19 +136,12 @@ export class CarouselService {
     return carouselSlide;
   }
 
-  async update(
-    id: number,
-    updateCarouselSlideDto: UpdateCarouselSlideDto,
-    language: Language,
-  ) {
+  async update(id: number, updateCarouselSlideDto: UpdateCarouselSlideDto) {
     try {
-      return await this.prisma.carouselSlide
-        .update({
-          where: { id },
-          data: updateCarouselSlideDto,
-          include: { translations: { where: { language } } },
-        })
-        .then(mergeTranslation);
+      await this.prisma.carouselSlide.update({
+        where: { id },
+        data: updateCarouselSlideDto,
+      });
     } catch {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }
@@ -153,9 +153,9 @@ export class CarouselService {
     field: CarouselSlideFileProperty,
     language: Language,
   ) {
-    let carouselSlideTranslation = await this.findOne(id, language);
+    let translatedCarouselSlide = await this.findOne(id, language);
 
-    const oldFileKey = carouselSlideTranslation[field];
+    const oldFileKey = translatedCarouselSlide[field];
     const newFileKey = await this.s3.uploadFile(S3_FOLDER, file);
 
     try {
@@ -165,27 +165,22 @@ export class CarouselService {
           data: { [field]: newFileKey },
           include: { slide: true },
         });
-      carouselSlideTranslation = { ...slide, ...translations };
+      translatedCarouselSlide = { ...slide, ...translations };
     } catch {
       await this.s3.deleteObject(newFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
-    return carouselSlideTranslation;
+    return translatedCarouselSlide;
   }
 
-  async expire(id: number, language: Language) {
+  async expire(id: number) {
     try {
-      return await this.prisma.carouselSlide
-        .update({
-          where: { id },
-          data: { expiredAt: new Date() },
-          include: {
-            translations: { where: { language } },
-          },
-        })
-        .then(mergeTranslation);
+      await this.prisma.carouselSlide.update({
+        where: { id },
+        data: { expiredAt: new Date() },
+      });
     } catch {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }

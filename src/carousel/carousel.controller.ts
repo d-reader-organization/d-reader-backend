@@ -36,7 +36,7 @@ import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Language, Role } from '@prisma/client';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LanguageDto } from 'src/types/language.dto';
+import { LanguageParams } from 'src/types/language.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
@@ -98,7 +98,7 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll(@Query() query: LanguageDto) {
+  async findAll(@Query() query: LanguageParams = { lang: Language.English }) {
     const language = query.lang ?? Language.English;
     return this.throttledFindAll(language);
   }
@@ -107,10 +107,9 @@ export class CarouselController {
   @Get('slides/get/:id')
   async findOne(
     @Param('id') id: string,
-    @Query() query: LanguageDto,
+    @Query() query: LanguageParams = { lang: Language.English },
   ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.English;
-    const carouselSlide = await this.carouselService.findOne(+id, language);
+    const carouselSlide = await this.carouselService.findOne(+id, query.lang);
     return toCarouselSlideDto(carouselSlide);
   }
 
@@ -119,16 +118,9 @@ export class CarouselController {
   @Patch('slides/update/:id')
   async update(
     @Param('id') id: string,
-    @Query() query: LanguageDto,
     @Body() updateCarouselSlideDto: UpdateCarouselSlideDto,
-  ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.English;
-    const updatedCarouselSlide = await this.carouselService.update(
-      +id,
-      updateCarouselSlideDto,
-      language,
-    );
-    return toCarouselSlideDto(updatedCarouselSlide);
+  ) {
+    await this.carouselService.update(+id, updateCarouselSlideDto);
   }
 
   /* Update specific carousel slides image file */
@@ -139,7 +131,7 @@ export class CarouselController {
   @Patch('slides/update/:id/image')
   async updateImage(
     @Param('id') id: string,
-    @Query() query: LanguageDto,
+    @Query() query: LanguageParams = { lang: Language.English },
     @UploadedFile() image: Express.Multer.File,
   ): Promise<CarouselSlideDto> {
     const language = query.lang ?? Language.English;
@@ -155,15 +147,7 @@ export class CarouselController {
   /* Make carousel slide expire */
   @Roles(Role.Superadmin)
   @Patch('slides/expire/:id')
-  async expire(
-    @Param('id') id: string,
-    @Query() query: LanguageDto,
-  ): Promise<CarouselSlideDto> {
-    const language = query.lang ?? Language.English;
-    const expiredCarouselSlide = await this.carouselService.expire(
-      +id,
-      language,
-    );
-    return toCarouselSlideDto(expiredCarouselSlide);
+  async expire(@Param('id') id: string) {
+    await this.carouselService.expire(+id);
   }
 }

@@ -8,9 +8,9 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
-import { LanguageDto } from 'src/types/language.dto';
+import { LanguageParams } from 'src/types/language.dto';
 
-export class CreateCarouselSlideTranslationDto extends LanguageDto {
+export class CreateCarouselSlideTranslationDto extends LanguageParams {
   @IsString()
   @IsOptional()
   @MaxLength(26)
