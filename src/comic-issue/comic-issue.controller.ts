@@ -69,7 +69,7 @@ import {
   OwnedComicIssueDto,
   toOwnedComicIssueDtoArray,
 } from './dto/owned-comic-issue.dto';
-import { LanguageDto } from 'src/types/language.dto';
+import { LanguageParams } from '../types/language.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -139,7 +139,7 @@ export class ComicIssueController {
   @Get('get/:id/pages')
   async getPages(
     @Param('id') id: string,
-    @Query() query: LanguageDto,
+    @Query() query: LanguageParams,
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
     const lang = query.lang ?? Language.English;
@@ -246,7 +246,7 @@ export class ComicIssueController {
   @Post('update/pages/:id')
   async updatePages(
     @Param('id') id: string,
-    @Query() query: LanguageDto,
+    @Query() query: LanguageParams,
     @ApiFileArray({
       bodyField: 'data',
       fileField: 'image',
