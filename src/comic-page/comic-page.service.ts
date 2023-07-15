@@ -58,7 +58,11 @@ export class ComicPageService {
 
         let imageKey: string;
         try {
-          const s3Folder = await this.getS3Folder(pageNumber, comicIssueId);
+          const s3Folder = await this.getS3Folder(
+            pageNumber,
+            comicIssueId,
+            language,
+          );
           imageKey = await this.s3.uploadFile(s3Folder, image);
         } catch {
           throw new BadRequestException('Malformed file upload');
@@ -156,7 +160,11 @@ export class ComicPageService {
     return;
   }
 
-  async getS3Folder(pageNumber: number, comicIssueId: number) {
+  async getS3Folder(
+    pageNumber: number,
+    comicIssueId: number,
+    language: Language,
+  ) {
     const comicPage = await this.prisma.comicPage.findUnique({
       where: { pageNumber_comicIssueId: { pageNumber, comicIssueId } },
       select: {
@@ -167,10 +175,10 @@ export class ComicPageService {
 
     if (!comicPage) {
       throw new NotFoundException(
-        `Comic page with comic issue id ${comicIssueId} and page number ${pageNumber} does not exist`,
+        `Comic page with comic issue id ${comicIssueId}, language ${language} and page number ${pageNumber} does not exist`,
       );
     }
 
-    return `comics/${comicPage.comicIssue.comicSlug}/issues/${comicPage.comicIssue.slug}/pages/`;
+    return `comics/${comicPage.comicIssue.comicSlug}/issues/${comicPage.comicIssue.slug}/pages/${language}`;
   }
 }
