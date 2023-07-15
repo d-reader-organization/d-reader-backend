@@ -407,8 +407,8 @@ Enum ComicRarity {
 }
 
 Enum Language {
-  En
-  Fr
+  English
+  French
 }
 
 Enum CarouselLocation {
