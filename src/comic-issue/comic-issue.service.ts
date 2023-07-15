@@ -23,7 +23,7 @@ import {
   Language,
 } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
+import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { subDays } from 'date-fns';
@@ -134,7 +134,7 @@ export class ComicIssueService {
     return candyMachine?.address;
   }
 
-  async findAll(query: ComicIssueFilterParams): Promise<ComicIssueInput[]> {
+  async findAll(query: ComicIssueParams): Promise<ComicIssueInput[]> {
     const comicIssues = await this.prisma.$queryRaw<
       Array<
         ComicIssue & {
@@ -243,7 +243,7 @@ export class ComicIssueService {
   }
 
   async findAllByOwner(
-    query: ComicIssueFilterParams,
+    query: ComicIssueParams,
     ownerAddress: string,
   ): Promise<OwnedComicIssueInput[]> {
     const ownedComicIssues = await this.prisma.comicIssue.findMany({
@@ -251,6 +251,7 @@ export class ComicIssueService {
       orderBy: { title: 'asc' },
       include: { collectionNft: true, statelessCovers: true },
       where: {
+        comicSlug: query.comicSlug,
         collectionNft: {
           collectionItems: { some: { ownerAddress } },
         },

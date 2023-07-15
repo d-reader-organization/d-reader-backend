@@ -11,7 +11,7 @@ import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
-import { ListingFilterParams } from './dto/listing-fliter-params.dto';
+import { FilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
 import { BuyParamsArray, InstantBuyParams } from './dto/instant-buy-params.dto';
 import { SilentQuery } from 'src/decorators/silent-query.decorator';
@@ -116,7 +116,7 @@ export class AuctionHouseController {
 
   @Get('/get/listings/:comicIssueId')
   async findAllListings(
-    @Query() query: ListingFilterParams,
+    @Query() query: FilterParams,
     @Param('comicIssueId') comicIssueId: string,
   ) {
     const listings = await this.auctionHouseService.findAllListings(

@@ -1,22 +1,19 @@
 import { Prisma } from '@prisma/client';
 import { SortOrder } from '../types/sort-order';
-import {
-  ComicFilterTag,
-  ComicSortTag,
-} from '../comic/dto/comic-filter-params.dto';
+import { ComicFilterTag, ComicSortTag } from '../comic/dto/comic-params.dto';
 import {
   ComicIssueFilterTag,
   ComicIssueSortTag,
-} from '../comic-issue/dto/comic-issue-filter-params.dto';
+} from '../comic-issue/dto/comic-issue-params.dto';
 import {
   CreatorFilterTag,
   CreatorSortTag,
-} from '../creator/dto/creator-filter-params.dto';
+} from '../creator/dto/creator-params.dto';
 
 export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
   switch (tag) {
     case ComicFilterTag.Popular:
-      return Prisma.sql`AND "popularizedAt" is not null`;
+      return Prisma.sql`AND comic."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }
@@ -27,7 +24,7 @@ export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
     case ComicIssueFilterTag.Free:
       return Prisma.sql`AND comicIssue."supply" = 0`;
     case ComicIssueFilterTag.Popular:
-      return Prisma.sql`AND "popularizedAt" is not null`;
+      return Prisma.sql`AND comicIssue."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }
@@ -35,6 +32,8 @@ export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
 
 export const filterCreatorBy = (tag: CreatorFilterTag): Prisma.Sql => {
   switch (tag) {
+    case CreatorFilterTag.Popular:
+      return Prisma.sql`AND creator."popularizedAt" is not null`;
     default:
       return Prisma.empty;
   }
@@ -91,3 +90,10 @@ export const sortCreatorBy = (tag: CreatorSortTag): Prisma.Sql => {
       return Prisma.sql`creator."name"`;
   }
 };
+
+export const havingGenreSlugsCondition = (genreSlugs?: string[]) =>
+  !!genreSlugs
+    ? Prisma.sql`HAVING array_agg("genre".slug) @> array[${Prisma.join(
+        genreSlugs,
+      )}]`
+    : Prisma.empty;
