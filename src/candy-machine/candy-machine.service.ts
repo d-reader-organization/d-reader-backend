@@ -118,16 +118,6 @@ export class CandyMachineService {
     );
   }
 
-  async addNewComic(
-    comicIssue: ComicIssueCMInput,
-    creatorAddress: string,
-  ): Promise<void> {
-    try {
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
   async mintDarkblock(
     comicIssue: ComicIssueCMInput,
     creatorAddress: string,

@@ -34,8 +34,8 @@ import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { Language, Role } from '@prisma/client';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { throttle } from 'lodash';
 import { LanguageDto } from 'src/types/language.dto';
+import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -64,9 +64,9 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
-  private throttledFindAll = throttle(
-    async () => {
-      const carouselSlides = await this.carouselService.findAll();
+  private throttledFindAll = memoizeThrottle(
+    async (language: Language) => {
+      const carouselSlides = await this.carouselService.findAll(language);
       return toCarouselSlideDtoArray(carouselSlides);
     },
     24 * 60 * 60 * 1000, // 24 hours
@@ -74,8 +74,9 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll() {
-    return await this.throttledFindAll();
+  async findAll(@Query() query: LanguageDto) {
+    const language = query.lang ?? Language.En;
+    return await this.throttledFindAll(language);
   }
 
   /* Get specific carousel slide by unique id */
