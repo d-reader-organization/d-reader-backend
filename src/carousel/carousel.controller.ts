@@ -77,8 +77,7 @@ export class CarouselController {
     @Body()
     createCarouselSlideTranslationDto: CreateCarouselSlideTranslationDto,
     @UploadedFiles({
-      transform: (val) =>
-        plainToInstance(CreateCarouselSlideTranslationDto, val),
+      transform: (val) => plainToInstance(CreateCarouselSlideFilesDto, val),
     })
     files: CreateCarouselSlideFilesDto,
   ) {
