@@ -7,6 +7,7 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   CreateCarouselSlideDto,
   CreateCarouselSlideFilesDto,
+  CreateCarouselSlideTranslationDto,
 } from '../carousel/dto/create-carousel-slide.dto';
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
 import { CarouselSlideTranslation, Language } from '@prisma/client';
@@ -31,6 +32,7 @@ export class CarouselService {
   ) {
     const { image } = createCarouselSlideFilesDto;
     const { title, lang, subtitle } = createCarouselSlideDto;
+    const language = lang ?? Language.En;
 
     let imageKey: string;
     try {
@@ -50,7 +52,7 @@ export class CarouselService {
             translations: {
               create: {
                 image: imageKey,
-                language: lang,
+                language,
                 subtitle,
                 title,
               },
@@ -63,6 +65,38 @@ export class CarouselService {
         .then(mergeTranslation);
     } catch {
       throw new BadRequestException('Bad carousel slide data');
+    }
+  }
+
+  async addTranslation(
+    id: number,
+    createCarouselSlideTranslationDto: CreateCarouselSlideTranslationDto,
+    createCarouselSlideFilesDto: CreateCarouselSlideFilesDto,
+  ) {
+    const { image } = createCarouselSlideFilesDto;
+    const { title, subtitle, lang } = createCarouselSlideTranslationDto;
+    const language = lang ?? Language.En;
+
+    let imageKey: string;
+    try {
+      imageKey = await this.s3.uploadFile(S3_FOLDER, image);
+    } catch {
+      throw new BadRequestException('Malformed file upload');
+    }
+    try {
+      await this.prisma.carouselSlideTranslation.create({
+        data: {
+          image: imageKey,
+          language,
+          title,
+          subtitle,
+          slide: {
+            connect: { id },
+          },
+        },
+      });
+    } catch {
+      throw new BadRequestException('Bad carousel slide translation data');
     }
   }
 

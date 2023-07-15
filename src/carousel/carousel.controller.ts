@@ -17,6 +17,8 @@ import {
   CreateCarouselSlideSwaggerDto,
   CreateCarouselSlideDto,
   CreateCarouselSlideFilesDto,
+  CreateCarouselSlideTranslationSwaggerDto,
+  CreateCarouselSlideTranslationDto,
 } from 'src/carousel/dto/create-carousel-slide.dto';
 import { CarouselService } from './carousel.service';
 import {
@@ -64,6 +66,29 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
+  /* Add a new carousel slide translation */
+  @Roles(Role.Superadmin)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateCarouselSlideTranslationSwaggerDto })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  @Post('slides/:id/translation/add')
+  async addTranslation(
+    @Param('id') id: number,
+    @Body()
+    createCarouselSlideTranslationDto: CreateCarouselSlideTranslationDto,
+    @UploadedFiles({
+      transform: (val) =>
+        plainToInstance(CreateCarouselSlideTranslationDto, val),
+    })
+    files: CreateCarouselSlideFilesDto,
+  ) {
+    await this.carouselService.addTranslation(
+      +id,
+      createCarouselSlideTranslationDto,
+      files,
+    );
+  }
+
   private throttledFindAll = memoizeThrottle(
     async (language: Language) => {
       const carouselSlides = await this.carouselService.findAll(language);
@@ -76,7 +101,7 @@ export class CarouselController {
   @Get('slides/get')
   async findAll(@Query() query: LanguageDto) {
     const language = query.lang ?? Language.En;
-    return await this.throttledFindAll(language);
+    return this.throttledFindAll(language);
   }
 
   /* Get specific carousel slide by unique id */
