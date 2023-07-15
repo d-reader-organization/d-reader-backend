@@ -8,6 +8,7 @@ import { CreateComicPageDto } from './dto/create-comic-page.dto';
 import { Language, Prisma } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import { TranslatedComicPage } from './entities/comic-page.dto';
+import { mergeTranslationArray } from 'src/utils/helpers';
 
 export type ComicPageWhereInput = {
   comicIssueId?: Prisma.ComicPageWhereInput['comicIssueId'];
@@ -81,23 +82,16 @@ export class ComicPageService {
     language: Language,
     isPreviewable?: boolean,
   ): Promise<TranslatedComicPage[]> {
-    return await this.prisma.comicPage.findMany({
-      where: { comicIssueId, isPreviewable },
-      include: {
-        translations: {
-          where: {
-            OR: [
-              {
-                language: Language.En,
-              },
-              {
-                language,
-              },
-            ],
+    return await this.prisma.comicPage
+      .findMany({
+        where: { comicIssueId, isPreviewable },
+        include: {
+          translations: {
+            where: { language },
           },
         },
-      },
-    });
+      })
+      .then(mergeTranslationArray);
   }
 
   async updateMany(

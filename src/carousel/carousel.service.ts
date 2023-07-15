@@ -13,7 +13,7 @@ import { CarouselSlideTranslation, Language } from '@prisma/client';
 import { addDays } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { TranslatedCarouselSlide } from './dto/carousel-slide.dto';
+import { mergeTranslation, mergeTranslationArray } from '../utils/helpers';
 
 const S3_FOLDER = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlideTranslation, 'image'>;
@@ -39,7 +39,6 @@ export class CarouselService {
       throw new BadRequestException('Malformed file upload');
     }
 
-    let carouselSlide: TranslatedCarouselSlide;
     try {
       return await this.prisma.carouselSlide
         .create({
@@ -61,38 +60,39 @@ export class CarouselService {
             translations: { where: { language: lang } },
           },
         })
-        .then(({ translations, ...slide }) => ({
-          ...translations[0],
-          ...slide,
-        }));
+        .then(mergeTranslation);
     } catch {
       throw new BadRequestException('Bad carousel slide data');
     }
-    return carouselSlide;
   }
 
-  async findAll() {
-    const carouselSlides = await this.prisma.carouselSlide.findMany({
-      where: {
-        expiredAt: { gt: new Date() },
-        publishedAt: { lt: new Date() },
-      },
-      orderBy: { priority: 'asc' },
-    });
-    return carouselSlides;
+  async findAll(language: Language) {
+    return await this.prisma.carouselSlide
+      .findMany({
+        where: {
+          expiredAt: { gt: new Date() },
+          publishedAt: { lt: new Date() },
+        },
+        orderBy: { priority: 'asc' },
+        include: {
+          translations: { where: { language } },
+        },
+      })
+      .then(mergeTranslationArray);
   }
 
   async findOne(id: number, language: Language) {
-    const { translations, ...slide } =
-      await this.prisma.carouselSlide.findUnique({
+    const carouselSlide = await this.prisma.carouselSlide
+      .findUnique({
         where: { id },
         include: { translations: { where: { language } } },
-      });
+      })
+      .then(mergeTranslation);
 
-    if (!slide) {
+    if (!carouselSlide) {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }
-    return { ...slide, ...translations[0] };
+    return carouselSlide;
   }
 
   async update(
@@ -107,10 +107,7 @@ export class CarouselService {
           data: updateCarouselSlideDto,
           include: { translations: { where: { language } } },
         })
-        .then(({ translations, ...slide }) => ({
-          ...translations[0],
-          ...slide,
-        }));
+        .then(mergeTranslation);
     } catch {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }
@@ -154,10 +151,7 @@ export class CarouselService {
             translations: { where: { language } },
           },
         })
-        .then(({ translations, ...slide }) => ({
-          ...translations[0],
-          ...slide,
-        }));
+        .then(mergeTranslation);
     } catch {
       throw new NotFoundException(`Carousel slide with ${id} does not exist`);
     }

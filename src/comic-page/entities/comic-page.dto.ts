@@ -19,15 +19,13 @@ export class ComicPageDto {
   image: string;
 }
 
-export type TranslatedComicPage = ComicPage & {
-  translations: ComicPageTranslation[];
-};
+export type TranslatedComicPage = ComicPage & ComicPageTranslation;
 export async function toComicPageDto(page: TranslatedComicPage) {
   const plainPageDto: ComicPageDto = {
     id: page.id,
     pageNumber: page.pageNumber,
     isPreviewable: page.isPreviewable,
-    image: await getPresignedUrl(page.translations[0].image),
+    image: await getPresignedUrl(page.image),
   };
 
   const pageDto = plainToInstance(ComicPageDto, plainPageDto);

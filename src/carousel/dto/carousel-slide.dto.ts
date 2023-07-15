@@ -61,7 +61,6 @@ export class CarouselSlideDto {
   externalLink?: string;
 }
 export type TranslatedCarouselSlide = CarouselSlide & CarouselSlideTranslation;
-
 export function toCarouselSlideDto(slide: TranslatedCarouselSlide) {
   const plainSlideDto: CarouselSlideDto = {
     id: slide.id,
