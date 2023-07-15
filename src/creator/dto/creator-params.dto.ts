@@ -1,31 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
-import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
-import { IsKebabCase } from '../../decorators/IsKebabCase';
+import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
 
-export enum ComicFilterTag {
+export enum CreatorFilterTag {
   Popular = 'popular',
 }
 
-export enum ComicSortTag {
-  Title = 'title',
-  Rating = 'rating',
-  Likes = 'likes',
-  Readers = 'readers',
-  Viewers = 'viewers',
-  Published = 'published',
+export enum CreatorSortTag {
+  Followers = 'followers',
+  Name = 'name',
 }
 
-export class ComicFilterParams extends Pagination {
-  @IsOptional()
-  @IsKebabCase()
-  creatorSlug?: string;
-
+export class FilterParams extends Pagination {
   @IsOptional()
   @IsString()
-  titleSubstring?: string;
+  nameSubstring?: string;
 
   @IsOptional()
   @IsArray()
@@ -42,11 +33,11 @@ export class ComicFilterParams extends Pagination {
   @IsOptional()
   sortOrder?: SortOrder;
 
-  @IsEnum(ComicFilterTag)
+  @IsEnum(CreatorFilterTag)
   @IsOptional()
-  filterTag?: ComicFilterTag;
+  filterTag?: CreatorFilterTag;
 
-  @IsEnum(ComicSortTag)
+  @IsEnum(CreatorSortTag)
   @IsOptional()
-  sortTag?: ComicSortTag;
+  sortTag?: CreatorSortTag;
 }

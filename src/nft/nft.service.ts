@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { NftFilterParams } from './dto/nft-filter-params.dto';
+import { FilterParams } from './dto/nft-params.dto';
 
 @Injectable()
 export class NftService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: NftFilterParams) {
+  async findAll(query: FilterParams) {
     const nfts = await this.prisma.nft.findMany({
       where: {
         ownerAddress: query?.owner,
         collectionNft: {
           comicIssue: query.comicIssueId
-            ? { id: query.comicIssueId }
+            ? { id: +query.comicIssueId }
             : { comic: { slug: query.comicSlug } },
         },
       },

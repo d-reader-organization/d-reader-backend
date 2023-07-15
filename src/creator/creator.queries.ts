@@ -1,36 +1,39 @@
 import { Prisma } from '@prisma/client';
-import { CreatorFilterParams } from './dto/creator-filter-params.dto';
-import { getSortOrder, sortCreatorBy } from '../utils/query-tags-helpers';
+import { FilterParams } from './dto/creator-params.dto';
+import {
+  filterCreatorBy,
+  getSortOrder,
+  havingGenreSlugsCondition,
+  sortCreatorBy,
+} from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
-  query: CreatorFilterParams,
+  query: FilterParams,
 ): {
-  genreSlugsCondition: Prisma.Sql;
   nameCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
+  filterCondition: Prisma.Sql;
 } => {
   const nameCondition = !!query.nameSubstring
     ? Prisma.sql`AND creator."name" ILIKE '%' || ${
         query.nameSubstring ?? ''
       } || '%'`
     : Prisma.empty;
-  const genreSlugsCondition = !!query.genreSlugs
-    ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
-    : Prisma.empty;
 
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortCreatorBy(query.sortTag);
+  const filterCondition = filterCreatorBy(query.filterTag);
   return {
-    genreSlugsCondition,
     nameCondition,
     sortOrder,
     sortColumn,
+    filterCondition,
   };
 };
 
-export const getCreatorsQuery = (query: CreatorFilterParams) => {
-  const { genreSlugsCondition, nameCondition, sortColumn, sortOrder } =
+export const getCreatorsQuery = (query: FilterParams) => {
+  const { nameCondition, sortColumn, sortOrder, filterCondition } =
     getQueryFilters(query);
   return Prisma.sql`select creator.*, json_agg(distinct genre.*) AS genres,
   SUM(case when walletcreator."isFollowing" = true then 1 else 0 end)  as "followersCount"
@@ -40,10 +43,11 @@ export const getCreatorsQuery = (query: CreatorFilterParams) => {
   inner join "Genre" genre on genre.slug = "comicToGenre"."B"  
   left join "WalletCreator" walletCreator on walletcreator."creatorSlug" = creator.slug
   where creator."deletedAt" is null and creator."verifiedAt" is not null and creator."emailConfirmedAt" is not null
+  ${filterCondition}
   ${nameCondition}
-  ${genreSlugsCondition}
   group by creator.id
   ORDER BY ${sortColumn} ${sortOrder}
+  ${havingGenreSlugsCondition(query.genreSlugs)}
   OFFSET ${query.skip}
   LIMIT ${query.take};`;
 };

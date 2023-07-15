@@ -1,18 +1,18 @@
 import { Prisma } from '@prisma/client';
-import { ComicIssueFilterParams } from '../comic-issue/dto/comic-issue-filter-params.dto';
+import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import {
   filterComicIssueBy,
   getSortOrder,
+  havingGenreSlugsCondition,
   sortComicIssueBy,
 } from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
-  query: ComicIssueFilterParams,
+  query: ComicIssueParams,
 ): {
   titleCondition: Prisma.Sql;
   comicSlugCondition: Prisma.Sql;
   creatorWhereCondition: Prisma.Sql;
-  genreSlugsCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
@@ -28,9 +28,6 @@ const getQueryFilters = (
   const creatorWhereCondition = !!query.creatorSlug
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
-  const genreSlugsCondition = !!query.genreSlugs
-    ? Prisma.sql`AND "comicToGenre"."B" IN (${Prisma.join(query.genreSlugs)})`
-    : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortComicIssueBy(query.sortTag);
   const filterCondition = filterComicIssueBy(query.filterTag);
@@ -38,21 +35,17 @@ const getQueryFilters = (
     titleCondition,
     comicSlugCondition,
     creatorWhereCondition,
-    genreSlugsCondition,
     sortOrder,
     sortColumn,
     filterCondition,
   };
 };
 
-export const getComicIssuesQuery = (
-  query: ComicIssueFilterParams,
-): Prisma.Sql => {
+export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   const {
     titleCondition,
     comicSlugCondition,
     creatorWhereCondition,
-    genreSlugsCondition,
     sortColumn,
     sortOrder,
     filterCondition,
@@ -105,8 +98,8 @@ ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
-${genreSlugsCondition}
 GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
+${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
 LIMIT ${query.take}

@@ -36,7 +36,7 @@ import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { Creator, Wallet, Role, Language } from '@prisma/client';
-import { ComicIssueFilterParams } from './dto/comic-issue-filter-params.dto';
+import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
 import {
@@ -106,9 +106,7 @@ export class ComicIssueController {
 
   /* Get all comic issues */
   @Get('get')
-  async findAll(
-    @Query() query: ComicIssueFilterParams,
-  ): Promise<ComicIssueDto[]> {
+  async findAll(@Query() query: ComicIssueParams): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
     return toComicIssueDtoArray(comicIssues);
   }
@@ -116,7 +114,7 @@ export class ComicIssueController {
   @Get('get/by-owner/:address')
   async findOwnedComicIssues(
     @Param('address') address: string,
-    @Query() query: ComicIssueFilterParams,
+    @Query() query: ComicIssueParams,
   ): Promise<OwnedComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAllByOwner(
       query,

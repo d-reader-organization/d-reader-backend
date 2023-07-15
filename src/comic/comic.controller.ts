@@ -31,7 +31,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { ComicFilterParams } from './dto/comic-filter-params.dto';
+import { ComicParams } from './dto/comic-params.dto';
 import { WalletComicService } from './wallet-comic.service';
 import { Creator, Wallet, Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
@@ -80,7 +80,7 @@ export class ComicController {
 
   /* Get all comics */
   @Get('get')
-  async findAll(@Query() query: ComicFilterParams): Promise<ComicDto[]> {
+  async findAll(@Query() query: ComicParams): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll(query);
     return toComicDtoArray(comics);
   }
@@ -98,7 +98,7 @@ export class ComicController {
   @Get('get/by-owner/:address')
   async findOwnedComics(
     @Param('address') address: string,
-    @Query() query: ComicFilterParams,
+    @Query() query: ComicParams,
   ): Promise<ComicDto[]> {
     const comics = await this.comicService.findAllByOwner(query, address);
     return toComicDtoArray(comics);

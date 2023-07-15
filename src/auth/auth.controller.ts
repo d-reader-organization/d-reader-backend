@@ -22,7 +22,7 @@ export class AuthController {
     return this.authService.validateName(name);
   }
 
-  @Throttle(2, 30)
+  @Throttle(3, 30)
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
   requestPassword(@Param('address') address: string) {
@@ -41,6 +41,7 @@ export class AuthController {
   /* Refresh your wallets access token */
   @UseGuards(RestAuthGuard)
   @ApiBearerAuth('JWT-auth')
+  @SkipThrottle()
   @Get('wallet/refresh-token/:refreshToken')
   reauthorize(
     @Param('refreshToken') refreshToken: string,
