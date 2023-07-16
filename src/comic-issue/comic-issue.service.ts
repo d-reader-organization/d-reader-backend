@@ -193,7 +193,7 @@ export class ComicIssueService {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
-        comic: { include: { creator: true } },
+        comic: { include: { creator: true, genres: true } },
         collectionNft: { select: { address: true } },
         collaborators: true,
         statelessCovers: true,

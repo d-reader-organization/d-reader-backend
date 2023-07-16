@@ -160,7 +160,7 @@ export class ComicIssueDto {
 }
 
 export type ComicIssueInput = ComicIssue & {
-  comic?: Comic & { creator?: Creator };
+  comic?: Comic & { creator?: Creator; genres?: Genre[] };
   stats?: ComicIssueStats;
   myStats?: WalletComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
@@ -195,7 +195,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
     isVerified: !!issue.verifiedAt,
-    creator: issue?.comic?.creator
+    creator: issue.comic?.creator
       ? {
           name: issue.comic.creator.name,
           slug: issue.comic.creator.slug,
@@ -203,7 +203,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           avatar: getPublicUrl(issue.comic.creator.avatar),
         }
       : undefined,
-    comic: issue?.comic
+    comic: issue.comic
       ? {
           title: issue.comic.title,
           slug: issue.comic.slug,
@@ -211,13 +211,13 @@ export function toComicIssueDto(issue: ComicIssueInput) {
         }
       : undefined,
     // TODO: order genres by 'priority' and filter out the deleted genres
-    genres: issue?.genres?.map((genre) => ({
+    genres: (issue.genres || issue.comic.genres)?.map((genre) => ({
       name: genre.name,
       slug: genre.slug,
       icon: getPublicUrl(genre.icon),
       color: genre.color,
     })),
-    stats: issue?.stats
+    stats: issue.stats
       ? {
           favouritesCount: issue.stats.favouritesCount,
           ratersCount: issue.stats.ratersCount,
