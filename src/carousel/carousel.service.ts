@@ -99,9 +99,7 @@ export class CarouselService {
           language,
           title,
           subtitle,
-          slide: {
-            connect: { id },
-          },
+          slide: { connect: { id } },
         },
       });
     } catch {
@@ -119,9 +117,7 @@ export class CarouselService {
         orderBy: { priority: 'asc' },
         include: {
           translations: {
-            where: {
-              OR: [{ language }, { language: Language.English }],
-            },
+            where: { OR: [{ language }, { language: Language.English }] },
             orderBy: { language: 'asc' },
           },
         },

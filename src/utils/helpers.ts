@@ -84,6 +84,7 @@ export const appendTimestamp = (string: string) => string + '-' + Date.now();
 type Translations = {
   [key: string]: string | number;
 };
+
 type WithTranslations<T extends { translations: Translations[] }> = Omit<
   T,
   'translations'
@@ -91,13 +92,14 @@ type WithTranslations<T extends { translations: Translations[] }> = Omit<
   T['translations'][number];
 
 export function flattenTranslations<T extends { translations: Translations[] }>(
-  obj: T,
+  objectWithTranslations: T,
 ): WithTranslations<T> {
-  const { translations, ...rest } = obj;
+  const { translations, ...rest } = objectWithTranslations;
   return { ...rest, ...translations[0] };
 }
+
 export function flattenTranslationsArray<
   T extends { translations: Translations[] },
 >(array: T[]): WithTranslations<T>[] {
-  return array.map((item) => flattenTranslations(item));
+  return array.map(flattenTranslations);
 }
