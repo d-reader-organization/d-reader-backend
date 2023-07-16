@@ -8,6 +8,8 @@ import {
   AudienceType,
   CarouselLocation,
   ComicRarity,
+  Language,
+  Prisma,
 } from '@prisma/client';
 import { CandyMachineService } from '../src/candy-machine/candy-machine.service';
 import { HeliusService } from '../src/webhooks/helius/helius.service';
@@ -100,15 +102,20 @@ const generatePages = (
   numberOfPages: number,
   fileExtension: 'png' | 'jpg' | 'jpeg',
   numberOfPreviewablePages = 3,
-) => {
+) : Prisma.ComicPageCreateWithoutComicIssueInput[] => {
   const indexArray = [...Array(numberOfPages).keys()];
 
-  const pagesData = indexArray.map((i) => {
+  const pagesData = indexArray.map((i) :  Prisma.ComicPageCreateWithoutComicIssueInput => {
     const pageNumber = i + 1;
     return {
       pageNumber,
       isPreviewable: pageNumber <= numberOfPreviewablePages,
-      image: `${imagePath}/page-${pageNumber}.${fileExtension}`,
+      translations : {
+        create: {
+          image: `${imagePath}/page-${pageNumber}.${fileExtension}`,
+          language: Language.English,
+        }
+      }
     };
   });
 
@@ -166,74 +173,109 @@ async function main() {
   }
 
   try {
-    await prisma.carouselSlide.createMany({
-      data: [
-        {
-          image: 'carousel/slides/1c4739b4-c402-459a-98ac-e884a6d51296.jpg',
-          title: 'StudioNX - new creator',
-          subtitle: 'Emmy award winning animation studio',
-          priority: 1,
-          comicIssueId: null,
-          comicSlug: null,
-          creatorSlug: 'studio-nx',
-          externalLink: null,
-          publishedAt: new Date(),
-          expiredAt: addDays(new Date(), 90),
-          location: CarouselLocation.Home,
-        },
-        {
-          image: 'carousel/slides/deb35549-1f59-45db-9aef-2efc0ee5930a.jpg',
-          title: 'Gooneytoons - new creator',
-          subtitle: 'release: June 1st, 8am UTC',
-          priority: 2,
-          comicIssueId: null,
-          comicSlug: 'gooneytoons',
-          creatorSlug: null,
-          externalLink: null,
-          publishedAt: subDays(new Date(), 1),
-          expiredAt: addDays(new Date(), 90),
-          location: CarouselLocation.Home,
-        },
-        {
-          image: 'carousel/slides/483d6796-e8ae-4379-80d4-4f9390fa3f1e.jpg',
-          title: 'Tsukiverse',
-          subtitle: 'In the land of might and magic...',
-          priority: 3,
-          comicIssueId: null,
-          comicSlug: null,
-          creatorSlug: 'goose-0-x',
-          externalLink: null,
-          publishedAt: new Date(),
-          expiredAt: addDays(new Date(), 90),
-          location: CarouselLocation.Home,
-        },
-        {
-          image: 'carousel/slides/3368f69d-a2de-49ae-9001-45f508d029c5.jpg',
-          title: 'Explore new worlds - Lupers',
-          subtitle: 'release: July 14th, 10am UTC',
-          priority: 4,
-          comicIssueId: null,
-          comicSlug: 'lupers',
-          creatorSlug: null,
-          externalLink: null,
-          publishedAt: subDays(new Date(), 2),
-          expiredAt: addDays(new Date(), 90),
-          location: CarouselLocation.Home,
-        },
-        {
-          image: 'carousel/slides/802ff196-544d-41d0-8d17-a1c1c353a317.jpg',
-          title: 'The Narentines: Origin',
-          subtitle: 'release: August 1st, 8am UTC',
-          priority: 5,
-          comicIssueId: null,
-          comicSlug: 'narentines',
-          creatorSlug: null,
-          externalLink: null,
-          publishedAt: new Date(),
-          expiredAt: addDays(new Date(), 90),
-          location: CarouselLocation.Home,
-        },
-      ],
+    await prisma.carouselSlide.create({
+      data:{
+        priority: 1,
+        comicIssueId: null,
+        comicSlug: null,
+        creatorSlug: 'studio-nx',
+        externalLink: null,
+        publishedAt: new Date(),
+        expiredAt: addDays(new Date(), 90),
+        location: CarouselLocation.Home,
+        translations:{
+          create:{
+            image: 'carousel/slides/1c4739b4-c402-459a-98ac-e884a6d51296.jpg',
+            title: 'StudioNX - new creator',
+            subtitle: 'Emmy award winning animation studio',
+            language: Language.English
+          }
+        }
+      }
+    });
+
+    await prisma.carouselSlide.create({
+      data:{
+        priority: 2,
+        comicIssueId: null,
+        comicSlug: 'gooneytoons',
+        creatorSlug: null,
+        externalLink: null,
+        publishedAt: subDays(new Date(), 1),
+        expiredAt: addDays(new Date(), 90),
+        location: CarouselLocation.Home,
+        translations:{
+          create:{
+            image: 'carousel/slides/deb35549-1f59-45db-9aef-2efc0ee5930a.jpg',
+            title: 'Gooneytoons - new creator',
+            subtitle: 'release: June 1st, 8am UTC',
+            language: Language.English
+          }
+        }
+      }
+    });
+
+    await prisma.carouselSlide.create({
+      data:{
+        priority: 3,
+        comicIssueId: null,
+        comicSlug: null,
+        creatorSlug: 'goose-0-x',
+        externalLink: null,
+        publishedAt: new Date(),
+        expiredAt: addDays(new Date(), 90),
+        location: CarouselLocation.Home,
+        translations:{
+          create:{
+            image: 'carousel/slides/483d6796-e8ae-4379-80d4-4f9390fa3f1e.jpg',
+            title: 'Tsukiverse',
+            subtitle: 'In the land of might and magic...',
+            language: Language.English
+          }
+        }
+      }
+    });
+
+    await prisma.carouselSlide.create({
+      data:{
+        priority: 4,
+        comicIssueId: null,
+        comicSlug: 'lupers',
+        creatorSlug: null,
+        externalLink: null,
+        publishedAt: subDays(new Date(), 2),
+        expiredAt: addDays(new Date(), 90),
+        location: CarouselLocation.Home,
+        translations:{
+          create:{
+            image: 'carousel/slides/3368f69d-a2de-49ae-9001-45f508d029c5.jpg',
+            title: 'Explore new worlds - Lupers',
+            subtitle: 'release: July 14th, 10am UTC',
+            language: Language.English
+          }
+        }
+      }
+    });
+
+    await prisma.carouselSlide.create({
+      data:{
+        priority: 5,
+        comicIssueId: null,
+        comicSlug: 'narentines',
+        creatorSlug: null,
+        externalLink: null,
+        publishedAt: new Date(),
+        expiredAt: addDays(new Date(), 90),
+        location: CarouselLocation.Home,
+        translations:{
+          create:{
+            image: 'carousel/slides/802ff196-544d-41d0-8d17-a1c1c353a317.jpg',
+            title: 'The Narentines: Origin',
+            subtitle: 'release: August 1st, 8am UTC',
+            language: Language.English
+          }
+        }
+      }
     });
     console.log('➕ Added carousel slides');
   } catch (e) {
@@ -551,14 +593,12 @@ async function main() {
                     publishedAt: new Date(),
                     popularizedAt: null,
                     pages: {
-                      createMany: {
-                        data: generatePages(
+                      create: generatePages(
                           'comics/gorecats/issues/rise-of-the-gorecats/pages',
                           6,
                           'png',
                           6,
                         ),
-                      },
                     },
                   },
                 },
@@ -625,14 +665,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: new Date(),
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/barbabyans/issues/adventure-begins/pages',
                     5,
                     'jpg',
                     5,
                   ),
-                },
               },
             },
           ],
@@ -697,14 +735,12 @@ async function main() {
             publishedAt: new Date(),
             popularizedAt: null,
             pages: {
-              createMany: {
-                data: generatePages(
+              create: generatePages(
                   'comics/niko-and-the-sword/issues/many-moons-ago/pages',
                   3,
                   'png',
                   3,
                 ),
-              },
             },
           },
         },
@@ -768,14 +804,12 @@ async function main() {
             publishedAt: new Date(),
             popularizedAt: new Date(),
             pages: {
-              createMany: {
-                data: generatePages(
+              create: generatePages(
                   'comics/the-dark-portal/issues/concept-art/pages',
                   9,
                   'jpg',
                   9,
                 ),
-              },
             },
           },
         },
@@ -876,14 +910,12 @@ async function main() {
                     publishedAt: new Date(),
                     popularizedAt: null,
                     pages: {
-                      createMany: {
-                        data: generatePages(
+                      create: generatePages(
                           'comics/narentines/issues/narentines-the-purge/pages',
                           1,
                           'jpg',
                           1,
                         ),
-                      },
                     },
                   },
                 },
@@ -949,14 +981,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: new Date(),
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/lupers/issues/tome-of-knowledge/pages',
                     12,
                     'jpg',
                     12,
                   ),
-                },
               },
             },
           ],
@@ -1055,14 +1085,12 @@ async function main() {
                       publishedAt: new Date(),
                       popularizedAt: null,
                       pages: {
-                        createMany: {
-                          data: generatePages(
+                        create: generatePages(
                             'comics/the-heist/issues/how-it-all-began/pages',
                             1,
                             'jpg',
                             1,
                           ),
-                        },
                       },
                     },
                   },
@@ -1164,14 +1192,12 @@ async function main() {
                       publishedAt: new Date(),
                       popularizedAt: null,
                       pages: {
-                        createMany: {
-                          data: generatePages(
+                        create: generatePages(
                             'comics/gooneytoons/issues/birth-of-the-gooneys/pages',
                             1,
                             'jpg',
                             1,
                           ),
-                        },
                       },
                     },
                     {
@@ -1335,14 +1361,12 @@ async function main() {
                     publishedAt: new Date(),
                     popularizedAt: null,
                     pages: {
-                      createMany: {
-                        data: generatePages(
+                      create: generatePages(
                           'comics/animosities/issues/episode-1/pages',
                           6,
                           'jpg',
                           6,
                         ),
-                      },
                     },
                   },
                 },
@@ -1404,15 +1428,13 @@ async function main() {
                 publishedAt: new Date(),
                 popularizedAt: null,
                 pages: {
-                  createMany: {
-                    data: generatePages(
+                  create: generatePages(
                       'comics/birthday/issues/episode-1/pages',
                       4,
                       'jpg',
                       2,
                     ),
                   },
-                },
               },
             ],
           },
@@ -1470,14 +1492,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: null,
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/immaculate-taint/issues/episode-1/pages',
                     8,
                     'jpg',
                     8,
                   ),
-                },
               },
             },
           ],
@@ -1537,14 +1557,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: new Date(),
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/island/issues/episode-1/pages',
                     11,
                     'jpg',
                     11,
                   ),
-                },
               },
             },
           ],
@@ -1640,14 +1658,12 @@ async function main() {
                       publishedAt: new Date(),
                       popularizedAt: new Date(),
                       pages: {
-                        createMany: {
-                          data: generatePages(
+                        create: generatePages(
                             'comics/wretches/issues/issue-1/pages',
                             7,
                             'jpg',
                             7,
                           ),
-                        },
                       },
                     },
                     process.env.SOLANA_CLUSTER === 'devnet'
@@ -1671,14 +1687,12 @@ async function main() {
                           publishedAt: new Date(),
                           popularizedAt: null,
                           pages: {
-                            createMany: {
-                              data: generatePages(
+                            create: generatePages(
                                 'comics/wretches/issues/issue-2/pages',
                                 6,
                                 'jpg',
                                 6,
                               ),
-                            },
                           },
                         }
                       : undefined,
@@ -1703,14 +1717,12 @@ async function main() {
                           publishedAt: new Date(),
                           popularizedAt: null,
                           pages: {
-                            createMany: {
-                              data: generatePages(
+                            create: generatePages(
                                 'comics/wretches/issues/issue-3/pages',
                                 6,
                                 'jpg',
                                 6,
                               ),
-                            },
                           },
                         }
                       : undefined,
@@ -1735,15 +1747,13 @@ async function main() {
                           publishedAt: new Date(),
                           popularizedAt: null,
                           pages: {
-                            createMany: {
-                              data: generatePages(
+                            create: generatePages(
                                 'comics/wretches/issues/issue-4/pages',
                                 5,
                                 'jpg',
                                 5,
                               ),
                             },
-                          },
                         }
                       : undefined,
                     process.env.SOLANA_CLUSTER === 'devnet'
@@ -1767,14 +1777,12 @@ async function main() {
                           publishedAt: new Date(),
                           popularizedAt: null,
                           pages: {
-                            createMany: {
-                              data: generatePages(
+                            create: generatePages(
                                 'comics/wretches/issues/issue-5/pages',
                                 6,
                                 'jpg',
                                 6,
                               ),
-                            },
                           },
                         }
                       : undefined,
@@ -1799,15 +1807,13 @@ async function main() {
                           publishedAt: new Date(),
                           popularizedAt: null,
                           pages: {
-                            createMany: {
-                              data: generatePages(
+                            create: generatePages(
                                 'comics/wretches/issues/issue-6/pages',
                                 5,
                                 'jpg',
                                 5,
                               ),
                             },
-                          },
                         }
                       : undefined,
                   ],
@@ -1871,14 +1877,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: new Date(),
               pages: {
-                createMany: {
-                  data: generatePages(
+                create:  generatePages(
                     'comics/jana/issues/issue-1/pages',
                     10,
                     'jpg',
                     10,
                   ),
-                },
               },
             },
             process.env.SOLANA_CLUSTER === 'devnet' && false
@@ -1902,14 +1906,12 @@ async function main() {
                   publishedAt: new Date(),
                   popularizedAt: null,
                   pages: {
-                    createMany: {
-                      data: generatePages(
+                    create:  generatePages(
                         'comics/jana/issues/issue-2/pages',
                         5,
                         'jpg',
                         5,
                       ),
-                    },
                   },
                 }
               : undefined,
@@ -1975,14 +1977,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: null,
               pages: {
-                createMany: {
-                  data: generatePages(
+                create:  generatePages(
                     'comics/knockturn-county/issues/issue-1/pages',
                     14,
                     'jpg',
                     14,
                   ),
-                },
               },
             },
             process.env.SOLANA_CLUSTER === 'devnet' && false
@@ -2006,14 +2006,12 @@ async function main() {
                   publishedAt: new Date(),
                   popularizedAt: null,
                   pages: {
-                    createMany: {
-                      data: generatePages(
+                    create : generatePages(
                         'comics/knockturn-county/issues/issue-2/pages',
                         5,
                         'jpg',
                         5,
                       ),
-                    },
                   },
                 }
               : undefined,
@@ -2074,14 +2072,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: null,
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/dark-waters/issues/treacherous-seas/pages',
                     10,
                     'jpg',
                     10,
                   ),
-                },
               },
             },
           ],
@@ -2146,14 +2142,12 @@ async function main() {
               publishedAt: new Date(),
               popularizedAt: new Date(),
               pages: {
-                createMany: {
-                  data: generatePages(
+                create: generatePages(
                     'comics/multi-versus/issues/episode-1/pages',
                     5,
                     'png',
                     5,
                   ),
-                },
               },
             },
           ],
@@ -2249,14 +2243,12 @@ async function main() {
                       publishedAt: new Date(),
                       popularizedAt: null,
                       pages: {
-                        createMany: {
-                          data: generatePages(
-                            'comics/tsukiverse/issues/issue-1/pages',
-                            1,
-                            'jpg',
-                            1,
-                          ),
-                        },
+                        create: generatePages(
+                          'comics/tsukiverse/issues/issue-1/pages',
+                          1,
+                          'jpg',
+                          1,
+                        ),
                       },
                     },
                   ],
