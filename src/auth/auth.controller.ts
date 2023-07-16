@@ -22,7 +22,7 @@ export class AuthController {
     return this.authService.validateName(name);
   }
 
-  @Throttle(3, 30)
+  @Throttle(10, 30)
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
   requestPassword(@Param('address') address: string) {
