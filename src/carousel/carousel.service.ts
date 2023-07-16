@@ -63,7 +63,12 @@ export class CarouselService {
             },
           },
           include: {
-            translations: { where: { language: lang } },
+            translations: {
+              where: {
+                OR: [{ language }, { language: Language.English }],
+              },
+              orderBy: { language: 'asc' },
+            },
           },
         })
         .then(flattenTranslations);
@@ -113,7 +118,12 @@ export class CarouselService {
         },
         orderBy: { priority: 'asc' },
         include: {
-          translations: { where: { language } },
+          translations: {
+            where: {
+              OR: [{ language }, { language: Language.English }],
+            },
+            orderBy: { language: 'asc' },
+          },
         },
       })
       .then(flattenTranslationsArray);
@@ -126,7 +136,14 @@ export class CarouselService {
     const carouselSlide = await this.prisma.carouselSlide
       .findUnique({
         where: { id },
-        include: { translations: { where: { language } } },
+        include: {
+          translations: {
+            where: {
+              OR: [{ language }, { language: Language.English }],
+            },
+            orderBy: { language: 'asc' },
+          },
+        },
       })
       .then(flattenTranslations);
 
