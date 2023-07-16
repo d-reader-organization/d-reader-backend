@@ -139,14 +139,13 @@ export class ComicIssueController {
   @Get('get/:id/pages')
   async getPages(
     @Param('id') id: string,
-    @Query() query: LanguageParams,
+    @Query() query: LanguageParams = { lang: Language.English },
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
-    const lang = query.lang ?? Language.English;
     const pages = await this.comicIssueService.getPages(
       +id,
       wallet.address,
-      lang,
+      query.lang,
     );
     return toComicPageDtoArray(pages);
   }
@@ -246,7 +245,7 @@ export class ComicIssueController {
   @Post('update/pages/:id')
   async updatePages(
     @Param('id') id: string,
-    @Query() query: LanguageParams,
+    @Query() query: LanguageParams = { lang: Language.English },
     @ApiFileArray({
       bodyField: 'data',
       fileField: 'image',
@@ -255,8 +254,7 @@ export class ComicIssueController {
     })
     pagesDto: CreateComicPageDto[],
   ) {
-    const language = query.lang ?? Language.English;
-    await this.comicPageService.updateMany(pagesDto, +id, language);
+    await this.comicPageService.updateMany(pagesDto, +id, query.lang);
   }
 
   /* Update Stateless covers */

@@ -8,7 +8,7 @@ import { CreateComicPageDto } from './dto/create-comic-page.dto';
 import { Language, Prisma } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import { TranslatedComicPage } from './entities/comic-page.dto';
-import { mergeTranslationArray } from 'src/utils/helpers';
+import { flattenTranslationsArray } from '../utils/helpers';
 
 export type ComicPageWhereInput = {
   comicIssueId?: Prisma.ComicPageWhereInput['comicIssueId'];
@@ -95,7 +95,7 @@ export class ComicPageService {
           },
         },
       })
-      .then(mergeTranslationArray);
+      .then(flattenTranslationsArray);
   }
 
   async updateMany(
