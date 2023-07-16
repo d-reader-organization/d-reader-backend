@@ -1,7 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
 import { getPresignedUrl } from 'src/aws/s3client';
-import { ComicPage } from '@prisma/client';
+import { ComicPage, ComicPageTranslation } from '@prisma/client';
 import { sortBy } from 'lodash';
 
 export class ComicPageDto {
@@ -19,7 +19,8 @@ export class ComicPageDto {
   image: string;
 }
 
-export async function toComicPageDto(page: ComicPage) {
+export type TranslatedComicPage = ComicPage & ComicPageTranslation;
+export async function toComicPageDto(page: TranslatedComicPage) {
   const plainPageDto: ComicPageDto = {
     id: page.id,
     pageNumber: page.pageNumber,
@@ -32,7 +33,7 @@ export async function toComicPageDto(page: ComicPage) {
 }
 
 export async function toComicPageDtoArray(
-  pages: ComicPage[],
+  pages: TranslatedComicPage[],
 ): Promise<ComicPageDto[]> {
   const comicPagesDto = await Promise.all(pages.map(toComicPageDto));
   return sortBy(comicPagesDto, 'pageNumber');

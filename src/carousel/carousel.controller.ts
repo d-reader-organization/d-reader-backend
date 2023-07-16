@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
@@ -16,6 +17,8 @@ import {
   CreateCarouselSlideSwaggerDto,
   CreateCarouselSlideDto,
   CreateCarouselSlideFilesDto,
+  CreateCarouselSlideTranslationSwaggerDto,
+  CreateCarouselSlideTranslationDto,
 } from 'src/carousel/dto/create-carousel-slide.dto';
 import { CarouselService } from './carousel.service';
 import {
@@ -30,10 +33,11 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { Role } from '@prisma/client';
+import { Language, Role } from '@prisma/client';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { throttle } from 'lodash';
+import { LanguageParams } from 'src/types/language.dto';
+import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -62,9 +66,31 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
-  private throttledFindAll = throttle(
-    async () => {
-      const carouselSlides = await this.carouselService.findAll();
+  /* Add a new carousel slide translation */
+  @Roles(Role.Superadmin)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateCarouselSlideTranslationSwaggerDto })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
+  @Post('slides/:id/translation/add')
+  async addTranslation(
+    @Param('id') id: number,
+    @Body()
+    createCarouselSlideTranslationDto: CreateCarouselSlideTranslationDto,
+    @UploadedFiles({
+      transform: (val) => plainToInstance(CreateCarouselSlideFilesDto, val),
+    })
+    files: CreateCarouselSlideFilesDto,
+  ) {
+    await this.carouselService.addTranslation(
+      +id,
+      createCarouselSlideTranslationDto,
+      files,
+    );
+  }
+
+  private throttledFindAll = memoizeThrottle(
+    async (language: Language) => {
+      const carouselSlides = await this.carouselService.findAll(language);
       return toCarouselSlideDtoArray(carouselSlides);
     },
     24 * 60 * 60 * 1000, // 24 hours
@@ -72,14 +98,18 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll() {
-    return await this.throttledFindAll();
+  async findAll(@Query() query: LanguageParams = { lang: Language.English }) {
+    const language = query.lang ?? Language.English;
+    return this.throttledFindAll(language);
   }
 
   /* Get specific carousel slide by unique id */
   @Get('slides/get/:id')
-  async findOne(@Param('id') id: string): Promise<CarouselSlideDto> {
-    const carouselSlide = await this.carouselService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+    @Query() query: LanguageParams = { lang: Language.English },
+  ): Promise<CarouselSlideDto> {
+    const carouselSlide = await this.carouselService.findOne(+id, query.lang);
     return toCarouselSlideDto(carouselSlide);
   }
 
@@ -89,12 +119,8 @@ export class CarouselController {
   async update(
     @Param('id') id: string,
     @Body() updateCarouselSlideDto: UpdateCarouselSlideDto,
-  ): Promise<CarouselSlideDto> {
-    const updatedCarouselSlide = await this.carouselService.update(
-      +id,
-      updateCarouselSlideDto,
-    );
-    return toCarouselSlideDto(updatedCarouselSlide);
+  ) {
+    await this.carouselService.update(+id, updateCarouselSlideDto);
   }
 
   /* Update specific carousel slides image file */
@@ -105,12 +131,15 @@ export class CarouselController {
   @Patch('slides/update/:id/image')
   async updateImage(
     @Param('id') id: string,
+    @Query() query: LanguageParams = { lang: Language.English },
     @UploadedFile() image: Express.Multer.File,
   ): Promise<CarouselSlideDto> {
+    const language = query.lang ?? Language.English;
     const updatedCarouselSlide = await this.carouselService.updateFile(
       +id,
       image,
       'image',
+      language,
     );
     return toCarouselSlideDto(updatedCarouselSlide);
   }
@@ -118,8 +147,7 @@ export class CarouselController {
   /* Make carousel slide expire */
   @Roles(Role.Superadmin)
   @Patch('slides/expire/:id')
-  async expire(@Param('id') id: string): Promise<CarouselSlideDto> {
-    const expiredCarouselSlide = await this.carouselService.expire(+id);
-    return toCarouselSlideDto(expiredCarouselSlide);
+  async expire(@Param('id') id: string) {
+    await this.carouselService.expire(+id);
   }
 }

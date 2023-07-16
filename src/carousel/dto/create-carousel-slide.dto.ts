@@ -8,11 +8,9 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
+import { LanguageParams } from 'src/types/language.dto';
 
-export class CreateCarouselSlideDto {
-  @IsNumber()
-  priority: number;
-
+export class CreateCarouselSlideTranslationDto extends LanguageParams {
   @IsString()
   @IsOptional()
   @MaxLength(26)
@@ -22,6 +20,11 @@ export class CreateCarouselSlideDto {
   @IsOptional()
   @MaxLength(48)
   subtitle?: string;
+}
+
+export class CreateCarouselSlideDto extends CreateCarouselSlideTranslationDto {
+  @IsNumber()
+  priority: number;
 
   @IsEnum(CarouselLocation)
   @ApiProperty({ enum: CarouselLocation })
@@ -52,5 +55,10 @@ export class CreateCarouselSlideFilesDto {
 
 export class CreateCarouselSlideSwaggerDto extends IntersectionType(
   CreateCarouselSlideDto,
+  CreateCarouselSlideFilesDto,
+) {}
+
+export class CreateCarouselSlideTranslationSwaggerDto extends IntersectionType(
+  CreateCarouselSlideTranslationDto,
   CreateCarouselSlideFilesDto,
 ) {}

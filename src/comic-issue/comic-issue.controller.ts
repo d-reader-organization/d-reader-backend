@@ -35,7 +35,7 @@ import { plainToInstance } from 'class-transformer';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Creator, Wallet, Role } from '@prisma/client';
+import { Creator, Wallet, Role, Language } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
@@ -69,6 +69,7 @@ import {
   OwnedComicIssueDto,
   toOwnedComicIssueDtoArray,
 } from './dto/owned-comic-issue.dto';
+import { LanguageParams } from '../types/language.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -138,9 +139,14 @@ export class ComicIssueController {
   @Get('get/:id/pages')
   async getPages(
     @Param('id') id: string,
+    @Query() query: LanguageParams = { lang: Language.English },
     @WalletEntity() wallet: Wallet,
   ): Promise<ComicPageDto[]> {
-    const pages = await this.comicIssueService.getPages(+id, wallet.address);
+    const pages = await this.comicIssueService.getPages(
+      +id,
+      wallet.address,
+      query.lang,
+    );
     return toComicPageDtoArray(pages);
   }
 
@@ -239,6 +245,7 @@ export class ComicIssueController {
   @Post('update/pages/:id')
   async updatePages(
     @Param('id') id: string,
+    @Query() query: LanguageParams = { lang: Language.English },
     @ApiFileArray({
       bodyField: 'data',
       fileField: 'image',
@@ -247,7 +254,7 @@ export class ComicIssueController {
     })
     pagesDto: CreateComicPageDto[],
   ) {
-    await this.comicPageService.updateMany(pagesDto, +id);
+    await this.comicPageService.updateMany(pagesDto, +id, query.lang);
   }
 
   /* Update Stateless covers */
