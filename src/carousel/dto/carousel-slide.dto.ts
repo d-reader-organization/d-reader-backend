@@ -8,7 +8,11 @@ import {
   IsString,
   IsUrl,
 } from 'class-validator';
-import { CarouselSlide, CarouselLocation } from '@prisma/client';
+import {
+  CarouselSlide,
+  CarouselLocation,
+  CarouselSlideTranslation,
+} from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { getPublicUrl } from 'src/aws/s3client';
 
@@ -56,8 +60,8 @@ export class CarouselSlideDto {
   @IsString()
   externalLink?: string;
 }
-
-export function toCarouselSlideDto(slide: CarouselSlide) {
+export type TranslatedCarouselSlide = CarouselSlide & CarouselSlideTranslation;
+export function toCarouselSlideDto(slide: TranslatedCarouselSlide) {
   const plainSlideDto: CarouselSlideDto = {
     id: slide.id,
     image: getPublicUrl(slide.image),
@@ -77,6 +81,6 @@ export function toCarouselSlideDto(slide: CarouselSlide) {
   return slideDto;
 }
 
-export const toCarouselSlideDtoArray = (slides: CarouselSlide[]) => {
+export const toCarouselSlideDtoArray = (slides: TranslatedCarouselSlide[]) => {
   return slides.map(toCarouselSlideDto);
 };

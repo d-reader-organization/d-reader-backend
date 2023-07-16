@@ -257,7 +257,7 @@ Table ComicPage {
   id Int [pk, increment]
   pageNumber Int [increment, not null]
   isPreviewable Boolean [not null, default: false]
-  image String [not null]
+  translations ComicPageTranslation [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
 
@@ -266,11 +266,33 @@ Table ComicPage {
   }
 }
 
+Table ComicPageTranslation {
+  image String [not null]
+  language Language [not null]
+  pageId Int [not null]
+  page ComicPage [not null]
+
+  indexes {
+    (pageId, language) [unique]
+  }
+}
+
+Table CarouselSlideTranslation {
+  title String [not null]
+  subtitle String [not null]
+  image String [not null]
+  language Language [not null]
+  slideId Int [not null]
+  slide CarouselSlide [not null]
+
+  indexes {
+    (slideId, language) [unique]
+  }
+}
+
 Table CarouselSlide {
   id Int [pk, increment]
-  image String [not null]
-  title String [not null, default: '']
-  subtitle String [not null, default: '']
+  translations CarouselSlideTranslation [not null]
   priority Int [not null]
   comicIssueId Int
   comicSlug String
@@ -384,6 +406,11 @@ Enum ComicRarity {
   Legendary
 }
 
+Enum Language {
+  English
+  French
+}
+
 Enum CarouselLocation {
   Home
 }
@@ -427,6 +454,10 @@ Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cas
 Ref: CollectionNft.comicIssueId - ComicIssue.id
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
+
+Ref: ComicPageTranslation.pageId > ComicPage.id
+
+Ref: CarouselSlideTranslation.slideId > CarouselSlide.id
 
 Ref: Newsletter.walletAddress - Wallet.address [delete: Cascade]
 
