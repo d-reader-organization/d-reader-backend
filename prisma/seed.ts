@@ -451,6 +451,23 @@ async function main() {
   try {
     await prisma.wallet.create({
       data: {
+        address: Keypair.generate().publicKey.toBase58(),
+        name: 'deanslist',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.User,
+        referralsRemaining: 30,
+      },
+    });
+    console.log('➕ Added deanslist wallet');
+  } catch (e) {
+    console.log('❌ Failed to add deanslist wallet', e);
+  }
+
+  try {
+    await prisma.wallet.create({
+      data: {
         address: '75eLTqY6pfTGhuzXAtRaWYXW9DDPhmX5zStvCjDKDmZ9',
         name: 'Admin',
         avatar: '',
@@ -2272,6 +2289,8 @@ async function main() {
   } catch (e) {
     console.log('❌ Failed to add "Tsukiverse" creator', e);
   }
+
+  // TODO: Dark Roasters, Chronicles of Cthulu, Endless (2)
 
   const dummyWalletCount = 10;
   try {
