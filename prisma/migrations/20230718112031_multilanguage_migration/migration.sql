@@ -4,6 +4,7 @@
   - You are about to drop the column `image` on the `CarouselSlide` table. All the data in the column will be lost.
   - You are about to drop the column `subtitle` on the `CarouselSlide` table. All the data in the column will be lost.
   - You are about to drop the column `title` on the `CarouselSlide` table. All the data in the column will be lost.
+  - You are about to drop the column `pdf` on the `ComicIssue` table. All the data in the column will be lost.
   - You are about to drop the column `image` on the `ComicPage` table. All the data in the column will be lost.
 
 */
@@ -16,7 +17,17 @@ DROP COLUMN "subtitle",
 DROP COLUMN "title";
 
 -- AlterTable
+ALTER TABLE "ComicIssue" DROP COLUMN "pdf";
+
+-- AlterTable
 ALTER TABLE "ComicPage" DROP COLUMN "image";
+
+-- CreateTable
+CREATE TABLE "ComicPdfTranslation" (
+    "pdf" TEXT NOT NULL DEFAULT '',
+    "language" "Language" NOT NULL,
+    "comicIssueId" INTEGER NOT NULL
+);
 
 -- CreateTable
 CREATE TABLE "ComicPageTranslation" (
@@ -35,10 +46,16 @@ CREATE TABLE "CarouselSlideTranslation" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ComicPdfTranslation_comicIssueId_language_key" ON "ComicPdfTranslation"("comicIssueId", "language");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ComicPageTranslation_pageId_language_key" ON "ComicPageTranslation"("pageId", "language");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CarouselSlideTranslation_slideId_language_key" ON "CarouselSlideTranslation"("slideId", "language");
+
+-- AddForeignKey
+ALTER TABLE "ComicPdfTranslation" ADD CONSTRAINT "ComicPdfTranslation_comicIssueId_fkey" FOREIGN KEY ("comicIssueId") REFERENCES "ComicIssue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ComicPageTranslation" ADD CONSTRAINT "ComicPageTranslation_pageId_fkey" FOREIGN KEY ("pageId") REFERENCES "ComicPage"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

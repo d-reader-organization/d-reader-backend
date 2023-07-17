@@ -578,7 +578,12 @@ async function main() {
                     sellerFeeBasisPoints: 0,
                     title: 'Rise of the Gorecats',
                     slug: 'rise-of-the-gorecats',
-                    pdf: 'comics/gorecats/issues/rise-of-the-gorecats/rise-of-the-gorecats.pdf',
+                    pdfTranslations:{
+                      create:{
+                        pdf: 'comics/gorecats/issues/rise-of-the-gorecats/rise-of-the-gorecats.pdf',
+                        language: Language.English,
+                      }
+                    },
                     description:
                       'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
                     flavorText: 'Geez these cats are so gore',

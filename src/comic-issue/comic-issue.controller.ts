@@ -212,12 +212,13 @@ export class ComicIssueController {
   @Patch('update/:id/pdf')
   async updatePdf(
     @Param('id') id: string,
+    @Query() query: LanguageParams = { lang: Language.English },
     @UploadedFile() pdf: Express.Multer.File,
-  ): Promise<ComicIssueDto> {
-    const updatedComicIssue = await this.comicIssueService.updateFile(
+  ) {
+    const updatedComicIssue = await this.comicIssueService.updateTranslations(
       +id,
       pdf,
-      'pdf',
+      query.lang,
     );
     return toComicIssueDto(updatedComicIssue);
   }

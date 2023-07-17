@@ -135,6 +135,15 @@ model Genre {
   comics    Comic[]
 }
 
+model ComicPdfTranslation {
+  pdf          String     @default("")
+  language     Language
+  comicIssueId Int
+  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id])
+
+  @@unique([comicIssueId, language])
+}
+
 model ComicIssue {
   id                   Int                      @id @default(autoincrement())
   number               Int
@@ -147,7 +156,7 @@ model ComicIssue {
   description          String                   @default("")
   flavorText           String                   @default("")
   signature            String                   @default("")
-  pdf                  String                   @default("")
+  pdfTranslations      ComicPdfTranslation[]
   // isFullyUploaded      Boolean                  @default(false)
   statelessCovers      StatelessCover[]
   statefulCovers       StatefulCover[]

@@ -67,7 +67,6 @@ export class CarouselService {
               where: {
                 OR: [{ language }, { language: Language.English }],
               },
-              orderBy: { language: 'asc' },
             },
           },
         })
@@ -122,7 +121,6 @@ export class CarouselService {
             where: {
               OR: [{ language }, { language: Language.English }],
             },
-            orderBy: { language: 'asc' },
           },
         },
       })
@@ -141,7 +139,6 @@ export class CarouselService {
             where: {
               OR: [{ language }, { language: Language.English }],
             },
-            orderBy: { language: 'asc' },
           },
         },
       })

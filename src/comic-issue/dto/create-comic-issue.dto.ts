@@ -14,8 +14,9 @@ import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsLamport } from 'src/decorators/IsLamport';
+import { LanguageParams } from 'src/types/language.dto';
 
-export class CreateComicIssueDto {
+export class CreateComicIssueDto extends LanguageParams {
   @IsNotEmpty()
   @MaxLength(48)
   title: string;
