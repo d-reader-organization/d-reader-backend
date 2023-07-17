@@ -728,77 +728,77 @@ async function main() {
       },
     });
 
-    // if (process.env.SOLANA_CLUSTER === 'devnet') {
-    await prisma.comic.create({
-      data: {
-        creator: { connect: { slug: 'studio-nx' } },
-        title: 'The Dark Portal',
-        slug: 'the-dark-portal',
-        description:
-          ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
-        flavorText: 'Nothing more exciting than frog pirates!',
-        genres: {
-          connect: [
-            { slug: 'adventure' },
-            { slug: 'fantasy' },
-            { slug: 'superhero' },
-            { slug: 'action' },
-            { slug: 'sci-fi' },
-            { slug: 'romance' },
-          ],
-        },
-        audienceType: AudienceType.Everyone,
-        deletedAt: null,
-        featuredAt: null,
-        verifiedAt: null,
-        publishedAt: subDays(new Date(), 18),
-        popularizedAt: null,
-        completedAt: new Date(),
-        cover: 'comics/the-dark-portal/cover.jpg',
-        pfp: 'comics/the-dark-portal/pfp.jpg',
-        banner: '',
-        logo: 'comics/the-dark-portal/logo.png',
-        website: 'https://www.studionx.com/',
-        twitter: 'https://twitter.com/StudioNX',
-        discord: '',
-        telegram: '',
-        instagram: 'https://www.instagram.com/jim_bryson/',
-        tikTok: '',
-        youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
-        issues: {
-          create: {
-            number: 1,
-            supply: 0,
-            discountMintPrice: 0,
-            mintPrice: 0,
-            sellerFeeBasisPoints: 0,
-            title: 'Concept Art',
-            slug: 'concept-art',
-            description:
-              ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
-            flavorText: 'Lovely pieces put by Jim Bryson',
-            ...generateCoversAndSignature('the-dark-portal', 'concept-art'),
-            releaseDate: subDays(new Date(), 15),
-            deletedAt: null,
-            featuredAt: null,
-            verifiedAt: new Date(),
-            publishedAt: new Date(),
-            popularizedAt: new Date(),
-            pages: {
-              createMany: {
-                data: generatePages(
-                  'comics/the-dark-portal/issues/concept-art/pages',
-                  9,
-                  'jpg',
-                  9,
-                ),
+    if (process.env.SOLANA_CLUSTER === 'devnet') {
+      await prisma.comic.create({
+        data: {
+          creator: { connect: { slug: 'studio-nx' } },
+          title: 'The Dark Portal',
+          slug: 'the-dark-portal',
+          description:
+            ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
+          flavorText: 'Nothing more exciting than frog pirates!',
+          genres: {
+            connect: [
+              { slug: 'adventure' },
+              { slug: 'fantasy' },
+              { slug: 'superhero' },
+              { slug: 'action' },
+              { slug: 'sci-fi' },
+              { slug: 'romance' },
+            ],
+          },
+          audienceType: AudienceType.Everyone,
+          deletedAt: null,
+          featuredAt: null,
+          verifiedAt: null,
+          publishedAt: subDays(new Date(), 18),
+          popularizedAt: null,
+          completedAt: new Date(),
+          cover: 'comics/the-dark-portal/cover.jpg',
+          pfp: 'comics/the-dark-portal/pfp.jpg',
+          banner: '',
+          logo: 'comics/the-dark-portal/logo.png',
+          website: 'https://www.studionx.com/',
+          twitter: 'https://twitter.com/StudioNX',
+          discord: '',
+          telegram: '',
+          instagram: 'https://www.instagram.com/jim_bryson/',
+          tikTok: '',
+          youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
+          issues: {
+            create: {
+              number: 1,
+              supply: 0,
+              discountMintPrice: 0,
+              mintPrice: 0,
+              sellerFeeBasisPoints: 0,
+              title: 'Concept Art',
+              slug: 'concept-art',
+              description:
+                ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
+              flavorText: 'Lovely pieces put by Jim Bryson',
+              ...generateCoversAndSignature('the-dark-portal', 'concept-art'),
+              releaseDate: subDays(new Date(), 15),
+              deletedAt: null,
+              featuredAt: null,
+              verifiedAt: new Date(),
+              publishedAt: new Date(),
+              popularizedAt: new Date(),
+              pages: {
+                createMany: {
+                  data: generatePages(
+                    'comics/the-dark-portal/issues/concept-art/pages',
+                    9,
+                    'jpg',
+                    9,
+                  ),
+                },
               },
             },
           },
         },
-      },
-    });
-    // }
+      });
+    }
 
     console.log('➕ Added "StudioNX" creator');
   } catch (e) {

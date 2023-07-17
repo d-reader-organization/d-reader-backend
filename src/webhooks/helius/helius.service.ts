@@ -112,7 +112,11 @@ export class HeliusService {
             return this.handleInstantBuy(transaction);
           default:
             if (!transaction.instructions[0]?.innerInstructions[0]?.accounts) {
-              console.log('Unhandled webhook event type: ', transaction.type);
+              console.log(
+                'Unhandled webhook event type: ',
+                JSON.stringify(transaction),
+                transaction.transactionError.valueOf(),
+              );
               return;
             }
             return this.handleMetadataUpdate(transaction);
