@@ -66,6 +66,7 @@ import {
   constructInitializeComicAuthorityInstruction,
   constructInitializeRecordAuthorityInstruction,
 } from './instructions';
+import { NftFiles } from './dto/types';
 
 @Injectable()
 export class CandyMachineService {
@@ -118,9 +119,24 @@ export class CandyMachineService {
     );
   }
 
+  async attachPdfs(comicIssue: ComicIssueCMInput, creatorAddress: string) {
+    const darkblockIds = comicIssue.pdfTranslations.map(async (translation) => {
+      return {
+        type: translation.language,
+        uri: await this.mintDarkblock(
+          comicIssue,
+          creatorAddress,
+          translation.pdf,
+        ),
+      };
+    });
+    return await Promise.all(darkblockIds);
+  }
+
   async mintDarkblock(
     comicIssue: ComicIssueCMInput,
     creatorAddress: string,
+    pdf: string,
   ): Promise<string> {
     try {
       const query = new URLSearchParams({
@@ -128,7 +144,7 @@ export class CandyMachineService {
       }).toString();
 
       const form = new FormData();
-      const getFileFromS3 = await getS3Object({ Key: comicIssue.pdf });
+      const getFileFromS3 = await getS3Object({ Key: pdf });
       const nftPlatform =
         process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
       const data = {
@@ -189,7 +205,7 @@ export class CandyMachineService {
     isUsed: string,
     isSigned: string,
     rarity: ComicRarity,
-    darkblockId?: string,
+    darkblockIds?: NftFiles[],
   ) {
     return await this.metaplex.nfts().uploadMetadata({
       name: comicIssue.title,
@@ -214,15 +230,7 @@ export class CandyMachineService {
       ],
       properties: {
         creators: [{ address: creatorAddress, share: HUNDRED }],
-        files: [
-          ...this.writeFiles(image),
-          darkblockId
-            ? {
-                type: 'Darkblock',
-                uri: darkblockId,
-              }
-            : undefined,
-        ],
+        files: [...this.writeFiles(image), ...(darkblockIds ?? [])],
       },
       collection: {
         name: comicIssue.title,
@@ -236,7 +244,7 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
     rarityCoverFiles: CoverFiles,
-    darkblockId: string,
+    darkblockIds: NftFiles[],
     rarity: ComicRarity,
     collectionNftAddress: PublicKey,
   ) {
@@ -244,7 +252,7 @@ export class CandyMachineService {
     await Promise.all(
       ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
         const property = generatePropertyName(isUsed, isSigned);
-        const darkblock = isUsed ? darkblockId : undefined;
+        const darkblocks = isUsed ? darkblockIds : undefined;
         itemMetadata[property] = await this.uploadMetadata(
           comicIssue,
           comicName,
@@ -253,7 +261,7 @@ export class CandyMachineService {
           isUsed.toString(),
           isSigned.toString(),
           rarity,
-          darkblock,
+          darkblocks,
         );
       }),
     );
@@ -274,7 +282,7 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
     numberOfRarities: number,
-    darkblockId: string,
+    darkblockIds: NftFiles[],
     rarityCoverFiles?: RarityCoverFiles,
   ) {
     const items: { uri: string; name: string }[] = [];
@@ -291,7 +299,7 @@ export class CandyMachineService {
         comicName,
         creatorAddress,
         rarityCoverFiles[ComicRarity[rarity].toString()],
-        darkblockId,
+        darkblockIds,
         rarity,
         collectionNftAddress,
       );
@@ -368,11 +376,11 @@ export class CandyMachineService {
 
     const candyMachineKey = Keypair.generate();
 
-    let darkblockId: string;
+    let darkblockIds: NftFiles[];
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
-      darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
+      darkblockIds = await this.attachPdfs(comicIssue, creatorAddress);
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
@@ -395,10 +403,7 @@ export class CandyMachineService {
                 ...statefulCovers,
                 ...statelessCovers,
               ),
-              {
-                type: 'Darkblock',
-                uri: darkblockId,
-              },
+              ...darkblockIds,
             ],
           },
         });
@@ -487,7 +492,7 @@ export class CandyMachineService {
       comicName,
       creatorAddress,
       statelessCovers.length,
-      darkblockId,
+      darkblockIds,
       rarityCoverFiles,
     );
 

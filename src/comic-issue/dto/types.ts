@@ -1,6 +1,7 @@
 import {
   ComicIssue,
   ComicIssueCollaborator,
+  ComicPdfTranslation,
   StatefulCover,
   StatelessCover,
 } from '@prisma/client';
@@ -10,6 +11,7 @@ export type ComicIssueCMInput = ComicIssue & {
   statelessCovers: StatelessCover[];
   statefulCovers: StatefulCover[];
   collaborators: ComicIssueCollaborator[];
+  pdfTranslations: ComicPdfTranslation[];
 };
 
 export class RarityShare {

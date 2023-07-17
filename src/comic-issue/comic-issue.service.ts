@@ -41,7 +41,7 @@ import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
-type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'pdf'>;
+type ComicIssueFileProperty = PickFields<ComicIssue, 'signature'>;
 
 @Injectable()
 export class ComicIssueService {
@@ -58,7 +58,8 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicSlug, sellerFee, ...rest } = createComicIssueDto;
+    const { slug, comicSlug, sellerFee, lang, ...rest } = createComicIssueDto;
+    const language = lang ?? Language.English;
     validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
@@ -96,7 +97,8 @@ export class ComicIssueService {
     let signatureKey: string, pdfKey: string;
     try {
       const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
-      if (pdf) pdfKey = await this.s3.uploadFile(s3Folder, pdf, 'pdf');
+      if (pdf)
+        pdfKey = await this.s3.uploadFile(s3Folder, pdf, `${language}-pdf`);
       if (signature)
         signatureKey = await this.s3.uploadFile(
           s3Folder,
@@ -112,7 +114,12 @@ export class ComicIssueService {
       include: { pages: true, collaborators: true },
       data: {
         signature: signatureKey,
-        pdf: pdfKey,
+        pdfTranslations: {
+          create: {
+            pdf: pdfKey,
+            language,
+          },
+        },
       },
     });
   }
@@ -312,6 +319,58 @@ export class ComicIssueService {
     }
   }
 
+  async updateTranslations(
+    id: number,
+    file: Express.Multer.File,
+    language: Language,
+  ) {
+    let comicIssue: ComicIssue;
+    try {
+      comicIssue = await this.prisma.comicIssue.findUnique({ where: { id } });
+    } catch {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+
+    const oldTranslation = await this.prisma.comicPdfTranslation.findFirst({
+      where: { comicIssueId: id, language },
+    });
+    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const newFileKey = await this.s3.uploadFile(
+      s3Folder,
+      file,
+      `${language}-pdf`,
+    );
+
+    try {
+      if (oldTranslation) {
+        await this.prisma.comicPdfTranslation.update({
+          where: { comicIssueId_language: { comicIssueId: id, language } },
+          data: {
+            pdf: newFileKey,
+          },
+        });
+      } else {
+        await this.prisma.comicPdfTranslation.create({
+          data: {
+            comicIssueId: id,
+            pdf: newFileKey,
+            language,
+          },
+        });
+      }
+    } catch {
+      await this.s3.deleteObject(newFileKey);
+      throw new BadRequestException(
+        'Malformed file upload or Comic issue already published',
+      );
+    }
+
+    if (oldTranslation) {
+      await this.s3.garbageCollectOldFile(newFileKey, oldTranslation.pdf);
+    }
+    return comicIssue;
+  }
+
   async updateFile(
     id: number,
     file: Express.Multer.File,
@@ -376,6 +435,7 @@ export class ComicIssueService {
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
+        pdfTranslations: true,
       },
     });
 
@@ -412,6 +472,7 @@ export class ComicIssueService {
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
+        pdfTranslations: true,
       },
     });
 
