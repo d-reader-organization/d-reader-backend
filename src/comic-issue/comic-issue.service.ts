@@ -349,6 +349,7 @@ export class ComicIssueService {
             pdf: newFileKey,
           },
         });
+        await this.s3.garbageCollectOldFile(newFileKey, oldTranslation.pdf);
       } else {
         await this.prisma.comicPdfTranslation.create({
           data: {
@@ -365,9 +366,6 @@ export class ComicIssueService {
       );
     }
 
-    if (oldTranslation) {
-      await this.s3.garbageCollectOldFile(newFileKey, oldTranslation.pdf);
-    }
     return comicIssue;
   }
 
