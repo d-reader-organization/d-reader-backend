@@ -98,9 +98,7 @@ export class CarouselService {
           language,
           title,
           subtitle,
-          slide: {
-            connect: { id },
-          },
+          slide: { connect: { id } },
         },
       });
     } catch {
