@@ -28,6 +28,8 @@ import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
+import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 
 @Injectable()
 export class AuctionHouseService {
@@ -418,10 +420,24 @@ export class AuctionHouseService {
         `NFT ${nftAddress} doesn't have any metadata`,
       );
     }
+
     const metadata = toMetadata(toMetadataAccount(info));
+    const nft = await this.prisma.nft.findFirst({
+      where: { address: metadata.mintAddress.toString() },
+      include: { metadata: true },
+    });
+    const collectionAddress = new PublicKey(nft.collectionNftAddress);
+    const updateAuthorityAddress = await pda(
+      [
+        Buffer.from(AUTH_TAG + nft.metadata.rarity.toLowerCase()),
+        collectionAddress.toBuffer(),
+      ],
+      COMIC_VERSE_ID,
+    );
+
     if (
       !metadata.collection.verified ||
-      !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
+      !updateAuthorityAddress.equals(metadata.updateAuthorityAddress)
     ) {
       throw new BadRequestException(
         `NFT ${nftAddress} is not from a verified collection`,
