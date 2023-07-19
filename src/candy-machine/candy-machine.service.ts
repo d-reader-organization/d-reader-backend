@@ -446,10 +446,10 @@ export class CandyMachineService {
             lamports: solFromLamports(BOT_TAX),
             lastInstruction: true,
           },
-          freezeSolPayment: {
-            amount: solFromLamports(comicIssue.mintPrice),
-            destination: this.metaplex.identity().publicKey,
-          },
+          // freezeSolPayment: {
+          //   amount: solFromLamports(comicIssue.mintPrice),
+          //   destination: this.metaplex.identity().publicKey,
+          // },
         },
         groups,
         creators: [

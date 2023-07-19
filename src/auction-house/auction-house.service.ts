@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import {
   AuctionHouse,
   Metaplex,
@@ -28,6 +28,7 @@ import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import { NonceAccountArgs, createNonceAccount } from '../utils/nonce-account';
 
 @Injectable()
 export class AuctionHouseService {
@@ -109,8 +110,15 @@ export class AuctionHouseService {
     }
   }
 
-  async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
+  async constructInstantBuyTransaction(
+    buyer: PublicKey,
+    buyArgs: BuyArgs,
+  ) {
     try {
+      const nonceAccount = await createNonceAccount(
+        this.metaplex.connection,
+        this.metaplex.identity(),
+      );
       const { mintAccount, seller, price } = buyArgs;
       const listingModel = await this.prisma.listing.findUnique({
         where: {
@@ -153,16 +161,21 @@ export class AuctionHouseService {
         listing,
         bid,
       );
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
+      const advanceNonceInstruction = SystemProgram.nonceAdvance({
+        authorizedPubkey: this.metaplex.identity().publicKey,
+        noncePubkey: nonceAccount.pubkey,
+      });
 
       const instantBuyTransaction = new Transaction({
         feePayer: buyer,
-        ...latestBlockhash,
-      })
-        .add(...bidInstruction)
-        .add(executeSaleInstruction);
-
+        recentBlockhash: nonceAccount.nonce,
+      });
+      instantBuyTransaction.add(
+        advanceNonceInstruction,
+        ...bidInstruction,
+        executeSaleInstruction,
+      );
+      instantBuyTransaction.sign(this.metaplex.identity());
       const rawTransaction = instantBuyTransaction.serialize({
         requireAllSignatures: false,
         verifySignatures: false,
@@ -420,8 +433,7 @@ export class AuctionHouseService {
     }
     const metadata = toMetadata(toMetadataAccount(info));
     if (
-      !metadata.collection.verified ||
-      !this.metaplex.identity().equals(metadata.updateAuthorityAddress)
+      !metadata.collection.verified
     ) {
       throw new BadRequestException(
         `NFT ${nftAddress} is not from a verified collection`,

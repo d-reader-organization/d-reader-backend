@@ -1,18 +1,22 @@
+import { IdentityClient } from '@metaplex-foundation/js';
 import {
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   NONCE_ACCOUNT_LENGTH,
   NonceAccount,
+  PublicKey,
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 
+export type NonceAccountArgs = { nonce: string; pubkey: PublicKey };
+
 export async function createNonceAccount(
   connection: Connection,
-  identity: Keypair,
-) {
+  identity: IdentityClient,
+): Promise<NonceAccountArgs> {
   const nonceKey = Keypair.generate();
   const latestBlockhash = await connection.getLatestBlockhash('confirmed');
   const tx = new Transaction({
