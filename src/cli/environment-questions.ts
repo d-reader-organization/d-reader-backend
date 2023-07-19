@@ -1,6 +1,6 @@
 import { Connection } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
-import { clusterHeliusApiUrl } from '../utils/helius';
+import { heliusClusterApiUrl } from 'helius-sdk';
 
 @QuestionSet({ name: 'environment' })
 export class EnvironmentQuestions {
@@ -39,7 +39,7 @@ export class EnvironmentQuestions {
         return 'Helius API key missing';
       }
 
-      const endpoint = clusterHeliusApiUrl(value, 'devnet');
+      const endpoint = heliusClusterApiUrl(value, 'devnet');
       const connection = new Connection(endpoint, 'confirmed');
 
       try {
