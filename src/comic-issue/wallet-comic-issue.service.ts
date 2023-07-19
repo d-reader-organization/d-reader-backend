@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
-import { WalletComicIssue } from '@prisma/client';
+import { Nft, WalletComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssue } from '@prisma/client';
+import { fetchOffChainMetadata, findUsedTrait } from 'src/utils/nft-metadata';
 
 @Injectable()
 export class WalletComicIssueService {
@@ -172,9 +173,10 @@ export class WalletComicIssueService {
     const ownedComicIssues = await this.prisma.nft.findMany({
       where: { collectionNftAddress, ownerAddress: walletAddress },
     });
+    const haveUsedComicIssue = await this.haveUsedNfts(ownedComicIssues);
 
     // if wallet does not own the issue, see if it's whitelisted per comic issue basis
-    if (!ownedComicIssues.length) {
+    if (!ownedComicIssues.length && !haveUsedComicIssue) {
       const walletComicIssue = await this.prisma.walletComicIssue.findFirst({
         where: { walletAddress, comicIssueId, isWhitelisted: true },
       });
@@ -194,6 +196,17 @@ export class WalletComicIssueService {
         if (!walletComic) return true;
       }
     }
+  }
+
+  private async haveUsedNfts(nfts: Nft[]): Promise<boolean> {
+    for (const nft of nfts) {
+      const offChainMetadata = await fetchOffChainMetadata(nft.uri);
+      const isUsed = findUsedTrait(offChainMetadata);
+      if (isUsed) {
+        return isUsed;
+      }
+    }
+    return false;
   }
 
   async rate(walletAddress: string, comicIssueId: number, rating: number) {

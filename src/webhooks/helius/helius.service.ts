@@ -145,7 +145,7 @@ export class HeliusService {
 
       const mint = metadata.mintAddress.toString();
       const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-      await this.prisma.nft.update({
+      const nft = await this.prisma.nft.update({
         where: { address: mint },
         data: {
           metadata: {
@@ -162,6 +162,7 @@ export class HeliusService {
           },
         },
       });
+      this.websocketGateway.handleWalletNftUsed(nft);
     } catch (e) {
       console.log(e);
     }
