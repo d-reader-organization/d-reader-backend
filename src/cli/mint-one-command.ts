@@ -48,7 +48,7 @@ export class MintOneCommand extends CommandRunner {
     );
 
     const encodedTransaction =
-      await this.candyMachineService.constructMintOneTransaction(
+      await this.candyMachineService.createMintOneTransaction(
         keypair.publicKey,
         options.candyMachineAddress,
       );
@@ -63,8 +63,9 @@ export class MintOneCommand extends CommandRunner {
       log('✅ Minted successfully');
       log(`✍️  Signature: ${cuy(signature)}`);
     } catch (e) {
-      logErr(`Failed to mint from ${options.candyMachineAddress.toBase58()}`);
-      console.log(e);
+      logErr(
+        `Failed to mint from ${options.candyMachineAddress.toBase58()}: ${e}`,
+      );
     }
   }
 }

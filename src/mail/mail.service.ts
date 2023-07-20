@@ -17,21 +17,4 @@ export class MailService {
       console.log(`Error while sending subscription email to ${recipient}`, e);
     }
   }
-
-  async sendEmailExample() {
-    try {
-      await this.mailerService.sendMail({
-        to: 'recipient@gmail.com',
-        // from: 'localhost@dReader.io',
-        subject: 'Test Email',
-        template: 'test',
-        context: {
-          name: 'John Doe',
-          currentDate: new Date().toLocaleDateString(),
-        },
-      });
-    } catch (e) {
-      console.log('Error while sending emails: ', e);
-    }
-  }
 }

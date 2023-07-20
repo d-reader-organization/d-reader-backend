@@ -26,14 +26,15 @@ export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
   @Get('/transactions/list')
-  async constructListTransaction(
+  createListTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: ListParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
-    return await this.auctionHouseService.constructListTransaction(
+
+    return this.auctionHouseService.createListTransaction(
       publicKey,
       mintAccount,
       query.price,
@@ -42,7 +43,7 @@ export class AuctionHouseController {
   }
 
   @Get('/transactions/private-bid')
-  async constructPrivateBidTransaction(
+  createPrivateBidTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: PrivateBidParams,
   ) {
@@ -51,7 +52,7 @@ export class AuctionHouseController {
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
-    return await this.auctionHouseService.constructPrivateBidTransaction(
+    return this.auctionHouseService.createPrivateBidTransaction(
       publicKey,
       mintAccount,
       query.price,
@@ -61,19 +62,19 @@ export class AuctionHouseController {
   }
 
   @Get('/transactions/instant-buy')
-  async constructInstantBuyTransaction(
+  createInstantBuyTransaction(
     @WalletEntity() wallet: Wallet,
     @Query() query: InstantBuyParams,
   ) {
     const publicKey = new PublicKey(wallet.address);
-    const buyArgs: BuyArgs = {
+    const buyArguments: BuyArgs = {
       mintAccount: new PublicKey(query.mintAccount),
       price: query.price,
       seller: new PublicKey(query.seller),
     };
-    return await this.auctionHouseService.constructInstantBuyTransaction(
+    return this.auctionHouseService.createInstantBuyTransaction(
       publicKey,
-      buyArgs,
+      buyArguments,
     );
   }
 
@@ -82,33 +83,28 @@ export class AuctionHouseController {
     name: 'query',
     type: BuyParamsArray,
   })
-  async constructMultipleBuys(
+  createMultipleBuys(
     @WalletEntity() wallet: Wallet,
     @SilentQuery() query: BuyParamsArray,
   ) {
     const buyParams = validateAndFormatParams(query.instantBuyParams);
     const publicKey = new PublicKey(wallet.address);
-    return await this.auctionHouseService.constructMultipleBuys(
-      publicKey,
-      buyParams,
-    );
+    return this.auctionHouseService.createMultipleBuys(publicKey, buyParams);
   }
 
   @Get('/transactions/cancel-bid')
-  async constructCancelBidTransaction(@Query() query: CancelParams) {
+  createCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
-    return await this.auctionHouseService.constructCancelBidTransaction(
-      receiptAddress,
-    );
+    return this.auctionHouseService.createCancelBidTransaction(receiptAddress);
   }
 
   @Get('/transactions/cancel-listing')
-  async constructCancelListingTransaction(@Query() query: CancelParams) {
+  createCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = query.receiptAddress
       ? new PublicKey(query.receiptAddress)
       : undefined;
     const mint = query.mint ?? undefined;
-    return await this.auctionHouseService.constructCancelListingTransaction(
+    return this.auctionHouseService.createCancelListingTransaction(
       receiptAddress,
       mint,
     );

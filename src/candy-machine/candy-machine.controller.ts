@@ -37,7 +37,7 @@ export class CandyMachineController {
     const publicKey = new PublicKey(wallet.address);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
 
-    return this.candyMachineService.constructMintOneTransaction(
+    return this.candyMachineService.createMintOneTransaction(
       publicKey,
       candyMachineAddress,
     );
@@ -51,8 +51,7 @@ export class CandyMachineController {
     const publicKey = new PublicKey(wallet.address);
     const mint = new PublicKey(query.mint);
 
-    return this.candyMachineService.constructChangeComicStateTransaction(
-      query.rarity,
+    return this.candyMachineService.createChangeComicStateTransaction(
       mint,
       publicKey,
       ComicStateArgs.Sign,
@@ -67,8 +66,7 @@ export class CandyMachineController {
     const publicKey = new PublicKey(wallet.address);
     const mint = new PublicKey(query.mint);
 
-    return this.candyMachineService.constructChangeComicStateTransaction(
-      query.rarity,
+    return this.candyMachineService.createChangeComicStateTransaction(
       mint,
       publicKey,
       ComicStateArgs.Use,

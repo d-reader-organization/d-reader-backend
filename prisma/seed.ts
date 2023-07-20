@@ -2290,8 +2290,6 @@ async function main() {
     console.log('❌ Failed to add "Tsukiverse" creator', e);
   }
 
-  // TODO: Dark Roasters, Chronicles of Cthulu, Endless (2)
-
   const dummyWalletCount = 10;
   try {
     // dummy wallets

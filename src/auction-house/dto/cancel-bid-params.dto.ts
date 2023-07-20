@@ -1,11 +1,11 @@
 import { IsOptional, IsString } from 'class-validator';
 
 export class CancelParams {
-  @IsOptional()
   @IsString()
-  receiptAddress: string;
+  @IsOptional()
+  receiptAddress?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   mint: string;
 }

@@ -210,7 +210,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           audienceType: issue.comic.audienceType,
         }
       : undefined,
-    // TODO: order genres by 'priority' and filter out the deleted genres
+    // TODO: use .reduce to filter out deleted genres, sort by priority, and map properties
     genres: (issue.genres || issue.comic.genres)?.map((genre) => ({
       name: genre.name,
       slug: genre.slug,

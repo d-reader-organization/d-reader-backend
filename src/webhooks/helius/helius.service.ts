@@ -53,7 +53,7 @@ export class HeliusService {
   createWebhook(payload: CreateHeliusWebhookDto) {
     return this.helius.createWebhook({
       ...payload,
-      // TODO v1: scope down to relevant TransactionType-s
+      // TODO: scope down to relevant TransactionType-s
       transactionTypes: [TransactionType.ANY],
       webhookType:
         process.env.SOLANA_CLUSTER === 'devnet'
@@ -137,10 +137,7 @@ export class HeliusService {
       const collection = metadata.collection;
       const isVerified = await this.verifyMetadataAccount(collection);
       if (!isVerified) {
-        console.log(
-          `Invalid or Unverified Metadata Account ${metadataAddress}`,
-        );
-        return;
+        throw new Error(`Unverified metadata account ${metadataAddress}`);
       }
 
       const mint = metadata.mintAddress.toString();
@@ -164,7 +161,7 @@ export class HeliusService {
       });
       this.websocketGateway.handleWalletNftUsed(nft);
     } catch (e) {
-      console.log(e);
+      console.log('Failed to handle NFT metadata update', e);
     }
   }
 
@@ -218,8 +215,8 @@ export class HeliusService {
         nft,
       });
       this.websocketGateway.handleWalletNftBought(nft.ownerAddress, nft);
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      console.log('Failed to handle instant buy', e);
     }
   }
 
@@ -244,8 +241,8 @@ export class HeliusService {
           listing.nft.ownerAddress,
           listing.nft,
         );
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      console.log('Failed to handle cancel listing', e);
     }
   }
 
@@ -303,8 +300,8 @@ export class HeliusService {
         nft,
       });
       this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
-    } catch (error) {
-      console.log(error);
+    } catch (e) {
+      console.log('Failed to handle NFT listing', e);
     }
   }
 
@@ -351,7 +348,7 @@ export class HeliusService {
         this.websocketGateway.handleWalletNftSent(previousOwner, nft);
       }
     } catch (e) {
-      console.log(e);
+      console.log('Failed to handle NFT transfer', e);
     }
   }
 
@@ -500,20 +497,16 @@ export class HeliusService {
     rarity: string,
     mint: PublicKey,
   ) {
-    try {
-      const instruction = await constructDelegateAuthorityInstruction(
-        this.metaplex,
-        collectionMint,
-        ComicRarity[rarity],
-        mint,
-      );
-      const tx = new Transaction().add(instruction);
-      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-        this.metaplex.identity(),
-      ]);
-    } catch (e) {
-      console.log('Error delegating comic authority : ', e);
-    }
+    const instruction = await constructDelegateAuthorityInstruction(
+      this.metaplex,
+      collectionMint,
+      ComicRarity[rarity],
+      mint,
+    );
+    const tx = new Transaction().add(instruction);
+    await sendAndConfirmTransaction(this.metaplex.connection, tx, [
+      this.metaplex.identity(),
+    ]);
   }
 
   // Refresh auth token each day
@@ -524,6 +517,7 @@ export class HeliusService {
     await this.helius.editWebhook(this.webhookID, {
       authHeader: this.generateJwtHeader(),
     });
-    console.log('Webhook auth token refreshed');
+
+    console.info('Webhook auth token refreshed');
   }
 }

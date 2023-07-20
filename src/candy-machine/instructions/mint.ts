@@ -7,6 +7,7 @@ import {
   TransactionInstruction,
   SYSVAR_INSTRUCTIONS_PUBKEY,
   AccountMeta,
+  Transaction,
 } from '@solana/web3.js';
 
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
@@ -260,6 +261,53 @@ export function getRemainingAccounts(
   }, initialAccounts);
 
   return remainingAccounts;
+}
+
+export async function constructMintOneTransaction(
+  metaplex: Metaplex,
+  feePayer: PublicKey,
+  candyMachineAddress: PublicKey,
+  label?: string,
+  nftGateMint?: PublicKey,
+  allowList?: string[],
+) {
+  const mint = Keypair.generate();
+  const candyMachine = await metaplex
+    .candyMachines()
+    .findByAddress({ address: candyMachineAddress });
+
+  const remainingAccounts = getRemainingAccounts(metaplex, {
+    candyMachine,
+    feePayer,
+    mint: mint.publicKey,
+    destinationWallet: metaplex.identity().publicKey,
+    label,
+    nftGateMint,
+  });
+  const mintInstructions = await constructMintInstruction(
+    metaplex,
+    candyMachine.address,
+    feePayer,
+    mint,
+    metaplex.connection,
+    remainingAccounts,
+    undefined,
+    label,
+    allowList,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const mintTransaction = new Transaction({
+    feePayer,
+    ...latestBlockhash,
+  }).add(...mintInstructions);
+
+  mintTransaction.sign(mint);
+
+  const rawTransaction = mintTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+  return rawTransaction.toString('base64');
 }
 
 function getTokenPaymentAccounts(

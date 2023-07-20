@@ -10,6 +10,7 @@ import {
   SplTokenAmount,
   amount,
   lamports,
+  token,
 } from '@metaplex-foundation/js';
 import {
   CancelInstructionAccounts,
@@ -21,9 +22,16 @@ import {
 import { createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
 import { withdrawFromBuyerEscrow } from './withdrawFromBuyerEscrow';
+import { solFromLamports } from 'src/utils/helpers';
+import { BidModel } from '../dto/types/bid-model';
+import { BuyArgs } from '../dto/types/buy-args';
+import { toListing } from './list';
+import { Listing, Nft } from '@prisma/client';
+import { constructExecuteSaleInstruction } from './executeSale';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -143,6 +151,90 @@ export const constructPrivateBidInstruction = async (
   return instructions;
 };
 
+export async function constructInstantBuyTransaction(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  buyer: PublicKey,
+  buyArguments: BuyArgs,
+  listing: Listing & { nft: Nft },
+) {
+  const { mintAccount, seller, price } = buyArguments;
+  const bidInstruction = await constructPrivateBidInstruction(
+    metaplex,
+    auctionHouse,
+    buyer,
+    mintAccount,
+    solFromLamports(price),
+    token(1),
+    false,
+    seller,
+  );
+  const partialListing = await toListing(metaplex, auctionHouse, listing);
+  const bid = toBid(
+    metaplex,
+    auctionHouse,
+    buyer,
+    mintAccount,
+    price,
+    listing.symbol,
+    seller,
+  );
+  const executeSaleInstruction = constructExecuteSaleInstruction(
+    metaplex,
+    auctionHouse,
+    partialListing,
+    bid,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+
+  const instantBuyTransaction = new Transaction({
+    feePayer: buyer,
+    ...latestBlockhash,
+  })
+    .add(...bidInstruction)
+    .add(executeSaleInstruction);
+
+  const rawTransaction = instantBuyTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+
+  return rawTransaction.toString('base64');
+}
+
+export async function constructPrivateBidTransaction(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  buyer: PublicKey,
+  mintAccount: PublicKey,
+  price: number,
+  printReceipt: boolean,
+  seller?: PublicKey,
+) {
+  const bidInstruction = await constructPrivateBidInstruction(
+    metaplex,
+    auctionHouse,
+    buyer,
+    mintAccount,
+    solFromLamports(price),
+    token(1),
+    printReceipt,
+    seller,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const bidTransaction = new Transaction({
+    feePayer: buyer,
+    ...latestBlockhash,
+  }).add(...bidInstruction);
+
+  const rawTransaction = bidTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+
+  return rawTransaction.toString('base64');
+}
+
 export function constructCancelBidInstruction(
   metaplex: Metaplex,
   bid: Bid,
@@ -195,4 +287,67 @@ export function constructCancelBidInstruction(
   );
 
   return instruction;
+}
+
+export async function constructCancelBidTransaction(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  bid: Bid,
+) {
+  const cancelBidInstruction = constructCancelBidInstruction(
+    metaplex,
+    bid,
+    auctionHouse,
+  );
+
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const bidTransaction = new Transaction({
+    feePayer: bid.buyerAddress,
+    ...latestBlockhash,
+  }).add(...cancelBidInstruction);
+
+  const rawTransaction = bidTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+
+  return rawTransaction.toString('base64');
+}
+
+export function toBid(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  buyerAddress: PublicKey,
+  address: PublicKey,
+  amount: number,
+  symbol: string,
+  seller: PublicKey,
+): BidModel {
+  const price = solFromLamports(amount);
+  const tokens = token(1, 0, symbol); // only considers nfts
+  const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
+    mint: address,
+    owner: seller,
+  });
+
+  const tradeStateAddress = metaplex.auctionHouse().pdas().tradeState({
+    auctionHouse: auctionHouse.address,
+    wallet: buyerAddress,
+    treasuryMint: auctionHouse.treasuryMint.address,
+    tokenMint: address,
+    price: price.basisPoints,
+    tokenSize: tokens.basisPoints,
+    tokenAccount,
+  });
+  return {
+    asset: {
+      token: { address: tokenAccount },
+      address,
+    },
+    buyerAddress,
+    tradeStateAddress,
+    price,
+    tokens,
+    auctionHouse,
+  };
 }

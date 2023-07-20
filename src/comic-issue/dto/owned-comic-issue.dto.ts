@@ -1,10 +1,10 @@
-import { plainToInstance, Type } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { IsInt, IsNotEmpty, IsPositive, IsUrl, Min } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { ComicIssue, Nft, StatelessCover } from '@prisma/client';
+import { ComicIssue, StatelessCover } from '@prisma/client';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { NftDto, toNftDto } from 'src/nft/dto/nft.dto';
+import { NftDto } from 'src/nft/dto/nft.dto';
 import { PickType } from '@nestjs/swagger';
 
 export class PartialNftDto extends PickType(NftDto, [
@@ -35,19 +35,14 @@ export class OwnedComicIssueDto {
   @IsInt()
   @Min(0)
   ownedCopiesCount: number;
-
-  @Type(() => PartialNftDto)
-  ownedNft: PartialNftDto;
 }
 
 export type OwnedComicIssueInput = ComicIssue & {
   ownedCopiesCount: number;
-  ownedNft: Nft;
   statelessCovers?: StatelessCover[];
 };
 
 export async function toOwnedComicIssueDto(issue: OwnedComicIssueInput) {
-  const nftDto = await toNftDto(issue.ownedNft);
   const plainComicIssueDto: OwnedComicIssueDto = {
     id: issue.id,
     number: issue.number,
@@ -55,13 +50,6 @@ export async function toOwnedComicIssueDto(issue: OwnedComicIssueInput) {
     slug: issue.slug,
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers).image) || '',
     ownedCopiesCount: issue.ownedCopiesCount,
-    ownedNft: {
-      address: nftDto.address,
-      attributes: nftDto.attributes,
-      isUsed: nftDto.isUsed,
-      isSigned: nftDto.isSigned,
-      rarity: nftDto.rarity,
-    },
   };
 
   const issueDto = plainToInstance(OwnedComicIssueDto, plainComicIssueDto);

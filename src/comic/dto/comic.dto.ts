@@ -171,7 +171,7 @@ export function toComicDto(comic: ComicInput) {
           isFavourite: comic.myStats.isFavourite,
         }
       : undefined,
-    // TODO: order genres by 'priority' and filter out the deleted genres
+    // TODO: use .reduce to filter out deleted genres, sort by priority, and map properties
     genres: comic.genres?.map((genre) => {
       return {
         name: genre.name,

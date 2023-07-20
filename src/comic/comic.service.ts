@@ -50,8 +50,7 @@ export class ComicService {
         },
       });
     } catch (e) {
-      console.log(e);
-      throw new BadRequestException('Bad comic data');
+      throw new BadRequestException('Bad comic data', e);
     }
 
     const { cover, banner, pfp, logo } = createComicFilesDto;

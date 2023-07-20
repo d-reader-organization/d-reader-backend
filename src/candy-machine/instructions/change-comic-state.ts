@@ -7,6 +7,7 @@ import {
   ComicStateArgs,
   createChangeComicStateInstruction,
 } from 'dreader-comic-verse';
+import { Transaction } from '@solana/web3.js';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -51,4 +52,38 @@ export async function constructChangeComicStateInstruction(
     rarity,
     state: newState,
   });
+}
+
+export async function constructChangeComicStateTransaction(
+  metaplex: Metaplex,
+  owner: PublicKey,
+  collectionMint: PublicKey,
+  candyMachineAddress: PublicKey,
+  rarity: ComicRarity,
+  mint: PublicKey,
+  feePayer: PublicKey,
+  newState: ComicStateArgs,
+) {
+  const instruction = await constructChangeComicStateInstruction(
+    metaplex,
+    collectionMint,
+    candyMachineAddress,
+    rarity,
+    mint,
+    feePayer,
+    owner,
+    newState,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+
+  const tx = new Transaction({
+    feePayer,
+    ...latestBlockhash,
+  }).add(instruction);
+
+  const rawTransaction = tx.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+  return rawTransaction.toString('base64');
 }

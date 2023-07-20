@@ -1,11 +1,13 @@
 import {
   AuctionHouse,
-  Listing,
   Metaplex,
   Pda,
   SolAmount,
   SplTokenAmount,
   lamports,
+  toMetadata,
+  toMetadataAccount,
+  token,
 } from '@metaplex-foundation/js';
 import {
   CancelInstructionAccounts,
@@ -16,9 +18,13 @@ import {
 } from '@metaplex-foundation/mpl-auction-house';
 import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
+import { solFromLamports } from '../../utils/helpers';
+import { Nft, Listing } from '@prisma/client';
+import { PartialListing } from '../dto/types/partial-listing';
 
 export function constructListInstruction(
   metaplex: Metaplex,
@@ -119,8 +125,40 @@ export function constructListInstruction(
   return instructions;
 }
 
+export async function constructListTransaction(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  seller: PublicKey,
+  mintAccount: PublicKey,
+  price: number,
+  printReceipt: boolean,
+) {
+  const listInstruction = constructListInstruction(
+    metaplex,
+    auctionHouse,
+    mintAccount,
+    seller,
+    solFromLamports(price),
+    printReceipt,
+    token(1, 0),
+  );
+
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const listTransaction = new Transaction({
+    feePayer: seller,
+    ...latestBlockhash,
+  }).add(...listInstruction);
+
+  const rawTransaction = listTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+
+  return rawTransaction.toString('base64');
+}
+
 export function constructCancelListingInstruction(
-  listing: Listing,
+  listing: PartialListing,
   auctionHouse: AuctionHouse,
 ) {
   const {
@@ -162,4 +200,71 @@ export function constructCancelListingInstruction(
   }
 
   return instructions;
+}
+
+export async function constructCancelListingTransaction(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  listing: PartialListing,
+) {
+  const cancelListingTransaction = constructCancelListingInstruction(
+    listing,
+    auctionHouse,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const listingTransaction = new Transaction({
+    feePayer: listing.sellerAddress,
+    ...latestBlockhash,
+  }).add(...cancelListingTransaction);
+
+  const rawTransaction = listingTransaction.serialize({
+    requireAllSignatures: false,
+    verifySignatures: false,
+  });
+
+  return rawTransaction.toString('base64');
+}
+
+export async function toListing(
+  metaplex: Metaplex,
+  auctionHouse: AuctionHouse,
+  listing: Listing & { nft: Nft },
+): Promise<PartialListing> {
+  const address = new PublicKey(listing.nftAddress);
+  const sellerAddress = new PublicKey(listing.nft.ownerAddress);
+  const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
+    mint: address,
+    owner: sellerAddress,
+  });
+
+  const price = solFromLamports(listing.price);
+  const tokens = token(1, 0, listing.symbol); // only considers nfts
+  const tradeStateAddress = metaplex.auctionHouse().pdas().tradeState({
+    auctionHouse: auctionHouse.address,
+    wallet: sellerAddress,
+    treasuryMint: auctionHouse.treasuryMint.address,
+    tokenMint: address,
+    price: price.basisPoints,
+    tokenSize: tokens.basisPoints,
+    tokenAccount,
+  });
+
+  const metadataAddress = metaplex.nfts().pdas().metadata({ mint: address });
+  const info = await metaplex.rpc().getAccount(metadataAddress);
+  const metadata = toMetadata(toMetadataAccount(info));
+
+  return {
+    asset: {
+      token: { address: tokenAccount },
+      address,
+      creators: metadata.creators,
+      metadataAddress,
+    },
+    sellerAddress,
+    tradeStateAddress,
+    price,
+    tokens,
+    auctionHouse,
+    receiptAddress: undefined,
+  };
 }
