@@ -596,8 +596,6 @@ export class CandyMachineService {
   }
 
   async constructChangeComicStateTransaction(
-    collectionMint: PublicKey,
-    candyMachineAddress: PublicKey,
     rarity: ComicRarity,
     mint: PublicKey,
     feePayer: PublicKey,
@@ -605,16 +603,19 @@ export class CandyMachineService {
   ) {
     try {
       let owner = feePayer;
-      if (newState == ComicStateArgs.Sign) {
-        const { ownerAddress } = await this.prisma.nft.findUnique({
+
+      const { ownerAddress, collectionNftAddress, candyMachineAddress } =
+        await this.prisma.nft.findUnique({
           where: { address: mint.toString() },
         });
-        owner = new PublicKey(ownerAddress);
-      }
+      owner = new PublicKey(ownerAddress);
+      const collectionMintPubKey = new PublicKey(collectionNftAddress);
+      const candyMachinePubKey = new PublicKey(candyMachineAddress);
+
       const instruction = await constructChangeComicStateInstruction(
         this.metaplex,
-        collectionMint,
-        candyMachineAddress,
+        collectionMintPubKey,
+        candyMachinePubKey,
         rarity,
         mint,
         feePayer,
