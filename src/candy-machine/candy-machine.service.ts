@@ -604,21 +604,18 @@ export class CandyMachineService {
     try {
       let owner = feePayer;
 
-      const {
-        ownerAddress,
-        collectionNftAddress,
-        candyMachineAddress: nftCandyMachineAddress,
-      } = await this.prisma.nft.findUnique({
-        where: { address: mint.toString() },
-      });
+      const { ownerAddress, collectionNftAddress, candyMachineAddress } =
+        await this.prisma.nft.findUnique({
+          where: { address: mint.toString() },
+        });
       owner = new PublicKey(ownerAddress);
-      const collectionMint = new PublicKey(collectionNftAddress);
-      const candyMachineAddress = new PublicKey(nftCandyMachineAddress);
+      const collectionMintPubKey = new PublicKey(collectionNftAddress);
+      const candyMachinePubKey = new PublicKey(candyMachineAddress);
 
       const instruction = await constructChangeComicStateInstruction(
         this.metaplex,
-        collectionMint,
-        candyMachineAddress,
+        collectionMintPubKey,
+        candyMachinePubKey,
         rarity,
         mint,
         feePayer,
