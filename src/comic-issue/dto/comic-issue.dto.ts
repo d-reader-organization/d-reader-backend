@@ -236,8 +236,6 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           canRead: issue.myStats.canRead,
           readAt: issue.myStats.readAt,
           viewedAt: issue.myStats.viewedAt,
-          // TODO: hasUnopenedComics: boolean
-          // TODO: hasOpenedComics: boolean
         }
       : undefined,
   };
