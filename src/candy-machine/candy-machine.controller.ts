@@ -58,13 +58,13 @@ export class CandyMachineController {
     );
   }
 
-  @Get('/transactions/use-comic-issue-nft')
+  @Get('/transactions/use-comic-issue-nft/:address')
   constructUseComicTransaction(
     @WalletEntity() wallet: Wallet,
-    @Query() query: ChangeComicStateParams,
+    @Param('address') address: string,
   ) {
     const publicKey = new PublicKey(wallet.address);
-    const mint = new PublicKey(query.mint);
+    const mint = new PublicKey(address);
 
     return this.candyMachineService.createChangeComicStateTransaction(
       mint,
