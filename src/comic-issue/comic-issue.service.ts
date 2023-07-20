@@ -266,11 +266,7 @@ export class ComicIssueService {
           where: { collectionNftAddress },
         });
 
-        const ownedNft = await this.prisma.nft.findFirst({
-          where: { ownerAddress, collectionNftAddress },
-        });
-
-        return { ...comicIssue, ownedCopiesCount, ownedNft };
+        return { ...comicIssue, ownedCopiesCount };
       }),
     );
   }

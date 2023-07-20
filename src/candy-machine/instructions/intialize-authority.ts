@@ -7,7 +7,11 @@ import {
   ComicStates,
 } from 'dreader-comic-verse';
 import { AUTH_TAG, PUB_AUTH_TAG, pda } from './pda';
-import { SystemProgram } from '@solana/web3.js';
+import {
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 
 export async function constructInitializeComicAuthorityInstruction(
   metaplex: Metaplex,
@@ -35,4 +39,22 @@ export async function constructInitializeComicAuthorityInstruction(
     rarity,
     comicStates,
   });
+}
+
+export async function initializeAuthority(
+  metaplex: Metaplex,
+  collectionMint: PublicKey,
+  rarity: ComicRarity,
+  comicStates: ComicStates,
+) {
+  const instruction = await constructInitializeComicAuthorityInstruction(
+    metaplex,
+    collectionMint,
+    rarity,
+    comicStates,
+  );
+  const tx = new Transaction().add(instruction);
+  await sendAndConfirmTransaction(metaplex.connection, tx, [
+    metaplex.identity(),
+  ]);
 }

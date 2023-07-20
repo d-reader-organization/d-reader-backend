@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   Keypair,
+  // LAMPORTS_PER_SOL,
   PublicKey,
-  Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
@@ -13,12 +13,14 @@ import {
   MetaplexFile,
   DefaultCandyGuardSettings,
   CandyMachine,
+  // BundlrStorageDriver,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
-  constructChangeComicStateInstruction,
-  constructMintInstruction,
-  getRemainingAccounts,
+  constructChangeComicStateTransaction,
+  constructMintOneTransaction,
+  initializeAuthority,
+  initializeRecordAuthority,
 } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
@@ -41,10 +43,9 @@ import {
   BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
-  DARKBLOCK_API,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
-import { initMetaplex } from '../utils/metaplex';
+import { MetdataFile, initMetaplex, writeFiles } from '../utils/metaplex';
 import {
   findDefaultCover,
   generateStatefulCoverName,
@@ -57,15 +58,10 @@ import {
   ItemMedata,
   RarityCoverFiles,
 } from '../types/shared';
-import { getS3Object } from '../aws/s3client';
-import axios from 'axios';
-import * as FormData from 'form-data';
 import { generatePropertyName } from '../utils/nft-metadata';
 import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
-import {
-  constructInitializeComicAuthorityInstruction,
-  constructInitializeRecordAuthorityInstruction,
-} from './instructions';
+import { ComicRarity as PrismaComicRarity } from '@prisma/client';
+import { DarkblockService } from './darkblock.service';
 
 @Injectable()
 export class CandyMachineService {
@@ -74,23 +70,19 @@ export class CandyMachineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
+    private readonly darkblockService: DarkblockService,
   ) {
     this.metaplex = initMetaplex();
   }
 
   async findMintedNfts(candyMachineAddress: string) {
-    try {
-      const candyMachineId = new PublicKey(candyMachineAddress);
-      const candyMachineCreator = PublicKey.findProgramAddressSync(
-        [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
-        this.metaplex.programs().getCandyMachine().address,
-      );
+    const candyMachineId = new PublicKey(candyMachineAddress);
+    const candyMachineCreator = PublicKey.findProgramAddressSync(
+      [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
+      this.metaplex.programs().getCandyMachine().address,
+    );
 
-      const mints = await this.getMintAddresses(candyMachineCreator[0]);
-      return mints;
-    } catch (e) {
-      console.log('error', e);
-    }
+    return await this.getMintAddresses(candyMachineCreator[0]);
   }
 
   async getMintAddresses(firstCreatorAddress: PublicKey) {
@@ -116,42 +108,6 @@ export class CandyMachineService {
     return metadataAccounts.map((metadataAccountInfo) =>
       bs58.encode(metadataAccountInfo.account.data),
     );
-  }
-
-  async mintDarkblock(
-    comicIssue: ComicIssueCMInput,
-    creatorAddress: string,
-  ): Promise<string> {
-    try {
-      const query = new URLSearchParams({
-        apikey: process.env.DARKBLOCK_API_KEY,
-      }).toString();
-
-      const form = new FormData();
-      const getFileFromS3 = await getS3Object({ Key: comicIssue.pdf });
-      const nftPlatform =
-        process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
-      const data = {
-        file: getFileFromS3.Body,
-        creator_address: this.metaplex.identity().publicKey.toString(),
-        nft_platform: nftPlatform,
-        nft_standard: 'Metaplex',
-        darkblock_description: comicIssue.description,
-        publisher_address: creatorAddress,
-      };
-      Object.entries(data).forEach((val) => {
-        form.append(val[0], val[1]);
-      });
-
-      const response = await axios.post(
-        `${DARKBLOCK_API}/darkblock/mint?${query}`,
-        form,
-      );
-
-      return response.data.tx_id;
-    } catch (e) {
-      console.log(e);
-    }
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
@@ -215,7 +171,7 @@ export class CandyMachineService {
       properties: {
         creators: [{ address: creatorAddress, share: HUNDRED }],
         files: [
-          ...this.writeFiles(image),
+          ...writeFiles(image),
           darkblockId
             ? {
                 type: 'Darkblock',
@@ -264,7 +220,12 @@ export class CandyMachineService {
       usedSigned: itemMetadata.usedSigned.uri,
       usedUnsigned: itemMetadata.usedUnsigned.uri,
     };
-    await this.initializeAuthority(collectionNftAddress, rarity, comicStates);
+    await initializeAuthority(
+      this.metaplex,
+      collectionNftAddress,
+      rarity,
+      comicStates,
+    );
     return itemMetadata;
   }
 
@@ -331,19 +292,15 @@ export class CandyMachineService {
   async initializeGuardAccounts(
     candyMachine: CandyMachine<DefaultCandyGuardSettings>,
   ) {
-    try {
-      await this.metaplex.candyMachines().callGuardRoute({
-        candyMachine,
-        guard: 'freezeSolPayment',
-        settings: {
-          path: 'initialize',
-          period: FREEZE_NFT_DAYS * DAY_SECONDS,
-          candyGuardAuthority: this.metaplex.identity(),
-        },
-      });
-    } catch (e) {
-      console.log(e);
-    }
+    await this.metaplex.candyMachines().callGuardRoute({
+      candyMachine,
+      guard: 'freezeSolPayment',
+      settings: {
+        path: 'initialize',
+        period: FREEZE_NFT_DAYS * DAY_SECONDS,
+        candyGuardAuthority: this.metaplex.identity(),
+      },
+    });
   }
 
   async createComicIssueCM(
@@ -353,6 +310,12 @@ export class CandyMachineService {
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
+
+    // TODO: do we need to fund the bundlr storage before creating the CM?
+    // const bundlrStorage = this.metaplex
+    //   .storage()
+    //   .driver() as BundlrStorageDriver;
+    // (await bundlrStorage.bundlr()).fund(0.2 * LAMPORTS_PER_SOL);
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
@@ -368,11 +331,23 @@ export class CandyMachineService {
 
     const candyMachineKey = Keypair.generate();
 
-    let darkblockId: string;
+    let darkblockId = '';
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
     } else {
-      darkblockId = await this.mintDarkblock(comicIssue, creatorAddress);
+      let darkblockMetadataFile: MetdataFile;
+      if (comicIssue.pdf) {
+        darkblockId = await this.darkblockService.mintDarkblock(
+          comicIssue.pdf,
+          comicIssue.description,
+          creatorAddress,
+        );
+        darkblockMetadataFile = {
+          type: 'Darkblock',
+          uri: darkblockId,
+        };
+      }
+
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
@@ -390,15 +365,8 @@ export class CandyMachineService {
               },
             ],
             files: [
-              ...this.writeFiles(
-                coverImage,
-                ...statefulCovers,
-                ...statelessCovers,
-              ),
-              {
-                type: 'Darkblock',
-                uri: darkblockId,
-              },
+              ...writeFiles(coverImage, ...statefulCovers, ...statelessCovers),
+              darkblockMetadataFile,
             ],
           },
         });
@@ -420,7 +388,9 @@ export class CandyMachineService {
       });
       collectionNftAddress = newCollectionNft.address;
     }
-    await this.initializeRecordAuthority(
+
+    await initializeRecordAuthority(
+      this.metaplex,
       collectionNftAddress,
       new PublicKey(creatorAddress),
       MAX_SIGNATURES_PERCENT,
@@ -496,7 +466,7 @@ export class CandyMachineService {
     let iteration = 0;
     const transactionBuilders: TransactionBuilder[] = [];
     for (const itemsChunk of itemChunks) {
-      console.log(
+      console.info(
         `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
           (iteration + 1) * INSERT_CHUNK_SIZE - 1
         } `,
@@ -544,144 +514,64 @@ export class CandyMachineService {
     });
   }
 
-  async constructMintOneTransaction(
+  async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
-    label?: string,
-    nftGateMint?: PublicKey,
-    allowList?: string[],
   ) {
-    try {
-      const mint = Keypair.generate();
-      const candyMachine = await this.metaplex
-        .candyMachines()
-        .findByAddress({ address: candyMachineAddress });
-
-      const remainingAccounts = getRemainingAccounts(this.metaplex, {
-        candyMachine,
-        feePayer,
-        mint: mint.publicKey,
-        destinationWallet: this.metaplex.identity().publicKey,
-        label,
-        nftGateMint,
-      });
-      const mintInstructions = await constructMintInstruction(
-        this.metaplex,
-        candyMachine.address,
-        feePayer,
-        mint,
-        this.metaplex.connection,
-        remainingAccounts,
-        undefined,
-        label,
-        allowList,
-      );
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
-      const mintTransaction = new Transaction({
-        feePayer,
-        ...latestBlockhash,
-      }).add(...mintInstructions);
-
-      mintTransaction.sign(mint);
-
-      const rawTransaction = mintTransaction.serialize({
-        requireAllSignatures: false,
-        verifySignatures: false,
-      });
-      return rawTransaction.toString('base64');
-    } catch (e) {
-      console.log(e);
-    }
+    return await constructMintOneTransaction(
+      this.metaplex,
+      feePayer,
+      candyMachineAddress,
+    );
   }
 
-  async constructChangeComicStateTransaction(
-    rarity: ComicRarity,
+  async createChangeComicStateTransaction(
     mint: PublicKey,
     feePayer: PublicKey,
     newState: ComicStateArgs,
   ) {
-    try {
-      let owner = feePayer;
+    const {
+      ownerAddress,
+      collectionNftAddress,
+      candyMachineAddress,
+      metadata,
+    } = await this.prisma.nft.findUnique({
+      where: { address: mint.toString() },
+      include: { metadata: true },
+    });
 
-      const { ownerAddress, collectionNftAddress, candyMachineAddress } =
-        await this.prisma.nft.findUnique({
-          where: { address: mint.toString() },
-        });
-      owner = new PublicKey(ownerAddress);
-      const collectionMintPubKey = new PublicKey(collectionNftAddress);
-      const candyMachinePubKey = new PublicKey(candyMachineAddress);
+    const owner = new PublicKey(ownerAddress);
+    const collectionMintPubKey = new PublicKey(collectionNftAddress);
+    const candyMachinePubKey = new PublicKey(candyMachineAddress);
+    const rarity = metadata.rarity;
 
-      const instruction = await constructChangeComicStateInstruction(
-        this.metaplex,
-        collectionMintPubKey,
-        candyMachinePubKey,
-        rarity,
-        mint,
-        feePayer,
-        owner,
-        newState,
-      );
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
-
-      const tx = new Transaction({
-        feePayer,
-        ...latestBlockhash,
-      }).add(instruction);
-
-      const rawTransaction = tx.serialize({
-        requireAllSignatures: false,
-        verifySignatures: false,
-      });
-      return rawTransaction.toString('base64');
-    } catch (e) {
-      console.log('Error processing transaction: ', e);
+    // TODO: Athar what the fudge is this? why did you make me do this 🤯
+    let numberedRarity = ComicRarity.None;
+    switch (rarity) {
+      case PrismaComicRarity.None:
+        numberedRarity = ComicRarity.None;
+      case PrismaComicRarity.Common:
+        numberedRarity = ComicRarity.Common;
+      case PrismaComicRarity.Uncommon:
+        numberedRarity = ComicRarity.Uncommon;
+      case PrismaComicRarity.Rare:
+        numberedRarity = ComicRarity.Rare;
+      case PrismaComicRarity.Epic:
+        numberedRarity = ComicRarity.Epic;
+      case PrismaComicRarity.Legendary:
+        numberedRarity = ComicRarity.Legendary;
     }
-  }
 
-  async initializeRecordAuthority(
-    collectionMint: PublicKey,
-    creator: PublicKey,
-    maxSignature: number,
-    minSignatures: number,
-  ) {
-    try {
-      const instruction = await constructInitializeRecordAuthorityInstruction(
-        this.metaplex,
-        collectionMint,
-        creator,
-        maxSignature,
-        minSignatures,
-      );
-      const tx = new Transaction().add(instruction);
-      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-        this.metaplex.identity(),
-      ]);
-    } catch (e) {
-      console.log('Record Authority account is not initialized : ', e);
-    }
-  }
-
-  async initializeAuthority(
-    collectionMint: PublicKey,
-    rarity: ComicRarity,
-    comicStates: ComicStates,
-  ) {
-    try {
-      const instruction = await constructInitializeComicAuthorityInstruction(
-        this.metaplex,
-        collectionMint,
-        rarity,
-        comicStates,
-      );
-      const tx = new Transaction().add(instruction);
-      await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-        this.metaplex.identity(),
-      ]);
-    } catch (e) {
-      console.log('Authority account is not initialized : ', e);
-    }
+    return await constructChangeComicStateTransaction(
+      this.metaplex,
+      owner,
+      collectionMintPubKey,
+      candyMachinePubKey,
+      numberedRarity,
+      mint,
+      feePayer,
+      newState,
+    );
   }
 
   async thawFrozenNft(
@@ -741,12 +631,5 @@ export class CandyMachineService {
     });
 
     return receipts;
-  }
-
-  writeFiles(...files: MetaplexFile[]) {
-    return files.map((file) => ({
-      uri: file,
-      type: file.contentType,
-    }));
   }
 }

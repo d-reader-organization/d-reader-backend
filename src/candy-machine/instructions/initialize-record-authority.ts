@@ -1,5 +1,9 @@
 import { Metaplex, PublicKey } from '@metaplex-foundation/js';
-import { SystemProgram } from '@solana/web3.js';
+import {
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import {
   PROGRAM_ID as COMIC_VERSE_ID,
   InitializeRecordAuthorityInstructionAccounts,
@@ -48,4 +52,24 @@ export async function constructInitializeRecordAuthorityInstruction(
   };
 
   return createInitializeRecordAuthorityInstruction(accounts, args);
+}
+
+export async function initializeRecordAuthority(
+  metaplex: Metaplex,
+  collectionMint: PublicKey,
+  creator: PublicKey,
+  maxSignature: number,
+  minSignatures: number,
+) {
+  const instruction = await constructInitializeRecordAuthorityInstruction(
+    metaplex,
+    collectionMint,
+    creator,
+    maxSignature,
+    minSignatures,
+  );
+  const tx = new Transaction().add(instruction);
+  await sendAndConfirmTransaction(metaplex.connection, tx, [
+    metaplex.identity(),
+  ]);
 }

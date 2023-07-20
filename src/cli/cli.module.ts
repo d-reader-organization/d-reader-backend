@@ -28,6 +28,7 @@ import { AddAllowList } from './add-allow-list-command';
 import { AddAllowListQuestions } from './add-allow-list-questions';
 import { ThawCollectionCommand } from './thaw-collection-command';
 import { ThawCollectionQuestions } from './thaw-collection-question';
+import { DarkblockService } from '../candy-machine/darkblock.service';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { ThawCollectionQuestions } from './thaw-collection-question';
     AddAllowListQuestions,
     AddAllowList,
     WalletService,
+    DarkblockService,
   ],
 })
 export class CLIModule {}

@@ -73,8 +73,7 @@ export class PasswordService {
         throw new UnauthorizedException('Malformed message!');
       } else return true;
     } catch (e) {
-      console.log(e);
-      // Failed to construct a Message object
+      console.info('Failed to construct a Message object: ', e);
     }
 
     // Try to construct a Transaction and match its instruction data against OTP bytes
@@ -102,10 +101,8 @@ export class PasswordService {
         } else return true;
       }
     } catch (e) {
-      console.log(e);
       // Failed to construct a Transaction object
+      throw new UnauthorizedException('Failed to connect the wallet!', e);
     }
-
-    throw new UnauthorizedException('Failed to connect the wallet!');
   }
 }
