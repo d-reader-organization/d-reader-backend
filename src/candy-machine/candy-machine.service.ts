@@ -545,21 +545,33 @@ export class CandyMachineService {
     const candyMachinePubKey = new PublicKey(candyMachineAddress);
     const rarity = metadata.rarity;
 
-    // TODO: Athar what the fudge is this? why did you make me do this 🤯
+    // TODO: Athar what the fudge is this? why did you make me do this 🤯, : sorry :(
     let numberedRarity = ComicRarity.None;
     switch (rarity) {
-      case PrismaComicRarity.None:
+      case PrismaComicRarity.None: {
         numberedRarity = ComicRarity.None;
-      case PrismaComicRarity.Common:
+        break;
+      }
+      case PrismaComicRarity.Common: {
         numberedRarity = ComicRarity.Common;
-      case PrismaComicRarity.Uncommon:
+        break;
+      }
+      case PrismaComicRarity.Uncommon: {
         numberedRarity = ComicRarity.Uncommon;
-      case PrismaComicRarity.Rare:
+        break;
+      }
+      case PrismaComicRarity.Rare: {
         numberedRarity = ComicRarity.Rare;
-      case PrismaComicRarity.Epic:
+        break;
+      }
+      case PrismaComicRarity.Epic: {
         numberedRarity = ComicRarity.Epic;
-      case PrismaComicRarity.Legendary:
+        break;
+      }
+      case PrismaComicRarity.Legendary: {
         numberedRarity = ComicRarity.Legendary;
+        break;
+      }
     }
 
     return await constructChangeComicStateTransaction(
