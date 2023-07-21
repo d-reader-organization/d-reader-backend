@@ -19,6 +19,7 @@ import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.s
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
+import { DarkblockService } from '../src/candy-machine/darkblock.service';
 
 const generateCoversAndSignature = (
   comicSlug: string,
@@ -80,9 +81,11 @@ const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
 const heliusService = new HeliusService(prismaService, webSocketGateway);
 const comicPageService = new ComicPageService(s3, prismaService);
+const darkblockService = new DarkblockService()
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,
+  darkblockService
 );
 const walletComicIssueService = new WalletComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(
