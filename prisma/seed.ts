@@ -81,11 +81,11 @@ const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
 const heliusService = new HeliusService(prismaService, webSocketGateway);
 const comicPageService = new ComicPageService(s3, prismaService);
-const darkblockService = new DarkblockService()
+const darkblockService = new DarkblockService();
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,
-  darkblockService
+  darkblockService,
 );
 const walletComicIssueService = new WalletComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(
@@ -575,7 +575,7 @@ async function main() {
                         data: generatePages(
                           'comics/gorecats/issues/rise-of-the-gorecats/pages',
                           6,
-                          'png',
+                          'jpg',
                           6,
                         ),
                       },
@@ -721,7 +721,7 @@ async function main() {
                 data: generatePages(
                   'comics/niko-and-the-sword/issues/many-moons-ago/pages',
                   3,
-                  'png',
+                  'jpg',
                   3,
                 ),
               },
@@ -2170,7 +2170,7 @@ async function main() {
                   data: generatePages(
                     'comics/multi-versus/issues/episode-1/pages',
                     5,
-                    'png',
+                    'jpg',
                     5,
                   ),
                 },
