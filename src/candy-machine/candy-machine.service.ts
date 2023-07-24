@@ -43,6 +43,7 @@ import {
   BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
+  RARITY_MAP,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, initMetaplex, writeFiles } from '../utils/metaplex';
@@ -60,7 +61,6 @@ import {
 } from '../types/shared';
 import { generatePropertyName } from '../utils/nft-metadata';
 import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
-import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { DarkblockService } from './darkblock.service';
 
 @Injectable()
@@ -543,36 +543,7 @@ export class CandyMachineService {
     const owner = new PublicKey(ownerAddress);
     const collectionMintPubKey = new PublicKey(collectionNftAddress);
     const candyMachinePubKey = new PublicKey(candyMachineAddress);
-    const rarity = metadata.rarity;
-
-    // TODO: Athar what the fudge is this? why did you make me do this 🤯, : sorry :(
-    let numberedRarity = ComicRarity.None;
-    switch (rarity) {
-      case PrismaComicRarity.None: {
-        numberedRarity = ComicRarity.None;
-        break;
-      }
-      case PrismaComicRarity.Common: {
-        numberedRarity = ComicRarity.Common;
-        break;
-      }
-      case PrismaComicRarity.Uncommon: {
-        numberedRarity = ComicRarity.Uncommon;
-        break;
-      }
-      case PrismaComicRarity.Rare: {
-        numberedRarity = ComicRarity.Rare;
-        break;
-      }
-      case PrismaComicRarity.Epic: {
-        numberedRarity = ComicRarity.Epic;
-        break;
-      }
-      case PrismaComicRarity.Legendary: {
-        numberedRarity = ComicRarity.Legendary;
-        break;
-      }
-    }
+    const numberedRarity = RARITY_MAP[metadata.rarity];
 
     return await constructChangeComicStateTransaction(
       this.metaplex,

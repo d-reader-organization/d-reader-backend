@@ -13,13 +13,13 @@ export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
   collectionMint: PublicKey,
   candyMachineAddress: PublicKey,
-  rarity: ComicRarity,
+  numberedRarity: ComicRarity,
   mint: PublicKey,
   signer: PublicKey,
   owner: PublicKey,
   newState: ComicStateArgs,
 ) {
-  const rarityString = ComicRarity[rarity].toString().toLowerCase();
+  const rarityString = ComicRarity[numberedRarity].toString().toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
@@ -48,7 +48,7 @@ export async function constructChangeComicStateInstruction(
     signer,
   };
   return createChangeComicStateInstruction(accounts, {
-    rarity,
+    rarity: numberedRarity,
     state: newState,
   });
 }
@@ -58,7 +58,7 @@ export async function constructChangeComicStateTransaction(
   owner: PublicKey,
   collectionMint: PublicKey,
   candyMachineAddress: PublicKey,
-  rarity: ComicRarity,
+  numberedRarity: ComicRarity,
   mint: PublicKey,
   feePayer: PublicKey,
   newState: ComicStateArgs,
@@ -67,7 +67,7 @@ export async function constructChangeComicStateTransaction(
     metaplex,
     collectionMint,
     candyMachineAddress,
-    rarity,
+    numberedRarity,
     mint,
     feePayer,
     owner,
