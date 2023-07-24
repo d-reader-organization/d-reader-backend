@@ -111,7 +111,7 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
-            if (!transaction.instructions[0]?.innerInstructions[0]?.accounts) {
+            if (!transaction.instructions[2]?.innerInstructions[0]?.accounts) {
               console.log(
                 'Unhandled webhook event type: ',
                 JSON.stringify(transaction),
@@ -128,7 +128,7 @@ export class HeliusService {
   private async handleMetadataUpdate(transaction: EnrichedTransaction) {
     try {
       const metadataAddress =
-        transaction.instructions[0].innerInstructions[0].accounts[0];
+        transaction.instructions[2].innerInstructions[0].accounts[0];
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
