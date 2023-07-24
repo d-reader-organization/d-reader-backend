@@ -1,10 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import {
-  Keypair,
-  // LAMPORTS_PER_SOL,
-  PublicKey,
-  sendAndConfirmTransaction,
-} from '@solana/web3.js';
+import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
   Metaplex,
@@ -13,7 +8,6 @@ import {
   MetaplexFile,
   DefaultCandyGuardSettings,
   CandyMachine,
-  // BundlrStorageDriver,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -310,12 +304,6 @@ export class CandyMachineService {
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
-
-    // TODO: do we need to fund the bundlr storage before creating the CM?
-    // const bundlrStorage = this.metaplex
-    //   .storage()
-    //   .driver() as BundlrStorageDriver;
-    // (await bundlrStorage.bundlr()).fund(0.2 * LAMPORTS_PER_SOL);
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);

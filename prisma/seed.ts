@@ -187,7 +187,7 @@ async function main() {
         {
           image: 'carousel/slides/deb35549-1f59-45db-9aef-2efc0ee5930a.jpg',
           title: 'Gooneytoons - new creator',
-          subtitle: 'release: June 1st, 8am UTC',
+          subtitle: 'release: coming soon',
           priority: 2,
           comicIssueId: null,
           comicSlug: 'gooneytoons',
@@ -213,7 +213,7 @@ async function main() {
         {
           image: 'carousel/slides/3368f69d-a2de-49ae-9001-45f508d029c5.jpg',
           title: 'Explore new worlds - Lupers',
-          subtitle: 'release: July 14th, 10am UTC',
+          subtitle: 'release: coming soon',
           priority: 4,
           comicIssueId: null,
           comicSlug: 'lupers',
@@ -226,7 +226,7 @@ async function main() {
         {
           image: 'carousel/slides/802ff196-544d-41d0-8d17-a1c1c353a317.jpg',
           title: 'The Narentines: Origin',
-          subtitle: 'release: August 1st, 8am UTC',
+          subtitle: 'release: coming soon',
           priority: 5,
           comicIssueId: null,
           comicSlug: 'narentines',
@@ -2184,6 +2184,113 @@ async function main() {
     console.log('➕ Added "Mad Muse Syndicate" creator');
   } catch (e) {
     console.log('❌ Failed to add "Mad Muse Syndicate" creator', e);
+  }
+
+  try {
+    await prisma.wallet.create({
+      data: {
+        address: Keypair.generate().publicKey.toBase58(),
+        name: 'Tsukiverse',
+        avatar: '',
+        createdAt: new Date(),
+        nonce: uuidv4(),
+        role: Role.User,
+        creator: {
+          create: {
+            email: 'creators@dreader.io',
+            name: 'Goose0x',
+            slug: 'goose-0-x',
+            avatar: 'creators/goose-0-x/avatar.jpg',
+            banner: 'creators/goose-0-x/banner.jpg',
+            logo: 'creators/goose-0-x/logo.png',
+            description:
+              'We are an Art first, story-driven project, with a unique nostalgic feel to make the collection and our brand stand out - all with your support as a loving community',
+            flavorText:
+              'brought to life by: @dangercloselabs | Artist and Lore @goose0x',
+            website: 'https://www.tsukiverse.io',
+            twitter: 'https://twitter.com/tsukiversenft',
+            instagram: 'https://www.instagram.com/tsukiv3rse/',
+            createdAt: new Date(),
+            deletedAt: null,
+            featuredAt: null,
+            verifiedAt: new Date(),
+            popularizedAt: new Date(),
+            emailConfirmedAt: new Date(),
+            comics: {
+              create: {
+                title: 'Tsukiverse',
+                slug: 'tsukiverse',
+                description:
+                  'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
+                flavorText: 'Only the worthy shall be chosen!',
+                genres: {
+                  connect: [
+                    { slug: 'action' },
+                    { slug: 'adventure' },
+                    { slug: 'fantasy' },
+                  ],
+                },
+                audienceType: AudienceType.Everyone,
+                deletedAt: null,
+                featuredAt: null,
+                verifiedAt: new Date(),
+                publishedAt: subDays(new Date(), 11),
+                popularizedAt: null,
+                completedAt: null,
+                cover: 'comics/tsukiverse/cover.jpg',
+                pfp: 'comics/tsukiverse/pfp.jpg',
+                banner: '',
+                logo: 'comics/tsukiverse/logo.png',
+                website: '',
+                twitter: '',
+                discord: '',
+                telegram: '',
+                instagram: '',
+                tikTok: '',
+                youTube: '',
+                issues: {
+                  create: [
+                    {
+                      number: 1,
+                      supply: 0,
+                      discountMintPrice: 0,
+                      mintPrice: 0,
+                      sellerFeeBasisPoints: 0,
+                      title: 'Issue 1',
+                      slug: 'issue-1',
+                      description:
+                        'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
+                      flavorText: 'Only the worthy shall be chosen!',
+                      ...generateCoversAndSignature('tsukiverse', 'issue-1'),
+                      releaseDate: subDays(new Date(), 22),
+                      deletedAt: null,
+                      featuredAt: null,
+                      verifiedAt: new Date(),
+                      publishedAt: new Date(),
+                      popularizedAt: null,
+                      pages: {
+                        createMany: {
+                          data: generatePages(
+                            'comics/tsukiverse/issues/issue-1/pages',
+                            1,
+                            'jpg',
+                            1,
+                          ),
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    console.log('➕ Added "Tsukiverse" creator');
+  } catch (e) {
+    console.log('❌ Failed to add "Tsukiverse" creator', e);
   }
 
   try {

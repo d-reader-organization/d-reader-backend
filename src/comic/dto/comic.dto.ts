@@ -23,7 +23,7 @@ import {
   AudienceType,
 } from '@prisma/client';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
-import { GenreDto } from 'src/genre/dto/genre.dto';
+import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
 
 export class PartialGenreDto extends PickType(GenreDto, [
   'name',
@@ -171,15 +171,7 @@ export function toComicDto(comic: ComicInput) {
           isFavourite: comic.myStats.isFavourite,
         }
       : undefined,
-    // TODO: use .reduce to filter out deleted genres, sort by priority, and map properties
-    genres: comic.genres?.map((genre) => {
-      return {
-        name: genre.name,
-        slug: genre.slug,
-        color: genre.color,
-        icon: getPublicUrl(genre.icon),
-      };
-    }),
+    genres: toPartialGenreDtoArray(comic.genres),
     creator: comic?.creator
       ? {
           name: comic.creator.name,

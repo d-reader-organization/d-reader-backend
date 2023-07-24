@@ -1,6 +1,6 @@
 {
   "name": "d-reader-backend",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "NestJS backend for dReader dapp on Solana",
   "author": "",
   "private": false,
@@ -62,6 +62,7 @@
     "@nestjs/throttler": "^4.2.1",
     "@nestjs/websockets": "^9.4.1",
     "@prisma/client": "^4.16.0",
+    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.78.0",
     "@types/ejs": "^3.0.3",
