@@ -38,7 +38,7 @@ import {
 } from './covers/stateless-cover.dto';
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { GenreDto } from 'src/genre/dto/genre.dto';
+import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
 
 class PartialComicDto extends PickType(ComicDto, [
   'title',
@@ -171,6 +171,8 @@ export type ComicIssueInput = ComicIssue & {
 };
 
 export function toComicIssueDto(issue: ComicIssueInput) {
+  const genres = issue.genres || issue.comic.genres;
+
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
     number: issue.number,
@@ -210,13 +212,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           audienceType: issue.comic.audienceType,
         }
       : undefined,
-    // TODO: use .reduce to filter out deleted genres, sort by priority, and map properties
-    genres: (issue.genres || issue.comic.genres)?.map((genre) => ({
-      name: genre.name,
-      slug: genre.slug,
-      icon: getPublicUrl(genre.icon),
-      color: genre.color,
-    })),
+    genres: toPartialGenreDtoArray(genres),
     stats: issue.stats
       ? {
           favouritesCount: issue.stats.favouritesCount,

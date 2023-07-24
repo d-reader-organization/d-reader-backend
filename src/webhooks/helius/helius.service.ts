@@ -53,7 +53,6 @@ export class HeliusService {
   createWebhook(payload: CreateHeliusWebhookDto) {
     return this.helius.createWebhook({
       ...payload,
-      // TODO: scope down to relevant TransactionType-s
       transactionTypes: [TransactionType.ANY],
       webhookType:
         process.env.SOLANA_CLUSTER === 'devnet'

@@ -95,9 +95,4 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
   if (raritiesCount != 1 && raritiesCount != 3 && raritiesCount != 5) {
     throw new BadRequestException('Unsupported rarity count: ' + raritiesCount);
   }
-
-  // TODO: enable pdf validation after we add dummy PDFs to seed.ts
-  // if (!comicIssue.pdf) {
-  //   throw new BadRequestException('Missing PDF file');
-  // }
 };

@@ -41,3 +41,30 @@ export function toGenreDto(genre: Genre) {
 export const toGenreDtoArray = (genres: Genre[]) => {
   return genres.map(toGenreDto);
 };
+
+export function toPartialGenreDtoArray(genres?: Genre[]) {
+  if (!genres) return genres;
+  const filteredSortedGenres = genres.reduce<Genre[]>((acc, genre) => {
+    if (!genre.deletedAt) {
+      const insertIndex = acc.findIndex(
+        (existingGenre) => existingGenre.priority > genre.priority,
+      );
+
+      if (insertIndex === -1) {
+        return [...acc, genre];
+      } else [...acc.slice(0, insertIndex), genre, ...acc.slice(insertIndex)];
+    }
+    return acc;
+  }, []);
+
+  const partialGenres = filteredSortedGenres.map((genre) => {
+    return {
+      name: genre.name,
+      slug: genre.slug,
+      color: genre.color,
+      icon: getPublicUrl(genre.icon),
+    };
+  });
+
+  return partialGenres;
+}
