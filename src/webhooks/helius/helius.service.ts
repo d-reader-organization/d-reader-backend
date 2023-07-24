@@ -110,12 +110,10 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
-            if (!transaction.instructions[2]?.innerInstructions[0]?.accounts) {
-              console.log(
-                'Unhandled webhook event type: ',
-                JSON.stringify(transaction),
-                transaction?.transactionError?.valueOf(),
-              );
+            if (
+              !transaction.instructions.at(-1)?.innerInstructions[0]?.accounts
+            ) {
+              console.log('Unhandled webhook', JSON.stringify(transaction));
               return;
             }
             return this.handleMetadataUpdate(transaction);
@@ -126,8 +124,9 @@ export class HeliusService {
 
   private async handleMetadataUpdate(transaction: EnrichedTransaction) {
     try {
+      // metadata address is found in the last instruction
       const metadataAddress =
-        transaction.instructions[2].innerInstructions[0].accounts[0];
+        transaction.instructions.at(-1).innerInstructions[0].accounts[0];
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
@@ -249,7 +248,7 @@ export class HeliusService {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
-      const tokenMetadata = transaction.instructions[2].accounts[2]; //index 2 for tokenMetadata account
+      const tokenMetadata = transaction.instructions.at(-1).accounts[2]; // token metadata is found in the last instruction
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
