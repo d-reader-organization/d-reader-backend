@@ -114,7 +114,7 @@ export class HeliusService {
               console.log(
                 'Unhandled webhook event type: ',
                 JSON.stringify(transaction),
-                transaction.transactionError.valueOf(),
+                transaction?.transactionError?.valueOf(),
               );
               return;
             }
