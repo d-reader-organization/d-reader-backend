@@ -1,5 +1,6 @@
 import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
+import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -138,4 +139,13 @@ export const ATTRIBUTE_COMBINATIONS = [
 export const getRarityShare = (numberOfCovers: number, rarity: string) => {
   const shareTable = getRarityShareTable(numberOfCovers);
   return shareTable.find((share) => share.rarity.toString() === rarity).value;
+};
+
+export const RARITY_MAP: { [key in PrismaComicRarity]: ComicRarity } = {
+  [PrismaComicRarity.None]: ComicRarity.None,
+  [PrismaComicRarity.Common]: ComicRarity.Common,
+  [PrismaComicRarity.Uncommon]: ComicRarity.Uncommon,
+  [PrismaComicRarity.Rare]: ComicRarity.Rare,
+  [PrismaComicRarity.Epic]: ComicRarity.Epic,
+  [PrismaComicRarity.Legendary]: ComicRarity.Legendary,
 };
