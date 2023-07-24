@@ -107,6 +107,7 @@ export class WalletService {
           },
         },
       });
+      // TODO: delegate authority to our smart contract if it's not delegated already
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
   }
