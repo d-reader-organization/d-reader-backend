@@ -110,12 +110,7 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
-            if (
-              !transaction.instructions.at(-1)?.innerInstructions[0]?.accounts
-            ) {
-              console.log('Unhandled webhook', JSON.stringify(transaction));
-              return;
-            }
+            console.log('Unhandled webhook', JSON.stringify(transaction));
             return this.handleMetadataUpdate(transaction);
         }
       }),
@@ -124,9 +119,14 @@ export class HeliusService {
 
   private async handleMetadataUpdate(transaction: EnrichedTransaction) {
     try {
+      console.log(
+        'transaction.instructions.at(-1): ',
+        transaction.instructions.at(-1),
+      );
       // metadata address is found in the last instruction
       const metadataAddress =
         transaction.instructions.at(-1).innerInstructions[0].accounts[0];
+      console.log('metadata address: ', metadataAddress);
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
@@ -138,7 +138,9 @@ export class HeliusService {
         throw new Error(`Unverified metadata account ${metadataAddress}`);
       }
 
+      console.log('mint: ', metadata.mintAddress.toString());
       const mint = metadata.mintAddress.toString();
+      console.log('off chain metadata: ', metadata.uri);
       const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
       const nft = await this.prisma.nft.update({
         where: { address: mint },
@@ -157,7 +159,9 @@ export class HeliusService {
           },
         },
       });
+      console.log('nft in database: ', nft.address, nft.name);
       this.websocketGateway.handleWalletNftUsed(nft);
+      console.log('websocketGateway.handleWalletNftUsed() fired');
     } catch (e) {
       console.log('Failed to handle NFT metadata update', e);
     }
