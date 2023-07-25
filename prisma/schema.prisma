@@ -37,6 +37,17 @@ model Wallet {
   lastActiveAt       DateTime?
 }
 
+enum NonceAccountStatus {
+  Available
+  Loaded
+}
+
+model NonceAccount {
+  address String             @id
+  status  NonceAccountStatus @default(Available)
+  nonce   String             @unique
+}
+
 enum Role {
   Superadmin
   Admin

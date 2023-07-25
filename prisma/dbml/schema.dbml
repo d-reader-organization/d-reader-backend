@@ -25,6 +25,12 @@ Table Wallet {
   lastActiveAt DateTime
 }
 
+Table NonceAccount {
+  address String [pk]
+  status NonceAccountStatus [not null, default: 'Available']
+  nonce String [unique, not null]
+}
+
 Table Creator {
   id Int [pk, increment]
   email String [unique, not null]
@@ -351,6 +357,11 @@ Table Listing {
   indexes {
     (nftAddress, canceledAt) [unique]
   }
+}
+
+Enum NonceAccountStatus {
+  Available
+  Loaded
 }
 
 Enum Role {

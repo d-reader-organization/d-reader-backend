@@ -28,7 +28,6 @@ import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
-import { NonceAccountArgs, createNonceAccount } from '../utils/nonce-account';
 
 @Injectable()
 export class AuctionHouseService {
@@ -110,10 +109,7 @@ export class AuctionHouseService {
     }
   }
 
-  async constructInstantBuyTransaction(
-    buyer: PublicKey,
-    buyArgs: BuyArgs,
-  ) {
+  async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
     try {
       const nonceAccount = await createNonceAccount(
         this.metaplex.connection,
@@ -432,9 +428,7 @@ export class AuctionHouseService {
       );
     }
     const metadata = toMetadata(toMetadataAccount(info));
-    if (
-      !metadata.collection.verified
-    ) {
+    if (!metadata.collection.verified) {
       throw new BadRequestException(
         `NFT ${nftAddress} is not from a verified collection`,
       );
