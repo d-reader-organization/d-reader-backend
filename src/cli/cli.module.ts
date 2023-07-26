@@ -28,6 +28,9 @@ import { AddAllowList } from './add-allow-list-command';
 import { AddAllowListQuestions } from './add-allow-list-questions';
 import { ThawCollectionCommand } from './thaw-collection-command';
 import { ThawCollectionQuestions } from './thaw-collection-question';
+import { CreateNonceAccountsQuestions } from './create-nonce-accounts-questions';
+import { CreateNonceAccountsCommand } from './create-nonce-accounts-command';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   imports: [
@@ -69,6 +72,9 @@ import { ThawCollectionQuestions } from './thaw-collection-question';
     AddAllowListQuestions,
     AddAllowList,
     WalletService,
+    NonceService,
+    CreateNonceAccountsQuestions,
+    CreateNonceAccountsCommand,
   ],
 })
 export class CLIModule {}

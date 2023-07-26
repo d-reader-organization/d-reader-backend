@@ -19,6 +19,9 @@ export class NonceController {
 
   @Post('nonce-transaction')
   async handleNonceTransaction(@Query() query: NonceTransactionParams) {
-    await this.nonceService.updateNonce(query.serializedTx, query.isCancelled);
+    await this.nonceService.updateMultipleNonce(
+      query.serializedTx,
+      query.isCancelled,
+    );
   }
 }

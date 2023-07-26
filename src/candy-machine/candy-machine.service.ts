@@ -66,6 +66,7 @@ import {
   constructInitializeComicAuthorityInstruction,
   constructInitializeRecordAuthorityInstruction,
 } from './instructions';
+import { NonceService } from '../nonce/nonce.service';
 
 @Injectable()
 export class CandyMachineService {
@@ -74,6 +75,7 @@ export class CandyMachineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
+    private readonly nonceServince: NonceService,
   ) {
     this.metaplex = initMetaplex();
   }
@@ -576,11 +578,10 @@ export class CandyMachineService {
         label,
         allowList,
       );
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
+      const nonce = await this.nonceServince.allocateNonceAccount(1);
       const mintTransaction = new Transaction({
         feePayer,
-        ...latestBlockhash,
+        recentBlockhash: nonce[0].nonce,
       }).add(...mintInstructions);
 
       mintTransaction.sign(mint);

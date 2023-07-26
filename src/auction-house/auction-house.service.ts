@@ -33,9 +33,9 @@ import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
-import { NonceService } from 'src/nonce/nonce.service';
-import { NonceAccountArgs } from 'src/nonce/types';
-import { BUY_LIMIT } from 'src/constants';
+import { NonceService } from '../nonce/nonce.service';
+import { NonceAccountArgs } from '../nonce/types';
+import { BUY_LIMIT } from '../constants';
 
 @Injectable()
 export class AuctionHouseService {

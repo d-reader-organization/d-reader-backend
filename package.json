@@ -35,7 +35,8 @@
     "authorize-wallet": "npx ts-node src/cli/main.ts authorize-wallet",
     "mint-one": "npx ts-node src/cli/main.ts mint-one",
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
-    "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection"
+    "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection",
+    "create-nonce-accounts": "npx ts-node src/cli/main.ts create-nonce-accounts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -19,6 +19,7 @@ import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.s
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
+import { NonceService } from '../src/nonce/nonce.service';
 
 const generateCoversAndSignature = (
   comicSlug: string,
@@ -79,10 +80,12 @@ const prisma = new PrismaClient();
 const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
 const heliusService = new HeliusService(prismaService, webSocketGateway);
+const nonceService = new NonceService(prismaService);
 const comicPageService = new ComicPageService(s3, prismaService);
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,
+  nonceService
 );
 const walletComicIssueService = new WalletComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(

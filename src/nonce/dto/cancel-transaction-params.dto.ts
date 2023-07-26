@@ -1,8 +1,12 @@
-import { IsBoolean, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsOptional } from 'class-validator';
 
 export class NonceTransactionParams {
-  @IsString()
-  serializedTx: string;
+  @IsArray()
+  @Type(() => String)
+  @ApiProperty({ type: [String] })
+  serializedTx: string[];
 
   @IsOptional()
   @IsBoolean()

@@ -1,6 +1,6 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, log, logErr } from './chalk';
-import { NonceService } from 'src/nonce/nonce.service';
+import { NonceService } from '../nonce/nonce.service';
 
 interface Options {
   supply: number;

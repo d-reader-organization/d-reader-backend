@@ -12,7 +12,7 @@ import {
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import { initMetaplex } from '../utils/metaplex';
-import { decodeTransaction } from 'src/utils/transactions';
+import { decodeTransaction } from '../utils/transactions';
 import { NonceAccountStatus } from '@prisma/client';
 import { NonceAccountArgs } from './types';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -111,6 +111,12 @@ export class NonceService {
     });
   }
 
+  async updateMultipleNonce(serializedTxs: string[], isCancelled?: boolean) {
+    for (const tx of serializedTxs) {
+      await this.updateNonce(tx, isCancelled);
+    }
+  }
+
   async fetchNewNonce(address: PublicKey) {
     const nonceInfo = await this.metaplex.connection.getAccountInfo(address);
     return NonceAccount.fromAccountData(nonceInfo.data);
@@ -173,17 +179,10 @@ export class NonceService {
 
   // creating 5 nonce accounts in a batch
   async create(supply: number) {
-    const iterations = (supply + 4) / 5;
-    const totalSupply = supply;
     const totalNonce: NonceAccountArgs[] = [];
-
-    for (let i = 0; i < iterations; i++) {
-      const transactionBatch: Promise<NonceAccountArgs>[] = [];
-      for (let j = 0; j < Math.min(totalSupply, 5); j++) {
-        transactionBatch.push(this.createNonceAccount());
-      }
-      const nonceBatch = await Promise.all(transactionBatch);
-      totalNonce.push(...nonceBatch);
+    for (let i = 0; i < supply; i++) {
+      const nonceArgs = await this.createNonceAccount();
+      totalNonce.push(nonceArgs);
     }
     await this.prisma.nonceAccount.createMany({ data: totalNonce });
   }
