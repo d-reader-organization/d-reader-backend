@@ -139,3 +139,5 @@ export const getRarityShare = (numberOfCovers: number, rarity: string) => {
   const shareTable = getRarityShareTable(numberOfCovers);
   return shareTable.find((share) => share.rarity.toString() === rarity).value;
 };
+
+export const BUY_LIMIT = 10;

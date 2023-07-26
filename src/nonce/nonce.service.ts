@@ -5,6 +5,7 @@ import {
   LAMPORTS_PER_SOL,
   NONCE_ACCOUNT_LENGTH,
   NonceAccount,
+  PublicKey,
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
@@ -17,7 +18,8 @@ import { NonceAccountArgs } from './types';
 
 @Injectable()
 export class NonceService {
-  private queues: { [queueName: string]: Transaction[] } = {};
+  private readonly transactionQueues: { [queueName: string]: Transaction[] } =
+    {};
   private readonly metaplex: Metaplex;
 
   constructor(private readonly prisma: PrismaService) {
@@ -25,35 +27,54 @@ export class NonceService {
   }
 
   createQueue(queueName: string) {
-    if (this.queues[queueName]) {
+    if (this.transactionQueues[queueName]) {
       throw new Error(`Queue with name ${queueName} already exists`);
     }
-    this.queues[queueName] = [];
+    this.transactionQueues[queueName] = [];
+  }
+
+  closeQueue(queueName: string) {
+    delete this.transactionQueues[queueName];
   }
 
   async addTransaction(queueName: string, serializedTx: string) {
-    if (!this.queues[queueName]) {
+    if (!this.transactionQueues[queueName]) {
       throw new Error(`Queue '${queueName}' does not exist.`);
     }
     const transaction = decodeTransaction(serializedTx);
-    this.queues[queueName].push(transaction);
+    this.transactionQueues[queueName].push(transaction);
   }
 
   async processTransactions(queueName: string) {
-    while (this.queues[queueName].length) {
-      const transaction = this.queues[queueName].shift();
+    while (this.transactionQueues[queueName].length) {
+      const transaction = this.transactionQueues[queueName].shift();
       const nonce = transaction.recentBlockhash;
+      const nonceAccount = await this.prisma.nonceAccount.findFirst({
+        where: { nonce },
+      });
+      if (!nonceAccount) {
+        console.error(`Invalid nonce token ${transaction.recentBlockhash}`);
+        continue;
+      }
       try {
-        await sendAndConfirmTransaction(this.metaplex.connection, transaction, [
-          this.metaplex.identity(),
-        ]);
+        const signature = await sendAndConfirmTransaction(
+          this.metaplex.connection,
+          transaction,
+          [this.metaplex.identity()],
+        );
+        console.log('signature:', signature);
       } catch (e) {
         // handle retry transaction
         console.log(e);
       } finally {
+        const nonceInfo = await this.metaplex.connection.getAccountInfo(
+          new PublicKey(nonceAccount.address),
+        );
+        const nonceAccountData = NonceAccount.fromAccountData(nonceInfo.data);
         await this.prisma.nonceAccount.update({
           where: { nonce },
           data: {
+            nonce: nonceAccountData.nonce,
             status: NonceAccountStatus.Available,
           },
         });
@@ -61,13 +82,51 @@ export class NonceService {
     }
   }
 
-  async processQueues() {
-    for (const key in this.queues) {
-      if (!this.queues[key]) {
-        throw new Error(`Queue '${key}' does not exist.`);
-      }
+  async processTransactionQueues() {
+    for (const key in this.transactionQueues) {
       await this.processTransactions(key);
     }
+  }
+
+  async updateNonce(serializedTx: string, isCancelled?: boolean) {
+    const transaction = decodeTransaction(serializedTx);
+    const nonce = transaction.recentBlockhash;
+    let newNonce: string;
+    if (!isCancelled) {
+      const nonceAccount = await this.prisma.nonceAccount.findFirst({
+        where: { nonce },
+      });
+      newNonce = (await this.fetchNewNonce(new PublicKey(nonceAccount.address)))
+        .nonce;
+    }
+    await this.prisma.nonceAccount.update({
+      where: { nonce },
+      data: {
+        status: NonceAccountStatus.Available,
+        nonce: newNonce,
+      },
+    });
+  }
+
+  async fetchNewNonce(address: PublicKey) {
+    const nonceInfo = await this.metaplex.connection.getAccountInfo(address);
+    return NonceAccount.fromAccountData(nonceInfo.data);
+  }
+
+  async allocateNonceAccount(supply: number) {
+    const nonceAccounts = await this.prisma.nonceAccount.findMany({
+      where: { status: NonceAccountStatus.Available },
+      take: supply,
+    });
+    await this.prisma.nonceAccount.updateMany({
+      where: {
+        address: { in: nonceAccounts.map((account) => account.address) },
+      },
+      data: {
+        status: NonceAccountStatus.Loaded,
+      },
+    });
+    return nonceAccounts;
   }
 
   async createNonceAccount(): Promise<NonceAccountArgs> {
@@ -98,10 +157,7 @@ export class NonceService {
         nonceKey,
         identity,
       ]);
-      const nonceInfo = await this.metaplex.connection.getAccountInfo(
-        nonceKey.publicKey,
-      );
-      const nonceAccount = NonceAccount.fromAccountData(nonceInfo.data);
+      const nonceAccount = await this.fetchNewNonce(nonceKey.publicKey);
 
       return {
         nonce: nonceAccount.nonce,

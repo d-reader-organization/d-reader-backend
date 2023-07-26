@@ -3,7 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import {
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import {
   AuctionHouse,
   Metaplex,
@@ -28,13 +33,19 @@ import { BidModel } from './dto/types/bid-model';
 import { BuyArgs } from './dto/types/buy-args';
 import { solFromLamports } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import { NonceService } from 'src/nonce/nonce.service';
+import { NonceAccountArgs } from 'src/nonce/types';
+import { BUY_LIMIT } from 'src/constants';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private readonly auctionHouseAddress: PublicKey;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly nonceService: NonceService,
+  ) {
     this.metaplex = initMetaplex();
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
   }
@@ -100,8 +111,19 @@ export class AuctionHouseService {
     buyArgs: BuyArgs[],
   ): Promise<string[]> {
     try {
-      const transactions = buyArgs.map((args) => {
-        return this.constructInstantBuyTransaction(buyer, args);
+      const buySize = buyArgs.length;
+      if (buySize > BUY_LIMIT) {
+        throw new Error(`Multiple Buy limit ${BUY_LIMIT} exceeded`);
+      }
+      const nonceAccounts = await this.nonceService.allocateNonceAccount(
+        buySize,
+      );
+      const transactions = buyArgs.map((args, index) => {
+        return this.constructInstantBuyTransaction(
+          buyer,
+          args,
+          nonceAccounts[index],
+        );
       });
       return await Promise.all(transactions);
     } catch (e) {
@@ -109,12 +131,12 @@ export class AuctionHouseService {
     }
   }
 
-  async constructInstantBuyTransaction(buyer: PublicKey, buyArgs: BuyArgs) {
+  async constructInstantBuyTransaction(
+    buyer: PublicKey,
+    buyArgs: BuyArgs,
+    nonceAccount?: NonceAccountArgs,
+  ) {
     try {
-      const nonceAccount = await createNonceAccount(
-        this.metaplex.connection,
-        this.metaplex.identity(),
-      );
       const { mintAccount, seller, price } = buyArgs;
       const listingModel = await this.prisma.listing.findUnique({
         where: {
@@ -157,17 +179,25 @@ export class AuctionHouseService {
         listing,
         bid,
       );
-      const advanceNonceInstruction = SystemProgram.nonceAdvance({
-        authorizedPubkey: this.metaplex.identity().publicKey,
-        noncePubkey: nonceAccount.pubkey,
-      });
+      let blockHash: string;
+      const remainingInstructions: TransactionInstruction[] = [];
+      if (nonceAccount) {
+        const advanceNonceInstruction = SystemProgram.nonceAdvance({
+          authorizedPubkey: this.metaplex.identity().publicKey,
+          noncePubkey: new PublicKey(nonceAccount.address),
+        });
+        remainingInstructions.push(advanceNonceInstruction);
+      } else {
+        blockHash = (await this.metaplex.connection.getLatestBlockhash())
+          .blockhash;
+      }
 
       const instantBuyTransaction = new Transaction({
         feePayer: buyer,
-        recentBlockhash: nonceAccount.nonce,
+        recentBlockhash: blockHash,
       });
       instantBuyTransaction.add(
-        advanceNonceInstruction,
+        ...remainingInstructions,
         ...bidInstruction,
         executeSaleInstruction,
       );

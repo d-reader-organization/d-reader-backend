@@ -60,22 +60,22 @@ export class AuctionHouseController {
     );
   }
 
-  // @Get('/transactions/instant-buy')
-  // async constructInstantBuyTransaction(
-  //   @WalletEntity() wallet: Wallet,
-  //   @Query() query: InstantBuyParams,
-  // ) {
-  //   const publicKey = new PublicKey(wallet.address);
-  //   const buyArgs: BuyArgs = {
-  //     mintAccount: new PublicKey(query.mintAccount),
-  //     price: query.price,
-  //     seller: new PublicKey(query.seller),
-  //   };
-  //   return await this.auctionHouseService.constructInstantBuyTransaction(
-  //     publicKey,
-  //     buyArgs,
-  //   );
-  // }
+  @Get('/transactions/instant-buy')
+  async constructInstantBuyTransaction(
+    @WalletEntity() wallet: Wallet,
+    @Query() query: InstantBuyParams,
+  ) {
+    const publicKey = new PublicKey(wallet.address);
+    const buyArgs: BuyArgs = {
+      mintAccount: new PublicKey(query.mintAccount),
+      price: query.price,
+      seller: new PublicKey(query.seller),
+    };
+    return await this.auctionHouseService.constructInstantBuyTransaction(
+      publicKey,
+      buyArgs,
+    );
+  }
 
   @Get('/transactions/multiple-buy')
   @ApiQuery({
