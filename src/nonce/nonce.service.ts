@@ -15,6 +15,7 @@ import { initMetaplex } from '../utils/metaplex';
 import { decodeTransaction } from 'src/utils/transactions';
 import { NonceAccountStatus } from '@prisma/client';
 import { NonceAccountArgs } from './types';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class NonceService {
@@ -82,7 +83,9 @@ export class NonceService {
     }
   }
 
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async processTransactionQueues() {
+    console.log('Processing Transactions');
     for (const key in this.transactionQueues) {
       await this.processTransactions(key);
     }
