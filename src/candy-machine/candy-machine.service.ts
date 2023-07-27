@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   Keypair,
   PublicKey,
+  SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
@@ -469,6 +470,7 @@ export class CandyMachineService {
       { payer: this.metaplex.identity() },
     );
     await this.initializeGuardAccounts(candyMachine);
+    this.nonceServince.createQueue(candyMachine.address.toString());
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
@@ -579,13 +581,17 @@ export class CandyMachineService {
         allowList,
       );
       const nonce = await this.nonceServince.allocateNonceAccount(1);
+      const advanceNonceInstruction = SystemProgram.nonceAdvance({
+        authorizedPubkey: this.metaplex.identity().publicKey,
+        noncePubkey: new PublicKey(nonce[0].address),
+      });
       const mintTransaction = new Transaction({
         feePayer,
         recentBlockhash: nonce[0].nonce,
-      }).add(...mintInstructions);
+      }).add(advanceNonceInstruction, ...mintInstructions);
 
-      mintTransaction.sign(mint);
-
+      mintTransaction.partialSign(mint);
+      mintTransaction.partialSign(this.metaplex.identity());
       const rawTransaction = mintTransaction.serialize({
         requireAllSignatures: false,
         verifySignatures: false,

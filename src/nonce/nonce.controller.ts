@@ -1,4 +1,4 @@
-import { Controller, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { NonceService } from './nonce.service';
@@ -13,15 +13,20 @@ export class NonceController {
   constructor(private readonly nonceService: NonceService) {}
 
   @Post('add-transaction')
-  async addTransaction(@Query() query: AddTransactionParams) {
+  async addTransaction(@Body() query: AddTransactionParams) {
     await this.nonceService.addTransaction(query.queueName, query.serializedTx);
   }
 
   @Post('nonce-transaction')
-  async handleNonceTransaction(@Query() query: NonceTransactionParams) {
+  async handleNonceTransaction(@Body() query: NonceTransactionParams) {
     await this.nonceService.updateMultipleNonce(
       query.serializedTx,
       query.isCancelled,
     );
+  }
+
+  @Get('create-queue/:name')
+  async createQueue(@Param('name') name: string) {
+    this.nonceService.createQueue(name);
   }
 }

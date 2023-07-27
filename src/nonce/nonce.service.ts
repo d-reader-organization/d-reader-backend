@@ -8,6 +8,7 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  sendAndConfirmRawTransaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
@@ -58,10 +59,13 @@ export class NonceService {
         continue;
       }
       try {
-        const signature = await sendAndConfirmTransaction(
+        const tx = transaction.serialize({
+          requireAllSignatures: false,
+          verifySignatures: false,
+        });
+        const signature = await sendAndConfirmRawTransaction(
           this.metaplex.connection,
-          transaction,
-          [this.metaplex.identity()],
+          tx,
         );
         console.log('signature:', signature);
       } catch (e) {
@@ -87,6 +91,7 @@ export class NonceService {
   async processTransactionQueues() {
     console.log('Processing Transactions');
     for (const key in this.transactionQueues) {
+      console.log(key);
       await this.processTransactions(key);
     }
   }

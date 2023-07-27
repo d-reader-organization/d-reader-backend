@@ -3,9 +3,15 @@ import { AuctionHouseController } from './auction-house.controller';
 import { AuctionHouseService } from './auction-house.service';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { WebSocketGateway } from 'src/websockets/websocket.gateway';
+import { NonceService } from 'src/nonce/nonce.service';
 
 @Module({
   controllers: [AuctionHouseController],
-  providers: [AuctionHouseService, HeliusService, WebSocketGateway],
+  providers: [
+    AuctionHouseService,
+    HeliusService,
+    WebSocketGateway,
+    NonceService,
+  ],
 })
 export class AuctionHouseModule {}

@@ -6,6 +6,7 @@ import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
 import { WalletComicIssueService } from './wallet-comic-issue.service';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { WebSocketGateway } from 'src/websockets/websocket.gateway';
+import { NonceService } from 'src/nonce/nonce.service';
 
 @Module({
   controllers: [ComicIssueController],
@@ -16,6 +17,7 @@ import { WebSocketGateway } from 'src/websockets/websocket.gateway';
     WalletComicIssueService,
     HeliusService,
     WebSocketGateway,
+    NonceService,
   ],
 })
 export class ComicIssueModule {}
