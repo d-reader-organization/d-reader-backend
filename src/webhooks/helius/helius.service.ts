@@ -110,12 +110,7 @@ export class HeliusService {
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
           default:
-            if (
-              !transaction.instructions.at(-1)?.innerInstructions[0]?.accounts
-            ) {
-              console.log('Unhandled webhook', JSON.stringify(transaction));
-              return;
-            }
+            console.log('Unhandled webhook', JSON.stringify(transaction));
             return this.handleMetadataUpdate(transaction);
         }
       }),
@@ -158,9 +153,7 @@ export class HeliusService {
         },
       });
       this.websocketGateway.handleWalletNftUsed(nft);
-    } catch (e) {
-      console.log('Failed to handle NFT metadata update', e);
-    }
+    } catch (e) {}
   }
 
   private async handleInstantBuy(transaction: EnrichedTransaction) {
