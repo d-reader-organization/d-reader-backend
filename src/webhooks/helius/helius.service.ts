@@ -164,7 +164,7 @@ export class HeliusService {
         .confirmTransaction(
           transaction.signature,
           { ...latestBlockhash },
-          'finalized',
+          'confirmed',
         );
       if (!!value.err) {
         throw new Error('Sale transaction failed to finalize');
@@ -315,7 +315,7 @@ export class HeliusService {
         .confirmTransaction(
           enrichedTransaction.signature,
           { ...latestBlockhash },
-          'finalized',
+          'confirmed',
         );
 
       if (!!value.err) {
@@ -347,13 +347,13 @@ export class HeliusService {
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
-    await this.metaplex.rpc().confirmTransaction(
-      enrichedTransaction.signature,
-      {
-        ...latestBlockhash,
-      },
-      'finalized',
-    );
+    await this.metaplex
+      .rpc()
+      .confirmTransaction(
+        enrichedTransaction.signature,
+        { ...latestBlockhash },
+        'confirmed',
+      );
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
