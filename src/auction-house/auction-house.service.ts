@@ -187,6 +187,7 @@ export class AuctionHouseService {
           noncePubkey: new PublicKey(nonceAccount.address),
         });
         remainingInstructions.push(advanceNonceInstruction);
+        blockHash = nonceAccount.nonce;
       } else {
         blockHash = (await this.metaplex.connection.getLatestBlockhash())
           .blockhash;

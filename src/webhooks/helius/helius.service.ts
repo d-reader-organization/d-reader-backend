@@ -248,7 +248,7 @@ export class HeliusService {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
-      const tokenMetadata = transaction.instructions[2].accounts[2]; //index 2 for tokenMetadata account
+      const tokenMetadata = transaction.instructions.at(-1).accounts[2]; //index 2 for tokenMetadata account
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
@@ -359,14 +359,14 @@ export class HeliusService {
       {
         ...latestBlockhash,
       },
-      'finalized',
+      'confirmed',
     );
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
     const collectionMint = new PublicKey(
-      enrichedTransaction.instructions[4].accounts[10],
+      enrichedTransaction.instructions[5].accounts[10],
     );
     await Promise.all([
       this.delegateAuthority(
@@ -379,7 +379,7 @@ export class HeliusService {
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
-    const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
+    const candyMachineAddress = enrichedTransaction.instructions[5].accounts[2];
 
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
 

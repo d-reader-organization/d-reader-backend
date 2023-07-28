@@ -33,6 +33,7 @@ export class NonceService {
       throw new Error(`Queue with name ${queueName} already exists`);
     }
     this.transactionQueues[queueName] = [];
+    console.log(`Queue ${queueName} created !`);
   }
 
   closeQueue(queueName: string) {
@@ -104,6 +105,7 @@ export class NonceService {
       const nonceAccount = await this.prisma.nonceAccount.findFirst({
         where: { nonce },
       });
+      await this.advanceNonce(nonceAccount.address);
       newNonce = (await this.fetchNewNonce(new PublicKey(nonceAccount.address)))
         .nonce;
     }
@@ -114,6 +116,22 @@ export class NonceService {
         nonce: newNonce,
       },
     });
+  }
+
+  async advanceNonce(address: string) {
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
+      'confirmed',
+    );
+    const tx = new Transaction({
+      ...latestBlockhash,
+      feePayer: this.metaplex.identity().publicKey,
+    });
+    tx.add(
+      SystemProgram.nonceAdvance({
+        authorizedPubkey: this.metaplex.identity().publicKey,
+        noncePubkey: new PublicKey(address),
+      }),
+    );
   }
 
   async updateMultipleNonce(serializedTxs: string[], isCancelled?: boolean) {
