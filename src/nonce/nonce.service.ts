@@ -40,12 +40,13 @@ export class NonceService {
     delete this.transactionQueues[queueName];
   }
 
-  async addTransaction(queueName: string, serializedTx: string) {
+  async addTransactions(queueName: string, serializedTx: string[]) {
     if (!this.transactionQueues[queueName]) {
       throw new Error(`Queue '${queueName}' does not exist.`);
     }
-    const transaction = decodeTransaction(serializedTx);
-    this.transactionQueues[queueName].push(transaction);
+    const transactions = serializedTx.map((tx) => decodeTransaction(tx));
+    this.transactionQueues[queueName].push(...transactions);
+    console.log('Transactions has been added');
   }
 
   async processTransactions(queueName: string) {

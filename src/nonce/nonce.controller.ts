@@ -14,7 +14,10 @@ export class NonceController {
 
   @Post('add-transaction')
   async addTransaction(@Body() query: AddTransactionParams) {
-    await this.nonceService.addTransaction(query.queueName, query.serializedTx);
+    await this.nonceService.addTransactions(
+      query.queueName,
+      query.serializedTxs,
+    );
   }
 
   @Post('nonce-transaction')
