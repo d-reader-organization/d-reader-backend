@@ -252,6 +252,7 @@ model Nft {
 
 model CandyMachine {
   address              String                @id
+  authorityPda         String                @unique
   mintAuthorityAddress String
   itemsAvailable       Int
   itemsMinted          Int

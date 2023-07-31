@@ -425,9 +425,15 @@ export class CandyMachineService {
       { payer: this.metaplex.identity() },
     );
     await this.initializeGuardAccounts(candyMachine);
+    const authorityPda = this.metaplex
+      .candyMachines()
+      .pdas()
+      .authority({ candyMachine: candyMachine.address })
+      .toString();
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
+        authorityPda,
         mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
         collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
         itemsAvailable: candyMachine.itemsAvailable.toNumber(),
