@@ -192,6 +192,7 @@ export class HeliusService {
               data: {
                 canceledAt: new Date(transaction.timestamp * 1000),
                 soldAt: new Date(transaction.timestamp * 1000),
+                saleTransaction: transaction.signature,
               },
             },
           },
@@ -434,6 +435,7 @@ export class HeliusService {
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp * 1000),
           description: enrichedTransaction.description,
+          signature: nftTransactionInfo.signature,
         },
       });
 

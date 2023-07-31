@@ -277,6 +277,7 @@ model CandyMachineReceipt {
   description         String
   candyMachine        CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
   candyMachineAddress String
+  signature           String
 }
 
 model CollectionNft {
@@ -371,16 +372,17 @@ model Metadata {
 }
 
 model Listing {
-  id         Int       @id @default(autoincrement())
-  nftAddress String
-  nft        Nft       @relation(fields: [nftAddress], references: [address])
-  price      Int
-  feePayer   String
-  signature  String
-  symbol     String
-  createdAt  DateTime
-  canceledAt DateTime
-  soldAt     DateTime?
+  id              Int       @id @default(autoincrement())
+  nftAddress      String
+  nft             Nft       @relation(fields: [nftAddress], references: [address])
+  price           Int
+  feePayer        String
+  signature       String
+  symbol          String
+  createdAt       DateTime
+  canceledAt      DateTime
+  soldAt          DateTime?
+  saleTransaction String?
 
   @@unique([nftAddress, canceledAt])
 }

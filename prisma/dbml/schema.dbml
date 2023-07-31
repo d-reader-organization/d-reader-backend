@@ -243,6 +243,7 @@ Table CandyMachineReceipt {
   description String [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
+  signature String [not null]
 }
 
 Table CollectionNft {
@@ -348,6 +349,7 @@ Table Listing {
   createdAt DateTime [not null]
   canceledAt DateTime [not null]
   soldAt DateTime
+  saleTransaction String
 
   indexes {
     (nftAddress, canceledAt) [unique]
