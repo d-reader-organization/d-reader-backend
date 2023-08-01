@@ -184,6 +184,7 @@ export class HeliusService {
         },
         data: {
           ownerAddress: transaction.tokenTransfers[0].toUserAccount,
+          ownerChangedAt: new Date(transaction.timestamp * 1000),
           listing: {
             update: {
               where: {
@@ -304,40 +305,33 @@ export class HeliusService {
       const ownerAddress = tokenTransfers.toUserAccount;
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
-
-      const nft = await this.prisma.nft.update({
-        where: { address },
-        data: { ownerAddress },
-      });
-
-      const { value } = await this.metaplex
+      await this.metaplex
         .rpc()
         .confirmTransaction(
           enrichedTransaction.signature,
           { ...latestBlockhash },
           'confirmed',
         );
-
-      if (!!value.err) {
-        await this.prisma.nft.update({
-          where: { address },
-          data: { ownerAddress: previousOwner },
-        });
-      } else {
-        await this.prisma.listing.update({
-          where: {
-            nftAddress_canceledAt: {
-              nftAddress: address,
-              canceledAt: new Date(0),
-            },
+      const nft = await this.prisma.nft.update({
+        where: { address },
+        data: {
+          ownerAddress,
+          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
+        },
+      });
+      await this.prisma.listing.update({
+        where: {
+          nftAddress_canceledAt: {
+            nftAddress: address,
+            canceledAt: new Date(0),
           },
-          data: {
-            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
-          },
-        });
-        this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
-        this.websocketGateway.handleWalletNftSent(previousOwner, nft);
-      }
+        },
+        data: {
+          canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+        },
+      });
+      this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
+      this.websocketGateway.handleWalletNftSent(previousOwner, nft);
     } catch (e) {
       console.log('Failed to handle NFT transfer', e);
     }
@@ -393,6 +387,7 @@ export class HeliusService {
           address: mint.toBase58(),
           name: metadata.name,
           candyMachine: { connect: { address: candyMachineAddress } },
+          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
           collectionNft: {
             connect: { address: metadata.collection.address.toBase58() },
           },

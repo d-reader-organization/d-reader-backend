@@ -214,6 +214,7 @@ Table Nft {
   collectionNftAddress String [not null]
   receipt CandyMachineReceipt
   listing Listing [not null]
+  ownerChangedAt DateTime [not null]
 }
 
 Table CandyMachine {

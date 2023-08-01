@@ -54,8 +54,14 @@ import {
   RarityCoverFiles,
 } from '../types/shared';
 import { generatePropertyName } from '../utils/nft-metadata';
-import { ComicStates, ComicRarity, ComicStateArgs } from 'dreader-comic-verse';
+import {
+  ComicStates,
+  ComicRarity,
+  ComicStateArgs,
+  PROGRAM_ID as COMIC_VERSE_ID,
+} from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
+import { PUB_AUTH_TAG, pda } from './instructions/pda';
 
 @Injectable()
 export class CandyMachineService {
@@ -377,13 +383,22 @@ export class CandyMachineService {
       collectionNftAddress = newCollectionNft.address;
     }
 
-    await initializeRecordAuthority(
-      this.metaplex,
-      collectionNftAddress,
-      new PublicKey(creatorAddress),
-      MAX_SIGNATURES_PERCENT,
-      MIN_SIGNATURES,
+    const recordAuthorityPda = await pda(
+      [Buffer.from(PUB_AUTH_TAG), collectionNftAddress.toBuffer()],
+      COMIC_VERSE_ID,
     );
+    const recordAuthority = await this.metaplex.connection.getAccountInfo(
+      recordAuthorityPda,
+    );
+    if (!recordAuthority) {
+      await initializeRecordAuthority(
+        this.metaplex,
+        collectionNftAddress,
+        new PublicKey(creatorAddress),
+        MAX_SIGNATURES_PERCENT,
+        MIN_SIGNATURES,
+      );
+    }
 
     const comicCreator = new PublicKey(creatorAddress);
     const { candyMachine } = await this.metaplex.candyMachines().create(

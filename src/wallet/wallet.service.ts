@@ -7,7 +7,12 @@ import { PrismaService } from 'nestjs-prisma';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
-import { Metadata, Metaplex, isMetadata } from '@metaplex-foundation/js';
+import {
+  JsonMetadata,
+  Metadata,
+  Metaplex,
+  isMetadata,
+} from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { Wallet } from '@prisma/client';
@@ -52,64 +57,125 @@ export class WalletService {
       select: { address: true },
     });
 
-    const findOurCandyMachine = (metadata: Metadata) => {
-      return candyMachines.find((cm) => {
-        this.metaplex
-          .candyMachines()
-          .pdas()
-          .authority({ candyMachine: new PublicKey(cm.address) })
-          .equals(metadata.creators[0].address);
-      });
-    };
-
     function doesWalletIndexCorrectly(metadata: Metadata) {
       return wallet.nfts.find(
         (nfts) => nfts.address === metadata.mintAddress.toString(),
       );
     }
-
     const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
     const unsyncedMetadatas = onChainMetadatas.filter(
       (metadata) =>
-        findOurCandyMachine(metadata) && !doesWalletIndexCorrectly(metadata),
+        this.findOurCandyMachine(candyMachines, metadata) &&
+        !doesWalletIndexCorrectly(metadata),
     );
-
     for (const metadata of unsyncedMetadatas) {
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
-
-      await this.prisma.nft.create({
-        data: {
-          address: metadata.mintAddress.toString(),
-          name: metadata.name,
-          metadata: {
-            connectOrCreate: {
-              where: { uri: metadata.uri },
-              create: {
-                collectionName: collectionMetadata.collection.name,
-                uri: metadata.uri,
-                isUsed: findUsedTrait(collectionMetadata),
-                isSigned: findSignedTrait(collectionMetadata),
-                rarity: findRarityTrait(collectionMetadata),
-              },
-            },
-          },
-          owner: {
-            connectOrCreate: {
-              where: { address: wallet.address },
-              create: { address: wallet.address, name: wallet.address },
-            },
-          },
-          candyMachine: {
-            connect: { address: findOurCandyMachine(metadata).address },
-          },
-          collectionNft: {
-            connect: { address: metadata.collection.address.toString() },
-          },
-        },
+      const nft = await this.prisma.nft.findFirst({
+        where: { address: metadata.mintAddress.toString() },
       });
-      // TODO: delegate authority to our smart contract if it's not delegated already
+      if (nft) this.updateNft(metadata, collectionMetadata, wallet.address);
+      else
+        this.createNft(
+          metadata,
+          collectionMetadata,
+          wallet.address,
+          candyMachines,
+        );
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
+  }
+
+  findOurCandyMachine(
+    candyMachines: { address: string }[],
+    metadata: Metadata,
+  ) {
+    return candyMachines.find((cm) =>
+      this.metaplex
+        .candyMachines()
+        .pdas()
+        .authority({ candyMachine: new PublicKey(cm.address) })
+        .equals(metadata.creators[0].address),
+    );
+  }
+
+  async updateNft(
+    metadata: Metadata<JsonMetadata<string>>,
+    collectionMetadata: JsonMetadata,
+    walletAddress: string,
+  ) {
+    await this.prisma.nft.update({
+      where: { address: metadata.mintAddress.toString() },
+      data: {
+        ownerChangedAt: new Date(),
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress, name: walletAddress },
+          },
+        },
+        metadata: {
+          connectOrCreate: {
+            where: { uri: metadata.uri },
+            create: {
+              collectionName: collectionMetadata.collection.name,
+              uri: metadata.uri,
+              isUsed: findUsedTrait(collectionMetadata),
+              isSigned: findSignedTrait(collectionMetadata),
+              rarity: findRarityTrait(collectionMetadata),
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async createNft(
+    metadata: Metadata<JsonMetadata<string>>,
+    collectionMetadata: JsonMetadata,
+    walletAddress: string,
+    candyMachines: { address: string }[],
+  ) {
+    await this.prisma.nft.create({
+      data: {
+        address: metadata.mintAddress.toString(),
+        name: metadata.name,
+        ownerChangedAt: new Date(),
+        metadata: {
+          connectOrCreate: {
+            where: { uri: metadata.uri },
+            create: {
+              collectionName: collectionMetadata.collection.name,
+              uri: metadata.uri,
+              isUsed: findUsedTrait(collectionMetadata),
+              isSigned: findSignedTrait(collectionMetadata),
+              rarity: findRarityTrait(collectionMetadata),
+            },
+          },
+        },
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress, name: walletAddress },
+          },
+        },
+        candyMachine: {
+          connect: {
+            address: this.findOurCandyMachine(candyMachines, metadata).address,
+          },
+        },
+        collectionNft: {
+          connect: { address: metadata.collection.address.toString() },
+        },
+      },
+    });
+    await Promise.all([
+      this.heliusService.delegateAuthority(
+        metadata.collection.address,
+        findRarityTrait(collectionMetadata).toString(),
+        metadata.mintAddress,
+      ),
+      this.heliusService.verifyMintCreator(metadata.mintAddress),
+    ]);
   }
 
   async findAll() {

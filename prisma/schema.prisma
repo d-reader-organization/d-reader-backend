@@ -248,6 +248,7 @@ model Nft {
   collectionNftAddress String
   receipt              CandyMachineReceipt?
   listing              Listing[]
+  ownerChangedAt       DateTime
 }
 
 model CandyMachine {
