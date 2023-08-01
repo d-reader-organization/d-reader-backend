@@ -2,20 +2,14 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { Authorization, JwtDto } from './dto/authorization.dto';
+import { JwtDto } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
-import { Wallet, Creator } from '@prisma/client';
-import { Cluster } from '../types/cluster';
-import { WalletService } from '../wallet/wallet.service';
-import { isValidUsername } from '../decorators/IsValidUsername';
-import { WALLET_NAME_SIZE } from '../constants';
-import { maxLength } from 'class-validator';
+import { Creator, User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -24,35 +18,38 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly passwordService: PasswordService,
-    private readonly walletService: WalletService,
   ) {}
 
-  async connect(address: string, encoding: string): Promise<Authorization> {
-    const wallet = await this.passwordService.validateWallet(address, encoding);
+  async connectWallet(userId: number, address: string, encoding: string) {
+    this.passwordService.validateWallet(userId, address, encoding);
 
-    let avatar = wallet.avatar || '';
-    // If wallet has no avatar, generate a random one
-    if (!avatar) {
-      avatar = await this.walletService.generateAvatar(address);
-    }
-
-    await this.prisma.wallet.update({
-      where: { address: wallet.address },
-      data: { lastLogin: new Date(), avatar },
+    await this.prisma.wallet.upsert({
+      where: { address },
+      create: { address, userId: userId },
+      update: { userId: userId },
     });
+  }
 
+  async disconnectWallet(address: string) {
+    await this.prisma.wallet.update({
+      where: { address },
+      data: { userId: null },
+    });
+  }
+
+  authorizeUser(user: User) {
     return {
-      accessToken: this.generateAccessToken(wallet),
-      refreshToken: this.generateRefreshToken(wallet),
+      accessToken: this.generateAccessToken(user),
+      refreshToken: this.generateRefreshToken(user),
     };
   }
 
-  private generateAccessToken(payload: Wallet): string {
+  private generateAccessToken(payload: User): string {
     const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
     return accessToken;
   }
 
-  private generateRefreshToken(payload: Wallet): string {
+  private generateRefreshToken(payload: User): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -63,7 +60,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  async refreshAccessToken(wallet: Wallet, token: string) {
+  async refreshAccessToken(user: User, token: string) {
     let jwtDto: JwtDto;
     try {
       jwtDto = this.jwtService.verify<JwtDto>(token, {
@@ -75,54 +72,27 @@ export class AuthService {
       );
     }
 
-    if (wallet.address !== jwtDto.address) {
+    if (user.id !== jwtDto.id) {
       throw new UnauthorizedException(
         'Refresh and access token address mismatch',
       );
     }
 
-    await this.prisma.wallet.update({
-      where: { address: wallet.address },
+    await this.prisma.user.update({
+      where: { id: user.id },
       data: { lastLogin: new Date() },
     });
 
-    return this.generateAccessToken(wallet);
+    return this.generateAccessToken(user);
   }
 
-  async validateJwt(jwtDto: JwtDto): Promise<Wallet & { creator?: Creator }> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { address: jwtDto.address },
+  async validateJwt(jwtDto: JwtDto): Promise<User & { creator?: Creator }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: jwtDto.id },
       include: { creator: true },
     });
 
-    if (!wallet) throw new NotFoundException(`Invalid wallet address`);
-    else if (
-      // Check nonce token expiry only on the 'mainnet-beta' environment
-      process.env.SOLANA_CLUSTER === Cluster.MainnetBeta &&
-      jwtDto.nonce !== wallet.nonce
-    ) {
-      throw new NotFoundException(`Expired nonce token`);
-    } else return wallet;
-  }
-
-  async validateName(name: string) {
-    if (!name || !maxLength(name, WALLET_NAME_SIZE)) {
-      throw new BadRequestException(
-        `Username max size ${WALLET_NAME_SIZE} characters`,
-      );
-    } else if (!isValidUsername(name)) {
-      throw new BadRequestException(
-        'Username can only have A-Z, 0-9, -, _ characters',
-      );
-    }
-    const wallet = await this.prisma.wallet.findFirst({
-      where: { name: { equals: name, mode: 'insensitive' } },
-    });
-
-    if (wallet) {
-      throw new BadRequestException('Username already taken');
-    }
-
-    return true;
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 }

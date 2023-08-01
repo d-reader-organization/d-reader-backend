@@ -10,8 +10,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
 import { Role } from '@prisma/client';
 
-/** Protects non 'GET' and 'POST' Wallet endpoints from anyone besides
- * Superadmin users and owner of relevant entities */
+/** Protects 'PUT' and 'PATCH' Wallet endpoints
+ * from anyone besides the wallet owners and Superadmin */
 @Injectable()
 export class WalletUpdateGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma: PrismaService) {}
@@ -19,28 +19,23 @@ export class WalletUpdateGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const { user, params, method } = request;
+    const { address } = params;
+    if (!user) return false;
+    if (!address) return true;
 
     // If reading or creating new Wallet entities, allow
     if (method.toLowerCase() === 'get') return true;
     else if (method.toLowerCase() === 'post') return true;
 
-    const { address } = params;
-    if (!address) return true;
-
     const wallet = await this.prisma.wallet.findUnique({
       where: { address },
-      select: { address: true, role: true },
+      select: { address: true, userId: true },
     });
 
     if (!wallet) {
-      throw new NotFoundException(`Wallet ${address} does not exist`);
-    }
-
-    if (!user) return false;
-    else if (wallet.role === Role.Superadmin) {
-      throw new ForbiddenException('Cannot update wallet with Superadmin role');
+      throw new NotFoundException(`Wallet ${address} not found`);
     } else if (user.role === Role.Superadmin) return true;
-    else if (user.address === wallet.address) return true;
+    else if (user.id === wallet.userId) return true;
     else throw new ForbiddenException("You don't own this wallet");
   }
 }

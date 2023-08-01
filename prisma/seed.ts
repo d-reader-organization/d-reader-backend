@@ -15,7 +15,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { WebSocketGateway } from '../src/websockets/websocket.gateway';
 import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
 import { ComicPageService } from '../src/comic-page/comic-page.service';
-import { WalletComicIssueService } from '../src/comic-issue/wallet-comic-issue.service';
+import { UserComicIssueService } from '../src/comic-issue/user-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
@@ -87,13 +87,13 @@ const candyMachineService = new CandyMachineService(
   heliusService,
   darkblockService,
 );
-const walletComicIssueService = new WalletComicIssueService(prismaService);
+const userComicIssueService = new UserComicIssueService(prismaService);
 const comicIssueService = new ComicIssueService(
   s3,
   prismaService,
   comicPageService,
   candyMachineService,
-  walletComicIssueService,
+  userComicIssueService,
 );
 const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
 const metaplex = initMetaplex(heliusService.helius.endpoint);
@@ -137,7 +137,9 @@ async function main() {
   await prisma.collectionNft.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
-  await prisma.walletComic.deleteMany();
+  await prisma.userComic.deleteMany();
+  await prisma.userComicIssue.deleteMany();
+  await prisma.userCreator.deleteMany();
   await prisma.comic.deleteMany();
   await prisma.newsletter.deleteMany();
   await prisma.creator.deleteMany();
@@ -362,15 +364,15 @@ async function main() {
 
   const treasuryPubKey = metaplex.identity().publicKey;
   try {
-    await prisma.wallet.create({
+    await prisma.user.create({
       data: {
-        address: treasuryPubKey.toBase58(),
         name: 'Superadmin',
         avatar: '',
         createdAt: new Date(),
         nonce: uuidv4(),
         role: Role.Superadmin,
         referralsRemaining: process.env.SOLANA_CLUSTER === 'devnet' ? 10000 : 5,
+        wallets: { create: { address: treasuryPubKey.toBase58() } },
       },
     });
     console.log('➕ Added Treasury wallet');
@@ -512,7 +514,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: null,
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Gorecats',
@@ -836,7 +838,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: null,
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Narentines',
@@ -1018,7 +1020,7 @@ async function main() {
               featuredAt: null,
               verifiedAt: new Date(),
               popularizedAt: new Date(),
-              emailConfirmedAt: new Date(),
+              emailVerifiedAt: new Date(),
               comics: {
                 create: {
                   title: 'The Heist',
@@ -1127,7 +1129,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: null,
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Gooneytoons',
@@ -1303,7 +1305,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: null,
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Animosities',
@@ -1605,7 +1607,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: null,
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Wretches',
@@ -2215,7 +2217,7 @@ async function main() {
             featuredAt: null,
             verifiedAt: new Date(),
             popularizedAt: new Date(),
-            emailConfirmedAt: new Date(),
+            emailVerifiedAt: new Date(),
             comics: {
               create: {
                 title: 'Tsukiverse',

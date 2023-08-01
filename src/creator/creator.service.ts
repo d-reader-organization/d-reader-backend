@@ -13,7 +13,7 @@ import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { FilterParams } from './dto/creator-params.dto';
-import { WalletCreatorService } from './wallet-creator.service';
+import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { appendTimestamp } from '../utils/helpers';
@@ -29,11 +29,11 @@ export class CreatorService {
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
-    private readonly walletCreatorService: WalletCreatorService,
+    private readonly userCreatorService: UserCreatorService,
   ) {}
 
   async create(
-    walletAddress: string,
+    userId: number,
     createCreatorDto: CreateCreatorDto,
     createCreatorFilesDto: CreateCreatorFilesDto,
   ) {
@@ -42,7 +42,7 @@ export class CreatorService {
     let creator: Creator;
     try {
       creator = await this.prisma.creator.create({
-        data: { ...rest, slug, walletAddress },
+        data: { ...rest, slug, userId },
       });
     } catch {
       throw new BadRequestException('Bad creator data');
@@ -90,7 +90,7 @@ export class CreatorService {
     });
   }
 
-  async findOne(slug: string, walletAddress: string) {
+  async findOne(slug: string, userId: number) {
     const creator = await this.prisma.creator.findUnique({
       where: { slug },
     });
@@ -99,9 +99,9 @@ export class CreatorService {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    const { stats, myStats } = await this.walletCreatorService.aggregateAll(
+    const { stats, myStats } = await this.userCreatorService.aggregateAll(
       slug,
-      walletAddress,
+      userId,
     );
 
     return { ...creator, stats, myStats };

@@ -32,7 +32,7 @@
     "sync-webhook": "npx ts-node src/cli/main.ts sync-webhook",
     "sync-wallet": "npx ts-node src/cli/main.ts sync-wallet",
     "airdrop-sol": "npx ts-node src/cli/main.ts airdrop-sol",
-    "authorize-wallet": "npx ts-node src/cli/main.ts authorize-wallet",
+    "login-user": "npx ts-node src/cli/main.ts login-user",
     "mint-one": "npx ts-node src/cli/main.ts mint-one",
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
     "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection"

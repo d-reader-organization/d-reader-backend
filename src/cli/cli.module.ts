@@ -4,7 +4,7 @@ import { CreateAuctionHouseCommand } from './create-auction-house-command';
 import { EnvironmentQuestions } from './environment-questions';
 import { AirdropSolCommand } from './airdrop-sol-command';
 import { AirdropQuestions } from './airdrop-questions';
-import { AuthorizeWalletCommand } from './authorize-wallet-command';
+import { LoginUserCommand } from './login-user-command';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from '../auth/auth.module';
@@ -29,6 +29,8 @@ import { AddAllowListQuestions } from './add-allow-list-questions';
 import { ThawCollectionCommand } from './thaw-collection-command';
 import { ThawCollectionQuestions } from './thaw-collection-question';
 import { DarkblockService } from '../candy-machine/darkblock.service';
+import { LoginUserQuestions } from './login-user-questions';
+import { UserService } from '../user/user.service';
 
 @Module({
   imports: [
@@ -59,7 +61,8 @@ import { DarkblockService } from '../candy-machine/darkblock.service';
     WebhookQuestions,
     AirdropSolCommand,
     AirdropQuestions,
-    AuthorizeWalletCommand,
+    LoginUserCommand,
+    LoginUserQuestions,
     MintOneCommand,
     MintOneQuestions,
     CandyMachineService,
@@ -71,6 +74,7 @@ import { DarkblockService } from '../candy-machine/darkblock.service';
     AddAllowList,
     WalletService,
     DarkblockService,
+    UserService,
   ],
 })
 export class CLIModule {}

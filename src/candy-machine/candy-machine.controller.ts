@@ -1,11 +1,9 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { CandyMachineService } from './candy-machine.service';
 import { MintOneParams } from './dto/mint-one-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
-import { Wallet } from '@prisma/client';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import { CandyMachineUpdateGuard } from 'src/guards/candy-machine-update.guard';
 import {
@@ -14,27 +12,19 @@ import {
 } from './dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from './dto/candy-machine.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ChangeComicStateParams } from './dto/change-comic-state-params.dto';
+import { SignComicParams } from './dto/sign-comic-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
+import { UseComicParams } from './dto/use-comic-params.dto';
 
-@UseGuards(RestAuthGuard, CandyMachineUpdateGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(CandyMachineUpdateGuard, ThrottlerGuard)
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
 export class CandyMachineController {
   constructor(private readonly candyMachineService: CandyMachineService) {}
 
-  @Get('find-minted-nfts')
-  findMintedNfts(@Query() query: MintOneParams) {
-    return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
-  }
-
   @Get('/transactions/mint-one')
-  constructMintOneTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: MintOneParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
+  constructMintOneTransaction(@Query() query: MintOneParams) {
+    const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
 
     return this.candyMachineService.createMintOneTransaction(
@@ -44,35 +34,38 @@ export class CandyMachineController {
   }
 
   @Get('/transactions/sign-comic')
-  constructSignComicTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: ChangeComicStateParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const mint = new PublicKey(query.mint);
+  constructSignComicTransaction(@Query() query: SignComicParams) {
+    const publicKey = new PublicKey(query.signerAddress);
+    const nftAddress = new PublicKey(query.nftAddress);
 
     return this.candyMachineService.createChangeComicStateTransaction(
-      mint,
+      nftAddress,
       publicKey,
       ComicStateArgs.Sign,
     );
   }
 
-  @Get('/transactions/use-comic-issue-nft/:address')
-  constructUseComicTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Param('address') address: string,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const mint = new PublicKey(address);
+  @Get('/transactions/use-comic-issue-nft')
+  constructUseComicTransaction(@Query() query: UseComicParams) {
+    const publicKey = new PublicKey(query.ownerAddress);
+    const nftAddress = new PublicKey(query.nftAddress);
 
     return this.candyMachineService.createChangeComicStateTransaction(
-      mint,
+      nftAddress,
       publicKey,
       ComicStateArgs.Use,
     );
   }
 
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('get/minted-nfts')
+  findMintedNfts(@Query() query: MintOneParams) {
+    return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
+  }
+
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('get/receipts')
   async findReceipts(
     @Query() query: CandyMachineReceiptParams,
@@ -81,6 +74,8 @@ export class CandyMachineController {
     return toCMReceiptDtoArray(receipts);
   }
 
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('get/:address')
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);

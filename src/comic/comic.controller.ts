@@ -30,10 +30,10 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
+import { UserEntity } from 'src/decorators/user.decorator';
 import { ComicParams } from './dto/comic-params.dto';
-import { WalletComicService } from './wallet-comic.service';
-import { Creator, Wallet, Role } from '@prisma/client';
+import { UserComicService } from './user-comic.service';
+import { Creator, User, Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
@@ -46,7 +46,7 @@ import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
 export class ComicController {
   constructor(
     private readonly comicService: ComicService,
-    private readonly walletComicService: WalletComicService,
+    private readonly userComicService: UserComicService,
   ) {}
 
   /* Create a new comic */
@@ -89,9 +89,9 @@ export class ComicController {
   @Get('get/:slug')
   async findOne(
     @Param('slug') slug: string,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicDto> {
-    const comic = await this.comicService.findOne(slug, wallet.address);
+    const comic = await this.comicService.findOne(slug, user.id);
     return toComicDto(comic);
   }
 
@@ -180,14 +180,10 @@ export class ComicController {
   async rate(
     @Param('slug') slug: string,
     @Body() rateComicDto: RateComicDto,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicDto> {
-    await this.walletComicService.rate(
-      wallet.address,
-      slug,
-      rateComicDto.rating,
-    );
-    return this.findOne(slug, wallet);
+    await this.userComicService.rate(user.id, slug, rateComicDto.rating);
+    return this.findOne(slug, user);
   }
 
   /* Subscribe/unsubscribe from specific comic */
@@ -195,14 +191,10 @@ export class ComicController {
   @Patch('subscribe/:slug')
   async subscribe(
     @Param('slug') slug: string,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicDto> {
-    await this.walletComicService.toggleState(
-      wallet.address,
-      slug,
-      'isSubscribed',
-    );
-    return this.findOne(slug, wallet);
+    await this.userComicService.toggleState(user.id, slug, 'isSubscribed');
+    return this.findOne(slug, user);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -210,14 +202,10 @@ export class ComicController {
   @Patch('favouritise/:slug')
   async favouritise(
     @Param('slug') slug: string,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicDto> {
-    await this.walletComicService.toggleState(
-      wallet.address,
-      slug,
-      'isFavourite',
-    );
-    return this.findOne(slug, wallet);
+    await this.userComicService.toggleState(user.id, slug, 'isFavourite');
+    return this.findOne(slug, user);
   }
 
   /* Publish comic */

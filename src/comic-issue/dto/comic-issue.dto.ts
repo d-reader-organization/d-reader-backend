@@ -17,13 +17,13 @@ import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import { WalletComicIssueDto } from './wallet-comic-issue.dto';
+import { UserComicIssueDto } from './user-comic-issue.dto';
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import {
   ComicIssue,
   Creator,
   Comic,
-  WalletComicIssue,
+  UserComicIssue,
   ComicIssueCollaborator,
   StatelessCover,
   StatefulCover,
@@ -39,6 +39,7 @@ import {
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
 import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 class PartialComicDto extends PickType(ComicDto, [
   'title',
@@ -133,12 +134,15 @@ export class ComicIssueDto {
   stats?: ComicIssueStatsDto;
 
   @IsOptional()
-  @Type(() => WalletComicIssueDto)
-  myStats?: WalletComicIssueDto;
+  @Type(() => UserComicIssueDto)
+  myStats?: UserComicIssueDto;
 
   @IsOptional()
   @IsString()
   candyMachineAddress?: string;
+
+  // @IsSolanaAddress()
+  // creatorAddress: string;
 
   @IsOptional()
   @IsArray()
@@ -157,12 +161,17 @@ export class ComicIssueDto {
   @Type(() => StatelessCoverDto)
   @ApiProperty({ type: [StatelessCoverDto] })
   statelessCovers?: StatelessCoverDto[];
+
+  // @IsArray()
+  // @Type(() => RoyaltyWalletDto)
+  // @ApiProperty({ type: [RoyaltyWalletDto] })
+  // royaltyWallets: RoyaltyWalletDto[];
 }
 
 export type ComicIssueInput = ComicIssue & {
   comic?: Comic & { creator?: Creator; genres?: Genre[] };
   stats?: ComicIssueStats;
-  myStats?: WalletComicIssue & { canRead: boolean };
+  myStats?: UserComicIssue & { canRead: boolean };
   candyMachineAddress?: string;
   collaborators?: ComicIssueCollaborator[];
   statelessCovers?: StatelessCover[];
@@ -197,6 +206,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
     isVerified: !!issue.verifiedAt,
+    // creatorAddress: issue.creatorAddress,
     creator: issue.comic?.creator
       ? {
           name: issue.comic.creator.name,

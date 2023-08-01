@@ -1,11 +1,11 @@
-import { Wallet } from '@prisma/client';
+import { User } from '@prisma/client';
 
 export class Authorization {
   accessToken: string;
   refreshToken: string;
 }
 
-export type JwtDto = Wallet & {
+export type JwtDto = User & {
   /** Issued at */
   iat: number;
   /** Expiration time */

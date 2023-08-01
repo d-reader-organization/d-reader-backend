@@ -2,12 +2,10 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { AuctionHouseService } from './auction-house.service';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { ListParams } from './dto/list-params.dto';
 import { PublicKey } from '@metaplex-foundation/js';
 import { PrivateBidParams } from './dto/private-bid-params.dto';
 import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
-import { Wallet } from '@prisma/client';
 import { CancelParams } from './dto/cancel-bid-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
@@ -18,19 +16,15 @@ import { SilentQuery } from 'src/decorators/silent-query.decorator';
 import { validateAndFormatParams } from '../utils/validate-params';
 import { BuyArgs } from './dto/types/buy-args';
 
-@UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(AuctionHouseGuard, ThrottlerGuard)
 @ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
   @Get('/transactions/list')
-  createListTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: ListParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
+  createListTransaction(@Query() query: ListParams) {
+    const publicKey = new PublicKey(query.sellerAddress);
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
@@ -43,12 +37,11 @@ export class AuctionHouseController {
   }
 
   @Get('/transactions/private-bid')
-  createPrivateBidTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: PrivateBidParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const seller = query.seller ? new PublicKey(query.seller) : null;
+  createPrivateBidTransaction(@Query() query: PrivateBidParams) {
+    const publicKey = new PublicKey(query.buyerAddress);
+    const seller = query.sellerAddress
+      ? new PublicKey(query.sellerAddress)
+      : null;
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
@@ -62,15 +55,12 @@ export class AuctionHouseController {
   }
 
   @Get('/transactions/instant-buy')
-  createInstantBuyTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: InstantBuyParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
+  createInstantBuyTransaction(@Query() query: InstantBuyParams) {
+    const publicKey = new PublicKey(query.buyerAddress);
     const buyArguments: BuyArgs = {
       mintAccount: new PublicKey(query.mintAccount),
       price: query.price,
-      seller: new PublicKey(query.seller),
+      seller: new PublicKey(query.sellerAddress),
     };
     return this.auctionHouseService.createInstantBuyTransaction(
       publicKey,
@@ -83,12 +73,9 @@ export class AuctionHouseController {
     name: 'query',
     type: BuyParamsArray,
   })
-  createMultipleBuys(
-    @WalletEntity() wallet: Wallet,
-    @SilentQuery() query: BuyParamsArray,
-  ) {
+  createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
     const buyParams = validateAndFormatParams(query.instantBuyParams);
-    const publicKey = new PublicKey(wallet.address);
+    const publicKey = new PublicKey(query[0].buyer);
     return this.auctionHouseService.createMultipleBuys(publicKey, buyParams);
   }
 
@@ -103,13 +90,15 @@ export class AuctionHouseController {
     const receiptAddress = query.receiptAddress
       ? new PublicKey(query.receiptAddress)
       : undefined;
-    const mint = query.mint ?? undefined;
+    const nftAddress = query.nftAddress ?? undefined;
     return this.auctionHouseService.createCancelListingTransaction(
       receiptAddress,
-      mint,
+      nftAddress,
     );
   }
 
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/get/listings/:comicIssueId')
   async findAllListings(
     @Query() query: FilterParams,
@@ -122,6 +111,8 @@ export class AuctionHouseController {
     return await toListingDtoArray(listings);
   }
 
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('/get/collection-stats/:comicIssueId')
   async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
     const stats = await this.auctionHouseService.findCollectionStats(

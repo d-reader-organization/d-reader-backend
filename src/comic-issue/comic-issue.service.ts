@@ -24,7 +24,7 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { UserComicIssueService } from './user-comic-issue.service';
 import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
@@ -49,7 +49,7 @@ export class ComicIssueService {
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
     private readonly candyMachineService: CandyMachineService,
-    private readonly walletComicIssueService: WalletComicIssueService,
+    private readonly userComicIssueService: UserComicIssueService,
   ) {}
 
   async create(
@@ -57,7 +57,14 @@ export class ComicIssueService {
     createComicIssueDto: CreateComicIssueDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
-    const { slug, comicSlug, sellerFee, ...rest } = createComicIssueDto;
+    const {
+      slug,
+      comicSlug,
+      sellerFee,
+      collaborators,
+      royaltyWallets,
+      ...rest
+    } = createComicIssueDto;
     validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
@@ -81,9 +88,8 @@ export class ComicIssueService {
           slug,
           sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
-          collaborators: {
-            createMany: { data: createComicIssueDto.collaborators },
-          },
+          collaborators: { createMany: { data: collaborators } },
+          royaltyWallets: { createMany: { data: royaltyWallets } },
         },
       });
     } catch {
@@ -155,7 +161,7 @@ export class ComicIssueService {
         const statelessCovers = await this.prisma.statelessCover.findMany({
           where: { comicIssueId: issue.id },
         });
-        const price = await this.walletComicIssueService.getComicIssuePrice(
+        const price = await this.userComicIssueService.getComicIssuePrice(
           issue,
         );
 
@@ -189,7 +195,7 @@ export class ComicIssueService {
     return response;
   }
 
-  async findOne(id: number, walletAddress: string) {
+  async findOne(id: number, userId: number) {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
@@ -204,20 +210,22 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    const findActiveCandyMachine = await this.findActiveCandyMachine(
+    const findActiveCandyMachine = this.findActiveCandyMachine(
       comicIssue.collectionNft?.address,
     );
 
-    const aggregateStats = await this.walletComicIssueService.aggregateAll(
+    const aggregateStats = this.userComicIssueService.aggregateAll(
       comicIssue,
-      walletAddress,
+      userId,
     );
 
-    const checkShouldShowPreviews =
-      await this.walletComicIssueService.shouldShowPreviews(id, walletAddress);
+    const shouldShowPreviews = this.userComicIssueService.shouldShowPreviews(
+      id,
+      userId,
+    );
 
-    await this.walletComicIssueService.refreshDate(
-      walletAddress,
+    const refreshDate = this.userComicIssueService.refreshDate(
+      userId,
       id,
       'viewedAt',
     );
@@ -226,17 +234,14 @@ export class ComicIssueService {
       await Promise.all([
         findActiveCandyMachine,
         aggregateStats,
-        checkShouldShowPreviews,
+        shouldShowPreviews,
+        refreshDate,
       ]);
 
     return {
       ...comicIssue,
       stats,
-      myStats: {
-        ...myStats,
-        canRead: !showOnlyPreviews,
-        // canRead: !showOnlyPreviews && !comicIssue.isWorkInProgress,
-      },
+      myStats: { ...myStats, canRead: !showOnlyPreviews },
       candyMachineAddress,
     };
   }
@@ -271,30 +276,45 @@ export class ComicIssueService {
     );
   }
 
-  async getPages(comicIssueId: number, walletAddress: string) {
-    const showPreviews = await this.walletComicIssueService.shouldShowPreviews(
+  async getPages(comicIssueId: number, userId: number) {
+    const showPreviews = await this.userComicIssueService.shouldShowPreviews(
       comicIssueId,
-      walletAddress,
+      userId,
     );
 
-    await this.read(comicIssueId, walletAddress);
+    await this.read(comicIssueId, userId);
     return this.comicPageService.findAll(comicIssueId, showPreviews);
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { sellerFee, ...rest } = updateComicIssueDto;
+    const { sellerFee, collaborators, royaltyWallets, ...rest } =
+      updateComicIssueDto;
     validatePrice(updateComicIssueDto);
 
-    try {
-      const updatedComicIssue = await this.prisma.comicIssue.update({
-        where: { id, publishedAt: null },
-        data: {
-          ...rest,
-          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
-          collaborators: undefined, // TODO v1: replace current collaborators (meditate on this one)
-        },
-      });
+    const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany({
+      where: { comicIssueId: id },
+    });
 
+    const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
+      where: { comicIssueId: id },
+    });
+
+    const updateComicIssue = this.prisma.comicIssue.update({
+      where: { id, publishedAt: null },
+      data: {
+        ...rest,
+        sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
+        collaborators: { createMany: { data: collaborators } },
+        royaltyWallets: { createMany: { data: royaltyWallets } },
+      },
+    });
+
+    try {
+      const [updatedComicIssue] = await this.prisma.$transaction([
+        updateComicIssue,
+        deleteCollaborators,
+        deleteRoyaltyWallets,
+      ]);
       return updatedComicIssue;
     } catch {
       throw new NotFoundException(
@@ -356,25 +376,42 @@ export class ComicIssueService {
     validateWeb3PublishInfo(publishOnChainDto);
     validatePrice(publishOnChainDto);
 
-    const { sellerFee, ...updatePayload } = publishOnChainDto;
+    const { sellerFee, royaltyWallets, ...updatePayload } = publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
-    const updatedComicIssue = await this.prisma.comicIssue.update({
+
+    const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
+      where: { comicIssueId: id },
+    });
+
+    const updateComicIssue = this.prisma.comicIssue.update({
       where: { id },
-      data: { publishedAt: new Date(), sellerFeeBasisPoints, ...updatePayload },
+      data: {
+        publishedAt: new Date(),
+        sellerFeeBasisPoints,
+        royaltyWallets: { createMany: { data: royaltyWallets } },
+        ...updatePayload,
+      },
       include: {
         comic: { include: { creator: true } },
         collectionNft: true,
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
+        royaltyWallets: true,
       },
     });
+
+    const [updatedComicIssue] = await this.prisma.$transaction([
+      updateComicIssue,
+      deleteRoyaltyWallets,
+    ]);
 
     try {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
-        updatedComicIssue.comic.creator.walletAddress,
+        updatedComicIssue.creatorAddress,
+        updatedComicIssue.royaltyWallets,
       );
     } catch (e) {
       // revert in case of failure
@@ -403,6 +440,7 @@ export class ComicIssueService {
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
+        royaltyWallets: true,
       },
     });
 
@@ -417,7 +455,8 @@ export class ComicIssueService {
       await this.candyMachineService.createComicIssueCM(
         comicIssue,
         comicIssue.comic.title,
-        comicIssue.comic.creator.walletAddress,
+        comicIssue.creatorAddress,
+        comicIssue.royaltyWallets,
       );
     }
 
@@ -441,8 +480,8 @@ export class ComicIssueService {
     }
   }
 
-  async read(id: number, walletAddress: string): Promise<void> {
-    await this.walletComicIssueService.refreshDate(walletAddress, id, 'readAt');
+  async read(id: number, userId: number): Promise<void> {
+    await this.userComicIssueService.refreshDate(userId, id, 'readAt');
   }
 
   async pseudoDelete(id: number) {

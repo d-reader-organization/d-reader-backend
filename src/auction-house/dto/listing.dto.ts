@@ -23,15 +23,18 @@ import {
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
-import { Listing, Wallet, Nft, ComicRarity } from '@prisma/client';
-import { ApiProperty, PickType } from '@nestjs/swagger';
+import { Listing, Wallet, Nft, ComicRarity, User } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
+import { UserDto } from '../../user/dto/user.dto';
+import { getPublicUrl } from '../../aws/s3client';
 import { WalletDto } from '../../wallet/dto/wallet.dto';
 
-export class PartialWalletDto extends PickType(WalletDto, [
-  'address',
-  'avatar',
-  'name',
-]) {}
+export class SellerDto {
+  id?: UserDto['id'];
+  avatar?: UserDto['avatar'];
+  name?: UserDto['name'];
+  address: WalletDto['address'];
+}
 
 export class ListingDto {
   @IsPositive()
@@ -47,8 +50,8 @@ export class ListingDto {
   @IsString()
   cover: string;
 
-  @Type(() => PartialWalletDto)
-  seller: PartialWalletDto;
+  @Type(() => SellerDto)
+  seller: SellerDto;
 
   @IsString()
   tokenAddress: string;
@@ -119,9 +122,7 @@ export class CreatorsDto {
 }
 
 export type ListingInput = Listing & {
-  nft: Nft & {
-    owner: Wallet;
-  };
+  nft: Nft & { owner: Wallet & { user?: User } };
 };
 
 export async function toListingDto(listing: ListingInput) {
@@ -138,9 +139,10 @@ export async function toListingDto(listing: ListingInput) {
     name: listing.nft.name,
     cover: collectionMetadata.image,
     seller: {
+      id: listing.nft.owner.user?.id,
+      avatar: getPublicUrl(listing.nft.owner.user?.avatar),
+      name: listing.nft.owner.user?.name,
       address: listing.nft.owner.address,
-      avatar: listing.nft.owner.avatar,
-      name: listing.nft.owner.name,
     },
     tokenAddress,
     price: listing.price,

@@ -1,16 +1,16 @@
 import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
-import { CandyMachineReceipt, Nft, Wallet } from '@prisma/client';
+import { CandyMachineReceipt, Nft, User, Wallet } from '@prisma/client';
 import { getPublicUrl } from '../../aws/s3client';
-import { WalletDto } from '../../wallet/dto/wallet.dto';
 import { PickType } from '@nestjs/swagger';
 import { NftDto } from '../../nft/dto/nft.dto';
+import { UserDto } from '../../user/dto/user.dto';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
-export class PartialWalletDto extends PickType(WalletDto, [
-  'address',
-  'avatar',
-  'name',
-]) {}
+export class BuyerDto extends PickType(UserDto, ['id', 'avatar', 'name']) {
+  @IsSolanaAddress()
+  address: string;
+}
 
 export class PartialNftDto extends PickType(NftDto, ['address', 'name']) {}
 
@@ -18,8 +18,8 @@ export class CandyMachineReceiptDto {
   @Type(() => PartialNftDto)
   nft: PartialNftDto;
 
-  @Type(() => PartialWalletDto)
-  buyer: PartialWalletDto;
+  @Type(() => BuyerDto)
+  buyer: BuyerDto;
 
   @IsString()
   candyMachineAddress: string;
@@ -33,7 +33,7 @@ export class CandyMachineReceiptDto {
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
   nft: Nft;
-  buyer: Wallet;
+  buyer: Wallet & { user: User };
 };
 
 export function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
@@ -43,9 +43,10 @@ export function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
       name: receipt.nft.name,
     },
     buyer: {
+      id: receipt.buyer.user.id,
+      avatar: getPublicUrl(receipt.buyer.user.avatar),
+      name: receipt.buyer.user.name,
       address: receipt.buyer.address,
-      avatar: getPublicUrl(receipt.buyer.avatar),
-      name: receipt.buyer.name,
     },
     candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,

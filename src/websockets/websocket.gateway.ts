@@ -116,9 +116,7 @@ export class WebSocketGateway {
   }
 
   async handleWalletNftUsed(nft: Nft) {
-    console.log('NFT in handleWalletNftUsed: ', nft);
     const nftDto = await toNftDto(nft);
-    console.log('NFT DTO in handleWalletNftUsed: ', nftDto);
     return this.server.sockets.emit(`wallet/${nftDto.owner}/item-used`, nftDto);
   }
 }

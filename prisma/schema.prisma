@@ -14,59 +14,69 @@ generator dbml {
   provider = "prisma-dbml-generator"
 }
 
-model Wallet {
-  address            String                @id
-  name               String                @unique
-  avatar             String                @default("")
-  createdAt          DateTime              @default(now())
-  lastLogin          DateTime?
-  nonce              String                @unique @default(uuid())
-  role               Role                  @default(User)
-  creator            Creator?
-  comics             WalletComic[]
-  comicIssues        WalletComicIssue[]
-  newsletter         Newsletter?
-  walletCreator      WalletCreator[]
-  mintReceipts       CandyMachineReceipt[]
-  nfts               Nft[]
-  referrerAddress    String?
-  referralsRemaining Int                   @default(0)
-  referrer           Wallet?               @relation("ReferrerToReferral", fields: [referrerAddress], references: [address])
-  referrals          Wallet[]              @relation("ReferrerToReferral")
+model User {
+  id                 Int              @id @default(autoincrement())
+  email              String           @unique
+  password           String
+  name               String           @unique
+  avatar             String           @default("")
+  nonce              String           @unique @default(uuid())
+  role               Role             @default(User)
+  referrerId         Int?
+  referralsRemaining Int              @default(0)
   referredAt         DateTime?
+  lastLogin          DateTime?
   lastActiveAt       DateTime?
+  emailVerifiedAt    DateTime?
+  createdAt          DateTime         @default(now())
+  creator            Creator?
+  comics             UserComic[]
+  comicIssues        UserComicIssue[]
+  creators           UserCreator[]
+  wallets            Wallet[]
+  referrer           User?            @relation("ReferrerToReferral", fields: [referrerId], references: [id])
+  referrals          User[]           @relation("ReferrerToReferral")
+}
+
+model Wallet {
+  address      String                @id
+  userId       Int?
+  user         User?                 @relation(fields: [userId], references: [id])
+  mintReceipts CandyMachineReceipt[]
+  nfts         Nft[]
 }
 
 enum Role {
   Superadmin
   Admin
+  Tester
   User
 }
 
 model Creator {
-  id               Int             @id @default(autoincrement())
-  email            String          @unique
-  name             String          @unique
-  slug             String          @unique
-  avatar           String          @default("")
-  banner           String          @default("")
-  logo             String          @default("")
-  description      String          @default("")
-  flavorText       String          @default("")
-  website          String          @default("")
-  twitter          String          @default("")
-  instagram        String          @default("")
-  lynkfire         String          @default("")
-  createdAt        DateTime        @default(now())
-  deletedAt        DateTime?
-  featuredAt       DateTime?
-  verifiedAt       DateTime?
-  popularizedAt    DateTime?
-  emailConfirmedAt DateTime?
-  comics           Comic[]
-  wallet           Wallet          @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress    String          @unique
-  walletCreator    WalletCreator[]
+  id              Int           @id @default(autoincrement())
+  email           String        @unique
+  name            String        @unique
+  slug            String        @unique
+  avatar          String        @default("")
+  banner          String        @default("")
+  logo            String        @default("")
+  description     String        @default("")
+  flavorText      String        @default("")
+  website         String        @default("")
+  twitter         String        @default("")
+  instagram       String        @default("")
+  lynkfire        String        @default("")
+  createdAt       DateTime      @default(now())
+  deletedAt       DateTime?
+  featuredAt      DateTime?
+  verifiedAt      DateTime?
+  popularizedAt   DateTime?
+  emailVerifiedAt DateTime?
+  comics          Comic[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int           @unique
+  userCreator     UserCreator[]
 }
 
 enum AudienceType {
@@ -104,17 +114,17 @@ model Comic {
   completedAt   DateTime?
   genres        Genre[]
   issues        ComicIssue[]
-  wallets       WalletComic[]
+  users         UserComic[]
   creator       Creator             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
   collaborators ComicCollaborator[]
 }
 
-model WalletComic {
+model UserComic {
   comic         Comic     @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug     String
-  wallet        Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
   rating        Int?
   isSubscribed  Boolean   @default(false)
   isFavourite   Boolean   @default(false)
@@ -122,7 +132,7 @@ model WalletComic {
   isWhitelisted Boolean   @default(false)
   viewedAt      DateTime?
 
-  @@id([comicSlug, walletAddress])
+  @@id([comicSlug, userId])
 }
 
 model Genre {
@@ -133,6 +143,13 @@ model Genre {
   color     String
   deletedAt DateTime?
   comics    Comic[]
+}
+
+model RoyaltyWallet {
+  address      String     @unique
+  share        Int
+  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id])
+  comicIssueId Int
 }
 
 model ComicIssue {
@@ -149,8 +166,6 @@ model ComicIssue {
   signature            String                   @default("")
   pdf                  String                   @default("")
   // isFullyUploaded      Boolean                  @default(false)
-  statelessCovers      StatelessCover[]
-  statefulCovers       StatefulCover[]
   releaseDate          DateTime
   updatedAt            DateTime                 @updatedAt
   createdAt            DateTime                 @default(now())
@@ -159,11 +174,15 @@ model ComicIssue {
   verifiedAt           DateTime?
   publishedAt          DateTime?
   popularizedAt        DateTime?
-  comic                Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  creatorAddress       String                   @default("")
   comicSlug            String
+  comic                Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  royaltyWallets       RoyaltyWallet[]
+  statelessCovers      StatelessCover[]
+  statefulCovers       StatefulCover[]
   collectionNft        CollectionNft?
   pages                ComicPage[]
-  wallets              WalletComicIssue[]
+  users                UserComicIssue[]
   collaborators        ComicIssueCollaborator[]
 
   @@unique([number, comicSlug])
@@ -242,6 +261,7 @@ model Nft {
   name                 String
   owner                Wallet               @relation(fields: [ownerAddress], references: [address])
   ownerAddress         String
+  ownerChangedAt       DateTime
   candyMachine         CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress  String
   collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
@@ -253,6 +273,7 @@ model Nft {
 model CandyMachine {
   address              String                @id
   mintAuthorityAddress String
+  authorityPda         String                @unique
   itemsAvailable       Int
   itemsMinted          Int
   itemsRemaining       Int
@@ -267,15 +288,16 @@ model CandyMachine {
 }
 
 model CandyMachineReceipt {
-  nftAddress          String       @id
-  nft                 Nft          @relation(fields: [nftAddress], references: [address])
-  buyer               Wallet       @relation(fields: [buyerAddress], references: [address])
-  buyerAddress        String
-  price               Int
-  timestamp           DateTime
-  description         String
-  candyMachine        CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
-  candyMachineAddress String
+  nftAddress           String       @id
+  nft                  Nft          @relation(fields: [nftAddress], references: [address])
+  buyer                Wallet       @relation(fields: [buyerAddress], references: [address])
+  buyerAddress         String
+  price                Int
+  timestamp            DateTime
+  description          String
+  candyMachine         CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
+  candyMachineAddress  String
+  transactionSignature String
 }
 
 model CollectionNft {
@@ -319,27 +341,23 @@ enum CarouselLocation {
 }
 
 model Newsletter {
-  wallet                       Wallet    @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress                String    @id
-  email                        String    @unique
-  subscribedAt                 DateTime  @default(now())
-  updatedAt                    DateTime? @updatedAt
-  wantsDevelopmentProgressNews Boolean
-  wantsPlatformContentNews     Boolean
-  wantsFreeNFTs                Boolean
-  ip                           String    @default("")
-  country                      String    @default("")
-  city                         String    @default("")
-  browser                      String    @default("")
-  device                       String    @default("")
-  os                           String    @default("")
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  subscribedAt DateTime  @default(now())
+  updatedAt    DateTime? @updatedAt
+  ip           String    @default("")
+  country      String    @default("")
+  city         String    @default("")
+  browser      String    @default("")
+  device       String    @default("")
+  os           String    @default("")
 }
 
-model WalletComicIssue {
+model UserComicIssue {
   comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId  Int
-  wallet        Wallet     @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
   rating        Int?
   isSubscribed  Boolean    @default(false)
   isFavourite   Boolean    @default(false)
@@ -347,17 +365,17 @@ model WalletComicIssue {
   viewedAt      DateTime?
   readAt        DateTime?
 
-  @@id([comicIssueId, walletAddress])
+  @@id([comicIssueId, userId])
 }
 
-model WalletCreator {
-  creator       Creator @relation(fields: [creatorSlug], references: [slug], onDelete: Cascade)
-  creatorSlug   String
-  wallet        Wallet  @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  walletAddress String
-  isFollowing   Boolean @default(false)
+model UserCreator {
+  creator     Creator @relation(fields: [creatorSlug], references: [slug], onDelete: Cascade)
+  creatorSlug String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  isFollowing Boolean @default(false)
 
-  @@id([creatorSlug, walletAddress])
+  @@id([creatorSlug, userId])
 }
 
 model Metadata {
@@ -370,16 +388,17 @@ model Metadata {
 }
 
 model Listing {
-  id         Int       @id @default(autoincrement())
-  nftAddress String
-  nft        Nft       @relation(fields: [nftAddress], references: [address])
-  price      Int
-  feePayer   String
-  signature  String
-  symbol     String
-  createdAt  DateTime
-  canceledAt DateTime
-  soldAt     DateTime?
+  id                       Int       @id @default(autoincrement())
+  nftAddress               String
+  nft                      Nft       @relation(fields: [nftAddress], references: [address])
+  price                    Int
+  feePayer                 String
+  signature                String
+  symbol                   String
+  createdAt                DateTime
+  canceledAt               DateTime
+  soldAt                   DateTime?
+  saleTransactionSignature String?
 
   @@unique([nftAddress, canceledAt])
 }
