@@ -75,7 +75,7 @@ model Creator {
   emailVerifiedAt DateTime?
   comics          Comic[]
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          Int           @unique
+  userId          Int           @unique // TODO v1: remove userId and give creators their own JWT token
   userCreator     UserCreator[]
 }
 
@@ -155,10 +155,10 @@ model RoyaltyWallet {
 model ComicIssue {
   id                   Int                      @id @default(autoincrement())
   number               Int
-  supply               Int
-  discountMintPrice    Int
-  mintPrice            Int
-  sellerFeeBasisPoints Int
+  supply               Int                      @default(0)
+  discountMintPrice    Int                      @default(0)
+  mintPrice            Int                      @default(0)
+  sellerFeeBasisPoints Int                      @default(0)
   title                String
   slug                 String
   description          String                   @default("")

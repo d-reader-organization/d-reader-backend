@@ -110,15 +110,12 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  @Get('get/by-owner/:address')
+  @Get('get/by-owner/:id')
   async findOwnedComicIssues(
-    @Param('address') address: string,
+    @Param('id') id: string,
     @Query() query: ComicIssueParams,
   ): Promise<OwnedComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllByOwner(
-      query,
-      address,
-    );
+    const comicIssues = await this.comicIssueService.findAllByOwner(query, +id);
     return toOwnedComicIssueDtoArray(comicIssues);
   }
 

@@ -296,16 +296,16 @@ export class UserService {
       });
       referrer = wallet.user;
     } else if (isEmail(referrerId)) {
-      referrer = await this.prisma.user.findUnique({
-        where: { email: referrerId },
+      referrer = await this.prisma.user.findFirst({
+        where: { email: { equals: referrerId, mode: 'insensitive' } },
       });
     } else if (isNumberString(referrerId)) {
       referrer = await this.prisma.user.findUnique({
         where: { id: +referrerId },
       });
     } else {
-      referrer = await this.prisma.user.findUnique({
-        where: { name: referrerId },
+      referrer = await this.prisma.user.findFirst({
+        where: { name: { equals: referrerId, mode: 'insensitive' } },
       });
     }
 

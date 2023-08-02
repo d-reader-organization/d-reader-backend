@@ -123,7 +123,7 @@ export class UserController {
   );
 
   @Throttle(10, 60)
-  @Get('sync/:id')
+  @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
     return this.throttledSyncWallets(+id);
   }

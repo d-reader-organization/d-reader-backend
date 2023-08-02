@@ -70,6 +70,7 @@
     "@types/pug": "2.0.6",
     "@types/uuid": "^9.0.2",
     "axios": "^1.4.0",
+    "bcrypt": "^5.1.0",
     "bs58": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
@@ -101,6 +102,7 @@
     "webpack": "^5.88.2"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.0.2",
     "@nestjs/cli": "^9.5.0",
     "@nestjs/schematics": "^9.2.0",
     "@nestjs/testing": "^9.4.1",

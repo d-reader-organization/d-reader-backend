@@ -361,7 +361,6 @@ export class HeliusService {
         { ...latestBlockhash },
         'confirmed',
       );
-
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);

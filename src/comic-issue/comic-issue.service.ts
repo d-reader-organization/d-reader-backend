@@ -248,7 +248,7 @@ export class ComicIssueService {
 
   async findAllByOwner(
     query: ComicIssueParams,
-    ownerAddress: string,
+    userId: number,
   ): Promise<OwnedComicIssueInput[]> {
     const ownedComicIssues = await this.prisma.comicIssue.findMany({
       distinct: 'title',
@@ -257,7 +257,7 @@ export class ComicIssueService {
       where: {
         comicSlug: query.comicSlug,
         collectionNft: {
-          collectionItems: { some: { ownerAddress } },
+          collectionItems: { some: { owner: { userId } } },
         },
       },
       skip: query.skip,
@@ -371,6 +371,8 @@ export class ComicIssueService {
       // throw new BadRequestException('Comic issue already published');
     } else if (!!comicIssue.collectionNft) {
       throw new BadRequestException('Comic issue already on chain');
+    } else if (!!comicIssue.creatorAddress) {
+      throw new BadRequestException('Comic issue missing creator address');
     }
 
     validateWeb3PublishInfo(publishOnChainDto);

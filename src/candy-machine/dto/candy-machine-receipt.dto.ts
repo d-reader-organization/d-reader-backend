@@ -5,11 +5,13 @@ import { getPublicUrl } from '../../aws/s3client';
 import { PickType } from '@nestjs/swagger';
 import { NftDto } from '../../nft/dto/nft.dto';
 import { UserDto } from '../../user/dto/user.dto';
-import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { WalletDto } from '../../wallet/dto/wallet.dto';
 
-export class BuyerDto extends PickType(UserDto, ['id', 'avatar', 'name']) {
-  @IsSolanaAddress()
-  address: string;
+export class BuyerDto {
+  id?: UserDto['id'];
+  avatar?: UserDto['avatar'];
+  name?: UserDto['name'];
+  address: WalletDto['address'];
 }
 
 export class PartialNftDto extends PickType(NftDto, ['address', 'name']) {}
@@ -43,9 +45,9 @@ export function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
       name: receipt.nft.name,
     },
     buyer: {
-      id: receipt.buyer.user.id,
-      avatar: getPublicUrl(receipt.buyer.user.avatar),
-      name: receipt.buyer.user.name,
+      id: receipt.buyer.user?.id,
+      avatar: getPublicUrl(receipt.buyer.user?.avatar),
+      name: receipt.buyer.user?.name,
       address: receipt.buyer.address,
     },
     candyMachineAddress: receipt.candyMachineAddress,
