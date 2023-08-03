@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { GenerateEnvironmentCommand } from './generate-environment-command';
 import { CreateAuctionHouseCommand } from './create-auction-house-command';
-import { EnvironmentQuestions } from './environment-questions';
+import { GenerateEnvironmentQuestions } from './generate-environment-questions';
 import { AirdropSolCommand } from './airdrop-sol-command';
-import { AirdropQuestions } from './airdrop-questions';
+import { AirdropSolQuestions } from './airdrop-sol-questions';
 import { LoginUserCommand } from './login-user-command';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
@@ -14,13 +14,9 @@ import { MintOneQuestions } from './mint-one-questions';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { AuctionHouseQuestions } from './auction-house-questions';
+import { CreateAuctionHouseQuestions } from './create-auction-house-questions';
 import { SyncWebhookCommand } from './sync-webhook-command';
-import { WebhookQuestions } from './webhook-questions';
-import { s3Module } from '../aws/s3.module';
-import { PrismaModule } from 'nestjs-prisma';
-import { JwtModule } from '@nestjs/jwt';
-import config from '../configs/config';
+import { SyncWebhookQuestions } from './sync-webhook-questions';
 import { WalletService } from '../wallet/wallet.service';
 import { SyncWalletCommand } from './sync-wallet-command';
 import { SyncWalletQuestions } from './sync-wallet-questions';
@@ -29,8 +25,13 @@ import { AddAllowListQuestions } from './add-allow-list-questions';
 import { ThawCollectionCommand } from './thaw-collection-command';
 import { ThawCollectionQuestions } from './thaw-collection-question';
 import { DarkblockService } from '../candy-machine/darkblock.service';
+import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
 import { LoginUserQuestions } from './login-user-questions';
 import { UserService } from '../user/user.service';
+import { s3Module } from '../aws/s3.module';
+import { PrismaModule } from 'nestjs-prisma';
+import { JwtModule } from '@nestjs/jwt';
+import config from '../configs/config';
 
 @Module({
   imports: [
@@ -51,16 +52,17 @@ import { UserService } from '../user/user.service';
     s3Module,
   ],
   providers: [
+    BundlrWithdrawCommand,
     GenerateEnvironmentCommand,
-    EnvironmentQuestions,
+    GenerateEnvironmentQuestions,
     CreateAuctionHouseCommand,
-    AuctionHouseQuestions,
+    CreateAuctionHouseQuestions,
     SyncWebhookCommand,
     ThawCollectionCommand,
     ThawCollectionQuestions,
-    WebhookQuestions,
+    SyncWebhookQuestions,
     AirdropSolCommand,
-    AirdropQuestions,
+    AirdropSolQuestions,
     LoginUserCommand,
     LoginUserQuestions,
     MintOneCommand,

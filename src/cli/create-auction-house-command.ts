@@ -11,7 +11,7 @@ interface Options {
 }
 
 @Command({
-  name: 'create-ah',
+  name: 'create-auction-house',
   description:
     'Create Auction House from the treasury wallet specified in .env',
 })
@@ -21,7 +21,7 @@ export class CreateAuctionHouseCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('auction-house', options);
+    options = await this.inquirerService.ask('create-auction-house', options);
     await this.createAuctionHouse(options);
   }
 

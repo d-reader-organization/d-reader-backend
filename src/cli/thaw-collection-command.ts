@@ -1,7 +1,6 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import { Metaplex, PublicKey } from '@metaplex-foundation/js';
-import { initMetaplex } from '../utils/metaplex';
+import { PublicKey } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -14,15 +13,12 @@ interface Options {
   description: 'thaw whole collection after candymachine mint',
 })
 export class ThawCollectionCommand extends CommandRunner {
-  private readonly metaplex: Metaplex;
-
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
     private readonly prisma: PrismaService,
   ) {
     super();
-    this.metaplex = initMetaplex();
   }
 
   async run(_: string[], options: Options): Promise<void> {

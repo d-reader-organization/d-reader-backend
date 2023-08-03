@@ -3,11 +3,10 @@ import { log, logErr } from './chalk';
 import {
   AllowListGuardSettings,
   DefaultCandyGuardSettings,
-  Metaplex,
   PublicKey,
   getMerkleRoot,
 } from '@metaplex-foundation/js';
-import { initMetaplex } from '../utils/metaplex';
+import { metaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { GuardGroup } from '../types/shared';
 
@@ -22,14 +21,11 @@ interface Options {
   description: 'add or update allowlist guard',
 })
 export class AddAllowList extends CommandRunner {
-  private readonly metaplex: Metaplex;
-
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
   ) {
     super();
-    this.metaplex = initMetaplex();
   }
 
   async run(_: string[], options: Options): Promise<void> {
@@ -42,7 +38,7 @@ export class AddAllowList extends CommandRunner {
     try {
       const { candyMachineAddress, wallets, label } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-      const candyMachine = await this.metaplex
+      const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
       const allowList: AllowListGuardSettings =

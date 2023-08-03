@@ -21,7 +21,7 @@ export class AirdropSolCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('airdrop', options);
+    options = await this.inquirerService.ask('airdrop-sol', options);
     await this.airdropSol(options);
   }
 
