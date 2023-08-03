@@ -3,6 +3,9 @@ import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class PrivateBidParams {
   @IsSolanaAddress()
+  buyerAddress: string;
+
+  @IsSolanaAddress()
   mintAccount: string;
 
   @IsNumberString()
@@ -10,7 +13,7 @@ export class PrivateBidParams {
 
   @IsSolanaAddress()
   @IsOptional()
-  seller?: string;
+  sellerAddress?: string;
 
   @IsBooleanString()
   @IsOptional()

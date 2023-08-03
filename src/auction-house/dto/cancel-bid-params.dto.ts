@@ -7,5 +7,5 @@ export class CancelParams {
 
   @IsString()
   @IsOptional()
-  mint: string;
+  nftAddress: string;
 }

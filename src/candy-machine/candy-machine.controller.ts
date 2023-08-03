@@ -1,21 +1,16 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { CandyMachineService } from './candy-machine.service';
-import { MintOneParams } from './dto/mint-one-params.dto';
-import { PublicKey } from '@metaplex-foundation/js';
-import { Wallet } from '@prisma/client';
-import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
+import { MintOneParams } from '../candy-machine/dto/mint-one-params.dto';
+import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
 import { CandyMachineUpdateGuard } from 'src/guards/candy-machine-update.guard';
 import {
   CandyMachineReceiptDto,
   toCMReceiptDtoArray,
-} from './dto/candy-machine-receipt.dto';
-import { toCandyMachineDto } from './dto/candy-machine.dto';
+} from '../candy-machine/dto/candy-machine-receipt.dto';
+import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ChangeComicStateParams } from './dto/change-comic-state-params.dto';
-import { ComicStateArgs } from 'dreader-comic-verse';
 
 @UseGuards(RestAuthGuard, CandyMachineUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -24,53 +19,11 @@ import { ComicStateArgs } from 'dreader-comic-verse';
 export class CandyMachineController {
   constructor(private readonly candyMachineService: CandyMachineService) {}
 
-  @Get('find-minted-nfts')
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('get/minted-nfts')
   findMintedNfts(@Query() query: MintOneParams) {
     return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
-  }
-
-  @Get('/transactions/mint-one')
-  constructMintOneTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: MintOneParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
-
-    return this.candyMachineService.createMintOneTransaction(
-      publicKey,
-      candyMachineAddress,
-    );
-  }
-
-  @Get('/transactions/sign-comic')
-  constructSignComicTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Query() query: ChangeComicStateParams,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const mint = new PublicKey(query.mint);
-
-    return this.candyMachineService.createChangeComicStateTransaction(
-      mint,
-      publicKey,
-      ComicStateArgs.Sign,
-    );
-  }
-
-  @Get('/transactions/use-comic-issue-nft/:address')
-  constructUseComicTransaction(
-    @WalletEntity() wallet: Wallet,
-    @Param('address') address: string,
-  ) {
-    const publicKey = new PublicKey(wallet.address);
-    const mint = new PublicKey(address);
-
-    return this.candyMachineService.createChangeComicStateTransaction(
-      mint,
-      publicKey,
-      ComicStateArgs.Use,
-    );
   }
 
   @Get('get/receipts')
@@ -81,6 +34,8 @@ export class CandyMachineController {
     return toCMReceiptDtoArray(receipts);
   }
 
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('get/:address')
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);

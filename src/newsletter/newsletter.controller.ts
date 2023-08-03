@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Param,
   UseGuards,
   Delete,
   Req,
@@ -11,23 +10,18 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { NewsletterService } from './newsletter.service';
-import {
-  NewsletterDto,
-  toNewsletterDto,
-  toNewsletterDtoArray,
-} from './dto/newsletter.dto';
+import { NewsletterDto, toNewsletterDtoArray } from './dto/newsletter.dto';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Wallet, Role } from '@prisma/client';
-import { UpsertNewsletterDto } from './dto/upsert-newsletter.dto';
+import { Role } from '@prisma/client';
 import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
 import { RealIP } from 'nestjs-real-ip';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
+// TODO v1: double check newsletter
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Newsletter')
@@ -36,17 +30,17 @@ export class NewsletterController {
   constructor(private readonly newsletterService: NewsletterService) {}
 
   /* Subscribe to newsletter */
+  @Throttle(2, 60)
   @Post('subscribe')
   async subscribe(
-    @Body() upsertNewsletterDto: UpsertNewsletterDto,
-    @WalletEntity() wallet: Wallet,
+    @Body() newsletterDto: NewsletterDto,
     @Req() request: Request,
     @RealIP() ip = '',
   ) {
     const geo = geoip.lookup(ip);
     const parser = new UAParser(request.headers['user-agent']);
 
-    const requestUserData: RequestUserData = {
+    const requestUser: RequestUserData = {
       ip,
       country: geo?.country,
       city: geo?.city,
@@ -55,11 +49,7 @@ export class NewsletterController {
       os: parser.getOS()?.name,
     };
 
-    await this.newsletterService.subscribe(
-      wallet.address,
-      upsertNewsletterDto,
-      requestUserData,
-    );
+    await this.newsletterService.subscribe(newsletterDto.email, requestUser);
   }
 
   /* Get all newsletter subscriptions */
@@ -70,17 +60,9 @@ export class NewsletterController {
     return toNewsletterDtoArray(newsletters);
   }
 
-  /* Get specific newsletter subscription by wallet address */
-  @Get('get/:address')
-  @Roles(Role.Superadmin)
-  async findOne(@Param('address') address: string): Promise<NewsletterDto> {
-    const newsletter = await this.newsletterService.findOne(address);
-    return toNewsletterDto(newsletter);
-  }
-
   /* Unsubscribe from newsletter */
   @Delete('unsubscribe')
-  async unsubscribe(@WalletEntity() wallet: Wallet) {
-    this.newsletterService.unsubscribe(wallet.address);
+  async unsubscribe(@Body() newsletterDto: NewsletterDto) {
+    this.newsletterService.unsubscribe(newsletterDto.email);
   }
 }

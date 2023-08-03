@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CreatorService } from './creator.service';
 import { CreatorController } from './creator.controller';
-import { WalletCreatorService } from './wallet-creator.service';
+import { UserCreatorService } from './user-creator.service';
 
 @Module({
   controllers: [CreatorController],
-  providers: [CreatorService, WalletCreatorService],
+  providers: [CreatorService, UserCreatorService],
 })
 export class CreatorModule {}

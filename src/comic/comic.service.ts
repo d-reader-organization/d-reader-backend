@@ -9,7 +9,7 @@ import {
   CreateComicFilesDto,
 } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto } from '../comic/dto/update-comic.dto';
-import { WalletComicService } from './wallet-comic.service';
+import { UserComicService } from './user-comic.service';
 import { Comic, Genre, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
@@ -28,7 +28,7 @@ export class ComicService {
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
-    private readonly walletComicService: WalletComicService,
+    private readonly userComicService: UserComicService,
   ) {}
 
   async create(
@@ -105,7 +105,7 @@ export class ComicService {
     });
   }
 
-  async findOne(slug: string, walletAddress?: string) {
+  async findOne(slug: string, userId?: number) {
     const comic = await this.prisma.comic.findUnique({
       include: { genres: true, creator: true },
       where: { slug },
@@ -115,10 +115,10 @@ export class ComicService {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
-    await this.walletComicService.refreshDate(walletAddress, slug, 'viewedAt');
-    const { stats, myStats } = await this.walletComicService.aggregateAll(
+    await this.userComicService.refreshDate(userId, slug, 'viewedAt');
+    const { stats, myStats } = await this.userComicService.aggregateAll(
       slug,
-      walletAddress,
+      userId,
     );
 
     return { ...comic, stats, myStats };

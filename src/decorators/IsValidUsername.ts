@@ -15,7 +15,7 @@ export function IsValidUsername(
       validator: {
         validate: (value): boolean => isValidUsername(value),
         defaultMessage: buildMessage(
-          () => 'Username can only have A-Z, 0-9, -, _ characters',
+          () => 'Username can only have A-Z, 0-9, - characters',
           validationOptions,
         ),
       },

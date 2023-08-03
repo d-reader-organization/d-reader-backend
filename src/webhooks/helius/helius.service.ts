@@ -13,6 +13,8 @@ import {
 } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import {
+  JsonMetadata,
+  Metadata,
   Metaplex,
   toMetadata,
   toMetadataAccount,
@@ -21,8 +23,7 @@ import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import * as jwt from 'jsonwebtoken';
-import { initMetaplex } from '../../utils/metaplex';
+import { metaplex } from '../../utils/metaplex';
 import {
   fetchOffChainMetadata,
   findRarityTrait,
@@ -31,6 +32,7 @@ import {
 } from '../../utils/nft-metadata';
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class HeliusService {
@@ -46,7 +48,7 @@ export class HeliusService {
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );
-    this.metaplex = initMetaplex();
+    this.metaplex = metaplex;
     this.webhookID = process.env.WEBHOOK_ID;
   }
 
@@ -135,6 +137,7 @@ export class HeliusService {
 
       const mint = metadata.mintAddress.toString();
       const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+
       const nft = await this.prisma.nft.update({
         where: { address: mint },
         data: {
@@ -180,10 +183,11 @@ export class HeliusService {
               canceledAt: new Date(transaction.timestamp * 1000),
             },
           },
-          owner: true,
+          owner: { include: { user: true } },
         },
         data: {
           ownerAddress: transaction.tokenTransfers[0].toUserAccount,
+          ownerChangedAt: new Date(transaction.timestamp * 1000),
           listing: {
             update: {
               where: {
@@ -192,6 +196,7 @@ export class HeliusService {
               data: {
                 canceledAt: new Date(transaction.timestamp * 1000),
                 soldAt: new Date(transaction.timestamp * 1000),
+                saleTransactionSignature: transaction.signature,
               },
             },
           },
@@ -218,7 +223,14 @@ export class HeliusService {
         where: {
           nftAddress_canceledAt: { nftAddress: mint, canceledAt: new Date(0) },
         },
-        include: { nft: { include: { collectionNft: true, owner: true } } },
+        include: {
+          nft: {
+            include: {
+              collectionNft: true,
+              owner: { include: { user: true } },
+            },
+          },
+        },
         data: {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
@@ -252,13 +264,11 @@ export class HeliusService {
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
 
       const nft = await this.prisma.nft.update({
-        where: {
-          address: mint,
-        },
+        where: { address: mint },
         include: {
           collectionNft: true,
           listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
-          owner: true,
+          owner: { include: { user: true } },
         },
         data: {
           listing: {
@@ -305,12 +315,7 @@ export class HeliusService {
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
 
-      const nft = await this.prisma.nft.update({
-        where: { address },
-        data: { ownerAddress },
-      });
-
-      const { value } = await this.metaplex
+      await this.metaplex
         .rpc()
         .confirmTransaction(
           enrichedTransaction.signature,
@@ -318,26 +323,28 @@ export class HeliusService {
           'confirmed',
         );
 
-      if (!!value.err) {
-        await this.prisma.nft.update({
-          where: { address },
-          data: { ownerAddress: previousOwner },
-        });
-      } else {
-        await this.prisma.listing.update({
-          where: {
-            nftAddress_canceledAt: {
-              nftAddress: address,
-              canceledAt: new Date(0),
-            },
+      const nft = await this.prisma.nft.update({
+        where: { address },
+        data: {
+          ownerAddress,
+          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
+        },
+      });
+
+      await this.prisma.listing.update({
+        where: {
+          nftAddress_canceledAt: {
+            nftAddress: address,
+            canceledAt: new Date(0),
           },
-          data: {
-            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
-          },
-        });
-        this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
-        this.websocketGateway.handleWalletNftSent(previousOwner, nft);
-      }
+        },
+        data: {
+          canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+        },
+      });
+
+      this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
+      this.websocketGateway.handleWalletNftSent(previousOwner, nft);
     } catch (e) {
       console.log('Failed to handle NFT transfer', e);
     }
@@ -361,6 +368,7 @@ export class HeliusService {
     const collectionMint = new PublicKey(
       enrichedTransaction.instructions[4].accounts[10],
     );
+
     await Promise.all([
       this.delegateAuthority(
         collectionMint,
@@ -373,43 +381,16 @@ export class HeliusService {
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
-
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
 
     let comicIssueId: number = undefined;
     try {
-      const comicIssueNft = await this.prisma.nft.create({
-        select: {
-          address: true,
-          collectionNft: { select: { comicIssueId: true } },
-        },
-        data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: ownerAddress },
-              create: { address: ownerAddress, name: ownerAddress },
-            },
-          },
-          address: mint.toBase58(),
-          name: metadata.name,
-          candyMachine: { connect: { address: candyMachineAddress } },
-          collectionNft: {
-            connect: { address: metadata.collection.address.toBase58() },
-          },
-          metadata: {
-            connectOrCreate: {
-              where: { uri: metadata.uri },
-              create: {
-                collectionName: offChainMetadata.collection.name,
-                uri: metadata.uri,
-                isUsed: findUsedTrait(offChainMetadata),
-                isSigned: findSignedTrait(offChainMetadata),
-                rarity: findRarityTrait(offChainMetadata),
-              },
-            },
-          },
-        },
-      });
+      const comicIssueNft = await this.indexNft(
+        metadata,
+        offChainMetadata,
+        ownerAddress,
+        candyMachineAddress,
+      );
 
       comicIssueId = comicIssueNft.collectionNft.comicIssueId;
       this.subscribeTo(comicIssueNft.address);
@@ -421,19 +402,20 @@ export class HeliusService {
       const nftTransactionInfo = enrichedTransaction.events.nft;
 
       const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { nft: true, buyer: true },
+        include: { nft: true, buyer: { include: { user: true } } },
         data: {
           nft: { connect: { address: mint.toBase58() } },
           candyMachine: { connect: { address: candyMachineAddress } },
           buyer: {
             connectOrCreate: {
               where: { address: nftTransactionInfo.buyer },
-              create: { address: nftTransactionInfo.buyer, name: ownerAddress },
+              create: { address: nftTransactionInfo.buyer },
             },
           },
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp * 1000),
           description: enrichedTransaction.description,
+          transactionSignature: nftTransactionInfo.signature,
         },
       });
 
@@ -498,6 +480,59 @@ export class HeliusService {
     await sendAndConfirmTransaction(this.metaplex.connection, tx, [
       this.metaplex.identity(),
     ]);
+  }
+
+  async indexNft(
+    metadata: Metadata<JsonMetadata<string>>,
+    collectionMetadata: JsonMetadata,
+    walletAddress: string,
+    candMachineAddress: string,
+  ) {
+    const nft = await this.prisma.nft.create({
+      select: {
+        address: true,
+        collectionNft: { select: { comicIssueId: true } },
+      },
+      data: {
+        address: metadata.mintAddress.toString(),
+        name: metadata.name,
+        ownerChangedAt: new Date(),
+        metadata: {
+          connectOrCreate: {
+            where: { uri: metadata.uri },
+            create: {
+              collectionName: collectionMetadata.collection.name,
+              uri: metadata.uri,
+              isUsed: findUsedTrait(collectionMetadata),
+              isSigned: findSignedTrait(collectionMetadata),
+              rarity: findRarityTrait(collectionMetadata),
+            },
+          },
+        },
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress },
+          },
+        },
+        candyMachine: { connect: { address: candMachineAddress } },
+        collectionNft: {
+          connect: { address: metadata.collection.address.toString() },
+        },
+      },
+    });
+
+    await Promise.all([
+      this.delegateAuthority(
+        metadata.collection.address,
+        findRarityTrait(collectionMetadata).toString(),
+        metadata.mintAddress,
+      ),
+      this.verifyMintCreator(metadata.mintAddress),
+    ]);
+
+    this.subscribeTo(metadata.mintAddress.toString());
+    return nft;
   }
 
   // Refresh auth token each day

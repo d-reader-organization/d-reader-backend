@@ -23,7 +23,7 @@ import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-st
 import { FilterParams } from './dto/listing-fliter-params.dto';
 import { isBoolean, throttle } from 'lodash';
 import { BuyArgs } from './dto/types/buy-args';
-import { initMetaplex } from '../utils/metaplex';
+import { metaplex } from '../utils/metaplex';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { PartialListing } from './dto/types/partial-listing';
@@ -34,7 +34,7 @@ export class AuctionHouseService {
   private readonly auctionHouseAddress: PublicKey;
 
   constructor(private readonly prisma: PrismaService) {
-    this.metaplex = initMetaplex();
+    this.metaplex = metaplex;
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
   }
 
@@ -282,7 +282,7 @@ export class AuctionHouseService {
           collectionNft: { comicIssueId },
         },
       },
-      include: { nft: { include: { owner: true } } },
+      include: { nft: { include: { owner: { include: { user: true } } } } },
       take: query.take,
       skip: query.skip,
     });

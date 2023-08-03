@@ -42,7 +42,7 @@ export const getCreatorsQuery = (query: FilterParams) => {
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug
   inner join "Genre" genre on genre.slug = "comicToGenre"."B"  
   left join "WalletCreator" walletCreator on walletcreator."creatorSlug" = creator.slug
-  where creator."deletedAt" is null and creator."verifiedAt" is not null and creator."emailConfirmedAt" is not null
+  where creator."deletedAt" is null and creator."verifiedAt" is not null and creator."emailVerifiedAt" is not null
   ${filterCondition}
   ${nameCondition}
   group by creator.id

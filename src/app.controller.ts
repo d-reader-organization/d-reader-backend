@@ -1,9 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import { WalletEntity } from './decorators/wallet.decorator';
+import { UserEntity } from './decorators/user.decorator';
 import { RestAuthGuard } from './guards/rest-auth.guard';
-import { Wallet } from '@prisma/client';
+import { User } from '@prisma/client';
 import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(ThrottlerGuard)
@@ -22,8 +22,8 @@ export class AppController {
   @UseGuards(RestAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('hello-authenticated')
-  getAuth(@WalletEntity() wallet: Wallet): string {
-    return this.appService.getAuth(wallet.address);
+  getAuth(@UserEntity() user: User): string {
+    return this.appService.getAuth(user.id);
   }
 
   @SkipThrottle()

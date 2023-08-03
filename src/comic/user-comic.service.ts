@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { WalletComic } from '@prisma/client';
+import { UserComic } from '@prisma/client';
 import { ComicStats } from './types/comic-stats';
 import { PickByType } from '../types/shared';
 
 @Injectable()
-export class WalletComicService {
+export class UserComicService {
   constructor(private readonly prisma: PrismaService) {}
 
   async aggregateComicStats(slug: string): Promise<ComicStats> {
-    const aggregate = this.prisma.walletComic.aggregate({
+    const aggregate = this.prisma.userComic.aggregate({
       where: { comicSlug: slug, rating: { not: null } },
       _avg: { rating: true },
       _count: true,
     });
 
-    const countFavourites = this.prisma.walletComic.count({
+    const countFavourites = this.prisma.userComic.count({
       where: { comicSlug: slug, isFavourite: true },
     });
 
-    const countViewers = this.prisma.walletComic.count({
+    const countViewers = this.prisma.userComic.count({
       where: {
         comicSlug: slug,
         viewedAt: {
@@ -37,9 +37,9 @@ export class WalletComicService {
       },
     });
 
-    const countReaders = this.prisma.walletComicIssue.count({
+    const countReaders = this.prisma.userComicIssue.count({
       where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
-      // distinct: ['walletAddress'],
+      // distinct: ['userId'],
     });
 
     try {
@@ -71,81 +71,73 @@ export class WalletComicService {
     }
   }
 
-  async findWalletComicStats(
-    slug: string,
-    walletAddress: string,
-  ): Promise<WalletComic> {
-    const walletComic = await this.prisma.walletComic.findUnique({
-      where: {
-        comicSlug_walletAddress: {
-          walletAddress,
-          comicSlug: slug,
-        },
-      },
+  async findUserComicStats(slug: string, userId: number): Promise<UserComic> {
+    const userComic = await this.prisma.userComic.findUnique({
+      where: { comicSlug_userId: { userId, comicSlug: slug } },
     });
 
-    if (!walletComic) {
+    if (!userComic) {
       return {
         comicSlug: slug,
-        walletAddress,
+        userId,
         rating: null,
         isSubscribed: false,
         isFavourite: false,
         isWhitelisted: false,
         viewedAt: null,
       };
-    } else return walletComic;
+    } else return userComic;
   }
 
-  async aggregateAll(slug: string, walletAddress?: string) {
-    if (walletAddress) {
+  async aggregateAll(slug: string, userId?: number) {
+    if (userId) {
       const getStats = this.aggregateComicStats(slug);
-      const getWalletStats = this.findWalletComicStats(slug, walletAddress);
+      const getUserStats = this.findUserComicStats(slug, userId);
 
-      const [stats, myStats] = await Promise.all([getStats, getWalletStats]);
+      const [stats, myStats] = await Promise.all([getStats, getUserStats]);
       return { stats, myStats };
     } else {
       return { stats: await this.aggregateComicStats(slug) };
     }
   }
 
-  async rate(walletAddress: string, comicSlug: string, rating: number) {
-    const walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, rating },
+  async rate(userId: number, comicSlug: string, rating: number) {
+    const userComic = await this.prisma.userComic.upsert({
+      where: { comicSlug_userId: { userId, comicSlug } },
+      create: { userId, comicSlug, rating },
       update: { rating },
     });
 
-    return walletComic;
+    return userComic;
   }
 
   async toggleState(
-    walletAddress: string,
+    userId: number,
     comicSlug: string,
-    property: keyof PickByType<WalletComic, boolean>,
+    property: keyof PickByType<UserComic, boolean>,
   ) {
-    let walletComic = await this.prisma.walletComic.findUnique({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
+    let userComic = await this.prisma.userComic.findUnique({
+      where: { comicSlug_userId: { userId, comicSlug } },
     });
 
-    walletComic = await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
-      create: { walletAddress, comicSlug, [property]: true },
-      update: { [property]: !walletComic?.[property] },
+    userComic = await this.prisma.userComic.upsert({
+      where: { comicSlug_userId: { userId, comicSlug } },
+      create: { userId, comicSlug, [property]: true },
+      update: { [property]: !userComic?.[property] },
     });
 
-    return walletComic;
+    return userComic;
   }
 
   async refreshDate(
-    walletAddress: string,
+    userId: number,
     comicSlug: string,
-    property: keyof PickByType<WalletComic, Date>,
+    property: keyof PickByType<UserComic, Date>,
   ) {
-    return await this.prisma.walletComic.upsert({
-      where: { comicSlug_walletAddress: { walletAddress, comicSlug } },
+    return await this.prisma.userComic.upsert({
+      where: { comicSlug_userId: { userId, comicSlug } },
       create: {
-        walletAddress,
+        userId,
         comicSlug,
         [property]: new Date(),
       },

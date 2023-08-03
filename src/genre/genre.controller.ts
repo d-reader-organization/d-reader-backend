@@ -27,11 +27,11 @@ import { GenreDto, toGenreDto, toGenreDtoArray } from './dto/genre.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { Role } from '@prisma/client';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { FilterParams } from './dto/genre-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from 'src/utils/lodash';
+import { Role } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')

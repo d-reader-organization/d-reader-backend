@@ -3,11 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { validateEd25519Address } from '../utils/solana';
-import { getTreasuryPublicKey } from '../utils/metaplex';
 import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
-import { Cluster } from '../types/cluster';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
@@ -16,45 +13,25 @@ import * as bs58 from 'bs58';
 export class PasswordService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateOneTimePassword(address: string): Promise<string> {
+  async generateOneTimePassword(userId: number): Promise<string> {
     const nonce = uuidv4();
-    validateEd25519Address(address);
 
-    // auto referrer users on non mainnet-beta environments
-    const isMainnet = process.env.SOLANA_CLUSTER === Cluster.MainnetBeta;
-    const referral = isMainnet
-      ? undefined
-      : {
-          referrer: { connect: { address: getTreasuryPublicKey() } },
-          referredAt: new Date(),
-        };
-    await this.prisma.wallet.upsert({
-      where: { address },
-      update: { nonce },
-      create: {
-        address,
-        nonce,
-        name: address,
-        ...referral,
-      },
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { nonce },
     });
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;
   }
 
-  async validateWallet(address: string, encoding: string) {
-    const wallet = await this.prisma.wallet.findUnique({ where: { address } });
+  async validateWallet(userId: number, address: string, encoding: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    if (!wallet) {
-      throw new NotFoundException(`No wallet found with address ${address}`);
+    if (!user) {
+      throw new NotFoundException(`No user found with id ${address}`);
     }
 
-    const match = this.matchPassword(wallet.nonce, address, encoding);
-    if (match) return wallet;
-  }
-
-  private matchPassword(nonce: string, address: string, encoding: string) {
-    const oneTimePassword = `${process.env.SIGN_MESSAGE}${nonce}`;
+    const oneTimePassword = `${process.env.SIGN_MESSAGE}${user.nonce}`;
     const oneTimePasswordBytes = new TextEncoder().encode(oneTimePassword);
 
     const publicKeyBytes = bs58.decode(address);

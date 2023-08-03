@@ -6,7 +6,7 @@ import { Pagination } from '../../types/pagination.dto';
 export class FilterParams extends PartialType(Pagination) {
   @IsOptional()
   @IsSolanaAddress()
-  owner?: string;
+  ownerAddress?: string;
 
   @IsOptional()
   @IsString()

@@ -20,6 +20,10 @@ export function getRandomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+export function chance(chanceForTrue: number) {
+  return getRandomInt(0, 10) > chanceForTrue / 10;
+}
+
 export function getRandomFloatOrInt(min: number, max: number) {
   const randomFloat = Math.floor(Math.random() * (max - min + 1) + min);
   return parseFloat(currencyFormat.format(randomFloat));
