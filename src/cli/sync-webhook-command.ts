@@ -23,7 +23,7 @@ export class SyncWebhookCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('webhook', options);
+    options = await this.inquirerService.ask('sync-webhook', options);
     await this.syncWebhook(options);
   }
 

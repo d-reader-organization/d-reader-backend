@@ -1,8 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
-@QuestionSet({ name: 'airdrop' })
-export class AirdropQuestions {
+@QuestionSet({ name: 'airdrop-sol' })
+export class AirdropSolQuestions {
   @Question({
     type: 'list',
     name: 'cluster',

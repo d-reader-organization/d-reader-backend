@@ -1,7 +1,7 @@
 import { QuestionSet, Question } from 'nest-commander';
 
-@QuestionSet({ name: 'auction-house' })
-export class AuctionHouseQuestions {
+@QuestionSet({ name: 'create-auction-house' })
+export class CreateAuctionHouseQuestions {
   @Question({
     type: 'list',
     name: 'cluster',

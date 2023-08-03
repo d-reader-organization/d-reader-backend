@@ -3,8 +3,8 @@ import { isURL } from 'class-validator';
 import { QuestionSet, Question } from 'nest-commander';
 import { heliusClusterApiUrl } from 'helius-sdk';
 
-@QuestionSet({ name: 'webhook' })
-export class WebhookQuestions {
+@QuestionSet({ name: 'sync-webhook' })
+export class SyncWebhookQuestions {
   @Question({
     type: 'input',
     name: 'webhookURL',

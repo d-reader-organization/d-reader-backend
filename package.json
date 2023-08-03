@@ -27,15 +27,16 @@
     "heroku:db": "npx prisma db push",
     "migrate:dev": "npx prisma migrate dev",
     "seed": "npx prisma db seed",
-    "generate-env": "npx ts-node src/cli/main.ts generate-env",
-    "create-ah": "npx ts-node src/cli/main.ts create-ah",
+    "generate-env": "npx ts-node src/cli/main.ts generate-environment",
+    "create-ah": "npx ts-node src/cli/main.ts create-auction-house",
     "sync-webhook": "npx ts-node src/cli/main.ts sync-webhook",
     "sync-wallet": "npx ts-node src/cli/main.ts sync-wallet",
     "airdrop-sol": "npx ts-node src/cli/main.ts airdrop-sol",
     "login-user": "npx ts-node src/cli/main.ts login-user",
     "mint-one": "npx ts-node src/cli/main.ts mint-one",
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
-    "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection"
+    "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection",
+    "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -18,7 +18,7 @@ interface Options {
 }
 
 @Command({
-  name: 'generate-env',
+  name: 'generate-environment',
   description: 'Generate necessary environment variables and wallets',
 })
 export class GenerateEnvironmentCommand extends CommandRunner {
@@ -27,7 +27,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('environment', options);
+    options = await this.inquirerService.ask('generate-environment', options);
     await this.generateEnvironment(options);
   }
 
@@ -81,7 +81,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     if (metaplex.cluster === ClusterEnum.MainnetBeta) {
       logErr(
         `Please run the ${cg(
-          "'yarn create-ah'",
+          "'yarn create-auction-house'",
         )} command in order to create an auction house.\nMake sure to top up the treasury wallet with a small amount of Sol`,
       );
     }

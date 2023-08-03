@@ -2,8 +2,8 @@ import { Connection } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 import { heliusClusterApiUrl } from 'helius-sdk';
 
-@QuestionSet({ name: 'environment' })
-export class EnvironmentQuestions {
+@QuestionSet({ name: 'generate-environment' })
+export class GenerateEnvironmentQuestions {
   @Question({
     type: 'list',
     name: 'cluster',
