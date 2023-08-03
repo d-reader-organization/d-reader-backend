@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Metaplex } from '@metaplex-foundation/js';
 import { DARKBLOCK_API } from '../constants';
-import { initMetaplex } from '../utils/metaplex';
+import { metaplex } from '../utils/metaplex';
 import { getS3Object } from '../aws/s3client';
 import axios from 'axios';
 import * as FormData from 'form-data';
@@ -15,7 +15,7 @@ export class DarkblockService {
   private readonly metaplex: Metaplex;
 
   constructor() {
-    this.metaplex = initMetaplex();
+    this.metaplex = metaplex;
   }
 
   async mintDarkblock(

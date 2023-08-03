@@ -26,12 +26,12 @@ import {
 } from '@nestjs/platform-express';
 import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
 import { plainToInstance } from 'class-transformer';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Wallet } from '@prisma/client';
+import { UserEntity } from 'src/decorators/user.decorator';
+import { User } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
 import { FilterParams } from './dto/creator-params.dto';
-import { WalletCreatorService } from './wallet-creator.service';
+import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(RestAuthGuard, CreatorUpdateGuard, ThrottlerGuard)
@@ -41,7 +41,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 export class CreatorController {
   constructor(
     private readonly creatorService: CreatorService,
-    private readonly walletCreatorService: WalletCreatorService,
+    private readonly userCreatorService: UserCreatorService,
   ) {}
 
   /* Create a new creator */
@@ -56,7 +56,7 @@ export class CreatorController {
   )
   @Post('create')
   async create(
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
     @Body() createCreatorDto: CreateCreatorDto,
     @UploadedFiles({
       // Is this memory consuming?
@@ -65,7 +65,7 @@ export class CreatorController {
     files: CreateCreatorFilesDto,
   ) {
     const creator = await this.creatorService.create(
-      wallet.address,
+      user.id,
       createCreatorDto,
       files,
     );
@@ -82,10 +82,10 @@ export class CreatorController {
   /* Get specific creator by unique slug */
   @Get('get/:slug')
   async findOne(
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
     @Param('slug') slug: string,
   ): Promise<CreatorDto> {
-    const creator = await this.creatorService.findOne(slug, wallet.address);
+    const creator = await this.creatorService.findOne(slug, user.id);
     return toCreatorDto(creator);
   }
 
@@ -170,9 +170,9 @@ export class CreatorController {
   /* Follow a creator */
   @Post('follow/:slug')
   follow(
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
     @Param('slug') slug: string,
   ): Promise<boolean> {
-    return this.walletCreatorService.toggleFollow(wallet.address, slug);
+    return this.userCreatorService.toggleFollow(user.id, slug);
   }
 }

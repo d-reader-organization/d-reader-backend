@@ -12,8 +12,10 @@ import {
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
-import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { IsLamport } from 'src/decorators/IsLamport';
+import { RoyaltyWalletDto } from './royalty-wallet.dto';
+import { IsKebabCase } from '../../decorators/IsKebabCase';
+import { IsLamport } from '../../decorators/IsLamport';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -72,10 +74,19 @@ export class CreateComicIssueDto {
   @IsKebabCase()
   comicSlug: string;
 
+  @IsOptional()
+  @IsSolanaAddress()
+  creatorAddress?: string;
+
   @IsArray()
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
   collaborators: ComicIssueCollaboratorDto[];
+
+  @IsArray()
+  @Type(() => RoyaltyWalletDto)
+  @ApiProperty({ type: [RoyaltyWalletDto] })
+  royaltyWallets: RoyaltyWalletDto[];
 }
 
 export class CreateComicIssueFilesDto {

@@ -59,10 +59,11 @@ export const BUNDLR_ADDRESS =
     ? 'https://devnet.bundlr.network'
     : 'https://node1.bundlr.network';
 
-export const WALLET_NAME_SIZE = 32;
+export const USERNAME_MIN_SIZE = 2;
+export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
-export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[\w-]+$/);
+export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {

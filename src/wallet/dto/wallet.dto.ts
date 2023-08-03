@@ -1,35 +1,15 @@
-import { IsBoolean, IsEnum, IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { Wallet, Role } from '@prisma/client';
-import { getPublicUrl } from '../../aws/s3client';
+import { Wallet } from '@prisma/client';
 
 export class WalletDto {
   @IsSolanaAddress()
   address: string;
-
-  @IsString()
-  name: string;
-
-  @IsUrl()
-  avatar: string;
-
-  @IsEnum(Role)
-  @ApiProperty({ enum: Role })
-  role: Role;
-
-  @IsBoolean()
-  hasBetaAccess: boolean;
 }
 
 export function toWalletDto(wallet: Wallet) {
   const plainWalletDto: WalletDto = {
     address: wallet.address,
-    name: wallet.name,
-    avatar: getPublicUrl(wallet.avatar),
-    role: wallet.role,
-    hasBetaAccess: !!wallet.referredAt,
   };
 
   const walletDto = plainToInstance(WalletDto, plainWalletDto);

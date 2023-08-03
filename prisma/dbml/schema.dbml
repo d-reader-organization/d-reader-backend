@@ -2,27 +2,36 @@
 //// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 //// ------------------------------------------------------
 
-Table Wallet {
-  address String [pk]
+Table User {
+  id Int [pk, increment]
+  email String [unique, not null]
+  password String [not null]
   name String [unique, not null]
   avatar String [not null, default: '']
-  createdAt DateTime [default: `now()`, not null]
-  lastLogin DateTime
   nonce String [unique, not null]
   role Role [not null, default: 'User']
+  referrerId Int
+  referralsRemaining Int [not null, default: 0]
+  referredAt DateTime
+  lastLogin DateTime
+  lastActiveAt DateTime
+  emailVerifiedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
   creator Creator
-  comics WalletComic [not null]
-  comicIssues WalletComicIssue [not null]
-  newsletter Newsletter
-  walletCreator WalletCreator [not null]
+  comics UserComic [not null]
+  comicIssues UserComicIssue [not null]
+  creators UserCreator [not null]
+  wallets Wallet [not null]
+  referrer User
+  referrals User [not null]
+}
+
+Table Wallet {
+  address String [pk]
+  userId Int
+  user User
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
-  referrerAddress String
-  referralsRemaining Int [not null, default: 0]
-  referrer Wallet
-  referrals Wallet [not null]
-  referredAt DateTime
-  lastActiveAt DateTime
 }
 
 Table Creator {
@@ -44,11 +53,11 @@ Table Creator {
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
-  emailConfirmedAt DateTime
+  emailVerifiedAt DateTime
   comics Comic [not null]
-  wallet Wallet [not null]
-  walletAddress String [unique, not null]
-  walletCreator WalletCreator [not null]
+  user User [not null]
+  userId Int [unique, not null]
+  userCreator UserCreator [not null]
 }
 
 Table Comic {
@@ -78,17 +87,17 @@ Table Comic {
   completedAt DateTime
   genres Genre [not null]
   issues ComicIssue [not null]
-  wallets WalletComic [not null]
+  users UserComic [not null]
   creator Creator [not null]
   creatorId Int [not null]
   collaborators ComicCollaborator [not null]
 }
 
-Table WalletComic {
+Table UserComic {
   comic Comic [not null]
   comicSlug String [not null]
-  wallet Wallet [not null]
-  walletAddress String [not null]
+  user User [not null]
+  userId Int [not null]
   rating Int
   isSubscribed Boolean [not null, default: false]
   isFavourite Boolean [not null, default: false]
@@ -96,7 +105,7 @@ Table WalletComic {
   viewedAt DateTime
 
   indexes {
-    (comicSlug, walletAddress) [pk]
+    (comicSlug, userId) [pk]
   }
 }
 
@@ -110,21 +119,26 @@ Table Genre {
   comics Comic [not null]
 }
 
+Table RoyaltyWallet {
+  address String [unique, not null]
+  share Int [not null]
+  comicIssue ComicIssue [not null]
+  comicIssueId Int [not null]
+}
+
 Table ComicIssue {
   id Int [pk, increment]
   number Int [not null]
-  supply Int [not null]
-  discountMintPrice Int [not null]
-  mintPrice Int [not null]
-  sellerFeeBasisPoints Int [not null]
+  supply Int [not null, default: 0]
+  discountMintPrice Int [not null, default: 0]
+  mintPrice Int [not null, default: 0]
+  sellerFeeBasisPoints Int [not null, default: 0]
   title String [not null]
   slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
   signature String [not null, default: '']
   pdf String [not null, default: '']
-  statelessCovers StatelessCover [not null]
-  statefulCovers StatefulCover [not null]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
@@ -133,11 +147,15 @@ Table ComicIssue {
   verifiedAt DateTime
   publishedAt DateTime
   popularizedAt DateTime
-  comic Comic [not null]
+  creatorAddress String [not null, default: '']
   comicSlug String [not null]
+  comic Comic [not null]
+  royaltyWallets RoyaltyWallet [not null]
+  statelessCovers StatelessCover [not null]
+  statefulCovers StatefulCover [not null]
   collectionNft CollectionNft
   pages ComicPage [not null]
-  wallets WalletComicIssue [not null]
+  users UserComicIssue [not null]
   collaborators ComicIssueCollaborator [not null]
 
   indexes {
@@ -208,6 +226,7 @@ Table Nft {
   name String [not null]
   owner Wallet [not null]
   ownerAddress String [not null]
+  ownerChangedAt DateTime [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
   collectionNft CollectionNft [not null]
@@ -219,6 +238,7 @@ Table Nft {
 Table CandyMachine {
   address String [pk]
   mintAuthorityAddress String [not null]
+  authorityPda String [unique, not null]
   itemsAvailable Int [not null]
   itemsMinted Int [not null]
   itemsRemaining Int [not null]
@@ -242,6 +262,7 @@ Table CandyMachineReceipt {
   description String [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
+  transactionSignature String [not null]
 }
 
 Table CollectionNft {
@@ -282,14 +303,10 @@ Table CarouselSlide {
 }
 
 Table Newsletter {
-  wallet Wallet [not null]
-  walletAddress String [pk]
+  id Int [pk, increment]
   email String [unique, not null]
   subscribedAt DateTime [default: `now()`, not null]
   updatedAt DateTime
-  wantsDevelopmentProgressNews Boolean [not null]
-  wantsPlatformContentNews Boolean [not null]
-  wantsFreeNFTs Boolean [not null]
   ip String [not null, default: '']
   country String [not null, default: '']
   city String [not null, default: '']
@@ -298,11 +315,11 @@ Table Newsletter {
   os String [not null, default: '']
 }
 
-Table WalletComicIssue {
+Table UserComicIssue {
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
-  wallet Wallet [not null]
-  walletAddress String [not null]
+  user User [not null]
+  userId Int [not null]
   rating Int
   isSubscribed Boolean [not null, default: false]
   isFavourite Boolean [not null, default: false]
@@ -311,19 +328,19 @@ Table WalletComicIssue {
   readAt DateTime
 
   indexes {
-    (comicIssueId, walletAddress) [pk]
+    (comicIssueId, userId) [pk]
   }
 }
 
-Table WalletCreator {
+Table UserCreator {
   creator Creator [not null]
   creatorSlug String [not null]
-  wallet Wallet [not null]
-  walletAddress String [not null]
+  user User [not null]
+  userId Int [not null]
   isFollowing Boolean [not null, default: false]
 
   indexes {
-    (creatorSlug, walletAddress) [pk]
+    (creatorSlug, userId) [pk]
   }
 }
 
@@ -347,6 +364,7 @@ Table Listing {
   createdAt DateTime [not null]
   canceledAt DateTime [not null]
   soldAt DateTime
+  saleTransactionSignature String
 
   indexes {
     (nftAddress, canceledAt) [unique]
@@ -356,6 +374,7 @@ Table Listing {
 Enum Role {
   Superadmin
   Admin
+  Tester
   User
 }
 
@@ -388,15 +407,19 @@ Enum CarouselLocation {
   Home
 }
 
-Ref: Wallet.referrerAddress - Wallet.address
+Ref: User.referrerId - User.id
 
-Ref: Creator.walletAddress - Wallet.address [delete: Cascade]
+Ref: Wallet.userId > User.id
+
+Ref: Creator.userId - User.id [delete: Cascade]
 
 Ref: Comic.creatorId > Creator.id [delete: Cascade]
 
-Ref: WalletComic.comicSlug > Comic.slug [delete: Cascade]
+Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: WalletComic.walletAddress > Wallet.address [delete: Cascade]
+Ref: UserComic.userId > User.id [delete: Cascade]
+
+Ref: RoyaltyWallet.comicIssueId > ComicIssue.id
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
@@ -428,14 +451,12 @@ Ref: CollectionNft.comicIssueId - ComicIssue.id
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: Newsletter.walletAddress - Wallet.address [delete: Cascade]
+Ref: UserComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: WalletComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
+Ref: UserComicIssue.userId > User.id [delete: Cascade]
 
-Ref: WalletComicIssue.walletAddress > Wallet.address [delete: Cascade]
+Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
 
-Ref: WalletCreator.creatorSlug > Creator.slug [delete: Cascade]
-
-Ref: WalletCreator.walletAddress > Wallet.address [delete: Cascade]
+Ref: UserCreator.userId > User.id [delete: Cascade]
 
 Ref: Listing.nftAddress > Nft.address

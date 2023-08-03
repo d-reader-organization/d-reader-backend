@@ -31,9 +31,6 @@ export const getTreasuryPublicKey = () => {
   return getTreasuryKeypair().publicKey.toBase58();
 };
 
-// calling this function initializes a new Metaplex instance
-// to consider: should we create a shared metaplexService so
-// there is only ever a single instance of Metaplex running
 export function initMetaplex(customEndpoint?: string) {
   const endpoint =
     customEndpoint ||
@@ -54,6 +51,8 @@ export function initMetaplex(customEndpoint?: string) {
 
   return metaplex;
 }
+
+export const metaplex = initMetaplex();
 
 export function writeFiles(...files: MetaplexFile[]): MetdataFile[] {
   return files.map((file) => ({

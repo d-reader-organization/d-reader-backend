@@ -8,9 +8,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SecurityConfig, ThrottleConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { WalletService } from '../wallet/wallet.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { UserService } from '../user/user.service';
+import { WalletService } from '../wallet/wallet.service';
 
 @Module({
   imports: [
@@ -42,10 +43,11 @@ import { WebSocketGateway } from '../websockets/websocket.gateway';
   providers: [
     AuthService,
     PasswordService,
-    WalletService,
     JwtStrategy,
     HeliusService,
     WebSocketGateway,
+    UserService,
+    WalletService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })

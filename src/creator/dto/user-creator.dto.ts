@@ -1,6 +1,6 @@
 import { IsBoolean } from 'class-validator';
 
-export class WalletCreatorStatsDto {
+export class UserCreatorStatsDto {
   @IsBoolean()
   isFollowing: boolean;
 }

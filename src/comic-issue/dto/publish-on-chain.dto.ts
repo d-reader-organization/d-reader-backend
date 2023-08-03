@@ -6,4 +6,6 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'mintPrice',
   'discountMintPrice',
   'sellerFee',
+  'royaltyWallets',
+  'creatorAddress',
 ]) {}

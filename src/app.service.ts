@@ -8,8 +8,8 @@ export class AppService {
     return 'API connected successfully!';
   }
 
-  getAuth(address: string): string {
-    return `API connected successfully! Welcome ${address}`;
+  getAuth(id: number): string {
+    return `API connected successfully! Welcome ${id}`;
   }
 
   async healthCheck(): Promise<string> {

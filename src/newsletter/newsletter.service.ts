@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { MailService } from '../mail/mail.service';
 import { RequestUserData } from '../types/request-user-data';
-import { UpsertNewsletterDto } from './dto/upsert-newsletter.dto';
 
 @Injectable()
 export class NewsletterService {
@@ -11,59 +10,28 @@ export class NewsletterService {
     private readonly mailService: MailService,
   ) {}
 
-  async subscribe(
-    walletAddress: string,
-    upsertNewsletterDto: UpsertNewsletterDto,
-    requestUserData: RequestUserData,
-  ) {
-    try {
-      const data = { ...upsertNewsletterDto, ...requestUserData };
+  async subscribe(email: string, requestUserData: RequestUserData) {
+    const data = { email, ...requestUserData };
 
-      const newsletter = await this.prisma.newsletter.upsert({
-        where: { walletAddress },
-        update: data,
-        create: { walletAddress, ...data },
-      });
-
-      this.mailService.subscribedSuccessfully(upsertNewsletterDto.email);
-      return newsletter;
-    } catch {
-      throw new NotFoundException(
-        `Wallet ${walletAddress} is not subscribed to newsletter`,
-      );
-    }
-  }
-
-  async findAll() {
-    const newsletters = await this.prisma.newsletter.findMany();
-    return newsletters;
-  }
-
-  async findOne(walletAddress: string) {
-    const newsletter = await this.prisma.newsletter.findUnique({
-      where: { walletAddress },
-    });
-
-    if (!newsletter) {
-      throw new NotFoundException(
-        `Wallet ${walletAddress} is not subscribed to newsletter`,
-      );
-    }
+    const newsletter = await this.prisma.newsletter.create({ data });
+    this.mailService.subscribedSuccessfully(email);
 
     return newsletter;
   }
 
-  async unsubscribe(walletAddress: string) {
-    try {
-      const newsletter = await this.prisma.newsletter.delete({
-        where: { walletAddress },
-      });
+  async findAll() {
+    return this.prisma.newsletter.findMany();
+  }
 
+  async unsubscribe(email: string) {
+    try {
+      const newsletter = this.prisma.newsletter.delete({
+        where: { email },
+      });
+      // TODO v1: this.mailService.unsubscribedSuccessfully(email);
       return newsletter;
     } catch {
-      throw new NotFoundException(
-        `Wallet ${walletAddress} is not subscribed to newsletter`,
-      );
+      throw new NotFoundException('Already unsubscribed');
     }
   }
 }

@@ -6,7 +6,7 @@ import {
   sol,
   WRAPPED_SOL_MINT,
 } from '@metaplex-foundation/js';
-import { generateSecret, createWallet } from '../utils/wallets';
+import { generateSecret, createWallet } from '../utils/wallet';
 import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cg, cgray, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';

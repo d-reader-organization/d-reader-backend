@@ -40,7 +40,7 @@ export class NftDto {
   description: string;
 
   @IsSolanaAddress()
-  owner: string;
+  ownerAddress: string;
 
   @IsNumber()
   royalties: number;
@@ -87,7 +87,7 @@ export async function toNftDto(nft: NftInput) {
     image: offChainMetadata.image,
     name: nft.name,
     description: offChainMetadata.description,
-    owner: nft.ownerAddress,
+    ownerAddress: nft.ownerAddress,
     royalties: offChainMetadata.seller_fee_basis_points / 100,
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,

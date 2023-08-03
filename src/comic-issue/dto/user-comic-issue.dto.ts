@@ -1,6 +1,6 @@
 import { IsBoolean, IsDate, IsOptional, Max, Min } from 'class-validator';
 
-export class WalletComicIssueDto {
+export class UserComicIssueDto {
   @Min(1)
   @Max(5)
   @IsOptional()

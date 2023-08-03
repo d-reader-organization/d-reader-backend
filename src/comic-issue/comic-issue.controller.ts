@@ -34,10 +34,10 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { WalletEntity } from 'src/decorators/wallet.decorator';
-import { Creator, Wallet, Role } from '@prisma/client';
+import { UserEntity } from 'src/decorators/user.decorator';
+import { Creator, User, Role } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
-import { WalletComicIssueService } from './wallet-comic-issue.service';
+import { UserComicIssueService } from './user-comic-issue.service';
 import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
 import {
   ComicPageDto,
@@ -78,7 +78,7 @@ export class ComicIssueController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
     private readonly comicPageService: ComicPageService,
-    private readonly walletComicIssueService: WalletComicIssueService,
+    private readonly userComicIssueService: UserComicIssueService,
   ) {}
 
   /* Create a new comic issue */
@@ -110,15 +110,12 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  @Get('get/by-owner/:address')
+  @Get('get/by-owner/:id')
   async findOwnedComicIssues(
-    @Param('address') address: string,
+    @Param('id') id: string,
     @Query() query: ComicIssueParams,
   ): Promise<OwnedComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllByOwner(
-      query,
-      address,
-    );
+    const comicIssues = await this.comicIssueService.findAllByOwner(query, +id);
     return toOwnedComicIssueDtoArray(comicIssues);
   }
 
@@ -126,21 +123,19 @@ export class ComicIssueController {
   @Get('get/:id')
   async findOne(
     @Param('id') id: string,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOne(
-      +id,
-      wallet.address,
-    );
+    const comicIssue = await this.comicIssueService.findOne(+id, user.id);
     return toComicIssueDto(comicIssue);
   }
 
+  /* Get specific comic issue's pages */
   @Get('get/:id/pages')
   async getPages(
     @Param('id') id: string,
-    @WalletEntity() wallet: Wallet,
+    @UserEntity() user: User,
   ): Promise<ComicPageDto[]> {
-    const pages = await this.comicIssueService.getPages(+id, wallet.address);
+    const pages = await this.comicIssueService.getPages(+id, user.id);
     return toComicPageDtoArray(pages);
   }
 
@@ -160,43 +155,26 @@ export class ComicIssueController {
   /* Favouritise/unfavouritise a specific comic issue */
   @SkipUpdateGuard()
   @Patch('favouritise/:id')
-  async favouritise(
-    @Param('id') id: string,
-    @WalletEntity() wallet: Wallet,
-  ): Promise<ComicIssueDto> {
-    await this.walletComicIssueService.toggleState(
-      wallet.address,
-      +id,
-      'isFavourite',
-    );
-    return this.findOne(id, wallet);
+  favouritise(@Param('id') id: string, @UserEntity() user: User) {
+    this.userComicIssueService.toggleState(user.id, +id, 'isFavourite');
   }
 
   /* Rate specific comic issue */
   @SkipUpdateGuard()
   @Patch('rate/:id')
-  async rate(
+  rate(
     @Param('id') id: string,
     @Body() rateComicDto: RateComicDto,
-    @WalletEntity() wallet: Wallet,
-  ): Promise<ComicIssueDto> {
-    await this.walletComicIssueService.rate(
-      wallet.address,
-      +id,
-      rateComicDto.rating,
-    );
-    return this.findOne(id, wallet);
+    @UserEntity() user: User,
+  ) {
+    this.userComicIssueService.rate(user.id, +id, rateComicDto.rating);
   }
 
-  /* Reads a specific comic issue */
+  /* Read a specific comic issue */
   @SkipUpdateGuard()
   @Patch('read/:id')
-  async read(
-    @Param('id') id: string,
-    @WalletEntity() wallet: Wallet,
-  ): Promise<ComicIssueDto> {
-    await this.comicIssueService.read(+id, wallet.address);
-    return this.findOne(id, wallet);
+  read(@Param('id') id: string, @UserEntity() user: User) {
+    this.comicIssueService.read(+id, user.id);
   }
 
   /* Update specific comic issues pdf file */

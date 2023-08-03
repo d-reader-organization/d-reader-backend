@@ -10,18 +10,12 @@ import {
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto } from './comic-stats.dto';
-import { WalletComicDto } from './wallet-comic.dto';
+import { UserComicDto } from './user-comic.dto';
 import { ComicStats } from 'src/comic/types/comic-stats';
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { getPublicUrl } from 'src/aws/s3client';
 import { round } from 'lodash';
-import {
-  Comic,
-  Genre,
-  WalletComic,
-  Creator,
-  AudienceType,
-} from '@prisma/client';
+import { Comic, Genre, UserComic, Creator, AudienceType } from '@prisma/client';
 import { CreatorDto } from 'src/creator/dto/creator.dto';
 import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
 
@@ -112,8 +106,8 @@ export class ComicDto {
   stats?: ComicStatsDto;
 
   @IsOptional()
-  @Type(() => WalletComicDto)
-  myStats?: WalletComicDto;
+  @Type(() => UserComicDto)
+  myStats?: UserComicDto;
 
   @IsArray()
   @Type(() => PartialGenreDto)
@@ -127,7 +121,7 @@ export type ComicInput = Comic & {
   genres?: Genre[];
   creator?: Creator;
   stats?: Partial<ComicStats>;
-  myStats?: WalletComic;
+  myStats?: UserComic;
 };
 
 export function toComicDto(comic: ComicInput) {

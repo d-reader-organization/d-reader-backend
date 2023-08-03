@@ -4,13 +4,16 @@ import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class InstantBuyParams {
   @IsSolanaAddress()
+  buyerAddress: string;
+
+  @IsSolanaAddress()
   mintAccount: string;
 
   @IsNumberString()
   price: number;
 
   @IsSolanaAddress()
-  seller: string;
+  sellerAddress: string;
 }
 
 export class BuyParamsArray {

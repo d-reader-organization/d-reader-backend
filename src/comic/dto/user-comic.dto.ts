@@ -1,6 +1,6 @@
 import { IsBoolean, IsOptional, Max, Min } from 'class-validator';
 
-export class WalletComicDto {
+export class UserComicDto {
   @Min(1)
   @Max(5)
   @IsOptional()
