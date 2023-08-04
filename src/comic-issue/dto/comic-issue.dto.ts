@@ -39,7 +39,6 @@ import {
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
 import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 class PartialComicDto extends PickType(ComicDto, [
   'title',

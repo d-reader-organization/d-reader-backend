@@ -1,9 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-export const studioNxCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const studioNx: Prisma.CreatorCreateArgs['data'] = {
   email: 'studionx@fake.com',
   name: 'StudioNX',
   slug: 'studio-nx',
@@ -18,12 +15,9 @@ export const studioNxCData = (
   instagram: 'https://www.instagram.com/jim_bryson',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const swamplabsCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const swamplabs: Prisma.CreatorCreateArgs['data'] = {
   email: 'karlo@swamplabs.com',
   name: 'Swamplabs',
   slug: 'swamplabs',
@@ -37,12 +31,9 @@ export const swamplabsCData = (
   twitter: 'https://twitter.com/lupers_world',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const gonneytoonsCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const gonneytoons: Prisma.CreatorCreateArgs['data'] = {
   email: 'admin@gooneytoons.studio',
   name: 'Gooneytoons Studio',
   slug: 'gooneytoons-studio',
@@ -57,12 +48,9 @@ export const gonneytoonsCData = (
   instagram: 'https://www.instagram.com/gooneytoons.nft',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const saucerpenCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const saucerpen: Prisma.CreatorCreateArgs['data'] = {
   email: 'korinahunjak@gmail.com',
   name: 'Saucerpen',
   slug: 'saucerpen',
@@ -76,12 +64,9 @@ export const saucerpenCData = (
   instagram: 'https://www.instagram.com/korina.hunjak/',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const madMuseCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const madMuse: Prisma.CreatorCreateArgs['data'] = {
   email: 'james.roche@dreader.io',
   name: 'Mad Muse Syndicate',
   slug: 'mad-muse-syndicate',
@@ -96,12 +81,9 @@ export const madMuseCData = (
   instagram: 'https://www.instagram.com/jameseroche',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const tsukiverseCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const tsukiverse: Prisma.CreatorCreateArgs['data'] = {
   email: 'creators@dreader.io',
   name: 'Goose0x',
   slug: 'goose-0-x',
@@ -117,12 +99,9 @@ export const tsukiverseCData = (
   verifiedAt: new Date(),
   popularizedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};
 
-export const longwoodCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+export const longwood: Prisma.CreatorCreateArgs['data'] = {
   email: 'john.smith@longwood-labs.com',
   name: 'Longwood Labs',
   slug: 'longwood-labs',
@@ -137,4 +116,4 @@ export const longwoodCData = (
   verifiedAt: new Date(),
   popularizedAt: new Date(),
   emailVerifiedAt: new Date(),
-});
+};

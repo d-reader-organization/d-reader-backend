@@ -2,14 +2,27 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { JwtDto } from './dto/authorization.dto';
+import { EntityType, JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Creator, User } from '@prisma/client';
+
+function sanitizePayload(
+  payload: User | Creator,
+  type: EntityType,
+): JwtPayload {
+  return {
+    id: payload.id,
+    name: payload.name,
+    email: payload.email,
+    type: type,
+  };
+}
 
 @Injectable()
 export class AuthService {
@@ -39,20 +52,35 @@ export class AuthService {
 
   authorizeUser(user: User) {
     return {
-      accessToken: this.generateAccessToken(user),
-      refreshToken: this.generateRefreshToken(user),
+      accessToken: this.generateAccessToken(user, 'user'),
+      refreshToken: this.generateRefreshToken(user, 'user'),
     };
   }
 
-  private generateAccessToken(payload: User): string {
-    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
+  authorizeCreator(creator: Creator) {
+    return {
+      accessToken: this.generateAccessToken(creator, 'creator'),
+      refreshToken: this.generateRefreshToken(creator, 'creator'),
+    };
+  }
+
+  private generateAccessToken(
+    payload: User | Creator,
+    type: EntityType,
+  ): string {
+    const sanitizedPayload = sanitizePayload(payload, type);
+    const accessToken = `Bearer ${this.jwtService.sign(sanitizedPayload)}`;
     return accessToken;
   }
 
-  private generateRefreshToken(payload: User): string {
+  private generateRefreshToken(
+    payload: User | Creator,
+    type: EntityType,
+  ): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
+    const sanitizedPayload = sanitizePayload(payload, type);
 
-    const refreshToken = this.jwtService.sign(payload, {
+    const refreshToken = this.jwtService.sign(sanitizedPayload, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: securityConfig.refreshIn,
     });
@@ -60,7 +88,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  async refreshAccessToken(user: User, token: string) {
+  async refreshAccessToken(jwtPayload: JwtPayload, token: string) {
     let jwtDto: JwtDto;
     try {
       jwtDto = this.jwtService.verify<JwtDto>(token, {
@@ -72,27 +100,41 @@ export class AuthService {
       );
     }
 
-    if (user.id !== jwtDto.id) {
-      throw new UnauthorizedException(
-        'Refresh and access token address mismatch',
-      );
+    if (jwtPayload.id !== jwtDto.id) {
+      throw new UnauthorizedException('Refresh and access token id mismatch');
     }
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    });
+    let userOrCreator: User | Creator;
+    if (jwtDto.type === 'user') {
+      userOrCreator = await this.prisma.user.update({
+        where: { id: jwtDto.id },
+        data: { lastLogin: new Date() },
+      });
+    } else if (jwtDto.type === 'creator') {
+      userOrCreator = await this.prisma.creator.update({
+        where: { id: jwtDto.id },
+        data: { lastLogin: new Date() },
+      });
+    }
 
-    return this.generateAccessToken(user);
+    return this.generateAccessToken(userOrCreator, jwtDto.type);
   }
 
-  async validateJwt(jwtDto: JwtDto): Promise<User & { creator?: Creator }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: jwtDto.id },
-      include: { creator: true },
-    });
+  async validateJwt(jwtDto: JwtDto) {
+    if (jwtDto.type === 'user') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: jwtDto.id },
+      });
 
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+      if (!user) throw new NotFoundException('User not found');
+    } else if (jwtDto.type === 'creator') {
+      const creator = await this.prisma.creator.findUnique({
+        where: { id: jwtDto.id },
+      });
+
+      if (!creator) throw new NotFoundException('Creator not found');
+    } else {
+      throw new ForbiddenException('Authorization type unknown: ', jwtDto.type);
+    }
   }
 }

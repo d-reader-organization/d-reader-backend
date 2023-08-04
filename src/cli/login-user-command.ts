@@ -1,5 +1,5 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import { LoginUserDto } from '../user/dto/login-user.dto';
+import { LoginDto } from '../user/dto/login.dto';
 import { AuthService } from '../auth/auth.service';
 import { UserService } from '../user/user.service';
 import { cb, cg, log, logErr } from './chalk';
@@ -27,7 +27,7 @@ export class LoginUserCommand extends CommandRunner {
     await this.login(options);
   }
 
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginDto) {
     log('🏗️  Starting user authorization...');
     try {
       const user = await this.userService.login(loginUserDto);

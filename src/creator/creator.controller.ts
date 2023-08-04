@@ -26,13 +26,14 @@ import {
 } from '@nestjs/platform-express';
 import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
 import { plainToInstance } from 'class-transformer';
-import { UserEntity } from 'src/decorators/user.decorator';
+import { PayloadEntity } from 'src/decorators/payload.decorator';
 import { User } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
 import { FilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { JwtPayload } from 'src/auth/dto/authorization.dto';
 
 @UseGuards(RestAuthGuard, CreatorUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -56,19 +57,13 @@ export class CreatorController {
   )
   @Post('create')
   async create(
-    @UserEntity() user: User,
     @Body() createCreatorDto: CreateCreatorDto,
     @UploadedFiles({
-      // Is this memory consuming?
       transform: (val) => plainToInstance(CreateCreatorFilesDto, val),
     })
     files: CreateCreatorFilesDto,
   ) {
-    const creator = await this.creatorService.create(
-      user.id,
-      createCreatorDto,
-      files,
-    );
+    const creator = await this.creatorService.create(createCreatorDto, files);
     return toCreatorDto(creator);
   }
 
@@ -82,7 +77,7 @@ export class CreatorController {
   /* Get specific creator by unique slug */
   @Get('get/:slug')
   async findOne(
-    @UserEntity() user: User,
+    @PayloadEntity() user: User,
     @Param('slug') slug: string,
   ): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug, user.id);
@@ -170,7 +165,7 @@ export class CreatorController {
   /* Follow a creator */
   @Post('follow/:slug')
   follow(
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
     @Param('slug') slug: string,
   ): Promise<boolean> {
     return this.userCreatorService.toggleFollow(user.id, slug);

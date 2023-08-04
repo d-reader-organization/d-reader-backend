@@ -29,15 +29,15 @@ import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { UserEntity } from 'src/decorators/user.decorator';
+import { PayloadEntity } from 'src/decorators/payload.decorator';
 import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
-import { Creator, User, Role } from '@prisma/client';
+import { Creator, Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';
 import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
+import { JwtPayload } from 'src/auth/dto/authorization.dto';
 
 @UseGuards(RestAuthGuard, RolesGuard, ComicUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -62,7 +62,7 @@ export class ComicController {
   )
   @Post('create')
   async create(
-    @CreatorEntity() creator: Creator,
+    @PayloadEntity() creator: JwtPayload,
     @Body() createComicDto: CreateComicDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicFilesDto, val),
@@ -89,7 +89,7 @@ export class ComicController {
   @Get('get/:slug')
   async findOne(
     @Param('slug') slug: string,
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
   ): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug, user.id);
     return toComicDto(comic);
@@ -180,7 +180,7 @@ export class ComicController {
   async rate(
     @Param('slug') slug: string,
     @Body() rateComicDto: RateComicDto,
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
   ): Promise<ComicDto> {
     await this.userComicService.rate(user.id, slug, rateComicDto.rating);
     return this.findOne(slug, user);
@@ -191,7 +191,7 @@ export class ComicController {
   @Patch('subscribe/:slug')
   async subscribe(
     @Param('slug') slug: string,
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
   ): Promise<ComicDto> {
     await this.userComicService.toggleState(user.id, slug, 'isSubscribed');
     return this.findOne(slug, user);
@@ -202,7 +202,7 @@ export class ComicController {
   @Patch('favouritise/:slug')
   async favouritise(
     @Param('slug') slug: string,
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
   ): Promise<ComicDto> {
     await this.userComicService.toggleState(user.id, slug, 'isFavourite');
     return this.findOne(slug, user);
@@ -238,3 +238,15 @@ export class ComicController {
     return toComicDto(recoveredComic);
   }
 }
+
+/**
+  TODO: 
+  isFreeToRead
+  isCompleted
+  isOnChain
+  isOwned
+  isPrimarySale
+  isSecondarySale
+  
+  free/web2/web3/previewable/WIP
+  */

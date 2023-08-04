@@ -4,43 +4,35 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto } from '../types/update-user.dto';
 import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
-import { Metaplex } from '@metaplex-foundation/js';
-import { PublicKey } from '@solana/web3.js';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
-import { User } from '@prisma/client';
-import { SAGA_COLLECTION_ADDRESS } from '../constants';
-import { metaplex } from '../utils/metaplex';
 import { PickFields } from '../types/shared';
 import { appendTimestamp } from '../utils/helpers';
 import { isEmail, isNumberString } from 'class-validator';
-import { RegisterUserDto } from './dto/register-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { RegisterDto } from '../types/register.dto';
+import { LoginDto } from '../types/login.dto';
+import { UpdatePasswordDto } from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
-import config from '../configs/config';
+import { PasswordService } from '../auth/password.service';
+import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
 
 @Injectable()
 export class UserService {
-  private readonly metaplex: Metaplex;
-
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
-  ) {
-    this.metaplex = metaplex;
-  }
+    private readonly passwordService: PasswordService,
+  ) {}
 
-  async register(registerUserDto: RegisterUserDto) {
+  async register(registerUserDto: RegisterDto) {
     const { name, email, password } = registerUserDto;
 
     validateName(name);
@@ -48,7 +40,7 @@ export class UserService {
     await this.throwIfNameTaken(name);
     await this.throwIfEmailTaken(email);
 
-    const hashedPassword = await this.hashPassword(password);
+    const hashedPassword = await this.passwordService.hash(password);
 
     let user = await this.prisma.user.create({
       data: { name, email, password: hashedPassword },
@@ -68,7 +60,7 @@ export class UserService {
     return user;
   }
 
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginDto) {
     const { nameOrEmail, password } = loginUserDto;
 
     if (!nameOrEmail) {
@@ -82,7 +74,7 @@ export class UserService {
       user = await this.findByName(nameOrEmail);
     }
 
-    await this.validatePassword(password, user.password);
+    await this.passwordService.validate(password, user.password);
     return this.prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
@@ -174,8 +166,8 @@ export class UserService {
     const { oldPassword, newPassword } = updatePasswordDto;
 
     const user = await this.findOne(id);
-    await this.validatePassword(oldPassword, user.password);
-    const hashedPassword = await this.hashPassword(newPassword);
+    await this.passwordService.validate(oldPassword, user.password);
+    const hashedPassword = await this.passwordService.hash(newPassword);
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
@@ -188,7 +180,7 @@ export class UserService {
 
   async resetPassword(id: number) {
     const newPassword = uuidv4();
-    const hashedPassword = await this.hashPassword(newPassword);
+    const hashedPassword = await this.passwordService.hash(newPassword);
 
     // TODO: send password reseted email
     return this.prisma.user.update({
@@ -209,18 +201,6 @@ export class UserService {
     return;
   }
 
-  /**
-  TODO: 
-  isFreeToRead
-  isCompleted
-  isOnChain
-  isOwned
-  isPrimarySale
-  isSecondarySale
-  
-  free/web2/web3/previewable/WIP
-  */
-
   async throwIfNameTaken(name?: string) {
     if (!name) return;
     const user = await this.prisma.user.findFirst({
@@ -237,18 +217,6 @@ export class UserService {
     });
 
     if (user) throw new NotFoundException(`${email} already taken`);
-  }
-
-  async hashPassword(password: string) {
-    const saltOrRound = config().security.bcryptSaltOrRound;
-    return await bcrypt.hash(password, saltOrRound);
-  }
-
-  async validatePassword(password: string, hashedPassword: string) {
-    const isPasswordValid = await bcrypt.compare(password, hashedPassword);
-    if (!isPasswordValid) {
-      throw new BadRequestException('Incorrect password!');
-    }
   }
 
   async updateFile(
@@ -346,7 +314,10 @@ export class UserService {
 
     let userHasSaga = false;
     for (const wallet of wallets) {
-      const walletHasSaga = await this.hasSagaGenesisToken(wallet.address);
+      const walletHasSaga = await this.walletService.hasSagaGenesisToken(
+        wallet.address,
+      );
+
       if (walletHasSaga) {
         userHasSaga = true;
         break;
@@ -354,22 +325,6 @@ export class UserService {
     }
 
     if (!userHasSaga) throw new BadRequestException('No SGT Token found');
-  }
-
-  /** Check if wallet has SGT NFT */
-  async hasSagaGenesisToken(address: string) {
-    const nfts = await this.metaplex
-      .nfts()
-      .findAllByOwner({ owner: new PublicKey(address) });
-
-    const sagaToken = nfts.find(
-      (nft) =>
-        nft.collection &&
-        nft.collection.address.toString() === SAGA_COLLECTION_ADDRESS &&
-        nft.collection.verified,
-    );
-
-    return !!sagaToken;
   }
 
   async generateAvatar(id: number) {

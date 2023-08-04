@@ -29,7 +29,6 @@ model User {
   lastActiveAt       DateTime?
   emailVerifiedAt    DateTime?
   createdAt          DateTime         @default(now())
-  creator            Creator?
   comics             UserComic[]
   comicIssues        UserComicIssue[]
   creators           UserCreator[]
@@ -56,7 +55,8 @@ enum Role {
 model Creator {
   id              Int           @id @default(autoincrement())
   email           String        @unique
-  name            String        @unique
+  // name can be non-slugish and not used for login
+  name            String        @unique // TODO: make sure this name is not constrainted like a username (slug)
   slug            String        @unique
   avatar          String        @default("")
   banner          String        @default("")
@@ -72,10 +72,10 @@ model Creator {
   featuredAt      DateTime?
   verifiedAt      DateTime?
   popularizedAt   DateTime?
+  lastLogin       DateTime?
+  lastActiveAt    DateTime?
   emailVerifiedAt DateTime?
   comics          Comic[]
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          Int           @unique // TODO v1: remove userId and give creators their own JWT token
   userCreator     UserCreator[]
 }
 
