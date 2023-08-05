@@ -1,86 +1,109 @@
 import { Prisma, Role } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import config from '../src/configs/config';
+import * as bcrypt from 'bcrypt';
 
-export const superadminData: Prisma.UserCreateArgs['data'] = {
+const saltOrRound = config().security.bcryptSaltOrRound;
+const hashPassword = async (password: string) => {
+  return await bcrypt.hash(password, saltOrRound);
+};
+
+export const superadminData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'superadmin',
   email: 'superadmin@dreader.io',
-  password: 'superadmin',
+  password: await hashPassword('superadmin'),
   emailVerifiedAt: new Date(),
   role: Role.Superadmin,
   referralsRemaining: 0,
-};
+});
 
-export const adminData: Prisma.UserCreateArgs['data'] = {
+export const adminData = async (): Promise<Prisma.UserCreateArgs['data']> => ({
   name: 'admin',
   email: 'admin@dreader.io',
-  password: 'admin',
+  password: await hashPassword('admin'),
   emailVerifiedAt: new Date(),
   role: Role.Admin,
   referralsRemaining: 0,
-};
+});
 
-export const josipData: Prisma.UserCreateArgs['data'] = {
+export const josipData = async (): Promise<Prisma.UserCreateArgs['data']> => ({
   name: 'josip',
   email: 'josip.volarevic@dreader.io',
-  password: 'josip',
+  password: await hashPassword('josip'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const lukaData: Prisma.UserCreateArgs['data'] = {
+export const lukaData = async (): Promise<Prisma.UserCreateArgs['data']> => ({
   name: 'luka',
   email: 'luka.crnogorac@dreader.io',
-  password: 'luka',
+  password: await hashPassword('luka'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const studionxData: Prisma.UserCreateArgs['data'] = {
+export const studionxData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'StudioNX',
   email: 'studionx@fake.com',
-  password: 'studionx',
+  password: await hashPassword('studionx'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const swamplabsData: Prisma.UserCreateArgs['data'] = {
+export const swamplabsData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Swamplabs',
   email: 'swamplabs@fake.com',
-  password: 'swamplabs',
+  password: await hashPassword('swamplabs'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const gooneytoonsData: Prisma.UserCreateArgs['data'] = {
+export const gooneytoonsData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Gooneytoons',
   email: 'gooneytoons@fake.com',
-  password: 'gooneytoons',
+  password: await hashPassword('gooneytoons'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const saucerpenData: Prisma.UserCreateArgs['data'] = {
+export const saucerpenData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Saucerpen',
   email: 'saucerpen@fake.com',
-  password: 'saucerpen',
+  password: await hashPassword('saucerpen'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const madmuseData: Prisma.UserCreateArgs['data'] = {
+export const madmuseData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Mad Muse Syndicate',
   email: 'madmusesyndicate@fake.com',
-  password: 'madmusesyndicate',
+  password: await hashPassword('madmusesyndicate'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const tsukiverseData: Prisma.UserCreateArgs['data'] = {
+export const tsukiverseData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Tsukiverse',
   email: 'tsukiverse@fake.com',
-  password: 'tsukiverse',
+  password: await hashPassword('tsukiverse'),
   emailVerifiedAt: new Date(),
-};
+});
 
-export const longwoodlabsData: Prisma.UserCreateArgs['data'] = {
+export const longwoodlabsData = async (): Promise<
+  Prisma.UserCreateArgs['data']
+> => ({
   name: 'Longwood Labs',
   email: 'longwoodlabs@fake.com',
-  password: 'longwoodlabs',
+  password: await hashPassword('longwoodlabs'),
   emailVerifiedAt: new Date(),
-};
+});
 
 const generateDummyUserData = (): Prisma.UserCreateArgs['data'] => {
   return {
