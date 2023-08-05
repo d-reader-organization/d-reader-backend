@@ -200,16 +200,16 @@ async function main() {
   console.log('Added genres');
 
   // SEED USERS
-  await prisma.user.create({ data: superadminData });
-  await prisma.user.create({ data: adminData });
-  await prisma.user.create({ data: josipData });
-  await prisma.user.create({ data: lukaData });
-  const nx = await prisma.user.create({ data: studionxData });
-  const sw = await prisma.user.create({ data: swamplabsData });
-  const go = await prisma.user.create({ data: gooneytoonsData });
-  const sa = await prisma.user.create({ data: saucerpenData });
-  const mm = await prisma.user.create({ data: madmuseData });
-  const ts = await prisma.user.create({ data: tsukiverseData });
+  await prisma.user.create({ data: await superadminData() });
+  await prisma.user.create({ data: await adminData() });
+  await prisma.user.create({ data: await josipData() });
+  await prisma.user.create({ data: await lukaData() });
+  const nx = await prisma.user.create({ data: await studionxData() });
+  const sw = await prisma.user.create({ data: await swamplabsData() });
+  const go = await prisma.user.create({ data: await gooneytoonsData() });
+  const sa = await prisma.user.create({ data: await saucerpenData() });
+  const mm = await prisma.user.create({ data: await madmuseData() });
+  const ts = await prisma.user.create({ data: await tsukiverseData() });
   console.log('Added users');
 
   // SEED CREATORS
@@ -307,7 +307,7 @@ async function main() {
   if (isDevnet) {
     await tryAirdropping();
 
-    const ll = await prisma.user.create({ data: longwoodlabsData });
+    const ll = await prisma.user.create({ data: await longwoodlabsData() });
     const llC = await prisma.creator.create({ data: longwoodCData(ll.id) });
     const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
     const heistC = await prisma.comic.create({ data: heistData(llC.id) });
