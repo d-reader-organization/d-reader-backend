@@ -1,5 +1,5 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import { LoginDto } from '../user/dto/login.dto';
+import { LoginDto } from '../../src/types/login.dto';
 import { AuthService } from '../auth/auth.service';
 import { UserService } from '../user/user.service';
 import { cb, cg, log, logErr } from './chalk';
@@ -37,7 +37,7 @@ export class LoginUserCommand extends CommandRunner {
       log(cg('👛  User: ') + user);
       log(cb('🔐  JWT token: '), authorization.accessToken);
     } catch (e) {
-      logErr('Failed to authorize the wallet\n' + e);
+      logErr('Failed to authorize the user\n' + e);
     }
   }
 }

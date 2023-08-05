@@ -10,7 +10,7 @@ import config from '../configs/config';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class PasswordService {

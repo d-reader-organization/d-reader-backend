@@ -187,7 +187,7 @@ async function main() {
   console.log('Added genres');
 
   // SEED USERS
-  await prisma.user.createMany({ data: usersToSeed });
+  await prisma.user.createMany({ data: await usersToSeed() });
   console.log('Added users');
 
   // SEED CREATORS

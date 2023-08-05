@@ -1,12 +1,21 @@
 import { Prisma, Role } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import config from '../src/configs/config';
+import * as bcrypt from 'bcrypt';
+
+const saltOrRound = config().security.bcryptSaltOrRound;
+const hashPassword = async (password: string) => {
+  return await bcrypt.hash(password, saltOrRound);
+};
 
 // Don't worry champs, these passwords are used only for localhost seeding
-export const usersToSeed: Prisma.UserCreateManyArgs['data'] = [
+export const usersToSeed = async (): Promise<
+  Prisma.UserCreateManyArgs['data']
+> => [
   {
     name: 'superadmin',
     email: 'superadmin@dreader.io',
-    password: 'superadmin',
+    password: await hashPassword('superadmin'),
     emailVerifiedAt: new Date(),
     role: Role.Superadmin,
     referralsRemaining: 0,
@@ -14,7 +23,7 @@ export const usersToSeed: Prisma.UserCreateManyArgs['data'] = [
   {
     name: 'admin',
     email: 'admin@dreader.io',
-    password: 'admin',
+    password: await hashPassword('admin'),
     emailVerifiedAt: new Date(),
     role: Role.Admin,
     referralsRemaining: 0,
@@ -22,13 +31,13 @@ export const usersToSeed: Prisma.UserCreateManyArgs['data'] = [
   {
     name: 'josip',
     email: 'josip.volarevic@dreader.io',
-    password: 'josip',
+    password: await hashPassword('josip'),
     emailVerifiedAt: new Date(),
   },
   {
     name: 'luka',
     email: 'luka.crnogorac@dreader.io',
-    password: 'luka',
+    password: await hashPassword('luka'),
     emailVerifiedAt: new Date(),
   },
 ];
