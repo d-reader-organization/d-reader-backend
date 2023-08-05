@@ -32,7 +32,7 @@ import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
 import { PayloadEntity } from 'src/decorators/payload.decorator';
 import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
-import { Creator, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles, RolesGuard } from 'src/guards/roles.guard';

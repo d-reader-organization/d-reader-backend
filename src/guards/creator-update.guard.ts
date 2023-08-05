@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
+import { Role } from '@prisma/client';
 
 /** Protects 'PUT' and 'PATCH' Creator endpoints
  * from anyone besides its creators and Superadmin */
@@ -33,7 +34,8 @@ export class CreatorUpdateGuard implements CanActivate {
 
     if (!creator) {
       throw new NotFoundException(`Creator with slug ${slug} not found`);
-    } else if (creator.id === user.id) return true;
+    } else if (user.role === Role.Superadmin) return true;
+    else if (creator.id === user.id) return true;
     else throw new ForbiddenException("You don't own this creator profile");
   }
 }

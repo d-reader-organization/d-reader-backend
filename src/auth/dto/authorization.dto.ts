@@ -12,6 +12,7 @@ type UserPayload = {
   id: User['id'];
   email: User['email'];
   name: User['name'];
+  role?: User['role'];
 };
 
 type CreatorPayload = {
@@ -21,7 +22,7 @@ type CreatorPayload = {
 };
 
 export type EntityType = 'user' | 'creator';
-export type JwtPayload = (UserPayload | CreatorPayload) & { type: EntityType };
+export type JwtPayload = (UserPayload & CreatorPayload) & { type: EntityType };
 
 export type JwtDto = JwtPayload & {
   /** Issued at */

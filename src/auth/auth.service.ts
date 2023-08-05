@@ -12,14 +12,14 @@ import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Creator, User } from '@prisma/client';
 
-function sanitizePayload(
-  payload: User | Creator,
-  type: EntityType,
-): JwtPayload {
+type UserOrCreator = (User | Creator) & { role?: User['role'] };
+
+function sanitizePayload(payload: UserOrCreator, type: EntityType): JwtPayload {
   return {
     id: payload.id,
     name: payload.name,
     email: payload.email,
+    role: payload?.role,
     type: type,
   };
 }
@@ -65,7 +65,7 @@ export class AuthService {
   }
 
   private generateAccessToken(
-    payload: User | Creator,
+    payload: UserOrCreator,
     type: EntityType,
   ): string {
     const sanitizedPayload = sanitizePayload(payload, type);
@@ -74,7 +74,7 @@ export class AuthService {
   }
 
   private generateRefreshToken(
-    payload: User | Creator,
+    payload: UserOrCreator,
     type: EntityType,
   ): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
@@ -104,7 +104,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh and access token id mismatch');
     }
 
-    let userOrCreator: User | Creator;
+    let userOrCreator: UserOrCreator;
     if (jwtDto.type === 'user') {
       userOrCreator = await this.prisma.user.update({
         where: { id: jwtDto.id },
