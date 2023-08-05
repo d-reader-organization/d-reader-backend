@@ -37,7 +37,7 @@ export class LoginUserCommand extends CommandRunner {
       log(cg('👛  User: ') + user);
       log(cb('🔐  JWT token: '), authorization.accessToken);
     } catch (e) {
-      logErr('Failed to authorize the wallet\n' + e);
+      logErr('Failed to authorize the user\n' + e);
     }
   }
 }
