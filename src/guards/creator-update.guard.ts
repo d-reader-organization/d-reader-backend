@@ -35,7 +35,7 @@ export class CreatorUpdateGuard implements CanActivate {
     if (!creator) {
       throw new NotFoundException(`Creator with slug ${slug} not found`);
     } else if (user.role === Role.Superadmin) return true;
-    else if (creator.id === user.creator?.id) return true;
+    else if (creator.id === user.id) return true;
     else throw new ForbiddenException("You don't own this creator profile");
   }
 }

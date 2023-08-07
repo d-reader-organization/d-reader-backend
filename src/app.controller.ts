@@ -1,10 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import { UserEntity } from './decorators/user.decorator';
+import { PayloadEntity } from './decorators/payload.decorator';
 import { RestAuthGuard } from './guards/rest-auth.guard';
-import { User } from '@prisma/client';
 import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
+import { JwtPayload } from './auth/dto/authorization.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('App')
@@ -22,7 +22,7 @@ export class AppController {
   @UseGuards(RestAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('hello-authenticated')
-  getAuth(@UserEntity() user: User): string {
+  getAuth(@PayloadEntity() user: JwtPayload): string {
     return this.appService.getAuth(user.id);
   }
 

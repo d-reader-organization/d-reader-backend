@@ -17,7 +17,6 @@ Table User {
   lastActiveAt DateTime
   emailVerifiedAt DateTime
   createdAt DateTime [default: `now()`, not null]
-  creator Creator
   comics UserComic [not null]
   comicIssues UserComicIssue [not null]
   creators UserCreator [not null]
@@ -39,6 +38,7 @@ Table Creator {
   email String [unique, not null]
   name String [unique, not null]
   slug String [unique, not null]
+  password String [not null]
   avatar String [not null, default: '']
   banner String [not null, default: '']
   logo String [not null, default: '']
@@ -53,10 +53,10 @@ Table Creator {
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
+  lastLogin DateTime
+  lastActiveAt DateTime
   emailVerifiedAt DateTime
   comics Comic [not null]
-  user User [not null]
-  userId Int [unique, not null]
   userCreator UserCreator [not null]
 }
 
@@ -410,8 +410,6 @@ Enum CarouselLocation {
 Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
-
-Ref: Creator.userId - User.id [delete: Cascade]
 
 Ref: Comic.creatorId > Creator.id [delete: Cascade]
 

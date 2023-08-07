@@ -1,12 +1,19 @@
 import { Prisma } from '@prisma/client';
+import config from '../src/configs/config';
+import * as bcrypt from 'bcrypt';
 
-export const studioNxCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
+const saltOrRound = config().security.bcryptSaltOrRound;
+const hashPassword = async (password: string) => {
+  return await bcrypt.hash(password, saltOrRound);
+};
+
+export const studioNx = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
   email: 'studionx@fake.com',
   name: 'StudioNX',
   slug: 'studio-nx',
+  password: await hashPassword('studionx'),
   avatar: 'creators/studio-nx/avatar.png',
   banner: 'creators/studio-nx/banner.jpg',
   logo: 'creators/studio-nx/logo.png',
@@ -20,13 +27,13 @@ export const studioNxCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const swamplabsCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'karlo@swamplabs.com',
+export const swamplabs = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
+  email: 'karlo@fake.com',
   name: 'Swamplabs',
   slug: 'swamplabs',
+  password: await hashPassword('swamplabs'),
   avatar: 'creators/swamplabs/avatar.png',
   banner: 'creators/swamplabs/banner.jpg',
   logo: 'creators/swamplabs/logo.jpg',
@@ -39,13 +46,13 @@ export const swamplabsCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const gonneytoonsCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'admin@gooneytoons.studio',
+export const gonneytoons = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
+  email: 'admin@fake.com',
   name: 'Gooneytoons Studio',
   slug: 'gooneytoons-studio',
+  password: await hashPassword('gooneytoons'),
   avatar: 'creators/gooneytoons-studio/avatar.png',
   banner: 'creators/gooneytoons-studio/banner.png',
   logo: 'creators/gooneytoons-studio/logo.png',
@@ -59,13 +66,13 @@ export const gonneytoonsCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const saucerpenCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'korinahunjak@gmail.com',
+export const saucerpen = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
+  email: 'korinahunjak@fake.com',
   name: 'Saucerpen',
   slug: 'saucerpen',
+  password: await hashPassword('saucerpen'),
   avatar: 'creators/saucerpen/avatar.jpg',
   banner: 'creators/saucerpen/banner.jpg',
   logo: 'creators/saucerpen/logo.png',
@@ -78,13 +85,11 @@ export const saucerpenCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const madMuseCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'james.roche@dreader.io',
+export const madMuse = async (): Promise<Prisma.CreatorCreateArgs['data']> => ({
+  email: 'james.roche@fake.com',
   name: 'Mad Muse Syndicate',
   slug: 'mad-muse-syndicate',
+  password: await hashPassword('madmuse'),
   avatar: 'creators/mad-muse-syndicate/avatar.jpg',
   banner: 'creators/mad-muse-syndicate/banner.jpg',
   logo: 'creators/mad-muse-syndicate/logo.jpg',
@@ -98,19 +103,19 @@ export const madMuseCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const tsukiverseCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'creators@dreader.io',
+export const tsukiverse = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
+  email: 'creators@fake.com',
   name: 'Goose0x',
   slug: 'goose-0-x',
+  password: await hashPassword('goose'),
   avatar: 'creators/goose-0-x/avatar.jpg',
   banner: 'creators/goose-0-x/banner.jpg',
   logo: 'creators/goose-0-x/logo.png',
   description:
     'We are an Art first, story-driven project, with a unique nostalgic feel to make the collection and our brand stand out - all with your support as a loving community',
-  flavorText: 'brought to life by: @dangercloselabs | Artist and Lore @goose0x',
+  flavorText: 'brought to life by: @fake.com',
   website: 'https://www.tsukiverse.io',
   twitter: 'https://twitter.com/tsukiversenft',
   instagram: 'https://www.instagram.com/tsukiv3rse/',
@@ -119,18 +124,17 @@ export const tsukiverseCData = (
   emailVerifiedAt: new Date(),
 });
 
-export const longwoodCData = (
-  userId: number,
-): Prisma.CreatorCreateArgs['data'] => ({
-  userId,
-  email: 'john.smith@longwood-labs.com',
+export const longwood = async (): Promise<
+  Prisma.CreatorCreateArgs['data']
+> => ({
+  email: 'john.smith@fake.com',
   name: 'Longwood Labs',
-  slug: 'longwood-labs',
+  slug: 'longwoodlabs',
+  password: await hashPassword('longwood-labs'),
   avatar: 'creators/longwood-labs/avatar.jpg',
   banner: 'creators/longwood-labs/banner.jpg',
   logo: 'creators/longwood-labs/logo.png',
-  description:
-    'Web3 idle gaming studio | Creators of @RemnantsNFT & @playtheheist',
+  description: 'Web3 idle gaming studio | Creators of @fake.com',
   flavorText: 'The best gaming studio in web3',
   website: 'https://linktr.ee/theheistgame',
   twitter: 'https://twitter.com/playtheheist',

@@ -1,6 +1,6 @@
 import { Request as ExpressRequest } from 'express';
-import { User, Creator } from '@prisma/client';
+import { JwtPayload } from '../auth/dto/authorization.dto';
 
 export interface Request extends ExpressRequest {
-  user?: User & { creator?: Creator };
+  user?: JwtPayload;
 }

@@ -51,28 +51,28 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
     filterCondition,
   } = getQueryFilters(query);
   return Prisma.sql`select comicIssue.*, comic."title" as "comicTitle", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
-  AVG(walletcomicissue.rating) as "averageRating",
+  AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT wci."isFavourite"
-           FROM "WalletComicIssue" wci
+           FROM "UserComicIssue" wci
            where wci."comicIssueId" = comicIssue.id and wci."isFavourite"  = true
           ) wciResult
     ) as "favouritesCount",
   (select COUNT(*)
      from (SELECT wci."rating"
-       FROM "WalletComicIssue" wci
+       FROM "UserComicIssue" wci
        where wci."comicIssueId" = comicIssue.id and wci."rating"  is not null
           ) wciResult
     ) as "ratersCount",
   (select COUNT(*)
    from (SELECT wci."viewedAt"
-     FROM "WalletComicIssue" wci
+     FROM "UserComicIssue" wci
      where wci."comicIssueId" = comicIssue.id and wci."viewedAt"  is not null
         ) wciResult
   ) as "viewersCount",    
    (select COUNT(*)
      from (SELECT wci."readAt"
-       FROM "WalletComicIssue" wci
+       FROM "UserComicIssue" wci
        where wci."comicIssueId" = comicIssue.id and wci."readAt"  is not null
           ) wciResult
     ) as "readersCount",
@@ -89,7 +89,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   from "ComicIssue" comicIssue
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
-  left join "WalletComicIssue" walletComicIssue on walletcomicissue."comicIssueId" = comicIssue.id  
+  left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug

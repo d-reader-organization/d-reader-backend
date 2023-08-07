@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
-import { Role } from '@prisma/client';
 import { Reflector } from '@nestjs/core';
 import { SKIP_UPDATE_GUARD } from './skip-update-guard';
 
@@ -50,8 +49,7 @@ export class ComicUpdateGuard implements CanActivate {
 
     if (!comic) {
       throw new NotFoundException(`Comic with slug ${slug} not found`);
-    } else if (user.role === Role.Superadmin) return true;
-    else if (comic.creatorId === user.creator?.id) return true;
+    } else if (comic.creatorId === user.id) return true;
     else throw new ForbiddenException("You don't own this comic");
   }
 }
