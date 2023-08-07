@@ -14,7 +14,7 @@ import { UserService } from '../user/user.service';
 import { WalletService } from '../wallet/wallet.service';
 import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
-import { MailService } from '../mail/mail.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -41,6 +41,7 @@ import { MailService } from '../mail/mail.service';
         };
       },
     }),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -53,7 +54,6 @@ import { MailService } from '../mail/mail.service';
     CreatorService,
     UserCreatorService,
     WalletService,
-    MailService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })
