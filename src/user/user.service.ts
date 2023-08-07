@@ -17,6 +17,7 @@ import { UpdatePasswordDto } from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
+import { MailService } from '../mail/mail.service';
 import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,17 +31,20 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
     private readonly passwordService: PasswordService,
+    private readonly mailService: MailService,
   ) {}
 
-  async register(registerUserDto: RegisterDto) {
-    const { name, email, password } = registerUserDto;
+  async register(registerDto: RegisterDto) {
+    const { name, email, password } = registerDto;
 
     validateName(name);
     validateEmail(email);
-    await this.throwIfNameTaken(name);
-    await this.throwIfEmailTaken(email);
 
-    const hashedPassword = await this.passwordService.hash(password);
+    const [hashedPassword] = await Promise.all([
+      this.passwordService.hash(password),
+      this.throwIfNameTaken(name),
+      this.throwIfEmailTaken(email),
+    ]);
 
     let user = await this.prisma.user.create({
       data: { name, email, password: hashedPassword },
@@ -56,12 +60,12 @@ export class UserService {
       console.info('Failed to generate random avatar: ', e);
     }
 
-    // TODO: on register -> send email verification request
+    await this.mailService.userRegistered(user);
     return user;
   }
 
-  async login(loginUserDto: LoginDto) {
-    const { nameOrEmail, password } = loginUserDto;
+  async login(loginDto: LoginDto) {
+    const { nameOrEmail, password } = loginDto;
 
     if (!nameOrEmail) {
       throw new BadRequestException('Please provide email or username');
@@ -207,7 +211,7 @@ export class UserService {
       where: { name: { equals: name, mode: 'insensitive' } },
     });
 
-    if (user) throw new NotFoundException(`${name} already taken`);
+    if (user) throw new BadRequestException(`${name} already taken`);
   }
 
   async throwIfEmailTaken(email?: string) {
@@ -216,7 +220,7 @@ export class UserService {
       where: { email: { equals: email, mode: 'insensitive' } },
     });
 
-    if (user) throw new NotFoundException(`${email} already taken`);
+    if (user) throw new BadRequestException(`${email} already taken`);
   }
 
   async updateFile(

@@ -38,6 +38,7 @@ Table Creator {
   email String [unique, not null]
   name String [unique, not null]
   slug String [unique, not null]
+  password String [not null]
   avatar String [not null, default: '']
   banner String [not null, default: '']
   logo String [not null, default: '']

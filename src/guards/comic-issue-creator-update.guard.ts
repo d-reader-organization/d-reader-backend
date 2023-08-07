@@ -17,10 +17,12 @@ export class ComicIssueCreatorUpdateGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
+
     const { user, params, method } = request;
     const { id } = params;
+
     if (!user) return false;
-    if (!id) return true;
+    if (!id) return false;
     if (user.type !== 'creator') return false;
 
     // If reading or creating new ComicIssue entities, allow

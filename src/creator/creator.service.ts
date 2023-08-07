@@ -4,10 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import {
-  CreateCreatorDto,
-  CreateCreatorFilesDto,
-} from '../creator/dto/create-creator.dto';
 import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
 import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -20,6 +16,14 @@ import { appendTimestamp } from '../utils/helpers';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorsQuery } from './creator.queries';
 import { getRandomFloatOrInt } from '../utils/helpers';
+import { RegisterDto } from '../types/register.dto';
+import { PasswordService } from '../auth/password.service';
+import { UpdatePasswordDto } from '../types/update-password.dto';
+import { validateEmail, validateName } from '../utils/user';
+import { LoginDto } from '../types/login.dto';
+import { isEmail } from 'class-validator';
+import { v4 as uuidv4 } from 'uuid';
+import { kebabCase } from 'lodash';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
@@ -30,47 +34,51 @@ export class CreatorService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly userCreatorService: UserCreatorService,
+    private readonly passwordService: PasswordService,
   ) {}
 
-  async create(
-    createCreatorDto: CreateCreatorDto,
-    createCreatorFilesDto: CreateCreatorFilesDto,
-  ) {
-    const { slug, ...rest } = createCreatorDto;
+  async register(registerDto: RegisterDto) {
+    const { name, email, password } = registerDto;
+    const slug = kebabCase(name);
 
-    let creator: Creator;
-    try {
-      creator = await this.prisma.creator.create({
-        data: { ...rest, slug },
-      });
-    } catch {
-      throw new BadRequestException('Bad creator data');
-    }
+    validateName(name);
+    validateEmail(email);
 
-    const { avatar, banner, logo } = createCreatorFilesDto;
+    const [hashedPassword] = await Promise.all([
+      this.passwordService.hash(password),
+      this.throwIfNameTaken(name),
+      this.throwIfSlugTaken(slug),
+      this.throwIfEmailTaken(email),
+    ]);
 
-    let avatarKey: string, bannerKey: string, logoKey: string;
-    try {
-      const s3Folder = getS3Folder(slug);
-      if (avatar)
-        avatarKey = await this.s3.uploadFile(s3Folder, avatar, 'avatar');
-      if (banner)
-        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
-      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
-    } catch {
-      throw new BadRequestException('Malformed file upload');
-    }
-
-    creator = await this.prisma.creator.update({
-      where: { id: creator.id },
-      data: {
-        avatar: avatarKey,
-        banner: bannerKey,
-        logo: logoKey,
-      },
+    const creator = await this.prisma.creator.create({
+      data: { name, email, password: hashedPassword, slug },
     });
 
+    // TODO: on register -> send email verification request
     return creator;
+  }
+
+  async login(loginDto: LoginDto) {
+    const { nameOrEmail, password } = loginDto;
+
+    if (!nameOrEmail) {
+      throw new BadRequestException('Please provide email or username');
+    }
+
+    let creator: Creator;
+    if (isEmail(nameOrEmail)) {
+      creator = await this.findByEmail(nameOrEmail);
+    } else {
+      // for now, creators can only log in via email
+      throw new BadRequestException('Incorrect email format');
+    }
+
+    await this.passwordService.validate(password, creator.password);
+    return this.prisma.creator.update({
+      where: { id: creator.id },
+      data: { lastLogin: new Date() },
+    });
   }
 
   async findAll(query: FilterParams) {
@@ -89,21 +97,71 @@ export class CreatorService {
     });
   }
 
-  async findOne(slug: string, userId: number) {
-    const creator = await this.prisma.creator.findUnique({
-      where: { slug },
-    });
+  async findOne(slug: string, userId?: number) {
+    const findCreator = this.prisma.creator.findUnique({ where: { slug } });
+    const getStats = this.userCreatorService.getCreatorStats(slug);
+    const getMyStats = this.userCreatorService.getUserStats(slug, userId);
+
+    const [creator, stats, myStats] = await Promise.all([
+      findCreator,
+      getStats,
+      getMyStats,
+    ]);
 
     if (!creator) {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    const { stats, myStats } = await this.userCreatorService.aggregateAll(
-      slug,
-      userId,
-    );
-
     return { ...creator, stats, myStats };
+  }
+
+  async findByEmail(email: string) {
+    const creator = await this.prisma.creator.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
+
+    if (!creator) {
+      throw new NotFoundException(`Creator with email ${email} does not exist`);
+    } else return creator;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async requestEmailVerification(id: number) {
+    // TODO: request for a new email verification link
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async verifyEmail(verificationToken: string) {
+    // TODO: verify users email
+    return;
+  }
+
+  async throwIfNameTaken(name?: string) {
+    if (!name) return;
+    const creator = await this.prisma.creator.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+    });
+
+    if (creator) throw new BadRequestException(`${name} already taken`);
+  }
+
+  async throwIfSlugTaken(slug?: string) {
+    if (!slug) return;
+    const creator = await this.prisma.creator.findFirst({
+      where: { slug: { equals: slug, mode: 'insensitive' } },
+    });
+
+    if (creator) throw new BadRequestException(`${slug} already taken`);
+  }
+
+  async throwIfEmailTaken(email?: string) {
+    if (!email) return;
+    const creator = await this.prisma.creator.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+    });
+
+    if (creator) throw new BadRequestException(`${email} already taken`);
   }
 
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
@@ -117,6 +175,33 @@ export class CreatorService {
     } catch {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
+  }
+
+  async updatePassword(slug: string, updatePasswordDto: UpdatePasswordDto) {
+    const { oldPassword, newPassword } = updatePasswordDto;
+
+    const creator = await this.findOne(slug);
+    await this.passwordService.validate(oldPassword, creator.password);
+    const hashedPassword = await this.passwordService.hash(newPassword);
+
+    const updatedCreator = await this.prisma.creator.update({
+      where: { slug },
+      data: { password: hashedPassword },
+    });
+
+    // TODO: send password updated email
+    return updatedCreator;
+  }
+
+  async resetPassword(slug: string) {
+    const newPassword = uuidv4();
+    const hashedPassword = await this.passwordService.hash(newPassword);
+
+    // TODO: send password reseted email
+    return this.prisma.creator.update({
+      where: { slug },
+      data: { password: hashedPassword },
+    });
   }
 
   async updateFile(

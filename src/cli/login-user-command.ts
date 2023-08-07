@@ -27,10 +27,10 @@ export class LoginUserCommand extends CommandRunner {
     await this.login(options);
   }
 
-  async login(loginUserDto: LoginDto) {
+  async login(loginDto: LoginDto) {
     log('🏗️  Starting user authorization...');
     try {
-      const user = await this.userService.login(loginUserDto);
+      const user = await this.userService.login(loginDto);
       const authorization = this.authService.authorizeUser(user);
 
       log(cg('✅ Authorization successful!'));

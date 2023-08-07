@@ -191,12 +191,12 @@ async function main() {
   console.log('Added users');
 
   // SEED CREATORS
-  const nxC = await prisma.creator.create({ data: studioNx });
-  const swC = await prisma.creator.create({ data: swamplabs });
-  const goC = await prisma.creator.create({ data: gonneytoons });
-  const saC = await prisma.creator.create({ data: saucerpen });
-  const mmC = await prisma.creator.create({ data: madMuse });
-  const tsC = await prisma.creator.create({ data: tsukiverse });
+  const nxC = await prisma.creator.create({ data: await studioNx() });
+  const swC = await prisma.creator.create({ data: await swamplabs() });
+  const goC = await prisma.creator.create({ data: await gonneytoons() });
+  const saC = await prisma.creator.create({ data: await saucerpen() });
+  const mmC = await prisma.creator.create({ data: await madMuse() });
+  const tsC = await prisma.creator.create({ data: await tsukiverse() });
   console.log('Added creators');
 
   // SEED COMICS
@@ -285,7 +285,7 @@ async function main() {
   if (isDevnet) {
     await tryAirdropping();
 
-    const llC = await prisma.creator.create({ data: longwood });
+    const llC = await prisma.creator.create({ data: await longwood() });
     const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
     const heistC = await prisma.comic.create({ data: heistData(llC.id) });
 

@@ -55,9 +55,9 @@ enum Role {
 model Creator {
   id              Int           @id @default(autoincrement())
   email           String        @unique
-  // name can be non-slugish and not used for login
-  name            String        @unique // TODO: make sure this name is not constrainted like a username (slug)
+  name            String        @unique
   slug            String        @unique
+  password        String
   avatar          String        @default("")
   banner          String        @default("")
   logo            String        @default("")

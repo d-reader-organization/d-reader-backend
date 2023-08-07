@@ -18,6 +18,7 @@ import { PayloadEntity } from '../decorators/payload.decorator';
 import { LoginDto } from '../types/login.dto';
 import { RegisterDto } from '../types/register.dto';
 import { Authorization, JwtPayload } from './dto/authorization.dto';
+import { CreatorService } from '../creator/creator.service';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -26,6 +27,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private readonly creatorService: CreatorService,
     private readonly passwordService: PasswordService,
   ) {}
 
@@ -47,18 +49,16 @@ export class AuthController {
   /* Register a new user */
   @Throttle(10, 60)
   @Post('user/register')
-  async registerUser(
-    @Body() registerUserDto: RegisterDto,
-  ): Promise<Authorization> {
-    const user = await this.userService.register(registerUserDto);
+  async registerUser(@Body() registerDto: RegisterDto): Promise<Authorization> {
+    const user = await this.userService.register(registerDto);
     return this.authService.authorizeUser(user);
   }
 
   /* Login as a user */
   @Throttle(10, 60)
   @Post('user/login')
-  async loginUser(@Body() loginUserDto: LoginDto): Promise<Authorization> {
-    const user = await this.userService.login(loginUserDto);
+  async loginUser(@Body() loginDto: LoginDto): Promise<Authorization> {
+    const user = await this.userService.login(loginDto);
     return this.authService.authorizeUser(user);
   }
 
@@ -80,8 +80,6 @@ export class AuthController {
   @Get('creator/validate-name/:name')
   validateCreatorName(@Param('name') name: string) {
     validateName(name);
-    // TODO: create these missing creator-service functions
-    // TODO: revise creator.controller, creator.service and everything?
     return this.creatorService.throwIfNameTaken(name);
   }
 
@@ -96,18 +94,18 @@ export class AuthController {
   @Throttle(10, 60)
   @Post('creator/register')
   async registerCreator(
-    @Body() registerUserDto: RegisterDto,
+    @Body() registerDto: RegisterDto,
   ): Promise<Authorization> {
-    const creator = await this.creatorService.register(registerUserDto);
-    return this.authService.authorizeUser(creator);
+    const creator = await this.creatorService.register(registerDto);
+    return this.authService.authorizeCreator(creator);
   }
 
   /* Login as a user */
   @Throttle(10, 60)
   @Post('creator/login')
-  async loginCreator(@Body() loginUserDto: LoginDto): Promise<Authorization> {
-    const creator = await this.creatorService.login(loginUserDto);
-    return this.authService.authorizeUser(creator);
+  async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
+    const creator = await this.creatorService.login(loginDto);
+    return this.authService.authorizeCreator(creator);
   }
 
   /* Refresh access token */

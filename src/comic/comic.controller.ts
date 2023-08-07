@@ -177,35 +177,26 @@ export class ComicController {
   /* Rate specific comic */
   @SkipUpdateGuard()
   @Patch('rate/:slug')
-  async rate(
+  rate(
     @Param('slug') slug: string,
     @Body() rateComicDto: RateComicDto,
     @PayloadEntity() user: JwtPayload,
-  ): Promise<ComicDto> {
-    await this.userComicService.rate(user.id, slug, rateComicDto.rating);
-    return this.findOne(slug, user);
+  ) {
+    return this.userComicService.rate(user.id, slug, rateComicDto.rating);
   }
 
   /* Subscribe/unsubscribe from specific comic */
   @SkipUpdateGuard()
   @Patch('subscribe/:slug')
-  async subscribe(
-    @Param('slug') slug: string,
-    @PayloadEntity() user: JwtPayload,
-  ): Promise<ComicDto> {
-    await this.userComicService.toggleState(user.id, slug, 'isSubscribed');
-    return this.findOne(slug, user);
+  subscribe(@Param('slug') slug: string, @PayloadEntity() user: JwtPayload) {
+    return this.userComicService.toggleState(user.id, slug, 'isSubscribed');
   }
 
   /* Favouritise/unfavouritise a specific comic */
   @SkipUpdateGuard()
   @Patch('favouritise/:slug')
-  async favouritise(
-    @Param('slug') slug: string,
-    @PayloadEntity() user: JwtPayload,
-  ): Promise<ComicDto> {
-    await this.userComicService.toggleState(user.id, slug, 'isFavourite');
-    return this.findOne(slug, user);
+  favouritise(@Param('slug') slug: string, @PayloadEntity() user: JwtPayload) {
+    return this.userComicService.toggleState(user.id, slug, 'isFavourite');
   }
 
   /* Publish comic */

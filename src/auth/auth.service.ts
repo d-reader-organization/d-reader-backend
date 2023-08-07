@@ -24,6 +24,7 @@ function sanitizePayload(payload: UserOrCreator, type: EntityType): JwtPayload {
   };
 }
 
+// TODO v2: one day  we can consider splitting this into two passport strategies
 @Injectable()
 export class AuthService {
   constructor(
@@ -120,19 +121,21 @@ export class AuthService {
     return this.generateAccessToken(userOrCreator, jwtDto.type);
   }
 
-  async validateJwt(jwtDto: JwtDto) {
+  async validateJwt(jwtDto: JwtDto): Promise<JwtPayload> {
     if (jwtDto.type === 'user') {
       const user = await this.prisma.user.findUnique({
         where: { id: jwtDto.id },
       });
 
       if (!user) throw new NotFoundException('User not found');
+      return sanitizePayload(user, 'user');
     } else if (jwtDto.type === 'creator') {
       const creator = await this.prisma.creator.findUnique({
         where: { id: jwtDto.id },
       });
 
       if (!creator) throw new NotFoundException('Creator not found');
+      return sanitizePayload(creator, 'creator');
     } else {
       throw new ForbiddenException('Authorization type unknown: ', jwtDto.type);
     }
