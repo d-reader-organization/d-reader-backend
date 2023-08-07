@@ -32,6 +32,7 @@ import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import config from '../configs/config';
     }),
     PrismaModule.forRoot({ isGlobal: true }),
     s3Module,
+    MailModule,
   ],
   providers: [
     BundlrWithdrawCommand,
