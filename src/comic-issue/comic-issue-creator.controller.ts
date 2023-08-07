@@ -9,7 +9,6 @@ import {
   UseInterceptors,
   UploadedFiles,
   Query,
-  ForbiddenException,
   UploadedFile,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -32,20 +31,8 @@ import {
   toComicIssueDtoArray,
 } from './dto/comic-issue.dto';
 import { plainToInstance } from 'class-transformer';
-import { ComicIssueUpdateGuard } from 'src/guards/comic-issue-update.guard';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
-import { UserEntity } from 'src/decorators/user.decorator';
-import { Creator, User, Role } from '@prisma/client';
+import { ComicIssueCreatorUpdateGuard } from 'src/guards/comic-issue-creator-update.guard';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
-import { UserComicIssueService } from './user-comic-issue.service';
-import { RateComicDto } from 'src/comic/dto/rate-comic.dto';
-import {
-  ComicPageDto,
-  toComicPageDtoArray,
-} from '../comic-page/entities/comic-page.dto';
-import { PublishOnChainDto } from './dto/publish-on-chain.dto';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
 import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -65,20 +52,17 @@ import {
   CreateComicPageFilesDto,
 } from '../comic-page/dto/create-comic-page.dto';
 import { ComicPageService } from '../comic-page/comic-page.service';
-import {
-  OwnedComicIssueDto,
-  toOwnedComicIssueDtoArray,
-} from './dto/owned-comic-issue.dto';
+import { JwtPayload } from '../auth/dto/authorization.dto';
+import { PayloadEntity } from '../decorators/payload.decorator';
 
-@UseGuards(RestAuthGuard, RolesGuard, ComicIssueUpdateGuard, ThrottlerGuard)
+@UseGuards(RestAuthGuard, ComicIssueCreatorUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
-export class ComicIssueController {
+export class ComicIssueCreatorController {
   constructor(
     private readonly comicIssueService: ComicIssueService,
     private readonly comicPageService: ComicPageService,
-    private readonly userComicIssueService: UserComicIssueService,
   ) {}
 
   /* Create a new comic issue */
@@ -87,7 +71,7 @@ export class ComicIssueController {
   @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
   @Post('create')
   async create(
-    @CreatorEntity() creator: Creator,
+    @PayloadEntity() creator: JwtPayload,
     @Body() createComicIssueDto: CreateComicIssueDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicIssueFilesDto, val),
@@ -110,35 +94,6 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  @Get('get/by-owner/:id')
-  async findOwnedComicIssues(
-    @Param('id') id: string,
-    @Query() query: ComicIssueParams,
-  ): Promise<OwnedComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllByOwner(query, +id);
-    return toOwnedComicIssueDtoArray(comicIssues);
-  }
-
-  /* Get specific comic issue by unique id */
-  @Get('get/:id')
-  async findOne(
-    @Param('id') id: string,
-    @UserEntity() user: User,
-  ): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOne(+id, user.id);
-    return toComicIssueDto(comicIssue);
-  }
-
-  /* Get specific comic issue's pages */
-  @Get('get/:id/pages')
-  async getPages(
-    @Param('id') id: string,
-    @UserEntity() user: User,
-  ): Promise<ComicPageDto[]> {
-    const pages = await this.comicIssueService.getPages(+id, user.id);
-    return toComicPageDtoArray(pages);
-  }
-
   /* Update specific comic issue */
   @Patch('update/:id')
   async update(
@@ -150,31 +105,6 @@ export class ComicIssueController {
       updateComicIssueDto,
     );
     return toComicIssueDto(updatedComicIssue);
-  }
-
-  /* Favouritise/unfavouritise a specific comic issue */
-  @SkipUpdateGuard()
-  @Patch('favouritise/:id')
-  favouritise(@Param('id') id: string, @UserEntity() user: User) {
-    this.userComicIssueService.toggleState(user.id, +id, 'isFavourite');
-  }
-
-  /* Rate specific comic issue */
-  @SkipUpdateGuard()
-  @Patch('rate/:id')
-  rate(
-    @Param('id') id: string,
-    @Body() rateComicDto: RateComicDto,
-    @UserEntity() user: User,
-  ) {
-    this.userComicIssueService.rate(user.id, +id, rateComicDto.rating);
-  }
-
-  /* Read a specific comic issue */
-  @SkipUpdateGuard()
-  @Patch('read/:id')
-  read(@Param('id') id: string, @UserEntity() user: User) {
-    this.comicIssueService.read(+id, user.id);
   }
 
   /* Update specific comic issues pdf file */
@@ -260,36 +190,6 @@ export class ComicIssueController {
     statefulCoverDto: [CreateStatefulCoverDto],
   ) {
     await this.comicIssueService.updateStatefulCovers(statefulCoverDto, +id);
-  }
-
-  /* Publish an off-chain comic issue on chain */
-  @Roles(Role.Superadmin, Role.Admin)
-  @Patch('publish-on-chain/:id')
-  async publishOnChain(
-    @Param('id') id: string,
-    @Body() publishOnChainDto: PublishOnChainDto,
-  ): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publishOnChain(
-      +id,
-      publishOnChainDto,
-    );
-    return toComicIssueDto(publishedComicIssue);
-  }
-
-  /* Publish comic issue */
-  @Roles(Role.Superadmin, Role.Admin)
-  @Patch('publish/:id')
-  async publish(@Param('id') id: string): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publish(+id);
-    return toComicIssueDto(publishedComicIssue);
-  }
-
-  /* Unpublish comic issue */
-  @Patch('unpublish/:id')
-  async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
-    throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${id}`);
-    // const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    // return toComicIssueDto(unpublishedComicIssue);
   }
 
   /* Queue comic issue for deletion */

@@ -7,6 +7,7 @@ import { UserCreatorMyStatsDto } from './types/user-creator-my-stats.dto';
 @Injectable()
 export class UserCreatorService {
   constructor(private readonly prisma: PrismaService) {}
+
   async toggleFollow(userId: number, creatorSlug: string): Promise<boolean> {
     let userCreator = await this.prisma.userCreator.findUnique({
       where: {
@@ -23,19 +24,7 @@ export class UserCreatorService {
     return !!userCreator;
   }
 
-  async aggregateAll(slug: string, userId?: number) {
-    if (userId) {
-      const getStats = this.aggregateCreatorStats(slug);
-      const getUserStats = this.userCreatorStats(slug, userId);
-
-      const [stats, myStats] = await Promise.all([getStats, getUserStats]);
-      return { stats, myStats };
-    } else {
-      return { stats: await this.aggregateCreatorStats(slug) };
-    }
-  }
-
-  async aggregateCreatorStats(slug: string): Promise<CreatorStats> {
+  async getCreatorStats(slug: string): Promise<CreatorStats> {
     const countFollowers = this.prisma.userCreator.count({
       where: { creatorSlug: slug, isFollowing: true },
     });
@@ -55,10 +44,12 @@ export class UserCreatorService {
     return { followersCount, comicIssuesCount, totalVolume };
   }
 
-  async userCreatorStats(
+  async getUserStats(
     creatorSlug: string,
-    userId: number,
+    userId?: number,
   ): Promise<UserCreatorMyStatsDto> {
+    if (!userId) return undefined;
+
     const userCreator = await this.prisma.userCreator.findUnique({
       where: { creatorSlug_userId: { userId, creatorSlug } },
     });

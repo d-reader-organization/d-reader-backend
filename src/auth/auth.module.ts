@@ -12,6 +12,9 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { UserService } from '../user/user.service';
 import { WalletService } from '../wallet/wallet.service';
+import { CreatorService } from '../creator/creator.service';
+import { UserCreatorService } from '../creator/user-creator.service';
+import { MailService } from '../mail/mail.service';
 
 @Module({
   imports: [
@@ -47,7 +50,10 @@ import { WalletService } from '../wallet/wallet.service';
     HeliusService,
     WebSocketGateway,
     UserService,
+    CreatorService,
+    UserCreatorService,
     WalletService,
+    MailService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })
