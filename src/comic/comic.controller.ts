@@ -95,12 +95,12 @@ export class ComicController {
     return toComicDto(comic);
   }
 
-  @Get('get/by-owner/:address')
+  @Get('get/by-owner/:userId')
   async findOwnedComics(
-    @Param('address') address: string,
+    @Param('userId') userId: string,
     @Query() query: ComicParams,
   ): Promise<ComicDto[]> {
-    const comics = await this.comicService.findAllByOwner(query, address);
+    const comics = await this.comicService.findAllByOwner(query, +userId);
     return toComicDtoArray(comics);
   }
 

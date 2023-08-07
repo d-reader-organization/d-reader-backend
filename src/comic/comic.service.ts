@@ -128,7 +128,7 @@ export class ComicService {
 
   async findAllByOwner(
     query: ComicParams,
-    ownerAddress: string,
+    userId: number,
   ): Promise<ComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
@@ -137,7 +137,7 @@ export class ComicService {
         issues: {
           some: {
             collectionNft: {
-              collectionItems: { some: { ownerAddress } },
+              collectionItems: { some: { owner: { userId } } },
             },
           },
         },
