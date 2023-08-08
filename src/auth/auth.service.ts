@@ -6,25 +6,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { EntityType, JwtDto, JwtPayload } from './dto/authorization.dto';
+import { JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Creator, User } from '@prisma/client';
 
-type UserOrCreator = (User | Creator) & { role?: User['role'] };
-
-function sanitizePayload(payload: UserOrCreator, type: EntityType): JwtPayload {
-  return {
-    id: payload.id,
-    name: payload.name,
-    email: payload.email,
-    role: payload?.role,
-    type: type,
-  };
-}
-
-// TODO v2: one day  we can consider splitting this into two passport strategies
+// One day  we can consider splitting this into two passport strategies
 @Injectable()
 export class AuthService {
   constructor(
@@ -53,35 +41,27 @@ export class AuthService {
 
   authorizeUser(user: User) {
     return {
-      accessToken: this.generateAccessToken(user, 'user'),
-      refreshToken: this.generateRefreshToken(user, 'user'),
+      accessToken: this.generateAccessToken({ ...user, type: 'user' }),
+      refreshToken: this.generateRefreshToken({ ...user, type: 'user' }),
     };
   }
 
   authorizeCreator(creator: Creator) {
     return {
-      accessToken: this.generateAccessToken(creator, 'creator'),
-      refreshToken: this.generateRefreshToken(creator, 'creator'),
+      accessToken: this.generateAccessToken({ ...creator, type: 'creator' }),
+      refreshToken: this.generateRefreshToken({ ...creator, type: 'creator' }),
     };
   }
 
-  private generateAccessToken(
-    payload: UserOrCreator,
-    type: EntityType,
-  ): string {
-    const sanitizedPayload = sanitizePayload(payload, type);
-    const accessToken = `Bearer ${this.jwtService.sign(sanitizedPayload)}`;
+  private generateAccessToken(payload: JwtPayload): string {
+    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
     return accessToken;
   }
 
-  private generateRefreshToken(
-    payload: UserOrCreator,
-    type: EntityType,
-  ): string {
+  private generateRefreshToken(payload: JwtPayload): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
-    const sanitizedPayload = sanitizePayload(payload, type);
 
-    const refreshToken = this.jwtService.sign(sanitizedPayload, {
+    const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: securityConfig.refreshIn,
     });
@@ -105,20 +85,21 @@ export class AuthService {
       throw new UnauthorizedException('Refresh and access token id mismatch');
     }
 
-    let userOrCreator: UserOrCreator;
     if (jwtDto.type === 'user') {
-      userOrCreator = await this.prisma.user.update({
+      const user = await this.prisma.user.update({
         where: { id: jwtDto.id },
         data: { lastLogin: new Date() },
       });
-    } else if (jwtDto.type === 'creator') {
-      userOrCreator = await this.prisma.creator.update({
-        where: { id: jwtDto.id },
-        data: { lastLogin: new Date() },
-      });
-    }
 
-    return this.generateAccessToken(userOrCreator, jwtDto.type);
+      return this.generateAccessToken({ ...user, type: 'user' });
+    } else if (jwtDto.type === 'creator') {
+      const creator = await this.prisma.creator.update({
+        where: { id: jwtDto.id },
+        data: { lastLogin: new Date() },
+      });
+
+      return this.generateAccessToken({ ...creator, type: 'creator' });
+    }
   }
 
   async validateJwt(jwtDto: JwtDto): Promise<JwtPayload> {
@@ -128,16 +109,16 @@ export class AuthService {
       });
 
       if (!user) throw new NotFoundException('User not found');
-      return sanitizePayload(user, 'user');
+      return { ...user, type: 'user' };
     } else if (jwtDto.type === 'creator') {
       const creator = await this.prisma.creator.findUnique({
         where: { id: jwtDto.id },
       });
 
       if (!creator) throw new NotFoundException('Creator not found');
-      return sanitizePayload(creator, 'creator');
+      return { ...creator, type: 'creator' };
     } else {
-      throw new ForbiddenException('Authorization type unknown: ', jwtDto.type);
+      throw new ForbiddenException('Authorization type unknown: ', jwtDto);
     }
   }
 }

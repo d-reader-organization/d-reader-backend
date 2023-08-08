@@ -10,8 +10,7 @@ import {
   UploadedFiles,
   UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
   CreateCarouselSlideSwaggerDto,
   CreateCarouselSlideDto,
@@ -29,21 +28,19 @@ import {
 } from './dto/carousel-slide.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { Role } from '@prisma/client';
+import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { throttle } from 'lodash';
 
-@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Carousel')
 @Controller('carousel')
 export class CarouselController {
   constructor(private readonly carouselService: CarouselService) {}
 
   /* Create a new carousel slide */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateCarouselSlideSwaggerDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
@@ -84,7 +81,7 @@ export class CarouselController {
   }
 
   /* Update specific carousel slide */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @Patch('slides/update/:id')
   async update(
     @Param('id') id: string,
@@ -98,7 +95,7 @@ export class CarouselController {
   }
 
   /* Update specific carousel slides image file */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @ApiConsumes('multipart/form-data')
   @ApiFile('image')
   @UseInterceptors(FileInterceptor('image'))
@@ -116,7 +113,7 @@ export class CarouselController {
   }
 
   /* Make carousel slide expire */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @Patch('slides/expire/:id')
   async expire(@Param('id') id: string): Promise<CarouselSlideDto> {
     const expiredCarouselSlide = await this.carouselService.expire(+id);

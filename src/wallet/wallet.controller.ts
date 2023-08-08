@@ -1,15 +1,12 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
-import { WalletUpdateGuard } from 'src/guards/wallet-update.guard';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from 'src/utils/lodash';
 
-@UseGuards(RestAuthGuard, WalletUpdateGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Wallet')
 @Controller('wallet')
 export class WalletController {

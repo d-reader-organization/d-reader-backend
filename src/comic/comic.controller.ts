@@ -1,46 +1,44 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
   UseGuards,
-  UseInterceptors,
-  UploadedFiles,
-  UploadedFile,
   Query,
   ForbiddenException,
+  Post,
+  UploadedFile,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import {
-  CreateComicSwaggerDto,
-  CreateComicDto,
-  CreateComicFilesDto,
-} from 'src/comic/dto/create-comic.dto';
-import { UpdateComicDto } from 'src/comic/dto/update-comic.dto';
+import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ComicService } from './comic.service';
+import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
+import { ComicParams } from './dto/comic-params.dto';
+import { UserComicService } from './user-comic.service';
+import { RateComicDto } from './dto/rate-comic.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { AdminGuard } from 'src/guards/roles.guard';
+import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserAuth } from 'src/guards/user-auth.guard';
+import { UserEntity } from 'src/decorators/user.decorator';
 import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
-import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { ComicUpdateGuard } from 'src/guards/comic-update.guard';
-import { PayloadEntity } from 'src/decorators/payload.decorator';
-import { ComicParams } from './dto/comic-params.dto';
-import { UserComicService } from './user-comic.service';
-import { Role } from '@prisma/client';
-import { RateComicDto } from './dto/rate-comic.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { SkipUpdateGuard } from 'src/guards/skip-update-guard';
-import { JwtPayload } from 'src/auth/dto/authorization.dto';
+import { CreatorEntity } from 'src/decorators/creator.decorator';
+import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
+import {
+  CreateComicSwaggerDto,
+  CreateComicDto,
+  CreateComicFilesDto,
+} from './dto/create-comic.dto';
+import { UpdateComicDto } from './dto/update-comic.dto';
 
-@UseGuards(RestAuthGuard, RolesGuard, ComicUpdateGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
 @Controller('comic')
 export class ComicController {
@@ -50,6 +48,7 @@ export class ComicController {
   ) {}
 
   /* Create a new comic */
+  @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicSwaggerDto })
   @UseInterceptors(
@@ -62,7 +61,7 @@ export class ComicController {
   )
   @Post('create')
   async create(
-    @PayloadEntity() creator: JwtPayload,
+    @CreatorEntity() creator: CreatorPayload,
     @Body() createComicDto: CreateComicDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicFilesDto, val),
@@ -86,10 +85,11 @@ export class ComicController {
   }
 
   /* Get specific comic by unique slug */
+  @UserAuth()
   @Get('get/:slug')
   async findOne(
     @Param('slug') slug: string,
-    @PayloadEntity() user: JwtPayload,
+    @UserEntity() user: UserPayload,
   ): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug, user.id);
     return toComicDto(comic);
@@ -105,6 +105,7 @@ export class ComicController {
   }
 
   /* Update specific comic */
+  @ComicOwnerAuth()
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -115,6 +116,7 @@ export class ComicController {
   }
 
   /* Update specific comics cover file */
+  @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('cover')
   @UseInterceptors(FileInterceptor('cover'))
@@ -132,6 +134,7 @@ export class ComicController {
   }
 
   /* Update specific comics banner file */
+  @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('banner')
   @UseInterceptors(FileInterceptor('banner'))
@@ -149,6 +152,7 @@ export class ComicController {
   }
 
   /* Update specific comics pfp file */
+  @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('pfp')
   @UseInterceptors(FileInterceptor('pfp'))
@@ -162,6 +166,7 @@ export class ComicController {
   }
 
   /* Update specific comics logo file */
+  @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('logo')
   @UseInterceptors(FileInterceptor('logo'))
@@ -175,32 +180,32 @@ export class ComicController {
   }
 
   /* Rate specific comic */
-  @SkipUpdateGuard()
+  @UserAuth()
   @Patch('rate/:slug')
   rate(
     @Param('slug') slug: string,
     @Body() rateComicDto: RateComicDto,
-    @PayloadEntity() user: JwtPayload,
+    @UserEntity() user: UserPayload,
   ) {
     return this.userComicService.rate(user.id, slug, rateComicDto.rating);
   }
 
   /* Subscribe/unsubscribe from specific comic */
-  @SkipUpdateGuard()
+  @UserAuth()
   @Patch('subscribe/:slug')
-  subscribe(@Param('slug') slug: string, @PayloadEntity() user: JwtPayload) {
+  subscribe(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
     return this.userComicService.toggleState(user.id, slug, 'isSubscribed');
   }
 
   /* Favouritise/unfavouritise a specific comic */
-  @SkipUpdateGuard()
+  @UserAuth()
   @Patch('favouritise/:slug')
-  favouritise(@Param('slug') slug: string, @PayloadEntity() user: JwtPayload) {
+  favouritise(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
     return this.userComicService.toggleState(user.id, slug, 'isFavourite');
   }
 
   /* Publish comic */
-  @Roles(Role.Superadmin, Role.Admin)
+  @AdminGuard()
   @Patch('publish/:slug')
   async publish(@Param('slug') slug: string): Promise<ComicDto> {
     const publishedComic = await this.comicService.publish(slug);
@@ -208,6 +213,7 @@ export class ComicController {
   }
 
   /* Unpublish comic */
+  @AdminGuard()
   @Patch('unpublish/:slug')
   async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${slug}`);
@@ -216,6 +222,7 @@ export class ComicController {
   }
 
   /* Queue comic for deletion */
+  @ComicOwnerAuth()
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
     const deletedComic = await this.comicService.pseudoDelete(slug);
@@ -223,6 +230,7 @@ export class ComicController {
   }
 
   /* Remove comic for deletion queue */
+  @ComicOwnerAuth()
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
     const recoveredComic = await this.comicService.pseudoRecover(slug);
@@ -231,13 +239,8 @@ export class ComicController {
 }
 
 /**
-  TODO: 
-  isFreeToRead
-  isCompleted
-  isOnChain
-  isOwned
-  isPrimarySale
-  isSecondarySale
-  
+  TODO v1: 
+  isFreeToRead, isCompleted, isOnChain,
+  isOwned, isPrimarySale, isSecondarySale
   free/web2/web3/previewable/WIP
-  */
+*/

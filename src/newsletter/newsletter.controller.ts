@@ -7,12 +7,9 @@ import {
   Delete,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
 import { NewsletterService } from './newsletter.service';
 import { NewsletterDto, toNewsletterDtoArray } from './dto/newsletter.dto';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
-import { Role } from '@prisma/client';
 import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
@@ -21,9 +18,8 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
-// TODO v1: double check newsletter
-@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+// TODO v1: redo newslettter
+@UseGuards(ThrottlerGuard)
 @ApiTags('Newsletter')
 @Controller('newsletter')
 export class NewsletterController {
@@ -54,7 +50,6 @@ export class NewsletterController {
 
   /* Get all newsletter subscriptions */
   @Get('get')
-  @Roles(Role.Superadmin)
   async findAll(): Promise<NewsletterDto[]> {
     const newsletters = await this.newsletterService.findAll();
     return toNewsletterDtoArray(newsletters);

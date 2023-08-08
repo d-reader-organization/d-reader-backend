@@ -5,27 +5,26 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UseGuards,
+  applyDecorators,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
-import { Role } from '@prisma/client';
+import { CreatorAuth } from './creator-auth.guard';
 
-/** Protects 'PUT' and 'PATCH' Creator endpoints
- * from anyone besides its creators and Superadmin */
+/** Protects endpoints against non-owners of the Creator entity */
 @Injectable()
-export class CreatorUpdateGuard implements CanActivate {
+export class CreatorOwnerGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const { user, params, method } = request;
+    const { user, params } = request;
     const { slug } = params;
-    if (!user) return false;
-    if (!slug) return true;
 
-    // If reading or creating new Creator entities, allow
-    if (method.toLowerCase() === 'get') return true;
-    else if (method.toLowerCase() === 'post') return true;
+    if (!user) return false;
+    if (!slug) return false;
+    else if (user.type !== 'creator') return false;
 
     const creator = await this.prisma.creator.findUnique({
       where: { slug },
@@ -34,8 +33,11 @@ export class CreatorUpdateGuard implements CanActivate {
 
     if (!creator) {
       throw new NotFoundException(`Creator with slug ${slug} not found`);
-    } else if (user.role === Role.Superadmin) return true;
-    else if (creator.id === user.id) return true;
+    } else if (creator.id === user.id) return true;
     else throw new ForbiddenException("You don't own this creator profile");
   }
+}
+
+export function CreatorOwnerAuth() {
+  return applyDecorators(CreatorAuth(), UseGuards(CreatorOwnerGuard));
 }

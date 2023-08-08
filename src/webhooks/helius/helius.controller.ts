@@ -8,7 +8,7 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { EnrichedTransaction } from 'helius-sdk';
 import {
   HeliusWebhookDto,
@@ -17,19 +17,16 @@ import {
 } from './dto/helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
-import { Roles, RolesGuard } from '../../guards/roles.guard';
-import { RestAuthGuard } from '../../guards/rest-auth.guard';
+import { AdminGuard } from '../../guards/roles.guard';
 import { WebhookGuard } from '../../guards/webhook.guard';
-import { Role } from '@prisma/client';
 
-@ApiBearerAuth('JWT-auth')
 @ApiTags('Helius')
 @Controller('helius')
 export class HeliusController {
   constructor(private readonly heliusService: HeliusService) {}
 
   /* Get all webhooks */
-  @UseGuards(RestAuthGuard)
+  @AdminGuard()
   @Get('get')
   async findAll(): Promise<HeliusWebhookDto[]> {
     const webhooks = await this.heliusService.findAll();
@@ -37,7 +34,7 @@ export class HeliusController {
   }
 
   /* Get main webhook by unique id */
-  @UseGuards(RestAuthGuard)
+  @AdminGuard()
   @Get('get-main')
   async findOne(): Promise<UpdateHeliusWebhookDto> {
     const webhook = await this.heliusService.findOne();
@@ -45,8 +42,7 @@ export class HeliusController {
   }
 
   /* Update specific webhook */
-  @UseGuards(RestAuthGuard, RolesGuard)
-  @Roles(Role.Superadmin, Role.Admin)
+  @AdminGuard()
   @Patch('update/:id')
   async updateWebhook(
     @Param('id') id: string,
@@ -67,8 +63,7 @@ export class HeliusController {
   }
 
   /* Delete specific webhook */
-  @UseGuards(RestAuthGuard, RolesGuard)
-  @Roles(Role.Superadmin, Role.Admin)
+  @AdminGuard()
   @Delete('delete/:id')
   remove(@Param('id') id: string): Promise<boolean> {
     return this.heliusService.deleteWebhook(id);
