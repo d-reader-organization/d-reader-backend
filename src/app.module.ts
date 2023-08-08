@@ -24,6 +24,7 @@ import { WebSocketModule } from './websockets/websockets.module';
 import { NftModule } from './nft/nft.module';
 import { s3Module } from './aws/s3.module';
 import config from './configs/config';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import config from './configs/config';
     WebSocketModule,
     NftModule,
     s3Module,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
