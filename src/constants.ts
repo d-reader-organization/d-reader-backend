@@ -66,6 +66,9 @@ export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
 
+export const AUTHORITY_GROUP_LABEL = 'dAuth';
+export const PUBLIC_GROUP_LABEL = 'public';
+
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
     rarity: ComicRarity.Common,
