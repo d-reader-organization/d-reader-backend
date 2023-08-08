@@ -10,50 +10,56 @@ import {
   Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { UpdateUserDto } from '../types/update-user.dto';
+import { ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { UserEntity } from 'src/decorators/user.decorator';
 import { toUserDto, UserDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UserUpdateGuard } from 'src/guards/user-update.guard';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdatePasswordDto } from 'src/types/update-password.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { User } from '@prisma/client';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 import {
   WalletAssetDto,
   toWalletAssetDtoArray,
 } from '../wallet/dto/wallet-asset.dto';
+import { UserAuth } from 'src/guards/user-auth.guard';
+import { UserOwnerAuth } from 'src/guards/user-owner.guard';
+import { UserEntity } from 'src/decorators/user.decorator';
 
-@UseGuards(RestAuthGuard, UserUpdateGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('User')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /* Verify your email address */
+  @UserOwnerAuth()
   @Post('request-email-verification')
-  async requestEmailVerification(@UserEntity() user: User) {
+  async requestEmailVerification(@UserEntity() user: UserPayload) {
     this.userService.requestEmailVerification(user.id);
   }
 
   /* Verify your email address */
+  @UserOwnerAuth()
   @Post('verify-email/:verificationToken')
-  async verifyEmail(@Param('verificationToken') verificationToken: string) {
-    this.userService.verifyEmail(verificationToken);
+  async verifyEmail(
+    @UserEntity() user: UserPayload,
+    @Param('verificationToken') verificationToken: string,
+  ) {
+    this.userService.verifyEmail(user.email, verificationToken);
   }
 
   /* Get user data from auth token */
+  @UserAuth()
   @Get('get/me')
-  async findMe(@UserEntity() user: User): Promise<UserDto> {
+  async findMe(@UserEntity() user: UserPayload): Promise<UserDto> {
     const me = await this.userService.findMe(user.id);
     return toUserDto(me);
   }
 
   /* Update specific user */
+  @UserOwnerAuth()
   @Patch('update/:id')
   async update(
     @Param('id') id: string,
@@ -64,6 +70,7 @@ export class UserController {
   }
 
   /* Update specific user's password */
+  @UserOwnerAuth()
   @Patch('update-password/:id')
   async updatePassword(
     @Param('id') id: string,
@@ -74,13 +81,14 @@ export class UserController {
   }
 
   /* Reset specific user's password */
+  @UserOwnerAuth()
   @Patch('reset-password')
-  async resetPassword(@Param('id') id: string): Promise<UserDto> {
-    const user = await this.userService.resetPassword(+id);
-    return toUserDto(user);
+  resetPassword(@Param('id') id: string) {
+    return this.userService.resetPassword(+id);
   }
 
   /* Update specific user's avatar file */
+  @UserOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
@@ -98,10 +106,11 @@ export class UserController {
   }
 
   /* Redeem a referral by user name, email, or id */
+  @UserOwnerAuth()
   @Patch('redeem-referral/:referrer')
   async redeemReferral(
     @Param('referrer') referrer: string,
-    @UserEntity() user: User,
+    @UserEntity() user: UserPayload,
   ) {
     const updatedUser = await this.userService.redeemReferral(
       referrer,
@@ -122,6 +131,7 @@ export class UserController {
     5 * 60 * 1000, // 5 minutes
   );
 
+  @UserOwnerAuth()
   @Throttle(10, 60)
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {

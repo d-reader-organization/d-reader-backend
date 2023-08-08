@@ -36,12 +36,12 @@ export const getCreatorsQuery = (query: FilterParams) => {
   const { nameCondition, sortColumn, sortOrder, filterCondition } =
     getQueryFilters(query);
   return Prisma.sql`select creator.*, json_agg(distinct genre.*) AS genres,
-  SUM(case when walletcreator."isFollowing" = true then 1 else 0 end)  as "followersCount"
+  SUM(case when userCreator."isFollowing" = true then 1 else 0 end)  as "followersCount"
   from "Creator" creator
   left join "Comic" comic on comic."creatorId" = creator.id
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug
   inner join "Genre" genre on genre.slug = "comicToGenre"."B"  
-  left join "WalletCreator" walletCreator on walletcreator."creatorSlug" = creator.slug
+  left join "UserCreator" userCreator on userCreator."creatorSlug" = creator.slug
   where creator."deletedAt" is null and creator."verifiedAt" is not null and creator."emailVerifiedAt" is not null
   ${filterCondition}
   ${nameCondition}

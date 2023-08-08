@@ -47,6 +47,7 @@ CREATE TABLE "Creator" (
     "email" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
     "avatar" TEXT NOT NULL DEFAULT '',
     "banner" TEXT NOT NULL DEFAULT '',
     "logo" TEXT NOT NULL DEFAULT '',
@@ -61,8 +62,9 @@ CREATE TABLE "Creator" (
     "featuredAt" TIMESTAMP(3),
     "verifiedAt" TIMESTAMP(3),
     "popularizedAt" TIMESTAMP(3),
+    "lastLogin" TIMESTAMP(3),
+    "lastActiveAt" TIMESTAMP(3),
     "emailVerifiedAt" TIMESTAMP(3),
-    "userId" INTEGER NOT NULL,
 
     CONSTRAINT "Creator_pkey" PRIMARY KEY ("id")
 );
@@ -376,9 +378,6 @@ CREATE UNIQUE INDEX "Creator_name_key" ON "Creator"("name");
 CREATE UNIQUE INDEX "Creator_slug_key" ON "Creator"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Creator_userId_key" ON "Creator"("userId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Genre_name_key" ON "Genre"("name");
 
 -- CreateIndex
@@ -431,9 +430,6 @@ ALTER TABLE "User" ADD CONSTRAINT "User_referrerId_fkey" FOREIGN KEY ("referrerI
 
 -- AddForeignKey
 ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Creator" ADD CONSTRAINT "Creator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Comic" ADD CONSTRAINT "Comic_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;

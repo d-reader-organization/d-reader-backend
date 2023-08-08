@@ -1,22 +1,17 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
 import { AuctionHouseService } from './auction-house.service';
-import { AuctionHouseGuard } from 'src/guards/auction-house-update.guard';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { FilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
 
-@UseGuards(RestAuthGuard, AuctionHouseGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
   @Get('/get/listings/:comicIssueId')
   async findAllListings(
     @Query() query: FilterParams,

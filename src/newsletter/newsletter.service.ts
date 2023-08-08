@@ -14,7 +14,7 @@ export class NewsletterService {
     const data = { email, ...requestUserData };
 
     const newsletter = await this.prisma.newsletter.create({ data });
-    this.mailService.subscribedSuccessfully(email);
+    this.mailService.subscribedToNewsletter(email);
 
     return newsletter;
   }
@@ -28,7 +28,7 @@ export class NewsletterService {
       const newsletter = this.prisma.newsletter.delete({
         where: { email },
       });
-      // TODO v1: this.mailService.unsubscribedSuccessfully(email);
+      // TODO v1: this.mailService.unsubscribedFromNewsletter(email);
       return newsletter;
     } catch {
       throw new NotFoundException('Already unsubscribed');

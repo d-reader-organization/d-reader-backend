@@ -1,13 +1,11 @@
 import { Controller, Get, UseGuards, Query, Param } from '@nestjs/common';
 import { NftService } from './nft.service';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { NftDto, toNftDto, toNftDtoArray } from './dto/nft.dto';
 import { FilterParams } from './dto/nft-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
-@UseGuards(RestAuthGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('NFTs')
 @Controller('nft')
 export class NftController {

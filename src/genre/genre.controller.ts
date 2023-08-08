@@ -11,8 +11,7 @@ import {
   UploadedFile,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
   CreateGenreSwaggerDto,
   CreateGenreDto,
@@ -26,22 +25,20 @@ import {
 import { GenreDto, toGenreDto, toGenreDtoArray } from './dto/genre.dto';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { Roles, RolesGuard } from 'src/guards/roles.guard';
+import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { FilterParams } from './dto/genre-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from 'src/utils/lodash';
-import { Role } from '@prisma/client';
 
-@UseGuards(RestAuthGuard, RolesGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Genre')
 @Controller('genre')
 export class GenreController {
   constructor(private readonly genreService: GenreService) {}
 
   /* Create a new genre */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateGenreSwaggerDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'icon', maxCount: 1 }]))
@@ -79,7 +76,7 @@ export class GenreController {
   }
 
   /* Update specific genre */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -90,7 +87,7 @@ export class GenreController {
   }
 
   /* Update specific genres icon file */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @ApiConsumes('multipart/form-data')
   @ApiFile('icon')
   @UseInterceptors(FileInterceptor('icon'))
@@ -104,7 +101,7 @@ export class GenreController {
   }
 
   /* Pseudo delete genre */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<GenreDto> {
     const deletedGenre = await this.genreService.pseudoDelete(slug);
@@ -112,7 +109,7 @@ export class GenreController {
   }
 
   /* Recover genre */
-  @Roles(Role.Superadmin)
+  @AdminGuard()
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
     const recoveredGenre = await this.genreService.pseudoRecover(slug);

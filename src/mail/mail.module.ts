@@ -3,29 +3,33 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
+import {
+  AuthenticationTypeLogin,
+  AuthenticationTypeOAuth2,
+} from 'nodemailer/lib/smtp-connection';
+
+type SupportedAuthType =
+  | AuthenticationTypeLogin['type']
+  | AuthenticationTypeOAuth2['type'];
 
 @Module({
   imports: [
     MailerModule.forRootAsync({
       useFactory: async (configService: ConfigService) => {
         return {
-          // transport: 'smtps://user@domain.com:pass@smtp.domain.com',
           transport: {
+            port: 1025,
             service: configService.get<string>('MAIL_SERVICE'),
-            host: configService.get<string>('MAIL_HOST'),
-            port: parseInt(configService.get<string>('MAIL_PORT')),
-            ignoreTLS: false,
-            secure: false,
             auth: {
+              type: configService.get<SupportedAuthType>('MAIL_AUTH_TYPE'),
               user: configService.get<string>('MAIL_USER'),
+              clientId: configService.get<string>('MAIL_CLIENT_ID'),
+              clientSecret: configService.get<string>('MAIL_CLIENT_SECRET'),
+              refreshToken: configService.get<string>('MAIL_REFRESH_TOKEN'),
               pass: configService.get<string>('MAIL_PASS'),
             },
           },
-          defaults: {
-            from: `"dReader - no reply" <${configService.get<string>(
-              'MAIL_FROM',
-            )}`,
-          },
+          defaults: { from: configService.get<string>('MAIL_FROM') },
           template: {
             dir: __dirname + '/templates',
             adapter: new PugAdapter(),

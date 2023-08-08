@@ -214,7 +214,7 @@ export class AuctionHouseService {
   }
 
   async getTotalVolume(comicIssueId: number) {
-    const sellAggregate = this.prisma.listing.aggregate({
+    const getSecondaryVolume = this.prisma.listing.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
         soldAt: { not: null },
@@ -222,24 +222,28 @@ export class AuctionHouseService {
       _sum: { price: true },
     });
 
-    const mintAggregate = this.prisma.candyMachineReceipt.aggregate({
+    const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
       where: {
         nft: { collectionNft: { comicIssueId } },
       },
       _sum: { price: true },
     });
 
-    const [sellVolume, mintVolume] = await Promise.all([
-      sellAggregate,
-      mintAggregate,
+    const [primarySalesVolume, secondarySalesVolume] = await Promise.all([
+      getSecondaryVolume,
+      getPrimaryVolume,
     ]);
-    return (sellVolume._sum?.price || 0) + (mintVolume._sum?.price || 0);
+
+    const primaryVolume = primarySalesVolume._sum?.price || 0;
+    const secondaryVolume = secondarySalesVolume._sum?.price || 0;
+    const totalVolume = primaryVolume + secondaryVolume;
+    return totalVolume;
   }
 
   async findCollectionStats(
     comicIssueId: number,
   ): Promise<CollectonMarketplaceStats> {
-    const aggregate = this.getTotalVolume(comicIssueId);
+    const getTotalVolume = this.getTotalVolume(comicIssueId);
 
     const countListed = this.prisma.listing.count({
       where: {
@@ -257,13 +261,13 @@ export class AuctionHouseService {
       select: { price: true },
     });
 
-    const [aggregations, itemsListed, cheapestItem] = await Promise.all([
-      aggregate,
+    const [totalVolume, itemsListed, cheapestItem] = await Promise.all([
+      getTotalVolume,
       countListed,
       getCheapestItem,
     ]);
     return {
-      totalVolume: aggregations,
+      totalVolume,
       itemsListed: itemsListed || 0,
       floorPrice: cheapestItem?.price || 0,
     };
@@ -274,13 +278,9 @@ export class AuctionHouseService {
       where: {
         canceledAt: new Date(0),
         soldAt: isBoolean(query.isSold)
-          ? {
-              [query.isSold ? 'not' : 'equals']: null,
-            }
+          ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
-        nft: {
-          collectionNft: { comicIssueId },
-        },
+        nft: { collectionNft: { comicIssueId } },
       },
       include: { nft: { include: { owner: { include: { user: true } } } } },
       take: query.take,

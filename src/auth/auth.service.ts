@@ -2,15 +2,17 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { JwtDto } from './dto/authorization.dto';
+import { JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { Creator, User } from '@prisma/client';
 
+// One day  we can consider splitting this into two passport strategies
 @Injectable()
 export class AuthService {
   constructor(
@@ -39,17 +41,24 @@ export class AuthService {
 
   authorizeUser(user: User) {
     return {
-      accessToken: this.generateAccessToken(user),
-      refreshToken: this.generateRefreshToken(user),
+      accessToken: this.generateAccessToken({ ...user, type: 'user' }),
+      refreshToken: this.generateRefreshToken({ ...user, type: 'user' }),
     };
   }
 
-  private generateAccessToken(payload: User): string {
+  authorizeCreator(creator: Creator) {
+    return {
+      accessToken: this.generateAccessToken({ ...creator, type: 'creator' }),
+      refreshToken: this.generateRefreshToken({ ...creator, type: 'creator' }),
+    };
+  }
+
+  private generateAccessToken(payload: JwtPayload): string {
     const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
     return accessToken;
   }
 
-  private generateRefreshToken(payload: User): string {
+  private generateRefreshToken(payload: JwtPayload): string {
     const securityConfig = this.configService.get<SecurityConfig>('security');
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -60,7 +69,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  async refreshAccessToken(user: User, token: string) {
+  async refreshAccessToken(jwtPayload: JwtPayload, token: string) {
     let jwtDto: JwtDto;
     try {
       jwtDto = this.jwtService.verify<JwtDto>(token, {
@@ -72,27 +81,44 @@ export class AuthService {
       );
     }
 
-    if (user.id !== jwtDto.id) {
-      throw new UnauthorizedException(
-        'Refresh and access token address mismatch',
-      );
+    if (jwtPayload.id !== jwtDto.id) {
+      throw new UnauthorizedException('Refresh and access token id mismatch');
     }
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    });
+    if (jwtDto.type === 'user') {
+      const user = await this.prisma.user.update({
+        where: { id: jwtDto.id },
+        data: { lastLogin: new Date() },
+      });
 
-    return this.generateAccessToken(user);
+      return this.generateAccessToken({ ...user, type: 'user' });
+    } else if (jwtDto.type === 'creator') {
+      const creator = await this.prisma.creator.update({
+        where: { id: jwtDto.id },
+        data: { lastLogin: new Date() },
+      });
+
+      return this.generateAccessToken({ ...creator, type: 'creator' });
+    }
   }
 
-  async validateJwt(jwtDto: JwtDto): Promise<User & { creator?: Creator }> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: jwtDto.id },
-      include: { creator: true },
-    });
+  async validateJwt(jwtDto: JwtDto): Promise<JwtPayload> {
+    if (jwtDto.type === 'user') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: jwtDto.id },
+      });
 
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+      if (!user) throw new NotFoundException('User not found');
+      return { ...user, type: 'user' };
+    } else if (jwtDto.type === 'creator') {
+      const creator = await this.prisma.creator.findUnique({
+        where: { id: jwtDto.id },
+      });
+
+      if (!creator) throw new NotFoundException('Creator not found');
+      return { ...creator, type: 'creator' };
+    } else {
+      throw new ForbiddenException('Authorization type unknown: ', jwtDto);
+    }
   }
 }
