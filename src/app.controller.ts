@@ -1,10 +1,12 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { AppService } from './app.service';
-import { PayloadEntity } from './decorators/payload.decorator';
-import { RestAuthGuard } from './guards/rest-auth.guard';
 import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
-import { JwtPayload } from './auth/dto/authorization.dto';
+import { AppService } from './app.service';
+import { UserAuth } from './guards/user-auth.guard';
+import { CreatorAuth } from './guards/creator-auth.guard';
+import { UserEntity } from './decorators/user.decorator';
+import { CreatorEntity } from './decorators/creator.decorator';
+import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('App')
@@ -18,12 +20,18 @@ export class AppController {
     return this.appService.get();
   }
 
-  /* Authenticated Hello World test endpoint */
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @Get('hello-authenticated')
-  getAuth(@PayloadEntity() user: JwtPayload): string {
+  /* User authenticated Hello World test endpoint */
+  @UserAuth()
+  @Get('hello-authenticated-user')
+  getUserAuth(@UserEntity() user: UserPayload): string {
     return this.appService.getAuth(user.id);
+  }
+
+  /* Creator authenticated Hello World test endpoint */
+  @CreatorAuth()
+  @Get('hello-authenticated-creator')
+  getCreatorAuth(@CreatorEntity() creator: CreatorPayload): string {
+    return this.appService.getAuth(creator.id);
   }
 
   @SkipThrottle()

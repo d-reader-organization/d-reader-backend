@@ -55,7 +55,6 @@ export class CreatorService {
       data: { name, email, password: hashedPassword, slug },
     });
 
-    // TODO: on register -> send email verification request
     return creator;
   }
 
@@ -125,16 +124,20 @@ export class CreatorService {
     } else return creator;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async requestEmailVerification(id: number) {
-    // TODO: request for a new email verification link
-    return;
+  async requestEmailVerification(slug: string) {
+    const creator = await this.findOne(slug);
+    const hashedEmail = await this.passwordService.hash(creator.email);
+
+    // TODO: send requestEmailVerification email
+    // this.mailService.requestEmailVerification(creator, hashedEmail);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verifyEmail(verificationToken: string) {
-    // TODO: verify users email
-    return;
+  async verifyEmail(email: string, verificationToken: string) {
+    await this.passwordService.validate(email, verificationToken);
+    await this.prisma.creator.update({
+      where: { email },
+      data: { emailVerifiedAt: new Date() },
+    });
   }
 
   async throwIfNameTaken(name?: string) {
@@ -181,15 +184,17 @@ export class CreatorService {
     const { oldPassword, newPassword } = updatePasswordDto;
 
     const creator = await this.findOne(slug);
-    await this.passwordService.validate(oldPassword, creator.password);
-    const hashedPassword = await this.passwordService.hash(newPassword);
+
+    const [hashedPassword] = await Promise.all([
+      this.passwordService.hash(newPassword),
+      this.passwordService.validate(oldPassword, creator.password),
+    ]);
 
     const updatedCreator = await this.prisma.creator.update({
       where: { slug },
       data: { password: hashedPassword },
     });
 
-    // TODO: send password updated email
     return updatedCreator;
   }
 
@@ -197,11 +202,13 @@ export class CreatorService {
     const newPassword = uuidv4();
     const hashedPassword = await this.passwordService.hash(newPassword);
 
-    // TODO: send password reseted email
-    return this.prisma.creator.update({
+    await this.prisma.creator.update({
       where: { slug },
       data: { password: hashedPassword },
     });
+
+    // TODO: send passwordReset email
+    // this.mailService.resetPassword(creator, hashedPassword);
   }
 
   async updateFile(

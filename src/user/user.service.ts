@@ -61,7 +61,7 @@ export class UserService {
       console.info('Failed to generate random avatar: ', e);
     }
 
-    await this.mailService.userRegistered(user, hashedEmail);
+    this.mailService.userRegistered(user, hashedEmail);
     return user;
   }
 
@@ -171,15 +171,17 @@ export class UserService {
     const { oldPassword, newPassword } = updatePasswordDto;
 
     const user = await this.findOne(id);
-    await this.passwordService.validate(oldPassword, user.password);
-    const hashedPassword = await this.passwordService.hash(newPassword);
+
+    const [hashedPassword] = await Promise.all([
+      this.passwordService.hash(newPassword),
+      this.passwordService.validate(oldPassword, user.password),
+    ]);
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: { password: hashedPassword },
     });
 
-    // TODO: send password updated email
     return updatedUser;
   }
 
@@ -187,23 +189,29 @@ export class UserService {
     const newPassword = uuidv4();
     const hashedPassword = await this.passwordService.hash(newPassword);
 
-    // TODO: send password reseted email
-    return this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id },
       data: { password: hashedPassword },
     });
+
+    // TODO: send passwordReset email
+    // this.mailService.resetPassword(user, hashedPassword);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async requestEmailVerification(id: number) {
-    // TODO: request for a new email verification link
-    return;
+    const user = await this.findOne(id);
+    const hashedEmail = await this.passwordService.hash(user.email);
+
+    // TODO: send requestEmailVerification email
+    // this.mailService.requestEmailVerification(user, hashedEmail);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async verifyEmail(verificationToken: string) {
-    // TODO: verify users email
-    return;
+  async verifyEmail(email: string, verificationToken: string) {
+    await this.passwordService.validate(email, verificationToken);
+    await this.prisma.user.update({
+      where: { email },
+      data: { emailVerifiedAt: new Date() },
+    });
   }
 
   async throwIfNameTaken(name?: string) {

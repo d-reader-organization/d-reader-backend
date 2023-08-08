@@ -20,6 +20,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
+import { TransactionModule } from './transactions/transaction.module';
 import { WebSocketModule } from './websockets/websockets.module';
 import { NftModule } from './nft/nft.module';
 import { s3Module } from './aws/s3.module';
@@ -71,6 +72,7 @@ import config from './configs/config';
     CandyMachineModule,
     AuctionHouseModule,
     WebSocketModule,
+    TransactionModule,
     NftModule,
     s3Module,
   ],

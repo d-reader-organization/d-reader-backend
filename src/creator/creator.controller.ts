@@ -10,24 +10,22 @@ import {
   UploadedFile,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { RestAuthGuard } from 'src/guards/rest-auth.guard';
+import { ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { UpdateCreatorDto } from 'src/creator/dto/update-creator.dto';
 import { CreatorService } from './creator.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
-import { PayloadEntity } from 'src/decorators/payload.decorator';
-import { User } from '@prisma/client';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { CreatorUpdateGuard } from 'src/guards/creator-update.guard';
+import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
 import { FilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { JwtPayload } from 'src/auth/dto/authorization.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UpdatePasswordDto } from 'src/types/update-password.dto';
+import { UserAuth } from 'src/guards/user-auth.guard';
+import { UserEntity } from 'src/decorators/user.decorator';
 
-@UseGuards(RestAuthGuard, CreatorUpdateGuard, ThrottlerGuard)
-@ApiBearerAuth('JWT-auth')
+@UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
 @Controller('creator')
 export class CreatorController {
@@ -44,9 +42,10 @@ export class CreatorController {
   }
 
   /* Get specific creator by unique slug */
+  @UserAuth()
   @Get('get/:slug')
   async findOne(
-    @PayloadEntity() user: User,
+    @UserEntity() user: UserPayload,
     @Param('slug') slug: string,
   ): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug, user.id);
@@ -54,6 +53,7 @@ export class CreatorController {
   }
 
   /* Update specific creator */
+  @CreatorOwnerAuth()
   @Patch('update/:slug')
   async update(
     @Param('slug') slug: string,
@@ -67,6 +67,7 @@ export class CreatorController {
   }
 
   /* Update specific creator's password */
+  @CreatorOwnerAuth()
   @Patch('update-password/:slug')
   async updatePassword(
     @Param('slug') slug: string,
@@ -80,13 +81,14 @@ export class CreatorController {
   }
 
   /* Reset specific creator's password */
+  @CreatorOwnerAuth()
   @Patch('reset-password')
-  async resetPassword(@Param('slug') slug: string): Promise<CreatorDto> {
-    const creator = await this.creatorService.resetPassword(slug);
-    return toCreatorDto(creator);
+  async resetPassword(@Param('slug') slug: string) {
+    return this.creatorService.resetPassword(slug);
   }
 
   /* Update specific creators avatar file */
+  @CreatorOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
@@ -104,6 +106,7 @@ export class CreatorController {
   }
 
   /* Update specific creators banner file */
+  @CreatorOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('banner')
   @UseInterceptors(FileInterceptor('banner'))
@@ -121,6 +124,7 @@ export class CreatorController {
   }
 
   /* Update specific creators logo file */
+  @CreatorOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('logo')
   @UseInterceptors(FileInterceptor('logo'))
@@ -138,6 +142,7 @@ export class CreatorController {
   }
 
   /* Queue creator for deletion */
+  @CreatorOwnerAuth()
   @Patch('delete/:slug')
   async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
     const deletedCreator = await this.creatorService.pseudoDelete(slug);
@@ -145,6 +150,7 @@ export class CreatorController {
   }
 
   /* Remove creator for deletion queue */
+  @CreatorOwnerAuth()
   @Patch('recover/:slug')
   async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
     const recoveredCreator = await this.creatorService.pseudoRecover(slug);
@@ -152,9 +158,10 @@ export class CreatorController {
   }
 
   /* Follow a creator */
+  @UserAuth()
   @Post('follow/:slug')
   follow(
-    @PayloadEntity() user: JwtPayload,
+    @UserEntity() user: UserPayload,
     @Param('slug') slug: string,
   ): Promise<boolean> {
     return this.userCreatorService.toggleFollow(user.id, slug);

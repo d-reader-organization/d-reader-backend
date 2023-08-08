@@ -7,18 +7,24 @@ import {
   UseGuards,
   Body,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { RestAuthGuard } from '../guards/rest-auth.guard';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import { validateEmail, validateName } from '../utils/user';
-import { PayloadEntity } from '../decorators/payload.decorator';
 import { LoginDto } from '../types/login.dto';
 import { RegisterDto } from '../types/register.dto';
-import { Authorization, JwtPayload } from './dto/authorization.dto';
+import {
+  Authorization,
+  CreatorPayload,
+  UserPayload,
+} from './dto/authorization.dto';
 import { CreatorService } from '../creator/creator.service';
+import { UserAuth } from '../guards/user-auth.guard';
+import { CreatorAuth } from '../guards/creator-auth.guard';
+import { UserEntity } from '../decorators/user.decorator';
+import { CreatorEntity } from '../decorators/creator.decorator';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -63,14 +69,13 @@ export class AuthController {
   }
 
   /* Refresh access token */
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @UserAuth()
   @SkipThrottle()
   @Get('user/refresh-token/:refreshToken')
   reauthorizeUser(
     @Param('refreshToken') refreshToken: string,
-    @PayloadEntity()
-    user: JwtPayload,
+    @UserEntity()
+    user: UserPayload,
   ) {
     return this.authService.refreshAccessToken(user, refreshToken);
   }
@@ -109,43 +114,39 @@ export class AuthController {
   }
 
   /* Refresh access token */
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @CreatorAuth()
   @SkipThrottle()
   @Get('creator/refresh-token/:refreshToken')
   reauthorizeCreator(
     @Param('refreshToken') refreshToken: string,
-    @PayloadEntity()
-    creator: JwtPayload,
+    @CreatorEntity()
+    creator: CreatorPayload,
   ) {
     return this.authService.refreshAccessToken(creator, refreshToken);
   }
 
   // WALLET ENDPOINTS
   @Throttle(10, 30)
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @UserAuth()
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
-  requestPassword(@PayloadEntity() user: JwtPayload) {
+  requestPassword(@UserEntity() user: UserPayload) {
     return this.passwordService.generateOneTimePassword(user.id);
   }
 
   /* Connect your wallet with a signed and encoded one time password */
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @UserAuth()
   @Get('wallet/connect/:address/:encoding')
   connectWallet(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
-    @PayloadEntity() user: JwtPayload,
+    @UserEntity() user: UserPayload,
   ) {
     return this.authService.connectWallet(user.id, address, encoding);
   }
 
   /* Disconnect your wallet with a signed and encoded one time password */
-  @UseGuards(RestAuthGuard)
-  @ApiBearerAuth('JWT-auth')
+  @UserAuth()
   @Get('wallet/disconnect/:address')
   disconnectWallet(@Param('address') address: string) {
     return this.authService.disconnectWallet(address);
