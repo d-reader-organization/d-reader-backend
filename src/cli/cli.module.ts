@@ -34,6 +34,7 @@ import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
 import { MintRemainingCommand } from './mint-remaining-command';
 import { MintRemainingQuestions } from './mint-remaining-questions';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { MintRemainingQuestions } from './mint-remaining-questions';
     }),
     PrismaModule.forRoot({ isGlobal: true }),
     s3Module,
+    MailModule,
   ],
   providers: [
     BundlrWithdrawCommand,

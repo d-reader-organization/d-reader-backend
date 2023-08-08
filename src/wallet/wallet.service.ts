@@ -16,6 +16,7 @@ import {
   findUsedTrait,
 } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
+import { SAGA_COLLECTION_ADDRESS } from '../constants';
 
 @Injectable()
 export class WalletService {
@@ -144,5 +145,21 @@ export class WalletService {
     });
 
     return nfts;
+  }
+
+  /** Check if wallet has SGT NFT */
+  async hasSagaGenesisToken(address: string) {
+    const nfts = await this.metaplex
+      .nfts()
+      .findAllByOwner({ owner: new PublicKey(address) });
+
+    const sagaToken = nfts.find(
+      (nft) =>
+        nft.collection &&
+        nft.collection.address.toString() === SAGA_COLLECTION_ADDRESS &&
+        nft.collection.verified,
+    );
+
+    return !!sagaToken;
   }
 }

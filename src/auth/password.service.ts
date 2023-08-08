@@ -2,12 +2,15 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
+import config from '../configs/config';
 import { v4 as uuidv4 } from 'uuid';
 import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class PasswordService {
@@ -22,6 +25,18 @@ export class PasswordService {
     });
 
     return `${process.env.SIGN_MESSAGE}${nonce}`;
+  }
+
+  async hash(password: string) {
+    const saltOrRound = config().security.bcryptSaltOrRound;
+    return await bcrypt.hash(password, saltOrRound);
+  }
+
+  async validate(password: string, hashedPassword: string) {
+    const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Incorrect password!');
+    }
   }
 
   async validateWallet(userId: number, address: string, encoding: string) {

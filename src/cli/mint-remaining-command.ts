@@ -14,7 +14,7 @@ interface Options {
 
 @Command({
   name: 'mint-remaining',
-  description: 'Mint from remaining candymachine by authority',
+  description: 'Mint from remaining candymachine supply by authority',
 })
 export class MintRemainingCommand extends CommandRunner {
   private readonly metaplex: Metaplex;

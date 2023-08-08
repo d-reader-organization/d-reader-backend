@@ -106,27 +106,29 @@ export class ComicService {
   }
 
   async findOne(slug: string, userId?: number) {
-    const comic = await this.prisma.comic.findUnique({
+    const findComic = this.prisma.comic.findUnique({
       include: { genres: true, creator: true },
       where: { slug },
     });
+    const getStats = this.userComicService.getComicStats(slug);
+    const getMyStats = this.userComicService.getUserStats(slug, userId);
+
+    const [comic, stats, myStats] = await Promise.all([
+      findComic,
+      getStats,
+      getMyStats,
+    ]);
 
     if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
-
-    await this.userComicService.refreshDate(userId, slug, 'viewedAt');
-    const { stats, myStats } = await this.userComicService.aggregateAll(
-      slug,
-      userId,
-    );
 
     return { ...comic, stats, myStats };
   }
 
   async findAllByOwner(
     query: ComicParams,
-    ownerAddress: string,
+    userId: number,
   ): Promise<ComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
@@ -135,7 +137,7 @@ export class ComicService {
         issues: {
           some: {
             collectionNft: {
-              collectionItems: { some: { ownerAddress } },
+              collectionItems: { some: { owner: { userId } } },
             },
           },
         },

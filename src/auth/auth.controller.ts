@@ -14,11 +14,11 @@ import { PasswordService } from './password.service';
 import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import { validateEmail, validateName } from '../utils/user';
-import { UserEntity } from '../decorators/user.decorator';
-import { LoginUserDto } from '../user/dto/login-user.dto';
-import { RegisterUserDto } from '../user/dto/register-user.dto';
-import { Authorization } from './dto/authorization.dto';
-import { User } from '@prisma/client';
+import { PayloadEntity } from '../decorators/payload.decorator';
+import { LoginDto } from '../types/login.dto';
+import { RegisterDto } from '../types/register.dto';
+import { Authorization, JwtPayload } from './dto/authorization.dto';
+import { CreatorService } from '../creator/creator.service';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -27,9 +27,11 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private readonly creatorService: CreatorService,
     private readonly passwordService: PasswordService,
   ) {}
 
+  // USER ENDPOINTS
   @SkipThrottle()
   @Get('user/validate-name/:name')
   validateUserName(@Param('name') name: string) {
@@ -47,18 +49,16 @@ export class AuthController {
   /* Register a new user */
   @Throttle(10, 60)
   @Post('user/register')
-  async register(
-    @Body() registerUserDto: RegisterUserDto,
-  ): Promise<Authorization> {
-    const user = await this.userService.register(registerUserDto);
+  async registerUser(@Body() registerDto: RegisterDto): Promise<Authorization> {
+    const user = await this.userService.register(registerDto);
     return this.authService.authorizeUser(user);
   }
 
   /* Login as a user */
   @Throttle(10, 60)
   @Post('user/login')
-  async login(@Body() loginUserDto: LoginUserDto): Promise<Authorization> {
-    const user = await this.userService.login(loginUserDto);
+  async loginUser(@Body() loginDto: LoginDto): Promise<Authorization> {
+    const user = await this.userService.login(loginDto);
     return this.authService.authorizeUser(user);
   }
 
@@ -67,20 +67,67 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @SkipThrottle()
   @Get('user/refresh-token/:refreshToken')
-  reauthorize(
+  reauthorizeUser(
     @Param('refreshToken') refreshToken: string,
-    @UserEntity()
-    user: User,
+    @PayloadEntity()
+    user: JwtPayload,
   ) {
     return this.authService.refreshAccessToken(user, refreshToken);
   }
 
+  // CREATOR ENDPOINTS
+  @SkipThrottle()
+  @Get('creator/validate-name/:name')
+  validateCreatorName(@Param('name') name: string) {
+    validateName(name);
+    return this.creatorService.throwIfNameTaken(name);
+  }
+
+  @SkipThrottle()
+  @Get('creator/validate-email/:email')
+  validateCreatorEmail(@Param('email') email: string) {
+    validateEmail(email);
+    return this.creatorService.throwIfEmailTaken(email);
+  }
+
+  /* Register a new user */
+  @Throttle(10, 60)
+  @Post('creator/register')
+  async registerCreator(
+    @Body() registerDto: RegisterDto,
+  ): Promise<Authorization> {
+    const creator = await this.creatorService.register(registerDto);
+    return this.authService.authorizeCreator(creator);
+  }
+
+  /* Login as a user */
+  @Throttle(10, 60)
+  @Post('creator/login')
+  async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
+    const creator = await this.creatorService.login(loginDto);
+    return this.authService.authorizeCreator(creator);
+  }
+
+  /* Refresh access token */
+  @UseGuards(RestAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @SkipThrottle()
+  @Get('creator/refresh-token/:refreshToken')
+  reauthorizeCreator(
+    @Param('refreshToken') refreshToken: string,
+    @PayloadEntity()
+    creator: JwtPayload,
+  ) {
+    return this.authService.refreshAccessToken(creator, refreshToken);
+  }
+
+  // WALLET ENDPOINTS
   @Throttle(10, 30)
   @UseGuards(RestAuthGuard)
   @ApiBearerAuth('JWT-auth')
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
-  requestPassword(@UserEntity() user: User) {
+  requestPassword(@PayloadEntity() user: JwtPayload) {
     return this.passwordService.generateOneTimePassword(user.id);
   }
 
@@ -91,7 +138,7 @@ export class AuthController {
   connectWallet(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
-    @UserEntity() user: User,
+    @PayloadEntity() user: JwtPayload,
   ) {
     return this.authService.connectWallet(user.id, address, encoding);
   }

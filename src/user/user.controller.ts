@@ -10,22 +10,22 @@ import {
   Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto } from '../types/update-user.dto';
 import { RestAuthGuard } from 'src/guards/rest-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { UserEntity } from 'src/decorators/user.decorator';
+import { PayloadEntity } from 'src/decorators/payload.decorator';
 import { toUserDto, UserDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserUpdateGuard } from 'src/guards/user-update.guard';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+import { UpdatePasswordDto } from 'src/types/update-password.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { User } from '@prisma/client';
 import { memoizeThrottle } from 'src/utils/lodash';
 import {
   WalletAssetDto,
   toWalletAssetDtoArray,
 } from '../wallet/dto/wallet-asset.dto';
+import { User } from '@prisma/client';
 
 @UseGuards(RestAuthGuard, UserUpdateGuard, ThrottlerGuard)
 @ApiBearerAuth('JWT-auth')
@@ -36,7 +36,7 @@ export class UserController {
 
   /* Verify your email address */
   @Post('request-email-verification')
-  async requestEmailVerification(@UserEntity() user: User) {
+  async requestEmailVerification(@PayloadEntity() user: User) {
     this.userService.requestEmailVerification(user.id);
   }
 
@@ -48,7 +48,7 @@ export class UserController {
 
   /* Get user data from auth token */
   @Get('get/me')
-  async findMe(@UserEntity() user: User): Promise<UserDto> {
+  async findMe(@PayloadEntity() user: User): Promise<UserDto> {
     const me = await this.userService.findMe(user.id);
     return toUserDto(me);
   }
@@ -101,7 +101,7 @@ export class UserController {
   @Patch('redeem-referral/:referrer')
   async redeemReferral(
     @Param('referrer') referrer: string,
-    @UserEntity() user: User,
+    @PayloadEntity() user: User,
   ) {
     const updatedUser = await this.userService.redeemReferral(
       referrer,

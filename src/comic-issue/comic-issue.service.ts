@@ -123,13 +123,11 @@ export class ComicIssueService {
   }
 
   async findActiveCandyMachine(
-    collectionNftAddress: string,
+    comicIssueId: number,
   ): Promise<string | undefined> {
-    if (!collectionNftAddress) return undefined;
-
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
-        collectionNftAddress,
+        collectionNft: { comicIssueId },
         itemsRemaining: { gt: 0 },
         OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
       },
@@ -196,7 +194,7 @@ export class ComicIssueService {
   }
 
   async findOne(id: number, userId: number) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
+    const findComicIssue = this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
         comic: { include: { creator: true, genres: true } },
@@ -205,38 +203,23 @@ export class ComicIssueService {
         statelessCovers: true,
       },
     });
+    const findActiveCandyMachine = this.findActiveCandyMachine(id);
+    const getStats = this.userComicIssueService.getComicIssueStats(id);
+    const getMyStats = this.userComicIssueService.getUserStats(id, userId);
+    const previews = this.userComicIssueService.shouldShowPreviews(id, userId);
+
+    const [comicIssue, candyMachineAddress, stats, myStats, showOnlyPreviews] =
+      await Promise.all([
+        findComicIssue,
+        findActiveCandyMachine,
+        getStats,
+        getMyStats,
+        previews,
+      ]);
 
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
-
-    const findActiveCandyMachine = this.findActiveCandyMachine(
-      comicIssue.collectionNft?.address,
-    );
-
-    const aggregateStats = this.userComicIssueService.aggregateAll(
-      comicIssue,
-      userId,
-    );
-
-    const shouldShowPreviews = this.userComicIssueService.shouldShowPreviews(
-      id,
-      userId,
-    );
-
-    const refreshDate = this.userComicIssueService.refreshDate(
-      userId,
-      id,
-      'viewedAt',
-    );
-
-    const [candyMachineAddress, { stats, myStats }, showOnlyPreviews] =
-      await Promise.all([
-        findActiveCandyMachine,
-        aggregateStats,
-        shouldShowPreviews,
-        refreshDate,
-      ]);
 
     return {
       ...comicIssue,
@@ -287,8 +270,12 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { sellerFee, collaborators, royaltyWallets, ...rest } =
-      updateComicIssueDto;
+    const {
+      sellerFee,
+      collaborators = [],
+      royaltyWallets = [],
+      ...rest
+    } = updateComicIssueDto;
     validatePrice(updateComicIssueDto);
 
     const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany({
@@ -300,7 +287,14 @@ export class ComicIssueService {
     });
 
     const updateComicIssue = this.prisma.comicIssue.update({
-      where: { id, publishedAt: null },
+      include: {
+        comic: { include: { creator: true, genres: true } },
+        collectionNft: { select: { address: true } },
+        collaborators: true,
+        statelessCovers: true,
+      },
+      // where: { id, publishedAt: null },
+      where: { id },
       data: {
         ...rest,
         sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
@@ -310,10 +304,10 @@ export class ComicIssueService {
     });
 
     try {
-      const [updatedComicIssue] = await this.prisma.$transaction([
-        updateComicIssue,
+      const [, , updatedComicIssue] = await this.prisma.$transaction([
         deleteCollaborators,
         deleteRoyaltyWallets,
+        updateComicIssue,
       ]);
       return updatedComicIssue;
     } catch {
@@ -351,7 +345,7 @@ export class ComicIssueService {
     } catch {
       await this.s3.deleteObject(newFileKey);
       throw new BadRequestException(
-        'Malformed file upload or Comic issue already published',
+        'Malformed file upload or or comic issue already published',
       );
     }
 
@@ -474,7 +468,7 @@ export class ComicIssueService {
   }
 
   async read(id: number, userId: number): Promise<void> {
-    await this.userComicIssueService.refreshDate(userId, id, 'readAt');
+    await this.userComicIssueService.read(userId, id);
   }
 
   async pseudoDelete(id: number) {

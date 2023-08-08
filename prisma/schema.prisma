@@ -29,7 +29,6 @@ model User {
   lastActiveAt       DateTime?
   emailVerifiedAt    DateTime?
   createdAt          DateTime         @default(now())
-  creator            Creator?
   comics             UserComic[]
   comicIssues        UserComicIssue[]
   creators           UserCreator[]
@@ -58,6 +57,7 @@ model Creator {
   email           String        @unique
   name            String        @unique
   slug            String        @unique
+  password        String
   avatar          String        @default("")
   banner          String        @default("")
   logo            String        @default("")
@@ -72,10 +72,10 @@ model Creator {
   featuredAt      DateTime?
   verifiedAt      DateTime?
   popularizedAt   DateTime?
+  lastLogin       DateTime?
+  lastActiveAt    DateTime?
   emailVerifiedAt DateTime?
   comics          Comic[]
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          Int           @unique // TODO v1: remove userId and give creators their own JWT token
   userCreator     UserCreator[]
 }
 

@@ -8,24 +8,19 @@ import { PickByType } from '../types/shared';
 export class UserComicService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async aggregateComicStats(slug: string): Promise<ComicStats> {
+  async getComicStats(comicSlug: string): Promise<ComicStats> {
     const aggregate = this.prisma.userComic.aggregate({
-      where: { comicSlug: slug, rating: { not: null } },
+      where: { comicSlug, rating: { not: null } },
       _avg: { rating: true },
       _count: true,
     });
 
     const countFavourites = this.prisma.userComic.count({
-      where: { comicSlug: slug, isFavourite: true },
+      where: { comicSlug, isFavourite: true },
     });
 
     const countViewers = this.prisma.userComic.count({
-      where: {
-        comicSlug: slug,
-        viewedAt: {
-          not: null,
-        },
-      },
+      where: { comicSlug, viewedAt: { not: null } },
     });
 
     const countIssues = this.prisma.comicIssue.count({
@@ -33,12 +28,12 @@ export class UserComicService {
         deletedAt: null,
         publishedAt: { lt: new Date() },
         verifiedAt: { not: null },
-        comicSlug: slug,
+        comicSlug,
       },
     });
 
     const countReaders = this.prisma.userComicIssue.count({
-      where: { comicIssue: { comicSlug: slug }, readAt: { not: null } },
+      where: { comicIssue: { comicSlug }, readAt: { not: null } },
       // distinct: ['userId'],
     });
 
@@ -71,44 +66,26 @@ export class UserComicService {
     }
   }
 
-  async findUserComicStats(slug: string, userId: number): Promise<UserComic> {
-    const userComic = await this.prisma.userComic.findUnique({
+  getUserStats(slug: string, userId?: number): Promise<UserComic> {
+    if (!userId) return undefined;
+
+    return this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug: slug } },
-    });
-
-    if (!userComic) {
-      return {
-        comicSlug: slug,
+      create: {
         userId,
-        rating: null,
-        isSubscribed: false,
-        isFavourite: false,
-        isWhitelisted: false,
-        viewedAt: null,
-      };
-    } else return userComic;
+        comicSlug: slug,
+        viewedAt: new Date(),
+      },
+      update: { viewedAt: new Date() },
+    });
   }
 
-  async aggregateAll(slug: string, userId?: number) {
-    if (userId) {
-      const getStats = this.aggregateComicStats(slug);
-      const getUserStats = this.findUserComicStats(slug, userId);
-
-      const [stats, myStats] = await Promise.all([getStats, getUserStats]);
-      return { stats, myStats };
-    } else {
-      return { stats: await this.aggregateComicStats(slug) };
-    }
-  }
-
-  async rate(userId: number, comicSlug: string, rating: number) {
-    const userComic = await this.prisma.userComic.upsert({
+  rate(userId: number, comicSlug: string, rating: number) {
+    return this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },
     });
-
-    return userComic;
   }
 
   async toggleState(
@@ -127,21 +104,5 @@ export class UserComicService {
     });
 
     return userComic;
-  }
-
-  async refreshDate(
-    userId: number,
-    comicSlug: string,
-    property: keyof PickByType<UserComic, Date>,
-  ) {
-    return await this.prisma.userComic.upsert({
-      where: { comicSlug_userId: { userId, comicSlug } },
-      create: {
-        userId,
-        comicSlug,
-        [property]: new Date(),
-      },
-      update: { [property]: new Date() },
-    });
   }
 }
