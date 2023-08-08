@@ -30,11 +30,7 @@ export class BundlrWithdrawCommand extends CommandRunner {
     const minimumBalance = toBigNumber(5000);
     const balanceToWithdraw = balance.minus(minimumBalance.toNumber());
 
-    try {
-      await bundlr.withdrawBalance(balanceToWithdraw);
-    } catch (e) {
-      console.log(e);
-    }
+    await bundlr.withdrawBalance(balanceToWithdraw);
     log(cg('💻 Withdrew from bundlr! '));
 
     const newBalance = await bundlr.getBalance(treasuryPubKey);

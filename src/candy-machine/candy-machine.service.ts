@@ -9,6 +9,8 @@ import {
   CandyMachine,
   CreatorInput,
   JsonMetadata,
+  getMerkleRoot,
+  toDateTime,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -32,6 +34,8 @@ import {
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
   RARITY_MAP,
+  AUTHORITY_GROUP_LABEL,
+  PUBLIC_GROUP_LABEL,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -52,6 +56,7 @@ import {
 } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
+import { addHours } from 'date-fns';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -140,6 +145,7 @@ export class CandyMachineService {
         period: FREEZE_NFT_DAYS * DAY_SECONDS,
         candyGuardAuthority: this.metaplex.identity(),
       },
+      group: AUTHORITY_GROUP_LABEL,
     });
   }
 
@@ -148,6 +154,7 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
     royaltyWallets: JsonMetadataCreators,
+    mintDuration: number,
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
@@ -256,11 +263,12 @@ export class CandyMachineService {
       address: this.metaplex.identity().publicKey,
       share: D_PUBLISHER_SHARE,
     };
-    const creativeTeamShares: CreatorInput[] = royaltyWallets.map((wallet) => ({
-      address: new PublicKey(wallet.address),
-      share: wallet.share * (D_PUBLISHER_SHARE / 100),
-    }));
-    const creators = creativeTeamShares.concat(dPublisherShare);
+    const creators: CreatorInput[] = royaltyWallets
+      .map((wallet) => ({
+        address: new PublicKey(wallet.address),
+        share: wallet.share,
+      }))
+      .concat(dPublisherShare);
 
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
@@ -285,7 +293,31 @@ export class CandyMachineService {
             destination: this.metaplex.identity().publicKey,
           },
         },
-        groups,
+        groups: [
+          {
+            label: AUTHORITY_GROUP_LABEL,
+            guards: {
+              allowList: {
+                merkleRoot: getMerkleRoot([
+                  this.metaplex.identity().publicKey.toString(),
+                ]),
+              },
+              freezeSolPayment: {
+                amount: solFromLamports(0),
+                destination: this.metaplex.identity().publicKey,
+              },
+            },
+          },
+          {
+            label: PUBLIC_GROUP_LABEL,
+            guards: {
+              endDate: {
+                date: toDateTime(addHours(new Date(), mintDuration)),
+              },
+            },
+          },
+          ...(groups ?? []),
+        ],
         creators,
       },
       { payer: this.metaplex.identity() },
@@ -384,6 +416,7 @@ export class CandyMachineService {
       this.metaplex,
       feePayer,
       candyMachineAddress,
+      PUBLIC_GROUP_LABEL,
     );
   }
 

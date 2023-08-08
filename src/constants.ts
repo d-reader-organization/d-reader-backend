@@ -1,6 +1,7 @@
 import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
+import { IsStrongPasswordOptions } from 'class-validator';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -64,6 +65,9 @@ export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
+
+export const AUTHORITY_GROUP_LABEL = 'dAuth';
+export const PUBLIC_GROUP_LABEL = 'public';
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
@@ -149,4 +153,9 @@ export const RARITY_MAP: { [key in PrismaComicRarity]: ComicRarity } = {
   [PrismaComicRarity.Rare]: ComicRarity.Rare,
   [PrismaComicRarity.Epic]: ComicRarity.Epic,
   [PrismaComicRarity.Legendary]: ComicRarity.Legendary,
+};
+
+export const PASSWORD_OPTIONS: IsStrongPasswordOptions = {
+  minSymbols: 0,
+  minLength: 8,
 };

@@ -5,27 +5,27 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UseGuards,
+  applyDecorators,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Request } from 'src/types/request';
 import { Role } from '@prisma/client';
+import { UserAuth } from './user-auth.guard';
 
-/** Protects 'PUT' and 'PATCH' User endpoints
- * from anyone besides the user itself and Superadmin */
+/** Protects endpoints against non-owners of the User entity */
 @Injectable()
 export class UserUpdateGuard implements CanActivate {
   constructor(@Inject(PrismaService) private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const { user: requestUser, params, method } = request;
+    const { user: requestUser, params } = request;
     const { id } = params;
-    if (!requestUser) return false;
-    if (!id) return true;
 
-    // If reading or creating new User entities, allow
-    if (method.toLowerCase() === 'get') return true;
-    else if (method.toLowerCase() === 'post') return true;
+    if (!id) return true;
+    if (!requestUser) return false;
+    if (requestUser.type !== 'user') return false;
 
     const user = await this.prisma.user.findUnique({
       where: { id: +id },
@@ -40,4 +40,8 @@ export class UserUpdateGuard implements CanActivate {
     else if (requestUser.id === user.id) return true;
     else throw new ForbiddenException("You don't own this user");
   }
+}
+
+export function UserOwnerAuth() {
+  return applyDecorators(UserAuth(), UseGuards(UserUpdateGuard));
 }

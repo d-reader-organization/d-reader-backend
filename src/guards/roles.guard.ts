@@ -5,13 +5,17 @@ import {
   ForbiddenException,
   Injectable,
   SetMetadata,
+  UseGuards,
+  applyDecorators,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
 import { Request } from 'src/types/request';
+import { UserAuth } from './user-auth.guard';
+import { Role } from '@prisma/client';
 
-export const Roles = (...roles: Role[]): CustomDecorator<string> =>
-  SetMetadata('roles', roles);
+export const Roles = (...roles: Role[]): CustomDecorator<string> => {
+  return SetMetadata('roles', roles);
+};
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,12 +26,21 @@ export class RolesGuard implements CanActivate {
     if (!roles) return true;
 
     const request = context.switchToHttp().getRequest<Request>();
-    const wallet = request.user;
-    if (!wallet) return false;
+    const user = request.user;
+    if (!user) return false;
+    if (user.type !== 'user') return false;
 
-    if (!!roles.includes(wallet.role)) return true;
+    if (!!roles.includes(user.role)) return true;
     else {
       throw new ForbiddenException('You do not have the required role');
     }
   }
+}
+
+export function AdminGuard() {
+  return applyDecorators(
+    UserAuth(),
+    UseGuards(RolesGuard),
+    Roles(Role.Superadmin, Role.Admin),
+  );
 }

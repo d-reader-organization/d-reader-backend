@@ -13,29 +13,16 @@ import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 import { DarkblockService } from '../src/candy-machine/darkblock.service';
 import { genresToSeed } from './genres';
-import { carouselSlidsToSeed } from './carousel-slides';
+import { carouselSlidesToSeed } from './carousel-slides';
+import { usersToSeed, generateDummyUsersData } from './users';
 import {
-  adminData,
-  generateDummyUsersData,
-  gooneytoonsData,
-  josipData,
-  longwoodlabsData,
-  lukaData,
-  madmuseData,
-  saucerpenData,
-  studionxData,
-  superadminData,
-  swamplabsData,
-  tsukiverseData,
-} from './users';
-import {
-  gonneytoonsCData,
-  longwoodCData,
-  madMuseCData,
-  saucerpenCData,
-  studioNxCData,
-  swamplabsCData,
-  tsukiverseCData,
+  gonneytoons,
+  longwood,
+  madMuse,
+  saucerpen,
+  studioNx,
+  swamplabs,
+  tsukiverse,
 } from './creators';
 import {
   animoData,
@@ -192,7 +179,7 @@ async function main() {
   if (Boolean(process.env.SEED_S3)) await copyFromSeedBucket();
 
   // SEED CAROUSEL SLIDES
-  await prisma.carouselSlide.createMany({ data: carouselSlidsToSeed });
+  await prisma.carouselSlide.createMany({ data: carouselSlidesToSeed });
   console.log('Added carousel slides');
 
   // SEED GENRES
@@ -200,25 +187,16 @@ async function main() {
   console.log('Added genres');
 
   // SEED USERS
-  await prisma.user.create({ data: superadminData });
-  await prisma.user.create({ data: adminData });
-  await prisma.user.create({ data: josipData });
-  await prisma.user.create({ data: lukaData });
-  const nx = await prisma.user.create({ data: studionxData });
-  const sw = await prisma.user.create({ data: swamplabsData });
-  const go = await prisma.user.create({ data: gooneytoonsData });
-  const sa = await prisma.user.create({ data: saucerpenData });
-  const mm = await prisma.user.create({ data: madmuseData });
-  const ts = await prisma.user.create({ data: tsukiverseData });
+  await prisma.user.createMany({ data: await usersToSeed() });
   console.log('Added users');
 
   // SEED CREATORS
-  const nxC = await prisma.creator.create({ data: studioNxCData(nx.id) });
-  const swC = await prisma.creator.create({ data: swamplabsCData(sw.id) });
-  const goC = await prisma.creator.create({ data: gonneytoonsCData(go.id) });
-  const saC = await prisma.creator.create({ data: saucerpenCData(sa.id) });
-  const mmC = await prisma.creator.create({ data: madMuseCData(mm.id) });
-  const tsC = await prisma.creator.create({ data: tsukiverseCData(ts.id) });
+  const nxC = await prisma.creator.create({ data: await studioNx() });
+  const swC = await prisma.creator.create({ data: await swamplabs() });
+  const goC = await prisma.creator.create({ data: await gonneytoons() });
+  const saC = await prisma.creator.create({ data: await saucerpen() });
+  const mmC = await prisma.creator.create({ data: await madMuse() });
+  const tsC = await prisma.creator.create({ data: await tsukiverse() });
   console.log('Added creators');
 
   // SEED COMICS
@@ -307,8 +285,7 @@ async function main() {
   if (isDevnet) {
     await tryAirdropping();
 
-    const ll = await prisma.user.create({ data: longwoodlabsData });
-    const llC = await prisma.creator.create({ data: longwoodCData(ll.id) });
+    const llC = await prisma.creator.create({ data: await longwood() });
     const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
     const heistC = await prisma.comic.create({ data: heistData(llC.id) });
 
@@ -346,10 +323,11 @@ async function main() {
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
           discountMintPrice: 0.05 * LAMPORTS_PER_SOL, // 0.05 discount price
           sellerFee: 5, // 5%
+          mintDuration: 7 * 24, // 7 days
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-              share: 100,
+              share: 80,
             },
           ],
         });

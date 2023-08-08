@@ -179,7 +179,7 @@ export type ComicIssueInput = ComicIssue & {
 };
 
 export function toComicIssueDto(issue: ComicIssueInput) {
-  const genres = issue.genres || issue.comic.genres;
+  const genres = issue.genres || issue.comic?.genres;
 
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
