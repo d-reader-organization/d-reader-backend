@@ -126,6 +126,7 @@ export class CreatorService {
 
   async requestEmailVerification(slug: string) {
     const creator = await this.findOne(slug);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const hashedEmail = await this.passwordService.hash(creator.email);
 
     // TODO: send requestEmailVerification email

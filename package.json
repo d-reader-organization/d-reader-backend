@@ -34,6 +34,7 @@
     "airdrop-sol": "npx ts-node src/cli/main.ts airdrop-sol",
     "login-user": "npx ts-node src/cli/main.ts login-user",
     "mint-one": "npx ts-node src/cli/main.ts mint-one",
+    "mint-remaining": "npx ts-node src/cli/main.ts mint-remaining",
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
     "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection",
     "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw"

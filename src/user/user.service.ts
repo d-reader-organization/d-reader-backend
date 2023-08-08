@@ -200,6 +200,7 @@ export class UserService {
 
   async requestEmailVerification(id: number) {
     const user = await this.findOne(id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const hashedEmail = await this.passwordService.hash(user.email);
 
     // TODO: send requestEmailVerification email

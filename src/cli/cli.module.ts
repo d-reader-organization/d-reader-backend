@@ -26,13 +26,15 @@ import { ThawCollectionCommand } from './thaw-collection-command';
 import { ThawCollectionQuestions } from './thaw-collection-question';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
+import { MintRemainingCommand } from './mint-remaining-command';
+import { MintRemainingQuestions } from './mint-remaining-questions';
 import { LoginUserQuestions } from './login-user-questions';
 import { UserService } from '../user/user.service';
+import { MailModule } from '../mail/mail.module';
 import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
-import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -75,6 +77,8 @@ import { MailModule } from '../mail/mail.module';
     SyncWalletQuestions,
     SyncWalletCommand,
     AddAllowListQuestions,
+    MintRemainingCommand,
+    MintRemainingQuestions,
     AddAllowList,
     WalletService,
     DarkblockService,
