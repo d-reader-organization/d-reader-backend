@@ -17,10 +17,11 @@ env:
     - DATABASE_URL
     # Mail
     - MAIL_SERVICE
-    - MAIL_PORT
-    - MAIL_HOST
+    - MAIL_AUTH_TYPE
+    - MAIL_CLIENT_ID
+    - MAIL_CLIENT_SECRET
+    - MAIL_REFRESH_TOKEN
     - MAIL_USER
-    - MAIL_PASS
     - MAIL_FROM
     # Security
     - JWT_ACCESS_SECRET

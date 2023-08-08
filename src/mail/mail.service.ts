@@ -2,6 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '@prisma/client';
 
+const logError = (template: string, recipient: string, e: any) => {
+  console.error(`Failed to send ${template} email to ${recipient}: ${e}`);
+};
+
+const SUBSCRIBE_TO_NEWSLETTER = 'subscribedToNewsletter';
+const USER_REGISTERED = 'userRegistered';
+
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
@@ -10,32 +17,27 @@ export class MailService {
     try {
       await this.mailerService.sendMail({
         to: recipient,
-        // from: 'localhost@dReader.io',
         subject: 'Newsletter subscription',
-        template: 'subscribedToNewsletter',
+        template: SUBSCRIBE_TO_NEWSLETTER,
       });
     } catch (e) {
-      console.log(`Error while sending subscription email to ${recipient}`, e);
+      logError(SUBSCRIBE_TO_NEWSLETTER, recipient, e);
     }
   }
 
-  async userRegistered(user: User) {
+  async userRegistered(user: User, verificationToken: string) {
     try {
       await this.mailerService.sendMail({
         to: user.email,
-        // from: 'localhost@dReader.io',
         subject: 'dReader account created',
-        template: 'userRegistered',
+        template: USER_REGISTERED,
         context: {
           name: user.name,
-          verificationToken: 'aaaaa',
+          verificationToken,
         },
       });
     } catch (e) {
-      console.error(e);
-      console.log(
-        `Failed to send 'registration successful' email to ${user.email}`,
-      );
+      logError(USER_REGISTERED, user.email, e);
     }
   }
 }

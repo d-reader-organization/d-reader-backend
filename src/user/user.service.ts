@@ -40,8 +40,9 @@ export class UserService {
     validateName(name);
     validateEmail(email);
 
-    const [hashedPassword] = await Promise.all([
+    const [hashedPassword, hashedEmail] = await Promise.all([
       this.passwordService.hash(password),
+      this.passwordService.hash(email),
       this.throwIfNameTaken(name),
       this.throwIfEmailTaken(email),
     ]);
@@ -60,7 +61,7 @@ export class UserService {
       console.info('Failed to generate random avatar: ', e);
     }
 
-    await this.mailService.userRegistered(user);
+    await this.mailService.userRegistered(user, hashedEmail);
     return user;
   }
 
