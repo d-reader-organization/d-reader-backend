@@ -278,9 +278,11 @@ export class ComicIssueController {
 
   /* Publish comic issue */
   @Roles(Role.Superadmin, Role.Admin)
-  @Patch('publish/:id')
-  async publish(@Param('id') id: string): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publish(+id);
+  @Patch('publish-off-chain/:id')
+  async publishOffChain(@Param('id') id: string): Promise<ComicIssueDto> {
+    const publishedComicIssue = await this.comicIssueService.publishOffChain(
+      +id,
+    );
     return toComicIssueDto(publishedComicIssue);
   }
 

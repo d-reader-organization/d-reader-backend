@@ -349,9 +349,10 @@ async function main() {
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-              share: 100,
+              share: 80,
             },
           ],
+          mintDuration:48
         });
         i++;
       }

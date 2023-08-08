@@ -32,6 +32,8 @@ import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
+import { MintRemainingCommand } from './mint-remaining-command';
+import { MintRemainingQuestions } from './mint-remaining-questions';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import config from '../configs/config';
     WalletService,
     DarkblockService,
     UserService,
+    MintRemainingCommand,
+    MintRemainingQuestions,
   ],
 })
 export class CLIModule {}

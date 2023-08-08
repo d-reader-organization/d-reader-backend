@@ -378,7 +378,8 @@ export class ComicIssueService {
     validateWeb3PublishInfo(publishOnChainDto);
     validatePrice(publishOnChainDto);
 
-    const { sellerFee, royaltyWallets, ...updatePayload } = publishOnChainDto;
+    const { sellerFee, royaltyWallets, mintDuration, ...updatePayload } =
+      publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
 
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
@@ -414,6 +415,7 @@ export class ComicIssueService {
         updatedComicIssue.comic.title,
         updatedComicIssue.creatorAddress,
         updatedComicIssue.royaltyWallets,
+        mintDuration,
       );
     } catch (e) {
       // revert in case of failure
@@ -433,7 +435,7 @@ export class ComicIssueService {
     return updatedComicIssue;
   }
 
-  async publish(id: number) {
+  async publishOffChain(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
       include: {
@@ -451,17 +453,6 @@ export class ComicIssueService {
     } else if (!!comicIssue.publishedAt) {
       throw new BadRequestException('Comic already published');
     }
-
-    // if supply is 0 we are creating an offchain (web2) comic issue
-    if (comicIssue.supply > 0) {
-      await this.candyMachineService.createComicIssueCM(
-        comicIssue,
-        comicIssue.comic.title,
-        comicIssue.creatorAddress,
-        comicIssue.royaltyWallets,
-      );
-    }
-
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       include: { collaborators: true },
