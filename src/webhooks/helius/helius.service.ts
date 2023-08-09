@@ -111,15 +111,17 @@ export class HeliusService {
             return this.handleCancelListing(transaction);
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
+          // helius-sdk still hasn't updated their TransactionType enum with our transaction type
+          case 'CHANGE_COMIC_STATE' as TransactionType:
+            return this.handleChangeComicState(transaction);
           default:
             console.log('Unhandled webhook', JSON.stringify(transaction));
-            return this.handleMetadataUpdate(transaction);
         }
       }),
     );
   }
 
-  private async handleMetadataUpdate(transaction: EnrichedTransaction) {
+  private async handleChangeComicState(transaction: EnrichedTransaction) {
     try {
       // metadata address is found in the last instruction
       const metadataAddress =
