@@ -56,7 +56,6 @@ import {
 } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
-import { addHours } from 'date-fns';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -154,7 +153,8 @@ export class CandyMachineService {
     comicName: string,
     creatorAddress: string,
     royaltyWallets: JsonMetadataCreators,
-    mintDuration: number,
+    startDate: Date,
+    endDate: Date,
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
@@ -230,15 +230,6 @@ export class CandyMachineService {
       });
       collectionNftAddress = newCollectionNft.address;
     }
-
-    await initializeRecordAuthority(
-      this.metaplex,
-      collectionNftAddress,
-      new PublicKey(creatorAddress),
-      MAX_SIGNATURES_PERCENT,
-      MIN_SIGNATURES,
-    );
-
     const recordAuthorityPda = await pda(
       [Buffer.from(PUB_AUTH_TAG), collectionNftAddress.toBuffer()],
       COMIC_VERSE_ID,
@@ -256,7 +247,6 @@ export class CandyMachineService {
         MIN_SIGNATURES,
       );
     }
-
     // TODO v1: This should be dynamic in the future
     const D_PUBLISHER_SHARE = 20; // 20% tax
     const dPublisherShare: CreatorInput = {
@@ -269,7 +259,6 @@ export class CandyMachineService {
         share: wallet.share,
       }))
       .concat(dPublisherShare);
-
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
         candyMachine: candyMachineKey,
@@ -311,8 +300,11 @@ export class CandyMachineService {
           {
             label: PUBLIC_GROUP_LABEL,
             guards: {
+              startDate: {
+                date: toDateTime(startDate),
+              },
               endDate: {
-                date: toDateTime(addHours(new Date(), mintDuration)),
+                date: toDateTime(endDate),
               },
             },
           },
