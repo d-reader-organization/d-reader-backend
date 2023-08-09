@@ -161,9 +161,8 @@ export class UserService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: { name, email },
+      data: { ...(name && { name }), ...(email && { email }) },
     });
-
     return updatedUser;
   }
 
