@@ -372,7 +372,7 @@ export class ComicIssueService {
     validateWeb3PublishInfo(publishOnChainDto);
     validatePrice(publishOnChainDto);
 
-    const { sellerFee, royaltyWallets, mintDuration, ...updatePayload } =
+    const { sellerFee, royaltyWallets, startDate, endDate, ...updatePayload } =
       publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
 
@@ -409,7 +409,8 @@ export class ComicIssueService {
         updatedComicIssue.comic.title,
         updatedComicIssue.creatorAddress,
         updatedComicIssue.royaltyWallets,
-        mintDuration,
+        startDate,
+        endDate,
       );
     } catch (e) {
       // revert in case of failure
