@@ -12,9 +12,11 @@ export class UpdateUserDto {
   @IsValidUsername()
   @MinLength(USERNAME_MIN_SIZE)
   @MaxLength(USERNAME_MAX_SIZE)
+  @IsOptional()
   name: string;
 
   @IsEmail()
+  @IsOptional()
   email: string;
 
   @IsString()
