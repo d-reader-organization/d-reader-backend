@@ -74,6 +74,7 @@ import {
   wretchesEp5Data,
   wretchesEp6Data,
 } from './comic-issues';
+import { addDays } from 'date-fns';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -323,7 +324,8 @@ async function main() {
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
           discountMintPrice: 0.05 * LAMPORTS_PER_SOL, // 0.05 discount price
           sellerFee: 5, // 5%
-          mintDuration: 7 * 24, // 7 days
+          startDate: new Date(),
+          endDate: addDays(new Date(), 7),
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
