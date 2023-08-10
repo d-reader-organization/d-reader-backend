@@ -35,6 +35,8 @@ import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
+import { AddGroupQuestions } from './add-group-questions';
+import { AddGroupCommand } from './add-group-command';
 
 @Module({
   imports: [
@@ -83,6 +85,8 @@ import config from '../configs/config';
     WalletService,
     DarkblockService,
     UserService,
+    AddGroupQuestions,
+    AddGroupCommand,
   ],
 })
 export class CLIModule {}

@@ -9,6 +9,7 @@ import {
 import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
+import { toCandyMachineGroupDtoArray } from './dto/candy-machine-group.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -33,5 +34,13 @@ export class CandyMachineController {
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);
     return toCandyMachineDto(candyMachine);
+  }
+
+  @Get('get/groups/:address')
+  async findCandyMachineGroups(@Param('address') address: string) {
+    const groups = await this.candyMachineService.findCandyMachineGroups(
+      address,
+    );
+    return toCandyMachineGroupDtoArray(groups);
   }
 }
