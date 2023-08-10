@@ -18,6 +18,7 @@ import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
+import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
 import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,6 +33,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
     private readonly passwordService: PasswordService,
+    private readonly authService: AuthService,
     private readonly mailService: MailService,
   ) {}
 
@@ -41,9 +43,8 @@ export class UserService {
     validateName(name);
     validateEmail(email);
 
-    const [hashedPassword, hashedEmail] = await Promise.all([
+    const [hashedPassword] = await Promise.all([
       this.passwordService.hash(password),
-      this.passwordService.hash(email),
       this.throwIfNameTaken(name),
       this.throwIfEmailTaken(email),
     ]);
@@ -62,7 +63,8 @@ export class UserService {
       console.info('Failed to generate random avatar: ', e);
     }
 
-    this.mailService.userRegistered(user, hashedEmail);
+    const verificationToken = this.authService.signEmail(email);
+    this.mailService.userRegistered(user, verificationToken);
     return user;
   }
 
@@ -153,18 +155,37 @@ export class UserService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     const { referrer, name, email } = updateUserDto;
 
+    const user = await this.findOne(id);
+    const isEmailUpdated = email && user.email !== email;
+    const isNameUpdated = name && user.name !== name;
+
     if (referrer) await this.redeemReferral(referrer, id);
 
-    validateName(name);
-    validateEmail(email);
-    await this.throwIfNameTaken(name);
-    await this.throwIfEmailTaken(email);
+    if (isEmailUpdated) {
+      validateEmail(email);
+      await this.throwIfEmailTaken(email);
+      await this.prisma.user.update({
+        where: { id },
+        data: { email, emailVerifiedAt: null },
+      });
 
-    const updatedUser = await this.prisma.user.update({
-      where: { id },
-      data: { name, email },
-    });
+      const verificationToken = this.authService.signEmail(user.email);
+      await this.mailService.requestUserEmailVerification(
+        user,
+        verificationToken,
+      );
+    }
 
+    if (isNameUpdated) {
+      validateName(name);
+      await this.throwIfNameTaken(name);
+      await this.prisma.user.update({
+        where: { id },
+        data: { name },
+      });
+    }
+
+    const updatedUser = await this.prisma.user.findUnique({ where: { id } });
     return updatedUser;
   }
 
@@ -204,22 +225,34 @@ export class UserService {
     });
   }
 
-  async requestEmailVerification(id: number) {
-    const user = await this.findOne(id);
+  async requestEmailVerification(email: string) {
+    const user = await this.findByEmail(email);
 
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
 
-    const hashedEmail = await this.passwordService.hash(user.email);
-    await this.mailService.requestUserEmailVerification(user, hashedEmail);
+    const verificationToken = this.authService.signEmail(user.email);
+    await this.mailService.requestUserEmailVerification(
+      user,
+      verificationToken,
+    );
   }
 
-  async verifyEmail(email: string, verificationToken: string) {
-    const [user] = await Promise.all([
-      this.prisma.user.findFirst({ where: { email: insensitive(email) } }),
-      this.passwordService.validate(email, verificationToken),
-    ]);
+  async verifyEmail(verificationToken: string) {
+    const email = this.authService.decodeEmail(verificationToken);
+
+    try {
+      this.authService.verifyEmail(verificationToken);
+    } catch (e) {
+      // resend 'request email verification' email if token verification failed
+      this.requestEmailVerification(email);
+      throw e;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: insensitive(email) },
+    });
 
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
@@ -231,8 +264,7 @@ export class UserService {
     });
   }
 
-  async throwIfNameTaken(name?: string) {
-    if (!name) return;
+  async throwIfNameTaken(name: string) {
     const user = await this.prisma.user.findFirst({
       where: { name: insensitive(name) },
     });
@@ -240,8 +272,7 @@ export class UserService {
     if (user) throw new BadRequestException(`${name} already taken`);
   }
 
-  async throwIfEmailTaken(email?: string) {
-    if (!email) return;
+  async throwIfEmailTaken(email: string) {
     const user = await this.prisma.user.findFirst({
       where: { email: insensitive(email) },
     });

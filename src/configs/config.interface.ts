@@ -11,6 +11,7 @@ export interface Config {
 
 export interface NestConfig {
   port: number;
+  api: string;
 }
 
 export interface CorsConfig {
@@ -35,6 +36,7 @@ export interface SecurityConfig {
 export interface S3Config {
   region: string;
   bucket: string;
+  cdn?: string;
   credentials: AwsCredentialIdentity;
 }
 

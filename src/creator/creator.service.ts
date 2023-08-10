@@ -21,6 +21,7 @@ import { PasswordService } from '../auth/password.service';
 import { UpdatePasswordDto } from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
 import { MailService } from '../mail/mail.service';
+import { AuthService } from '../auth/auth.service';
 import { LoginDto } from '../types/login.dto';
 import { insensitive } from '../utils/lodash';
 import { isEmail } from 'class-validator';
@@ -37,6 +38,7 @@ export class CreatorService {
     private readonly prisma: PrismaService,
     private readonly userCreatorService: UserCreatorService,
     private readonly passwordService: PasswordService,
+    private readonly authService: AuthService,
     private readonly mailService: MailService,
   ) {}
 
@@ -47,9 +49,8 @@ export class CreatorService {
     validateName(name);
     validateEmail(email);
 
-    const [hashedPassword, hashedEmail] = await Promise.all([
+    const [hashedPassword] = await Promise.all([
       this.passwordService.hash(password),
-      this.passwordService.hash(email),
       this.throwIfNameTaken(name),
       this.throwIfSlugTaken(slug),
       this.throwIfEmailTaken(email),
@@ -59,7 +60,8 @@ export class CreatorService {
       data: { name, email, password: hashedPassword, slug },
     });
 
-    this.mailService.creatorRegistered(creator, hashedEmail);
+    const verificationToken = this.authService.signEmail(email);
+    this.mailService.creatorRegistered(creator, verificationToken);
     return creator;
   }
 
@@ -129,44 +131,33 @@ export class CreatorService {
     } else return creator;
   }
 
-  async throwIfNameTaken(name?: string) {
-    if (!name) return;
-    const creator = await this.prisma.creator.findFirst({
-      where: { name: insensitive(name) },
-    });
-
-    if (creator) throw new BadRequestException(`${name} already taken`);
-  }
-
-  async throwIfSlugTaken(slug?: string) {
-    if (!slug) return;
-    const creator = await this.prisma.creator.findFirst({
-      where: { slug: insensitive(slug) },
-    });
-
-    if (creator) throw new BadRequestException(`${slug} already taken`);
-  }
-
-  async throwIfEmailTaken(email?: string) {
-    if (!email) return;
-    const creator = await this.prisma.creator.findFirst({
-      where: { email: insensitive(email) },
-    });
-
-    if (creator) throw new BadRequestException(`${email} already taken`);
-  }
-
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
-    try {
-      const updatedCreator = await this.prisma.creator.update({
+    const { email, ...otherData } = updateCreatorDto;
+
+    const creator = await this.findOne(slug);
+    const isEmailUpdated = email && creator.email !== email;
+
+    if (isEmailUpdated) {
+      validateEmail(email);
+      await this.throwIfEmailTaken(email);
+      await this.prisma.creator.update({
         where: { slug },
-        data: updateCreatorDto,
+        data: { email, emailVerifiedAt: null },
       });
 
-      return updatedCreator;
-    } catch {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      const verificationToken = this.authService.signEmail(creator.email);
+      await this.mailService.requestCreatorEmailVerification(
+        creator,
+        verificationToken,
+      );
     }
+
+    const updatedCreator = await this.prisma.creator.update({
+      where: { slug },
+      data: otherData,
+    });
+
+    return updatedCreator;
   }
 
   async updatePassword(slug: string, updatePasswordDto: UpdatePasswordDto) {
@@ -205,25 +196,34 @@ export class CreatorService {
     });
   }
 
-  async requestEmailVerification(slug: string) {
-    const creator = await this.findOne(slug);
+  async requestEmailVerification(email: string) {
+    const creator = await this.findByEmail(email);
 
     if (!!creator.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
 
-    const hashedEmail = await this.passwordService.hash(creator.email);
+    const verificationToken = this.authService.signEmail(creator.email);
     await this.mailService.requestCreatorEmailVerification(
       creator,
-      hashedEmail,
+      verificationToken,
     );
   }
 
-  async verifyEmail(email: string, verificationToken: string) {
-    const [creator] = await Promise.all([
-      this.prisma.creator.findFirst({ where: { email: insensitive(email) } }),
-      this.passwordService.validate(email, verificationToken),
-    ]);
+  async verifyEmail(verificationToken: string) {
+    const email = this.authService.decodeEmail(verificationToken);
+
+    try {
+      this.authService.verifyEmail(verificationToken);
+    } catch (e) {
+      // resend 'request email verification' email if token verification failed
+      this.requestEmailVerification(email);
+      throw e;
+    }
+
+    const creator = await this.prisma.creator.findFirst({
+      where: { email: insensitive(email) },
+    });
 
     if (!!creator.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
@@ -233,6 +233,30 @@ export class CreatorService {
       where: { email },
       data: { emailVerifiedAt: new Date() },
     });
+  }
+
+  async throwIfNameTaken(name: string) {
+    const creator = await this.prisma.creator.findFirst({
+      where: { name: insensitive(name) },
+    });
+
+    if (creator) throw new BadRequestException(`${name} already taken`);
+  }
+
+  async throwIfSlugTaken(slug: string) {
+    const creator = await this.prisma.creator.findFirst({
+      where: { slug: insensitive(slug) },
+    });
+
+    if (creator) throw new BadRequestException(`${slug} already taken`);
+  }
+
+  async throwIfEmailTaken(email: string) {
+    const creator = await this.prisma.creator.findFirst({
+      where: { email: insensitive(email) },
+    });
+
+    if (creator) throw new BadRequestException(`${email} already taken`);
   }
 
   async updateFile(

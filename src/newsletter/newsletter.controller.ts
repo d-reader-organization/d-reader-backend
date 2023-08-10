@@ -59,10 +59,7 @@ export class NewsletterController {
 
   /* Unsubscribe from newsletter */
   @Delete('unsubscribe/:verificationToken')
-  async unsubscribe(
-    @Body() newsletterDto: NewsletterDto,
-    @Param('verificationToken') verificationToken: string,
-  ) {
-    this.newsletterService.unsubscribe(newsletterDto.email, verificationToken);
+  async unsubscribe(@Param('verificationToken') verificationToken: string) {
+    this.newsletterService.unsubscribe(verificationToken);
   }
 }

@@ -4,8 +4,10 @@ import { UserController } from './user.controller';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
-import { HeliusService } from 'src/webhooks/helius/helius.service';
-import { WebSocketGateway } from 'src/websockets/websocket.gateway';
+import { HeliusService } from '../webhooks/helius/helius.service';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { AuthService } from '../auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   controllers: [UserController],
@@ -16,6 +18,8 @@ import { WebSocketGateway } from 'src/websockets/websocket.gateway';
     MailService,
     HeliusService,
     WebSocketGateway,
+    AuthService,
+    JwtService,
   ],
 })
 export class UserModule {}
