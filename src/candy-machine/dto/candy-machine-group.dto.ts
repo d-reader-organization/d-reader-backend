@@ -33,6 +33,8 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
   return candyMachineGroupDto;
 }
 
-export function toCandyMachineGroupsDto(groups: CandyMachineGroupSettings[]) {
-  return groups.map((group) => toCandyMachineGroupDto(group));
+export function toCandyMachineGroupDtoArray(
+  groups: CandyMachineGroupSettings[],
+) {
+  return groups.map(toCandyMachineGroupDto);
 }
