@@ -37,7 +37,8 @@
     "mint-remaining": "npx ts-node src/cli/main.ts mint-remaining",
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
     "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection",
-    "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw"
+    "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw",
+    "add-group": "npx ts-node src/cli/main.ts add-group"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
