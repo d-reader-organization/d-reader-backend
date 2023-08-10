@@ -152,6 +152,16 @@ export class UserService {
     return nfts;
   }
 
+  async getWallets(userId: number) {
+    const wallets = await this.prisma.wallet.findMany({
+      where: { userId },
+      orderBy: { address: 'asc' },
+    });
+
+    const walletAddresses = wallets.map((wallet) => wallet.address);
+    return walletAddresses;
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     const { referrer, name, email } = updateUserDto;
 
