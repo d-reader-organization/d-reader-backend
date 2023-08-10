@@ -7,10 +7,10 @@ import {
   TransactionBuilder,
   DefaultCandyGuardSettings,
   CandyMachine,
-  CreatorInput,
   JsonMetadata,
   getMerkleRoot,
   toDateTime,
+  CreateCandyMachineInput,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -247,18 +247,13 @@ export class CandyMachineService {
         MIN_SIGNATURES,
       );
     }
-    // TODO v1: This should be dynamic in the future
-    const D_PUBLISHER_SHARE = 20; // 20% tax
-    const dPublisherShare: CreatorInput = {
-      address: this.metaplex.identity().publicKey,
-      share: D_PUBLISHER_SHARE,
-    };
-    const creators: CreatorInput[] = royaltyWallets
-      .map((wallet) => ({
+
+    const creators: CreateCandyMachineInput['creators'] = royaltyWallets.map(
+      (wallet) => ({
         address: new PublicKey(wallet.address),
         share: wallet.share,
-      }))
-      .concat(dPublisherShare);
+      }),
+    );
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
         candyMachine: candyMachineKey,

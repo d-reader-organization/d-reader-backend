@@ -303,8 +303,7 @@ Table CarouselSlide {
 }
 
 Table Newsletter {
-  id Int [pk, increment]
-  email String [unique, not null]
+  email String [pk]
   subscribedAt DateTime [default: `now()`, not null]
   updatedAt DateTime
   ip String [not null, default: '']

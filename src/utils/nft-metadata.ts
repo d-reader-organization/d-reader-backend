@@ -167,7 +167,6 @@ export async function uploadItemMetadata(
 
   for (const rarityShare of rarityShares) {
     const { rarity } = rarityShare;
-    // TODO v1: we should deprecate the rarityCoverFiles and stick with the array of covers format
     const itemMetadata = await uploadAllMetadata(
       metaplex,
       comicIssue,

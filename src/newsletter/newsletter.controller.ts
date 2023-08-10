@@ -6,6 +6,7 @@ import {
   UseGuards,
   Delete,
   Req,
+  Param,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { NewsletterService } from './newsletter.service';
@@ -15,10 +16,10 @@ import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
 import { RealIP } from 'nestjs-real-ip';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { AdminGuard } from 'src/guards/roles.guard';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
-// TODO v1: redo newslettter
 @UseGuards(ThrottlerGuard)
 @ApiTags('Newsletter')
 @Controller('newsletter')
@@ -27,9 +28,9 @@ export class NewsletterController {
 
   /* Subscribe to newsletter */
   @Throttle(2, 60)
-  @Post('subscribe')
+  @Post('subscribe/:email')
   async subscribe(
-    @Body() newsletterDto: NewsletterDto,
+    @Param('email') email: string,
     @Req() request: Request,
     @RealIP() ip = '',
   ) {
@@ -45,10 +46,11 @@ export class NewsletterController {
       os: parser.getOS()?.name,
     };
 
-    await this.newsletterService.subscribe(newsletterDto.email, requestUser);
+    await this.newsletterService.subscribe(email, requestUser);
   }
 
   /* Get all newsletter subscriptions */
+  @AdminGuard()
   @Get('get')
   async findAll(): Promise<NewsletterDto[]> {
     const newsletters = await this.newsletterService.findAll();
@@ -56,8 +58,11 @@ export class NewsletterController {
   }
 
   /* Unsubscribe from newsletter */
-  @Delete('unsubscribe')
-  async unsubscribe(@Body() newsletterDto: NewsletterDto) {
-    this.newsletterService.unsubscribe(newsletterDto.email);
+  @Delete('unsubscribe/:verificationToken')
+  async unsubscribe(
+    @Body() newsletterDto: NewsletterDto,
+    @Param('verificationToken') verificationToken: string,
+  ) {
+    this.newsletterService.unsubscribe(newsletterDto.email, verificationToken);
   }
 }

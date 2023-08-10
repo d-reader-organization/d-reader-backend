@@ -341,8 +341,7 @@ enum CarouselLocation {
 }
 
 model Newsletter {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
+  email        String    @id
   subscribedAt DateTime  @default(now())
   updatedAt    DateTime? @updatedAt
   ip           String    @default("")

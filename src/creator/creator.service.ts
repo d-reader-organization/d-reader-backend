@@ -20,7 +20,9 @@ import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
 import { UpdatePasswordDto } from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
+import { MailService } from '../mail/mail.service';
 import { LoginDto } from '../types/login.dto';
+import { insensitive } from '../utils/lodash';
 import { isEmail } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
@@ -35,6 +37,7 @@ export class CreatorService {
     private readonly prisma: PrismaService,
     private readonly userCreatorService: UserCreatorService,
     private readonly passwordService: PasswordService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -44,8 +47,9 @@ export class CreatorService {
     validateName(name);
     validateEmail(email);
 
-    const [hashedPassword] = await Promise.all([
+    const [hashedPassword, hashedEmail] = await Promise.all([
       this.passwordService.hash(password),
+      this.passwordService.hash(email),
       this.throwIfNameTaken(name),
       this.throwIfSlugTaken(slug),
       this.throwIfEmailTaken(email),
@@ -55,6 +59,7 @@ export class CreatorService {
       data: { name, email, password: hashedPassword, slug },
     });
 
+    this.mailService.creatorRegistered(creator, hashedEmail);
     return creator;
   }
 
@@ -116,7 +121,7 @@ export class CreatorService {
 
   async findByEmail(email: string) {
     const creator = await this.prisma.creator.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: insensitive(email) },
     });
 
     if (!creator) {
@@ -124,27 +129,10 @@ export class CreatorService {
     } else return creator;
   }
 
-  async requestEmailVerification(slug: string) {
-    const creator = await this.findOne(slug);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const hashedEmail = await this.passwordService.hash(creator.email);
-
-    // TODO: send requestEmailVerification email
-    // this.mailService.requestEmailVerification(creator, hashedEmail);
-  }
-
-  async verifyEmail(email: string, verificationToken: string) {
-    await this.passwordService.validate(email, verificationToken);
-    await this.prisma.creator.update({
-      where: { email },
-      data: { emailVerifiedAt: new Date() },
-    });
-  }
-
   async throwIfNameTaken(name?: string) {
     if (!name) return;
     const creator = await this.prisma.creator.findFirst({
-      where: { name: { equals: name, mode: 'insensitive' } },
+      where: { name: insensitive(name) },
     });
 
     if (creator) throw new BadRequestException(`${name} already taken`);
@@ -153,7 +141,7 @@ export class CreatorService {
   async throwIfSlugTaken(slug?: string) {
     if (!slug) return;
     const creator = await this.prisma.creator.findFirst({
-      where: { slug: { equals: slug, mode: 'insensitive' } },
+      where: { slug: insensitive(slug) },
     });
 
     if (creator) throw new BadRequestException(`${slug} already taken`);
@@ -162,7 +150,7 @@ export class CreatorService {
   async throwIfEmailTaken(email?: string) {
     if (!email) return;
     const creator = await this.prisma.creator.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: insensitive(email) },
     });
 
     if (creator) throw new BadRequestException(`${email} already taken`);
@@ -191,6 +179,12 @@ export class CreatorService {
       this.passwordService.validate(oldPassword, creator.password),
     ]);
 
+    if (oldPassword === newPassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
     const updatedCreator = await this.prisma.creator.update({
       where: { slug },
       data: { password: hashedPassword },
@@ -203,13 +197,42 @@ export class CreatorService {
     const newPassword = uuidv4();
     const hashedPassword = await this.passwordService.hash(newPassword);
 
+    const creator = await this.prisma.creator.findUnique({ where: { slug } });
+    await this.mailService.creatorPasswordReset(creator, hashedPassword);
     await this.prisma.creator.update({
       where: { slug },
-      data: { password: hashedPassword },
+      data: { password: newPassword },
     });
+  }
 
-    // TODO: send passwordReset email
-    // this.mailService.resetPassword(creator, hashedPassword);
+  async requestEmailVerification(slug: string) {
+    const creator = await this.findOne(slug);
+
+    if (!!creator.emailVerifiedAt) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    const hashedEmail = await this.passwordService.hash(creator.email);
+    await this.mailService.requestCreatorEmailVerification(
+      creator,
+      hashedEmail,
+    );
+  }
+
+  async verifyEmail(email: string, verificationToken: string) {
+    const [creator] = await Promise.all([
+      this.prisma.creator.findFirst({ where: { email: insensitive(email) } }),
+      this.passwordService.validate(email, verificationToken),
+    ]);
+
+    if (!!creator.emailVerifiedAt) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    await this.prisma.creator.update({
+      where: { email },
+      data: { emailVerifiedAt: new Date() },
+    });
   }
 
   async updateFile(
