@@ -237,10 +237,3 @@ export class ComicController {
     return toComicDto(recoveredComic);
   }
 }
-
-/**
-  TODO v1: 
-  isFreeToRead, isCompleted, isOnChain,
-  isOwned, isPrimarySale, isSecondarySale
-  free/web2/web3/previewable/WIP
-*/

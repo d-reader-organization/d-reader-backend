@@ -20,10 +20,11 @@ import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
 import { FilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { UserPayload } from 'src/auth/dto/authorization.dto';
+import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
 import { UpdatePasswordDto } from 'src/types/update-password.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
+import { CreatorEntity } from 'src/decorators/creator.decorator';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -82,9 +83,26 @@ export class CreatorController {
 
   /* Reset specific creator's password */
   @CreatorOwnerAuth()
-  @Patch('reset-password')
-  async resetPassword(@Param('slug') slug: string) {
+  @Patch('reset-password/:slug')
+  resetPassword(@Param('slug') slug: string) {
     return this.creatorService.resetPassword(slug);
+  }
+
+  /* Verify your email address */
+  @CreatorOwnerAuth()
+  @Post('request-email-verification')
+  requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
+    return this.creatorService.requestEmailVerification(creator.slug);
+  }
+
+  /* Verify your email address */
+  @CreatorOwnerAuth()
+  @Post('verify-email/:verificationToken')
+  verifyEmail(
+    @CreatorEntity() creator: CreatorPayload,
+    @Param('verificationToken') verificationToken: string,
+  ) {
+    return this.creatorService.verifyEmail(creator.email, verificationToken);
   }
 
   /* Update specific creators avatar file */

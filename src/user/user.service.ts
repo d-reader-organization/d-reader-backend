@@ -18,6 +18,7 @@ import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
+import { insensitive } from '../utils/lodash';
 import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -123,7 +124,7 @@ export class UserService {
 
   async findByEmail(email: string) {
     const user = await this.prisma.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: insensitive(email) },
     });
 
     if (!user) {
@@ -133,7 +134,7 @@ export class UserService {
 
   async findByName(name: string) {
     const user = await this.prisma.user.findFirst({
-      where: { name: { equals: name, mode: 'insensitive' } },
+      where: { name: insensitive(name) },
     });
 
     if (!user) {
@@ -177,6 +178,12 @@ export class UserService {
       this.passwordService.validate(oldPassword, user.password),
     ]);
 
+    if (oldPassword === newPassword) {
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
+    }
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: { password: hashedPassword },
@@ -189,26 +196,35 @@ export class UserService {
     const newPassword = uuidv4();
     const hashedPassword = await this.passwordService.hash(newPassword);
 
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    await this.mailService.userPasswordReset(user, hashedPassword);
     await this.prisma.user.update({
       where: { id },
-      data: { password: hashedPassword },
+      data: { password: newPassword },
     });
-
-    // TODO: send passwordReset email
-    // this.mailService.resetPassword(user, hashedPassword);
   }
 
   async requestEmailVerification(id: number) {
     const user = await this.findOne(id);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const hashedEmail = await this.passwordService.hash(user.email);
 
-    // TODO: send requestEmailVerification email
-    // this.mailService.requestEmailVerification(user, hashedEmail);
+    if (!!user.emailVerifiedAt) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    const hashedEmail = await this.passwordService.hash(user.email);
+    await this.mailService.requestUserEmailVerification(user, hashedEmail);
   }
 
   async verifyEmail(email: string, verificationToken: string) {
-    await this.passwordService.validate(email, verificationToken);
+    const [user] = await Promise.all([
+      this.prisma.user.findFirst({ where: { email: insensitive(email) } }),
+      this.passwordService.validate(email, verificationToken),
+    ]);
+
+    if (!!user.emailVerifiedAt) {
+      throw new BadRequestException('Email already verified');
+    }
+
     await this.prisma.user.update({
       where: { email },
       data: { emailVerifiedAt: new Date() },
@@ -218,7 +234,7 @@ export class UserService {
   async throwIfNameTaken(name?: string) {
     if (!name) return;
     const user = await this.prisma.user.findFirst({
-      where: { name: { equals: name, mode: 'insensitive' } },
+      where: { name: insensitive(name) },
     });
 
     if (user) throw new BadRequestException(`${name} already taken`);
@@ -227,7 +243,7 @@ export class UserService {
   async throwIfEmailTaken(email?: string) {
     if (!email) return;
     const user = await this.prisma.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: { email: insensitive(email) },
     });
 
     if (user) throw new BadRequestException(`${email} already taken`);
@@ -279,7 +295,7 @@ export class UserService {
       referrer = wallet.user;
     } else if (isEmail(referrerId)) {
       referrer = await this.prisma.user.findFirst({
-        where: { email: { equals: referrerId, mode: 'insensitive' } },
+        where: { email: insensitive(referrerId) },
       });
     } else if (isNumberString(referrerId)) {
       referrer = await this.prisma.user.findUnique({
@@ -287,7 +303,7 @@ export class UserService {
       });
     } else {
       referrer = await this.prisma.user.findFirst({
-        where: { name: { equals: referrerId, mode: 'insensitive' } },
+        where: { name: insensitive(referrerId) },
       });
     }
 
@@ -345,7 +361,7 @@ export class UserService {
     const buffer = jdenticon.toPng(id, 400);
     const file = {
       fieldname: 'avatar.png',
-      originalname: 'icon',
+      originalname: 'con',
       mimetype: 'image/png',
       buffer,
     };

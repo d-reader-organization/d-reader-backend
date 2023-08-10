@@ -33,23 +33,6 @@ import { UserEntity } from 'src/decorators/user.decorator';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  /* Verify your email address */
-  @UserOwnerAuth()
-  @Post('request-email-verification')
-  async requestEmailVerification(@UserEntity() user: UserPayload) {
-    this.userService.requestEmailVerification(user.id);
-  }
-
-  /* Verify your email address */
-  @UserOwnerAuth()
-  @Post('verify-email/:verificationToken')
-  async verifyEmail(
-    @UserEntity() user: UserPayload,
-    @Param('verificationToken') verificationToken: string,
-  ) {
-    this.userService.verifyEmail(user.email, verificationToken);
-  }
-
   /* Get user data from auth token */
   @UserAuth()
   @Get('get/me')
@@ -82,9 +65,26 @@ export class UserController {
 
   /* Reset specific user's password */
   @UserOwnerAuth()
-  @Patch('reset-password')
+  @Patch('reset-password/:id')
   resetPassword(@Param('id') id: string) {
     return this.userService.resetPassword(+id);
+  }
+
+  /* Verify your email address */
+  @UserOwnerAuth()
+  @Post('request-email-verification')
+  requestEmailVerification(@UserEntity() user: UserPayload) {
+    return this.userService.requestEmailVerification(user.id);
+  }
+
+  /* Verify your email address */
+  @UserOwnerAuth()
+  @Post('verify-email/:verificationToken')
+  verifyEmail(
+    @UserEntity() user: UserPayload,
+    @Param('verificationToken') verificationToken: string,
+  ) {
+    return this.userService.verifyEmail(user.email, verificationToken);
   }
 
   /* Update specific user's avatar file */

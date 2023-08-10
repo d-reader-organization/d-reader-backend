@@ -53,7 +53,7 @@ export class TransactionController {
 
   @Get('/use-comic-issue-nft')
   constructUseComicTransaction(@Query() query: UseComicParams) {
-    // TODO v1: should NFT owner be derived from on-chain data?
+    // TODO: should NFT owner be derived from on-chain data? @Athar
     const publicKey = new PublicKey(query.ownerAddress);
     const nftAddress = new PublicKey(query.nftAddress);
 

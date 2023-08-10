@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   throttle,
   memoize,
@@ -52,4 +53,8 @@ export function memoizeDebounce<T extends (...args: any[]) => any>(
   };
 
   return wrappedFunction;
+}
+
+export function insensitive(string: string): Prisma.StringFilter {
+  return { equals: string, mode: 'insensitive' };
 }
