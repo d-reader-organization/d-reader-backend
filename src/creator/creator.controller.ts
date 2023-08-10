@@ -92,17 +92,13 @@ export class CreatorController {
   @CreatorOwnerAuth()
   @Post('request-email-verification')
   requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
-    return this.creatorService.requestEmailVerification(creator.slug);
+    return this.creatorService.requestEmailVerification(creator.email);
   }
 
-  /* Verify your email address */
-  @CreatorOwnerAuth()
+  /* Verify an email address */
   @Post('verify-email/:verificationToken')
-  verifyEmail(
-    @CreatorEntity() creator: CreatorPayload,
-    @Param('verificationToken') verificationToken: string,
-  ) {
-    return this.creatorService.verifyEmail(creator.email, verificationToken);
+  verifyEmail(@Param('verificationToken') verificationToken: string) {
+    return this.creatorService.verifyEmail(verificationToken);
   }
 
   /* Update specific creators avatar file */

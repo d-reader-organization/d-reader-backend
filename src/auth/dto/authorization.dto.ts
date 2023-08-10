@@ -22,4 +22,8 @@ export type JwtDto = JwtPayload & {
   exp: number;
 };
 
-// TokenPayload
+export type EmailJwtDto = {
+  email: string;
+  iat: number;
+  exp: number;
+};

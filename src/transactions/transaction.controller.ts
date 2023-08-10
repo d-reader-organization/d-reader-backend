@@ -42,10 +42,10 @@ export class TransactionController {
   @Get('/sign-comic')
   constructSignComicTransaction(@Query() query: SignComicParams) {
     const publicKey = new PublicKey(query.signerAddress);
-    const nftAddress = new PublicKey(query.nftAddress);
+    const nftPubKey = new PublicKey(query.nftAddress);
 
     return this.candyMachineService.createChangeComicStateTransaction(
-      nftAddress,
+      nftPubKey,
       publicKey,
       ComicStateArgs.Sign,
     );
@@ -53,12 +53,11 @@ export class TransactionController {
 
   @Get('/use-comic-issue-nft')
   constructUseComicTransaction(@Query() query: UseComicParams) {
-    // TODO: should NFT owner be derived from on-chain data? @Athar
     const publicKey = new PublicKey(query.ownerAddress);
-    const nftAddress = new PublicKey(query.nftAddress);
+    const nftPubKey = new PublicKey(query.nftAddress);
 
     return this.candyMachineService.createChangeComicStateTransaction(
-      nftAddress,
+      nftPubKey,
       publicKey,
       ComicStateArgs.Use,
     );

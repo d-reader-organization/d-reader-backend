@@ -74,17 +74,13 @@ export class UserController {
   @UserOwnerAuth()
   @Post('request-email-verification')
   requestEmailVerification(@UserEntity() user: UserPayload) {
-    return this.userService.requestEmailVerification(user.id);
+    return this.userService.requestEmailVerification(user.email);
   }
 
-  /* Verify your email address */
-  @UserOwnerAuth()
+  /* Verify an email address */
   @Post('verify-email/:verificationToken')
-  verifyEmail(
-    @UserEntity() user: UserPayload,
-    @Param('verificationToken') verificationToken: string,
-  ) {
-    return this.userService.verifyEmail(user.email, verificationToken);
+  verifyEmail(@Param('verificationToken') verificationToken: string) {
+    return this.userService.verifyEmail(verificationToken);
   }
 
   /* Update specific user's avatar file */

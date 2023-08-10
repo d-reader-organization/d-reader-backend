@@ -99,8 +99,8 @@ export class WalletService {
     await this.prisma.nft.update({
       where: { address: metadata.mintAddress.toString() },
       data: {
-        ownerChangedAt: new Date(), // TODO: isn't this incorrect?
-        // should we actually fetch the transaction timestamp? @Athar
+        // TODO v1: this should fetch the info on when the owner changed from chain
+        ownerChangedAt: new Date(0),
         owner: {
           connectOrCreate: {
             where: { address: walletAddress },

@@ -35,11 +35,13 @@ type s3File = {
 export class s3Service {
   readonly region: string;
   readonly bucket: string;
+  readonly cdn: string;
   readonly client: S3Client;
 
   constructor() {
     this.region = config().s3.region;
     this.bucket = config().s3.bucket;
+    this.cdn = config().s3.cdn;
 
     this.client = new S3Client({
       region: this.region,
@@ -75,6 +77,7 @@ export class s3Service {
     // If key is an empty string, return it
     if (!key) return key;
     else if (key.startsWith('https://')) return key;
+    else if (this.cdn) return `${config().s3.cdn}/${key}`;
     else `https://${this.bucket}.s3.amazonaws.com/${key}`;
   };
 
