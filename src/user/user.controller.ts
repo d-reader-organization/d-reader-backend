@@ -122,6 +122,13 @@ export class UserController {
     return toWalletAssetDtoArray(assets);
   }
 
+  /* Get all wallets connected to the user */
+  @Get('get/:id/wallets')
+  async getWallets(@Param('id') id: string): Promise<string[]> {
+    const wallets = await this.userService.getWallets(+id);
+    return wallets;
+  }
+
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
     5 * 60 * 1000, // 5 minutes
