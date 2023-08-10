@@ -3,10 +3,11 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { JwtDto, JwtPayload } from './dto/authorization.dto';
+import { EmailJwtDto, JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
@@ -51,6 +52,46 @@ export class AuthService {
       accessToken: this.generateAccessToken({ ...creator, type: 'creator' }),
       refreshToken: this.generateRefreshToken({ ...creator, type: 'creator' }),
     };
+  }
+
+  signEmail(email: string): string {
+    const signedEmail = this.jwtService.sign(
+      { email },
+      {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn: '1d',
+      },
+    );
+    return signedEmail;
+  }
+
+  decodeEmail(emailToken: string) {
+    const emailJwtDto = this.jwtService.decode(emailToken);
+
+    if (
+      typeof emailJwtDto === 'object' &&
+      'email' in emailJwtDto &&
+      typeof emailJwtDto.email === 'string'
+    ) {
+      return emailJwtDto.email;
+    } else throw new BadRequestException('Malformed email token');
+  }
+
+  verifyEmail(emailToken: string) {
+    let emailJwtDto: EmailJwtDto;
+    try {
+      emailJwtDto = this.jwtService.verify<EmailJwtDto>(emailToken, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException(
+        'Token expired, new verification link is sent to your inbox',
+      );
+    }
+
+    if (typeof emailJwtDto === 'object' && 'email' in emailJwtDto) {
+      return emailJwtDto.email;
+    } else throw new BadRequestException('Malformed email token');
   }
 
   private generateAccessToken(payload: JwtPayload): string {

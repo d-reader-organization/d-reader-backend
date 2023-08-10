@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Creator, User } from '@prisma/client';
+import config from '../configs/config';
 
 const logError = (template: string, recipient: string, e: any) => {
   console.error(`Failed to send ${template} email to ${recipient}: ${e}`);
@@ -15,9 +16,15 @@ const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
 const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
 const UNSUBSCRIBED_FROM_NEWSLETTER = 'unsubscribedFromNewsletter';
 
+// TODO: prettify email styles and add more meaningful content
+
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  private readonly api: string;
+
+  constructor(private readonly mailerService: MailerService) {
+    this.api = config().nest.api;
+  }
 
   async subscribedToNewsletter(recipient: string) {
     try {
@@ -39,7 +46,7 @@ export class MailService {
         template: USER_REGISTERED,
         context: {
           name: user.name,
-          verificationToken,
+          verificationUrl: this.verificationUrl(verificationToken, 'user'),
         },
       });
     } catch (e) {
@@ -74,7 +81,7 @@ export class MailService {
         template: USER_EMAIL_VERIFICATION,
         context: {
           name: user.name,
-          verificationToken,
+          verificationUrl: this.verificationUrl(verificationToken, 'user'),
         },
       });
     } catch (e) {
@@ -93,7 +100,7 @@ export class MailService {
         template: CREATOR_REGISTERED,
         context: {
           name: creator.name,
-          verificationToken,
+          verificationUrl: this.verificationUrl(verificationToken, 'creator'),
         },
       });
     } catch (e) {
@@ -131,7 +138,7 @@ export class MailService {
         template: CREATOR_EMAIL_VERIFICATION,
         context: {
           name: creator.name,
-          verificationToken,
+          verificationUrl: this.verificationUrl(verificationToken, 'creator'),
         },
       });
     } catch (e) {
@@ -142,7 +149,7 @@ export class MailService {
     }
   }
 
-  async unsubscribeFromNewsletter(email: string) {
+  async unsubscribedFromNewsletter(email: string) {
     try {
       await this.mailerService.sendMail({
         to: email,
@@ -152,5 +159,9 @@ export class MailService {
     } catch (e) {
       logError(UNSUBSCRIBED_FROM_NEWSLETTER, email, e);
     }
+  }
+
+  verificationUrl(verificationToken: string, type: 'user' | 'creator') {
+    return `${this.api}/${type}/verify-email/${verificationToken}`;
   }
 }

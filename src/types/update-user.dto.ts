@@ -13,11 +13,11 @@ export class UpdateUserDto {
   @MinLength(USERNAME_MIN_SIZE)
   @MaxLength(USERNAME_MAX_SIZE)
   @IsOptional()
-  name: string;
+  name?: string;
 
   @IsEmail()
   @IsOptional()
-  email: string;
+  email?: string;
 
   @IsString()
   @IsOptional()

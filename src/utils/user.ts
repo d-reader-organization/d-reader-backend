@@ -4,8 +4,8 @@ import { USERNAME_MAX_SIZE, USERNAME_MIN_SIZE } from '../constants';
 import { isValidUsername } from '../decorators/IsValidUsername';
 
 export function validateName(name: string) {
-  if (!name) {
-    return;
+  if (typeof name !== 'string') {
+    throw new BadRequestException(`Bad name format: ${name || '<unknown>'}`);
   } else if (!maxLength(name, USERNAME_MAX_SIZE)) {
     throw new BadRequestException(`Max ${USERNAME_MAX_SIZE} characters`);
   } else if (!minLength(name, USERNAME_MIN_SIZE)) {
@@ -16,9 +16,9 @@ export function validateName(name: string) {
 }
 
 export function validateEmail(email: string) {
-  if (!email) {
-    return;
+  if (typeof email !== 'string') {
+    throw new BadRequestException(`Bad email format: ${email || '<unknown>'}`);
   } else if (!isEmail(email)) {
-    throw new BadRequestException(`Incorrect email format: ${email}`);
+    throw new BadRequestException('Incorrect email format');
   }
 }
