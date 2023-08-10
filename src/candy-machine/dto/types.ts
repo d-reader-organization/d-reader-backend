@@ -12,3 +12,8 @@ export type MintSettings = {
   label?: string;
   nftGateMint?: PublicKey;
 };
+
+export type CandyMachineGroupSettings = {
+  label: string;
+  guards: DefaultCandyGuardSettings;
+};

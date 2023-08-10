@@ -497,4 +497,14 @@ export class CandyMachineService {
 
     return receipts;
   }
+
+  async findCandyMachineGroups(candyMachineAddress: string) {
+    const address = new PublicKey(candyMachineAddress);
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address });
+    return candyMachine.candyGuard.groups.filter(
+      (group) => group.label != AUTHORITY_GROUP_LABEL,
+    );
+  }
 }
