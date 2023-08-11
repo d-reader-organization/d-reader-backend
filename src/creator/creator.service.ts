@@ -103,6 +103,15 @@ export class CreatorService {
     });
   }
 
+  async findMe(id: number) {
+    const creator = await this.prisma.creator.update({
+      where: { id },
+      data: { lastActiveAt: new Date() },
+    });
+
+    return creator;
+  }
+
   async findOne(slug: string, userId?: number) {
     const findCreator = this.prisma.creator.findUnique({ where: { slug } });
     const getStats = this.userCreatorService.getCreatorStats(slug);
