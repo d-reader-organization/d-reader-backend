@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  CreateGenreDto,
+  CreateGenreBodyDto,
   CreateGenreFilesDto,
 } from '../genre/dto/create-genre.dto';
 import { UpdateGenreDto } from '../genre/dto/update-genre.dto';
@@ -27,10 +27,10 @@ export class GenreService {
   ) {}
 
   async create(
-    createGenreDto: CreateGenreDto,
+    createGenreBodyDto: CreateGenreBodyDto,
     createGenreFilesDto: CreateGenreFilesDto,
   ) {
-    const { slug, ...rest } = createGenreDto;
+    const { slug, ...rest } = createGenreBodyDto;
 
     let genre: Genre;
     try {

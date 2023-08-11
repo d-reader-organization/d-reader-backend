@@ -17,7 +17,7 @@ import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { IsLamport } from '../../decorators/IsLamport';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
-export class CreateComicIssueDto {
+export class CreateComicIssueBodyDto {
   @IsNotEmpty()
   @MaxLength(48)
   title: string;
@@ -99,7 +99,7 @@ export class CreateComicIssueFilesDto {
   pdf?: Express.Multer.File | null;
 }
 
-export class CreateComicIssueSwaggerDto extends IntersectionType(
-  CreateComicIssueDto,
+export class CreateComicIssueDto extends IntersectionType(
+  CreateComicIssueBodyDto,
   CreateComicIssueFilesDto,
 ) {}

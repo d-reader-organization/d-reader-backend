@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
 
-export class CreateCarouselSlideDto {
+export class CreateCarouselSlideBodyDto {
   @IsNumber()
   priority: number;
 
@@ -50,7 +50,7 @@ export class CreateCarouselSlideFilesDto {
   image?: Express.Multer.File | null;
 }
 
-export class CreateCarouselSlideSwaggerDto extends IntersectionType(
-  CreateCarouselSlideDto,
+export class CreateCarouselSlideDto extends IntersectionType(
+  CreateCarouselSlideBodyDto,
   CreateCarouselSlideFilesDto,
 ) {}

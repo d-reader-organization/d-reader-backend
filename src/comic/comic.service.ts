@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  CreateComicDto,
+  CreateComicBodyDto,
   CreateComicFilesDto,
 } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto } from '../comic/dto/update-comic.dto';
@@ -33,10 +33,10 @@ export class ComicService {
 
   async create(
     creatorId: number,
-    createComicDto: CreateComicDto,
+    createComicBodyDto: CreateComicBodyDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { slug, genres, isCompleted, ...rest } = createComicDto;
+    const { slug, genres, isCompleted, ...rest } = createComicBodyDto;
 
     let comic: Comic;
     try {

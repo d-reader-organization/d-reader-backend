@@ -80,8 +80,8 @@ export class UserComicService {
     });
   }
 
-  rate(userId: number, comicSlug: string, rating: number) {
-    return this.prisma.userComic.upsert({
+  async rate(userId: number, comicSlug: string, rating: number) {
+    await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },

@@ -12,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
-  CreateCarouselSlideSwaggerDto,
   CreateCarouselSlideDto,
+  CreateCarouselSlideBodyDto,
   CreateCarouselSlideFilesDto,
 } from 'src/carousel/dto/create-carousel-slide.dto';
 import { CarouselService } from './carousel.service';
@@ -42,11 +42,11 @@ export class CarouselController {
   /* Create a new carousel slide */
   @AdminGuard()
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateCarouselSlideSwaggerDto })
+  @ApiBody({ type: CreateCarouselSlideDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 1 }]))
   @Post('slides/create')
   async create(
-    @Body() createCarouselSlideDto: CreateCarouselSlideDto,
+    @Body() createCarouselSlideDto: CreateCarouselSlideBodyDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateCarouselSlideFilesDto, val),
     })

@@ -1,6 +1,6 @@
 import { OmitType, PartialType } from '@nestjs/swagger';
-import { CreateGenreDto } from './create-genre.dto';
+import { CreateGenreBodyDto } from './create-genre.dto';
 
 export class UpdateGenreDto extends PartialType(
-  OmitType(CreateGenreDto, ['name', 'slug'] as const),
+  OmitType(CreateGenreBodyDto, ['name', 'slug'] as const),
 ) {}
