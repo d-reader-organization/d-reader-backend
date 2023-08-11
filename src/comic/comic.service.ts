@@ -36,7 +36,7 @@ export class ComicService {
     createComicDto: CreateComicDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { slug, genres, isOngoing, ...rest } = createComicDto;
+    const { slug, genres, isCompleted, ...rest } = createComicDto;
 
     let comic: Comic;
     try {
@@ -45,7 +45,7 @@ export class ComicService {
           ...rest,
           slug,
           creatorId,
-          completedAt: !isOngoing ? new Date() : null,
+          completedAt: isCompleted ? new Date() : null,
           genres: { connect: genres.map((slug) => ({ slug })) },
         },
       });
@@ -157,13 +157,14 @@ export class ComicService {
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
-    const { genres, ...rest } = updateComicDto;
+    const { genres, isCompleted, ...rest } = updateComicDto;
 
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug, publishedAt: null },
         data: {
           ...rest,
+          completedAt: isCompleted ? new Date() : null,
           genres: { set: genres.map((slug) => ({ slug })) },
         },
       });
