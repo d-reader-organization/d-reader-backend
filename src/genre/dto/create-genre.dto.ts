@@ -10,7 +10,7 @@ import {
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 
-export class CreateGenreDto {
+export class CreateGenreBodyDto {
   @IsString()
   @MinLength(2)
   @MaxLength(40)
@@ -38,7 +38,7 @@ export class CreateGenreFilesDto {
   icon?: Express.Multer.File | null;
 }
 
-export class CreateGenreSwaggerDto extends IntersectionType(
-  CreateGenreDto,
+export class CreateGenreDto extends IntersectionType(
+  CreateGenreBodyDto,
   CreateGenreFilesDto,
 ) {}

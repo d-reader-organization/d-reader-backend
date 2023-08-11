@@ -62,8 +62,8 @@ import {
   CreateStatelessCoverDto,
 } from './dto/covers/create-stateless-cover.dto';
 import {
-  CreateComicIssueSwaggerDto,
   CreateComicIssueDto,
+  CreateComicIssueBodyDto,
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
@@ -82,12 +82,12 @@ export class ComicIssueController {
   /* Create a new comic issue */
   @ComicIssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateComicIssueSwaggerDto })
+  @ApiBody({ type: CreateComicIssueDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
   @Post('create')
   async create(
     @CreatorEntity() creator: CreatorPayload,
-    @Body() createComicIssueDto: CreateComicIssueDto,
+    @Body() createComicIssueDto: CreateComicIssueBodyDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicIssueFilesDto, val),
     })

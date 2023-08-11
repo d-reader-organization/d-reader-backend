@@ -32,8 +32,8 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
 import {
-  CreateComicSwaggerDto,
   CreateComicDto,
+  CreateComicBodyDto,
   CreateComicFilesDto,
 } from './dto/create-comic.dto';
 import { UpdateComicDto } from './dto/update-comic.dto';
@@ -50,7 +50,7 @@ export class ComicController {
   /* Create a new comic */
   @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateComicSwaggerDto })
+  @ApiBody({ type: CreateComicDto })
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'cover', maxCount: 1 },
@@ -62,7 +62,7 @@ export class ComicController {
   @Post('create')
   async create(
     @CreatorEntity() creator: CreatorPayload,
-    @Body() createComicDto: CreateComicDto,
+    @Body() createComicDto: CreateComicBodyDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateComicFilesDto, val),
     })

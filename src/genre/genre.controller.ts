@@ -13,8 +13,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
-  CreateGenreSwaggerDto,
   CreateGenreDto,
+  CreateGenreBodyDto,
   CreateGenreFilesDto,
 } from 'src/genre/dto/create-genre.dto';
 import { GenreService } from './genre.service';
@@ -40,11 +40,11 @@ export class GenreController {
   /* Create a new genre */
   @AdminGuard()
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateGenreSwaggerDto })
+  @ApiBody({ type: CreateGenreDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'icon', maxCount: 1 }]))
   @Post('create')
   async create(
-    @Body() createGenreDto: CreateGenreDto,
+    @Body() createGenreDto: CreateGenreBodyDto,
     @UploadedFiles({
       transform: (val) => plainToInstance(CreateGenreFilesDto, val),
     })

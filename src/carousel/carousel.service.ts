@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  CreateCarouselSlideDto,
+  CreateCarouselSlideBodyDto,
   CreateCarouselSlideFilesDto,
 } from '../carousel/dto/create-carousel-slide.dto';
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
@@ -25,7 +25,7 @@ export class CarouselService {
   ) {}
 
   async create(
-    createCarouselSlideDto: CreateCarouselSlideDto,
+    createCarouselSlideBodyDto: CreateCarouselSlideBodyDto,
     createCarouselSlideFilesDto: CreateCarouselSlideFilesDto,
   ) {
     const { image } = createCarouselSlideFilesDto;
@@ -41,7 +41,7 @@ export class CarouselService {
     try {
       carouselSlide = await this.prisma.carouselSlide.create({
         data: {
-          ...createCarouselSlideDto,
+          ...createCarouselSlideBodyDto,
           // expires in 30 days by default, change this in the future
           expiredAt: addDays(new Date(), 30),
           publishedAt: new Date(),

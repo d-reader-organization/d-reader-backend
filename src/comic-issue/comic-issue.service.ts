@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import {
-  CreateComicIssueDto,
+  CreateComicIssueBodyDto,
   CreateComicIssueFilesDto,
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
@@ -54,7 +54,7 @@ export class ComicIssueService {
 
   async create(
     creatorId: number,
-    createComicIssueDto: CreateComicIssueDto,
+    createComicIssueBodyDto: CreateComicIssueBodyDto,
     createComicIssueFilesDto: CreateComicIssueFilesDto,
   ) {
     const {
@@ -64,8 +64,8 @@ export class ComicIssueService {
       collaborators,
       royaltyWallets,
       ...rest
-    } = createComicIssueDto;
-    validatePrice(createComicIssueDto);
+    } = createComicIssueBodyDto;
+    validatePrice(createComicIssueBodyDto);
 
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },

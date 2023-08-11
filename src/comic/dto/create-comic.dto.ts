@@ -13,7 +13,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
 import { AudienceType } from '@prisma/client';
 
-export class CreateComicDto {
+export class CreateComicBodyDto {
   @IsNotEmpty()
   @MaxLength(48)
   title: string;
@@ -99,7 +99,7 @@ export class CreateComicFilesDto {
   logo?: Express.Multer.File | null;
 }
 
-export class CreateComicSwaggerDto extends IntersectionType(
-  CreateComicDto,
+export class CreateComicDto extends IntersectionType(
+  CreateComicBodyDto,
   CreateComicFilesDto,
 ) {}
