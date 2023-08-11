@@ -29,7 +29,7 @@ export class CreateComicDto {
     typeof value === 'string' ? Boolean(value) : value,
   )
   @ApiProperty({ default: true })
-  isOngoing: boolean;
+  isCompleted: boolean;
 
   @IsEnum(AudienceType)
   @ApiProperty({ enum: AudienceType })
