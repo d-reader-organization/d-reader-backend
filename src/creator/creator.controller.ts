@@ -25,6 +25,7 @@ import { UpdatePasswordDto } from 'src/types/update-password.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
+import { CreatorAuth } from 'src/guards/creator-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -34,6 +35,14 @@ export class CreatorController {
     private readonly creatorService: CreatorService,
     private readonly userCreatorService: UserCreatorService,
   ) {}
+
+  /* Get creator data from auth token */
+  @CreatorAuth()
+  @Get('get/me')
+  async findMe(@UserEntity() creator: UserPayload): Promise<CreatorDto> {
+    const me = await this.creatorService.findMe(creator.id);
+    return toCreatorDto(me);
+  }
 
   /* Get all creators */
   @Get('get')
