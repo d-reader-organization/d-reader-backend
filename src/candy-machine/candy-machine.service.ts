@@ -11,6 +11,9 @@ import {
   getMerkleRoot,
   toDateTime,
   CreateCandyMachineInput,
+  NftGateGuardSettings,
+  AllowListGuardSettings,
+  isMetadata,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -506,5 +509,50 @@ export class CandyMachineService {
     return candyMachine.candyGuard.groups.filter(
       (group) => group.label != AUTHORITY_GROUP_LABEL,
     );
+  }
+
+  async findWalletEligibleGroups(
+    wallet: PublicKey,
+    candyMachineAddress: PublicKey,
+  ) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
+    const eligibleGroups = (
+      await Promise.all(
+        candyMachine.candyGuard.groups.map(async (group) => {
+          const [isNftGateValid, isAllowListValid] = await Promise.all([
+            this.assertNftGate(group.guards.nftGate, wallet),
+            this.assertAllowList(group.guards.allowList, wallet),
+          ]);
+
+          if (isNftGateValid && isAllowListValid) {
+            return group.label;
+          }
+        }),
+      )
+    ).filter(Boolean);
+
+    return eligibleGroups;
+  }
+
+  async assertNftGate(
+    nftGate: NftGateGuardSettings | undefined,
+    wallet: PublicKey,
+  ) {
+    if (!nftGate) return true;
+    const nftMetadatas = (
+      await this.metaplex.nfts().findAllByOwner({ owner: wallet })
+    ).filter(isMetadata);
+    return nftMetadatas.find((metadata) =>
+      metadata.collection.address.equals(nftGate.requiredCollection),
+    );
+  }
+
+  async assertAllowList(
+    allowList: AllowListGuardSettings | undefined,
+    wallet: PublicKey,
+  ) {
+    if (!allowList) return true;
   }
 }
