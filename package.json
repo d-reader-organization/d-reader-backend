@@ -1,6 +1,6 @@
 {
   "name": "d-reader-backend",
-  "version": "0.9.3",
+  "version": "0.9.8",
   "description": "NestJS backend for dReader dapp on Solana",
   "author": "",
   "private": false,
