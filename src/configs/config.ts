@@ -12,7 +12,7 @@ const config: Config = {
     enabled: true,
     title: 'dReader API',
     description: 'API endpoints for dReader.io app',
-    version: '0.9.2',
+    version: '0.9.8',
     path: 'api',
     persistAuthorization: true,
   },
