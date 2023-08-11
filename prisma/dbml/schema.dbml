@@ -31,6 +31,7 @@ Table Wallet {
   user User
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
+  allowList AllowListOnWallets [not null]
 }
 
 Table Creator {
@@ -250,6 +251,27 @@ Table CandyMachine {
   collectionNftAddress String [not null]
   items Nft [not null]
   receipts CandyMachineReceipt [not null]
+  allowList AllowList [not null]
+}
+
+Table AllowList {
+  groupLabel String [pk]
+  wallet AllowListOnWallets [not null]
+  whitelistSupply Int [not null]
+  whitelistUsed Int [not null]
+  candyMachineAddress String [not null]
+  candyMachine CandyMachine [not null]
+}
+
+Table AllowListOnWallets {
+  wallet Wallet [not null]
+  walletAddress String [not null]
+  allowList AllowList [not null]
+  groupLabel String [not null]
+
+  indexes {
+    (walletAddress, groupLabel) [pk]
+  }
 }
 
 Table CandyMachineReceipt {
@@ -437,6 +459,12 @@ Ref: Nft.candyMachineAddress > CandyMachine.address
 Ref: Nft.collectionNftAddress > CollectionNft.address
 
 Ref: CandyMachine.collectionNftAddress > CollectionNft.address
+
+Ref: AllowList.candyMachineAddress > CandyMachine.address
+
+Ref: AllowListOnWallets.walletAddress > Wallet.address
+
+Ref: AllowListOnWallets.groupLabel > AllowList.groupLabel
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 

@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsString } from 'class-validator';
+import { IsBoolean, IsDate, IsNumber, IsString } from 'class-validator';
 import { CandyMachineGroupSettings } from './types';
 import { plainToInstance } from 'class-transformer';
 
@@ -12,6 +12,9 @@ export class CandyMachineGroupDto {
   @IsDate()
   endDate: Date;
 
+  @IsNumber()
+  mintPrice: number;
+
   @IsBoolean()
   isActive: boolean;
 }
@@ -24,7 +27,8 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     label: group.label,
     startDate,
     endDate,
-    isActive: startDate < currentDate && currentDate < endDate,
+    mintPrice: group.guards.freezeSolPayment.amount.basisPoints.toNumber(),
+    isActive: startDate <= currentDate && currentDate < endDate,
   };
   const candyMachineGroupDto = plainToInstance(
     CandyMachineGroupDto,

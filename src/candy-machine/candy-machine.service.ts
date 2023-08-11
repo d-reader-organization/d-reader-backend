@@ -59,6 +59,7 @@ import {
 } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
+import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -511,29 +512,33 @@ export class CandyMachineService {
     );
   }
 
-  async findWalletEligibleGroups(
-    wallet: PublicKey,
-    candyMachineAddress: PublicKey,
-  ) {
+  async findWalletEligibleGroups(query: EligibleGroupsParams) {
+    const candyMachinePubKey = new PublicKey(query.candyMachineAddress);
+    const walletPubkey = new PublicKey(query.walletAddress);
     const candyMachine = await this.metaplex
       .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
-    const eligibleGroups = (
-      await Promise.all(
-        candyMachine.candyGuard.groups.map(async (group) => {
-          const [isNftGateValid, isAllowListValid] = await Promise.all([
-            this.assertNftGate(group.guards.nftGate, wallet),
-            this.assertAllowList(group.guards.allowList, wallet),
-          ]);
+      .findByAddress({ address: candyMachinePubKey });
 
-          if (isNftGateValid && isAllowListValid) {
-            return group.label;
-          }
-        }),
-      )
-    ).filter(Boolean);
+    const eligibleGroups = await Promise.all(
+      candyMachine.candyGuard.groups.map(async (group) => {
+        if (group.label === AUTHORITY_GROUP_LABEL) return;
+        const [isNftGateValid, isAllowListValid] = await Promise.all([
+          this.assertNftGate(group.guards.nftGate, walletPubkey),
+          this.assertAllowList(
+            group.guards.allowList,
+            query.candyMachineAddress,
+            walletPubkey,
+            group.label,
+          ),
+        ]);
 
-    return eligibleGroups;
+        if (isNftGateValid && isAllowListValid) {
+          return group;
+        }
+      }),
+    );
+
+    return eligibleGroups.filter(Boolean);
   }
 
   async assertNftGate(
@@ -541,18 +546,31 @@ export class CandyMachineService {
     wallet: PublicKey,
   ) {
     if (!nftGate) return true;
+
     const nftMetadatas = (
       await this.metaplex.nfts().findAllByOwner({ owner: wallet })
     ).filter(isMetadata);
-    return nftMetadatas.find((metadata) =>
+
+    return nftMetadatas.some((metadata) =>
       metadata.collection.address.equals(nftGate.requiredCollection),
     );
   }
 
   async assertAllowList(
     allowList: AllowListGuardSettings | undefined,
+    candyMachineAddress: string,
     wallet: PublicKey,
+    groupLabel: string,
   ) {
     if (!allowList) return true;
+
+    const allowListItem = await this.prisma.allowListOnWallets.findFirst({
+      where: {
+        walletAddress: wallet.toString(),
+        allowList: { candyMachineAddress, groupLabel },
+      },
+    });
+
+    return !!allowListItem;
   }
 }

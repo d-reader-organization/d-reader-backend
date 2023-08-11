@@ -43,6 +43,7 @@ model Wallet {
   user         User?                 @relation(fields: [userId], references: [id])
   mintReceipts CandyMachineReceipt[]
   nfts         Nft[]
+  allowList    AllowListOnWallets[]
 }
 
 enum Role {
@@ -285,6 +286,25 @@ model CandyMachine {
   collectionNftAddress String
   items                Nft[]
   receipts             CandyMachineReceipt[]
+  allowList            AllowList[]
+}
+
+model AllowList {
+  groupLabel          String               @id
+  wallet              AllowListOnWallets[]
+  whitelistSupply     Int
+  whitelistUsed       Int
+  candyMachineAddress String
+  candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+}
+
+model AllowListOnWallets {
+  wallet        Wallet    @relation(fields: [walletAddress], references: [address])
+  walletAddress String
+  allowList     AllowList @relation(fields: [groupLabel], references: [groupLabel])
+  groupLabel    String
+
+  @@id([walletAddress, groupLabel])
 }
 
 model CandyMachineReceipt {
