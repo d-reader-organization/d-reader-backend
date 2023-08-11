@@ -92,17 +92,15 @@ export class UserComicService {
     userId: number,
     comicSlug: string,
     property: keyof PickByType<UserComic, boolean>,
-  ) {
-    let userComic = await this.prisma.userComic.findUnique({
+  ): Promise<void> {
+    const userComic = await this.prisma.userComic.findUnique({
       where: { comicSlug_userId: { userId, comicSlug } },
     });
 
-    userComic = await this.prisma.userComic.upsert({
+    await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, [property]: true },
       update: { [property]: !userComic?.[property] },
     });
-
-    return userComic;
   }
 }

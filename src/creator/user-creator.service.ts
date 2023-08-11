@@ -8,20 +8,18 @@ import { UserCreatorMyStatsDto } from './types/user-creator-my-stats.dto';
 export class UserCreatorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async toggleFollow(userId: number, creatorSlug: string): Promise<boolean> {
-    let userCreator = await this.prisma.userCreator.findUnique({
+  async toggleFollow(userId: number, creatorSlug: string): Promise<void> {
+    const userCreator = await this.prisma.userCreator.findUnique({
       where: {
         creatorSlug_userId: { userId, creatorSlug },
       },
     });
 
-    userCreator = await this.prisma.userCreator.upsert({
+    await this.prisma.userCreator.upsert({
       where: { creatorSlug_userId: { userId, creatorSlug } },
       create: { creatorSlug, userId, isFollowing: true },
       update: { isFollowing: !userCreator?.isFollowing },
     });
-
-    return !!userCreator;
   }
 
   async getCreatorStats(slug: string): Promise<CreatorStats> {

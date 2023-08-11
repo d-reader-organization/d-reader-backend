@@ -182,10 +182,7 @@ export class CreatorController {
   /* Follow a creator */
   @UserAuth()
   @Patch('follow/:slug')
-  follow(
-    @UserEntity() user: UserPayload,
-    @Param('slug') slug: string,
-  ): Promise<boolean> {
+  follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
     return this.userCreatorService.toggleFollow(user.id, slug);
   }
 }

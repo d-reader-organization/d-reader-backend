@@ -65,7 +65,7 @@ export class HeliusController {
   /* Delete specific webhook */
   @AdminGuard()
   @Delete('delete/:id')
-  remove(@Param('id') id: string): Promise<boolean> {
+  remove(@Param('id') id: string) {
     return this.heliusService.deleteWebhook(id);
   }
 }
