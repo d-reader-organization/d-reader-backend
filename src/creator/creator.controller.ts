@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
@@ -99,13 +98,13 @@ export class CreatorController {
 
   /* Verify your email address */
   @CreatorOwnerAuth()
-  @Post('request-email-verification')
+  @Patch('request-email-verification')
   requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
     return this.creatorService.requestEmailVerification(creator.email);
   }
 
   /* Verify an email address */
-  @Post('verify-email/:verificationToken')
+  @Patch('verify-email/:verificationToken')
   verifyEmail(@Param('verificationToken') verificationToken: string) {
     return this.creatorService.verifyEmail(verificationToken);
   }
@@ -182,7 +181,7 @@ export class CreatorController {
 
   /* Follow a creator */
   @UserAuth()
-  @Post('follow/:slug')
+  @Patch('follow/:slug')
   follow(
     @UserEntity() user: UserPayload,
     @Param('slug') slug: string,
