@@ -291,9 +291,9 @@ model CandyMachine {
 
 model AllowList {
   groupLabel          String               @id
-  wallet              AllowListOnWallets[]
+  wallets             AllowListOnWallets[]
   whitelistSupply     Int
-  whitelistUsed       Int
+  whitelistUsed       Int                  @default(0)
   candyMachineAddress String
   candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
 }

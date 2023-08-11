@@ -256,9 +256,9 @@ Table CandyMachine {
 
 Table AllowList {
   groupLabel String [pk]
-  wallet AllowListOnWallets [not null]
+  wallets AllowListOnWallets [not null]
   whitelistSupply Int [not null]
-  whitelistUsed Int [not null]
+  whitelistUsed Int [not null, default: 0]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]
 }

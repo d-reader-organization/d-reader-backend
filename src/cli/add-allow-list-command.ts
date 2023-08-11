@@ -2,18 +2,17 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import {
   AllowListGuardSettings,
-  DefaultCandyGuardSettings,
   PublicKey,
   getMerkleRoot,
 } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { GuardGroup } from '../types/shared';
+import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
   candyMachineAddress: string;
-  wallets: string[];
-  label?: string;
+  label: string;
 }
 
 @Command({
@@ -24,6 +23,7 @@ export class AddAllowList extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -36,11 +36,19 @@ export class AddAllowList extends CommandRunner {
   addAllowList = async (options: Options) => {
     log('\n🏗️  updating candymachine with allowlist');
     try {
-      const { candyMachineAddress, wallets, label } = options;
+      const { candyMachineAddress, label } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
+
+      const wallets = await this.prisma.allowList
+        .findFirst({
+          where: { groupLabel: label, candyMachineAddress },
+          include: { wallets: true },
+        })
+        .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
+
       const allowList: AllowListGuardSettings =
         wallets.length > 0
           ? {
@@ -48,28 +56,21 @@ export class AddAllowList extends CommandRunner {
             }
           : null;
 
-      let groups: GuardGroup[], guard: Partial<DefaultCandyGuardSettings>;
-
-      if (label != '') {
-        const existingGroup = candyMachine.candyGuard.groups.find(
-          (group) => group.label === label,
-        );
-        const group = {
-          label,
-          guards: { ...existingGroup?.guards, allowList },
-        };
-        const resolvedGroups = candyMachine.candyGuard.groups.filter(
-          (group) => group.label != label,
-        );
-        groups = [...resolvedGroups, group];
-      } else {
-        guard = { ...candyMachine.candyGuard.guards, allowList };
-      }
+      const existingGroup = candyMachine.candyGuard.groups.find(
+        (group) => group.label === label,
+      );
+      const group: GuardGroup = {
+        label,
+        guards: { ...existingGroup?.guards, allowList },
+      };
+      const resolvedGroups = candyMachine.candyGuard.groups.filter(
+        (group) => group.label != label,
+      );
+      const groups = [...resolvedGroups, group];
 
       await this.candyMachineService.updateCandyMachine(
         candyMachinePublicKey,
         groups,
-        guard,
       );
     } catch (error) {
       logErr(`Error : ${error}`);

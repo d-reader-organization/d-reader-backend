@@ -502,6 +502,37 @@ export class CandyMachineService {
     return receipts;
   }
 
+  async addAllowList(
+    candyMachineAddress: string,
+    wallets: string[],
+    groupLabel: string,
+    whitelistSupply: number,
+  ) {
+    await this.prisma.allowList.create({
+      data: {
+        groupLabel,
+        whitelistSupply,
+        candyMachine: {
+          connect: {
+            address: candyMachineAddress,
+          },
+        },
+        wallets: {
+          create: wallets.map((address) => {
+            return {
+              wallet: {
+                connectOrCreate: {
+                  where: { address },
+                  create: { address },
+                },
+              },
+            };
+          }),
+        },
+      },
+    });
+  }
+
   async findCandyMachineGroups(candyMachineAddress: string) {
     const address = new PublicKey(candyMachineAddress);
     const candyMachine = await this.metaplex
