@@ -7,7 +7,6 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../types/update-user.dto';
@@ -72,13 +71,13 @@ export class UserController {
 
   /* Verify your email address */
   @UserOwnerAuth()
-  @Post('request-email-verification')
+  @Patch('request-email-verification')
   requestEmailVerification(@UserEntity() user: UserPayload) {
     return this.userService.requestEmailVerification(user.email);
   }
 
   /* Verify an email address */
-  @Post('verify-email/:verificationToken')
+  @Patch('verify-email/:verificationToken')
   verifyEmail(@Param('verificationToken') verificationToken: string) {
     return this.userService.verifyEmail(verificationToken);
   }

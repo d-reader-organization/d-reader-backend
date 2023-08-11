@@ -62,7 +62,7 @@ export class AuthController {
 
   /* Login as a user */
   @Throttle(10, 60)
-  @Post('user/login')
+  @Patch('user/login')
   async loginUser(@Body() loginDto: LoginDto): Promise<Authorization> {
     const user = await this.userService.login(loginDto);
     return this.authService.authorizeUser(user);
@@ -107,7 +107,7 @@ export class AuthController {
 
   /* Login as a user */
   @Throttle(10, 60)
-  @Post('creator/login')
+  @Patch('creator/login')
   async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
     const creator = await this.creatorService.login(loginDto);
     return this.authService.authorizeCreator(creator);
@@ -129,7 +129,7 @@ export class AuthController {
   @Throttle(10, 30)
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
-  @Patch('wallet/request-password/:address')
+  @Get('wallet/request-password/:address')
   requestPassword(@UserEntity() user: UserPayload) {
     return this.passwordService.generateOneTimePassword(user.id);
   }
