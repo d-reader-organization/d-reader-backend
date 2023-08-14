@@ -505,13 +505,13 @@ export class CandyMachineService {
 
   async addAllowList(
     candyMachineAddress: string,
-    wallets: string[],
+    allowList: string[],
     groupLabel: string,
     whitelistSupply: number,
   ) {
-    const query: Prisma.AllowListOnWalletsCreateNestedManyWithoutAllowListInput =
+    const wallets: Prisma.AllowListOnWalletsCreateNestedManyWithoutAllowListInput =
       {
-        create: wallets.map((address) => {
+        create: allowList.map((address) => {
           return {
             wallet: {
               connectOrCreate: {
@@ -527,14 +527,14 @@ export class CandyMachineService {
       where: {
         groupLabel_candyMachineAddress: { groupLabel, candyMachineAddress },
       },
-      update: { wallets: query },
+      update: { wallets },
       create: {
         candyMachine: {
           connect: {
             address: candyMachineAddress,
           },
         },
-        wallets: query,
+        wallets,
         groupLabel,
         whitelistSupply,
       },
