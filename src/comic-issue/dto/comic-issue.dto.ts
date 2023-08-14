@@ -38,7 +38,8 @@ import {
 } from './covers/stateless-cover.dto';
 import { StatefulCoverDto } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { GenreDto, toPartialGenreDtoArray } from '../../genre/dto/genre.dto';
+import { GenreDto, toPartialGenreDtoArray } from 'src/genre/dto/genre.dto';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 class PartialComicDto extends PickType(ComicDto, [
   'title',
@@ -115,6 +116,10 @@ export class ComicIssueDto {
   @IsBoolean()
   isVerified: boolean;
 
+  @IsNotEmpty()
+  @IsKebabCase()
+  comicSlug: string;
+
   @IsOptional()
   @Type(() => PartialCreatorDto)
   creator?: PartialCreatorDto;
@@ -140,8 +145,8 @@ export class ComicIssueDto {
   @IsString()
   candyMachineAddress?: string;
 
-  // @IsSolanaAddress()
-  // creatorAddress: string;
+  @IsSolanaAddress()
+  creatorAddress: string;
 
   @IsOptional()
   @IsArray()
@@ -183,6 +188,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
 
   const plainComicIssueDto: ComicIssueDto = {
     id: issue.id,
+    comicSlug: issue.comicSlug,
     number: issue.number,
     supply: issue.supply,
     discountMintPrice: issue.discountMintPrice,
@@ -205,7 +211,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
     isVerified: !!issue.verifiedAt,
-    // creatorAddress: issue.creatorAddress,
+    creatorAddress: issue.creatorAddress,
     creator: issue.comic?.creator
       ? {
           name: issue.comic.creator.name,
