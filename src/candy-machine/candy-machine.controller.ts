@@ -17,9 +17,12 @@ import { toCandyMachineGroupDtoArray } from './dto/candy-machine-group.dto';
 export class CandyMachineController {
   constructor(private readonly candyMachineService: CandyMachineService) {}
 
+  /* this endpoint is not used in production */
   @Get('get/minted-nfts')
-  findMintedNfts(@Query() query: MintOneParams) {
-    return this.candyMachineService.findMintedNfts(query.candyMachineAddress);
+  async findMintedNfts(@Query() query: MintOneParams) {
+    return await this.candyMachineService.findMintedNfts(
+      query.candyMachineAddress,
+    );
   }
 
   @Get('get/receipts')

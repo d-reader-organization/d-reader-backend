@@ -103,16 +103,14 @@ export class GenreController {
   /* Pseudo delete genre */
   @AdminGuard()
   @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string): Promise<GenreDto> {
-    const deletedGenre = await this.genreService.pseudoDelete(slug);
-    return toGenreDto(deletedGenre);
+  async pseudoDelete(@Param('slug') slug: string) {
+    await this.genreService.pseudoDelete(slug);
   }
 
   /* Recover genre */
   @AdminGuard()
   @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string): Promise<GenreDto> {
-    const recoveredGenre = await this.genreService.pseudoRecover(slug);
-    return toGenreDto(recoveredGenre);
+  async pseudoRecover(@Param('slug') slug: string) {
+    await this.genreService.pseudoRecover(slug);
   }
 }

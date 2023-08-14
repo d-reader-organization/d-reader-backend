@@ -390,7 +390,6 @@ export class ComicIssueService {
       },
       include: {
         comic: { include: { creator: true } },
-        collectionNft: true,
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
@@ -407,8 +406,6 @@ export class ComicIssueService {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
-        updatedComicIssue.creatorAddress,
-        updatedComicIssue.royaltyWallets,
         startDate,
         endDate,
       );
@@ -426,21 +423,11 @@ export class ComicIssueService {
       });
       throw e;
     }
-
-    return updatedComicIssue;
   }
 
   async publishOffChain(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
-      include: {
-        comic: { include: { creator: true } },
-        collectionNft: true,
-        statefulCovers: true,
-        statelessCovers: true,
-        collaborators: true,
-        royaltyWallets: true,
-      },
     });
 
     if (!comicIssue) {
@@ -449,13 +436,11 @@ export class ComicIssueService {
       throw new BadRequestException('Comic already published');
     }
 
-    const updatedComicIssue = await this.prisma.comicIssue.update({
+    return await this.prisma.comicIssue.update({
       where: { id },
       include: { collaborators: true },
       data: { publishedAt: new Date() },
     });
-
-    return updatedComicIssue;
   }
 
   async unpublish(id: number) {
@@ -469,8 +454,8 @@ export class ComicIssueService {
     }
   }
 
-  async read(id: number, userId: number): Promise<void> {
-    await this.userComicIssueService.read(userId, id);
+  async read(id: number, userId: number) {
+    return await this.userComicIssueService.read(userId, id);
   }
 
   async pseudoDelete(id: number) {

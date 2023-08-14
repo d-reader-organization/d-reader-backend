@@ -40,16 +40,16 @@ export class AuthController {
   // USER ENDPOINTS
   @SkipThrottle()
   @Get('user/validate-name/:name')
-  validateUserName(@Param('name') name: string) {
+  async validateUserName(@Param('name') name: string) {
     validateName(name);
-    return this.userService.throwIfNameTaken(name);
+    return await this.userService.throwIfNameTaken(name);
   }
 
   @SkipThrottle()
   @Get('user/validate-email/:email')
-  validateUserEmail(@Param('email') email: string) {
+  async validateUserEmail(@Param('email') email: string) {
     validateEmail(email);
-    return this.userService.throwIfEmailTaken(email);
+    return await this.userService.throwIfEmailTaken(email);
   }
 
   /* Register a new user */
@@ -72,27 +72,27 @@ export class AuthController {
   @UserAuth()
   @SkipThrottle()
   @Get('user/refresh-token/:refreshToken')
-  reauthorizeUser(
+  async reauthorizeUser(
     @Param('refreshToken') refreshToken: string,
     @UserEntity()
     user: UserPayload,
   ) {
-    return this.authService.refreshAccessToken(user, refreshToken);
+    return await this.authService.refreshAccessToken(user, refreshToken);
   }
 
   // CREATOR ENDPOINTS
   @SkipThrottle()
   @Get('creator/validate-name/:name')
-  validateCreatorName(@Param('name') name: string) {
+  async validateCreatorName(@Param('name') name: string) {
     validateName(name);
-    return this.creatorService.throwIfNameTaken(name);
+    return await this.creatorService.throwIfNameTaken(name);
   }
 
   @SkipThrottle()
   @Get('creator/validate-email/:email')
-  validateCreatorEmail(@Param('email') email: string) {
+  async validateCreatorEmail(@Param('email') email: string) {
     validateEmail(email);
-    return this.creatorService.throwIfEmailTaken(email);
+    return await this.creatorService.throwIfEmailTaken(email);
   }
 
   /* Register a new user */
@@ -117,12 +117,12 @@ export class AuthController {
   @CreatorAuth()
   @SkipThrottle()
   @Get('creator/refresh-token/:refreshToken')
-  reauthorizeCreator(
+  async reauthorizeCreator(
     @Param('refreshToken') refreshToken: string,
     @CreatorEntity()
     creator: CreatorPayload,
   ) {
-    return this.authService.refreshAccessToken(creator, refreshToken);
+    return await this.authService.refreshAccessToken(creator, refreshToken);
   }
 
   // WALLET ENDPOINTS
@@ -130,25 +130,25 @@ export class AuthController {
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
   @Get('wallet/request-password/:address')
-  requestPassword(@UserEntity() user: UserPayload) {
-    return this.passwordService.generateOneTimePassword(user.id);
+  async requestPassword(@UserEntity() user: UserPayload) {
+    return await this.passwordService.generateOneTimePassword(user.id);
   }
 
   /* Connect your wallet with a signed and encoded one time password */
   @UserAuth()
   @Get('wallet/connect/:address/:encoding')
-  connectWallet(
+  async connectWallet(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
     @UserEntity() user: UserPayload,
   ) {
-    return this.authService.connectWallet(user.id, address, encoding);
+    await this.authService.connectWallet(user.id, address, encoding);
   }
 
   /* Disconnect your wallet with a signed and encoded one time password */
   @UserAuth()
   @Get('wallet/disconnect/:address')
-  disconnectWallet(@Param('address') address: string) {
-    return this.authService.disconnectWallet(address);
+  async disconnectWallet(@Param('address') address: string) {
+    await this.authService.disconnectWallet(address);
   }
 }

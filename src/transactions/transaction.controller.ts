@@ -29,22 +29,22 @@ export class TransactionController {
   ) {}
 
   @Get('/mint-one')
-  constructMintOneTransaction(@Query() query: MintOneParams) {
+  async constructMintOneTransaction(@Query() query: MintOneParams) {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
 
-    return this.candyMachineService.createMintOneTransaction(
+    return await this.candyMachineService.createMintOneTransaction(
       publicKey,
       candyMachineAddress,
     );
   }
 
   @Get('/sign-comic')
-  constructSignComicTransaction(@Query() query: SignComicParams) {
+  async constructSignComicTransaction(@Query() query: SignComicParams) {
     const publicKey = new PublicKey(query.signerAddress);
     const nftPubKey = new PublicKey(query.nftAddress);
 
-    return this.candyMachineService.createChangeComicStateTransaction(
+    return await this.candyMachineService.createChangeComicStateTransaction(
       nftPubKey,
       publicKey,
       ComicStateArgs.Sign,
@@ -52,11 +52,11 @@ export class TransactionController {
   }
 
   @Get('/use-comic-issue-nft')
-  constructUseComicTransaction(@Query() query: UseComicParams) {
+  async constructUseComicTransaction(@Query() query: UseComicParams) {
     const publicKey = new PublicKey(query.ownerAddress);
     const nftPubKey = new PublicKey(query.nftAddress);
 
-    return this.candyMachineService.createChangeComicStateTransaction(
+    return await this.candyMachineService.createChangeComicStateTransaction(
       nftPubKey,
       publicKey,
       ComicStateArgs.Use,
@@ -64,12 +64,12 @@ export class TransactionController {
   }
 
   @Get('/list')
-  createListTransaction(@Query() query: ListParams) {
+  async createListTransaction(@Query() query: ListParams) {
     const publicKey = new PublicKey(query.sellerAddress);
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
-    return this.auctionHouseService.createListTransaction(
+    return await this.auctionHouseService.createListTransaction(
       publicKey,
       mintAccount,
       query.price,
@@ -78,7 +78,7 @@ export class TransactionController {
   }
 
   @Get('/private-bid')
-  createPrivateBidTransaction(@Query() query: PrivateBidParams) {
+  async createPrivateBidTransaction(@Query() query: PrivateBidParams) {
     const publicKey = new PublicKey(query.buyerAddress);
     const seller = query.sellerAddress
       ? new PublicKey(query.sellerAddress)
@@ -86,7 +86,7 @@ export class TransactionController {
     const mintAccount = new PublicKey(query.mintAccount);
     const printReceipt = query.printReceipt == 'false' ? false : true;
 
-    return this.auctionHouseService.createPrivateBidTransaction(
+    return await this.auctionHouseService.createPrivateBidTransaction(
       publicKey,
       mintAccount,
       query.price,
@@ -96,14 +96,14 @@ export class TransactionController {
   }
 
   @Get('/instant-buy')
-  createInstantBuyTransaction(@Query() query: InstantBuyParams) {
+  async createInstantBuyTransaction(@Query() query: InstantBuyParams) {
     const publicKey = new PublicKey(query.buyerAddress);
     const buyArguments: BuyArgs = {
       mintAccount: new PublicKey(query.mintAccount),
       price: query.price,
       seller: new PublicKey(query.sellerAddress),
     };
-    return this.auctionHouseService.createInstantBuyTransaction(
+    return await this.auctionHouseService.createInstantBuyTransaction(
       publicKey,
       buyArguments,
     );
@@ -114,25 +114,30 @@ export class TransactionController {
     name: 'query',
     type: BuyParamsArray,
   })
-  createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
+  async createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
     const buyParams = validateAndFormatParams(query.instantBuyParams);
     const publicKey = new PublicKey(query[0].buyer);
-    return this.auctionHouseService.createMultipleBuys(publicKey, buyParams);
+    return await this.auctionHouseService.createMultipleBuys(
+      publicKey,
+      buyParams,
+    );
   }
 
   @Get('/cancel-bid')
-  createCancelBidTransaction(@Query() query: CancelParams) {
+  async createCancelBidTransaction(@Query() query: CancelParams) {
     const receiptAddress = new PublicKey(query.receiptAddress);
-    return this.auctionHouseService.createCancelBidTransaction(receiptAddress);
+    return await this.auctionHouseService.createCancelBidTransaction(
+      receiptAddress,
+    );
   }
 
   @Get('/cancel-listing')
-  createCancelListingTransaction(@Query() query: CancelParams) {
+  async createCancelListingTransaction(@Query() query: CancelParams) {
     const receiptAddress = query.receiptAddress
       ? new PublicKey(query.receiptAddress)
       : undefined;
     const nftAddress = query.nftAddress ?? undefined;
-    return this.auctionHouseService.createCancelListingTransaction(
+    return await this.auctionHouseService.createCancelListingTransaction(
       receiptAddress,
       nftAddress,
     );

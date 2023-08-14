@@ -65,21 +65,21 @@ export class UserController {
   /* Reset specific user's password */
   @UserOwnerAuth()
   @Patch('reset-password/:id')
-  resetPassword(@Param('id') id: string) {
-    return this.userService.resetPassword(+id);
+  async resetPassword(@Param('id') id: string) {
+    await this.userService.resetPassword(+id);
   }
 
   /* Verify your email address */
   @UserOwnerAuth()
   @Patch('request-email-verification')
-  requestEmailVerification(@UserEntity() user: UserPayload) {
-    return this.userService.requestEmailVerification(user.email);
+  async requestEmailVerification(@UserEntity() user: UserPayload) {
+    await this.userService.requestEmailVerification(user.email);
   }
 
   /* Verify an email address */
   @Patch('verify-email/:verificationToken')
-  verifyEmail(@Param('verificationToken') verificationToken: string) {
-    return this.userService.verifyEmail(verificationToken);
+  async verifyEmail(@Param('verificationToken') verificationToken: string) {
+    await this.userService.verifyEmail(verificationToken);
   }
 
   /* Update specific user's avatar file */
@@ -137,6 +137,7 @@ export class UserController {
   @Throttle(10, 60)
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
+    // TODO: check if syncWallet is working correctly (it's not async and awaited)
     return this.throttledSyncWallets(+id);
   }
 }

@@ -246,26 +246,26 @@ export class ComicIssueController {
   /* Favouritise/unfavouritise a specific comic issue */
   @UserAuth()
   @Patch('favouritise/:id')
-  favouritise(@Param('id') id: string, @UserEntity() user: UserPayload) {
-    this.userComicIssueService.toggleState(user.id, +id, 'isFavourite');
+  async favouritise(@Param('id') id: string, @UserEntity() user: UserPayload) {
+    await this.userComicIssueService.toggleState(user.id, +id, 'isFavourite');
   }
 
   /* Rate specific comic issue */
   @UserAuth()
   @Patch('rate/:id')
-  rate(
+  async rate(
     @Param('id') id: string,
     @Body() rateComicDto: RateComicDto,
     @UserEntity() user: UserPayload,
   ) {
-    this.userComicIssueService.rate(user.id, +id, rateComicDto.rating);
+    await this.userComicIssueService.rate(user.id, +id, rateComicDto.rating);
   }
 
   /* Read a specific comic issue */
   @UserAuth()
   @Patch('read/:id')
-  read(@Param('id') id: string, @UserEntity() user: UserPayload) {
-    this.comicIssueService.read(+id, user.id);
+  async read(@Param('id') id: string, @UserEntity() user: UserPayload) {
+    await this.comicIssueService.read(+id, user.id);
   }
 
   /* Publish an off-chain comic issue on chain */
@@ -274,46 +274,36 @@ export class ComicIssueController {
   async publishOnChain(
     @Param('id') id: string,
     @Body() publishOnChainDto: PublishOnChainDto,
-  ): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publishOnChain(
-      +id,
-      publishOnChainDto,
-    );
-    return toComicIssueDto(publishedComicIssue);
+  ) {
+    await this.comicIssueService.publishOnChain(+id, publishOnChainDto);
   }
 
   /* Publish comic issue */
   @AdminGuard()
   @Patch('publish-off-chain/:id')
-  async publishOffChain(@Param('id') id: string): Promise<ComicIssueDto> {
-    const publishedComicIssue = await this.comicIssueService.publishOffChain(
-      +id,
-    );
-    return toComicIssueDto(publishedComicIssue);
+  async publishOffChain(@Param('id') id: string) {
+    await this.comicIssueService.publishOffChain(+id);
   }
 
   /* Unpublish comic issue */
   @AdminGuard()
   @Patch('unpublish/:id')
-  async unpublish(@Param('id') id: string): Promise<ComicIssueDto> {
+  async unpublish(@Param('id') id: string) {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${id}`);
-    // const unpublishedComicIssue = await this.comicIssueService.unpublish(+id);
-    // return toComicIssueDto(unpublishedComicIssue);
+    // await this.comicIssueService.unpublish(+id);
   }
 
   /* Queue comic issue for deletion */
   @ComicIssueOwnerAuth()
   @Patch('delete/:id')
-  async pseudoDelete(@Param('id') id: string): Promise<ComicIssueDto> {
-    const deletedComicIssue = await this.comicIssueService.pseudoDelete(+id);
-    return toComicIssueDto(deletedComicIssue);
+  async pseudoDelete(@Param('id') id: string) {
+    await this.comicIssueService.pseudoDelete(+id);
   }
 
   /* Remove comic issue for deletion queue */
   @ComicIssueOwnerAuth()
   @Patch('recover/:id')
-  async pseudoRecover(@Param('id') id: string): Promise<ComicIssueDto> {
-    const recoveredComicIssue = await this.comicIssueService.pseudoRecover(+id);
-    return toComicIssueDto(recoveredComicIssue);
+  async pseudoRecover(@Param('id') id: string) {
+    await this.comicIssueService.pseudoRecover(+id);
   }
 }

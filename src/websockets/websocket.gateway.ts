@@ -8,10 +8,10 @@ import {
   CandyMachineReceiptInput,
   toCMReceiptDto,
 } from '../candy-machine/dto/candy-machine-receipt.dto';
-import { Nft } from '@prisma/client';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import { toNftDto } from '../nft/dto/nft.dto';
+import { Nft } from '@prisma/client';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })

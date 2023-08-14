@@ -11,6 +11,7 @@ import { EmailJwtDto, JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
+import { UNAUTHORIZED_MESSAGE } from '../constants';
 import { Creator, User } from '@prisma/client';
 
 // One day  we can consider splitting this into two passport strategies
@@ -24,9 +25,9 @@ export class AuthService {
   ) {}
 
   async connectWallet(userId: number, address: string, encoding: string) {
-    this.passwordService.validateWallet(userId, address, encoding);
+    await this.passwordService.validateWallet(userId, address, encoding);
 
-    await this.prisma.wallet.upsert({
+    return await this.prisma.wallet.upsert({
       where: { address },
       create: { address, userId: userId },
       update: { userId: userId },
@@ -34,7 +35,7 @@ export class AuthService {
   }
 
   async disconnectWallet(address: string) {
-    await this.prisma.wallet.update({
+    return await this.prisma.wallet.update({
       where: { address },
       data: { userId: null },
     });
@@ -117,9 +118,7 @@ export class AuthService {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
     } catch {
-      throw new UnauthorizedException(
-        'Refresh token invalid or expired, please reconnect',
-      );
+      throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
     }
 
     if (jwtPayload.id !== jwtDto.id) {

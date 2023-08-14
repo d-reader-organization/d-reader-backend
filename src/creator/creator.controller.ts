@@ -81,32 +81,28 @@ export class CreatorController {
   async updatePassword(
     @Param('slug') slug: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ): Promise<CreatorDto> {
-    const creator = await this.creatorService.updatePassword(
-      slug,
-      updatePasswordDto,
-    );
-    return toCreatorDto(creator);
+  ) {
+    await this.creatorService.updatePassword(slug, updatePasswordDto);
   }
 
   /* Reset specific creator's password */
   @CreatorOwnerAuth()
   @Patch('reset-password/:slug')
-  resetPassword(@Param('slug') slug: string) {
-    return this.creatorService.resetPassword(slug);
+  async resetPassword(@Param('slug') slug: string) {
+    await this.creatorService.resetPassword(slug);
   }
 
   /* Verify your email address */
   @CreatorOwnerAuth()
   @Patch('request-email-verification')
-  requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
-    return this.creatorService.requestEmailVerification(creator.email);
+  async requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
+    await this.creatorService.requestEmailVerification(creator.email);
   }
 
   /* Verify an email address */
   @Patch('verify-email/:verificationToken')
-  verifyEmail(@Param('verificationToken') verificationToken: string) {
-    return this.creatorService.verifyEmail(verificationToken);
+  async verifyEmail(@Param('verificationToken') verificationToken: string) {
+    await this.creatorService.verifyEmail(verificationToken);
   }
 
   /* Update specific creators avatar file */
@@ -166,23 +162,21 @@ export class CreatorController {
   /* Queue creator for deletion */
   @CreatorOwnerAuth()
   @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string): Promise<CreatorDto> {
-    const deletedCreator = await this.creatorService.pseudoDelete(slug);
-    return toCreatorDto(deletedCreator);
+  async pseudoDelete(@Param('slug') slug: string) {
+    await this.creatorService.pseudoDelete(slug);
   }
 
   /* Remove creator for deletion queue */
   @CreatorOwnerAuth()
   @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string): Promise<CreatorDto> {
-    const recoveredCreator = await this.creatorService.pseudoRecover(slug);
-    return toCreatorDto(recoveredCreator);
+  async pseudoRecover(@Param('slug') slug: string) {
+    await this.creatorService.pseudoRecover(slug);
   }
 
   /* Follow a creator */
   @UserAuth()
   @Patch('follow/:slug')
-  follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
-    return this.userCreatorService.toggleFollow(user.id, slug);
+  async follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
+    await this.userCreatorService.toggleFollow(user.id, slug);
   }
 }

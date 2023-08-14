@@ -182,58 +182,60 @@ export class ComicController {
   /* Rate specific comic */
   @UserAuth()
   @Patch('rate/:slug')
-  rate(
+  async rate(
     @Param('slug') slug: string,
     @Body() rateComicDto: RateComicDto,
     @UserEntity() user: UserPayload,
   ) {
-    return this.userComicService.rate(user.id, slug, rateComicDto.rating);
+    await this.userComicService.rate(user.id, slug, rateComicDto.rating);
   }
 
   /* Subscribe/unsubscribe from specific comic */
   @UserAuth()
   @Patch('subscribe/:slug')
-  subscribe(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
-    return this.userComicService.toggleState(user.id, slug, 'isSubscribed');
+  async subscribe(
+    @Param('slug') slug: string,
+    @UserEntity() user: UserPayload,
+  ) {
+    await this.userComicService.toggleState(user.id, slug, 'isSubscribed');
   }
 
   /* Favouritise/unfavouritise a specific comic */
   @UserAuth()
   @Patch('favouritise/:slug')
-  favouritise(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
-    return this.userComicService.toggleState(user.id, slug, 'isFavourite');
+  async favouritise(
+    @Param('slug') slug: string,
+    @UserEntity() user: UserPayload,
+  ) {
+    await this.userComicService.toggleState(user.id, slug, 'isFavourite');
   }
 
   /* Publish comic */
   @AdminGuard()
   @Patch('publish/:slug')
-  async publish(@Param('slug') slug: string): Promise<ComicDto> {
-    const publishedComic = await this.comicService.publish(slug);
-    return toComicDto(publishedComic);
+  async publish(@Param('slug') slug: string) {
+    await this.comicService.publish(slug);
   }
 
   /* Unpublish comic */
   @AdminGuard()
   @Patch('unpublish/:slug')
-  async unpublish(@Param('slug') slug: string): Promise<ComicDto> {
+  async unpublish(@Param('slug') slug: string) {
     throw new ForbiddenException(`Endpoint disabled, cannot unpublish ${slug}`);
-    // const unpublishedComic = await this.comicService.unpublish(slug);
-    // return toComicDto(unpublishedComic);
+    // await this.comicService.unpublish(slug);
   }
 
   /* Queue comic for deletion */
   @ComicOwnerAuth()
   @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string): Promise<ComicDto> {
-    const deletedComic = await this.comicService.pseudoDelete(slug);
-    return toComicDto(deletedComic);
+  async pseudoDelete(@Param('slug') slug: string) {
+    await this.comicService.pseudoDelete(slug);
   }
 
   /* Remove comic for deletion queue */
   @ComicOwnerAuth()
   @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string): Promise<ComicDto> {
-    const recoveredComic = await this.comicService.pseudoRecover(slug);
-    return toComicDto(recoveredComic);
+  async pseudoRecover(@Param('slug') slug: string) {
+    await this.comicService.pseudoRecover(slug);
   }
 }

@@ -185,20 +185,20 @@ export class UserComicIssueService {
     userId: number,
     comicIssueId: number,
     property: keyof PickByType<UserComicIssue, boolean>,
-  ): Promise<void> {
+  ): Promise<UserComicIssue> {
     const userComicIssue = await this.prisma.userComicIssue.findUnique({
       where: { comicIssueId_userId: { userId, comicIssueId } },
     });
 
-    await this.prisma.userComicIssue.upsert({
+    return await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: { userId, comicIssueId, [property]: true },
       update: { [property]: !userComicIssue?.[property] },
     });
   }
 
-  read(userId: number, comicIssueId: number) {
-    return this.prisma.userComicIssue.upsert({
+  async read(userId: number, comicIssueId: number) {
+    return await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: {
         userId,
