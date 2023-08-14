@@ -108,6 +108,7 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
+  // TODO: this can be moved to the 'comic/get' endpoint?
   @Get('get/by-owner/:id')
   async findOwnedComicIssues(
     @Param('id') id: string,
@@ -193,7 +194,7 @@ export class ComicIssueController {
   @ComicIssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
-  @Post('update/pages/:id')
+  @Post('update/:id/pages')
   async updatePages(
     @Param('id') id: string,
     @ApiFileArray({
@@ -211,7 +212,7 @@ export class ComicIssueController {
   @ComicIssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
-  @Post('update/stateless-covers/:id')
+  @Post('update/:id/stateless-covers')
   async updateStatelessCovers(
     @Param('id') id: string,
     @ApiFileArray({
@@ -227,7 +228,7 @@ export class ComicIssueController {
 
   /* Update Stateful covers */
   @ComicIssueOwnerAuth()
-  @Post('update/stateful-covers/:id')
+  @Post('update/:id/stateful-covers')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
   async updateStatefulCovers(
