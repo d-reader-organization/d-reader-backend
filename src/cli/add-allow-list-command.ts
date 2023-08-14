@@ -8,11 +8,12 @@ import {
 import { metaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { GuardGroup } from '../types/shared';
-import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
   candyMachineAddress: string;
   label: string;
+  allowList: string[];
+  whitelistSupply?: number;
 }
 
 @Command({
@@ -23,7 +24,6 @@ export class AddAllowList extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
-    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -36,20 +36,16 @@ export class AddAllowList extends CommandRunner {
   addAllowList = async (options: Options) => {
     log('\n🏗️  updating candymachine with allowlist');
     try {
-      const { candyMachineAddress, label } = options;
+      const { candyMachineAddress, label, allowList, whitelistSupply } =
+        options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
-
-      const wallets = await this.prisma.allowList
-        .findFirst({
-          where: { groupLabel: label, candyMachineAddress },
-          include: { wallets: true },
-        })
+      const wallets = await this.candyMachineService
+        .addAllowList(candyMachineAddress, allowList, label, whitelistSupply)
         .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
-
-      const allowList: AllowListGuardSettings =
+      const allowListGuard: AllowListGuardSettings =
         wallets.length > 0
           ? {
               merkleRoot: getMerkleRoot(wallets),
@@ -61,7 +57,7 @@ export class AddAllowList extends CommandRunner {
       );
       const group: GuardGroup = {
         label,
-        guards: { ...existingGroup?.guards, allowList },
+        guards: { ...existingGroup.guards, allowList: allowListGuard },
       };
       const resolvedGroups = candyMachine.candyGuard.groups.filter(
         (group) => group.label != label,

@@ -50,4 +50,14 @@ export class AddGroupQuestions {
   parseEndDate(endDate: string): DateTime {
     return toDateTime(endDate);
   }
+
+  @Question({
+    type: 'input',
+    name: 'mintPrice',
+    message: 'price of the nft (in lamports)',
+  })
+  parseMintPrice(amount: number): number {
+    if (typeof amount === 'string') return +amount;
+    return amount;
+  }
 }

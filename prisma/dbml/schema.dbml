@@ -255,23 +255,25 @@ Table CandyMachine {
 }
 
 Table AllowList {
-  groupLabel String [pk]
+  id Int [pk, increment]
+  groupLabel String [not null]
   wallets AllowListOnWallets [not null]
   whitelistSupply Int [not null]
   whitelistUsed Int [not null, default: 0]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]
+
+  indexes {
+    (groupLabel, candyMachineAddress) [unique]
+  }
 }
 
 Table AllowListOnWallets {
+  id Int [pk, increment]
   wallet Wallet [not null]
   walletAddress String [not null]
   allowList AllowList [not null]
-  groupLabel String [not null]
-
-  indexes {
-    (walletAddress, groupLabel) [pk]
-  }
+  allowListId Int [not null]
 }
 
 Table CandyMachineReceipt {
@@ -464,7 +466,7 @@ Ref: AllowList.candyMachineAddress > CandyMachine.address
 
 Ref: AllowListOnWallets.walletAddress > Wallet.address
 
-Ref: AllowListOnWallets.groupLabel > AllowList.groupLabel
+Ref: AllowListOnWallets.allowListId > AllowList.id
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 

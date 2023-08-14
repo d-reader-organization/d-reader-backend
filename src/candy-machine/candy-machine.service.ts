@@ -60,6 +60,7 @@ import {
 import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
+import { Prisma } from '@prisma/client';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -276,10 +277,6 @@ export class CandyMachineService {
             lamports: solFromLamports(BOT_TAX),
             lastInstruction: true,
           },
-          freezeSolPayment: {
-            amount: solFromLamports(comicIssue.mintPrice),
-            destination: this.metaplex.identity().publicKey,
-          },
         },
         groups: [
           {
@@ -304,6 +301,10 @@ export class CandyMachineService {
               },
               endDate: {
                 date: toDateTime(endDate),
+              },
+              freezeSolPayment: {
+                amount: solFromLamports(comicIssue.mintPrice),
+                destination: this.metaplex.identity().publicKey,
               },
             },
           },
@@ -508,28 +509,36 @@ export class CandyMachineService {
     groupLabel: string,
     whitelistSupply: number,
   ) {
-    await this.prisma.allowList.create({
-      data: {
-        groupLabel,
-        whitelistSupply,
+    const query: Prisma.AllowListOnWalletsCreateNestedManyWithoutAllowListInput =
+      {
+        create: wallets.map((address) => {
+          return {
+            wallet: {
+              connectOrCreate: {
+                where: { address },
+                create: { address },
+              },
+            },
+          };
+        }),
+      };
+
+    return await this.prisma.allowList.upsert({
+      where: {
+        groupLabel_candyMachineAddress: { groupLabel, candyMachineAddress },
+      },
+      update: { wallets: query },
+      create: {
         candyMachine: {
           connect: {
             address: candyMachineAddress,
           },
         },
-        wallets: {
-          create: wallets.map((address) => {
-            return {
-              wallet: {
-                connectOrCreate: {
-                  where: { address },
-                  create: { address },
-                },
-              },
-            };
-          }),
-        },
+        wallets: query,
+        groupLabel,
+        whitelistSupply,
       },
+      include: { wallets: true },
     });
   }
 
@@ -549,7 +558,6 @@ export class CandyMachineService {
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePubKey });
-
     const eligibleGroups = await Promise.all(
       candyMachine.candyGuard.groups.map(async (group) => {
         if (group.label === AUTHORITY_GROUP_LABEL) return;
@@ -562,7 +570,6 @@ export class CandyMachineService {
             group.label,
           ),
         ]);
-
         if (isNftGateValid && isAllowListValid) {
           return group;
         }
@@ -595,13 +602,17 @@ export class CandyMachineService {
   ) {
     if (!allowList) return true;
 
-    const allowListItem = await this.prisma.allowListOnWallets.findFirst({
+    const allowListItem = await this.prisma.allowList.findFirst({
       where: {
-        walletAddress: wallet.toString(),
-        allowList: { candyMachineAddress, groupLabel },
+        candyMachineAddress: candyMachineAddress,
+        groupLabel,
+      },
+      include: {
+        wallets: {
+          where: { walletAddress: wallet.toString() },
+        },
       },
     });
-
     return !!allowListItem;
   }
 }

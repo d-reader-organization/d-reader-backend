@@ -31,4 +31,33 @@ export class AddAllowListQuestions {
   parseLabel(label: string): string {
     return label;
   }
+
+  @Question({
+    type: 'input',
+    name: 'allowList',
+    message:
+      'list of wallet address to add in the allowlist (empty if no wallet to add)',
+    default: [],
+    validate: async function (allowList: string[]) {
+      allowList.forEach((wallet) => {
+        if (wallet && !PublicKey.isOnCurve(wallet)) {
+          return 'Address must be a solana address';
+        }
+      });
+      return true;
+    },
+  })
+  parseWalletAddress(wallets: string): string[] {
+    return JSON.parse(wallets);
+  }
+
+  @Question({
+    type: 'input',
+    name: 'whitelistSupply',
+    message: 'supply of wallets to give whitelist (empty to not update)',
+  })
+  parseWhitelistSupply(supply: number): number {
+    if (typeof supply === 'string') return +supply;
+    return supply;
+  }
 }

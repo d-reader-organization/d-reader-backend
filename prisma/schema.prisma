@@ -290,21 +290,23 @@ model CandyMachine {
 }
 
 model AllowList {
-  groupLabel          String               @id
+  id                  Int                  @id @default(autoincrement())
+  groupLabel          String
   wallets             AllowListOnWallets[]
   whitelistSupply     Int
   whitelistUsed       Int                  @default(0)
   candyMachineAddress String
   candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+
+  @@unique([groupLabel, candyMachineAddress])
 }
 
 model AllowListOnWallets {
+  id            Int       @id @default(autoincrement())
   wallet        Wallet    @relation(fields: [walletAddress], references: [address])
   walletAddress String
-  allowList     AllowList @relation(fields: [groupLabel], references: [groupLabel])
-  groupLabel    String
-
-  @@id([walletAddress, groupLabel])
+  allowList     AllowList @relation(fields: [allowListId], references: [id])
+  allowListId   Int
 }
 
 model CandyMachineReceipt {

@@ -31,6 +31,14 @@ export class CandyMachineController {
     return toCMReceiptDtoArray(receipts);
   }
 
+  @Get('get/eligible-groups')
+  async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
+    const groups = await this.candyMachineService.findWalletEligibleGroups(
+      query,
+    );
+    return toCandyMachineGroupDtoArray(groups);
+  }
+
   @Get('get/:address')
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);
@@ -41,14 +49,6 @@ export class CandyMachineController {
   async findCandyMachineGroups(@Param('address') address: string) {
     const groups = await this.candyMachineService.findCandyMachineGroups(
       address,
-    );
-    return toCandyMachineGroupDtoArray(groups);
-  }
-
-  @Get('get/eligible-groups')
-  async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
-    const groups = await this.candyMachineService.findWalletEligibleGroups(
-      query,
     );
     return toCandyMachineGroupDtoArray(groups);
   }

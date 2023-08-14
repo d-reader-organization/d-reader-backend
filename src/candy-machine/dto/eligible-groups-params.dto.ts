@@ -1,7 +1,6 @@
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { Pagination } from '../../types/pagination.dto';
 
-export class EligibleGroupsParams extends Pagination {
+export class EligibleGroupsParams {
   @IsSolanaAddress()
   candyMachineAddress: string;
 

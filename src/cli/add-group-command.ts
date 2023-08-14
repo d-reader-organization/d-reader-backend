@@ -3,18 +3,21 @@ import { log, logErr } from './chalk';
 import {
   DateTime,
   EndDateGuardSettings,
+  FreezeSolPaymentGuardSettings,
   PublicKey,
   StartDateGuardSettings,
 } from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
+import { initMetaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { GuardGroup } from '../types/shared';
+import { solFromLamports } from '../utils/helpers';
 
 interface Options {
   candyMachineAddress: string;
   label: string;
   startDate: DateTime;
   endDate: DateTime;
+  mintPrice: number;
 }
 
 @Command({
@@ -37,8 +40,11 @@ export class AddGroupCommand extends CommandRunner {
   addGroup = async (options: Options) => {
     log('\n🏗️  add new group in candymachine');
     try {
-      const { candyMachineAddress, label, startDate, endDate } = options;
+      const { candyMachineAddress, label, startDate, endDate, mintPrice } =
+        options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+      const metaplex = initMetaplex();
+
       const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
@@ -49,6 +55,10 @@ export class AddGroupCommand extends CommandRunner {
       const endDateGuard: EndDateGuardSettings = {
         date: endDate,
       };
+      const freezeSolPayment: FreezeSolPaymentGuardSettings = {
+        amount: solFromLamports(mintPrice),
+        destination: metaplex.identity().publicKey,
+      };
 
       const existingGroup = candyMachine.candyGuard.groups.find(
         (group) => group.label === label,
@@ -58,7 +68,12 @@ export class AddGroupCommand extends CommandRunner {
       }
       const group: GuardGroup = {
         label,
-        guards: { startDate: startDateGuard, endDate: endDateGuard },
+        guards: {
+          ...candyMachine.candyGuard.guards,
+          freezeSolPayment,
+          startDate: startDateGuard,
+          endDate: endDateGuard,
+        },
       };
       const resolvedGroups = candyMachine.candyGuard.groups.filter(
         (group) => group.label != label,
