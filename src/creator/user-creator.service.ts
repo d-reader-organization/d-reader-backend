@@ -3,19 +3,23 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { mockPromise, getRandomFloatOrInt } from '../utils/helpers';
 import { UserCreatorMyStatsDto } from './types/user-creator-my-stats.dto';
+import { UserCreator } from '@prisma/client';
 
 @Injectable()
 export class UserCreatorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async toggleFollow(userId: number, creatorSlug: string): Promise<void> {
+  async toggleFollow(
+    userId: number,
+    creatorSlug: string,
+  ): Promise<UserCreator> {
     const userCreator = await this.prisma.userCreator.findUnique({
       where: {
         creatorSlug_userId: { userId, creatorSlug },
       },
     });
 
-    await this.prisma.userCreator.upsert({
+    return await this.prisma.userCreator.upsert({
       where: { creatorSlug_userId: { userId, creatorSlug } },
       create: { creatorSlug, userId, isFollowing: true },
       update: { isFollowing: !userCreator?.isFollowing },

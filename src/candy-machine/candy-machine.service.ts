@@ -151,13 +151,14 @@ export class CandyMachineService {
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    creatorAddress: string,
-    royaltyWallets: JsonMetadataCreators,
     startDate: Date,
     endDate: Date,
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
+
+    const creatorAddress = comicIssue.creatorAddress;
+    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);

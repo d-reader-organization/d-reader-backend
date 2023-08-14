@@ -229,7 +229,7 @@ export class UserService {
 
     const user = await this.prisma.user.findUnique({ where: { id } });
     await this.mailService.userPasswordReset(user, hashedPassword);
-    await this.prisma.user.update({
+    return await this.prisma.user.update({
       where: { id },
       data: { password: newPassword },
     });

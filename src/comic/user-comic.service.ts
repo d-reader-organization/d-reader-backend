@@ -81,7 +81,7 @@ export class UserComicService {
   }
 
   async rate(userId: number, comicSlug: string, rating: number) {
-    await this.prisma.userComic.upsert({
+    return this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },
@@ -92,12 +92,12 @@ export class UserComicService {
     userId: number,
     comicSlug: string,
     property: keyof PickByType<UserComic, boolean>,
-  ): Promise<void> {
+  ): Promise<UserComic> {
     const userComic = await this.prisma.userComic.findUnique({
       where: { comicSlug_userId: { userId, comicSlug } },
     });
 
-    await this.prisma.userComic.upsert({
+    return await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, [property]: true },
       update: { [property]: !userComic?.[property] },

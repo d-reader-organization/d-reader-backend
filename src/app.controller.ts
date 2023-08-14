@@ -37,6 +37,6 @@ export class AppController {
   @SkipThrottle()
   @Get('healthcheck')
   async healthCheck(): Promise<string> {
-    return this.appService.healthCheck();
+    return await this.appService.healthCheck();
   }
 }

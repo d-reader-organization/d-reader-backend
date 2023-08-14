@@ -185,12 +185,10 @@ export class CreatorService {
       );
     }
 
-    const updatedCreator = await this.prisma.creator.update({
+    return await this.prisma.creator.update({
       where: { slug },
       data: { password: hashedPassword },
     });
-
-    return updatedCreator;
   }
 
   async resetPassword(slug: string) {
@@ -199,7 +197,7 @@ export class CreatorService {
 
     const creator = await this.prisma.creator.findUnique({ where: { slug } });
     await this.mailService.creatorPasswordReset(creator, hashedPassword);
-    await this.prisma.creator.update({
+    return await this.prisma.creator.update({
       where: { slug },
       data: { password: newPassword },
     });
@@ -238,7 +236,7 @@ export class CreatorService {
       throw new BadRequestException('Email already verified');
     }
 
-    await this.prisma.creator.update({
+    return await this.prisma.creator.update({
       where: { email },
       data: { emailVerifiedAt: new Date() },
     });
