@@ -20,8 +20,8 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @UseGuards(ThrottlerGuard)
-@ApiTags('Transactions')
-@Controller('transactions')
+@ApiTags('Transaction')
+@Controller('transaction')
 export class TransactionController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
