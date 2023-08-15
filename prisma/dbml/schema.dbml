@@ -31,6 +31,7 @@ Table Wallet {
   user User
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]
+  candyMachineGroups WalletCandyMachineGroup [not null]
 }
 
 Table Creator {
@@ -250,6 +251,32 @@ Table CandyMachine {
   collectionNftAddress String [not null]
   items Nft [not null]
   receipts CandyMachineReceipt [not null]
+  groups CandyMachineGroup [not null]
+}
+
+Table CandyMachineGroup {
+  id Int [pk, increment]
+  label String [not null]
+  wallets WalletCandyMachineGroup [not null]
+  allowListSupply Int [not null]
+  allowListUsed Int [not null, default: 0]
+  candyMachineAddress String [not null]
+  candyMachine CandyMachine [not null]
+
+  indexes {
+    (label, candyMachineAddress) [unique]
+  }
+}
+
+Table WalletCandyMachineGroup {
+  wallet Wallet [not null]
+  walletAddress String [not null]
+  candyMachineGroup CandyMachineGroup [not null]
+  candyMachineGroupId Int [not null]
+
+  indexes {
+    (candyMachineGroupId, walletAddress) [pk]
+  }
 }
 
 Table CandyMachineReceipt {
@@ -437,6 +464,12 @@ Ref: Nft.candyMachineAddress > CandyMachine.address
 Ref: Nft.collectionNftAddress > CollectionNft.address
 
 Ref: CandyMachine.collectionNftAddress > CollectionNft.address
+
+Ref: CandyMachineGroup.candyMachineAddress > CandyMachine.address
+
+Ref: WalletCandyMachineGroup.walletAddress > Wallet.address
+
+Ref: WalletCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 

@@ -10,6 +10,7 @@ import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { toCandyMachineGroupDtoArray } from './dto/candy-machine-group.dto';
+import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -31,6 +32,14 @@ export class CandyMachineController {
   ): Promise<CandyMachineReceiptDto[]> {
     const receipts = await this.candyMachineService.findReceipts(query);
     return toCMReceiptDtoArray(receipts);
+  }
+
+  @Get('get/eligible-groups')
+  async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
+    const groups = await this.candyMachineService.findWalletEligibleGroups(
+      query,
+    );
+    return toCandyMachineGroupDtoArray(groups);
   }
 
   @Get('get/:address')

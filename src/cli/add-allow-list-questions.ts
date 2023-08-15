@@ -20,10 +20,26 @@ export class AddAllowListQuestions {
 
   @Question({
     type: 'input',
-    name: 'wallets',
-    message: 'list of wallet address representing the allowlist',
-    validate: async function (wallets: string[]) {
-      wallets.forEach((wallet) => {
+    name: 'label',
+    message: 'group label must be of max 6 characters',
+    validate: async function (value: string) {
+      if (!value || value.length > 6 || value.length < 1)
+        return 'invalid group label';
+      return true;
+    },
+  })
+  parseLabel(label: string): string {
+    return label;
+  }
+
+  @Question({
+    type: 'input',
+    name: 'allowList',
+    message:
+      'list of wallet address to add in the allowlist (empty if no wallet to add)',
+    default: [],
+    validate: async function (allowList: string[]) {
+      allowList.forEach((wallet) => {
         if (wallet && !PublicKey.isOnCurve(wallet)) {
           return 'Address must be a solana address';
         }
@@ -37,11 +53,11 @@ export class AddAllowListQuestions {
 
   @Question({
     type: 'input',
-    name: 'label',
-    default: '',
-    message: 'group label (empty if allowlist is for global guards)',
+    name: 'whitelistSupply',
+    message: 'supply of wallets to give whitelist (empty to not update)',
   })
-  parseLabel(label: string): string {
-    return label;
+  parseWhitelistSupply(supply: number): number {
+    if (typeof supply === 'string') return +supply;
+    return supply;
   }
 }

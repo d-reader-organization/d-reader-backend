@@ -37,11 +37,12 @@ model User {
 }
 
 model Wallet {
-  address      String                @id
-  userId       Int?
-  user         User?                 @relation(fields: [userId], references: [id])
-  mintReceipts CandyMachineReceipt[]
-  nfts         Nft[]
+  address            String                    @id
+  userId             Int?
+  user               User?                     @relation(fields: [userId], references: [id])
+  mintReceipts       CandyMachineReceipt[]
+  nfts               Nft[]
+  candyMachineGroups WalletCandyMachineGroup[]
 }
 
 enum Role {
@@ -284,6 +285,28 @@ model CandyMachine {
   collectionNftAddress String
   items                Nft[]
   receipts             CandyMachineReceipt[]
+  groups               CandyMachineGroup[]
+}
+
+model CandyMachineGroup {
+  id                  Int                       @id @default(autoincrement())
+  label               String
+  wallets             WalletCandyMachineGroup[]
+  allowListSupply     Int
+  allowListUsed       Int                       @default(0)
+  candyMachineAddress String
+  candyMachine        CandyMachine              @relation(fields: [candyMachineAddress], references: [address])
+
+  @@unique([label, candyMachineAddress])
+}
+
+model WalletCandyMachineGroup {
+  wallet              Wallet            @relation(fields: [walletAddress], references: [address])
+  walletAddress       String
+  candyMachineGroup   CandyMachineGroup @relation(fields: [candyMachineGroupId], references: [id])
+  candyMachineGroupId Int
+
+  @@id([candyMachineGroupId, walletAddress])
 }
 
 model CandyMachineReceipt {
