@@ -38,12 +38,12 @@ model User {
 }
 
 model Wallet {
-  address      String                @id
-  userId       Int?
-  user         User?                 @relation(fields: [userId], references: [id])
-  mintReceipts CandyMachineReceipt[]
-  nfts         Nft[]
-  allowList    AllowListOnWallets[]
+  address            String                    @id
+  userId             Int?
+  user               User?                     @relation(fields: [userId], references: [id])
+  mintReceipts       CandyMachineReceipt[]
+  nfts               Nft[]
+  candyMachineGroups WalletCandyMachineGroup[]
 }
 
 enum Role {
@@ -286,27 +286,28 @@ model CandyMachine {
   collectionNftAddress String
   items                Nft[]
   receipts             CandyMachineReceipt[]
-  allowList            AllowList[]
+  groups               CandyMachineGroup[]
 }
 
-model AllowList {
-  id                  Int                  @id @default(autoincrement())
-  groupLabel          String
-  wallets             AllowListOnWallets[]
-  whitelistSupply     Int
-  whitelistUsed       Int                  @default(0)
+model CandyMachineGroup {
+  id                  Int                       @id @default(autoincrement())
+  label               String
+  wallets             WalletCandyMachineGroup[]
+  allowListSupply     Int
+  allowListUsed       Int                       @default(0)
   candyMachineAddress String
-  candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+  candyMachine        CandyMachine              @relation(fields: [candyMachineAddress], references: [address])
 
-  @@unique([groupLabel, candyMachineAddress])
+  @@unique([label, candyMachineAddress])
 }
 
-model AllowListOnWallets {
-  id            Int       @id @default(autoincrement())
-  wallet        Wallet    @relation(fields: [walletAddress], references: [address])
-  walletAddress String
-  allowList     AllowList @relation(fields: [allowListId], references: [id])
-  allowListId   Int
+model WalletCandyMachineGroup {
+  wallet              Wallet            @relation(fields: [walletAddress], references: [address])
+  walletAddress       String
+  candyMachineGroup   CandyMachineGroup @relation(fields: [candyMachineGroupId], references: [id])
+  candyMachineGroupId Int
+
+  @@id([candyMachineGroupId, walletAddress])
 }
 
 model CandyMachineReceipt {

@@ -506,10 +506,10 @@ export class CandyMachineService {
   async addAllowList(
     candyMachineAddress: string,
     allowList: string[],
-    groupLabel: string,
-    whitelistSupply: number,
+    label: string,
+    allowListSupply: number,
   ) {
-    const wallets: Prisma.AllowListOnWalletsCreateNestedManyWithoutAllowListInput =
+    const wallets: Prisma.WalletCandyMachineGroupCreateNestedManyWithoutCandyMachineGroupInput =
       {
         create: allowList.map((address) => {
           return {
@@ -523,9 +523,9 @@ export class CandyMachineService {
         }),
       };
 
-    return await this.prisma.allowList.upsert({
+    return await this.prisma.candyMachineGroup.upsert({
       where: {
-        groupLabel_candyMachineAddress: { groupLabel, candyMachineAddress },
+        label_candyMachineAddress: { label, candyMachineAddress },
       },
       update: { wallets },
       create: {
@@ -535,8 +535,8 @@ export class CandyMachineService {
           },
         },
         wallets,
-        groupLabel,
-        whitelistSupply,
+        label,
+        allowListSupply,
       },
       include: { wallets: true },
     });
@@ -554,31 +554,39 @@ export class CandyMachineService {
 
   async findWalletEligibleGroups(query: EligibleGroupsParams) {
     const candyMachinePubKey = new PublicKey(query.candyMachineAddress);
-    const walletPubkey = new PublicKey(query.walletAddress);
+    const walletPubKey = new PublicKey(query.walletAddress);
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePubKey });
-    const eligibleGroups = await Promise.all(
-      candyMachine.candyGuard.groups.map(async (group) => {
-        if (group.label === AUTHORITY_GROUP_LABEL) return;
+
+    const eligibleGroups = await candyMachine.candyGuard.groups.reduce(
+      async (promise, group) => {
+        const resolvedGroups = await promise;
+
+        if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
+
         const [isNftGateValid, isAllowListValid] = await Promise.all([
-          this.assertNftGate(group.guards.nftGate, walletPubkey),
+          this.assertNftGate(group.guards.nftGate, walletPubKey),
           this.assertAllowList(
             group.guards.allowList,
             query.candyMachineAddress,
-            walletPubkey,
+            walletPubKey,
             group.label,
           ),
         ]);
+
         if (isNftGateValid && isAllowListValid) {
-          return group;
+          return [...resolvedGroups, group];
         }
-      }),
+        return resolvedGroups;
+      },
+      Promise.resolve([]),
     );
 
-    return eligibleGroups.filter(Boolean);
+    return eligibleGroups;
   }
 
+  // TODO: assertNftGate can be further optimizied by fetching all nfts once and using helius api's
   async assertNftGate(
     nftGate: NftGateGuardSettings | undefined,
     wallet: PublicKey,
@@ -598,14 +606,14 @@ export class CandyMachineService {
     allowList: AllowListGuardSettings | undefined,
     candyMachineAddress: string,
     wallet: PublicKey,
-    groupLabel: string,
+    label: string,
   ) {
     if (!allowList) return true;
 
-    const allowListItem = await this.prisma.allowList.findFirst({
+    const allowListItem = await this.prisma.candyMachineGroup.findFirst({
       where: {
         candyMachineAddress: candyMachineAddress,
-        groupLabel,
+        label,
       },
       include: {
         wallets: {
