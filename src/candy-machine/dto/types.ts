@@ -9,6 +9,7 @@ export type MintSettings = {
   feePayer: PublicKey;
   mint: PublicKey;
   destinationWallet: PublicKey;
+  mintLimitId?: number;
   label?: string;
   nftGateMint?: PublicKey;
 };
