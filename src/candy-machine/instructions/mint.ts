@@ -194,13 +194,15 @@ export const allGuards: string[] = [
   'nftGate',
   'allowList',
   'freezeSolPayment',
+  'mintLimit',
 ];
 
 export function getRemainingAccounts(
   metaplex: Metaplex,
   mintSettings: MintSettings,
 ): AccountMeta[] {
-  const { candyMachine, feePayer, mint, destinationWallet } = mintSettings;
+  const { candyMachine, feePayer, mint, destinationWallet, mintLimitId } =
+    mintSettings;
   const initialAccounts: AccountMeta[] = [];
 
   const guards = resolveGuards(candyMachine, mintSettings.label);
@@ -255,6 +257,18 @@ export function getRemainingAccounts(
           );
           break;
         }
+        case 'mintLimit': {
+          initialAccounts.push(
+            ...getMintLimitAccounts(
+              metaplex,
+              mintLimitId,
+              feePayer,
+              candyMachine.address,
+              candyMachine.candyGuard.address,
+            ),
+          );
+          break;
+        }
       }
     }
     return initialAccounts;
@@ -268,8 +282,9 @@ export async function constructMintOneTransaction(
   feePayer: PublicKey,
   candyMachineAddress: PublicKey,
   label?: string,
-  nftGateMint?: PublicKey,
+  mintLimitId?: number,
   allowList?: string[],
+  nftGateMint?: PublicKey,
 ) {
   const mint = Keypair.generate();
   const candyMachine = await metaplex
@@ -280,6 +295,7 @@ export async function constructMintOneTransaction(
     candyMachine,
     feePayer,
     mint: mint.publicKey,
+    mintLimitId,
     destinationWallet: metaplex.identity().publicKey,
     label,
     nftGateMint,
@@ -308,6 +324,26 @@ export async function constructMintOneTransaction(
     verifySignatures: false,
   });
   return rawTransaction.toString('base64');
+}
+
+function getMintLimitAccounts(
+  metaplex: Metaplex,
+  id: number,
+  user: PublicKey,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+) {
+  const mintCount = metaplex
+    .candyMachines()
+    .pdas()
+    .mintLimitCounter({ id, user, candyGuard, candyMachine });
+  return [
+    {
+      pubkey: mintCount,
+      isSigner: false,
+      isWritable: true,
+    },
+  ];
 }
 
 function getTokenPaymentAccounts(

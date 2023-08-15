@@ -40,6 +40,7 @@ import {
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT,
+  PUBLIC_GROUP_MINT_LIMIT_ID,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -309,7 +310,7 @@ export class CandyMachineService {
                 destination: this.metaplex.identity().publicKey,
               },
               mintLimit: {
-                id: 1,
+                id: PUBLIC_GROUP_MINT_LIMIT_ID,
                 limit: PUBLIC_GROUP_MINT_LIMIT,
               },
             },
@@ -415,6 +416,7 @@ export class CandyMachineService {
       feePayer,
       candyMachineAddress,
       PUBLIC_GROUP_LABEL,
+      PUBLIC_GROUP_MINT_LIMIT_ID,
     );
   }
 
