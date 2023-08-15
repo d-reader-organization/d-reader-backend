@@ -39,6 +39,7 @@ import {
   RARITY_MAP,
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
+  PUBLIC_GROUP_MINT_LIMIT,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -306,6 +307,10 @@ export class CandyMachineService {
               freezeSolPayment: {
                 amount: solFromLamports(comicIssue.mintPrice),
                 destination: this.metaplex.identity().publicKey,
+              },
+              mintLimit: {
+                id: 1,
+                limit: PUBLIC_GROUP_MINT_LIMIT,
               },
             },
           },
