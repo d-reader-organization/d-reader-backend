@@ -12,7 +12,7 @@ import { UpdateGenreDto } from '../genre/dto/update-genre.dto';
 import { Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
-import { FilterParams } from './dto/genre-params.dto';
+import { GenreFilterParams } from './dto/genre-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 
@@ -57,7 +57,7 @@ export class GenreService {
     return genre;
   }
 
-  async findAll(query: FilterParams) {
+  async findAll(query: GenreFilterParams) {
     const genres = await this.prisma.genre.findMany({
       skip: query?.skip,
       take: query?.take,

@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { FilterParams } from './dto/nft-params.dto';
+import { NftFilterParams } from './dto/nft-params.dto';
 
 @Injectable()
 export class NftService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: FilterParams) {
+  async findAll(query: NftFilterParams) {
     const nfts = await this.prisma.nft.findMany({
       where: {
         ownerAddress: query?.ownerAddress,

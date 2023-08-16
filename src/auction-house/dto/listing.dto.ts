@@ -166,6 +166,6 @@ export async function toListingDto(listing: ListingInput) {
   return listingDto;
 }
 
-export const toListingDtoArray = (listings: ListingInput[]) => {
-  return Promise.all(listings.map(toListingDto));
+export const toListingDtoArray = (listedItems: ListingInput[]) => {
+  return Promise.all(listedItems.map(toListingDto));
 };

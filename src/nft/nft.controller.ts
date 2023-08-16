@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards, Query, Param } from '@nestjs/common';
 import { NftService } from './nft.service';
 import { ApiTags } from '@nestjs/swagger';
 import { NftDto, toNftDto, toNftDtoArray } from './dto/nft.dto';
-import { FilterParams } from './dto/nft-params.dto';
+import { NftFilterParams } from './dto/nft-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @UseGuards(ThrottlerGuard)
@@ -13,7 +13,7 @@ export class NftController {
 
   /* Get all NFTs */
   @Get('get')
-  async findAll(@Query() query: FilterParams): Promise<NftDto[]> {
+  async findAll(@Query() query: NftFilterParams): Promise<NftDto[]> {
     const nfts = await this.nftService.findAll(query);
     return toNftDtoArray(nfts);
   }
