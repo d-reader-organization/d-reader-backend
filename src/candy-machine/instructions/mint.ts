@@ -60,7 +60,6 @@ export async function constructMintInstruction(
       address: candyMachine,
     });
 
-  // PDAs
   const authorityPda = metaplex.candyMachines().pdas().authority({
     candyMachine: candyMachine,
   });
@@ -77,7 +76,6 @@ export async function constructMintInstruction(
     .pdas()
     .associatedTokenAccount({ mint: mint.publicKey, owner: payer });
 
-  // collection PDAs
   const collectionMetadata = metaplex.nfts().pdas().metadata({
     mint: candyMachineObject.collectionMintAddress,
   });
@@ -122,6 +120,7 @@ export async function constructMintInstruction(
     systemProgram: SystemProgram.programId,
     recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
     instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+    anchorRemainingAccounts: remainingAccounts,
   };
 
   if (!mintArgs) {
@@ -178,11 +177,6 @@ export async function constructMintInstruction(
   );
 
   const mintInstruction = createMintInstruction(accounts, args);
-
-  if (remainingAccounts) {
-    mintInstruction.keys.push(...remainingAccounts);
-  }
-
   instructions.push(mintInstruction);
 
   return instructions;
@@ -201,8 +195,7 @@ export function getRemainingAccounts(
   metaplex: Metaplex,
   mintSettings: MintSettings,
 ): AccountMeta[] {
-  const { candyMachine, feePayer, mint, destinationWallet, mintLimitId } =
-    mintSettings;
+  const { candyMachine, feePayer, mint, destinationWallet } = mintSettings;
   const initialAccounts: AccountMeta[] = [];
 
   const guards = resolveGuards(candyMachine, mintSettings.label);
@@ -261,7 +254,7 @@ export function getRemainingAccounts(
           initialAccounts.push(
             ...getMintLimitAccounts(
               metaplex,
-              mintLimitId,
+              guards.mintLimit.id,
               feePayer,
               candyMachine.address,
               candyMachine.candyGuard.address,
@@ -282,7 +275,6 @@ export async function constructMintOneTransaction(
   feePayer: PublicKey,
   candyMachineAddress: PublicKey,
   label?: string,
-  mintLimitId?: number,
   allowList?: string[],
   nftGateMint?: PublicKey,
 ) {
@@ -295,7 +287,6 @@ export async function constructMintOneTransaction(
     candyMachine,
     feePayer,
     mint: mint.publicKey,
-    mintLimitId,
     destinationWallet: metaplex.identity().publicKey,
     label,
     nftGateMint,

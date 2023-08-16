@@ -416,7 +416,6 @@ export class CandyMachineService {
       feePayer,
       candyMachineAddress,
       PUBLIC_GROUP_LABEL,
-      PUBLIC_GROUP_MINT_LIMIT_ID,
     );
   }
 
