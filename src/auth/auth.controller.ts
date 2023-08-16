@@ -15,16 +15,10 @@ import { UserService } from '../user/user.service';
 import { validateEmail, validateName } from '../utils/user';
 import { LoginDto } from '../types/login.dto';
 import { RegisterDto } from '../types/register.dto';
-import {
-  Authorization,
-  CreatorPayload,
-  UserPayload,
-} from './dto/authorization.dto';
+import { Authorization, UserPayload } from './dto/authorization.dto';
 import { CreatorService } from '../creator/creator.service';
 import { UserAuth } from '../guards/user-auth.guard';
-import { CreatorAuth } from '../guards/creator-auth.guard';
 import { UserEntity } from '../decorators/user.decorator';
-import { CreatorEntity } from '../decorators/creator.decorator';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
@@ -69,15 +63,10 @@ export class AuthController {
   }
 
   /* Refresh access token */
-  @UserAuth()
   @SkipThrottle()
   @Get('user/refresh-token/:refreshToken')
-  async reauthorizeUser(
-    @Param('refreshToken') refreshToken: string,
-    @UserEntity()
-    user: UserPayload,
-  ) {
-    return await this.authService.refreshAccessToken(user, refreshToken);
+  async reauthorizeUser(@Param('refreshToken') refreshToken: string) {
+    return await this.authService.refreshAccessToken(refreshToken);
   }
 
   // CREATOR ENDPOINTS
@@ -113,16 +102,12 @@ export class AuthController {
     return this.authService.authorizeCreator(creator);
   }
 
+  // TODO: revise how refresh tokens should actually work (authorized endpoint?)
   /* Refresh access token */
-  @CreatorAuth()
   @SkipThrottle()
   @Get('creator/refresh-token/:refreshToken')
-  async reauthorizeCreator(
-    @Param('refreshToken') refreshToken: string,
-    @CreatorEntity()
-    creator: CreatorPayload,
-  ) {
-    return await this.authService.refreshAccessToken(creator, refreshToken);
+  async reauthorizeCreator(@Param('refreshToken') refreshToken: string) {
+    return await this.authService.refreshAccessToken(refreshToken);
   }
 
   // WALLET ENDPOINTS
