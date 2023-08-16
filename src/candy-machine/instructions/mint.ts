@@ -60,7 +60,6 @@ export async function constructMintInstruction(
       address: candyMachine,
     });
 
-  // PDAs
   const authorityPda = metaplex.candyMachines().pdas().authority({
     candyMachine: candyMachine,
   });
@@ -77,7 +76,6 @@ export async function constructMintInstruction(
     .pdas()
     .associatedTokenAccount({ mint: mint.publicKey, owner: payer });
 
-  // collection PDAs
   const collectionMetadata = metaplex.nfts().pdas().metadata({
     mint: candyMachineObject.collectionMintAddress,
   });
@@ -122,6 +120,7 @@ export async function constructMintInstruction(
     systemProgram: SystemProgram.programId,
     recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
     instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
+    anchorRemainingAccounts: remainingAccounts,
   };
 
   if (!mintArgs) {
@@ -178,21 +177,18 @@ export async function constructMintInstruction(
   );
 
   const mintInstruction = createMintInstruction(accounts, args);
-
-  if (remainingAccounts) {
-    mintInstruction.keys.push(...remainingAccounts);
-  }
-
   instructions.push(mintInstruction);
 
   return instructions;
 }
 
+// TODO: research: guard orders can cause errors
 export const allGuards: string[] = [
   'tokenPayment',
   'solPayment',
   'nftGate',
   'allowList',
+  'mintLimit',
   'freezeSolPayment',
 ];
 
@@ -255,6 +251,18 @@ export function getRemainingAccounts(
           );
           break;
         }
+        case 'mintLimit': {
+          initialAccounts.push(
+            ...getMintLimitAccounts(
+              metaplex,
+              guards.mintLimit.id,
+              feePayer,
+              candyMachine.address,
+              candyMachine.candyGuard.address,
+            ),
+          );
+          break;
+        }
       }
     }
     return initialAccounts;
@@ -268,8 +276,8 @@ export async function constructMintOneTransaction(
   feePayer: PublicKey,
   candyMachineAddress: PublicKey,
   label?: string,
-  nftGateMint?: PublicKey,
   allowList?: string[],
+  nftGateMint?: PublicKey,
 ) {
   const mint = Keypair.generate();
   const candyMachine = await metaplex
@@ -308,6 +316,26 @@ export async function constructMintOneTransaction(
     verifySignatures: false,
   });
   return rawTransaction.toString('base64');
+}
+
+function getMintLimitAccounts(
+  metaplex: Metaplex,
+  id: number,
+  user: PublicKey,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+) {
+  const mintCounterPda = metaplex
+    .candyMachines()
+    .pdas()
+    .mintLimitCounter({ id, user, candyGuard, candyMachine });
+  return [
+    {
+      pubkey: mintCounterPda,
+      isSigner: false,
+      isWritable: true,
+    },
+  ];
 }
 
 function getTokenPaymentAccounts(
