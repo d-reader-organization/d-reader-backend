@@ -5,12 +5,19 @@ export class Authorization {
   refreshToken: string;
 }
 
-export type UserPayload = User & {
+export type UserPayload = {
   type: 'user';
+  id: User['id'];
+  email: User['email'];
+  name: User['name'];
+  role: User['role'];
 };
 
-export type CreatorPayload = Creator & {
+export type CreatorPayload = {
   type: 'creator';
+  id: Creator['id'];
+  email: Creator['email'];
+  name: Creator['name'];
 };
 
 export type JwtPayload = UserPayload | CreatorPayload;

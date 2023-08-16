@@ -13,6 +13,11 @@ import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { UNAUTHORIZED_MESSAGE } from '../constants';
 import { Creator, User } from '@prisma/client';
+import { pick } from 'lodash';
+
+const sanitizePayload = (payload: JwtPayload) => {
+  return pick(payload, 'type', 'id', 'email', 'name', 'role');
+};
 
 // One day  we can consider splitting this into two passport strategies
 @Injectable()
@@ -96,14 +101,16 @@ export class AuthService {
   }
 
   private generateAccessToken(payload: JwtPayload): string {
-    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
+    const sanitizedPayload = sanitizePayload(payload);
+    const accessToken = `Bearer ${this.jwtService.sign(sanitizedPayload)}`;
     return accessToken;
   }
 
   private generateRefreshToken(payload: JwtPayload): string {
+    const sanitizedPayload = sanitizePayload(payload);
     const securityConfig = this.configService.get<SecurityConfig>('security');
 
-    const refreshToken = this.jwtService.sign(payload, {
+    const refreshToken = this.jwtService.sign(sanitizedPayload, {
       secret: this.configService.get('JWT_REFRESH_SECRET'),
       expiresIn: securityConfig.refreshIn,
     });
@@ -111,7 +118,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  async refreshAccessToken(jwtPayload: JwtPayload, token: string) {
+  async refreshAccessToken(token: string) {
     let jwtDto: JwtDto;
     try {
       jwtDto = this.jwtService.verify<JwtDto>(token, {
@@ -121,9 +128,9 @@ export class AuthService {
       throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
     }
 
-    if (jwtPayload.id !== jwtDto.id) {
-      throw new UnauthorizedException('Refresh and access token id mismatch');
-    }
+    // if (jwtPayload.id !== jwtDto.id) {
+    //   throw new UnauthorizedException('Refresh and access token id mismatch');
+    // }
 
     if (jwtDto.type === 'user') {
       const user = await this.prisma.user.update({

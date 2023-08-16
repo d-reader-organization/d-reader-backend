@@ -38,7 +38,7 @@ export class CreatorController {
   /* Get creator data from auth token */
   @CreatorAuth()
   @Get('get/me')
-  async findMe(@UserEntity() creator: UserPayload): Promise<CreatorDto> {
+  async findMe(@CreatorEntity() creator: UserPayload): Promise<CreatorDto> {
     const me = await this.creatorService.findMe(creator.id);
     return toCreatorDto(me);
   }
