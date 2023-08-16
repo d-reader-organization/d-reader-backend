@@ -182,13 +182,14 @@ export async function constructMintInstruction(
   return instructions;
 }
 
+// TODO: research: guard orders can cause errors
 export const allGuards: string[] = [
   'tokenPayment',
   'solPayment',
   'nftGate',
   'allowList',
-  'freezeSolPayment',
   'mintLimit',
+  'freezeSolPayment',
 ];
 
 export function getRemainingAccounts(
@@ -324,13 +325,13 @@ function getMintLimitAccounts(
   candyMachine: PublicKey,
   candyGuard: PublicKey,
 ) {
-  const mintCount = metaplex
+  const mintCounterPda = metaplex
     .candyMachines()
     .pdas()
     .mintLimitCounter({ id, user, candyGuard, candyMachine });
   return [
     {
-      pubkey: mintCount,
+      pubkey: mintCounterPda,
       isSigner: false,
       isWritable: true,
     },
