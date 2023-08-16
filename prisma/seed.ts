@@ -329,7 +329,7 @@ async function main() {
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
-              share: 80,
+              share: 100,
             },
           ],
         });
