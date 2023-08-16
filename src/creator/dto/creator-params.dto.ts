@@ -13,7 +13,7 @@ export enum CreatorSortTag {
   Name = 'name',
 }
 
-export class FilterParams extends Pagination {
+export class CreatorFilterParams extends Pagination {
   @IsOptional()
   @IsString()
   nameSubstring?: string;

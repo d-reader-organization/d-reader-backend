@@ -20,7 +20,7 @@ import {
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
-import { FilterParams } from './dto/listing-fliter-params.dto';
+import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { isBoolean, throttle } from 'lodash';
 import { BuyArgs } from './dto/types/buy-args';
 import { metaplex } from '../utils/metaplex';
@@ -273,14 +273,14 @@ export class AuctionHouseService {
     };
   }
 
-  async findAllListings(query: FilterParams, comicIssueId: number) {
+  async findListedItems(query: ListingFilterParams) {
     return await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
         soldAt: isBoolean(query.isSold)
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
-        nft: { collectionNft: { comicIssueId } },
+        nft: { collectionNft: { comicIssueId: query.comicIssueId } },
       },
       include: { nft: { include: { owner: { include: { user: true } } } } },
       take: query.take,

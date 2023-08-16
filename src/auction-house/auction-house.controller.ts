@@ -3,7 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { AuctionHouseService } from './auction-house.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
-import { FilterParams } from './dto/listing-fliter-params.dto';
+import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
 
 @UseGuards(ThrottlerGuard)
@@ -12,23 +12,20 @@ import { toCollectionStats } from './dto/collection-stats.dto';
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
-  @Get('/get/listings/:comicIssueId')
-  async findAllListings(
-    @Query() query: FilterParams,
-    @Param('comicIssueId') comicIssueId: string,
-  ) {
-    const listings = await this.auctionHouseService.findAllListings(
-      query,
-      +comicIssueId,
-    );
-    return await toListingDtoArray(listings);
+  @Get('/get/listed-items')
+  async findListedItems(@Query() query: ListingFilterParams) {
+    const listedItems = await this.auctionHouseService.findListedItems(query);
+    return await toListingDtoArray(listedItems);
   }
 
+  // TODO: move this to /comic-issue/get/:id/collection-stats
+  // params { primarySale: boolean, secondarySale: boolean, offchainStats: boolean }
+  // primarySale (totalVolume, itemsMinted, price)
+  // secondarySale (totalVolume, itemsListed, floorPrice)
+  // offchainStats (favouritesCount, ratersCount, averageRating, issuesCount, readersCount, viewersCount)
   @Get('/get/collection-stats/:comicIssueId')
-  async findCollectionStats(@Param('comicIssueId') comicIssueId: string) {
-    const stats = await this.auctionHouseService.findCollectionStats(
-      +comicIssueId,
-    );
+  async findCollectionStats(@Param('comicIssueId') id: string) {
+    const stats = await this.auctionHouseService.findCollectionStats(+id);
     return toCollectionStats(stats);
   }
 }

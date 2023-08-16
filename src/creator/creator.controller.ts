@@ -16,7 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
-import { FilterParams } from './dto/creator-params.dto';
+import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
@@ -45,7 +45,7 @@ export class CreatorController {
 
   /* Get all creators */
   @Get('get')
-  async findAll(@Query() query: FilterParams): Promise<CreatorDto[]> {
+  async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
     return toCreatorDtoArray(creators);
   }

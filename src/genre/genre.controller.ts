@@ -27,7 +27,7 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateGenreDto } from './dto/update-genre.dto';
-import { FilterParams } from './dto/genre-params.dto';
+import { GenreFilterParams } from './dto/genre-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from 'src/utils/lodash';
 
@@ -55,7 +55,7 @@ export class GenreController {
   }
 
   private throttledFindAll = memoizeThrottle(
-    async (query: FilterParams) => {
+    async (query: GenreFilterParams) => {
       const genres = await this.genreService.findAll(query);
       return toGenreDtoArray(genres);
     },
@@ -64,7 +64,7 @@ export class GenreController {
 
   /* Get all genres */
   @Get('get')
-  findAll(@Query() query: FilterParams) {
+  findAll(@Query() query: GenreFilterParams) {
     return this.throttledFindAll(query);
   }
 

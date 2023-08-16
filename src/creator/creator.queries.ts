@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { FilterParams } from './dto/creator-params.dto';
+import { CreatorFilterParams } from './dto/creator-params.dto';
 import {
   filterCreatorBy,
   getSortOrder,
@@ -8,7 +8,7 @@ import {
 } from '../utils/query-tags-helpers';
 
 const getQueryFilters = (
-  query: FilterParams,
+  query: CreatorFilterParams,
 ): {
   nameCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
@@ -32,7 +32,7 @@ const getQueryFilters = (
   };
 };
 
-export const getCreatorsQuery = (query: FilterParams) => {
+export const getCreatorsQuery = (query: CreatorFilterParams) => {
   const { nameCondition, sortColumn, sortOrder, filterCondition } =
     getQueryFilters(query);
   return Prisma.sql`select creator.*, json_agg(distinct genre.*) AS genres,
