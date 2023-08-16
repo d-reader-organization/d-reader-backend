@@ -115,8 +115,7 @@ export class CarouselController {
   /* Make carousel slide expire */
   @AdminGuard()
   @Patch('slides/expire/:id')
-  async expire(@Param('id') id: string): Promise<CarouselSlideDto> {
-    const expiredCarouselSlide = await this.carouselService.expire(+id);
-    return toCarouselSlideDto(expiredCarouselSlide);
+  async expire(@Param('id') id: string) {
+    await this.carouselService.expire(+id);
   }
 }
