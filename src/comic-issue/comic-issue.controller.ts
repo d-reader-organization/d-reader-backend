@@ -109,12 +109,15 @@ export class ComicIssueController {
   }
 
   // TODO: this can be moved to the 'comic/get' endpoint?
-  @Get('get/by-owner/:id')
+  @Get('get/by-owner/:userId')
   async findOwnedComicIssues(
-    @Param('id') id: string,
+    @Param('userId') userId: string,
     @Query() query: ComicIssueParams,
   ): Promise<OwnedComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllByOwner(query, +id);
+    const comicIssues = await this.comicIssueService.findAllByOwner(
+      query,
+      +userId,
+    );
     return toOwnedComicIssueDtoArray(comicIssues);
   }
 
