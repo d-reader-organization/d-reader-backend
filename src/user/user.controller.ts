@@ -57,9 +57,8 @@ export class UserController {
   async updatePassword(
     @Param('id') id: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ): Promise<UserDto> {
-    const user = await this.userService.updatePassword(+id, updatePasswordDto);
-    return toUserDto(user);
+  ) {
+    await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
   /* Reset specific user's password */
@@ -140,4 +139,6 @@ export class UserController {
     // TODO: check if syncWallet is working correctly (it's not async and awaited)
     return this.throttledSyncWallets(+id);
   }
+
+  // TODO: /delete, /recover, /get, /get/{id} endpoints missing
 }

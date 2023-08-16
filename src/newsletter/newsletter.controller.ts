@@ -1,6 +1,5 @@
 import {
   Controller,
-  Get,
   Post,
   UseGuards,
   Delete,
@@ -9,13 +8,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { NewsletterService } from './newsletter.service';
-import { NewsletterDto, toNewsletterDtoArray } from './dto/newsletter.dto';
 import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
 import { RealIP } from 'nestjs-real-ip';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { AdminGuard } from 'src/guards/roles.guard';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
@@ -46,14 +43,6 @@ export class NewsletterController {
     };
 
     await this.newsletterService.subscribe(email, requestUser);
-  }
-
-  /* Get all newsletter subscriptions */
-  @AdminGuard()
-  @Get('get')
-  async findAll(): Promise<NewsletterDto[]> {
-    const newsletters = await this.newsletterService.findAll();
-    return toNewsletterDtoArray(newsletters);
   }
 
   /* Unsubscribe from newsletter */
