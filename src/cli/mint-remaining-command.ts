@@ -52,7 +52,6 @@ export class MintRemainingCommand extends CommandRunner {
       authority.publicKey,
       candyMachineAddress,
       AUTHORITY_GROUP_LABEL,
-      undefined,
       [authority.publicKey.toString()],
     );
     const transaction = decodeTransaction(encodedTransaction, 'base64');
