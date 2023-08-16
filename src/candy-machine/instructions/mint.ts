@@ -182,25 +182,15 @@ export async function constructMintInstruction(
   return instructions;
 }
 
-// TODO: research: guard orders can cause errors
-export const allGuards: string[] = [
-  'tokenPayment',
-  'solPayment',
-  'nftGate',
-  'allowList',
-  'mintLimit',
-  'freezeSolPayment',
-];
-
 export function getRemainingAccounts(
   metaplex: Metaplex,
   mintSettings: MintSettings,
 ): AccountMeta[] {
   const { candyMachine, feePayer, mint, destinationWallet } = mintSettings;
   const initialAccounts: AccountMeta[] = [];
-
+  const candyGuard = metaplex.programs().getCandyGuard();
   const guards = resolveGuards(candyMachine, mintSettings.label);
-  const remainingAccounts = allGuards.reduce((_, curr) => {
+  const remainingAccounts = candyGuard.availableGuards.reduce((_, curr) => {
     if (guards[curr]) {
       switch (curr) {
         case 'tokenPayment': {
