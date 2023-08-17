@@ -18,6 +18,7 @@ import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey } from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { PUBLIC_GROUP_LABEL } from '../constants';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -32,10 +33,11 @@ export class TransactionController {
   async constructMintOneTransaction(@Query() query: MintOneParams) {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
-
+    const label = query.label ?? PUBLIC_GROUP_LABEL;
     return await this.candyMachineService.createMintOneTransaction(
       publicKey,
       candyMachineAddress,
+      label,
     );
   }
 

@@ -410,12 +410,18 @@ export class CandyMachineService {
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
+    label: string,
   ) {
+    const allowList = await this.findAllowList(
+      candyMachineAddress.toString(),
+      label,
+    );
     return await constructMintOneTransaction(
       this.metaplex,
       feePayer,
       candyMachineAddress,
-      PUBLIC_GROUP_LABEL,
+      label,
+      allowList,
     );
   }
 
@@ -547,6 +553,16 @@ export class CandyMachineService {
       },
       include: { wallets: true },
     });
+  }
+
+  async findAllowList(candyMachineAddress: string, label: string) {
+    const allowList = await this.prisma.candyMachineGroup.findFirst({
+      where: { candyMachineAddress, label },
+      include: { wallets: true },
+    });
+    return allowList
+      ? allowList.wallets.map((item) => item.walletAddress)
+      : undefined;
   }
 
   async findCandyMachineGroups(candyMachineAddress: string) {
