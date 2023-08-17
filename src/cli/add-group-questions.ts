@@ -53,6 +53,16 @@ export class AddGroupQuestions {
 
   @Question({
     type: 'input',
+    name: 'mintLimit',
+    message: 'Allotted Minting Limit per Wallet',
+  })
+  parseMintLimit(mintLimit: number): number {
+    if (typeof mintLimit === 'string') return +mintLimit;
+    return mintLimit;
+  }
+
+  @Question({
+    type: 'input',
     name: 'mintPrice',
     message: 'price of the nft (in lamports)',
   })

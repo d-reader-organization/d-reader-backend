@@ -4,6 +4,7 @@ import {
   DateTime,
   EndDateGuardSettings,
   FreezeSolPaymentGuardSettings,
+  MintLimitGuardSettings,
   PublicKey,
   StartDateGuardSettings,
 } from '@metaplex-foundation/js';
@@ -17,6 +18,7 @@ interface Options {
   label: string;
   startDate: DateTime;
   endDate: DateTime;
+  mintLimit: number;
   mintPrice: number;
 }
 
@@ -40,14 +42,21 @@ export class AddGroupCommand extends CommandRunner {
   addGroup = async (options: Options) => {
     log('\n🏗️  add new group in candymachine');
     try {
-      const { candyMachineAddress, label, startDate, endDate, mintPrice } =
-        options;
+      const {
+        candyMachineAddress,
+        label,
+        startDate,
+        endDate,
+        mintLimit,
+        mintPrice,
+      } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const metaplex = initMetaplex();
 
       const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
+      const candyMachineGroups = candyMachine.candyGuard.groups;
 
       const startDateGuard: StartDateGuardSettings = {
         date: startDate,
@@ -59,8 +68,12 @@ export class AddGroupCommand extends CommandRunner {
         amount: solFromLamports(mintPrice),
         destination: metaplex.identity().publicKey,
       };
+      const mintLimitGuard: MintLimitGuardSettings = {
+        id: candyMachineGroups.length,
+        limit: mintLimit,
+      };
 
-      const existingGroup = candyMachine.candyGuard.groups.find(
+      const existingGroup = candyMachineGroups.find(
         (group) => group.label === label,
       );
       if (existingGroup) {
@@ -73,9 +86,10 @@ export class AddGroupCommand extends CommandRunner {
           freezeSolPayment,
           startDate: startDateGuard,
           endDate: endDateGuard,
+          mintLimit: mintLimitGuard,
         },
       };
-      const resolvedGroups = candyMachine.candyGuard.groups.filter(
+      const resolvedGroups = candyMachineGroups.filter(
         (group) => group.label != label,
       );
 
