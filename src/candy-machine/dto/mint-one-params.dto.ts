@@ -1,3 +1,4 @@
+import { IsOptional, IsString } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class MintOneParams {
@@ -6,4 +7,8 @@ export class MintOneParams {
 
   @IsSolanaAddress()
   minterAddress: string;
+
+  @IsOptional()
+  @IsString()
+  label?: string;
 }

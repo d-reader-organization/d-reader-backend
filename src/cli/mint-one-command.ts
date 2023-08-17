@@ -14,6 +14,7 @@ import * as AES from 'crypto-js/aes';
 
 interface Options {
   candyMachineAddress: PublicKey;
+  label: string;
 }
 
 @Command({
@@ -46,11 +47,11 @@ export class MintOneCommand extends CommandRunner {
     const keypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
-
     const encodedTransaction =
       await this.candyMachineService.createMintOneTransaction(
         keypair.publicKey,
         options.candyMachineAddress,
+        options.label,
       );
     const transaction = decodeTransaction(encodedTransaction, 'base64');
     transaction.partialSign(keypair);
