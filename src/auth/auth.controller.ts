@@ -64,7 +64,7 @@ export class AuthController {
 
   /* Refresh access token */
   @SkipThrottle()
-  @Get('user/refresh-token/:refreshToken')
+  @Patch('user/refresh-token/:refreshToken')
   async reauthorizeUser(@Param('refreshToken') refreshToken: string) {
     return await this.authService.refreshAccessToken(refreshToken);
   }
@@ -105,7 +105,7 @@ export class AuthController {
   // TODO: revise how refresh tokens should actually work (authorized endpoint?)
   /* Refresh access token */
   @SkipThrottle()
-  @Get('creator/refresh-token/:refreshToken')
+  @Patch('creator/refresh-token/:refreshToken')
   async reauthorizeCreator(@Param('refreshToken') refreshToken: string) {
     return await this.authService.refreshAccessToken(refreshToken);
   }
@@ -114,14 +114,14 @@ export class AuthController {
   @Throttle(10, 30)
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
-  @Get('wallet/request-password/:address')
+  @Patch('wallet/request-password/:address')
   async requestPassword(@UserEntity() user: UserPayload) {
     return await this.passwordService.generateOneTimePassword(user.id);
   }
 
   /* Connect your wallet with a signed and encoded one time password */
   @UserAuth()
-  @Get('wallet/connect/:address/:encoding')
+  @Patch('wallet/connect/:address/:encoding')
   async connectWallet(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
@@ -132,7 +132,7 @@ export class AuthController {
 
   /* Disconnect your wallet with a signed and encoded one time password */
   @UserAuth()
-  @Get('wallet/disconnect/:address')
+  @Patch('wallet/disconnect/:address')
   async disconnectWallet(@Param('address') address: string) {
     await this.authService.disconnectWallet(address);
   }
