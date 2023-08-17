@@ -162,4 +162,4 @@ export const PASSWORD_OPTIONS: IsStrongPasswordOptions = {
   minLength: 8,
 };
 
-export const UNAUTHORIZED_MESSAGE = "Authorization invalid or expired'";
+export const UNAUTHORIZED_MESSAGE = 'Authorization invalid or expired';

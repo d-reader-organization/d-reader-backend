@@ -11,7 +11,6 @@ import { EmailJwtDto, JwtDto, JwtPayload } from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
-import { UNAUTHORIZED_MESSAGE } from '../constants';
 import { Creator, User } from '@prisma/client';
 import { pick } from 'lodash';
 
@@ -125,7 +124,7 @@ export class AuthService {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
     } catch {
-      throw new UnauthorizedException(UNAUTHORIZED_MESSAGE);
+      throw new UnauthorizedException('Authorization expired');
     }
 
     // if (jwtPayload.id !== jwtDto.id) {
