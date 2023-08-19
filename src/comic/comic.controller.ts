@@ -37,6 +37,7 @@ import {
   CreateComicFilesDto,
 } from './dto/create-comic.dto';
 import { UpdateComicDto } from './dto/update-comic.dto';
+import { CreatorAuth } from 'src/guards/creator-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
@@ -48,7 +49,7 @@ export class ComicController {
   ) {}
 
   /* Create a new comic */
-  @ComicOwnerAuth()
+  @CreatorAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicDto })
   @UseInterceptors(
