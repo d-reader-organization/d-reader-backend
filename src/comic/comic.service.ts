@@ -12,13 +12,14 @@ import { UpdateComicDto } from '../comic/dto/update-comic.dto';
 import { UserComicService } from './user-comic.service';
 import { Comic, Genre, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { subDays } from 'date-fns';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { ComicStats } from './types/comic-stats';
 import { getComicsQuery } from './comic.queries';
 import { ComicInput } from './dto/comic.dto';
+import { insensitive } from '../utils/lodash';
+import { subDays } from 'date-fns';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -36,13 +37,19 @@ export class ComicService {
     createComicBodyDto: CreateComicBodyDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { slug, genres, isCompleted, ...rest } = createComicBodyDto;
+    const { title, slug, genres, isCompleted, ...rest } = createComicBodyDto;
+
+    await Promise.all([
+      this.throwIfTitleTaken(title),
+      this.throwIfSlugTaken(slug),
+    ]);
 
     let comic: Comic;
     try {
       comic = await this.prisma.comic.create({
         data: {
           ...rest,
+          title,
           slug,
           creatorId,
           completedAt: isCompleted ? new Date() : null,
@@ -159,6 +166,21 @@ export class ComicService {
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, ...rest } = updateComicDto;
 
+    // const comic = await this.prisma.comic.findUnique({ where: { slug } });
+    // const isTitleUpdated = title && comic.title !== title;
+    // const isSlugUpdated = slug && comic.slug !== slug;
+
+    // if (isTitleUpdated) {
+    //   await this.throwIfTitleTaken(title);
+    //   await this.prisma.comic.update({ where: { slug }, data: { title } });
+    // }
+
+    // if (isSlugUpdated) {
+    //   await this.throwIfSlugTaken(title);
+    //   await this.prisma.comic.update({ where: { slug }, data: { title } });
+    //   // migrate files from deprecated s3 folder to a new one
+    // }
+
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug, publishedAt: null },
@@ -205,6 +227,22 @@ export class ComicService {
 
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
     return comic;
+  }
+
+  async throwIfTitleTaken(title: string) {
+    const comic = await this.prisma.comic.findFirst({
+      where: { title: insensitive(title) },
+    });
+
+    if (comic) throw new BadRequestException(`${title} already taken`);
+  }
+
+  async throwIfSlugTaken(slug: string) {
+    const comic = await this.prisma.comic.findFirst({
+      where: { slug: insensitive(slug) },
+    });
+
+    if (comic) throw new BadRequestException(`${slug} already taken`);
   }
 
   async publish(slug: string) {
