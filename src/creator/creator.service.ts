@@ -143,7 +143,7 @@ export class CreatorService {
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
     const { email, ...otherData } = updateCreatorDto;
 
-    const creator = await this.findOne(slug);
+    const creator = await this.prisma.creator.findUnique({ where: { slug } });
     const isEmailUpdated = email && creator.email !== email;
 
     if (isEmailUpdated) {
