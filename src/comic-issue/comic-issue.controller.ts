@@ -68,6 +68,7 @@ import {
 } from './dto/create-comic-issue.dto';
 import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
+import { CreatorAuth } from 'src/guards/creator-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -80,7 +81,7 @@ export class ComicIssueController {
   ) {}
 
   /* Create a new comic issue */
-  @ComicIssueOwnerAuth()
+  @CreatorAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicIssueDto })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
