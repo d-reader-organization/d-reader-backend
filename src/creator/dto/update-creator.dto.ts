@@ -4,8 +4,9 @@ import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 
 export class UpdateCreatorDto {
   @IsEmail()
-  @Transform(({ value }) => value.toLowerCase())
-  email: string;
+  @IsOptional()
+  @Transform(({ value }) => value?.toLowerCase())
+  email?: string;
 
   // @IsNotEmpty()
   // @MaxLength(48)
