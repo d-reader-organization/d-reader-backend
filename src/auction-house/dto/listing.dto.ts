@@ -74,6 +74,9 @@ export class ListingDto {
   @ApiProperty({ enum: ComicRarity })
   rarity: ComicRarity;
 
+  @IsNumber()
+  royalties: number;
+
   // @IsString()
   // description: string;
 
@@ -82,9 +85,6 @@ export class ListingDto {
 
   // @IsDateString()
   // createdAt: string;
-
-  // @IsNumber()
-  // royalties: number;
 
   // @IsString()
   // collectionName: string;
@@ -153,10 +153,11 @@ export async function toListingDto(listing: ListingInput) {
     isUsed: findUsedTrait(collectionMetadata),
     isSigned: findSignedTrait(collectionMetadata),
     rarity: findRarityTrait(collectionMetadata),
+    royalties: collectionMetadata.seller_fee_basis_points,
+
     // description: collectionMetadata.description, // hide this in array?
     // symbol: listing.symbol, // hide this in array?
     // createdAt: listing.createdAt.toISOString(), // hide this in array?
-    // royalties: collectionMetadata.seller_fee_basis_points, // hide this in array?
     // collectionName: collectionMetadata.collection.name, // hide this in array?
     // externalUrl: collectionMetadata.external_url, // hide this in array?
     // creators: collectionMetadata.properties.creators, // hide this in array?
