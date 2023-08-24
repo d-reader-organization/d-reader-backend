@@ -5,6 +5,22 @@ header {
     gap: 64px;
 }
 
+header button{
+    display: flex;
+    padding: 24px;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    background: var(--primary-yellow-default, #FCEB54);
+    color: var(--greyscale-greyscale-600, #15171C);
+    font-family: Arial;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 120%; /* 24px */
+    cursor: pointer;
+}
+
 .mail {
     display: inline-flex;
     padding: 118px 172px 87px 172px;
@@ -12,6 +28,26 @@ header {
     justify-content: flex-end;
     align-items: center;
     gap: 118px;
+}
+
+.content {
+    width: 680px;
+    color: #000;
+    text-align: center;
+    font-family: Arial;
+    font-size: 28px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
+}
+
+.content p{
+    color: #000;
+    font-family: Arial;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
 }
 
 footer {

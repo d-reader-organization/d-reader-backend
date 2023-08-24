@@ -8,11 +8,10 @@ html
             include ../assets/icon.svg
             .content
                 block content
-        
+            button(type="button") Click Here
         footer
             .socials 
-                - const svgFilenames = ['web.svg', 'discord.svg', 'twitter.svg', 'email.svg'];
-                each filename in svgFilenames
+                each filename in ['web.svg', 'discord.svg', 'twitter.svg', 'email.svg']
                     img(src=`../assets/${filename}`)
             p.  
                 Copyright © 2023 dReader d.o.o. All rights reserved<br/>View our <span class="privacy-policy">Privacy Policy</span><br/><br/>
