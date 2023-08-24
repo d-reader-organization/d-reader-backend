@@ -19,7 +19,7 @@ import { getRandomFloatOrInt } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
 import { UpdatePasswordDto } from '../types/update-password.dto';
-import { validateEmail, validateName } from '../utils/user';
+import { validateCreatorName, validateEmail } from '../utils/user';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { LoginDto } from '../types/login.dto';
@@ -46,7 +46,7 @@ export class CreatorService {
     const { name, email, password } = registerDto;
     const slug = kebabCase(name);
 
-    validateName(name);
+    validateCreatorName(name);
     validateEmail(email);
 
     const [hashedPassword] = await Promise.all([

@@ -12,7 +12,11 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
-import { validateEmail, validateName } from '../utils/user';
+import {
+  validateCreatorName,
+  validateEmail,
+  validateName,
+} from '../utils/user';
 import { LoginDto } from '../types/login.dto';
 import { RegisterDto } from '../types/register.dto';
 import { Authorization, UserPayload } from './dto/authorization.dto';
@@ -73,7 +77,7 @@ export class AuthController {
   @SkipThrottle()
   @Get('creator/validate-name/:name')
   async validateCreatorName(@Param('name') name: string) {
-    validateName(name);
+    validateCreatorName(name);
     return await this.creatorService.throwIfNameTaken(name);
   }
 

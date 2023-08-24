@@ -4,7 +4,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { IsValidUsername } from '../decorators/IsValidUsername';
+// import { IsValidUsername } from '../decorators/IsValidUsername';
 import {
   USERNAME_MIN_SIZE,
   USERNAME_MAX_SIZE,
@@ -12,7 +12,7 @@ import {
 } from '../constants';
 
 export class RegisterDto {
-  @IsValidUsername()
+  // @IsValidUsername()
   @MinLength(USERNAME_MIN_SIZE)
   @MaxLength(USERNAME_MAX_SIZE)
   name: string;
