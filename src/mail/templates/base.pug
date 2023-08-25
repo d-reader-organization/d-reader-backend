@@ -5,7 +5,9 @@ link(rel="stylesheet" href=`${dirname}/styles/base.css`)
         img(src=`${dirname}/assets/icon.svg`)
         .content
             block content
-        button(type="button") Click Here
+        if verificationUrl
+            a(href=verificationUrl) 
+                button(type="button") Click Here
     footer
         .socials 
             each filename in ['web.svg', 'discord.svg', 'twitter.svg', 'email.svg']
