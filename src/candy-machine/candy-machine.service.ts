@@ -317,7 +317,13 @@ export class CandyMachineService {
           },
           ...(groups ?? []),
         ],
-        creators,
+        creators: [
+          {
+            address: this.metaplex.identity().publicKey,
+            share: 0,
+          },
+          ...creators,
+        ],
       },
       { payer: this.metaplex.identity() },
     );
