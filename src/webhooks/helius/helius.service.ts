@@ -370,19 +370,6 @@ export class HeliusService {
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-    const collectionMint = new PublicKey(
-      enrichedTransaction.instructions[4].accounts[10],
-    );
-
-    await Promise.all([
-      this.delegateAuthority(
-        collectionMint,
-        findRarityTrait(offChainMetadata).toString(),
-        mint,
-      ),
-      this.verifyMintCreator(mint),
-    ]);
-
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
