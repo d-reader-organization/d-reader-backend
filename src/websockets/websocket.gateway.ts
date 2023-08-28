@@ -34,6 +34,12 @@ export class WebSocketGateway {
     );
   }
 
+  handleNftMintRejected(comicIssueId: number) {
+    return this.server.sockets.emit(
+      `comic-issue/${comicIssueId}/item-mint-rejected`,
+    );
+  }
+
   async handleNftSold(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
@@ -63,6 +69,12 @@ export class WebSocketGateway {
     return this.server.sockets.emit(
       `wallet/${receipt.buyerAddress}/item-minted`,
       receiptDto,
+    );
+  }
+
+  handleWalletNftMintRejected(buyerAddress: string) {
+    return this.server.sockets.emit(
+      `wallet/${buyerAddress}/item-mint-rejected`,
     );
   }
 
