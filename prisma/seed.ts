@@ -75,6 +75,7 @@ import {
   wretchesEp6Data,
 } from './comic-issues';
 import { addDays } from 'date-fns';
+import { PUBLIC_GROUP_MINT_LIMIT } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -326,6 +327,7 @@ async function main() {
           sellerFee: 5, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
+          publicMintLimit: PUBLIC_GROUP_MINT_LIMIT,
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
