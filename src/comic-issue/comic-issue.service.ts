@@ -373,8 +373,14 @@ export class ComicIssueService {
     validateWeb3PublishInfo(publishOnChainDto);
     validatePrice(publishOnChainDto);
 
-    const { sellerFee, royaltyWallets, startDate, endDate, ...updatePayload } =
-      publishOnChainDto;
+    const {
+      sellerFee,
+      royaltyWallets,
+      startDate,
+      endDate,
+      publicMintLimit,
+      ...updatePayload
+    } = publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
 
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
@@ -409,6 +415,7 @@ export class ComicIssueService {
         updatedComicIssue.comic.title,
         startDate,
         endDate,
+        publicMintLimit,
       );
     } catch (e) {
       // revert in case of failure

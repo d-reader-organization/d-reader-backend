@@ -520,7 +520,11 @@ function resolveGuards(
   const group = candyMachine.candyGuard.groups.find(
     (group) => group.label === label,
   );
-
+  if (!group) {
+    throw new Error(
+      `Group with label ${label} does not exist on Candy Machine ${candyMachine.address.toString()}`,
+    );
+  }
   // remove null to overwrite default guards with only specified guards in group
   const activeGroupGuards = Object.fromEntries(
     Object.entries(group.guards).filter(([, v]) => v != null),
