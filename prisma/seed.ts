@@ -327,7 +327,6 @@ async function main() {
           sellerFee: 5, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
-          publicMintLimit: PUBLIC_GROUP_MINT_LIMIT,
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
