@@ -1,3 +1,5 @@
-h3 Hello #{name}! 📧
+extends base.pug
 
-p To verify your email, please visit the following link: #{verificationUrl}
+block content
+    h3 Hello #{name}!
+    p To verify your email, please visit the following link: #{verificationUrl}

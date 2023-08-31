@@ -13,6 +13,7 @@
   "scripts": {
     "prebuild": "rimraf dist && npx prisma generate",
     "build": "nest build",
+    "postbuild": "cp -r public dist/public",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
