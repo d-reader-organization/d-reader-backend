@@ -378,6 +378,7 @@ export class ComicIssueService {
       startDate,
       endDate,
       publicMintLimit,
+      freezePeriod,
       ...updatePayload
     } = publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
@@ -412,9 +413,7 @@ export class ComicIssueService {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
-        startDate,
-        endDate,
-        publicMintLimit,
+        { startDate, endDate, publicMintLimit, freezePeriod },
       );
     } catch (e) {
       // revert in case of failure
