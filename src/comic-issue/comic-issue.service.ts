@@ -61,8 +61,8 @@ export class ComicIssueService {
       slug,
       comicSlug,
       sellerFee,
-      collaborators,
-      royaltyWallets,
+      collaborators = [],
+      royaltyWallets = [],
       ...rest
     } = createComicIssueBodyDto;
     validatePrice(createComicIssueBodyDto);
@@ -92,7 +92,8 @@ export class ComicIssueService {
           royaltyWallets: { createMany: { data: royaltyWallets } },
         },
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       throw new BadRequestException('Bad comic issue data');
     }
 
@@ -114,7 +115,7 @@ export class ComicIssueService {
 
     return await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
-      include: { pages: true, collaborators: true },
+      include: { pages: true, collaborators: true, statelessCovers: true },
       data: {
         signature: signatureKey,
         pdf: pdfKey,

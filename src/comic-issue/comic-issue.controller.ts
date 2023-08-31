@@ -84,7 +84,12 @@ export class ComicIssueController {
   @CreatorAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateComicIssueDto })
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'signature', maxCount: 1 },
+      { name: 'pdf', maxCount: 1 },
+    ]),
+  )
   @Post('create')
   async create(
     @CreatorEntity() creator: CreatorPayload,

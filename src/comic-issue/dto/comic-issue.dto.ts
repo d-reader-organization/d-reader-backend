@@ -199,7 +199,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     description: issue.description,
     flavorText: issue.flavorText,
     signature: getPublicUrl(issue.signature),
-    cover: getPublicUrl(findDefaultCover(issue.statelessCovers).image) || '',
+    cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
     candyMachineAddress: issue.candyMachineAddress ?? undefined,
     // collaborators: issue.collaborators,
