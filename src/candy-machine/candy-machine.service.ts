@@ -62,6 +62,7 @@ import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 import { Prisma } from '@prisma/client';
+import { GuardParams } from './dto/types';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -141,13 +142,14 @@ export class CandyMachineService {
 
   async initializeGuardAccounts(
     candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+    freezePeriod?: number,
   ) {
     await this.metaplex.candyMachines().callGuardRoute({
       candyMachine,
       guard: 'freezeSolPayment',
       settings: {
         path: 'initialize',
-        period: FREEZE_NFT_DAYS * DAY_SECONDS,
+        period: (freezePeriod ?? FREEZE_NFT_DAYS) * DAY_SECONDS,
         candyGuardAuthority: this.metaplex.identity(),
       },
       group: AUTHORITY_GROUP_LABEL,
@@ -157,10 +159,7 @@ export class CandyMachineService {
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    startDate: Date,
-    endDate: Date,
-    publicMintLimit: number,
-    groups?: GuardGroup[],
+    guardParams: GuardParams,
   ) {
     validateComicIssueCMInput(comicIssue);
 
@@ -262,6 +261,8 @@ export class CandyMachineService {
         share: wallet.share,
       }),
     );
+
+    const { startDate, endDate, publicMintLimit, freezePeriod } = guardParams;
     const { candyMachine } = await this.metaplex.candyMachines().create(
       {
         candyMachine: candyMachineKey,
@@ -309,13 +310,14 @@ export class CandyMachineService {
                 amount: solFromLamports(comicIssue.mintPrice),
                 destination: this.metaplex.identity().publicKey,
               },
-              mintLimit: {
-                id: PUBLIC_GROUP_MINT_LIMIT_ID,
-                limit: publicMintLimit,
-              },
+              mintLimit: publicMintLimit
+                ? {
+                    id: PUBLIC_GROUP_MINT_LIMIT_ID,
+                    limit: publicMintLimit,
+                  }
+                : undefined,
             },
           },
-          ...(groups ?? []),
         ],
         creators: [
           {
@@ -327,7 +329,7 @@ export class CandyMachineService {
       },
       { payer: this.metaplex.identity() },
     );
-    await this.initializeGuardAccounts(candyMachine);
+    await this.initializeGuardAccounts(candyMachine, freezePeriod);
     const authorityPda = this.metaplex
       .candyMachines()
       .pdas()

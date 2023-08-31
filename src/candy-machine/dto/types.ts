@@ -17,3 +17,10 @@ export type CandyMachineGroupSettings = {
   label: string;
   guards: DefaultCandyGuardSettings;
 };
+
+export type GuardParams = {
+  startDate: Date;
+  endDate: Date;
+  publicMintLimit?: number;
+  freezePeriod?: number;
+};
