@@ -114,6 +114,8 @@ export class HeliusService {
           // helius-sdk still hasn't updated their TransactionType enum with our transaction type
           case 'CHANGE_COMIC_STATE' as TransactionType:
             return this.handleChangeComicState(transaction);
+          case TransactionType.NFT_MINT_REJECTED:
+            return this.handleMintRejectedEvent(transaction);
           default:
             console.log('Unhandled webhook', JSON.stringify(transaction));
 
@@ -370,19 +372,6 @@ export class HeliusService {
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-    const collectionMint = new PublicKey(
-      enrichedTransaction.instructions[4].accounts[10],
-    );
-
-    await Promise.all([
-      this.delegateAuthority(
-        collectionMint,
-        findRarityTrait(offChainMetadata).toString(),
-        mint,
-      ),
-      this.verifyMintCreator(mint),
-    ]);
-
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
     const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
@@ -438,6 +427,25 @@ export class HeliusService {
 
       this.websocketGateway.handleNftMinted(comicIssueId, receipt);
       this.websocketGateway.handleWalletNftMinted(receipt);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private async handleMintRejectedEvent(
+    enrichedTransaction: EnrichedTransaction,
+  ) {
+    try {
+      const nftTransactionInfo = enrichedTransaction.events.nft;
+      const collectionNftAddress =
+        enrichedTransaction.instructions[4].accounts[10];
+      const collectionNft = await this.prisma.collectionNft.findFirst({
+        where: { address: collectionNftAddress },
+      });
+      this.websocketGateway.handleNftMintRejected(collectionNft.comicIssueId);
+      this.websocketGateway.handleWalletNftMintRejected(
+        nftTransactionInfo.buyer,
+      );
     } catch (e) {
       console.error(e);
     }

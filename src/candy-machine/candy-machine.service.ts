@@ -39,7 +39,6 @@ import {
   RARITY_MAP,
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
-  PUBLIC_GROUP_MINT_LIMIT,
   PUBLIC_GROUP_MINT_LIMIT_ID,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
@@ -160,6 +159,7 @@ export class CandyMachineService {
     comicName: string,
     startDate: Date,
     endDate: Date,
+    publicMintLimit: number,
     groups?: GuardGroup[],
   ) {
     validateComicIssueCMInput(comicIssue);
@@ -311,13 +311,19 @@ export class CandyMachineService {
               },
               mintLimit: {
                 id: PUBLIC_GROUP_MINT_LIMIT_ID,
-                limit: PUBLIC_GROUP_MINT_LIMIT,
+                limit: publicMintLimit,
               },
             },
           },
           ...(groups ?? []),
         ],
-        creators,
+        creators: [
+          {
+            address: this.metaplex.identity().publicKey,
+            share: 0,
+          },
+          ...creators,
+        ],
       },
       { payer: this.metaplex.identity() },
     );
