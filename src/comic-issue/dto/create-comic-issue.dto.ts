@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -22,6 +22,7 @@ export class CreateComicIssueBodyDto {
   @MaxLength(48)
   title: string;
 
+  @Expose()
   @IsKebabCase()
   @Transform(({ obj }) => kebabCase(obj.title))
   @ApiProperty({ readOnly: true, required: false })
@@ -78,15 +79,18 @@ export class CreateComicIssueBodyDto {
   @IsSolanaAddress()
   creatorAddress?: string;
 
-  @IsArray()
+  // TODO: revise this
+  // @IsArray()
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
+  @Transform(({ value }) => JSON.parse(value))
   collaborators: ComicIssueCollaboratorDto[];
 
   @IsArray()
   @Type(() => RoyaltyWalletDto)
   @ApiProperty({ type: [RoyaltyWalletDto] })
-  royaltyWallets: RoyaltyWalletDto[];
+  @IsOptional()
+  royaltyWallets?: RoyaltyWalletDto[];
 }
 
 export class CreateComicIssueFilesDto {
