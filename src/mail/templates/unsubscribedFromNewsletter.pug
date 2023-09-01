@@ -1,7 +1,13 @@
 extends base.pug
 
-block content
-    h3 Cheers champ 🍻
-    p You've successfully unsubscribed from our <strong>newsletter</strong>
+block title
+    h1 Bye bye 👋
 
-    p If this was a mistake, feel free to <strong>subscribe</strong> again by clicking on the button below
+block content
+    p You've successfully unsubscribed from our newsletter!
+    p Hope you're happy now 🥲
+    br
+    p If this was a mistake, resubscribe again by clicking the button below
+
+block action
+    a(href=actionUrl) Subscribe

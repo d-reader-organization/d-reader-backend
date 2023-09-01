@@ -1,7 +1,13 @@
 extends base.pug
 
-block content
-    h3 You're in! 🎉
-    p Welcome to the <strong>digital comic revolution</strong>
-    p Thank you for supporting <strong>dReader</strong> in early phases and helping us find a new home for comics - blockchain
+block title
+    h1 You're in! ✅
 
+block content
+    p Thanks for subscribing to our newsletter!
+    p We'll make sure to keep you up to date with all the important events and releases.
+    br
+    p Subscribed by mistake? Unsubscribe by clicking the button below
+
+block action
+    a(href=actionUrl) Unsubscribe

@@ -7,3 +7,7 @@ env:
   clear:
     NODE_ENV: production
     SOLANA_CLUSTER: devnet
+    API_URL: https://api-main-devnet.dreader.io
+    D_READER_URL: https://main-devnet.dreader.app
+    D_PUBLISHER_URL: https://main-devnet.dreader.app
+    CDN_URL: 

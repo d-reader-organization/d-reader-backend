@@ -1,6 +1,7 @@
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 
 export interface Config {
+  client: ClientConfig;
   nest: NestConfig;
   cors: CorsConfig;
   swagger: SwaggerConfig;
@@ -9,9 +10,14 @@ export interface Config {
   throttle: ThrottleConfig;
 }
 
+export interface ClientConfig {
+  dReaderUrl: string;
+  dPublisherUrl: string;
+}
+
 export interface NestConfig {
   port: number;
-  api: string;
+  apiUrl: string;
 }
 
 export interface CorsConfig {

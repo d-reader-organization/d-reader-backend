@@ -8,33 +8,55 @@ const logError = (template: string, recipient: string, e: any) => {
 };
 
 const SUBSCRIBE_TO_NEWSLETTER = 'subscribedToNewsletter';
+const UNSUBSCRIBED_FROM_NEWSLETTER = 'unsubscribedFromNewsletter';
 const USER_REGISTERED = 'userRegistered';
 const USER_PASSWORD_RESET = 'userPasswordReset';
 const USER_EMAIL_VERIFICATION = 'userEmailVerification';
 const CREATOR_REGISTERED = 'creatorRegistered';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
 const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
-const UNSUBSCRIBED_FROM_NEWSLETTER = 'unsubscribedFromNewsletter';
-
-// TODO: prettify email styles and add more meaningful content
 
 @Injectable()
 export class MailService {
-  private readonly api: string;
+  private readonly apiUrl: string;
+  private readonly dReaderUrl: string;
+  private readonly dPublisherUrl: string;
 
   constructor(private readonly mailerService: MailerService) {
-    this.api = config().nest.api;
+    this.apiUrl = config().nest.apiUrl;
+    this.dReaderUrl = config().client.dReaderUrl;
+    this.dPublisherUrl = config().client.dPublisherUrl;
   }
 
-  async subscribedToNewsletter(recipient: string) {
+  async subscribedToNewsletter(email: string) {
     try {
       await this.mailerService.sendMail({
-        to: recipient,
-        subject: 'Newsletter subscription',
+        to: email,
+        subject: '✅ Newsletter subscription',
         template: SUBSCRIBE_TO_NEWSLETTER,
+        context: {
+          apiUrl: this.apiUrl,
+          actionUrl: this.newsletterUrl(email),
+        },
       });
     } catch (e) {
-      logError(SUBSCRIBE_TO_NEWSLETTER, recipient, e);
+      logError(SUBSCRIBE_TO_NEWSLETTER, email, e);
+    }
+  }
+
+  async unsubscribedFromNewsletter(email: string) {
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: '💀 Newsletter is no more!',
+        template: UNSUBSCRIBED_FROM_NEWSLETTER,
+        context: {
+          apiUrl: this.apiUrl,
+          actionUrl: this.newsletterUrl(email),
+        },
+      });
+    } catch (e) {
+      logError(UNSUBSCRIBED_FROM_NEWSLETTER, email, e);
     }
   }
 
@@ -46,8 +68,8 @@ export class MailService {
         template: USER_REGISTERED,
         context: {
           name: user.name,
-          verificationUrl: this.verificationUrl(verificationToken, 'user'),
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
         },
       });
     } catch (e) {
@@ -64,7 +86,8 @@ export class MailService {
         context: {
           name: user.name,
           newPassword,
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.loginUrl(this.dReaderUrl),
         },
       });
     } catch (e) {
@@ -83,8 +106,8 @@ export class MailService {
         template: USER_EMAIL_VERIFICATION,
         context: {
           name: user.name,
-          verificationUrl: this.verificationUrl(verificationToken, 'user'),
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
         },
       });
     } catch (e) {
@@ -103,8 +126,11 @@ export class MailService {
         template: CREATOR_REGISTERED,
         context: {
           name: creator.name,
-          verificationUrl: this.verificationUrl(verificationToken, 'creator'),
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(
+            this.dPublisherUrl,
+            verificationToken,
+          ),
         },
       });
     } catch (e) {
@@ -121,7 +147,8 @@ export class MailService {
         context: {
           name: creator.name,
           newPassword,
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.loginUrl(this.dPublisherUrl),
         },
       });
     } catch (e) {
@@ -143,8 +170,11 @@ export class MailService {
         template: CREATOR_EMAIL_VERIFICATION,
         context: {
           name: creator.name,
-          verificationUrl: this.verificationUrl(verificationToken, 'creator'),
-          api: this.api,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(
+            this.dPublisherUrl,
+            verificationToken,
+          ),
         },
       });
     } catch (e) {
@@ -155,22 +185,15 @@ export class MailService {
     }
   }
 
-  async unsubscribedFromNewsletter(email: string) {
-    try {
-      await this.mailerService.sendMail({
-        to: email,
-        subject: '💀 Newsletter is no more!',
-        template: UNSUBSCRIBED_FROM_NEWSLETTER,
-        context: {
-          api: this.api,
-        },
-      });
-    } catch (e) {
-      logError(UNSUBSCRIBED_FROM_NEWSLETTER, email, e);
-    }
+  newsletterUrl(email: string) {
+    return `${this.dReaderUrl}/newsletter/${email}`;
   }
 
-  verificationUrl(verificationToken: string, type: 'user' | 'creator') {
-    return `${this.api}/${type}/verify-email/${verificationToken}`;
+  verificationUrl(clientUrl: string, verificationToken: string) {
+    return `${clientUrl}/verify-email/${verificationToken}`;
+  }
+
+  loginUrl(clientUrl: string) {
+    return `${clientUrl}/login`;
   }
 }

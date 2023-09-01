@@ -1,5 +1,12 @@
 extends base.pug
 
+block title
+    h1 Hello #{name}
+
 block content
-    h3 Hello #{name}!
-    p To verify your email, please visit the following link: #{verificationUrl}
+    p You have requested an email verification
+    br
+    p Please verify your email by clicking on the button below
+
+block action
+    a(href=actionUrl) Verify email

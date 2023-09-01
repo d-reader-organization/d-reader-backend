@@ -1,8 +1,13 @@
 extends base.pug
 
-block content
-    h3 Welcome #{name}! 🎉
-    p Welcome to the <strong>digital comic revolution</strong>
-    p Thank you for supporting <strong>dReader</strong> in early phases and helping us find a new home for comics - blockchain
+block title
+    h1 Welcome #{name} 🎉
 
-    p To verify your email, please visit the following link: #{verificationUrl}
+block content
+    p Your Creator account has been set up.
+    p Thank you for helping us find a new home for comics - blockchain
+    br
+    p To verify your email, click on the button below
+
+block action
+    a(href=actionUrl) Verify email
