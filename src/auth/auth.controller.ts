@@ -106,7 +106,7 @@ export class AuthController {
     return this.authService.authorizeCreator(creator);
   }
 
-  // TODO: revise how refresh tokens should actually work (authorized endpoint?)
+  // Should this be an authorized endpoint? How do refresh tokens actually work??
   /* Refresh access token */
   @SkipThrottle()
   @Patch('creator/refresh-token/:refreshToken')

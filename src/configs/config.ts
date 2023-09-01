@@ -1,9 +1,13 @@
 import { Config } from './config.interface';
 
 const config: Config = {
+  client: {
+    dReaderUrl: process.env.D_READER_URL,
+    dPublisherUrl: process.env.D_PUBLISHER_URL,
+  },
   nest: {
     port: 3005,
-    api: process.env.API_URL,
+    apiUrl: process.env.API_URL,
   },
   cors: {
     enabled: true,

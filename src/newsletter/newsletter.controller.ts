@@ -22,6 +22,8 @@ const geoip = require('geoip-lite');
 export class NewsletterController {
   constructor(private readonly newsletterService: NewsletterService) {}
 
+  // TODO: protect these routes by hashing email in the route path
+
   /* Subscribe to newsletter */
   @Throttle(2, 60)
   @Post('subscribe/:email')
