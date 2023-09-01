@@ -4,7 +4,8 @@ import { Creator, User } from '@prisma/client';
 import config from '../configs/config';
 
 const logError = (template: string, recipient: string, e: any) => {
-  console.error(`Failed to send ${template} email to ${recipient}: ${e}`);
+  console.error(`Failed to send ${template} email to ${recipient}`);
+  console.error('ERROR: ', e);
 };
 
 const SUBSCRIBE_TO_NEWSLETTER = 'subscribedToNewsletter';
