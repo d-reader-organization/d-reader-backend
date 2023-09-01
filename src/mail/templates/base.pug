@@ -1,23 +1,25 @@
 link(rel="stylesheet" href=`${apiUrl}/styles/base.css`)
-header
-    img.logo(src=`${apiUrl}/assets/logo.png`)
-main
-    div.title
-        block title
-    div.content
-        block content
-    div.action
-        block action
-footer
-    div.footer-links
-        a.footer-link(href="https://dreader.io/links")
-            img(src=`${apiUrl}/assets/web.png`)
-        a.footer-link(href="https://discord.gg/rrZsRvC9mh")
-            img(src=`${apiUrl}/assets/discord.png`)
-        a.footer-link(href="https://x.com/dReaderApp")
-            img(src=`${apiUrl}/assets/twitter.png`)
-        a.footer-link(href="mailto:support@dreader.io")
-            img(src=`${apiUrl}/assets/email.png`) 
-    p.copyright Copyright © 2023 dReader d.o.o. All rights reserved
-    p.privacy-policy View our <a class="privacy-policy-link">Privacy Policy</a>
-    p.nota-bene This email contains important information about your dReader account and cannot be unsubscribed from.
+
+div.mail
+    header.header
+        img.logo(src=`${apiUrl}/assets/logo.png`)
+    main.main
+        div.title
+            block title
+        div.content
+            block content
+        div.action
+            block action
+    footer.footer
+        div.footer-links
+            a.footer-link(href="https://dreader.io/links")
+                img(src=`${apiUrl}/assets/web.png`)
+            a.footer-link(href="https://discord.gg/rrZsRvC9mh")
+                img(src=`${apiUrl}/assets/discord.png`)
+            a.footer-link(href="https://x.com/dReaderApp")
+                img(src=`${apiUrl}/assets/twitter.png`)
+            a.footer-link(href="mailto:support@dreader.io")
+                img(src=`${apiUrl}/assets/email.png`) 
+        p.copyright Copyright © 2023 dReader d.o.o. All rights reserved
+        p.privacy-policy View our <a class="privacy-policy-link">Privacy Policy</a>
+        p.nota-bene This email contains important information about your dReader account and cannot be unsubscribed from.
