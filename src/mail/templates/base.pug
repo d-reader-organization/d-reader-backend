@@ -1,8 +1,7 @@
-- const dirname = "../../../public"
-link(rel="stylesheet" href=`${dirname}/styles/base.css`)
+link(rel="stylesheet" href=`${api}/styles/base.css`)
 .mail
     header
-        img(src=`${dirname}/assets/icon.svg`)
+        img(src=`${api}/assets/Icon.png`)
         .content
             block content
         if verificationUrl
@@ -10,8 +9,8 @@ link(rel="stylesheet" href=`${dirname}/styles/base.css`)
                 button(type="button") Click Here
     footer
         .socials 
-            each filename in ['web.svg', 'discord.svg', 'twitter.svg', 'email.svg']
-                img(src=`${dirname}/assets/${filename}`)
+            each filename in ['Web.png', 'Discord.png', 'Twitter.png', 'Email.png']
+                img(src=`${api}/assets/${filename}`)
         p.  
             Copyright © 2023 dReader d.o.o. All rights reserved<br/>View our <span class="privacy-policy">Privacy Policy</span><br/><br/>
             <span class="security-text">This email contains important information about your dReader account and cannot be unsubscribed from.
