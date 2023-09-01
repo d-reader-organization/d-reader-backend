@@ -9,6 +9,7 @@ import {
   NestConfig,
   SwaggerConfig,
 } from './configs/config.interface';
+import * as express from 'express';
 
 // Boot Strap
 async function bootstrap() {
@@ -78,6 +79,7 @@ async function bootstrap() {
     app.enableCors();
   }
 
+  app.use(express.static('public'));
   await app.listen(process.env.PORT || nestConfig.port || 3005);
 }
 

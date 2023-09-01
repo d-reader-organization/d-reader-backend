@@ -15,8 +15,6 @@ env:
     PORT: 3005
   secret:
     - DATABASE_URL
-    - API_URL
-    - CDN_URL
     # Mail
     - MAIL_SERVICE
     - MAIL_AUTH_TYPE

@@ -1,5 +1,13 @@
-h3 Cheers champ 🍻
-p You've successfully unsubscribed from our newsletter
+extends base.pug
 
-p If this was a mistake, feel free to subscribe again by clicking on the button below
-button SUBSCRIBE
+block title
+    h1 Bye bye 👋
+
+block content
+    p You've successfully unsubscribed from our newsletter!
+    p Hope you're happy now 🥲
+    br
+    p If this was a mistake, resubscribe again by clicking the button below
+
+block action
+    a(href=actionUrl) Subscribe
