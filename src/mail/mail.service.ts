@@ -47,6 +47,7 @@ export class MailService {
         context: {
           name: user.name,
           verificationUrl: this.verificationUrl(verificationToken, 'user'),
+          api: this.api,
         },
       });
     } catch (e) {
@@ -63,6 +64,7 @@ export class MailService {
         context: {
           name: user.name,
           newPassword,
+          api: this.api,
         },
       });
     } catch (e) {
@@ -82,6 +84,7 @@ export class MailService {
         context: {
           name: user.name,
           verificationUrl: this.verificationUrl(verificationToken, 'user'),
+          api: this.api,
         },
       });
     } catch (e) {
@@ -101,6 +104,7 @@ export class MailService {
         context: {
           name: creator.name,
           verificationUrl: this.verificationUrl(verificationToken, 'creator'),
+          api: this.api,
         },
       });
     } catch (e) {
@@ -117,6 +121,7 @@ export class MailService {
         context: {
           name: creator.name,
           newPassword,
+          api: this.api,
         },
       });
     } catch (e) {
@@ -139,6 +144,7 @@ export class MailService {
         context: {
           name: creator.name,
           verificationUrl: this.verificationUrl(verificationToken, 'creator'),
+          api: this.api,
         },
       });
     } catch (e) {
@@ -155,6 +161,9 @@ export class MailService {
         to: email,
         subject: '💀 Newsletter is no more!',
         template: UNSUBSCRIBED_FROM_NEWSLETTER,
+        context: {
+          api: this.api,
+        },
       });
     } catch (e) {
       logError(UNSUBSCRIBED_FROM_NEWSLETTER, email, e);
