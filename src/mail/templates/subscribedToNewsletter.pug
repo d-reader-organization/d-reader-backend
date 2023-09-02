@@ -1,13 +1,13 @@
 extends userBase.pug
 
 block title
-    h1 You're in! ✅
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') You're in! ✅
 
 block content
-    p Thanks for subscribing to our newsletter!
-    p We'll make sure to keep you up to date with all the important events and releases.
+    p(style='font-size: 18px; margin: 8px 0;') Thanks for subscribing to our newsletter!
+    p(style='font-size: 18px; margin: 8px 0;') We'll make sure to keep you up to date with all the important events and releases.
     br
-    p Subscribed by mistake? Unsubscribe by clicking the button below
+    p(style='font-size: 18px; margin: 8px 0;') Subscribed by mistake? Unsubscribe by clicking the button below
 
 block action
     a(href=actionUrl) Unsubscribe
