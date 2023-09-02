@@ -22,6 +22,9 @@ import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
 import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { UserFilterParams } from './dto/user-params.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { subDays } from 'date-fns';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -99,8 +102,12 @@ export class UserService {
     }
   }
 
-  async findAll() {
-    const users = await this.prisma.user.findMany();
+  async findAll(query: UserFilterParams) {
+    const users = await this.prisma.user.findMany({
+      skip: query?.skip,
+      take: query?.take,
+      where: { deletedAt: null },
+    });
 
     return users;
   }
@@ -407,5 +414,40 @@ export class UserService {
     };
     const s3Folder = getS3Folder(id);
     return this.s3.uploadFile(s3Folder, file, 'avatar');
+  }
+
+  async pseudoDelete(id: number) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+      // TODO v2: send email: user account scheduled for deletion
+    } catch {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+  }
+
+  async pseudoRecover(id: number) {
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: { deletedAt: null },
+      });
+    } catch {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async clearUsersQueuedForRemoval() {
+    const where = { where: { deletedAt: { lte: subDays(new Date(), 60) } } };
+    const usersToRemove = await this.prisma.user.findMany(where);
+    await this.prisma.user.deleteMany(where);
+
+    for (const user of usersToRemove) {
+      const s3Folder = getS3Folder(user.id);
+      await this.s3.deleteFolder(s3Folder);
+    }
   }
 }

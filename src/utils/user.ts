@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { maxLength, minLength, isEmail } from 'class-validator';
 import { USERNAME_MAX_SIZE, USERNAME_MIN_SIZE } from '../constants';
 import { isValidUsername } from '../decorators/IsValidUsername';
+import { naughtyWords } from './naughty-words';
 
 export function validateName(name: string) {
   if (typeof name !== 'string') {
@@ -12,6 +13,10 @@ export function validateName(name: string) {
     throw new BadRequestException(`Min ${USERNAME_MIN_SIZE} characters`);
   } else if (!isValidUsername(name)) {
     throw new BadRequestException('Only have A-Z,0-9,- characters allowed');
+  } else if (naughtyWords.includes(name.toLowerCase())) {
+    throw new BadRequestException(
+      'Naughty word detected. Please use another username or contact us if you think this is a mistake',
+    );
   }
 }
 
