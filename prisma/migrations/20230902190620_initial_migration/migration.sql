@@ -24,6 +24,7 @@ CREATE TABLE "User" (
     "role" "Role" NOT NULL DEFAULT 'User',
     "referrerId" INTEGER,
     "referralsRemaining" INTEGER NOT NULL DEFAULT 0,
+    "deletedAt" TIMESTAMP(3),
     "referredAt" TIMESTAMP(3),
     "lastLogin" TIMESTAMP(3),
     "lastActiveAt" TIMESTAMP(3),
@@ -36,7 +37,10 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Wallet" (
     "address" TEXT NOT NULL,
+    "label" TEXT NOT NULL DEFAULT '',
     "userId" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "connectedAt" TIMESTAMP(3),
 
     CONSTRAINT "Wallet_pkey" PRIMARY KEY ("address")
 );
@@ -57,6 +61,7 @@ CREATE TABLE "Creator" (
     "twitter" TEXT NOT NULL DEFAULT '',
     "instagram" TEXT NOT NULL DEFAULT '',
     "lynkfire" TEXT NOT NULL DEFAULT '',
+    "tippingAddress" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
     "featuredAt" TIMESTAMP(3),
@@ -237,6 +242,25 @@ CREATE TABLE "CandyMachine" (
 );
 
 -- CreateTable
+CREATE TABLE "CandyMachineGroup" (
+    "id" SERIAL NOT NULL,
+    "label" TEXT NOT NULL,
+    "allowListSupply" INTEGER NOT NULL,
+    "allowListUsed" INTEGER NOT NULL DEFAULT 0,
+    "candyMachineAddress" TEXT NOT NULL,
+
+    CONSTRAINT "CandyMachineGroup_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "WalletCandyMachineGroup" (
+    "walletAddress" TEXT NOT NULL,
+    "candyMachineGroupId" INTEGER NOT NULL,
+
+    CONSTRAINT "WalletCandyMachineGroup_pkey" PRIMARY KEY ("candyMachineGroupId","walletAddress")
+);
+
+-- CreateTable
 CREATE TABLE "CandyMachineReceipt" (
     "nftAddress" TEXT NOT NULL,
     "buyerAddress" TEXT NOT NULL,
@@ -289,7 +313,6 @@ CREATE TABLE "CarouselSlide" (
 
 -- CreateTable
 CREATE TABLE "Newsletter" (
-    "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "subscribedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3),
@@ -300,7 +323,7 @@ CREATE TABLE "Newsletter" (
     "device" TEXT NOT NULL DEFAULT '',
     "os" TEXT NOT NULL DEFAULT '',
 
-    CONSTRAINT "Newsletter_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Newsletter_pkey" PRIMARY KEY ("email")
 );
 
 -- CreateTable
@@ -408,13 +431,13 @@ CREATE UNIQUE INDEX "StatefulCover_comicIssueId_isSigned_isUsed_rarity_key" ON "
 CREATE UNIQUE INDEX "CandyMachine_authorityPda_key" ON "CandyMachine"("authorityPda");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "CandyMachineGroup_label_candyMachineAddress_key" ON "CandyMachineGroup"("label", "candyMachineAddress");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CollectionNft_comicIssueId_key" ON "CollectionNft"("comicIssueId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ComicPage_pageNumber_comicIssueId_key" ON "ComicPage"("pageNumber", "comicIssueId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Newsletter_email_key" ON "Newsletter"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Listing_nftAddress_canceledAt_key" ON "Listing"("nftAddress", "canceledAt");
@@ -472,6 +495,15 @@ ALTER TABLE "Nft" ADD CONSTRAINT "Nft_collectionNftAddress_fkey" FOREIGN KEY ("c
 
 -- AddForeignKey
 ALTER TABLE "CandyMachine" ADD CONSTRAINT "CandyMachine_collectionNftAddress_fkey" FOREIGN KEY ("collectionNftAddress") REFERENCES "CollectionNft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CandyMachineGroup" ADD CONSTRAINT "CandyMachineGroup_candyMachineAddress_fkey" FOREIGN KEY ("candyMachineAddress") REFERENCES "CandyMachine"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WalletCandyMachineGroup" ADD CONSTRAINT "WalletCandyMachineGroup_walletAddress_fkey" FOREIGN KEY ("walletAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WalletCandyMachineGroup" ADD CONSTRAINT "WalletCandyMachineGroup_candyMachineGroupId_fkey" FOREIGN KEY ("candyMachineGroupId") REFERENCES "CandyMachineGroup"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CandyMachineReceipt" ADD CONSTRAINT "CandyMachineReceipt_nftAddress_fkey" FOREIGN KEY ("nftAddress") REFERENCES "Nft"("address") ON DELETE RESTRICT ON UPDATE CASCADE;

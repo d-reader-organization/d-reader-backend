@@ -303,6 +303,7 @@ export class CreatorService {
         where: { slug },
         data: { deletedAt: new Date() },
       });
+      // TODO v2: send email: creator account scheduled for deletion
     } catch {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }

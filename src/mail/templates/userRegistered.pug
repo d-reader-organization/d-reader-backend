@@ -1,13 +1,13 @@
 extends userBase.pug
 
 block title
-    h1 Welcome #{name}!
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') Welcome #{name}!
 
 block content
-    p Your account has been created.
-    p Thank you for helping us find a new home for comics - blockchain
+    p(style='font-size: 18px; margin: 8px 0;') Your account has been created.
+    p(style='font-size: 18px; margin: 8px 0;') Thank you for helping us find a new home for comics - blockchain
     br
-    p To verify your email, click on the button below
+    p(style='font-size: 18px; margin: 8px 0;') To verify your email, click on the button below
 
 block action
     a.verify.yellow-bg(href=actionUrl) Verify email

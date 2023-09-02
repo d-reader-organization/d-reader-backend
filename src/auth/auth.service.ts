@@ -33,8 +33,8 @@ export class AuthService {
 
     return await this.prisma.wallet.upsert({
       where: { address },
-      create: { address, userId: userId },
-      update: { userId: userId },
+      create: { address, userId: userId, connectedAt: new Date() },
+      update: { userId: userId, connectedAt: new Date() },
     });
   }
 

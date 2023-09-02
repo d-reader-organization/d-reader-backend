@@ -7,12 +7,13 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../types/update-user.dto';
 import { ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { toUserDto, UserDto } from './dto/user.dto';
+import { toUserDto, toUserDtoArray, UserDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdatePasswordDto } from 'src/types/update-password.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
@@ -26,6 +27,8 @@ import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserOwnerAuth } from 'src/guards/user-owner.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { WalletDto, toWalletDtoArray } from 'src/wallet/dto/wallet.dto';
+import { AdminGuard } from 'src/guards/roles.guard';
+import { UserFilterParams } from './dto/user-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('User')
@@ -39,6 +42,36 @@ export class UserController {
   async findMe(@UserEntity() user: UserPayload): Promise<UserDto> {
     const me = await this.userService.findMe(user.id);
     return toUserDto(me);
+  }
+
+  /* Get all users */
+  @AdminGuard()
+  @Get('get')
+  async findAll(@Query() query: UserFilterParams): Promise<UserDto[]> {
+    const users = await this.userService.findAll(query);
+    return toUserDtoArray(users);
+  }
+
+  /* Get specific user unique id */
+  @AdminGuard()
+  @Get('get/:id')
+  async findOne(@Param('id') id: string): Promise<UserDto> {
+    const user = await this.userService.findOne(+id);
+    return toUserDto(user);
+  }
+
+  /* Get all NFTs owned by the user */
+  @Get('get/:id/assets')
+  async getAssets(@Param('id') id: string): Promise<WalletAssetDto[]> {
+    const assets = await this.userService.getAssets(+id);
+    return toWalletAssetDtoArray(assets);
+  }
+
+  /* Get all wallets connected to the user */
+  @Get('get/:id/wallets')
+  async getWallets(@Param('id') id: string): Promise<WalletDto[]> {
+    const wallets = await this.userService.getWallets(+id);
+    return toWalletDtoArray(wallets);
   }
 
   /* Update specific user */
@@ -114,20 +147,6 @@ export class UserController {
     return toUserDto(updatedUser);
   }
 
-  /* Get all NFTs owned by the user */
-  @Get('get/:id/assets')
-  async getAssets(@Param('id') id: string): Promise<WalletAssetDto[]> {
-    const assets = await this.userService.getAssets(+id);
-    return toWalletAssetDtoArray(assets);
-  }
-
-  /* Get all wallets connected to the user */
-  @Get('get/:id/wallets')
-  async getWallets(@Param('id') id: string): Promise<WalletDto[]> {
-    const wallets = await this.userService.getWallets(+id);
-    return toWalletDtoArray(wallets);
-  }
-
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
     5 * 60 * 1000, // 5 minutes
@@ -137,9 +156,20 @@ export class UserController {
   @Throttle(10, 60)
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
-    // TODO: check if syncWallet is working correctly (it's not async and awaited)
     return this.throttledSyncWallets(+id);
   }
 
-  // TODO: /delete, /recover, /get, /get/{id} endpoints missing
+  /* Pseudo delete genre */
+  @UserOwnerAuth()
+  @Patch('delete/:id')
+  async pseudoDelete(@Param('id') id: string) {
+    await this.userService.pseudoDelete(+id);
+  }
+
+  /* Recover genre */
+  @UserOwnerAuth()
+  @Patch('recover/:id')
+  async pseudoRecover(@Param('id') id: string) {
+    await this.userService.pseudoRecover(+id);
+  }
 }

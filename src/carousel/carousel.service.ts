@@ -72,7 +72,7 @@ export class CarouselService {
     });
 
     if (!carouselSlide) {
-      throw new NotFoundException(`Carousel slide with ${id} does not exist`);
+      throw new NotFoundException(`Carousel slide with id ${id} not found`);
     }
 
     return carouselSlide;
@@ -87,7 +87,7 @@ export class CarouselService {
 
       return updatedCarouselSlide;
     } catch {
-      throw new NotFoundException(`Carousel slide with ${id} does not exist`);
+      throw new NotFoundException(`Carousel slide with id ${id} not found`);
     }
   }
 
@@ -122,7 +122,7 @@ export class CarouselService {
         data: { expiredAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Carousel slide with ${id} does not exist`);
+      throw new NotFoundException(`Carousel slide with id ${id} not found`);
     }
   }
 }
