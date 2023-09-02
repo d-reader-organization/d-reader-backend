@@ -32,7 +32,10 @@ type SupportedAuthType =
           defaults: { from: configService.get<string>('MAIL_FROM') },
           template: {
             dir: __dirname + '/templates',
-            adapter: new PugAdapter({ inlineCssEnabled: true }),
+            adapter: new PugAdapter({
+              inlineCssEnabled: true,
+              inlineCssOptions: { removeHtmlSelectors: false, url: ' ' },
+            }),
             options: { strict: true },
           },
           options: {

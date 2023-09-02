@@ -1,33 +1,31 @@
 link(rel="stylesheet", href=`${apiUrl}/styles/base.css`)
-header
-    img.logo(src=`${apiUrl}/assets/logo.png`, alt="logo")
-.mail
-    table.main
-        tr
-            td.title
-                block title
-        tr
-            td.content
-                block content
-        tr
-            td.action
-                block action
-        tr.footer-links
-            td
-                a.footer-link.footer-link--web(href='https://dreader.io/links')
-                    img(src=`${apiUrl}/assets/web.png`, alt="dreader")
-            td
-                a.footer-link.footer-link--discord(href='https://discord.gg/rrZsRvC9mh')
-                    img(src=`${apiUrl}/assets/discord.png`, alt="discord")
-            td
-                a.footer-link.footer-link--twitter(href='https://x.com/dReaderApp')
-                    img(src=`${apiUrl}/assets/twitter.png`, alt="twitter")
-            td
-                a.footer-link.footer-link--mail(href='mailto:support@dreader.io')
-                    img(src=`${apiUrl}/assets/email.png`, alt="email")
-        tr
-            td
-                p.copyright Copyright &copy; 2023 dReader d.o.o. All rights reserved
-                p.privacy-policy View our 
-                    a.privacy-policy-link Privacy Policy
-                p.nota-bene This email contains important information about your dReader account and cannot be unsubscribed from.
+
+table.mail
+    tr
+        th
+            img.logo(src=`${apiUrl}/assets/logo.png`, alt="logo" title="logo")
+    tr
+        td.title
+            block title
+    tr
+        td.content
+            block content
+    tr
+        td.action
+            block action
+    tr
+        td.footer-links
+            a.footer-link.footer-link--web(href='https://dreader.io/links')
+                img(src=`${apiUrl}/assets/web.png`, alt="web" title="dReader web")
+            a.footer-link.footer-link--discord(href='https://discord.gg/rrZsRvC9mh')
+                img(src=`${apiUrl}/assets/discord.png`, alt="discord" title="dReader discord invite")
+            a.footer-link.footer-link--twitter(href='https://x.com/dPublisherApp')
+                img(src=`${apiUrl}/assets/twitter.png`, alt="twitter" title="dPublisher twitter account")
+            a.footer-link.footer-link--mail(href='mailto:support@dreader.io')
+                img(src=`${apiUrl}/assets/email.png`, alt="email" title="dPublisher email contact")
+    tr
+        td
+            p.copyright Copyright &copy; 2023 dReader d.o.o. All rights reserved
+            p.privacy-policy View our 
+                a.privacy-policy-link(href='https://github.com/d-reader-organization/.github/blob/main/PRIVACY_POLICY') Privacy Policy
+            p.nota-bene This email contains important information about your dPublisher account and cannot be unsubscribed from.
