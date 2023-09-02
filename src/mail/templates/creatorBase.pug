@@ -1,40 +1,33 @@
-header 
-   img.logo(src=`${apiUrl}/assets/logo.png`, style='display: block; margin: 0 auto;')
-head
-  .mail(style='align-items: center; display: flex; flex-direction: column; font-family: Arial; max-width: 680px; padding: 24px 18px; text-align: center; margin: 0 auto;')
-    table.main(style='color: #000; margin-bottom: 56px;')
-      tr
-        td
-          .title
-            block title
-      tr
-        td
-          .content(style='padding: 20px;background-color: #ffffff; border-radius: 8px; text-align: center;')
-            block content
-      tr
-        td
-          .action(style='background-color: #49c187; border-radius: 8px; font-size: 20px; font-weight: bold; margin: 16px auto 0px auto; min-width: 180px; padding: 16px; white-space: nowrap; width: min-content; text-align: center;')
-            block action
-      tr
-        td
-          .footer-links(style='align-items: center; display: flex; flex-direction: row; justify-content: center; margin-bottom: 24px;')
+link(rel="stylesheet", href=`${apiUrl}/styles/base.css`)
+header
+    img.logo(src=`${apiUrl}/assets/logo.png`, alt="logo")
+.mail
+    table.main
+        tr
+            td.title
+                block title
+        tr
+            td.content
+                block content
+        tr
+            td.action
+                block action
+        tr.footer-links
             td
-              a.footer-link--web(href='https://dreader.io/links' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
-                img(src=`${apiUrl}/assets/web.png`, alt="dreader", style='display: block; margin: 0 auto;')
+                a.footer-link.footer-link--web(href='https://dreader.io/links')
+                    img(src=`${apiUrl}/assets/web.png`, alt="dreader")
             td
-              a.footer-link--discord(href='https://discord.gg/rrZsRvC9mh' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
-                img(src=`${apiUrl}/assets/discord.png`, alt="discord", style='display: block; margin: 0 auto;')
+                a.footer-link.footer-link--discord(href='https://discord.gg/rrZsRvC9mh')
+                    img(src=`${apiUrl}/assets/discord.png`, alt="discord")
             td
-              a.footer-link--twitter(href='https://x.com/dReaderApp' style="all: unset; cursor: pointer; height; 24px; line-height: 0; margin-right: 24px; width: 24px;")
-                img(src=`${apiUrl}/assets/twitter.png`, alt="twitter", style='display: block; margin: 0 auto;')
+                a.footer-link.footer-link--twitter(href='https://x.com/dReaderApp')
+                    img(src=`${apiUrl}/assets/twitter.png`, alt="twitter")
             td
-              a.footer-link--mail(href='mailto:support@dreader.io' style="all: unset; cursor: pointer; height: 24px; line-height: 0; width: 24px;")
-                img(src=`${apiUrl}/assets/email.png`, alt="email", style='display: block; margin: 0 auto;') 
-      tr
-        td
-          p.copyright(style='color: #777d8c; font-size: 16px; margin: 8px 0; margin-bottom: 2px;') Copyright &copy; 2023 dReader d.o.o. All rights reserved
-          p.privacy-policy(style='color: #777d8c; font-size: 16px; margin: 8px 0; margin-top: 0;')
-            | View our 
-            a.privacy-policy-link(style='all: unset; cursor: pointer; font-weight: bold; text-decoration: none; color: black;') Privacy Policy
-          p.nota-bene(style='color: #777d8c; font-size: 14px; font-style: italic; margin: 8px 0;')
-            | This email contains important information about your dReader account and cannot be unsubscribed from.
+                a.footer-link.footer-link--mail(href='mailto:support@dreader.io')
+                    img(src=`${apiUrl}/assets/email.png`, alt="email")
+        tr
+            td
+                p.copyright Copyright &copy; 2023 dReader d.o.o. All rights reserved
+                p.privacy-policy View our 
+                    a.privacy-policy-link Privacy Policy
+                p.nota-bene This email contains important information about your dReader account and cannot be unsubscribed from.
