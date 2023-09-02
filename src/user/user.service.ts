@@ -158,8 +158,7 @@ export class UserService {
       orderBy: { address: 'asc' },
     });
 
-    const walletAddresses = wallets.map((wallet) => wallet.address);
-    return walletAddresses;
+    return wallets;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {

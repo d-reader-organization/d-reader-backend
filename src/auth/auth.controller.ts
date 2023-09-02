@@ -134,7 +134,7 @@ export class AuthController {
     await this.authService.connectWallet(user.id, address, encoding);
   }
 
-  /* Disconnect your wallet with a signed and encoded one time password */
+  /* Disconnect your wallet */
   @UserAuth()
   @Patch('wallet/disconnect/:address')
   async disconnectWallet(@Param('address') address: string) {

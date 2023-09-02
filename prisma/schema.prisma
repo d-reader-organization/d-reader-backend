@@ -38,6 +38,7 @@ model User {
 
 model Wallet {
   address            String                    @id
+  label              String                    @default("")
   userId             Int?
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
@@ -67,6 +68,7 @@ model Creator {
   twitter         String        @default("")
   instagram       String        @default("")
   lynkfire        String        @default("")
+  tippingAddress  String        @default("")
   createdAt       DateTime      @default(now())
   deletedAt       DateTime?
   featuredAt      DateTime?

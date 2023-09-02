@@ -20,6 +20,8 @@ import { UserCreatorMyStatsDto } from 'src/creator/types/user-creator-my-stats.d
 import { UserCreatorStatsDto } from './user-creator.dto';
 import { GenreDto } from 'src/genre/dto/genre.dto';
 import { PickType } from '@nestjs/swagger';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsOptionalString } from 'src/decorators/IsOptionalString';
 
 export class PartialGenreDto extends PickType(GenreDto, [
   'name',
@@ -66,6 +68,10 @@ export class CreatorDto {
   @MaxLength(128)
   flavorText: string;
 
+  @IsSolanaAddress()
+  @IsOptionalString()
+  tippingAddress: string;
+
   @IsOptionalUrl()
   website: string;
 
@@ -110,6 +116,7 @@ export function toCreatorDto(creator: CreatorInput) {
     logo: getPublicUrl(creator.logo),
     description: creator.description,
     flavorText: creator.flavorText,
+    tippingAddress: creator.tippingAddress,
     website: creator.website,
     twitter: creator.twitter,
     instagram: creator.instagram,

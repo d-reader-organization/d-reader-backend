@@ -15,10 +15,11 @@ import {
   BuyParamsArray,
 } from '../auction-house/dto/instant-buy-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
-import { PublicKey } from '@metaplex-foundation/js';
+import { NotYetImplementedError, PublicKey } from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PUBLIC_GROUP_LABEL } from '../constants';
+import { TipCreatorParams } from 'src/candy-machine/dto/tip-creator-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -51,6 +52,18 @@ export class TransactionController {
       publicKey,
       ComicStateArgs.Sign,
     );
+  }
+
+  @Get('/tip-creator')
+  async constructTipCreatorTransaction(@Query() query: TipCreatorParams) {
+    console.log(query);
+    // TODO: construct a transaction which sends query.tipAmount of SPL token
+    // specified by splTokenAddress to a creator.tippingAddress from a
+    // creator found by the query.creatorId
+
+    throw new NotYetImplementedError();
+    // at some point we might also add a query.isAnonymous which would use
+    // Elusiv for private transaction if the user decided to do an anonymous tip
   }
 
   @Get('/use-comic-issue-nft')

@@ -18,7 +18,7 @@ import { Nft } from '@prisma/client';
 export class WebSocketGateway {
   @WebSocketServer() server: Server;
 
-  // TODO v1: add new client and/or comic-issue whenever someone starts listening?
+  // TODO v2: add new client and/or comic-issue whenever someone starts listening?
   // @SubscribeMessage('comic-issue/${id}')
   // https://wanago.io/2021/01/25/api-nestjs-chat-websockets/
 

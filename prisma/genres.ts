@@ -105,4 +105,12 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
     icon: 'genres/crime.svg',
     color: '#3d3e60',
   },
+  // {
+  //   name: 'AI',
+  //   slug: 'ai',
+  //   deletedAt: null,
+  //   priority: 14,
+  //   icon: 'genres/ai.svg',
+  //   color: '#ffffff',
+  // },
 ];

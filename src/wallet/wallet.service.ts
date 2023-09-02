@@ -17,6 +17,7 @@ import {
 } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { SAGA_COLLECTION_ADDRESS } from '../constants';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 @Injectable()
 export class WalletService {
@@ -28,6 +29,19 @@ export class WalletService {
     private readonly heliusService: HeliusService,
   ) {
     this.metaplex = metaplex;
+  }
+
+  async update(address: string, updateWalletDto: UpdateWalletDto) {
+    try {
+      const updatedWallet = await this.prisma.wallet.update({
+        where: { address },
+        data: updateWalletDto,
+      });
+
+      return updatedWallet;
+    } catch {
+      throw new NotFoundException(`Wallet with ${address} does not exist`);
+    }
   }
 
   async syncWallet(address: string) {
@@ -99,7 +113,7 @@ export class WalletService {
     await this.prisma.nft.update({
       where: { address: metadata.mintAddress.toString() },
       data: {
-        // TODO v1: this should fetch the info on when the owner changed from chain
+        // TODO v2: this should fetch the info on when the owner changed from chain
         ownerChangedAt: new Date(0),
         owner: {
           connectOrCreate: {
