@@ -1,6 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "deletedAt" TIMESTAMP(3);
-
--- AlterTable
-ALTER TABLE "Wallet" ADD COLUMN     "connectedAt" TIMESTAMP(3),
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
