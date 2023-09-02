@@ -2,24 +2,22 @@ link(rel="stylesheet" href=`${apiUrl}/styles/base.css`)
 
 div.mail
     header.header
-        img.logo(src=`${apiUrl}/assets/logo.png`)
+        div.logo
     main.main
         div.title
             block title
         div.content
             block content
+        //- TODO: at some point we want to create a dReader-base.pug and dPublisher-base.pug
+        //- The reason we might want that is, different links and colors! dPublisher should have a green action button
         div.action
             block action
     footer.footer
         div.footer-links
-            a.footer-link(href="https://dreader.io/links")
-                img(src=`${apiUrl}/assets/web.png`)
-            a.footer-link(href="https://discord.gg/rrZsRvC9mh")
-                img(src=`${apiUrl}/assets/discord.png`)
-            a.footer-link(href="https://x.com/dReaderApp")
-                img(src=`${apiUrl}/assets/twitter.png`)
-            a.footer-link(href="mailto:support@dreader.io")
-                img(src=`${apiUrl}/assets/email.png`) 
+            a.footer-link.footer-link--web(href="https://dreader.io/links")
+            a.footer-link.footer-link--discord(href="https://discord.gg/rrZsRvC9mh")
+            a.footer-link.footer-link--twitter(href="https://x.com/dReaderApp")
+            a.footer-link.footer-link--mail(href="mailto:support@dreader.io")
         p.copyright Copyright © 2023 dReader d.o.o. All rights reserved
         p.privacy-policy View our <a class="privacy-policy-link">Privacy Policy</a>
         p.nota-bene This email contains important information about your dReader account and cannot be unsubscribed from.
