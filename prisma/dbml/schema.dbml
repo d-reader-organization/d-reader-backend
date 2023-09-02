@@ -12,6 +12,7 @@ Table User {
   role Role [not null, default: 'User']
   referrerId Int
   referralsRemaining Int [not null, default: 0]
+  deletedAt DateTime
   referredAt DateTime
   lastLogin DateTime
   lastActiveAt DateTime
@@ -29,6 +30,8 @@ Table Wallet {
   address String [pk]
   label String [not null, default: '']
   userId Int
+  createdAt DateTime [default: `now()`, not null]
+  connectedAt DateTime
   user User
   mintReceipts CandyMachineReceipt [not null]
   nfts Nft [not null]

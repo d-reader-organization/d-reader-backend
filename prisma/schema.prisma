@@ -23,6 +23,7 @@ model User {
   role               Role             @default(User)
   referrerId         Int?
   referralsRemaining Int              @default(0)
+  deletedAt          DateTime?
   referredAt         DateTime?
   lastLogin          DateTime?
   lastActiveAt       DateTime?
@@ -40,6 +41,8 @@ model Wallet {
   address            String                    @id
   label              String                    @default("")
   userId             Int?
+  createdAt          DateTime                  @default(now())
+  connectedAt        DateTime?
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
   nfts               Nft[]

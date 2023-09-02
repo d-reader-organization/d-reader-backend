@@ -40,7 +40,7 @@ export class WalletService {
 
       return updatedWallet;
     } catch {
-      throw new NotFoundException(`Wallet with ${address} does not exist`);
+      throw new NotFoundException(`Wallet with address ${address} not found`);
     }
   }
 
