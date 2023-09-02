@@ -114,7 +114,7 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  // TODO: this can be moved to the 'comic-issue/get' endpoint?
+  // TODO v2: this can be moved to the 'comic-issue/get' endpoint?
   @Get('get/by-owner/:userId')
   async findOwnedComicIssues(
     @Param('userId') userId: string,

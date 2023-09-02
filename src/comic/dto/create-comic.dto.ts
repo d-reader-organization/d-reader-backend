@@ -72,7 +72,7 @@ export class CreateComicBodyDto {
   @Transform(({ value }: { value: string[] | string }) => {
     if (value && typeof value === 'string') {
       return value.split(',');
-    } else return value || [];
+    } else return value;
   })
   genres: string[];
 }

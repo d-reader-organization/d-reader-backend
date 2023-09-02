@@ -96,7 +96,7 @@ export class ComicController {
     return toComicDto(comic);
   }
 
-  // TODO: this can be moved to the 'comic/get' endpoint?
+  // TODO v2: this can be moved to the 'comic/get' endpoint?
   @Get('get/by-owner/:userId')
   async findOwnedComics(
     @Param('userId') userId: string,

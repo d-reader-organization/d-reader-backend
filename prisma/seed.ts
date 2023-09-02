@@ -75,7 +75,6 @@ import {
   wretchesEp6Data,
 } from './comic-issues';
 import { addDays } from 'date-fns';
-import { PUBLIC_GROUP_MINT_LIMIT } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();

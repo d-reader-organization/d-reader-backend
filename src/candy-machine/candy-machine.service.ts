@@ -617,7 +617,7 @@ export class CandyMachineService {
     return eligibleGroups;
   }
 
-  // TODO: assertNftGate can be further optimizied by fetching all nfts once and using helius api's
+  // TODO v2: assertNftGate can be further optimizied by fetching all nfts once and using helius api's
   async assertNftGate(
     nftGate: NftGateGuardSettings | undefined,
     wallet: PublicKey,

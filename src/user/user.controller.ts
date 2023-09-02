@@ -25,6 +25,7 @@ import {
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserOwnerAuth } from 'src/guards/user-owner.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
+import { WalletDto, toWalletDtoArray } from 'src/wallet/dto/wallet.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('User')
@@ -122,9 +123,9 @@ export class UserController {
 
   /* Get all wallets connected to the user */
   @Get('get/:id/wallets')
-  async getWallets(@Param('id') id: string): Promise<string[]> {
+  async getWallets(@Param('id') id: string): Promise<WalletDto[]> {
     const wallets = await this.userService.getWallets(+id);
-    return wallets;
+    return toWalletDtoArray(wallets);
   }
 
   private throttledSyncWallets = memoizeThrottle(

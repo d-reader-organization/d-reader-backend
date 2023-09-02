@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, MaxLength, IsString, IsOptional } from 'class-validator';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class UpdateCreatorDto {
   @IsEmail()
@@ -17,6 +18,10 @@ export class UpdateCreatorDto {
   // @Transform(({ obj }) => kebabCase(obj.name))
   // @ApiProperty({ readOnly: true, required: false })
   // slug: string;
+
+  @IsSolanaAddress()
+  @IsOptional()
+  tippingAddress?: string;
 
   @IsString()
   @IsOptional()

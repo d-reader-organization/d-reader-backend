@@ -27,6 +27,7 @@ Table User {
 
 Table Wallet {
   address String [pk]
+  label String [not null, default: '']
   userId Int
   user User
   mintReceipts CandyMachineReceipt [not null]
@@ -49,6 +50,7 @@ Table Creator {
   twitter String [not null, default: '']
   instagram String [not null, default: '']
   lynkfire String [not null, default: '']
+  tippingAddress String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
   featuredAt DateTime

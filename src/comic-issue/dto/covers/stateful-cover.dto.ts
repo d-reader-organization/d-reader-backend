@@ -1,8 +1,14 @@
-import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ComicRarity, StatefulCover } from '@prisma/client';
-import { Transform, plainToInstance } from 'class-transformer';
-import { getPublicUrl, transformToUrl } from '../../../aws/s3client';
+import { plainToInstance } from 'class-transformer';
+import { getPublicUrl } from '../../../aws/s3client';
 
 export class StatefulCoverDto {
   @IsString()
@@ -19,8 +25,8 @@ export class StatefulCoverDto {
   @ApiProperty({ enum: ComicRarity })
   rarity?: ComicRarity;
 
-  @IsString()
-  @Transform(transformToUrl, { toClassOnly: true })
+  @IsUrl()
+  // @Transform(transformToUrl, { toClassOnly: true })
   image: string;
 }
 

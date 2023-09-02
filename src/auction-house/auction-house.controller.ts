@@ -18,7 +18,7 @@ export class AuctionHouseController {
     return await toListingDtoArray(listedItems);
   }
 
-  // TODO: move this to /comic-issue/get/:id/collection-stats
+  // TODO v2: move this to /comic-issue/get/:id/collection-stats
   // params { primarySale: boolean, secondarySale: boolean, offchainStats: boolean }
   // primarySale (totalVolume, itemsMinted, itemsRemaining, price, endsAt, hasEnded)
   // secondarySale (totalVolume, itemsListed, floorPrice)

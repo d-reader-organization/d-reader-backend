@@ -37,7 +37,13 @@ export class ComicService {
     createComicBodyDto: CreateComicBodyDto,
     createComicFilesDto: CreateComicFilesDto,
   ) {
-    const { title, slug, genres, isCompleted, ...rest } = createComicBodyDto;
+    const {
+      title,
+      slug,
+      genres = [],
+      isCompleted,
+      ...rest
+    } = createComicBodyDto;
 
     await Promise.all([
       this.throwIfTitleTaken(title),
