@@ -1,3 +1,5 @@
+header 
+   img.logo(src=`${apiUrl}/assets/logo.png`, style='display: block; margin: 0 auto;')
 head
   .mail(style='align-items: center; display: flex; flex-direction: column; font-family: Arial; max-width: 680px; padding: 24px 18px; text-align: center; margin: 0 auto;')
     table.main(style='color: #000; margin-bottom: 56px;')
@@ -17,13 +19,17 @@ head
         td
           .footer-links(style='align-items: center; display: flex; flex-direction: row; justify-content: center; margin-bottom: 24px;')
             td
-              a.footer-link.footer-link--web(href='https://dreader.io/links' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
+              a.footer-link--web(href='https://dreader.io/links' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
+                img(src=`${apiUrl}/assets/web.png`, alt="dreader", style='display: block; margin: 0 auto;')
             td
-              a.footer-link.footer-link--discord(href='https://discord.gg/rrZsRvC9mh' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
+              a.footer-link--discord(href='https://discord.gg/rrZsRvC9mh' style="all: unset; cursor: pointer; height: 24px; line-height: 0; margin-right: 24px; width: 24px;")
+                img(src=`${apiUrl}/assets/discord.png`, alt="discord", style='display: block; margin: 0 auto;')
             td
-              a.footer-link.footer-link--twitter(href='https://x.com/dReaderApp' style="all: unset; cursor: pointer; height; 24px; line-height: 0; margin-right: 24px; width: 24px;")
+              a.footer-link--twitter(href='https://x.com/dReaderApp' style="all: unset; cursor: pointer; height; 24px; line-height: 0; margin-right: 24px; width: 24px;")
+                img(src=`${apiUrl}/assets/twitter.png`, alt="twitter", style='display: block; margin: 0 auto;')
             td
-              a.footer-link.footer-link--mail(href='mailto:support@dreader.io' style="all: unset; cursor: pointer; height: 24px; line-height: 0; width: 24px;")
+              a.footer-link--mail(href='mailto:support@dreader.io' style="all: unset; cursor: pointer; height: 24px; line-height: 0; width: 24px;")
+                img(src=`${apiUrl}/assets/email.png`, alt="email", style='display: block; margin: 0 auto;') 
       tr
         td
           p.copyright(style='color: #777d8c; font-size: 16px; margin: 8px 0; margin-bottom: 2px;') Copyright &copy; 2023 dReader d.o.o. All rights reserved
