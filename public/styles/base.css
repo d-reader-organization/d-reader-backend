@@ -8,6 +8,14 @@
   text-align: center;
 }
 
+.yellow-bg {
+  background-color: #fceb54;
+}
+
+.green-bg {
+  background-color: #49c187;
+}
+
 a,
 button {
   all: unset;
@@ -57,7 +65,6 @@ p {
 
 .action {
   border-radius: 8px;
-  background-color: #fceb54;
   padding: 16px;
   width: min-content;
   white-space: nowrap;
