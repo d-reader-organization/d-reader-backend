@@ -7,7 +7,6 @@ import { UserEntity } from './decorators/user.decorator';
 import { CreatorEntity } from './decorators/creator.decorator';
 import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
 import { ApiTags } from '@nestjs/swagger';
-
 @UseGuards(ThrottlerGuard)
 @ApiTags('App')
 @Controller('app')

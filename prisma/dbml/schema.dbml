@@ -2,6 +2,17 @@
 //// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 //// ------------------------------------------------------
 
+Table GlobalStatus {
+  id Int [pk, increment]
+  type GlobalStatusType [not null]
+  message String [not null]
+  expiresAt DateTime
+
+  indexes {
+    (type, expiresAt) [unique]
+  }
+}
+
 Table User {
   id Int [pk, increment]
   email String [unique, not null]
@@ -400,6 +411,13 @@ Table Listing {
   indexes {
     (nftAddress, canceledAt) [unique]
   }
+}
+
+Enum GlobalStatusType {
+  Success
+  Info
+  Warning
+  Maintenance
 }
 
 Enum Role {
