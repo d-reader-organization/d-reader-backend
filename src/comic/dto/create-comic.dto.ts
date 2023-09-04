@@ -1,4 +1,4 @@
-import { ApiProperty, IntersectionType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
@@ -13,7 +13,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
 import { AudienceType } from '@prisma/client';
 
-export class CreateComicBodyDto {
+export class CreateComicDto {
   @IsNotEmpty()
   @MaxLength(48)
   title: string;
@@ -64,42 +64,8 @@ export class CreateComicBodyDto {
   @IsOptionalUrl()
   youTube?: string;
 
-  @Expose()
   @IsArray()
-  @IsOptional()
   @Type(() => String)
-  @ApiProperty({ type: [String], required: false })
-  @Transform(({ value }: { value: string[] | string }) => {
-    if (value && typeof value === 'string') {
-      return value.split(',');
-    } else return value;
-  })
+  @ApiProperty({ type: [String] })
   genres: string[];
 }
-
-export class CreateComicFilesDto {
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  cover?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  banner?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  pfp?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
-  logo?: Express.Multer.File | null;
-}
-
-export class CreateComicDto extends IntersectionType(
-  CreateComicBodyDto,
-  CreateComicFilesDto,
-) {}

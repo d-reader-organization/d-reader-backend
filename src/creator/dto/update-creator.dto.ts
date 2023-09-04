@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, MaxLength, IsString, IsOptional } from 'class-validator';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
@@ -19,8 +20,8 @@ export class UpdateCreatorDto {
   // @ApiProperty({ readOnly: true, required: false })
   // slug: string;
 
-  @IsSolanaAddress()
   @IsOptional()
+  @IsSolanaAddress()
   tippingAddress?: string;
 
   @IsString()
@@ -44,4 +45,21 @@ export class UpdateCreatorDto {
 
   @IsOptionalUrl()
   lynkfire?: string;
+}
+
+export class UpdateCreatorFilesDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  avatar?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  banner?: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  @IsOptional()
+  logo?: Express.Multer.File | null;
 }

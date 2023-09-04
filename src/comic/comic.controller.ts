@@ -12,7 +12,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ComicService } from './comic.service';
 import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
 import { ComicParams } from './dto/comic-params.dto';
@@ -31,12 +31,8 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
-import {
-  CreateComicDto,
-  CreateComicBodyDto,
-  CreateComicFilesDto,
-} from './dto/create-comic.dto';
-import { UpdateComicDto } from './dto/update-comic.dto';
+import { CreateComicDto } from './dto/create-comic.dto';
+import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 
 @UseGuards(ThrottlerGuard)
@@ -50,30 +46,12 @@ export class ComicController {
 
   /* Create a new comic */
   @CreatorAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateComicDto })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'cover', maxCount: 1 },
-      { name: 'banner', maxCount: 1 },
-      { name: 'pfp', maxCount: 1 },
-      { name: 'logo', maxCount: 1 },
-    ]),
-  )
   @Post('create')
   async create(
     @CreatorEntity() creator: CreatorPayload,
-    @Body() createComicDto: CreateComicBodyDto,
-    @UploadedFiles({
-      transform: (val) => plainToInstance(CreateComicFilesDto, val),
-    })
-    files: CreateComicFilesDto,
+    @Body() createComicDto: CreateComicDto,
   ): Promise<ComicDto> {
-    const comic = await this.comicService.create(
-      creator.id,
-      createComicDto,
-      files,
-    );
+    const comic = await this.comicService.create(creator.id, createComicDto);
 
     return toComicDto(comic);
   }
@@ -115,6 +93,29 @@ export class ComicController {
   ): Promise<ComicDto> {
     const updatedComic = await this.comicService.update(slug, updateComicDto);
     return toComicDto(updatedComic);
+  }
+
+  /* Update specific comic's files */
+  @ComicOwnerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'cover', maxCount: 1 },
+      { name: 'banner', maxCount: 1 },
+      { name: 'pfp', maxCount: 1 },
+      { name: 'logo', maxCount: 1 },
+    ]),
+  )
+  @Patch('update/:slug/files')
+  async updateFiles(
+    @Param('slug') slug: string,
+    @UploadedFiles({
+      transform: (val) => plainToInstance(UpdateComicFilesDto, val),
+    })
+    files: UpdateComicFilesDto,
+  ): Promise<ComicDto> {
+    const comic = await this.comicService.updateFiles(slug, files);
+    return toComicDto(comic);
   }
 
   /* Update specific comics cover file */

@@ -12,7 +12,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ComicIssueService } from './comic-issue.service';
 import {
   ComicIssueDto,
@@ -61,12 +61,11 @@ import {
   CreateStatelessCoverFilesDto,
   CreateStatelessCoverDto,
 } from './dto/covers/create-stateless-cover.dto';
+import { CreateComicIssueDto } from './dto/create-comic-issue.dto';
 import {
-  CreateComicIssueDto,
-  CreateComicIssueBodyDto,
-  CreateComicIssueFilesDto,
-} from './dto/create-comic-issue.dto';
-import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
+  UpdateComicIssueDto,
+  UpdateComicIssueFilesDto,
+} from './dto/update-comic-issue.dto';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 
@@ -82,27 +81,14 @@ export class ComicIssueController {
 
   /* Create a new comic issue */
   @CreatorAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: CreateComicIssueDto })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'signature', maxCount: 1 },
-      { name: 'pdf', maxCount: 1 },
-    ]),
-  )
   @Post('create')
   async create(
     @CreatorEntity() creator: CreatorPayload,
-    @Body() createComicIssueDto: CreateComicIssueBodyDto,
-    @UploadedFiles({
-      transform: (val) => plainToInstance(CreateComicIssueFilesDto, val),
-    })
-    files: CreateComicIssueFilesDto,
+    @Body() createComicIssueDto: CreateComicIssueDto,
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.create(
       creator.id,
       createComicIssueDto,
-      files,
     );
     return toComicIssueDto(comicIssue);
   }
@@ -161,6 +147,27 @@ export class ComicIssueController {
       updateComicIssueDto,
     );
     return toComicIssueDto(updatedComicIssue);
+  }
+
+  /* Update specific comic issue's files */
+  @ComicIssueOwnerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'signature', maxCount: 1 },
+      { name: 'pdf', maxCount: 1 },
+    ]),
+  )
+  @Patch('update/:id/files')
+  async updateFiles(
+    @Param('id') id: string,
+    @UploadedFiles({
+      transform: (val) => plainToInstance(UpdateComicIssueFilesDto, val),
+    })
+    files: UpdateComicIssueFilesDto,
+  ): Promise<ComicIssueDto> {
+    const comicIssue = await this.comicIssueService.updateFiles(+id, files);
+    return toComicIssueDto(comicIssue);
   }
 
   /* Update specific comic issues pdf file */

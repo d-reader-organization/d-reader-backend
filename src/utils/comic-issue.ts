@@ -1,7 +1,7 @@
 import { ComicRarity, StatefulCover, StatelessCover } from '@prisma/client';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
-import { CreateComicIssueBodyDto } from '../comic-issue/dto/create-comic-issue.dto';
+import { CreateComicIssueDto } from '../comic-issue/dto/create-comic-issue.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { UpdateComicIssueDto } from '../comic-issue/dto/update-comic-issue.dto';
 import { BadRequestException } from '@nestjs/common';
@@ -23,7 +23,7 @@ export const generateStatefulCoverName = (cover: StatefulCoverDto): string => {
 };
 
 export const validatePrice = (
-  comicIssue: CreateComicIssueBodyDto | UpdateComicIssueDto | PublishOnChainDto,
+  comicIssue: CreateComicIssueDto | UpdateComicIssueDto | PublishOnChainDto,
 ) => {
   // if supply is 0, it's a web2 comic which must be FREE
   if (

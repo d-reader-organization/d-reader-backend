@@ -5,11 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { CreateComicIssueDto } from './dto/create-comic-issue.dto';
 import {
-  CreateComicIssueBodyDto,
-  CreateComicIssueFilesDto,
-} from './dto/create-comic-issue.dto';
-import { UpdateComicIssueDto } from './dto/update-comic-issue.dto';
+  UpdateComicIssueDto,
+  UpdateComicIssueFilesDto,
+} from './dto/update-comic-issue.dto';
 import { isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import {
@@ -52,20 +52,16 @@ export class ComicIssueService {
     private readonly userComicIssueService: UserComicIssueService,
   ) {}
 
-  async create(
-    creatorId: number,
-    createComicIssueBodyDto: CreateComicIssueBodyDto,
-    createComicIssueFilesDto: CreateComicIssueFilesDto,
-  ) {
+  async create(creatorId: number, createComicIssueDto: CreateComicIssueDto) {
     const {
       slug,
       comicSlug,
-      sellerFee,
+      sellerFee = 0,
       collaborators = [],
       royaltyWallets = [],
       ...rest
-    } = createComicIssueBodyDto;
-    validatePrice(createComicIssueBodyDto);
+    } = createComicIssueDto;
+    validatePrice(createComicIssueDto);
 
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
@@ -78,11 +74,9 @@ export class ComicIssueService {
     // make sure creator of the comic issue owns the parent comic as well
     if (parentComic.creatorId !== creatorId) throw new ImATeapotException();
 
-    let comicIssue: ComicIssue & { pages: ComicPage[] };
-
     try {
-      comicIssue = await this.prisma.comicIssue.create({
-        include: { pages: true },
+      const comicIssue = await this.prisma.comicIssue.create({
+        include: { pages: true, collaborators: true, statelessCovers: true },
         data: {
           ...rest,
           slug,
@@ -92,35 +86,12 @@ export class ComicIssueService {
           royaltyWallets: { createMany: { data: royaltyWallets } },
         },
       });
+
+      return comicIssue;
     } catch (e) {
       console.log(e);
       throw new BadRequestException('Bad comic issue data');
     }
-
-    const { signature, pdf } = createComicIssueFilesDto;
-    // upload files if any
-    let signatureKey: string, pdfKey: string;
-    try {
-      const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
-      if (pdf) pdfKey = await this.s3.uploadFile(s3Folder, pdf, 'pdf');
-      if (signature)
-        signatureKey = await this.s3.uploadFile(
-          s3Folder,
-          signature,
-          'signature',
-        );
-    } catch {
-      throw new BadRequestException('Malformed file upload');
-    }
-
-    return await this.prisma.comicIssue.update({
-      where: { id: comicIssue.id },
-      include: { pages: true, collaborators: true, statelessCovers: true },
-      data: {
-        signature: signatureKey,
-        pdf: pdfKey,
-      },
-    });
   }
 
   async findActiveCandyMachine(
@@ -271,51 +242,105 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const {
-      sellerFee,
-      collaborators = [],
-      royaltyWallets = [],
-      ...rest
-    } = updateComicIssueDto;
+    const { sellerFee, collaborators, royaltyWallets, ...rest } =
+      updateComicIssueDto;
+
     validatePrice(updateComicIssueDto);
 
-    const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany({
-      where: { comicIssueId: id },
-    });
+    const areCollaboratorsUpdated = !isNil(collaborators);
+    const areRoyaltyWalletsUpdated = !isNil(royaltyWallets);
 
-    const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
-      where: { comicIssueId: id },
-    });
+    if (areCollaboratorsUpdated) {
+      const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany(
+        {
+          where: { comicIssueId: id },
+        },
+      );
 
-    const updateComicIssue = this.prisma.comicIssue.update({
-      include: {
-        comic: { include: { creator: true, genres: true } },
-        collectionNft: { select: { address: true } },
-        collaborators: true,
-        statelessCovers: true,
-      },
-      // where: { id, publishedAt: null },
-      where: { id },
-      data: {
-        ...rest,
-        sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
-        collaborators: { createMany: { data: collaborators } },
-        royaltyWallets: { createMany: { data: royaltyWallets } },
-      },
-    });
+      const updateCollaborators = this.prisma.comicIssue.update({
+        where: { id },
+        data: { collaborators: { createMany: { data: collaborators } } },
+      });
+
+      await this.prisma.$transaction([
+        deleteCollaborators,
+        updateCollaborators,
+      ]);
+    }
+
+    if (areRoyaltyWalletsUpdated) {
+      const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
+        where: { comicIssueId: id },
+      });
+
+      const updateRoyaltyWallets = this.prisma.comicIssue.update({
+        where: { id },
+        data: { royaltyWallets: { createMany: { data: royaltyWallets } } },
+      });
+
+      await this.prisma.$transaction([
+        deleteRoyaltyWallets,
+        updateRoyaltyWallets,
+      ]);
+    }
 
     try {
-      const [, , updatedComicIssue] = await this.prisma.$transaction([
-        deleteCollaborators,
-        deleteRoyaltyWallets,
-        updateComicIssue,
-      ]);
+      const updatedComicIssue = await this.prisma.comicIssue.update({
+        include: {
+          comic: { include: { creator: true, genres: true } },
+          collectionNft: { select: { address: true } },
+          collaborators: true,
+          statelessCovers: true,
+        },
+        // where: { id, publishedAt: null },
+        where: { id },
+        data: {
+          ...rest,
+          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
+        },
+      });
+
       return updatedComicIssue;
     } catch {
       throw new NotFoundException(
         `Comic issue with id ${id} does not exist or is published`,
       );
     }
+  }
+
+  async updateFiles(id: number, comicIssueFilesDto: UpdateComicIssueFilesDto) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id },
+    });
+
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+
+    const { signature, pdf } = comicIssueFilesDto;
+    // upload files if any
+    let signatureKey: string, pdfKey: string;
+    try {
+      const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+      if (pdf) pdfKey = await this.s3.uploadFile(s3Folder, pdf, 'pdf');
+      if (signature)
+        signatureKey = await this.s3.uploadFile(
+          s3Folder,
+          signature,
+          'signature',
+        );
+    } catch {
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    return await this.prisma.comicIssue.update({
+      where: { id: comicIssue.id },
+      include: { pages: true, collaborators: true, statelessCovers: true },
+      data: {
+        signature: signatureKey,
+        pdf: pdfKey,
+      },
+    });
   }
 
   async updateFile(
