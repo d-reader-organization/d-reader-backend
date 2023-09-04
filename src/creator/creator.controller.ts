@@ -8,11 +8,18 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes } from '@nestjs/swagger';
-import { UpdateCreatorDto } from 'src/creator/dto/update-creator.dto';
+import {
+  UpdateCreatorDto,
+  UpdateCreatorFilesDto,
+} from 'src/creator/dto/update-creator.dto';
 import { CreatorService } from './creator.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
@@ -25,6 +32,7 @@ import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
+import { plainToInstance } from 'class-transformer';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -103,6 +111,28 @@ export class CreatorController {
   @Patch('verify-email/:verificationToken')
   async verifyEmail(@Param('verificationToken') verificationToken: string) {
     await this.creatorService.verifyEmail(verificationToken);
+  }
+
+  /* Update specific creator's files */
+  @CreatorOwnerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'banner', maxCount: 1 },
+      { name: 'logo', maxCount: 1 },
+    ]),
+  )
+  @Patch('update/:slug/files')
+  async updateFiles(
+    @Param('slug') slug: string,
+    @UploadedFiles({
+      transform: (val) => plainToInstance(UpdateCreatorFilesDto, val),
+    })
+    files: UpdateCreatorFilesDto,
+  ): Promise<CreatorDto> {
+    const comicIssue = await this.creatorService.updateFiles(slug, files);
+    return toCreatorDto(comicIssue);
   }
 
   /* Update specific creators avatar file */

@@ -4,7 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { UpdateCreatorDto } from '../creator/dto/update-creator.dto';
+import {
+  UpdateCreatorDto,
+  UpdateCreatorFilesDto,
+} from '../creator/dto/update-creator.dto';
 import { Creator, Genre } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
@@ -264,6 +267,27 @@ export class CreatorService {
     });
 
     if (creator) throw new BadRequestException(`${email} already taken`);
+  }
+
+  async updateFiles(slug: string, creatorFilesDto: UpdateCreatorFilesDto) {
+    const { avatar, banner, logo } = creatorFilesDto;
+
+    let avatarKey: string, bannerKey: string, logoKey: string;
+    try {
+      const s3Folder = getS3Folder(slug);
+      if (avatar)
+        avatarKey = await this.s3.uploadFile(s3Folder, avatar, 'avatar');
+      if (banner)
+        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
+      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
+    } catch {
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    return await this.prisma.creator.update({
+      where: { slug },
+      data: { avatar: avatarKey, banner: bannerKey, logo: logoKey },
+    });
   }
 
   async updateFile(

@@ -1,9 +1,10 @@
-import { ApiProperty, IntersectionType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsPositive,
   Max,
@@ -17,7 +18,7 @@ import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { IsLamport } from '../../decorators/IsLamport';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
-export class CreateComicIssueBodyDto {
+export class CreateComicIssueDto {
   @IsNotEmpty()
   @MaxLength(48)
   title: string;
@@ -34,31 +35,28 @@ export class CreateComicIssueBodyDto {
   )
   number: number;
 
+  @IsKebabCase()
+  comicSlug: string;
+
+  @IsOptional()
   @Min(0)
   // @IsDivisibleBy(100)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  supply: number;
+  @IsNumber()
+  supply?: number;
 
+  @IsOptional()
   @IsLamport()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  discountMintPrice: number;
+  discountMintPrice?: number;
 
+  @IsOptional()
   @IsLamport()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  mintPrice: number;
+  mintPrice?: number;
 
+  @IsOptional()
   @Min(0)
   @Max(1)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
-  sellerFee: number;
+  @IsNumber()
+  sellerFee?: number;
 
   @IsOptional()
   @MaxLength(256)
@@ -72,38 +70,19 @@ export class CreateComicIssueBodyDto {
   @Transform(({ value }) => new Date(value).toISOString())
   releaseDate: string;
 
-  @IsKebabCase()
-  comicSlug: string;
-
   @IsOptional()
   @IsSolanaAddress()
   creatorAddress?: string;
 
-  // TODO: revise this
-  // @IsArray()
+  @IsOptional()
+  @IsArray()
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
-  @Transform(({ value }) => JSON.parse(value))
-  collaborators: ComicIssueCollaboratorDto[];
+  collaborators?: ComicIssueCollaboratorDto[];
 
+  @IsOptional()
   @IsArray()
   @Type(() => RoyaltyWalletDto)
   @ApiProperty({ type: [RoyaltyWalletDto] })
-  @IsOptional()
   royaltyWallets?: RoyaltyWalletDto[];
 }
-
-export class CreateComicIssueFilesDto {
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  signature?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  pdf?: Express.Multer.File | null;
-}
-
-export class CreateComicIssueDto extends IntersectionType(
-  CreateComicIssueBodyDto,
-  CreateComicIssueFilesDto,
-) {}

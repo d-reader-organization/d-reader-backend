@@ -4,11 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import {
-  CreateComicBodyDto,
-  CreateComicFilesDto,
-} from '../comic/dto/create-comic.dto';
-import { UpdateComicDto } from '../comic/dto/update-comic.dto';
+import { CreateComicDto } from '../comic/dto/create-comic.dto';
+import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { UserComicService } from './user-comic.service';
 import { Comic, Genre, Creator } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -32,27 +29,16 @@ export class ComicService {
     private readonly userComicService: UserComicService,
   ) {}
 
-  async create(
-    creatorId: number,
-    createComicBodyDto: CreateComicBodyDto,
-    createComicFilesDto: CreateComicFilesDto,
-  ) {
-    const {
-      title,
-      slug,
-      genres = [],
-      isCompleted,
-      ...rest
-    } = createComicBodyDto;
+  async create(creatorId: number, createComicDto: CreateComicDto) {
+    const { title, slug, genres, isCompleted, ...rest } = createComicDto;
 
     await Promise.all([
       this.throwIfTitleTaken(title),
       this.throwIfSlugTaken(slug),
     ]);
 
-    let comic: Comic;
     try {
-      comic = await this.prisma.comic.create({
+      const comic = await this.prisma.comic.create({
         data: {
           ...rest,
           title,
@@ -62,36 +48,11 @@ export class ComicService {
           genres: { connect: genres.map((slug) => ({ slug })) },
         },
       });
+
+      return comic;
     } catch (e) {
       throw new BadRequestException('Bad comic data', e);
     }
-
-    const { cover, banner, pfp, logo } = createComicFilesDto;
-
-    let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
-    try {
-      const s3Folder = getS3Folder(slug);
-      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
-      if (banner)
-        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
-      if (pfp) pfpKey = await this.s3.uploadFile(s3Folder, pfp, 'pfp');
-      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
-    } catch {
-      await this.prisma.comic.delete({ where: { slug: comic.slug } });
-      throw new BadRequestException('Malformed file upload');
-    }
-
-    comic = await this.prisma.comic.update({
-      where: { slug: comic.slug },
-      data: {
-        cover: coverKey,
-        banner: bannerKey,
-        pfp: pfpKey,
-        logo: logoKey,
-      },
-    });
-
-    return comic;
   }
 
   async findAll(query: ComicParams) {
@@ -203,6 +164,38 @@ export class ComicService {
         `Comic ${slug} does not exist or is published`,
       );
     }
+  }
+
+  async updateFiles(slug: string, comicFilesDto: UpdateComicFilesDto) {
+    const { cover, banner, pfp, logo } = comicFilesDto;
+
+    const comic = await this.prisma.comic.findUnique({ where: { slug } });
+
+    if (!comic) {
+      throw new NotFoundException(`Comic ${slug} does not exist`);
+    }
+
+    let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
+    try {
+      const s3Folder = getS3Folder(slug);
+      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
+      if (banner)
+        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
+      if (pfp) pfpKey = await this.s3.uploadFile(s3Folder, pfp, 'pfp');
+      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
+    } catch {
+      throw new BadRequestException('Malformed file upload');
+    }
+
+    return await this.prisma.comic.update({
+      where: { slug },
+      data: {
+        cover: coverKey,
+        banner: bannerKey,
+        pfp: pfpKey,
+        logo: logoKey,
+      },
+    });
   }
 
   async updateFile(

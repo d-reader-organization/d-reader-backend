@@ -1,8 +1,8 @@
 import { PickType } from '@nestjs/swagger';
-import { CreateComicIssueBodyDto } from './create-comic-issue.dto';
+import { CreateComicIssueDto } from './create-comic-issue.dto';
 import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
 
-export class PublishOnChainDto extends PickType(CreateComicIssueBodyDto, [
+export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'supply',
   'mintPrice',
   'discountMintPrice',
