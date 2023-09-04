@@ -177,7 +177,7 @@ async function main() {
   console.log('Emptied database!');
 
   // CLEAR S3 BUCKET AND RESEED FROM THE SEED BUCKET
-  if (true || Boolean(process.env.SEED_S3)) await copyFromSeedBucket();
+  if (Boolean(process.env.SEED_S3)) await copyFromSeedBucket();
 
   // SEED CAROUSEL SLIDES
   await prisma.carouselSlide.createMany({ data: carouselSlidesToSeed });

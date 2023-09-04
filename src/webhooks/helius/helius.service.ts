@@ -501,6 +501,19 @@ export class HeliusService {
     walletAddress: string,
     candMachineAddress: string,
   ) {
+    try {
+      await Promise.all([
+        this.delegateAuthority(
+          metadata.collection.address,
+          findRarityTrait(collectionMetadata).toString(),
+          metadata.mintAddress,
+        ),
+        this.verifyMintCreator(metadata.mintAddress),
+      ]);
+    } catch (e) {
+      console.error(e);
+    }
+
     const nft = await this.prisma.nft.create({
       select: {
         address: true,
@@ -534,15 +547,6 @@ export class HeliusService {
         },
       },
     });
-
-    await Promise.all([
-      this.delegateAuthority(
-        metadata.collection.address,
-        findRarityTrait(collectionMetadata).toString(),
-        metadata.mintAddress,
-      ),
-      this.verifyMintCreator(metadata.mintAddress),
-    ]);
 
     this.subscribeTo(metadata.mintAddress.toString());
     return nft;
