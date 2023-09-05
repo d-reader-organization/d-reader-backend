@@ -30,7 +30,7 @@ export class SettingsController {
     return toGlobalStatusArray(globalStatus);
   }
 
-  @Post('create-global-status')
+  @Post('global-status/create')
   async createGlobalStatus(
     @Body() createGlobalStatusDto: CreateGlobalStatusDto,
   ): Promise<GlobalStatusDto> {
@@ -40,7 +40,7 @@ export class SettingsController {
     return toGlobalStatus(globalStatus);
   }
 
-  @Patch('update-global-status/:id')
+  @Patch('global-status/:id/update')
   async updateGlobalStatus(
     @Param('id') id: string,
     @Body() updateGlobalStatusDto: UpdateGlobalStatusDto,
