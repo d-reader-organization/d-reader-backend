@@ -13,22 +13,6 @@ generator dbml {
   provider = "prisma-dbml-generator"
 }
 
-enum GlobalStatusType {
-  Success
-  Info
-  Warning
-  Maintenance
-}
-
-model GlobalStatus {
-  id        Int              @id @default(autoincrement())
-  type      GlobalStatusType
-  message   String
-  expiresAt DateTime?
-
-  @@unique([type, expiresAt])
-}
-
 model User {
   id                 Int              @id @default(autoincrement())
   email              String           @unique
@@ -443,4 +427,18 @@ model Listing {
   saleTransactionSignature String?
 
   @@unique([nftAddress, canceledAt])
+}
+
+enum GlobalStatusType {
+  Success
+  Info
+  Warning
+  Maintenance
+}
+
+model GlobalStatus {
+  id        Int              @id @default(autoincrement())
+  type      GlobalStatusType
+  message   String
+  expiresAt DateTime?
 }
