@@ -13,6 +13,9 @@ CREATE TYPE "ComicRarity" AS ENUM ('None', 'Common', 'Uncommon', 'Rare', 'Epic',
 -- CreateEnum
 CREATE TYPE "CarouselLocation" AS ENUM ('Home');
 
+-- CreateEnum
+CREATE TYPE "GlobalStatusType" AS ENUM ('Success', 'Info', 'Warning', 'Maintenance');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -374,6 +377,16 @@ CREATE TABLE "Listing" (
     "saleTransactionSignature" TEXT,
 
     CONSTRAINT "Listing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GlobalStatus" (
+    "id" SERIAL NOT NULL,
+    "type" "GlobalStatusType" NOT NULL,
+    "message" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3),
+
+    CONSTRAINT "GlobalStatus_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
