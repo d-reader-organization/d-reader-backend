@@ -26,6 +26,7 @@ import { UserModule } from './user/user.module';
 import { NftModule } from './nft/nft.module';
 import { s3Module } from './aws/s3.module';
 import config from './configs/config';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import config from './configs/config';
     NftModule,
     s3Module,
     UserModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

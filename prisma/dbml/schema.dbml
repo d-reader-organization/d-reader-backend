@@ -402,6 +402,13 @@ Table Listing {
   }
 }
 
+Table GlobalStatus {
+  id Int [pk, increment]
+  type GlobalStatusType [not null]
+  message String [not null]
+  expiresAt DateTime
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -436,6 +443,13 @@ Enum ComicRarity {
 
 Enum CarouselLocation {
   Home
+}
+
+Enum GlobalStatusType {
+  Success
+  Info
+  Warning
+  Maintenance
 }
 
 Ref: User.referrerId - User.id
