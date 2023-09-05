@@ -428,3 +428,17 @@ model Listing {
 
   @@unique([nftAddress, canceledAt])
 }
+
+enum GlobalStatusType {
+  Success
+  Info
+  Warning
+  Maintenance
+}
+
+model GlobalStatus {
+  id        Int              @id @default(autoincrement())
+  type      GlobalStatusType
+  message   String
+  expiresAt DateTime?
+}
