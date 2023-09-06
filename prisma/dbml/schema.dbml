@@ -402,6 +402,16 @@ Table Listing {
   }
 }
 
+Table SplToken {
+  id Int [pk, increment]
+  name String [not null]
+  address String [not null]
+  decimals Int [not null]
+  symbol String [not null]
+  priority Int [not null]
+  Icon String [not null]
+}
+
 Table GlobalStatus {
   id Int [pk, increment]
   type GlobalStatusType [not null]
