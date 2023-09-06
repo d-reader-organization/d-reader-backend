@@ -1,6 +1,7 @@
 import { SplToken } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsInt, IsPositive, IsString } from 'class-validator';
+import { IsInt, IsPositive, IsString, IsUrl } from 'class-validator';
+import { getPublicUrl } from 'src/aws/s3client';
 
 export class SplTokenDto {
   @IsPositive()
@@ -21,7 +22,7 @@ export class SplTokenDto {
   @IsInt()
   priority: number;
 
-  @IsString()
+  @IsUrl()
   icon: string;
 }
 
@@ -32,7 +33,7 @@ export const toSplToken = (token: SplToken): SplTokenDto => {
     decimals: token.decimals,
     symbol: token.symbol,
     priority: token.priority,
-    icon: token.icon,
+    icon: getPublicUrl(token.icon),
   };
   return plainToInstance(SplTokenDto, plainSplTokentDto);
 };

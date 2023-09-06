@@ -15,7 +15,7 @@ CREATE TABLE "SplToken" (
     "decimals" INTEGER NOT NULL,
     "symbol" TEXT NOT NULL,
     "priority" INTEGER NOT NULL,
-    "Icon" TEXT NOT NULL,
+    "icon" TEXT NOT NULL,
 
     CONSTRAINT "SplToken_pkey" PRIMARY KEY ("id")
 );
