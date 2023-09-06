@@ -28,6 +28,7 @@ export class SplTokenDto {
 
 export const toSplToken = (token: SplToken): SplTokenDto => {
   const plainSplTokentDto = {
+    id: token.id,
     name: token.name,
     address: token.address,
     decimals: token.decimals,
