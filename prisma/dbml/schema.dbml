@@ -295,6 +295,7 @@ Table CandyMachineReceipt {
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
   transactionSignature String [not null]
+  splTokenAddress String [not null]
 }
 
 Table CollectionNft {

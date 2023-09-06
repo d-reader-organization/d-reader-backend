@@ -31,6 +31,9 @@ export class CandyMachineReceiptDto {
 
   @IsDateString()
   timestamp: string;
+
+  @IsString()
+  splTokenAddress: string;
 }
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
@@ -53,6 +56,7 @@ export function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
     candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,
     timestamp: receipt.timestamp.toISOString(),
+    splTokenAddress: receipt.splTokenAddress,
   };
 
   const receiptDto = plainToInstance(CandyMachineReceiptDto, plainReceiptDto);

@@ -33,6 +33,7 @@ import {
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
+import { SOL_ADDRESS } from '../../constants';
 
 @Injectable()
 export class HeliusService {
@@ -394,6 +395,10 @@ export class HeliusService {
 
     try {
       const nftTransactionInfo = enrichedTransaction.events.nft;
+      let splTokenAddress = SOL_ADDRESS;
+      if (enrichedTransaction.tokenTransfers.at(1)) {
+        splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
+      }
 
       const receipt = await this.prisma.candyMachineReceipt.create({
         include: { nft: true, buyer: { include: { user: true } } },
@@ -410,6 +415,7 @@ export class HeliusService {
           timestamp: new Date(nftTransactionInfo.timestamp * 1000),
           description: enrichedTransaction.description,
           transactionSignature: nftTransactionInfo.signature,
+          splTokenAddress,
         },
       });
 

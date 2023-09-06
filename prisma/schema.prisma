@@ -325,6 +325,7 @@ model CandyMachineReceipt {
   candyMachine         CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
   candyMachineAddress  String
   transactionSignature String
+  splTokenAddress      String
 }
 
 model CollectionNft {
