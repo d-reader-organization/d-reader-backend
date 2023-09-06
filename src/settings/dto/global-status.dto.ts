@@ -1,9 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { GlobalStatusType, GlobalStatus } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsString } from 'class-validator';
+import { IsEnum, IsPositive, IsString } from 'class-validator';
 
 export class GlobalStatusDto {
+  @IsPositive()
+  id: number;
+
   @IsEnum(GlobalStatusType)
   @ApiProperty({ enum: GlobalStatusType })
   type: GlobalStatusType;
@@ -14,6 +17,7 @@ export class GlobalStatusDto {
 
 export const toGlobalStatus = (status: GlobalStatus): GlobalStatusDto => {
   const plainGlobalStatusDto = {
+    id: status.id,
     type: status.type,
     message: status.message,
   };

@@ -17,6 +17,7 @@ import {
 import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { UpdateGlobalStatusDto } from './dto/update-global-status.dto';
+import { toSplTokenArray } from './dto/spl-token.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Settings')
@@ -50,5 +51,11 @@ export class SettingsController {
       updateGlobalStatusDto,
     );
     return toGlobalStatus(globalStatus);
+  }
+
+  @Get('token-list')
+  async getTokenList() {
+    const tokenList = await this.settingService.getTokenList();
+    return toSplTokenArray(tokenList);
   }
 }
