@@ -282,6 +282,15 @@ async function main() {
     console.log('Added dummy user: ' + dummyUserData.name);
   }
 
+  // SEED SUPPORTED SPL TOKENS
+  await prisma.splToken.createMany({
+    data:[
+      {name:"Wrapped Sol",address:"So11111111111111111111111111111111111111112",priority:1,symbol:"$SOL",decimals:9,Icon:""},
+      {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,Icon:""},
+      {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,Icon:""},
+    ]
+  })
+
   // SEED MORE DATA ON DEVNET
   if (isDevnet) {
     await tryAirdropping();
