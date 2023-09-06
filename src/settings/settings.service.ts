@@ -31,4 +31,10 @@ export class SettingsService {
       },
     });
   }
+
+  async getTokenList() {
+    return await this.prisma.splToken.findMany({
+      orderBy: { priority: 'asc' },
+    });
+  }
 }

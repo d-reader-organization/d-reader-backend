@@ -286,9 +286,9 @@ async function main() {
   // SEED SUPPORTED SPL TOKENS
   await prisma.splToken.createMany({
     data:[
-      {name:"Wrapped Sol",address:SOL_ADDRESS,priority:1,symbol:"$SOL",decimals:9,Icon:""},
-      {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,Icon:""},
-      {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,Icon:""},
+      {name:"Wrapped Sol",address:SOL_ADDRESS,priority:1,symbol:"$SOL",decimals:9,icon:""},
+      {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,icon:""},
+      {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,icon:""},
     ]
   })
 
