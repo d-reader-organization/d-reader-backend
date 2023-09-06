@@ -286,10 +286,10 @@ async function main() {
   // SEED SUPPORTED SPL TOKENS
   await prisma.splToken.createMany({
     data:[
-      {name:"Wrapped Sol",address:SOL_ADDRESS,priority:1,symbol:"$SOL",decimals:9,icon:""},
-      {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,icon:""},
-      {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,icon:""},
-      {name:"COCO Token",address:"74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ",priority:3,symbol:"$COCO",decimals:5,icon:""},
+      {name:"Wrapped Sol",address:SOL_ADDRESS,priority:1,symbol:"$SOL",decimals:9,icon:"spl-token/wrapped-sol/icon.png"},
+      {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,icon:"spl-token/usd-coin/icon.png"},
+      {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,icon:"spl-token/nana-token/icon.png"},
+      {name:"COCO Token",address:"74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ",priority:3,symbol:"$COCO",decimals:5,icon:"spl-token/coco-token/icon.png"},
     ]
   })
 
