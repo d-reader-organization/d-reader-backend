@@ -437,7 +437,7 @@ model SplToken {
   decimals Int
   symbol   String
   priority Int
-  Icon     String
+  icon     String
 }
 
 enum GlobalStatusType {
