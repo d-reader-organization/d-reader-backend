@@ -75,6 +75,7 @@ import {
   wretchesEp6Data,
 } from './comic-issues';
 import { addDays } from 'date-fns';
+import { SOL_ADDRESS } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -285,7 +286,7 @@ async function main() {
   // SEED SUPPORTED SPL TOKENS
   await prisma.splToken.createMany({
     data:[
-      {name:"Wrapped Sol",address:"So11111111111111111111111111111111111111112",priority:1,symbol:"$SOL",decimals:9,Icon:""},
+      {name:"Wrapped Sol",address:SOL_ADDRESS,priority:1,symbol:"$SOL",decimals:9,Icon:""},
       {name:"USD Coin",address:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",priority:2,symbol:"$USDC",decimals:6,Icon:""},
       {name:"NANA Token",address:"HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr",priority:3,symbol:"$NANA",decimals:9,Icon:""},
     ]
