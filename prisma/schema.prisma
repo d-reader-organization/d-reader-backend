@@ -429,6 +429,16 @@ model Listing {
   @@unique([nftAddress, canceledAt])
 }
 
+model SplToken {
+  id       Int    @id @default(autoincrement())
+  name     String
+  address  String
+  decimals Int
+  symbol   String
+  priority Int
+  Icon     String
+}
+
 enum GlobalStatusType {
   Success
   Info
