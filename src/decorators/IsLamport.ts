@@ -7,7 +7,7 @@ export const IS_LAMPORT = 'isLamport';
  */
 export function isLamport(value: unknown): boolean {
   try {
-    return typeof value === 'number' && value >= 0;
+    return typeof value === 'number' && value >= 0 && value % 1 === 0;
   } catch {
     return false;
   }

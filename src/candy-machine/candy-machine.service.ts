@@ -197,6 +197,10 @@ export class CandyMachineService {
         };
       }
 
+      // TODO: bundlr funding on mainnet is not working as intended?
+      // TODO: if we fail to publish a collection, we don't get a 2nd try, it always fails (authority)
+      // TOOD: the account of type [CANDY MACHINE] is not found
+
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
