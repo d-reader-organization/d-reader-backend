@@ -23,7 +23,7 @@ export async function constructInitializeComicAuthorityInstruction(
     [Buffer.from(PUB_AUTH_TAG), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
   );
-  const rarityString = ComicRarity[rarity].toLowerCase(); //  check
+  const rarityString = ComicRarity[rarity].toLowerCase();
   const authority = await pda(
     [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
     COMIC_VERSE_ID,
