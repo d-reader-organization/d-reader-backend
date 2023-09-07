@@ -16,12 +16,17 @@ import {
 import { BadRequestException } from '@nestjs/common';
 import { initializeAuthority } from '../candy-machine/instructions';
 import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
-import { ComicStates, ComicRarity } from 'dreader-comic-verse';
+import {
+  ComicStates,
+  ComicRarity,
+  PROGRAM_ID as COMIC_VERSE_ID,
+} from 'dreader-comic-verse';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { writeFiles } from './metaplex';
 import { isNil } from 'lodash';
 import axios from 'axios';
+import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 
 const findTrait = (jsonMetadata: JsonMetadata, traitType: string) => {
   const trait = jsonMetadata.attributes.find((a) => a.trait_type === traitType);
@@ -140,12 +145,22 @@ export async function uploadAllMetadata(
     usedSigned: itemMetadata.usedSigned.uri,
     usedUnsigned: itemMetadata.usedUnsigned.uri,
   };
-  await initializeAuthority(
-    metaplex,
-    collectionNftAddress,
-    rarity,
-    comicStates,
+
+  const rarityString = ComicRarity[rarity].toLowerCase();
+  const authorityPda = await pda(
+    [Buffer.from(AUTH_TAG + rarityString), collectionNftAddress.toBuffer()],
+    COMIC_VERSE_ID,
   );
+  const authority = await metaplex.connection.getAccountInfo(authorityPda);
+  if (!authority) {
+    await initializeAuthority(
+      metaplex,
+      collectionNftAddress,
+      rarity,
+      comicStates,
+    );
+  }
+
   return itemMetadata;
 }
 
