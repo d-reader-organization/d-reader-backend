@@ -247,8 +247,14 @@ export class ComicIssueService {
 
     validatePrice(updateComicIssueDto);
 
+    const isSellerFeeUpdated = !isNil(sellerFee);
     const areCollaboratorsUpdated = !isNil(collaborators);
     const areRoyaltyWalletsUpdated = !isNil(royaltyWallets);
+
+    let sellerFeeBasisPointsData: Prisma.ComicIssueUpdateInput['sellerFeeBasisPoints'];
+    if (isSellerFeeUpdated) {
+      sellerFeeBasisPointsData = sellerFee * 100;
+    }
 
     if (areCollaboratorsUpdated) {
       const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany(
@@ -294,10 +300,7 @@ export class ComicIssueService {
         },
         // where: { id, publishedAt: null },
         where: { id },
-        data: {
-          ...rest,
-          sellerFeeBasisPoints: isNil(sellerFee) ? undefined : sellerFee * 100,
-        },
+        data: { ...rest, sellerFeeBasisPoints: sellerFeeBasisPointsData },
       });
 
       return updatedComicIssue;
