@@ -3,6 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { UpdateGlobalStatusDto } from './dto/update-global-status.dto';
 import { s3Service } from '../aws/s3.service';
+import { kebabCase } from 'lodash';
 
 @Injectable()
 export class SettingsService {
@@ -44,12 +45,13 @@ export class SettingsService {
 
   async updateTokenIcon(id: number, file: Express.Multer.File) {
     let token = await this.prisma.splToken.findUnique({ where: { id } });
-    const s3Folder = `spl-token/${token.name
-      .toLowerCase()
-      .replace(/\s+/g, '-')}/`;
 
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, 'icon');
+    const S3_FOLDER = 'spl-tokens/';
+
+    const sanitizedName = kebabCase(token.name);
+    const newFileKey = await this.s3.uploadFile(S3_FOLDER, file, sanitizedName);
     const oldFileKey = token.icon;
+
     try {
       token = await this.prisma.splToken.update({
         where: { id },
