@@ -9,7 +9,7 @@ export class NftService {
   async findAll(query: NftFilterParams) {
     const nfts = await this.prisma.nft.findMany({
       where: {
-        ownerAddress: query?.ownerAddress,
+        owner: { address: query?.ownerAddress, userId: +query.userId },
         collectionNft: {
           comicIssue: query.comicIssueId
             ? { id: +query.comicIssueId }
