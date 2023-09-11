@@ -16,7 +16,9 @@ import { ComicStats } from './types/comic-stats';
 import { getComicsQuery } from './comic.queries';
 import { ComicInput } from './dto/comic.dto';
 import { insensitive } from '../utils/lodash';
+import { Prisma } from '@prisma/client';
 import { subDays } from 'date-fns';
+import { isNil } from 'lodash';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -136,6 +138,8 @@ export class ComicService {
     // const comic = await this.prisma.comic.findUnique({ where: { slug } });
     // const isTitleUpdated = title && comic.title !== title;
     // const isSlugUpdated = slug && comic.slug !== slug;
+    const areGenresUpdated = !isNil(genres);
+    const isCompletedUpdated = !isNil(isCompleted);
 
     // if (isTitleUpdated) {
     //   await this.throwIfTitleTaken(title);
@@ -148,13 +152,23 @@ export class ComicService {
     //   // migrate files from deprecated s3 folder to a new one
     // }
 
+    let genresData: Prisma.ComicUpdateInput['genres'];
+    if (areGenresUpdated) {
+      genresData = { set: genres.map((slug) => ({ slug })) };
+    }
+
+    let isCompletedData: Prisma.ComicUpdateInput['completedAt'];
+    if (isCompletedUpdated) {
+      isCompletedData = isCompleted ? new Date() : null;
+    }
+
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug, publishedAt: null },
         data: {
           ...rest,
-          completedAt: isCompleted ? new Date() : null,
-          genres: { set: genres.map((slug) => ({ slug })) },
+          completedAt: isCompletedData,
+          genres: genresData,
         },
       });
 
