@@ -28,7 +28,7 @@ export class CandyMachineController {
     @Query() query: CandyMachineReceiptParams,
   ): Promise<CandyMachineReceiptDto[]> {
     const receipts = await this.candyMachineService.findReceipts(query);
-    return toCMReceiptDtoArray(receipts);
+    return await toCMReceiptDtoArray(receipts);
   }
 
   @Get('get/eligible-groups')
