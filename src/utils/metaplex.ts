@@ -31,7 +31,7 @@ export const getTreasuryPublicKey = () => {
   return getTreasuryKeypair().publicKey.toBase58();
 };
 
-export function initMetaplex(customEndpoint?: string) {
+export function getConnection(customEndpoint?: string) {
   const endpoint =
     customEndpoint ||
     heliusClusterApiUrl(
@@ -39,6 +39,11 @@ export function initMetaplex(customEndpoint?: string) {
       process.env.SOLANA_CLUSTER as Cluster,
     );
   const connection = new Connection(endpoint, 'confirmed');
+  return connection;
+}
+
+export function initMetaplex(customEndpoint?: string) {
+  const connection = getConnection(customEndpoint);
   const treasuryKeypair = getTreasuryKeypair();
   const metaplex = new Metaplex(connection)
     .use(keypairIdentity(treasuryKeypair))

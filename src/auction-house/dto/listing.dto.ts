@@ -28,12 +28,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserDto } from '../../user/dto/user.dto';
 import { getPublicUrl } from '../../aws/s3client';
 import { WalletDto } from '../../wallet/dto/wallet.dto';
+import { getOwnerDomain } from '../../utils/sns';
 
 export class SellerDto {
   id?: UserDto['id'];
   avatar?: UserDto['avatar'];
   name?: UserDto['name'];
   address: WalletDto['address'];
+  @IsOptional()
+  @IsString()
+  sns?: string;
 }
 
 export class ListingDto {
@@ -126,9 +130,13 @@ export type ListingInput = Listing & {
 };
 
 export async function toListingDto(listing: ListingInput) {
-  const collectionMetadata = await fetchOffChainMetadata(listing.nft.uri);
+  const sellerAddress = new PublicKey(listing.nft.owner.address);
+  const [collectionMetadata, sns] = await Promise.all([
+    fetchOffChainMetadata(listing.nft.uri),
+    getOwnerDomain(sellerAddress),
+  ]);
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
-    new PublicKey(listing.nft.owner.address).toBuffer(),
+    sellerAddress.toBuffer(),
     tokenProgram.address.toBuffer(),
     new PublicKey(listing.nftAddress).toBuffer(),
   ]).toString();
@@ -143,6 +151,7 @@ export async function toListingDto(listing: ListingInput) {
       avatar: getPublicUrl(listing.nft.owner.user?.avatar),
       name: listing.nft.owner.user?.name,
       address: listing.nft.owner.address,
+      sns,
     },
     tokenAddress,
     price: listing.price,
