@@ -26,8 +26,11 @@ export class WebSocketGateway {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
   }
 
-  handleNftMinted(comicIssueId: number, receipt: CandyMachineReceiptInput) {
-    const receiptDto = toCMReceiptDto(receipt);
+  async handleNftMinted(
+    comicIssueId: number,
+    receipt: CandyMachineReceiptInput,
+  ) {
+    const receiptDto = await toCMReceiptDto(receipt);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-minted`,
       receiptDto,
@@ -64,8 +67,8 @@ export class WebSocketGateway {
     );
   }
 
-  handleWalletNftMinted(receipt: CandyMachineReceiptInput) {
-    const receiptDto = toCMReceiptDto(receipt);
+  async handleWalletNftMinted(receipt: CandyMachineReceiptInput) {
+    const receiptDto = await toCMReceiptDto(receipt);
     return this.server.sockets.emit(
       `wallet/${receipt.buyerAddress}/item-minted`,
       receiptDto,
