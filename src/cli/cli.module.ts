@@ -29,14 +29,16 @@ import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
 import { MintRemainingCommand } from './mint-remaining-command';
 import { MintRemainingQuestions } from './mint-remaining-questions';
 import { LoginUserQuestions } from './login-user-questions';
+import { AddGroupQuestions } from './add-group-questions';
+import { AddGroupCommand } from './add-group-command';
+import { BundlrFundCommand } from './bundlr-fund-command';
+import { BundlrFundQuestions } from './bundlr-fund-questions';
 import { UserService } from '../user/user.service';
 import { MailModule } from '../mail/mail.module';
 import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
-import { AddGroupQuestions } from './add-group-questions';
-import { AddGroupCommand } from './add-group-command';
 
 @Module({
   imports: [
@@ -59,6 +61,8 @@ import { AddGroupCommand } from './add-group-command';
   ],
   providers: [
     BundlrWithdrawCommand,
+    BundlrFundCommand,
+    BundlrFundQuestions,
     GenerateEnvironmentCommand,
     GenerateEnvironmentQuestions,
     CreateAuctionHouseCommand,
