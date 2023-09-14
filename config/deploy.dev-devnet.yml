@@ -9,5 +9,5 @@ env:
     SOLANA_CLUSTER: devnet
     API_URL: https://api-dev-devnet.dreader.io
     D_READER_URL: https://dev-devnet.dreader.app
-    D_PUBLISHER_URL: https://dev-devnet.dreader.app
+    D_PUBLISHER_URL: https://dev-devnet.dpublisher.app
     CDN_URL: 
