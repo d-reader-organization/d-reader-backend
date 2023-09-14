@@ -359,6 +359,7 @@ export class HeliusService {
   }
 
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
+    console.log(enrichedTransaction);
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
@@ -375,7 +376,7 @@ export class HeliusService {
 
     // Candy Machine Guard program is the 5th instruction
     // Candy Machine address is the 3rd account in the guard instruction
-    const candyMachineAddress = enrichedTransaction.instructions[4].accounts[2];
+    const candyMachineAddress = enrichedTransaction.instructions[3].accounts[2];
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
 
     let comicIssueId: number = undefined;
@@ -444,7 +445,7 @@ export class HeliusService {
     try {
       const nftTransactionInfo = enrichedTransaction.events.nft;
       const collectionNftAddress =
-        enrichedTransaction.instructions[4].accounts[10];
+        enrichedTransaction.instructions[3].accounts[13];
       const collectionNft = await this.prisma.collectionNft.findFirst({
         where: { address: collectionNftAddress },
       });
