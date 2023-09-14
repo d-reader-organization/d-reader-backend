@@ -40,6 +40,12 @@ export const usersToSeed = async (): Promise<
     password: await hashPassword('luka'),
     emailVerifiedAt: new Date(),
   },
+  {
+    name: 'testgoogleplay',
+    email: 'test@google.play',
+    password: await hashPassword('testgoogleplay'),
+    emailVerifiedAt: new Date(),
+  },
 ];
 
 const generateDummyUserData = (): Prisma.UserCreateArgs['data'] => {
