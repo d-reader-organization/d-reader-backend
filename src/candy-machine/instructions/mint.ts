@@ -13,11 +13,11 @@ import {
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
 
 import {
-  createMintInstruction,
+  createMintV2Instruction,
   createRouteInstruction,
   GuardType,
-  MintInstructionAccounts,
-  MintInstructionArgs,
+  MintV2InstructionAccounts,
+  MintV2InstructionArgs,
 } from '@metaplex-foundation/mpl-candy-guard';
 
 import {
@@ -30,9 +30,9 @@ import {
   TokenPaymentGuardSettings,
 } from '@metaplex-foundation/js';
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   createInitializeMintInstruction,
-  createMintToInstruction,
   MintLayout,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
@@ -71,7 +71,7 @@ export async function constructMintInstruction(
     mint: mint.publicKey,
   });
 
-  const nftTokenAccount = metaplex
+  const token = metaplex
     .tokens()
     .pdas()
     .associatedTokenAccount({ mint: mint.publicKey, owner: payer });
@@ -83,16 +83,12 @@ export async function constructMintInstruction(
     mint: candyMachineObject.collectionMintAddress,
   });
 
-  const collectionAuthorityRecord = metaplex
+  const tokenRecord = metaplex
     .nfts()
     .pdas()
-    .collectionAuthorityRecord({
-      mint: candyMachineObject.collectionMintAddress,
-      collectionAuthority: authorityPda,
-    });
+    .tokenRecord({ mint: mint.publicKey, token });
 
   const collectionMint = candyMachineObject.collectionMintAddress;
-  // Retrieves the collection nft
   const collectionNft = await metaplex
     .nfts()
     .findByMint({ mintAddress: collectionMint });
@@ -100,26 +96,40 @@ export async function constructMintInstruction(
     console.error('no associated candyguard !');
     return;
   }
-  const accounts: MintInstructionAccounts = {
-    candyGuard: candyMachineObject.candyGuard?.address,
+  const collectionDelegateRecord = metaplex
+    .nfts()
+    .pdas()
+    .metadataDelegateRecord({
+      mint: collectionMint,
+      type: 'CollectionV1',
+      updateAuthority: collectionNft.updateAuthorityAddress,
+      delegate: authorityPda,
+    });
+
+  const accounts: MintV2InstructionAccounts = {
+    candyGuard: candyMachineObject.candyGuard.address,
     candyMachineProgram: CANDY_MACHINE_PROGRAM_ID,
     candyMachine,
-    payer: payer,
     candyMachineAuthorityPda: authorityPda,
-    nftMasterEdition: nftMasterEdition,
+    nftMasterEdition,
     nftMetadata,
     nftMint: mint.publicKey,
+    token,
+    tokenRecord,
     nftMintAuthority: payer,
+    payer,
+    minter: payer,
     collectionUpdateAuthority: collectionNft.updateAuthorityAddress,
-    collectionAuthorityRecord,
+    collectionDelegateRecord,
     collectionMasterEdition,
     collectionMetadata,
     collectionMint,
     tokenMetadataProgram: METAPLEX_PROGRAM_ID,
-    tokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
+    sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+    splTokenProgram: TOKEN_PROGRAM_ID,
+    splAtaProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
-    instructionSysvarAccount: SYSVAR_INSTRUCTIONS_PUBKEY,
     anchorRemainingAccounts: remainingAccounts,
   };
 
@@ -127,7 +137,7 @@ export async function constructMintInstruction(
     mintArgs = new Uint8Array();
   }
 
-  const args: MintInstructionArgs = {
+  const args: MintV2InstructionArgs = {
     mintArgs,
     label: label ?? null,
   };
@@ -167,16 +177,17 @@ export async function constructMintInstruction(
   instructions.push(
     createAssociatedTokenAccountInstruction(
       payer,
-      nftTokenAccount,
+      token,
       payer,
       mint.publicKey,
     ),
   );
-  instructions.push(
-    createMintToInstruction(mint.publicKey, nftTokenAccount, payer, 1, []),
+  const mintInstruction = createMintV2Instruction(accounts, args);
+  const mintIndex = mintInstruction.keys.findIndex((key) =>
+    key.pubkey.equals(mint.publicKey),
   );
-
-  const mintInstruction = createMintInstruction(accounts, args);
+  mintInstruction.keys[mintIndex].isSigner = true;
+  mintInstruction.keys[mintIndex].isWritable = true;
   instructions.push(mintInstruction);
 
   return instructions;
