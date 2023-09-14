@@ -63,6 +63,7 @@ import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 import { Prisma } from '@prisma/client';
 import { GuardParams } from './dto/types';
+import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -264,10 +265,11 @@ export class CandyMachineService {
     );
 
     const { startDate, endDate, publicMintLimit, freezePeriod } = guardParams;
-    const { candyMachine } = await this.metaplex.candyMachines().create(
+    const candyMachineTx = await constructCandyMachineTransaction(
+      this.metaplex,
       {
         candyMachine: candyMachineKey,
-        authority: this.metaplex.identity(),
+        authority: this.metaplex.identity().publicKey,
         collection: {
           address: collectionNftAddress,
           updateAuthority: this.metaplex.identity(),
@@ -328,8 +330,15 @@ export class CandyMachineService {
           ...creators,
         ],
       },
-      { payer: this.metaplex.identity() },
     );
+    await sendAndConfirmTransaction(metaplex.connection, candyMachineTx, [
+      metaplex.identity(),
+      candyMachineKey,
+    ]);
+
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineKey.publicKey });
     await this.initializeGuardAccounts(candyMachine, freezePeriod);
     const authorityPda = this.metaplex
       .candyMachines()
