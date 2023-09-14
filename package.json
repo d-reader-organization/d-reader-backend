@@ -39,6 +39,7 @@
     "add-allow-list": "npx ts-node src/cli/main.ts add-allow-list",
     "thaw-collection": "npx ts-node src/cli/main.ts thaw-collection",
     "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw",
+    "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
     "add-group": "npx ts-node src/cli/main.ts add-group"
   },
   "prisma": {
