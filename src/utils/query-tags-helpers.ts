@@ -64,7 +64,7 @@ export const sortComicBy = (tag: ComicSortTag): Prisma.Sql => {
 export const sortComicIssueBy = (tag: ComicIssueSortTag): Prisma.Sql => {
   switch (tag) {
     case ComicIssueSortTag.Title:
-      return Prisma.sql`comicIssue."title"`;
+      return Prisma.sql`comicIssue."title" and comic.title`;
     case ComicIssueSortTag.Latest:
       return Prisma.sql`comicIssue."releaseDate"`;
     case ComicIssueSortTag.Likes:
@@ -76,7 +76,7 @@ export const sortComicIssueBy = (tag: ComicIssueSortTag): Prisma.Sql => {
     case ComicIssueSortTag.Viewers:
       return Prisma.sql`"viewersCount"`;
     default:
-      return Prisma.sql`comicIssue."title"`;
+      return Prisma.sql`comicIssue."title" and comic.title`;
   }
 };
 
