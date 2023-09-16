@@ -71,6 +71,7 @@ export class ComicService {
         ...comic,
         stats: {
           favouritesCount: Number(comic.favouritesCount),
+          bookmarksCount: Number(comic.bookmarksCount),
           ratersCount: Number(comic.ratersCount),
           averageRating: Number(comic.averageRating),
           issuesCount: Number(comic.issuesCount),
@@ -125,7 +126,12 @@ export class ComicService {
     return await Promise.all(
       ownedComics.map(async (ownedComic) => {
         const issuesCount = await this.prisma.comicIssue.count({
-          where: { comicSlug: ownedComic.slug },
+          where: {
+            comicSlug: ownedComic.slug,
+            deletedAt: null,
+            verifiedAt: { not: null },
+            publishedAt: { not: null },
+          },
         });
         return { ...ownedComic, stats: { issuesCount } };
       }),

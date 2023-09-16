@@ -223,12 +223,7 @@ export class ComicIssueService {
       ownedComicIssues.map(async (comicIssue) => {
         const collectionNftAddress = comicIssue.collectionNft.address;
         const ownedCopiesCount = await this.prisma.nft.count({
-          where: {
-            collectionNftAddress,
-            owner: {
-              userId,
-            },
-          },
+          where: { collectionNftAddress, owner: { userId } },
         });
 
         return { ...comicIssue, ownedCopiesCount };

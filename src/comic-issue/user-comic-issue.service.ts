@@ -23,7 +23,7 @@ export class UserComicIssueService {
     });
 
     const countFavourites = this.prisma.userComicIssue.count({
-      where: { comicIssueId, isFavourite: true },
+      where: { comicIssueId, favouritedAt: { not: null } },
     });
 
     const countReaders = this.prisma.userComicIssue.count({
@@ -35,7 +35,11 @@ export class UserComicIssueService {
     });
 
     const countIssues = this.prisma.comicIssue.count({
-      where: { comicSlug: issue.comicSlug },
+      where: {
+        comicSlug: issue.comicSlug,
+        verifiedAt: { not: null },
+        publishedAt: { not: null },
+      },
     });
 
     const countTotalPages = this.prisma.comicPage.count({
@@ -128,6 +132,7 @@ export class UserComicIssueService {
     collectionAddress?: string,
   ): Promise<boolean | undefined> {
     let collectionNftAddress = collectionAddress;
+
     // if collection NFT address was not provided, make sure it doesn't exist
     if (!collectionAddress) {
       const collectionNft = await this.prisma.collectionNft.findFirst({
@@ -181,19 +186,22 @@ export class UserComicIssueService {
     });
   }
 
-  async toggleState(
+  async toggleDate(
     userId: number,
     comicIssueId: number,
-    property: keyof PickByType<UserComicIssue, boolean>,
+    property: keyof PickByType<UserComicIssue, Date>,
   ): Promise<UserComicIssue> {
     const userComicIssue = await this.prisma.userComicIssue.findUnique({
       where: { comicIssueId_userId: { userId, comicIssueId } },
     });
 
+    // if date is existing, remove it, otherwise add a new date
+    const updatedDate = !!userComicIssue?.[property] ? null : new Date();
+
     return await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
-      create: { userId, comicIssueId, [property]: true },
-      update: { [property]: !userComicIssue?.[property] },
+      create: { userId, comicIssueId, [property]: new Date() },
+      update: { [property]: updatedDate },
     });
   }
 

@@ -46,10 +46,11 @@ export const getComicsQuery = (query: ComicParams) => {
   } = getQueryFilters(query);
   return Prisma.sql`SELECT comic."title", comic.slug, comic."audienceType", comic.cover, comic.banner, comic.pfp, comic.logo, comic.description, comic."flavorText", comic.website, comic.twitter, comic.discord, comic.telegram, comic.instagram, comic."tikTok", comic."youTube", comic."updatedAt", comic."createdAt", comic."deletedAt", comic."featuredAt", comic."verifiedAt", comic."publishedAt", comic."popularizedAt", comic."completedAt",json_agg(distinct genre.*) AS genres, to_jsonb(creator) as creator,
 AVG(userComic.rating) as "averageRating",
-(select COUNT(*) from (select * from "UserComic" wc where wc."comicSlug" = comic.slug and wc.rating is not null) wcResult) as "ratersCount",
-(select COUNT(*) from (select * from "UserComic" wc where wc."comicSlug" = comic.slug and wc."viewedAt" is not null) wcResult) as "viewersCount",
-(select COUNT(*) from (select * from "UserComic" wc where wc."comicSlug" = comic.slug and wc."isFavourite" = true) wcResult) as "favouritesCount",
-(select COUNT(*) from "UserComicIssue" wci inner join "ComicIssue" ci  on ci.id = wci."comicIssueId" where ci."comicSlug" = comic.slug and wci."readAt" is not null) as "readersCount",
+(select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc.rating is not null) ucResult) as "ratersCount",
+(select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc."viewedAt" is not null) ucResult) as "viewersCount",
+(select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc."favouritedAt" is not null) ucResult) as "favouritesCount",
+(select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc."bookmarkedAt" is not null) ucResult) as "bookmarksCount",
+(select COUNT(*) from "UserComicIssue" uci inner join "ComicIssue" ci  on ci.id = uci."comicIssueId" where ci."comicSlug" = comic.slug and uci."readAt" is not null) as "readersCount",
 (select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug) issuesResult) as "issuesCount"
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 

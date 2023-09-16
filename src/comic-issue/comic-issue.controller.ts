@@ -100,7 +100,6 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
-  // TODO v2: this can be moved to the 'comic-issue/get' endpoint?
   @Get('get/by-owner/:userId')
   async findOwnedComicIssues(
     @Param('userId') userId: string,
@@ -264,7 +263,7 @@ export class ComicIssueController {
   @UserAuth()
   @Patch('favouritise/:id')
   async favouritise(@Param('id') id: string, @UserEntity() user: UserPayload) {
-    await this.userComicIssueService.toggleState(user.id, +id, 'isFavourite');
+    await this.userComicIssueService.toggleDate(user.id, +id, 'favouritedAt');
   }
 
   /* Rate specific comic issue */

@@ -24,6 +24,10 @@ export class CandyMachineDto {
   endsAt?: string;
 }
 
+// TODO: VERY IMPORTANT
+// endsAt is null in the database
+// we need to figure out how to properly handle CandyMachineGroups
+// frontend needs to implement these changes
 export async function toCandyMachineDto(candyMachine: CandyMachine) {
   const plainCandyMachineDto: CandyMachineDto = {
     address: candyMachine.address,

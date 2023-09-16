@@ -11,4 +11,7 @@ export class UserComicDto {
 
   @IsBoolean()
   isFavourite: boolean;
+
+  @IsBoolean()
+  isBookmarked: boolean;
 }

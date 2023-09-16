@@ -91,6 +91,8 @@ export const gorecatsEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/gorecats/issues/rise-of-the-gorecats/pages', 6, 6),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const babiesEp1Data = (
@@ -110,6 +112,8 @@ export const babiesEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/barbabyans/issues/adventure-begins/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const nikoEp1Data = (
@@ -128,6 +132,8 @@ export const nikoEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/niko-and-the-sword/issues/many-moons-ago/pages', 3, 3),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const narentinesEp1Data = (
@@ -147,6 +153,8 @@ export const narentinesEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/narentines/issues/narentines-the-purge/pages', 1, 1),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const lupersEp1Data = (
@@ -166,6 +174,8 @@ export const lupersEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/lupers/issues/tome-of-knowledge/pages', 12, 12),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const gooneyEp1Data = (
@@ -184,6 +194,8 @@ export const gooneyEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/gooneytoons/issues/birth-of-the-gooneys/pages', 1, 1),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const gooneyEp2Data = (
@@ -252,6 +264,8 @@ export const animoEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/animosities/issues/episode-1/pages', 6, 6),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const taintEp1Data = (
@@ -269,6 +283,8 @@ export const taintEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/immaculate-taint/issues/episode-1/pages', 8, 8),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const islandEp1Data = (
@@ -286,6 +302,8 @@ export const islandEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/island/issues/episode-1/pages', 11, 11),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp1Data = (
@@ -305,6 +323,8 @@ export const wretchesEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/wretches/issues/issue-1/pages', 7, 7),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp2Data = (
@@ -323,6 +343,8 @@ export const wretchesEp2Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/wretches/issues/issue-2/pages', 6, 6),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp3Data = (
@@ -341,6 +363,8 @@ export const wretchesEp3Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/wretches/issues/issue-3/pages', 6, 6),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp4Data = (
@@ -359,6 +383,8 @@ export const wretchesEp4Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/wretches/issues/issue-4/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp5Data = (
@@ -377,6 +403,8 @@ export const wretchesEp5Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/wretches/issues/issue-5/pages', 6, 6),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const wretchesEp6Data = (
@@ -395,6 +423,8 @@ export const wretchesEp6Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/wretches/issues/issue-6/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const janaEp1Data = (
@@ -415,6 +445,8 @@ export const janaEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/jana/issues/issue-1/pages', 10, 10),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const janaEp2Data = (
@@ -434,6 +466,8 @@ export const janaEp2Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/jana/issues/issue-2/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const countyEp1Data = (
@@ -453,6 +487,8 @@ export const countyEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/knockturn-county/issues/issue-1/pages', 14, 14),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const countyEp2Data = (
@@ -472,6 +508,8 @@ export const countyEp2Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/knockturn-county/issues/issue-2/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const watersEp1Data = (
@@ -491,6 +529,8 @@ There are issues facing our planet that, if we don\'t see them, if they\'re not 
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/dark-waters/issues/treacherous-seas/pages', 10, 10),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const versusEp1Data = (
@@ -510,6 +550,8 @@ export const versusEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/multi-versus/issues/episode-1/pages', 5, 5),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const tsukiEp1Data = (
@@ -528,6 +570,8 @@ export const tsukiEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/tsukiverse/issues/issue-1/pages', 1, 1),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const portalEp1Data = (
@@ -547,6 +591,8 @@ export const portalEp1Data = (
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   popularizedAt: new Date(),
   pages: pages('comics/the-dark-portal/issues/concept-art/pages', 9, 9),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const heistEp1Data = (
@@ -565,6 +611,8 @@ export const heistEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/the-heist/issues/how-it-all-began/pages', 1, 1),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });
 
 export const birthEp1Data = (
@@ -582,4 +630,6 @@ export const birthEp1Data = (
   publishedAt: new Date(),
   creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
   pages: pages('comics/birthday/issues/episode-1/pages', 4, 2),
+  isFreeToRead: false,
+  isFullyUploaded: true,
 });

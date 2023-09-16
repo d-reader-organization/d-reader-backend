@@ -102,7 +102,10 @@ export class ComicIssueDto {
   releaseDate: string;
 
   @IsBoolean()
-  isFree: boolean;
+  isFreeToRead: boolean;
+
+  @IsBoolean()
+  isFullyUploaded: boolean;
 
   @IsBoolean()
   isPublished: boolean;
@@ -205,8 +208,8 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     // collaborators: issue.collaborators,
     // statefulCovers: toStatefulCoverDtoArray(issue.statefulCovers),
     statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),
-    // if supply is 0 it's not an NFT collection and therefore it's free
-    isFree: issue.supply === 0,
+    isFreeToRead: issue.isFreeToRead,
+    isFullyUploaded: issue.isFullyUploaded,
     isPublished: !!issue.publishedAt,
     isPopular: !!issue.popularizedAt,
     isDeleted: !!issue.deletedAt,
@@ -243,8 +246,10 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     myStats: issue.myStats
       ? {
           rating: issue.myStats.rating,
-          isFavourite: issue.myStats.isFavourite,
+          isFavourite: !!issue.myStats.favouritedAt,
+          isSubscribed: !!issue.myStats.subscribedAt,
           canRead: issue.myStats.canRead,
+          isPartiallyReadable: issue.myStats.canRead && issue.isFullyUploaded,
           readAt: issue.myStats.readAt,
           viewedAt: issue.myStats.viewedAt,
         }
