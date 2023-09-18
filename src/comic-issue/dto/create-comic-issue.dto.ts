@@ -15,9 +15,10 @@ import {
 import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { RoyaltyWalletDto } from './royalty-wallet.dto';
-import { IsKebabCase } from '../../decorators/IsKebabCase';
-import { IsLamport } from '../../decorators/IsLamport';
+import { IsKebabCase } from 'src/decorators/IsKebabCase';
+import { IsLamport } from 'src/decorators/IsLamport';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -31,9 +32,7 @@ export class CreateComicIssueDto {
   slug: string;
 
   @IsPositive()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
+  @TransformStringToNumber()
   number: number;
 
   @IsKebabCase()

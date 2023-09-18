@@ -1,15 +1,11 @@
-import { Transform } from 'class-transformer';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class TipCreatorParams {
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
+  @TransformStringToNumber()
   creatorId: number;
 
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
+  @TransformStringToNumber()
   tipAmount: number;
 
   @IsSolanaAddress()

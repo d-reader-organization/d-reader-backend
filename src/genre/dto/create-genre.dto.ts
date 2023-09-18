@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class CreateGenreBodyDto {
   @IsString()
@@ -26,9 +27,7 @@ export class CreateGenreBodyDto {
   color: string;
 
   @IsNumber()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : value,
-  )
+  @TransformStringToNumber()
   priority: number;
 }
 
