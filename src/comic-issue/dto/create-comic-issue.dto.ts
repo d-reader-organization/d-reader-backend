@@ -83,6 +83,10 @@ export class CreateComicIssueDto {
   creatorAddress?: string;
 
   @IsOptional()
+  @IsSolanaAddress()
+  creatorBackupAddress?: string;
+
+  @IsOptional()
   @IsArray()
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })

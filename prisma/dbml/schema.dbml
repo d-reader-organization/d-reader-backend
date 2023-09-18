@@ -157,6 +157,7 @@ Table ComicIssue {
   publishedAt DateTime
   popularizedAt DateTime
   creatorAddress String [not null, default: '']
+  creatorBackupAddress String [not null, default: '']
   comicSlug String [not null]
   comic Comic [not null]
   royaltyWallets RoyaltyWallet [not null]

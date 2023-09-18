@@ -37,6 +37,7 @@ import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssueInput } from './dto/comic-issue.dto';
 import { validatePrice, validateWeb3PublishInfo } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
+import { Metaplex } from '@metaplex-foundation/js';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -45,17 +46,21 @@ type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'pdf'>;
 @Injectable()
 export class ComicIssueService {
   constructor(
+    private readonly metaplex: Metaplex,
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
     private readonly candyMachineService: CandyMachineService,
     private readonly userComicIssueService: UserComicIssueService,
-  ) {}
+  ) {
+    this.metaplex = metaplex;
+  }
 
   async create(creatorId: number, createComicIssueDto: CreateComicIssueDto) {
     const {
       slug,
       comicSlug,
+      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
       sellerFee = 0,
       collaborators = [],
       royaltyWallets = [],
@@ -80,6 +85,7 @@ export class ComicIssueService {
         data: {
           ...rest,
           slug,
+          creatorBackupAddress,
           sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
           collaborators: { createMany: { data: collaborators } },
@@ -248,8 +254,13 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
-    const { sellerFee, collaborators, royaltyWallets, ...rest } =
-      updateComicIssueDto;
+    const {
+      sellerFee,
+      collaborators,
+      royaltyWallets,
+      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
+      ...rest
+    } = updateComicIssueDto;
 
     validatePrice(updateComicIssueDto);
 
@@ -264,9 +275,7 @@ export class ComicIssueService {
 
     if (areCollaboratorsUpdated) {
       const deleteCollaborators = this.prisma.comicIssueCollaborator.deleteMany(
-        {
-          where: { comicIssueId: id },
-        },
+        { where: { comicIssueId: id } },
       );
 
       const updateCollaborators = this.prisma.comicIssue.update({
@@ -306,7 +315,11 @@ export class ComicIssueService {
         },
         // where: { id, publishedAt: null },
         where: { id },
-        data: { ...rest, sellerFeeBasisPoints: sellerFeeBasisPointsData },
+        data: {
+          ...rest,
+          sellerFeeBasisPoints: sellerFeeBasisPointsData,
+          creatorBackupAddress,
+        },
       });
 
       return updatedComicIssue;

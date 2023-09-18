@@ -165,6 +165,7 @@ export class CandyMachineService {
     validateComicIssueCMInput(comicIssue);
 
     const creatorAddress = comicIssue.creatorAddress;
+    const creatorBackupAddress = comicIssue.creatorBackupAddress;
     const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
@@ -252,6 +253,7 @@ export class CandyMachineService {
         this.metaplex,
         collectionNftAddress,
         new PublicKey(creatorAddress),
+        new PublicKey(creatorBackupAddress),
         MAX_SIGNATURES_PERCENT,
         MIN_SIGNATURES,
       );

@@ -16,6 +16,7 @@ export async function constructInitializeRecordAuthorityInstruction(
   metaplex: Metaplex,
   collectionMint: PublicKey,
   creator: PublicKey,
+  creatorAuthority: PublicKey,
   maxSignatures: number,
   minSignatures: number,
 ) {
@@ -44,7 +45,7 @@ export async function constructInitializeRecordAuthorityInstruction(
     tokenAccount: collectionTokenAccount,
     metadata: collectionMetadata,
     creator,
-    creatorAuthority: metaplex.identity().publicKey, //TODO: assign a appropriate wallet
+    creatorAuthority,
   };
 
   const args: InitializeRecordAuthorityInstructionArgs = {
@@ -59,6 +60,7 @@ export async function initializeRecordAuthority(
   metaplex: Metaplex,
   collectionMint: PublicKey,
   creator: PublicKey,
+  creatorAuthority: PublicKey,
   maxSignature: number,
   minSignatures: number,
 ) {
@@ -66,6 +68,7 @@ export async function initializeRecordAuthority(
     metaplex,
     collectionMint,
     creator,
+    creatorAuthority,
     maxSignature,
     minSignatures,
   );

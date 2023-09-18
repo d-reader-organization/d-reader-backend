@@ -88,11 +88,19 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
   }
 
   if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {
-    throw new BadRequestException('Missing crucial cover assets');
+    throw new BadRequestException('Missing necessary cover assets');
   }
 
   const raritiesCount = comicIssue.statelessCovers.length;
   if (raritiesCount != 1 && raritiesCount != 3 && raritiesCount != 5) {
     throw new BadRequestException('Unsupported rarity count: ' + raritiesCount);
+  }
+
+  if (!comicIssue.creatorAddress) {
+    throw new BadRequestException('Missing necessary creator address');
+  }
+
+  if (!comicIssue.creatorBackupAddress) {
+    throw new BadRequestException('Missing necessary creator backup address');
   }
 };
