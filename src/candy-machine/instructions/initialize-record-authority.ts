@@ -44,6 +44,7 @@ export async function constructInitializeRecordAuthorityInstruction(
     tokenAccount: collectionTokenAccount,
     metadata: collectionMetadata,
     creator,
+    creatorAuthority: metaplex.identity().publicKey, //TODO: assign a appropriate wallet
   };
 
   const args: InitializeRecordAuthorityInstructionArgs = {

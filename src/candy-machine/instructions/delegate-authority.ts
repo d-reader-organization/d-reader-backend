@@ -6,6 +6,8 @@ import {
   ComicRarity,
   createAssignAuthorityToProgramInstruction,
 } from 'dreader-comic-verse';
+import { SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js';
+import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
 export async function constructDelegateAuthorityInstruction(
   metaplex: Metaplex,
@@ -27,6 +29,11 @@ export async function constructDelegateAuthorityInstruction(
     tokenMetadataProgram,
     collectionMint,
     metadata,
+    mint,
+    authorizationRules: AUTH_RULES,
+    authorizationRulesProgram: AUTH_RULES_ID,
+    sysvarInstruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+    systemProgram: SystemProgram.programId,
   };
   return createAssignAuthorityToProgramInstruction(accounts, { rarity });
 }

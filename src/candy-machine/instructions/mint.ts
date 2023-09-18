@@ -106,7 +106,6 @@ export async function constructMintInstruction(
       updateAuthority: collectionNft.updateAuthorityAddress,
       delegate: authorityPda,
     });
-
   const accounts: MintV2InstructionAccounts = {
     candyGuard: candyMachineObject.candyGuard.address,
     candyMachineProgram: CANDY_MACHINE_PROGRAM_ID,
@@ -135,7 +134,6 @@ export async function constructMintInstruction(
     authorizationRulesProgram: AUTH_RULES_ID,
     anchorRemainingAccounts: remainingAccounts,
   };
-
   if (!mintArgs) {
     mintArgs = new Uint8Array();
   }
@@ -191,9 +189,18 @@ export async function constructMintInstruction(
   );
   mintInstruction.keys[mintIndex].isSigner = true;
   mintInstruction.keys[mintIndex].isWritable = true;
-  instructions.push(mintInstruction);
+  mintInstruction.keys.push(getRuleSet());
 
+  instructions.push(mintInstruction);
   return instructions;
+}
+
+export function getRuleSet(): AccountMeta {
+  return {
+    isSigner: false,
+    isWritable: false,
+    pubkey: AUTH_RULES,
+  };
 }
 
 export function getRemainingAccounts(

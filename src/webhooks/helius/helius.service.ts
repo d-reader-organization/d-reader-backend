@@ -359,7 +359,6 @@ export class HeliusService {
   }
 
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
-    console.log(enrichedTransaction);
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
