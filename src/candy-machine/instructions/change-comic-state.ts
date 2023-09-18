@@ -7,7 +7,11 @@ import {
   ComicStateArgs,
   createChangeComicStateInstruction,
 } from 'dreader-comic-verse';
-import { Transaction } from '@solana/web3.js';
+import {
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+  SystemProgram,
+  Transaction,
+} from '@solana/web3.js';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -46,6 +50,9 @@ export async function constructChangeComicStateInstruction(
     tokenAccount,
     recordAuthority,
     signer,
+    mint,
+    sysvarInstruction: SYSVAR_INSTRUCTIONS_PUBKEY,
+    systemProgram: SystemProgram.programId,
   };
   return createChangeComicStateInstruction(accounts, {
     rarity: numberedRarity,
