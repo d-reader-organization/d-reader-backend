@@ -37,6 +37,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { MintSettings } from '../dto/types';
+import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -130,6 +131,8 @@ export async function constructMintInstruction(
     splTokenProgram: TOKEN_PROGRAM_ID,
     splAtaProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     recentSlothashes: SYSVAR_SLOT_HASHES_PUBKEY,
+    authorizationRules: AUTH_RULES,
+    authorizationRulesProgram: AUTH_RULES_ID,
     anchorRemainingAccounts: remainingAccounts,
   };
 

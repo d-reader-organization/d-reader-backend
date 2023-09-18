@@ -19,6 +19,7 @@ import {
 } from '@metaplex-foundation/mpl-candy-guard';
 import { createInitializeV2Instruction as createInitializeCandyMachineInstruction } from '@metaplex-foundation/mpl-candy-machine-core';
 import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
+import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
 export async function constructCandyMachineTransaction(
   metaplex: Metaplex,
@@ -126,6 +127,9 @@ export async function constructCandyMachineInstructions(
       tokenMetadataProgram: tokenMetadataProgram.address,
       sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
       systemProgram: SystemProgram.programId,
+      ruleSet: AUTH_RULES,
+      authorizationRules: AUTH_RULES,
+      authorizationRulesProgram: AUTH_RULES_ID,
     },
     {
       data: candyMachineData,
