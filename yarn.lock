@@ -1904,7 +1904,7 @@
     "@solana/web3.js" "^1.56.2"
     bn.js "^5.2.0"
 
-"@metaplex-foundation/mpl-candy-machine-core@^0.2.1":
+"@metaplex-foundation/mpl-candy-machine-core@^0.2.1", "@metaplex-foundation/mpl-candy-machine-core@^0.2.2":
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-candy-machine-core/-/mpl-candy-machine-core-0.2.2.tgz#b0435a2b199eed5f95b3daec44f7f0467b45bfab"
   integrity sha512-ARMi6v35jdfndzDYdHinEU4MQrcSUC0Qo2m7kRPy1q8A/JueqEtySAywpcWOJU5ToBinCB4ZZ3v+8GoYFKNXSA==
@@ -2955,7 +2955,7 @@
     "@wallet-standard/base" "^1.0.1"
     "@wallet-standard/features" "^1.0.3"
 
-"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.68.0", "@solana/web3.js@^1.73.3", "@solana/web3.js@^1.77.3", "@solana/web3.js@^1.78.0":
+"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.50.1", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.63.1", "@solana/web3.js@^1.66.2", "@solana/web3.js@^1.68.0", "@solana/web3.js@^1.73.3", "@solana/web3.js@^1.78.0":
   version "1.78.4"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.78.4.tgz#e8ca9abe4ec2af5fc540c1d272efee24aaffedb3"
   integrity sha512-up5VG1dK+GPhykmuMIozJZBbVqpm77vbOG6/r5dS7NBGZonwHfTLdBbsYc3rjmaQ4DpCXUa3tUc4RZHRORvZrw==
@@ -5423,17 +5423,18 @@ dotenv@16.1.4:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.1.4.tgz#67ac1a10cd9c25f5ba604e4e08bc77c0ebe0ca8c"
   integrity sha512-m55RtE8AsPeJBpOIFKihEmqUcoVncQIwo7x9U8ZwLEZw9ZpXboz2c+rvog+jUaJvVrZ5kBOeYQBX5+8Aa/OZQw==
 
-dreader-comic-verse@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/dreader-comic-verse/-/dreader-comic-verse-0.0.7.tgz#c3cc426fa24417bddf13acc5e343ae77151136e9"
-  integrity sha512-DawyW1AautvSz7sLv2dB0/ck8Y3FL8AZFsZvIHBehHUpLseQ/WEgUYdP04J8IHN1A2+MV63hnUbHJuh1q76FxA==
+dreader-comic-verse@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/dreader-comic-verse/-/dreader-comic-verse-1.0.0.tgz#e13faeef3cbce8d4a6b86c9f23bcd9af1c5c9fab"
+  integrity sha512-FXSFQoNeMYVPkxwcICPsIpnqOmLMPF97ivINNM9bv7aiu/ZyrgUfOZDZz+zGYvCtuS0uA0HDA9G/ahTORtQ4tg==
   dependencies:
     "@metaplex-foundation/beet" "^0.7.1"
     "@metaplex-foundation/beet-solana" "^0.4.0"
     "@metaplex-foundation/js" "^0.19.4"
+    "@metaplex-foundation/mpl-candy-machine-core" "^0.2.2"
     "@metaplex-foundation/mpl-token-metadata" "^2.11.1"
     "@solana/spl-token" "^0.3.7"
-    "@solana/web3.js" "^1.77.3"
+    "@solana/web3.js" "^1.78.0"
 
 eastasianwidth@^0.2.0:
   version "0.2.0"
