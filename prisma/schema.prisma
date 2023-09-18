@@ -180,6 +180,7 @@ model ComicIssue {
   publishedAt          DateTime?
   popularizedAt        DateTime?
   creatorAddress       String                   @default("")
+  creatorBackupAddress String                   @default("")
   comicSlug            String
   comic                Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   royaltyWallets       RoyaltyWallet[]
