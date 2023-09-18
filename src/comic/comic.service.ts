@@ -71,7 +71,6 @@ export class ComicService {
         ...comic,
         stats: {
           favouritesCount: Number(comic.favouritesCount),
-          bookmarksCount: Number(comic.bookmarksCount),
           ratersCount: Number(comic.ratersCount),
           averageRating: Number(comic.averageRating),
           issuesCount: Number(comic.issuesCount),

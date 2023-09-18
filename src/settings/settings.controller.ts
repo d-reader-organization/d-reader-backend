@@ -58,7 +58,7 @@ export class SettingsController {
     return toGlobalStatus(globalStatus);
   }
 
-  @Get('token-list')
+  @Get('tokens/get')
   async getTokenList() {
     const tokenList = await this.settingService.getTokenList();
     return toSplTokenArray(tokenList);
@@ -68,7 +68,7 @@ export class SettingsController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('icon')
   @UseInterceptors(FileInterceptor('icon'))
-  @Patch('update/:id/token-icon')
+  @Patch('tokens/update/:id/token-icon')
   async updateTokenIcon(
     @Param('id') id: string,
     @UploadedFile() icon: Express.Multer.File,

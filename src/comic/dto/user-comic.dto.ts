@@ -6,8 +6,8 @@ export class UserComicDto {
   @IsOptional()
   rating: number | null;
 
-  @IsBoolean()
-  isSubscribed: boolean;
+  // @IsBoolean()
+  // isSubscribed: boolean;
 
   @IsBoolean()
   isFavourite: boolean;

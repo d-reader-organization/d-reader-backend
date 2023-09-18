@@ -247,7 +247,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
       ? {
           rating: issue.myStats.rating,
           isFavourite: !!issue.myStats.favouritedAt,
-          isSubscribed: !!issue.myStats.subscribedAt,
+          // isSubscribed: !!issue.myStats.subscribedAt,
           canRead: issue.myStats.canRead,
           readAt: issue.myStats.readAt,
           viewedAt: issue.myStats.viewedAt,

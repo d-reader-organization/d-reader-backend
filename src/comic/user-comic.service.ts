@@ -19,9 +19,13 @@ export class UserComicService {
       where: { comicSlug, favouritedAt: { not: null } },
     });
 
-    const countBookmarks = this.prisma.userComic.count({
-      where: { comicSlug, bookmarkedAt: { not: null } },
-    });
+    // const countBookmarks = this.prisma.userComic.count({
+    //   where: { comicSlug, bookmarkedAt: { not: null } },
+    // });
+
+    // const countSubscribers = this.prisma.userComic.count({
+    //   where: { comicSlug, subscribedAt: { not: null } },
+    // });
 
     const countViewers = this.prisma.userComic.count({
       where: { comicSlug, viewedAt: { not: null } },
@@ -45,14 +49,16 @@ export class UserComicService {
       const [
         aggregations,
         favouritesCount,
-        bookmarksCount,
+        // bookmarksCount,
+        // subscribersCount,
         issuesCount,
         readersCount,
         viewersCount,
       ] = await Promise.all([
         aggregate,
         countFavourites,
-        countBookmarks,
+        // countBookmarks,
+        // countSubscribers,
         countIssues,
         countReaders,
         countViewers,
@@ -61,7 +67,8 @@ export class UserComicService {
       return {
         readersCount,
         favouritesCount,
-        bookmarksCount,
+        // bookmarksCount,
+        // subscribersCount,
         issuesCount,
         viewersCount,
         averageRating: aggregations._avg.rating,
