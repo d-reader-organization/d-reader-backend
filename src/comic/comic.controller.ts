@@ -193,14 +193,14 @@ export class ComicController {
   }
 
   /* Subscribe/unsubscribe from specific comic */
-  @UserAuth()
-  @Patch('subscribe/:slug')
-  async subscribe(
-    @Param('slug') slug: string,
-    @UserEntity() user: UserPayload,
-  ) {
-    await this.userComicService.toggleDate(user.id, slug, 'subscribedAt');
-  }
+  // @UserAuth()
+  // @Patch('subscribe/:slug')
+  // async subscribe(
+  //   @Param('slug') slug: string,
+  //   @UserEntity() user: UserPayload,
+  // ) {
+  //   await this.userComicService.toggleDate(user.id, slug, 'subscribedAt');
+  // }
 
   /* Bookmark/unbookmark a specific comic */
   @UserAuth()

@@ -157,7 +157,7 @@ export function toComicDto(comic: ComicInput) {
     myStats: comic?.myStats
       ? {
           rating: comic.myStats.rating,
-          isSubscribed: !!comic.myStats.subscribedAt,
+          // isSubscribed: !!comic.myStats.subscribedAt,
           isFavourite: !!comic.myStats.favouritedAt,
           isBookmarked: !!comic.myStats.bookmarkedAt,
         }

@@ -9,8 +9,8 @@ export class UserComicIssueDto {
   @IsBoolean()
   isFavourite: boolean;
 
-  @IsBoolean()
-  isSubscribed: boolean;
+  // @IsBoolean()
+  // isSubscribed: boolean;
 
   @IsDate()
   @IsOptional()
