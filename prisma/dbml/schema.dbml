@@ -146,7 +146,7 @@ Table ComicIssue {
   flavorText String [not null, default: '']
   signature String [not null, default: '']
   pdf String [not null, default: '']
-  isFreeToRead Boolean [not null, default: false]
+  isFreeToRead Boolean [not null]
   isFullyUploaded Boolean [not null, default: false]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]

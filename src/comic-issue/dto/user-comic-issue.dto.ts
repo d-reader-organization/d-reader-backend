@@ -23,8 +23,4 @@ export class UserComicIssueDto {
   @IsBoolean()
   @IsOptional()
   canRead?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  isPartiallyReadable?: boolean;
 }

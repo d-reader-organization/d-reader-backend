@@ -249,7 +249,6 @@ export function toComicIssueDto(issue: ComicIssueInput) {
           isFavourite: !!issue.myStats.favouritedAt,
           isSubscribed: !!issue.myStats.subscribedAt,
           canRead: issue.myStats.canRead,
-          isPartiallyReadable: issue.myStats.canRead && issue.isFullyUploaded,
           readAt: issue.myStats.readAt,
           viewedAt: issue.myStats.viewedAt,
         }

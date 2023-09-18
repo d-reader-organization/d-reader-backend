@@ -178,15 +178,18 @@ export class ComicIssueService {
     const findActiveCandyMachine = this.findActiveCandyMachine(id);
     const getStats = this.userComicIssueService.getComicIssueStats(id);
     const getMyStats = this.userComicIssueService.getUserStats(id, userId);
-    const previews = this.userComicIssueService.shouldShowPreviews(id, userId);
+    const checkCanUserRead = this.userComicIssueService.checkCanUserRead(
+      id,
+      userId,
+    );
 
-    const [comicIssue, candyMachineAddress, stats, myStats, showOnlyPreviews] =
+    const [comicIssue, candyMachineAddress, stats, myStats, canRead] =
       await Promise.all([
         findComicIssue,
         findActiveCandyMachine,
         getStats,
         getMyStats,
-        previews,
+        checkCanUserRead,
       ]);
 
     if (!comicIssue) {
@@ -196,7 +199,7 @@ export class ComicIssueService {
     return {
       ...comicIssue,
       stats,
-      myStats: { ...myStats, canRead: !showOnlyPreviews },
+      myStats: { ...myStats, canRead },
       candyMachineAddress,
     };
   }
@@ -232,13 +235,16 @@ export class ComicIssueService {
   }
 
   async getPages(comicIssueId: number, userId: number) {
-    const showPreviews = await this.userComicIssueService.shouldShowPreviews(
+    const canRead = await this.userComicIssueService.checkCanUserRead(
       comicIssueId,
       userId,
     );
 
-    await this.read(comicIssueId, userId);
-    return this.comicPageService.findAll(comicIssueId, showPreviews);
+    // fetch only previewable pages if user can't read the full comic issue
+    const isPreviewable = canRead ? undefined : true;
+
+    await this.read(comicIssueId, userId); // TODO v2: do this without blocking the thread
+    return this.comicPageService.findAll(comicIssueId, isPreviewable);
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {

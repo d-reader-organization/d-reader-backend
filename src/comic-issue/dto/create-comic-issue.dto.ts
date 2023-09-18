@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsNotEmpty,
   IsNumber,
@@ -37,6 +38,13 @@ export class CreateComicIssueDto {
 
   @IsKebabCase()
   comicSlug: string;
+
+  @IsBoolean()
+  isFreeToRead: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isFullyUploaded?: boolean;
 
   @IsOptional()
   @Min(0)
