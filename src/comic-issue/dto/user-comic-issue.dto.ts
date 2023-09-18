@@ -9,10 +9,15 @@ export class UserComicIssueDto {
   @IsBoolean()
   isFavourite: boolean;
 
+  @IsBoolean()
+  isSubscribed: boolean;
+
   @IsDate()
+  @IsOptional()
   viewedAt: Date | null;
 
   @IsDate()
+  @IsOptional()
   readAt: Date | null;
 
   @IsBoolean()

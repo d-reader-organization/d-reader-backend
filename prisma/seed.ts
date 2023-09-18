@@ -1,5 +1,5 @@
 import { LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
-import { chance, getRandomInt } from '../src/utils/helpers';
+import { chance, getRandomInt, maybeDateNow } from '../src/utils/helpers';
 import { PrismaClient } from '@prisma/client';
 import { CandyMachineService } from '../src/candy-machine/candy-machine.service';
 import { HeliusService } from '../src/webhooks/helius/helius.service';
@@ -258,9 +258,10 @@ async function main() {
         data: {
           userId: user.id,
           comicSlug,
-          isFavourite: chance(60),
-          isSubscribed: chance(30),
-          viewedAt: chance(60) ? new Date() : undefined,
+          favouritedAt: maybeDateNow(60),
+          subscribedAt: maybeDateNow(30),
+          viewedAt: maybeDateNow(60),
+          bookmarkedAt: maybeDateNow(20),
           rating: shouldRate ? getRandomInt(4, 5) : undefined,
         },
       });
@@ -272,10 +273,10 @@ async function main() {
         data: {
           userId: user.id,
           comicIssueId,
-          isFavourite: chance(60),
-          isSubscribed: chance(10),
-          viewedAt: chance(60) ? new Date() : undefined,
-          readAt: chance(60) ? new Date() : undefined,
+          favouritedAt: maybeDateNow(60),
+          subscribedAt: maybeDateNow(10),
+          viewedAt: maybeDateNow(60),
+          readAt: maybeDateNow(60),
           rating: shouldRate ? getRandomInt(4, 5) : undefined,
         },
       });

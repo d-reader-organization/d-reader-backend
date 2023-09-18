@@ -113,9 +113,10 @@ CREATE TABLE "UserComic" (
     "comicSlug" TEXT NOT NULL,
     "userId" INTEGER NOT NULL,
     "rating" INTEGER,
-    "isSubscribed" BOOLEAN NOT NULL DEFAULT false,
-    "isFavourite" BOOLEAN NOT NULL DEFAULT false,
-    "isWhitelisted" BOOLEAN NOT NULL DEFAULT false,
+    "subscribedAt" TIMESTAMP(3),
+    "favouritedAt" TIMESTAMP(3),
+    "bookmarkedAt" TIMESTAMP(3),
+    "whitelistedAt" TIMESTAMP(3),
     "viewedAt" TIMESTAMP(3),
 
     CONSTRAINT "UserComic_pkey" PRIMARY KEY ("comicSlug","userId")
@@ -154,6 +155,8 @@ CREATE TABLE "ComicIssue" (
     "flavorText" TEXT NOT NULL DEFAULT '',
     "signature" TEXT NOT NULL DEFAULT '',
     "pdf" TEXT NOT NULL DEFAULT '',
+    "isFreeToRead" BOOLEAN NOT NULL,
+    "isFullyUploaded" BOOLEAN NOT NULL DEFAULT false,
     "releaseDate" TIMESTAMP(3) NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -272,6 +275,7 @@ CREATE TABLE "CandyMachineReceipt" (
     "description" TEXT NOT NULL,
     "candyMachineAddress" TEXT NOT NULL,
     "transactionSignature" TEXT NOT NULL,
+    "splTokenAddress" TEXT NOT NULL,
 
     CONSTRAINT "CandyMachineReceipt_pkey" PRIMARY KEY ("nftAddress")
 );
@@ -334,9 +338,9 @@ CREATE TABLE "UserComicIssue" (
     "comicIssueId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
     "rating" INTEGER,
-    "isSubscribed" BOOLEAN NOT NULL DEFAULT false,
-    "isFavourite" BOOLEAN NOT NULL DEFAULT false,
-    "isWhitelisted" BOOLEAN NOT NULL DEFAULT false,
+    "subscribedAt" TIMESTAMP(3),
+    "favouritedAt" TIMESTAMP(3),
+    "whitelistedAt" TIMESTAMP(3),
     "viewedAt" TIMESTAMP(3),
     "readAt" TIMESTAMP(3),
 
@@ -347,7 +351,7 @@ CREATE TABLE "UserComicIssue" (
 CREATE TABLE "UserCreator" (
     "creatorSlug" TEXT NOT NULL,
     "userId" INTEGER NOT NULL,
-    "isFollowing" BOOLEAN NOT NULL DEFAULT false,
+    "followedAt" TIMESTAMP(3),
 
     CONSTRAINT "UserCreator_pkey" PRIMARY KEY ("creatorSlug","userId")
 );
@@ -377,6 +381,19 @@ CREATE TABLE "Listing" (
     "saleTransactionSignature" TEXT,
 
     CONSTRAINT "Listing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SplToken" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "decimals" INTEGER NOT NULL,
+    "symbol" TEXT NOT NULL,
+    "priority" INTEGER NOT NULL,
+    "icon" TEXT NOT NULL,
+
+    CONSTRAINT "SplToken_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable

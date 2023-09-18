@@ -16,7 +16,11 @@ export class UserComicService {
     });
 
     const countFavourites = this.prisma.userComic.count({
-      where: { comicSlug, isFavourite: true },
+      where: { comicSlug, favouritedAt: { not: null } },
+    });
+
+    const countBookmarks = this.prisma.userComic.count({
+      where: { comicSlug, bookmarkedAt: { not: null } },
     });
 
     const countViewers = this.prisma.userComic.count({
@@ -26,7 +30,7 @@ export class UserComicService {
     const countIssues = this.prisma.comicIssue.count({
       where: {
         deletedAt: null,
-        publishedAt: { lt: new Date() },
+        publishedAt: { not: null },
         verifiedAt: { not: null },
         comicSlug,
       },
@@ -41,12 +45,14 @@ export class UserComicService {
       const [
         aggregations,
         favouritesCount,
+        bookmarksCount,
         issuesCount,
         readersCount,
         viewersCount,
       ] = await Promise.all([
         aggregate,
         countFavourites,
+        countBookmarks,
         countIssues,
         countReaders,
         countViewers,
@@ -55,6 +61,7 @@ export class UserComicService {
       return {
         readersCount,
         favouritesCount,
+        bookmarksCount,
         issuesCount,
         viewersCount,
         averageRating: aggregations._avg.rating,
@@ -88,19 +95,22 @@ export class UserComicService {
     });
   }
 
-  async toggleState(
+  async toggleDate(
     userId: number,
     comicSlug: string,
-    property: keyof PickByType<UserComic, boolean>,
+    property: keyof PickByType<UserComic, Date>,
   ): Promise<UserComic> {
     const userComic = await this.prisma.userComic.findUnique({
       where: { comicSlug_userId: { userId, comicSlug } },
     });
 
+    // if date is existing, remove it, otherwise add a new date
+    const updatedDate = !!userComic?.[property] ? null : new Date();
+
     return await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
-      create: { userId, comicSlug, [property]: true },
-      update: { [property]: !userComic?.[property] },
+      create: { userId, comicSlug, [property]: new Date() },
+      update: { [property]: updatedDate },
     });
   }
 }

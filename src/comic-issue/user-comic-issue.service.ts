@@ -23,7 +23,7 @@ export class UserComicIssueService {
     });
 
     const countFavourites = this.prisma.userComicIssue.count({
-      where: { comicIssueId, isFavourite: true },
+      where: { comicIssueId, favouritedAt: { not: null } },
     });
 
     const countReaders = this.prisma.userComicIssue.count({
@@ -35,7 +35,11 @@ export class UserComicIssueService {
     });
 
     const countIssues = this.prisma.comicIssue.count({
-      where: { comicSlug: issue.comicSlug },
+      where: {
+        comicSlug: issue.comicSlug,
+        verifiedAt: { not: null },
+        publishedAt: { not: null },
+      },
     });
 
     const countTotalPages = this.prisma.comicPage.count({
@@ -122,33 +126,26 @@ export class UserComicIssueService {
     });
   }
 
-  async shouldShowPreviews(
+  async checkCanUserRead(
     comicIssueId: number,
     userId: number,
-    collectionAddress?: string,
-  ): Promise<boolean | undefined> {
-    let collectionNftAddress = collectionAddress;
-    // if collection NFT address was not provided, make sure it doesn't exist
-    if (!collectionAddress) {
-      const collectionNft = await this.prisma.collectionNft.findFirst({
-        where: { comicIssueId },
-      });
+  ): Promise<boolean> {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id: comicIssueId },
+    });
 
-      // if comic issue is not an NFT collection it's a FREE web2 comic
-      if (!collectionNft) return;
-      else collectionNftAddress = collectionNft.address;
-    }
+    if (comicIssue.isFreeToRead) return true;
 
     // find all NFTs that token gate the comic issue and are owned by the wallet
     const ownedUsedComicIssueNfts = await this.prisma.nft.findMany({
       where: {
-        collectionNftAddress,
+        collectionNft: { comicIssueId },
         owner: { userId },
         metadata: { isUsed: true }, // only take into account "unwrapped" comics
       },
     });
 
-    if (!ownedUsedComicIssueNfts.length) return true;
+    if (!!ownedUsedComicIssueNfts.length) return true;
 
     // if wallet does not own the issue, see if the user is whitelisted per comic issue basis
     // if (!ownedUsedComicIssueNfts.length) {
@@ -171,6 +168,8 @@ export class UserComicIssueService {
     //     if (!userComic) return true;
     //   }
     // }
+
+    return false;
   }
 
   async rate(userId: number, comicIssueId: number, rating: number) {
@@ -181,19 +180,22 @@ export class UserComicIssueService {
     });
   }
 
-  async toggleState(
+  async toggleDate(
     userId: number,
     comicIssueId: number,
-    property: keyof PickByType<UserComicIssue, boolean>,
+    property: keyof PickByType<UserComicIssue, Date>,
   ): Promise<UserComicIssue> {
     const userComicIssue = await this.prisma.userComicIssue.findUnique({
       where: { comicIssueId_userId: { userId, comicIssueId } },
     });
 
+    // if date is existing, remove it, otherwise add a new date
+    const updatedDate = !!userComicIssue?.[property] ? null : new Date();
+
     return await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
-      create: { userId, comicIssueId, [property]: true },
-      update: { [property]: !userComicIssue?.[property] },
+      create: { userId, comicIssueId, [property]: new Date() },
+      update: { [property]: updatedDate },
     });
   }
 
