@@ -2,6 +2,7 @@ import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { IsStrongPasswordOptions } from 'class-validator';
+import { PublicKey } from '@solana/web3.js';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -164,3 +165,11 @@ export const PASSWORD_OPTIONS: IsStrongPasswordOptions = {
 };
 
 export const UNAUTHORIZED_MESSAGE = 'Authorization invalid or expired';
+
+//Metaplex recommended ruleset (This is based on deny list)
+export const AUTH_RULES = new PublicKey(
+  'eBJLFYPxJmMGKuFwpDWkzxZeUrad92kZRC5BJLpzyT9',
+);
+export const AUTH_RULES_ID = new PublicKey(
+  'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg',
+);
