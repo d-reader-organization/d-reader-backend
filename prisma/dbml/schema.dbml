@@ -105,9 +105,10 @@ Table UserComic {
   user User [not null]
   userId Int [not null]
   rating Int
-  isSubscribed Boolean [not null, default: false]
-  isFavourite Boolean [not null, default: false]
-  isWhitelisted Boolean [not null, default: false]
+  subscribedAt DateTime
+  favouritedAt DateTime
+  bookmarkedAt DateTime
+  whitelistedAt DateTime
   viewedAt DateTime
 
   indexes {
@@ -145,6 +146,8 @@ Table ComicIssue {
   flavorText String [not null, default: '']
   signature String [not null, default: '']
   pdf String [not null, default: '']
+  isFreeToRead Boolean [not null]
+  isFullyUploaded Boolean [not null, default: false]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
@@ -353,9 +356,9 @@ Table UserComicIssue {
   user User [not null]
   userId Int [not null]
   rating Int
-  isSubscribed Boolean [not null, default: false]
-  isFavourite Boolean [not null, default: false]
-  isWhitelisted Boolean [not null, default: false]
+  subscribedAt DateTime
+  favouritedAt DateTime
+  whitelistedAt DateTime
   viewedAt DateTime
   readAt DateTime
 
@@ -369,7 +372,7 @@ Table UserCreator {
   creatorSlug String [not null]
   user User [not null]
   userId Int [not null]
-  isFollowing Boolean [not null, default: false]
+  followedAt DateTime
 
   indexes {
     (creatorSlug, userId) [pk]

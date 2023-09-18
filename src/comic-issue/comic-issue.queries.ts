@@ -53,33 +53,33 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   return Prisma.sql`select comicIssue.*, comic."title" as "comicTitle", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
   AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
-     from (SELECT wci."isFavourite"
-           FROM "UserComicIssue" wci
-           where wci."comicIssueId" = comicIssue.id and wci."isFavourite"  = true
-          ) wciResult
+     from (SELECT uci."favouritedAt"
+           FROM "UserComicIssue" uci
+           where uci."comicIssueId" = comicIssue.id and uci."favouritedAt" is not null
+          ) uciResult
     ) as "favouritesCount",
   (select COUNT(*)
-     from (SELECT wci."rating"
-       FROM "UserComicIssue" wci
-       where wci."comicIssueId" = comicIssue.id and wci."rating"  is not null
-          ) wciResult
+     from (SELECT uci."rating"
+       FROM "UserComicIssue" uci
+       where uci."comicIssueId" = comicIssue.id and uci."rating"  is not null
+          ) uciResult
     ) as "ratersCount",
   (select COUNT(*)
-   from (SELECT wci."viewedAt"
-     FROM "UserComicIssue" wci
-     where wci."comicIssueId" = comicIssue.id and wci."viewedAt"  is not null
-        ) wciResult
+   from (SELECT uci."viewedAt"
+     FROM "UserComicIssue" uci
+     where uci."comicIssueId" = comicIssue.id and uci."viewedAt"  is not null
+        ) uciResult
   ) as "viewersCount",    
    (select COUNT(*)
-     from (SELECT wci."readAt"
-       FROM "UserComicIssue" wci
-       where wci."comicIssueId" = comicIssue.id and wci."readAt"  is not null
-          ) wciResult
+     from (SELECT uci."readAt"
+       FROM "UserComicIssue" uci
+       where uci."comicIssueId" = comicIssue.id and uci."readAt"  is not null
+          ) uciResult
     ) as "readersCount",
     (
       SELECT COUNT(*) as totalIssuesCount
-      FROM "ComicIssue" ci2
-      where "ci2"."comicSlug"  = comicIssue."comicSlug"
+      FROM "ComicIssue" ci
+      where "ci"."comicSlug"  = comicIssue."comicSlug" and "ci"."verifiedAt" is not null and "ci"."publishedAt" is not null and "ci"."deletedAt" is null
     ) AS "totalIssuesCount",
     (
       SELECT COUNT(*) as totalPagesCount

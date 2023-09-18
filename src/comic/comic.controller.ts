@@ -74,7 +74,6 @@ export class ComicController {
     return toComicDto(comic);
   }
 
-  // TODO v2: this can be moved to the 'comic/get' endpoint?
   @Get('get/by-owner/:userId')
   async findOwnedComics(
     @Param('userId') userId: string,
@@ -200,7 +199,14 @@ export class ComicController {
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.userComicService.toggleState(user.id, slug, 'isSubscribed');
+    await this.userComicService.toggleDate(user.id, slug, 'subscribedAt');
+  }
+
+  /* Bookmark/unbookmark a specific comic */
+  @UserAuth()
+  @Patch('bookmark/:slug')
+  async bookmark(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
+    await this.userComicService.toggleDate(user.id, slug, 'bookmarkedAt');
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -210,7 +216,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.userComicService.toggleState(user.id, slug, 'isFavourite');
+    await this.userComicService.toggleDate(user.id, slug, 'favouritedAt');
   }
 
   /* Publish comic */

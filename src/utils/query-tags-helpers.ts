@@ -22,7 +22,7 @@ export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
 export const filterComicIssueBy = (tag: ComicIssueFilterTag): Prisma.Sql => {
   switch (tag) {
     case ComicIssueFilterTag.Free:
-      return Prisma.sql`AND comicIssue."supply" = 0`;
+      return Prisma.sql`AND comicIssue."isFreeToRead" = true`;
     case ComicIssueFilterTag.Popular:
       return Prisma.sql`AND comicIssue."popularizedAt" is not null`;
     default:

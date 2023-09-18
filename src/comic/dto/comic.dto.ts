@@ -98,9 +98,6 @@ export class ComicDto {
   @IsEmptyOrUrl()
   youTube: string;
 
-  // @IsBoolean()
-  // isFree: string;
-
   @IsOptional()
   @Type(() => ComicStatsDto)
   stats?: ComicStatsDto;
@@ -147,7 +144,6 @@ export function toComicDto(comic: ComicInput) {
     instagram: comic.instagram,
     tikTok: comic.tikTok,
     youTube: comic.youTube,
-    // isFree: comic.isFree,
     stats: comic?.stats
       ? {
           favouritesCount: comic.stats.favouritesCount,
@@ -161,8 +157,9 @@ export function toComicDto(comic: ComicInput) {
     myStats: comic?.myStats
       ? {
           rating: comic.myStats.rating,
-          isSubscribed: comic.myStats.isSubscribed,
-          isFavourite: comic.myStats.isFavourite,
+          isSubscribed: !!comic.myStats.subscribedAt,
+          isFavourite: !!comic.myStats.favouritedAt,
+          isBookmarked: !!comic.myStats.bookmarkedAt,
         }
       : undefined,
     genres: toPartialGenreDtoArray(comic.genres),
