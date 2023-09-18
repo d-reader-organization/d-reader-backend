@@ -38,6 +38,7 @@ import { ComicIssueInput } from './dto/comic-issue.dto';
 import { validatePrice, validateWeb3PublishInfo } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 import { Metaplex } from '@metaplex-foundation/js';
+import { metaplex } from '../utils/metaplex';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -45,8 +46,9 @@ type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'pdf'>;
 
 @Injectable()
 export class ComicIssueService {
+  private readonly metaplex: Metaplex;
+
   constructor(
-    private readonly metaplex: Metaplex,
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly comicPageService: ComicPageService,
