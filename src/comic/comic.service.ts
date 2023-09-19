@@ -239,7 +239,7 @@ export class ComicService {
         data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject(newFileKey);
+      await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 

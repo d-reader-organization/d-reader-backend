@@ -120,10 +120,41 @@ export class s3Service {
     );
   };
 
-  /** Clean up old files when uploading new ones, in case there was an old file and it wasn't overwriten by the new file */
+  /** Clean up new files when updating existing ones, in case there was an old file and it was overwriten by any new file */
+  garbageCollectNewFiles = async (
+    newFileKeys: string[],
+    oldFileKeys: string[] = [],
+  ) => {
+    for (const newFileKey in newFileKeys) {
+      if (!oldFileKeys.includes(newFileKey)) {
+        await this.deleteObject(newFileKey);
+      }
+    }
+  };
+
+  /** Clean up new file when updating an existing one, in case there was an old file and it was overwriten by the new file */
+  garbageCollectNewFile = async (newFileKey: string, oldFileKey?: string) => {
+    if (oldFileKey !== newFileKey) {
+      await this.deleteObject(newFileKey);
+    }
+  };
+
+  /** Clean up old file when uploading a new one, in case there was an old file and it wasn't overwriten by the new file */
   garbageCollectOldFile = async (newFileKey: string, oldFileKey?: string) => {
     if (oldFileKey && oldFileKey !== newFileKey) {
       await this.deleteObject(oldFileKey);
+    }
+  };
+
+  /** Clean up old files when uploading new ones, in case there was an old file and it wasn't overwriten by the new file */
+  garbageCollectOldFiles = async (
+    newFileKeys: string[],
+    oldFileKeys: string[] = [],
+  ) => {
+    for (const oldFileKey in oldFileKeys) {
+      if (!newFileKeys.includes(oldFileKey)) {
+        await this.deleteObject(oldFileKey);
+      }
     }
   };
 

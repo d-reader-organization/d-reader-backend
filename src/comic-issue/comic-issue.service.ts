@@ -70,6 +70,7 @@ export class ComicIssueService {
     } = createComicIssueDto;
     validatePrice(createComicIssueDto);
 
+    // should this comicSlug search be case sensitive or not?
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
     });
@@ -393,7 +394,7 @@ export class ComicIssueService {
         data: { [field]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject(newFileKey);
+      await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw new BadRequestException(
         'Malformed file upload or or comic issue already published',
       );
@@ -594,11 +595,14 @@ export class ComicIssueService {
     statelessCoversDto: CreateStatelessCoverDto[],
     comicIssueId: number,
   ) {
+    // Forbid this endpoint if the comic is published on chain?
+
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
       include: { statelessCovers: true },
     });
     const oldStatelessCovers = comicIssue.statelessCovers;
+    const areStatelessCoversUpdated = !!oldStatelessCovers;
 
     // upload stateless covers to S3 and format data for INSERT
     const newStatelessCoversData = await this.createManyStatelessCoversData(
@@ -606,20 +610,41 @@ export class ComicIssueService {
       comicIssue,
     );
 
+    const oldFileKeys = oldStatelessCovers.map((cover) => cover.image);
+    const newFileKeys = newStatelessCoversData.map((cover) => cover.image);
+
     try {
-      await this.prisma.statelessCover.createMany({
-        data: newStatelessCoversData,
-      });
+      if (areStatelessCoversUpdated) {
+        const deleteStatelessCovers = this.prisma.statelessCover.deleteMany({
+          where: { comicIssueId },
+        });
+
+        const createNewStatelessCovers = this.prisma.statelessCover.createMany({
+          data: newStatelessCoversData,
+        });
+
+        await this.prisma.$transaction([
+          deleteStatelessCovers,
+          createNewStatelessCovers,
+        ]);
+      }
     } catch (e) {
-      const keys = newStatelessCoversData.map((cover) => cover.image);
-      await this.s3.deleteObjects(keys);
+      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw e;
     }
 
-    if (!!oldStatelessCovers.length) {
-      const keys = oldStatelessCovers.map((cover) => cover.image);
-      await this.s3.deleteObjects(keys);
+    try {
+      if (!areStatelessCoversUpdated) {
+        await this.prisma.statelessCover.createMany({
+          data: newStatelessCoversData,
+        });
+      }
+    } catch (e) {
+      await this.s3.garbageCollectNewFiles(newFileKeys);
+      throw e;
     }
+
+    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
   }
 
   async updateStatefulCovers(

@@ -8,6 +8,7 @@ import {
   ATTRIBUTE_COMBINATIONS,
   D_PUBLISHER_SYMBOL,
   D_READER_FRONTEND_URL,
+  RARITY_MAP,
   RARITY_TRAIT,
   SIGNED_TRAIT,
   USED_TRAIT,
@@ -176,6 +177,7 @@ export async function uploadItemMetadata(
 ) {
   const items: { uri: string; name: string }[] = [];
 
+  // TODO v2: rarityShares is not reliable, we should pick info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: { uri: string; name: string }[] = [];
   let supplyLeft = comicIssue.supply;
@@ -189,7 +191,7 @@ export async function uploadItemMetadata(
       royaltyWallets,
       rarityCoverFiles[ComicRarity[rarity].toString()],
       darkblockId,
-      rarity,
+      RARITY_MAP[rarity],
       collectionNftAddress,
     );
     const { unusedUnsigned } = itemMetadata;

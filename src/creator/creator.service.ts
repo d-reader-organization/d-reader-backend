@@ -313,7 +313,7 @@ export class CreatorService {
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
-      await this.s3.deleteObject(newFileKey);
+      await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw new BadRequestException('Malformed file upload');
     }
 
