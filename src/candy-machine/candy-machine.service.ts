@@ -427,6 +427,21 @@ export class CandyMachineService {
     });
   }
 
+  async createMintTransaction(
+    feePayer: PublicKey,
+    candyMachineAddress: PublicKey,
+    label: string,
+    mintCount?: number,
+  ) {
+    const transactions: Promise<string>[] = [];
+    for (let i = 0; i < mintCount; i++) {
+      transactions.push(
+        this.createMintOneTransaction(feePayer, candyMachineAddress, label),
+      );
+    }
+    return await Promise.all(transactions);
+  }
+
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
