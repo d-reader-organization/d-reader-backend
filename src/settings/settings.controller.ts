@@ -5,12 +5,10 @@ import {
   Param,
   Patch,
   Post,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import {
   GlobalStatusDto,
   toGlobalStatus,
@@ -19,10 +17,7 @@ import {
 import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { UpdateGlobalStatusDto } from './dto/update-global-status.dto';
-import { toSplToken, toSplTokenArray } from './dto/spl-token.dto';
-import { ApiFile } from 'src/decorators/api-file.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { AdminGuard } from 'src/guards/roles.guard';
+import { toSplTokenArray } from './dto/spl-token.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Settings')
@@ -30,7 +25,7 @@ import { AdminGuard } from 'src/guards/roles.guard';
 export class SettingsController {
   constructor(private readonly settingService: SettingsService) {}
 
-  @Get('global-status')
+  @Get('global-status/get')
   async getGlobalStatus(): Promise<GlobalStatusDto[]> {
     const globalStatus = await this.settingService.getGlobalStatus();
     return toGlobalStatusArray(globalStatus);
@@ -58,22 +53,10 @@ export class SettingsController {
     return toGlobalStatus(globalStatus);
   }
 
-  @Get('tokens/get')
-  async getTokenList() {
-    const tokenList = await this.settingService.getTokenList();
+  /** Get a list of supported SPL tokens */
+  @Get('spl-token/get')
+  async getSupportedSplTokens() {
+    const tokenList = await this.settingService.getSupportedSplTokens();
     return toSplTokenArray(tokenList);
-  }
-
-  @AdminGuard()
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('icon')
-  @UseInterceptors(FileInterceptor('icon'))
-  @Patch('tokens/update/:id/token-icon')
-  async updateTokenIcon(
-    @Param('id') id: string,
-    @UploadedFile() icon: Express.Multer.File,
-  ) {
-    const token = await this.settingService.updateTokenIcon(+id, icon);
-    return toSplToken(token);
   }
 }
