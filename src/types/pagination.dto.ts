@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Max, Min } from 'class-validator';
-import { TransformStringToNumber } from 'src/utils/transform';
+import { TransformStringToNumber } from '../utils/transform';
 
 export class Pagination {
   @Min(0)
