@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { MintOneParams } from '../candy-machine/dto/mint-one-params.dto';
+import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { SignComicParams } from '../candy-machine/dto/sign-comic-params.dto';
 import { UseComicParams } from '../candy-machine/dto/use-comic-params.dto';
@@ -30,8 +30,9 @@ export class TransactionController {
     private readonly auctionHouseService: AuctionHouseService,
   ) {}
 
+  /** @deprecated */
   @Get('/mint-one')
-  async constructMintOneTransaction(@Query() query: MintOneParams) {
+  async constructMintOneTransaction(@Query() query: MintParams) {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
     const label = query.label ?? PUBLIC_GROUP_LABEL;
@@ -39,6 +40,20 @@ export class TransactionController {
       publicKey,
       candyMachineAddress,
       label,
+    );
+  }
+
+  @Get('/mint')
+  async constructMintTransaction(@Query() query: MintParams) {
+    const publicKey = new PublicKey(query.minterAddress);
+    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
+    const label = query.label ?? PUBLIC_GROUP_LABEL;
+    const mintCount = query.mintCount ? +query.mintCount : 1;
+    return await this.candyMachineService.createMintTransaction(
+      publicKey,
+      candyMachineAddress,
+      label,
+      mintCount,
     );
   }
 
