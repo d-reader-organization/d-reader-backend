@@ -231,7 +231,7 @@ export class ComicService {
 
     const s3Folder = getS3Folder(slug);
     const oldFileKey = comic[field];
-    const newFileKey = await this.s3.uploadFile(s3Folder, file);
+    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
 
     try {
       comic = await this.prisma.comic.update({

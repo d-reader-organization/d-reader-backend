@@ -1,12 +1,18 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsBoolean, IsPositive } from 'class-validator';
 import { Transform } from 'class-transformer';
+import {
+  TransformStringToBoolean,
+  TransformStringToNumber,
+} from 'src/utils/transform';
 
 export class CreateComicPageBodyDto {
   @IsPositive()
+  @TransformStringToNumber()
   pageNumber: number;
 
   @IsBoolean()
+  @TransformStringToBoolean()
   isPreviewable: boolean;
 }
 

@@ -213,7 +213,7 @@ export class ComicIssueController {
   async updatePages(
     @Param('id') id: string,
     @ApiFileArray({
-      bodyField: 'data',
+      bodyField: 'pages',
       fileField: 'image',
       bodyType: CreateComicPageBodyDto,
       fileType: CreateComicPageFilesDto,
@@ -249,7 +249,7 @@ export class ComicIssueController {
   async updateStatefulCovers(
     @Param('id') id: string,
     @ApiFileArray({
-      bodyField: 'data',
+      bodyField: 'covers',
       fileField: 'image',
       bodyType: CreateStatefulCoverBodyDto,
       fileType: CreateStatefulCoverFilesDto,

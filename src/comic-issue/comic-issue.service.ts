@@ -35,7 +35,12 @@ import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssueInput } from './dto/comic-issue.dto';
-import { validatePrice, validateWeb3PublishInfo } from '../utils/comic-issue';
+import {
+  getStatefulCoverName,
+  getStatelessCoverName,
+  validatePrice,
+  validateWeb3PublishInfo,
+} from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
@@ -97,8 +102,7 @@ export class ComicIssueService {
       });
 
       return comicIssue;
-    } catch (e) {
-      console.log(e);
+    } catch {
       throw new BadRequestException('Bad comic issue data');
     }
   }
@@ -554,7 +558,14 @@ export class ComicIssueService {
     return await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatelessCoverCreateManyInput> => {
-          const imageKey = await this.s3.uploadFile(s3Folder, cover.image);
+          // human readable file name
+          const fileName = getStatelessCoverName(cover);
+          const imageKey = await this.s3.uploadFile(
+            s3Folder,
+            cover.image,
+            fileName,
+          );
+
           return {
             image: imageKey,
             rarity: cover.rarity,
@@ -577,7 +588,13 @@ export class ComicIssueService {
     return await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatefulCoverCreateManyInput> => {
-          const imageKey = await this.s3.uploadFile(s3Folder, cover.image);
+          // human readable file name
+          const fileName = getStatefulCoverName(cover);
+          const imageKey = await this.s3.uploadFile(
+            s3Folder,
+            cover.image,
+            fileName,
+          );
           return {
             image: imageKey,
             rarity: cover.rarity,
@@ -619,13 +636,13 @@ export class ComicIssueService {
           where: { comicIssueId },
         });
 
-        const createNewStatelessCovers = this.prisma.statelessCover.createMany({
+        const createStatelessCovers = this.prisma.statelessCover.createMany({
           data: newStatelessCoversData,
         });
 
         await this.prisma.$transaction([
           deleteStatelessCovers,
-          createNewStatelessCovers,
+          createStatelessCovers,
         ]);
       }
     } catch (e) {
