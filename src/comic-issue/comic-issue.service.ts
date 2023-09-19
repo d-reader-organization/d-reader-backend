@@ -437,12 +437,18 @@ export class ComicIssueService {
       where: { comicIssueId: id },
     });
 
+    let creatorBackupAddress: string;
+    if (!comicIssue.creatorBackupAddress) {
+      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58();
+    }
+
     const updateComicIssue = this.prisma.comicIssue.update({
       where: { id },
       data: {
         publishedAt: new Date(),
         sellerFeeBasisPoints,
         royaltyWallets: { createMany: { data: royaltyWallets } },
+        creatorBackupAddress,
         ...updatePayload,
       },
       include: {
