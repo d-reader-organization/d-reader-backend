@@ -231,7 +231,7 @@ export class ComicIssueController {
   async updateStatelessCovers(
     @Param('id') id: string,
     @ApiFileArray({
-      bodyField: 'data',
+      bodyField: 'covers',
       fileField: 'image',
       bodyType: CreateStatelessCoverBodyDto,
       fileType: CreateStatelessCoverFilesDto,

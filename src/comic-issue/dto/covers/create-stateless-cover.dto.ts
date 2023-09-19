@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { ComicRarity } from '@prisma/client';
 import { Transform } from 'class-transformer';
+import { TransformStringToBoolean } from 'src/utils/transform';
 
 export class CreateStatelessCoverBodyDto {
   @IsString()
@@ -22,6 +23,7 @@ export class CreateStatelessCoverBodyDto {
   share: number;
 
   @IsBoolean()
+  @TransformStringToBoolean()
   isDefault: boolean;
 }
 

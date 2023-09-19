@@ -74,45 +74,45 @@ export const PUBLIC_GROUP_MINT_LIMIT_ID = 1;
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: ComicRarity.Common,
+    rarity: PrismaComicRarity.Common,
     value: 70,
   },
   {
-    rarity: ComicRarity.Rare,
+    rarity: PrismaComicRarity.Rare,
     value: 25,
   },
   {
-    rarity: ComicRarity.Legendary,
+    rarity: PrismaComicRarity.Legendary,
     value: 5,
   },
 ];
 
 export const FIVE_RARITIES_SHARE: RarityShare[] = [
   {
-    rarity: ComicRarity.Common,
+    rarity: PrismaComicRarity.Common,
     value: 60,
   },
   {
-    rarity: ComicRarity.Uncommon,
+    rarity: PrismaComicRarity.Uncommon,
     value: 25,
   },
   {
-    rarity: ComicRarity.Rare,
+    rarity: PrismaComicRarity.Rare,
     value: 10,
   },
   {
-    rarity: ComicRarity.Epic,
+    rarity: PrismaComicRarity.Epic,
     value: 3,
   },
   {
-    rarity: ComicRarity.Legendary,
+    rarity: PrismaComicRarity.Legendary,
     value: 2,
   },
 ];
 
 export const ONE_RARITY_SHARE: RarityShare[] = [
   {
-    rarity: ComicRarity.None,
+    rarity: PrismaComicRarity.None,
     value: 100,
   },
 ];

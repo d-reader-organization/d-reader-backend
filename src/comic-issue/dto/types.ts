@@ -4,8 +4,8 @@ import {
   RoyaltyWallet,
   StatefulCover,
   StatelessCover,
+  ComicRarity,
 } from '@prisma/client';
-import { ComicRarity } from 'dreader-comic-verse';
 
 export type ComicIssueCMInput = ComicIssue & {
   statelessCovers: StatelessCover[];

@@ -314,7 +314,7 @@ export class UserService {
         data: { [field]: newFileKey },
       });
     } catch (e) {
-      await this.s3.deleteObject(newFileKey);
+      await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw e;
     }
 
