@@ -31,6 +31,7 @@ export class CandyMachineController {
     return await toCMReceiptDtoArray(receipts);
   }
 
+  // TODO: return ALL groups, with a flag `isEligible`
   @Get('get/eligible-groups')
   async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
     const groups = await this.candyMachineService.findWalletEligibleGroups(

@@ -17,7 +17,21 @@ export class CandyMachineGroupDto {
 
   @IsBoolean()
   isActive: boolean;
+
+  //TODO:
+  // mintLimit: number
+  // splTokenAddress: string
 }
+
+//TODO:
+// interface UserCandyMachineGroup extends CandyMachineGroupDto {
+//   userId: number;
+//   itemsMinted: number; (number of items minted with this group by this user)
+//   itemsRemaing: number ;
+//   isEligible: boolean;
+// }
+
+// TODO: transaction/mint -> transaction/mint { itemsToMint: number = 1, groupLabel: string }
 
 export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
   const startDate = new Date(group.guards.startDate.date.toNumber() * 1000);

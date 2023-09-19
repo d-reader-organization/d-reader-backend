@@ -301,6 +301,7 @@ model CandyMachineGroup {
   allowListSupply     Int
   allowListUsed       Int                       @default(0)
   candyMachineAddress String
+  // mintLimit           Int
   candyMachine        CandyMachine              @relation(fields: [candyMachineAddress], references: [address])
 
   @@unique([label, candyMachineAddress])
