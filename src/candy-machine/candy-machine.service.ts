@@ -45,7 +45,7 @@ import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
 import {
   findDefaultCover,
-  generateStatefulCoverName,
+  getStatefulCoverName,
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
@@ -123,10 +123,7 @@ export class CandyMachineService {
     const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
     const statefulCoverPromises = comicIssue.statefulCovers.map(
       async (cover) => {
-        const file = await s3toMxFile(
-          cover.image,
-          generateStatefulCoverName(cover),
-        );
+        const file = await s3toMxFile(cover.image, getStatefulCoverName(cover));
         const property = generatePropertyName(cover.isUsed, cover.isSigned);
         const value = {
           ...rarityCoverFiles[cover.rarity],

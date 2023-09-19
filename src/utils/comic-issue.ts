@@ -4,14 +4,27 @@ import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { CreateComicIssueDto } from '../comic-issue/dto/create-comic-issue.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { UpdateComicIssueDto } from '../comic-issue/dto/update-comic-issue.dto';
+import { StatelessCoverDto } from '../comic-issue/dto/covers/stateless-cover.dto';
 import { BadRequestException } from '@nestjs/common';
 import { MIN_SIGNATURES } from '../constants';
+import { CreateStatelessCoverBodyDto } from 'src/comic-issue/dto/covers/create-stateless-cover.dto';
+import { CreateStatefulCoverBodyDto } from 'src/comic-issue/dto/covers/create-stateful-cover.dto';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
 };
 
-export const generateStatefulCoverName = (cover: StatefulCoverDto): string => {
+export const getStatelessCoverName = (
+  cover: StatelessCoverDto | CreateStatelessCoverBodyDto,
+): string => {
+  return `cover${
+    cover.rarity === ComicRarity.None ? '' : '-' + cover.rarity.toLowerCase()
+  }`;
+};
+
+export const getStatefulCoverName = (
+  cover: StatefulCoverDto | CreateStatefulCoverBodyDto,
+): string => {
   return (
     (cover.isUsed ? 'used-' : 'unused-') +
     (cover.isSigned ? 'signed' : 'unsigned') +
