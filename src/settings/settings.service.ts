@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
-import { UpdateGlobalStatusDto } from './dto/update-global-status.dto';
 
 @Injectable()
 export class SettingsService {
@@ -23,13 +22,10 @@ export class SettingsService {
     });
   }
 
-  async updateGlobalStatus(id: number, update: UpdateGlobalStatusDto) {
+  async removeGlobalStatus(id: number) {
     return await this.prisma.globalStatus.update({
       where: { id },
-      data: {
-        message: update.message,
-        expiresAt: update.isExpired ? new Date() : null,
-      },
+      data: { expiresAt: new Date() },
     });
   }
 

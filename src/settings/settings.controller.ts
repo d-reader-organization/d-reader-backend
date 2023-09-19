@@ -16,7 +16,6 @@ import {
 } from './dto/global-status.dto';
 import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
-import { UpdateGlobalStatusDto } from './dto/update-global-status.dto';
 import { toSplTokenArray } from './dto/spl-token.dto';
 
 @UseGuards(ThrottlerGuard)
@@ -41,15 +40,9 @@ export class SettingsController {
     return toGlobalStatus(globalStatus);
   }
 
-  @Patch('global-status/:id/update')
-  async updateGlobalStatus(
-    @Param('id') id: string,
-    @Body() updateGlobalStatusDto: UpdateGlobalStatusDto,
-  ) {
-    const globalStatus = await this.settingService.updateGlobalStatus(
-      +id,
-      updateGlobalStatusDto,
-    );
+  @Patch('global-status/:id/remove')
+  async updateGlobalStatus(@Param('id') id: string) {
+    const globalStatus = await this.settingService.removeGlobalStatus(+id);
     return toGlobalStatus(globalStatus);
   }
 
