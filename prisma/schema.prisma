@@ -328,6 +328,7 @@ model CandyMachineReceipt {
   candyMachineAddress  String
   transactionSignature String
   splTokenAddress      String
+  label                String       @default("")
 }
 
 model CollectionNft {

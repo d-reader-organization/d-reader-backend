@@ -1,8 +1,15 @@
-import { IsBoolean, IsDate, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { CandyMachineGroupSettings } from './types';
 import { plainToInstance } from 'class-transformer';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
-export class CandyMachineGroupDto {
+export class WalletEligibleGroupDto {
   @IsString()
   label: string;
 
@@ -18,41 +25,64 @@ export class CandyMachineGroupDto {
   @IsBoolean()
   isActive: boolean;
 
-  //TODO:
-  // mintLimit: number
-  // splTokenAddress: string
+  @IsString()
+  splTokenAddress: string;
+
+  @IsNumber()
+  itemsMinted: number;
+
+  @IsBoolean()
+  isEligible: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  itemsRemaing?: number;
+
+  @IsOptional()
+  @IsNumber()
+  mintLimit?: number;
 }
 
-//TODO:
-// interface UserCandyMachineGroup extends CandyMachineGroupDto {
-//   userId: number;
-//   itemsMinted: number; (number of items minted with this group by this user)
-//   itemsRemaing: number ;
-//   isEligible: boolean;
-// }
-
-// TODO: transaction/mint -> transaction/mint { itemsToMint: number = 1, groupLabel: string }
-
-export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
+export function toWalletEligibleGroupDto(group: CandyMachineGroupSettings) {
   const startDate = new Date(group.guards.startDate.date.toNumber() * 1000);
   const endDate = new Date(group.guards.endDate.date.toNumber() * 1000);
   const currentDate = new Date();
-  const plainCandyMachineGroupDto: CandyMachineGroupDto = {
+  let mintPrice: number,
+    splTokenAddress: string,
+    mintLimit: number,
+    itemsRemaing: number;
+  if (group.guards.freezeSolPayment) {
+    mintPrice = group.guards.freezeSolPayment.amount.basisPoints.toNumber();
+    splTokenAddress = WRAPPED_SOL_MINT.toBase58();
+  } else {
+    mintPrice = group.guards.freezeTokenPayment.amount.basisPoints.toNumber();
+    splTokenAddress = group.guards.freezeTokenPayment.mint.toBase58();
+  }
+  if (group.guards.mintLimit) {
+    mintLimit = group.guards.mintLimit.limit;
+    itemsRemaing = mintLimit - group.itemsMinted;
+  }
+  const plainWalletEligibleGroupDto: WalletEligibleGroupDto = {
     label: group.label,
     startDate,
     endDate,
-    mintPrice: group.guards.freezeSolPayment.amount.basisPoints.toNumber(),
+    mintPrice,
     isActive: startDate <= currentDate && currentDate < endDate,
+    splTokenAddress,
+    isEligible: group.isEligible,
+    itemsMinted: group.itemsMinted,
+    mintLimit,
+    itemsRemaing,
   };
-  const candyMachineGroupDto = plainToInstance(
-    CandyMachineGroupDto,
-    plainCandyMachineGroupDto,
+  const walletEligibleGroupDto = plainToInstance(
+    WalletEligibleGroupDto,
+    plainWalletEligibleGroupDto,
   );
-  return candyMachineGroupDto;
+  return walletEligibleGroupDto;
 }
 
-export function toCandyMachineGroupDtoArray(
+export function toWalletEligibleGroupDtoArray(
   groups: CandyMachineGroupSettings[],
 ) {
-  return groups.map(toCandyMachineGroupDto);
+  return groups.map(toWalletEligibleGroupDto);
 }
