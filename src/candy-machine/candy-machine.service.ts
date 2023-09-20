@@ -62,7 +62,7 @@ import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 import { Prisma } from '@prisma/client';
-import { GuardParams } from './dto/types';
+import { CandyMachineGroupSettings, GuardParams } from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
@@ -607,15 +607,17 @@ export class CandyMachineService {
     );
   }
 
-  async findWalletEligibleGroups(query: EligibleGroupsParams) {
+  async findWalletEligibleGroups(
+    query: EligibleGroupsParams,
+  ): Promise<CandyMachineGroupSettings[]> {
     const candyMachinePubKey = new PublicKey(query.candyMachineAddress);
     const walletPubKey = new PublicKey(query.walletAddress);
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePubKey });
 
-    const eligibleGroups = await candyMachine.candyGuard.groups.reduce(
-      async (promise, group) => {
+    const eligibleGroups: CandyMachineGroupSettings[] =
+      await candyMachine.candyGuard.groups.reduce(async (promise, group) => {
         const resolvedGroups = await promise;
 
         if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
@@ -630,14 +632,22 @@ export class CandyMachineService {
           ),
         ]);
 
-        if (isNftGateValid && isAllowListValid) {
-          return [...resolvedGroups, group];
-        }
-        return resolvedGroups;
-      },
-      Promise.resolve([]),
-    );
-
+        const itemsMinted = await this.prisma.candyMachineReceipt.count({
+          where: {
+            candyMachineAddress: query.candyMachineAddress,
+            buyerAddress: query.walletAddress,
+            label: group.label,
+          },
+        });
+        return [
+          ...resolvedGroups,
+          {
+            ...group,
+            isEligible: isNftGateValid && isAllowListValid,
+            itemsMinted,
+          },
+        ];
+      }, Promise.resolve([]));
     return eligibleGroups;
   }
 

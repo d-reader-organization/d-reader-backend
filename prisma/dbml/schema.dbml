@@ -300,6 +300,7 @@ Table CandyMachineReceipt {
   candyMachineAddress String [not null]
   transactionSignature String [not null]
   splTokenAddress String [not null]
+  label String [not null, default: '']
 }
 
 Table CollectionNft {

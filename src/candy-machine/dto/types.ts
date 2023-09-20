@@ -16,6 +16,8 @@ export type MintSettings = {
 export type CandyMachineGroupSettings = {
   label: string;
   guards: DefaultCandyGuardSettings;
+  isEligible: boolean;
+  itemsMinted: number;
 };
 
 export type GuardParams = {
