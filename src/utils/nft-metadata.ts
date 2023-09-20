@@ -189,7 +189,7 @@ export async function uploadItemMetadata(
       comicIssue,
       comicName,
       royaltyWallets,
-      rarityCoverFiles[ComicRarity[rarity].toString()],
+      rarityCoverFiles[rarity],
       darkblockId,
       RARITY_MAP[rarity],
       collectionNftAddress,
