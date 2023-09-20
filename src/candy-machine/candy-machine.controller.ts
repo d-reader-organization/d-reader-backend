@@ -6,7 +6,7 @@ import {
   toCMReceiptDtoArray,
 } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
-import { toCandyMachineGroupDtoArray } from './dto/candy-machine-group.dto';
+import { toWalletEligibleGroupDtoArray } from './dto/candy-machine-group.dto';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
@@ -31,26 +31,17 @@ export class CandyMachineController {
     return await toCMReceiptDtoArray(receipts);
   }
 
-  // TODO: return ALL groups, with a flag `isEligible`
   @Get('get/eligible-groups')
   async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
     const groups = await this.candyMachineService.findWalletEligibleGroups(
       query,
     );
-    return toCandyMachineGroupDtoArray(groups);
+    return toWalletEligibleGroupDtoArray(groups);
   }
 
   @Get('get/:address')
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);
     return toCandyMachineDto(candyMachine);
-  }
-
-  @Get('get/:address/groups')
-  async findCandyMachineGroups(@Param('address') address: string) {
-    const groups = await this.candyMachineService.findCandyMachineGroups(
-      address,
-    );
-    return toCandyMachineGroupDtoArray(groups);
   }
 }

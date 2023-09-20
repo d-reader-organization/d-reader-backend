@@ -34,7 +34,8 @@ import { constructDelegateAuthorityInstruction } from '../../candy-machine/instr
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
 import { SOL_ADDRESS } from '../../constants';
-
+import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
+import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
@@ -400,6 +401,9 @@ export class HeliusService {
         splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
       }
 
+      const ixData = mintV2Struct.deserialize(
+        bs58.decode(enrichedTransaction.instructions[3].data),
+      );
       const receipt = await this.prisma.candyMachineReceipt.create({
         include: { nft: true, buyer: { include: { user: true } } },
         data: {
@@ -416,6 +420,7 @@ export class HeliusService {
           description: enrichedTransaction.description,
           transactionSignature: nftTransactionInfo.signature,
           splTokenAddress,
+          label: ixData[0].label,
         },
       });
 
