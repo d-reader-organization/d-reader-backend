@@ -67,6 +67,8 @@ export const validateWeb3PublishInfo = (
     publishOnChainDto.sellerFee > 100
   ) {
     throw new BadRequestException('Seller fee must be in range of 0-100%');
+  } else if (!publishOnChainDto.creatorAddress) {
+    throw new BadRequestException('Comic issue missing creator address');
   }
 };
 

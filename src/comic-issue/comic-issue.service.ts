@@ -436,8 +436,6 @@ export class ComicIssueService {
       // throw new BadRequestException('Comic issue already published');
     } else if (!!comicIssue.collectionNft) {
       throw new BadRequestException('Comic issue already on chain');
-    } else if (!!comicIssue.creatorAddress) {
-      throw new BadRequestException('Comic issue missing creator address');
     }
 
     validateWeb3PublishInfo(publishOnChainDto);
