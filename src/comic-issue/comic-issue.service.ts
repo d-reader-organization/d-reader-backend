@@ -427,7 +427,11 @@ export class ComicIssueService {
   async publishOnChain(id: number, publishOnChainDto: PublishOnChainDto) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id, deletedAt: null },
-      include: { collectionNft: true },
+      include: {
+        collectionNft: true,
+        statefulCovers: true,
+        statelessCovers: true,
+      },
     });
 
     if (!comicIssue) {
@@ -436,6 +440,10 @@ export class ComicIssueService {
       // throw new BadRequestException('Comic issue already published');
     } else if (!!comicIssue.collectionNft) {
       throw new BadRequestException('Comic issue already on chain');
+    } else if (!!comicIssue.statelessCovers) {
+      throw new BadRequestException('Comic issue missing stateless covers');
+    } else if (!!comicIssue.statefulCovers) {
+      throw new BadRequestException('Comic issue missing stateful covers');
     }
 
     validateWeb3PublishInfo(publishOnChainDto);
