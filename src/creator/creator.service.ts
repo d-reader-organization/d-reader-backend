@@ -15,7 +15,6 @@ import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { appendTimestamp } from '../utils/helpers';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorsQuery } from './creator.queries';
 import { getRandomFloatOrInt } from '../utils/helpers';
@@ -272,22 +271,51 @@ export class CreatorService {
   async updateFiles(slug: string, creatorFilesDto: UpdateCreatorFilesDto) {
     const { avatar, banner, logo } = creatorFilesDto;
 
+    let creator = await this.prisma.creator.findUnique({ where: { slug } });
+
     let avatarKey: string, bannerKey: string, logoKey: string;
+
+    const newFileKeys: string[] = [];
+    const oldFileKeys = [creator.avatar, creator.banner, creator.logo];
+
     try {
       const s3Folder = getS3Folder(slug);
-      if (avatar)
-        avatarKey = await this.s3.uploadFile(s3Folder, avatar, 'avatar');
-      if (banner)
-        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
-      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
+      if (avatar) {
+        avatarKey = await this.s3.uploadFile(avatar, {
+          s3Folder,
+          fileName: 'avatar',
+          timestamp: true,
+        });
+        newFileKeys.push(avatarKey);
+      }
+      if (banner) {
+        bannerKey = await this.s3.uploadFile(banner, {
+          s3Folder,
+          fileName: 'banner',
+          timestamp: true,
+        });
+        newFileKeys.push(bannerKey);
+      }
+      if (logo) {
+        logoKey = await this.s3.uploadFile(logo, {
+          s3Folder,
+          fileName: 'logo',
+          timestamp: true,
+        });
+        newFileKeys.push(logoKey);
+      }
     } catch {
+      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException('Malformed file upload');
     }
 
-    return await this.prisma.creator.update({
+    creator = await this.prisma.creator.update({
       where: { slug },
       data: { avatar: avatarKey, banner: bannerKey, logo: logoKey },
     });
+
+    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
+    return creator;
   }
 
   async updateFile(
@@ -304,8 +332,11 @@ export class CreatorService {
 
     const s3Folder = getS3Folder(slug);
     const oldFileKey = creator[field];
-    const fileName = appendTimestamp(field);
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, fileName);
+    const newFileKey = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: field,
+      timestamp: true,
+    });
 
     try {
       creator = await this.prisma.creator.update({

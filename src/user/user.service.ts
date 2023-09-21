@@ -9,7 +9,6 @@ import * as jdenticon from 'jdenticon';
 import { s3Service } from '../aws/s3.service';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { PickFields } from '../types/shared';
-import { appendTimestamp } from '../utils/helpers';
 import { isEmail, isNumberString } from 'class-validator';
 import { RegisterDto } from '../types/register.dto';
 import { LoginDto } from '../types/login.dto';
@@ -305,8 +304,11 @@ export class UserService {
 
     const s3Folder = getS3Folder(id);
     const oldFileKey = user[field];
-    const fileName = appendTimestamp(field);
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, fileName);
+    const newFileKey = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: field,
+      timestamp: true,
+    });
 
     try {
       user = await this.prisma.user.update({
@@ -413,7 +415,11 @@ export class UserService {
       buffer,
     };
     const s3Folder = getS3Folder(id);
-    return this.s3.uploadFile(s3Folder, file, 'avatar');
+    return this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: 'avatar',
+      timestamp: true,
+    });
   }
 
   async pseudoDelete(id: number) {
