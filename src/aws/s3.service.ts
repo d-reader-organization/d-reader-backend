@@ -15,11 +15,17 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import config from '../configs/config';
-import { Optional } from '../utils/helpers';
+import { Optional, appendTimestamp } from '../utils/helpers';
 import * as path from 'path';
 import { isEmpty } from 'lodash';
 import { getTruncatedTime } from './s3client';
 import { v4 as uuidv4 } from 'uuid';
+
+export type UploadFileOptions = {
+  s3Folder: string;
+  fileName?: string;
+  timestamp?: boolean;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
@@ -125,8 +131,8 @@ export class s3Service {
     newFileKeys: string[],
     oldFileKeys: string[] = [],
   ) => {
-    for (const newFileKey in newFileKeys) {
-      if (!oldFileKeys.includes(newFileKey)) {
+    for (const newFileKey of newFileKeys) {
+      if (!!newFileKey && !oldFileKeys.includes(newFileKey)) {
         await this.deleteObject(newFileKey);
       }
     }
@@ -151,8 +157,8 @@ export class s3Service {
     newFileKeys: string[],
     oldFileKeys: string[] = [],
   ) => {
-    for (const oldFileKey in oldFileKeys) {
-      if (!newFileKeys.includes(oldFileKey)) {
+    for (const oldFileKey of oldFileKeys) {
+      if (!!oldFileKey && !newFileKeys.includes(oldFileKey)) {
         await this.deleteObject(oldFileKey);
       }
     }
@@ -225,9 +231,14 @@ export class s3Service {
     await this.deleteObjects(keys);
   };
 
-  uploadFile = async (folder: string, file: s3File, fileName = uuidv4()) => {
+  uploadFile = async (file: s3File, options: UploadFileOptions) => {
     if (file) {
-      const fileKey = folder + fileName + path.extname(file.originalname);
+      const s3Folder = options.s3Folder;
+      const fileName = options.fileName || uuidv4();
+      const timestamp = options.timestamp || false;
+      const finalFileName = timestamp ? appendTimestamp(fileName) : fileName;
+      const fileKey =
+        s3Folder + finalFileName + path.extname(file.originalname);
 
       await this.putObject({
         ContentType: file.mimetype,

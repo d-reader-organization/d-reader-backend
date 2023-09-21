@@ -16,7 +16,7 @@ import { GenreFilterParams } from './dto/genre-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 
-const S3_FOLDER = 'genres/';
+const s3Folder = 'genres/';
 type GenreFileProperty = PickFields<Genre, 'icon'>;
 
 @Injectable()
@@ -43,7 +43,8 @@ export class GenreService {
 
     let iconKey: string;
     try {
-      if (icon) iconKey = await this.s3.uploadFile(S3_FOLDER, icon, slug);
+      if (icon)
+        iconKey = await this.s3.uploadFile(icon, { s3Folder, fileName: slug });
     } catch {
       await this.prisma.genre.delete({ where: { slug } });
       throw new BadRequestException('Malformed file upload');
@@ -98,7 +99,10 @@ export class GenreService {
     let genre = await this.findOne(slug);
 
     const oldFileKey = genre[field];
-    const newFileKey = await this.s3.uploadFile(S3_FOLDER, file, slug);
+    const newFileKey = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: slug,
+    });
 
     try {
       genre = await this.prisma.genre.update({

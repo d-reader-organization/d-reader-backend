@@ -188,25 +188,49 @@ export class ComicService {
   async updateFiles(slug: string, comicFilesDto: UpdateComicFilesDto) {
     const { cover, banner, pfp, logo } = comicFilesDto;
 
-    const comic = await this.prisma.comic.findUnique({ where: { slug } });
+    let comic = await this.prisma.comic.findUnique({ where: { slug } });
 
     if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
+    const newFileKeys: string[] = [];
+    const oldFileKeys = [comic.cover, comic.banner, comic.pfp, comic.logo];
+
     let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
       const s3Folder = getS3Folder(slug);
-      if (cover) coverKey = await this.s3.uploadFile(s3Folder, cover, 'cover');
-      if (banner)
-        bannerKey = await this.s3.uploadFile(s3Folder, banner, 'banner');
-      if (pfp) pfpKey = await this.s3.uploadFile(s3Folder, pfp, 'pfp');
-      if (logo) logoKey = await this.s3.uploadFile(s3Folder, logo, 'logo');
+      if (cover) {
+        coverKey = await this.s3.uploadFile(cover, {
+          s3Folder,
+          fileName: 'cover',
+        });
+        newFileKeys.push(coverKey);
+      }
+      if (banner) {
+        bannerKey = await this.s3.uploadFile(banner, {
+          s3Folder,
+          fileName: 'banner',
+        });
+        newFileKeys.push(bannerKey);
+      }
+      if (pfp) {
+        pfpKey = await this.s3.uploadFile(pfp, { s3Folder, fileName: 'pfp' });
+        newFileKeys.push(pfpKey);
+      }
+      if (logo) {
+        logoKey = await this.s3.uploadFile(logo, {
+          s3Folder,
+          fileName: 'logo',
+        });
+        newFileKeys.push(logoKey);
+      }
     } catch {
+      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException('Malformed file upload');
     }
 
-    return await this.prisma.comic.update({
+    comic = await this.prisma.comic.update({
       where: { slug },
       data: {
         cover: coverKey,
@@ -215,6 +239,9 @@ export class ComicService {
         logo: logoKey,
       },
     });
+
+    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
+    return comic;
   }
 
   async updateFile(
@@ -231,7 +258,10 @@ export class ComicService {
 
     const s3Folder = getS3Folder(slug);
     const oldFileKey = comic[field];
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
+    const newFileKey = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: field,
+    });
 
     try {
       comic = await this.prisma.comic.update({

@@ -338,6 +338,8 @@ export class ComicIssueService {
   }
 
   async updateFiles(id: number, comicIssueFilesDto: UpdateComicIssueFilesDto) {
+    const { signature, pdf } = comicIssueFilesDto;
+
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
     });
@@ -346,23 +348,33 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    const { signature, pdf } = comicIssueFilesDto;
+    const newFileKeys: string[] = [];
+    const oldFileKeys = [comicIssue.signature, comicIssue.pdf];
+
     // upload files if any
     let signatureKey: string, pdfKey: string;
     try {
       const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
-      if (pdf) pdfKey = await this.s3.uploadFile(s3Folder, pdf, 'pdf');
-      if (signature)
-        signatureKey = await this.s3.uploadFile(
+      if (signature) {
+        signatureKey = await this.s3.uploadFile(signature, {
           s3Folder,
-          signature,
-          'signature',
-        );
+          fileName: 'signature',
+        });
+        newFileKeys.push(signatureKey);
+      }
+      if (pdf) {
+        pdfKey = await this.s3.uploadFile(pdf, {
+          s3Folder,
+          fileName: comicIssue.slug,
+        });
+        newFileKeys.push(pdfKey);
+      }
     } catch {
+      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException('Malformed file upload');
     }
 
-    return await this.prisma.comicIssue.update({
+    const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id: comicIssue.id },
       include: { pages: true, collaborators: true, statelessCovers: true },
       data: {
@@ -370,6 +382,9 @@ export class ComicIssueService {
         pdf: pdfKey,
       },
     });
+
+    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
+    return updatedComicIssue;
   }
 
   async updateFile(
@@ -389,7 +404,8 @@ export class ComicIssueService {
 
     const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
     const oldFileKey = comicIssue[field];
-    const newFileKey = await this.s3.uploadFile(s3Folder, file, field);
+    const fileName = field === 'pdf' ? comicIssue.slug : field;
+    const newFileKey = await this.s3.uploadFile(file, { s3Folder, fileName });
 
     try {
       comicIssue = await this.prisma.comicIssue.update({
@@ -560,11 +576,10 @@ export class ComicIssueService {
         async (cover): Promise<Prisma.StatelessCoverCreateManyInput> => {
           // human readable file name
           const fileName = getStatelessCoverName(cover);
-          const imageKey = await this.s3.uploadFile(
+          const imageKey = await this.s3.uploadFile(cover.image, {
             s3Folder,
-            cover.image,
             fileName,
-          );
+          });
 
           return {
             image: imageKey,
@@ -588,13 +603,11 @@ export class ComicIssueService {
     return await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatefulCoverCreateManyInput> => {
-          // human readable file name
           const fileName = getStatefulCoverName(cover);
-          const imageKey = await this.s3.uploadFile(
+          const imageKey = await this.s3.uploadFile(cover.image, {
             s3Folder,
-            cover.image,
             fileName,
-          );
+          });
           return {
             image: imageKey,
             rarity: cover.rarity,

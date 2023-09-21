@@ -38,7 +38,7 @@ export class ComicPageService {
 
         let imageKey: string;
         try {
-          imageKey = await this.s3.uploadFile(s3Folder, image, fileName);
+          imageKey = await this.s3.uploadFile(image, { s3Folder, fileName });
         } catch {
           throw new BadRequestException('Malformed file upload');
         }

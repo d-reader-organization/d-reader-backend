@@ -14,7 +14,7 @@ import { addDays } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 
-const S3_FOLDER = 'carousel/slides/';
+const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
 
 @Injectable()
@@ -32,7 +32,7 @@ export class CarouselService {
 
     let imageKey: string;
     try {
-      imageKey = await this.s3.uploadFile(S3_FOLDER, image);
+      imageKey = await this.s3.uploadFile(image, { s3Folder });
     } catch {
       throw new BadRequestException('Malformed file upload');
     }
@@ -99,7 +99,7 @@ export class CarouselService {
     let carouselSlide = await this.findOne(id);
 
     const oldFileKey = carouselSlide[field];
-    const newFileKey = await this.s3.uploadFile(S3_FOLDER, file);
+    const newFileKey = await this.s3.uploadFile(file, { s3Folder });
 
     try {
       carouselSlide = await this.prisma.carouselSlide.update({
