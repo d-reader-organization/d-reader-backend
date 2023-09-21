@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, MaxLength, IsString, IsOptional } from 'class-validator';
+import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
@@ -20,7 +21,7 @@ export class UpdateCreatorDto {
   // @ApiProperty({ readOnly: true, required: false })
   // slug: string;
 
-  @IsOptional()
+  @IsOptionalString()
   @IsSolanaAddress()
   tippingAddress?: string;
 
