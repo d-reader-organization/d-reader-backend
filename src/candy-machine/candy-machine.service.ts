@@ -613,57 +613,103 @@ export class CandyMachineService {
     query: EligibleGroupsParams,
   ): Promise<CandyMachineGroupSettings[]> {
     const candyMachinePubKey = new PublicKey(query.candyMachineAddress);
-    const walletPubKey = new PublicKey(query.walletAddress);
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePubKey });
 
     const eligibleGroups: CandyMachineGroupSettings[] =
-      await candyMachine.candyGuard.groups.reduce(async (promise, group) => {
-        const resolvedGroups = await promise;
+      await candyMachine.candyGuard.groups.reduce(
+        async (promise, group): Promise<CandyMachineGroupSettings[]> => {
+          const resolvedGroups = await promise;
 
-        if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
+          if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
 
-        const { displayLabel, isEligible } = await this.checkWalletEligiblity(
-          query.candyMachineAddress,
-          walletPubKey,
-          group.label,
-        );
-
-        const itemsMinted = await this.prisma.candyMachineReceipt.count({
-          where: {
-            candyMachineAddress: query.candyMachineAddress,
-            buyerAddress: query.walletAddress,
-            label: group.label,
-          },
-        });
-        return [
-          ...resolvedGroups,
-          { ...group, isEligible, itemsMinted, displayLabel },
-        ];
-      }, Promise.resolve([]));
+          const { displayLabel, isEligible, allowListCount } =
+            await this.checkWalletEligiblity(
+              query.candyMachineAddress,
+              group.label,
+              query.walletAddress,
+            );
+          const { itemsMinted, walletItemsMinted } = await this.getMintCount(
+            query.candyMachineAddress,
+            group.label,
+            query.walletAddress,
+          );
+          let supply: number;
+          if (group.label === PUBLIC_GROUP_LABEL) {
+            supply = candyMachine.itemsRemaining.toNumber();
+          } else {
+            supply = allowListCount * group.guards.mintLimit.limit;
+          }
+          const appendGroups: CandyMachineGroupSettings[] = [
+            ...resolvedGroups,
+            {
+              ...group,
+              itemsMinted,
+              displayLabel,
+              supply,
+              walletSettings: {
+                isEligible,
+                itemsMinted: walletItemsMinted,
+              },
+            },
+          ];
+          return appendGroups;
+        },
+        Promise.resolve([]),
+      );
     return eligibleGroups;
+  }
+
+  async getMintCount(
+    candyMachineAddress: string,
+    label: string,
+    buyer: string,
+  ): Promise<{ itemsMinted: number; walletItemsMinted: number }> {
+    const itemsMinted = await this.prisma.candyMachineReceipt.findMany({
+      where: { candyMachineAddress, label },
+    });
+    const walletItemsMinted = itemsMinted.filter(
+      (item) => item.buyerAddress === buyer,
+    );
+    return {
+      itemsMinted: itemsMinted.length,
+      walletItemsMinted: walletItemsMinted.length,
+    };
   }
 
   async checkWalletEligiblity(
     candyMachineAddress: string,
-    wallet: PublicKey,
     label: string,
-  ) {
+    wallet: string,
+  ): Promise<{
+    displayLabel: string;
+    isEligible: boolean;
+    allowListCount?: number;
+  }> {
+    if (label === PUBLIC_GROUP_LABEL) {
+      return {
+        displayLabel: PUBLIC_GROUP_LABEL,
+        isEligible: true,
+      };
+    }
+
     const group = await this.prisma.candyMachineGroup.findFirst({
       where: {
         candyMachineAddress: candyMachineAddress,
         label,
       },
       include: {
-        wallets: {
-          where: { walletAddress: wallet.toString() },
-        },
+        wallets: true,
       },
     });
+    const isEligible = group.wallets.find(
+      (address) => address.walletAddress == wallet,
+    );
     return {
       displayLabel: group.displayLabel,
-      isEligible: !!group.wallets.length,
+      isEligible: !!isEligible,
+      allowListCount: group.wallets.length,
     };
   }
 }

@@ -6,15 +6,22 @@ import {
   IsString,
 } from 'class-validator';
 import { CandyMachineGroupSettings } from './types';
-import { plainToInstance } from 'class-transformer';
+import { Type, plainToInstance } from 'class-transformer';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { ApiProperty } from '@nestjs/swagger';
 
-// TODO: groups should have display labels
-// TODO: Keep a separate CandyMachineGroupDto
-// And then do WalletCandyMachineGroupDto extends CandyMachineGroupDto {}
-// TODO: do we need to cache any requests? /eligible-groups or on chain requests
+export class WalletGroupDto {
+  @IsNumber()
+  itemsMinted: number;
 
-export class WalletEligibleGroupDto {
+  @IsBoolean()
+  isEligible: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  itemsRemaing?: number;
+}
+export class CandyMachineGroupDto {
   @IsString()
   label: string;
 
@@ -30,6 +37,9 @@ export class WalletEligibleGroupDto {
   @IsNumber()
   mintPrice: number;
 
+  @IsNumber()
+  supply: number;
+
   @IsBoolean()
   isActive: boolean;
 
@@ -39,19 +49,16 @@ export class WalletEligibleGroupDto {
   @IsNumber()
   itemsMinted: number;
 
-  @IsBoolean()
-  isEligible: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  itemsRemaing?: number;
+  @Type(() => WalletGroupDto)
+  @ApiProperty({ type: WalletGroupDto })
+  wallet: WalletGroupDto;
 
   @IsOptional()
   @IsNumber()
   mintLimit?: number;
 }
 
-export function toWalletEligibleGroupDto(group: CandyMachineGroupSettings) {
+export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
   const startDate = new Date(group.guards.startDate.date.toNumber() * 1000);
   const endDate = new Date(group.guards.endDate.date.toNumber() * 1000);
   const currentDate = new Date();
@@ -68,30 +75,34 @@ export function toWalletEligibleGroupDto(group: CandyMachineGroupSettings) {
   }
   if (group.guards.mintLimit) {
     mintLimit = group.guards.mintLimit.limit;
-    itemsRemaing = mintLimit - group.itemsMinted;
+    itemsRemaing = mintLimit - group.walletSettings.itemsMinted;
   }
-  const plainWalletEligibleGroupDto: WalletEligibleGroupDto = {
+  const plainCandyMachineGroupDto: CandyMachineGroupDto = {
     label: group.label,
     startDate,
     endDate,
     mintPrice,
     isActive: startDate <= currentDate && currentDate < endDate,
     splTokenAddress,
-    isEligible: group.isEligible,
     itemsMinted: group.itemsMinted,
     mintLimit,
-    itemsRemaing,
     displayLabel: group.displayLabel,
+    supply: group.supply,
+    wallet: {
+      itemsMinted: group.walletSettings.itemsMinted,
+      itemsRemaing,
+      isEligible: group.walletSettings.isEligible,
+    },
   };
-  const walletEligibleGroupDto = plainToInstance(
-    WalletEligibleGroupDto,
-    plainWalletEligibleGroupDto,
+  const candyMachineGroupDto = plainToInstance(
+    CandyMachineGroupDto,
+    plainCandyMachineGroupDto,
   );
-  return walletEligibleGroupDto;
+  return candyMachineGroupDto;
 }
 
-export function toWalletEligibleGroupDtoArray(
+export function toCandyMachineGroupDtoArray(
   groups: CandyMachineGroupSettings[],
 ) {
-  return groups.map(toWalletEligibleGroupDto);
+  return groups.map(toCandyMachineGroupDto);
 }
