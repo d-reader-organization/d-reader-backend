@@ -204,7 +204,11 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     signature: getPublicUrl(issue.signature),
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
-    candyMachineAddress: issue.candyMachineAddress ?? undefined,
+    // TODO: rename this to activeCandyMachineAddress
+    candyMachineAddress: issue.candyMachineAddress, // do we need this anymore?
+    // TODO: take care of this
+    // isPrimarySaleActive: true, // if there is an active candy machine
+    // isSecondarySaleActive: true, // comicIssue.isSecondarySaleActive
     // collaborators: issue.collaborators,
     // statefulCovers: toStatefulCoverDtoArray(issue.statefulCovers),
     statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),

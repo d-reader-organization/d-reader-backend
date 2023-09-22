@@ -11,9 +11,7 @@ import {
   getMerkleRoot,
   toDateTime,
   CreateCandyMachineInput,
-  NftGateGuardSettings,
   AllowListGuardSettings,
-  isMetadata,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -612,15 +610,12 @@ export class CandyMachineService {
 
         if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
 
-        const [isNftGateValid, isAllowListValid] = await Promise.all([
-          this.assertNftGate(group.guards.nftGate, walletPubKey),
-          this.assertAllowList(
-            group.guards.allowList,
-            query.candyMachineAddress,
-            walletPubKey,
-            group.label,
-          ),
-        ]);
+        const isEligible = await this.assertAllowList(
+          group.guards.allowList,
+          query.candyMachineAddress,
+          walletPubKey,
+          group.label,
+        );
 
         const itemsMinted = await this.prisma.candyMachineReceipt.count({
           where: {
@@ -629,32 +624,9 @@ export class CandyMachineService {
             label: group.label,
           },
         });
-        return [
-          ...resolvedGroups,
-          {
-            ...group,
-            isEligible: isNftGateValid && isAllowListValid,
-            itemsMinted,
-          },
-        ];
+        return [...resolvedGroups, { ...group, isEligible, itemsMinted }];
       }, Promise.resolve([]));
     return eligibleGroups;
-  }
-
-  // TODO v2: assertNftGate can be further optimizied by fetching all nfts once and using helius api's
-  async assertNftGate(
-    nftGate: NftGateGuardSettings | undefined,
-    wallet: PublicKey,
-  ) {
-    if (!nftGate) return true;
-
-    const nftMetadatas = (
-      await this.metaplex.nfts().findAllByOwner({ owner: wallet })
-    ).filter(isMetadata);
-
-    return nftMetadatas.some((metadata) =>
-      metadata.collection.address.equals(nftGate.requiredCollection),
-    );
   }
 
   async assertAllowList(

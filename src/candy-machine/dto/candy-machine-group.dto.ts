@@ -9,6 +9,11 @@ import { CandyMachineGroupSettings } from './types';
 import { plainToInstance } from 'class-transformer';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
+// TODO: groups should have display labels
+// TODO: Keep a separate CandyMachineGroupDto
+// And then do WalletCandyMachineGroupDto extends CandyMachineGroupDto {}
+// TODO: do we need to cache any requests? /eligible-groups or on chain requests
+
 export class WalletEligibleGroupDto {
   @IsString()
   label: string;
