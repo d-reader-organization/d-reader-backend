@@ -13,7 +13,7 @@ export class SettingsService {
   }
 
   async createGlobalStatus(globalStatusDto: CreateGlobalStatusDto) {
-    // TODO: this should also emit a ws event to clients
+    // TODO v2: this should also emit a ws event to clients
     return await this.prisma.globalStatus.create({
       data: {
         type: globalStatusDto.type,

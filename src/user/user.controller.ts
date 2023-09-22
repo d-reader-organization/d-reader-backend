@@ -111,8 +111,11 @@ export class UserController {
 
   /* Verify an email address */
   @Patch('verify-email/:verificationToken')
-  async verifyEmail(@Param('verificationToken') verificationToken: string) {
-    await this.userService.verifyEmail(verificationToken);
+  async verifyEmail(
+    @Param('verificationToken') verificationToken: string,
+  ): Promise<UserDto> {
+    const user = await this.userService.verifyEmail(verificationToken);
+    return toUserDto(user);
   }
 
   /* Update specific user's avatar file */
