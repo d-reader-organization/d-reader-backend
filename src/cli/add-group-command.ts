@@ -16,6 +16,7 @@ import { solFromLamports } from '../utils/helpers';
 interface Options {
   candyMachineAddress: string;
   label: string;
+  displayLabel: string;
   startDate: DateTime;
   endDate: DateTime;
   mintLimit: number;
@@ -49,6 +50,7 @@ export class AddGroupCommand extends CommandRunner {
         endDate,
         mintLimit,
         mintPrice,
+        displayLabel,
       } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const metaplex = initMetaplex();
@@ -97,6 +99,11 @@ export class AddGroupCommand extends CommandRunner {
       await this.candyMachineService.updateCandyMachine(
         candyMachinePublicKey,
         groups,
+      );
+      await this.candyMachineService.addCandyMachineGroup(
+        candyMachineAddress,
+        label,
+        displayLabel,
       );
     } catch (error) {
       logErr(`Error : ${error}`);

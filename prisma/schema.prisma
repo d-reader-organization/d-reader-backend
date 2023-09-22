@@ -297,8 +297,8 @@ model CandyMachine {
 model CandyMachineGroup {
   id                  Int                       @id @default(autoincrement())
   label               String
+  displayLabel        String
   wallets             WalletCandyMachineGroup[]
-  allowListSupply     Int
   allowListUsed       Int                       @default(0)
   candyMachineAddress String
   // mintLimit           Int
