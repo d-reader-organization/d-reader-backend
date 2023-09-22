@@ -31,14 +31,17 @@ export class CandyMachineController {
     return await toCMReceiptDtoArray(receipts);
   }
 
-  @Get('get/eligible-groups')
-  async findWalletEligibleGroups(@Query() query: EligibleGroupsParams) {
+  @Get('get/groups')
+  async findGroups(@Query() query: EligibleGroupsParams) {
     const groups = await this.candyMachineService.findWalletEligibleGroups(
       query,
     );
     return toWalletEligibleGroupDtoArray(groups);
   }
 
+  /**
+   * Use get/eligible-groups instead
+   * @deprecated */
   @Get('get/:address')
   async findByAddress(@Param('address') address: string) {
     const candyMachine = await this.candyMachineService.findByAddress(address);

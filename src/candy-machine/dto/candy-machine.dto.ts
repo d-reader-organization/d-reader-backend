@@ -24,16 +24,13 @@ export class CandyMachineDto {
   endsAt?: string;
 }
 
-// TODO: VERY IMPORTANT
-// endsAt is null in the database
-// we need to figure out how to properly handle CandyMachineGroups
-// frontend needs to implement these changes
 export async function toCandyMachineDto(candyMachine: CandyMachine) {
   const plainCandyMachineDto: CandyMachineDto = {
     address: candyMachine.address,
     supply: candyMachine.itemsAvailable,
     itemsMinted: candyMachine.itemsMinted,
-    baseMintPrice: candyMachine.baseMintPrice,
+    baseMintPrice: candyMachine.baseMintPrice, // TODO: deprecate this
+    // TODO: this endsAt should fetch the end date of the last group (excluding our private group)
     endsAt: candyMachine.endsAt?.toISOString(),
   };
 
