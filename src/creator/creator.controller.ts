@@ -109,8 +109,11 @@ export class CreatorController {
 
   /* Verify an email address */
   @Patch('verify-email/:verificationToken')
-  async verifyEmail(@Param('verificationToken') verificationToken: string) {
-    await this.creatorService.verifyEmail(verificationToken);
+  async verifyEmail(
+    @Param('verificationToken') verificationToken: string,
+  ): Promise<CreatorDto> {
+    const creator = await this.creatorService.verifyEmail(verificationToken);
+    return toCreatorDto(creator);
   }
 
   /* Update specific creator's files */
@@ -131,8 +134,8 @@ export class CreatorController {
     })
     files: UpdateCreatorFilesDto,
   ): Promise<CreatorDto> {
-    const comicIssue = await this.creatorService.updateFiles(slug, files);
-    return toCreatorDto(comicIssue);
+    const creator = await this.creatorService.updateFiles(slug, files);
+    return toCreatorDto(creator);
   }
 
   /* Update specific creators avatar file */

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -185,10 +186,7 @@ export class UserService {
       });
 
       const verificationToken = this.authService.signEmail(user.email);
-      await this.mailService.requestUserEmailVerification(
-        user,
-        verificationToken,
-      );
+      this.mailService.requestUserEmailVerification(user, verificationToken);
     }
 
     if (isNameUpdated) {
@@ -233,7 +231,14 @@ export class UserService {
     const hashedPassword = await this.passwordService.hash(newPassword);
 
     const user = await this.prisma.user.findUnique({ where: { id } });
-    await this.mailService.userPasswordReset(user, hashedPassword);
+    try {
+      await this.mailService.userPasswordReset(user, hashedPassword);
+    } catch {
+      throw new InternalServerErrorException(
+        "Failed to send 'password reset' email",
+      );
+    }
+
     return await this.prisma.user.update({
       where: { id },
       data: { password: newPassword },
@@ -248,10 +253,7 @@ export class UserService {
     }
 
     const verificationToken = this.authService.signEmail(user.email);
-    await this.mailService.requestUserEmailVerification(
-      user,
-      verificationToken,
-    );
+    this.mailService.requestUserEmailVerification(user, verificationToken);
   }
 
   async verifyEmail(verificationToken: string) {
@@ -273,7 +275,7 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
 
-    await this.prisma.user.update({
+    return await this.prisma.user.update({
       where: { email },
       data: { emailVerifiedAt: new Date() },
     });
@@ -424,11 +426,13 @@ export class UserService {
 
   async pseudoDelete(id: number) {
     try {
-      return await this.prisma.user.update({
+      const user = await this.prisma.user.update({
         where: { id },
         data: { deletedAt: new Date() },
       });
-      // TODO v2: send email: user account scheduled for deletion
+
+      this.mailService.userScheduledForDeletion(user);
+      return user;
     } catch {
       throw new NotFoundException(`User with id ${id} not found`);
     }
@@ -445,15 +449,20 @@ export class UserService {
     }
   }
 
+  // Should we first check if user has some dangling relations with Wallets etc?
+  // onDelete: Cascade should/could be used in the schema
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearUsersQueuedForRemoval() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const where = { where: { deletedAt: { lte: subDays(new Date(), 60) } } };
-    const usersToRemove = await this.prisma.user.findMany(where);
-    await this.prisma.user.deleteMany(where);
+    // const usersToRemove = await this.prisma.user.findMany(where);
+    // for (const user of usersToRemove) {
+    //   await this.mailService.userDeleted(user);
 
-    for (const user of usersToRemove) {
-      const s3Folder = getS3Folder(user.id);
-      await this.s3.deleteFolder(s3Folder);
-    }
+    //   const s3Folder = getS3Folder(user.id);
+    //   await this.s3.deleteFolder(s3Folder);
+
+    //   await this.prisma.user.delete({ where: { id: user.id } });
+    // }
   }
 }

@@ -118,4 +118,8 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
   if (!comicIssue.creatorBackupAddress) {
     throw new BadRequestException('Missing necessary creator backup address');
   }
+
+  if (!comicIssue.creatorBackupAddress) {
+    throw new BadRequestException('Missing necessary creator backup address');
+  }
 };

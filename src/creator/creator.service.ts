@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -157,7 +158,7 @@ export class CreatorService {
       });
 
       const verificationToken = this.authService.signEmail(creator.email);
-      await this.mailService.requestCreatorEmailVerification(
+      this.mailService.requestCreatorEmailVerification(
         creator,
         verificationToken,
       );
@@ -198,7 +199,15 @@ export class CreatorService {
     const hashedPassword = await this.passwordService.hash(newPassword);
 
     const creator = await this.prisma.creator.findUnique({ where: { slug } });
-    await this.mailService.creatorPasswordReset(creator, hashedPassword);
+
+    try {
+      await this.mailService.creatorPasswordReset(creator, hashedPassword);
+    } catch {
+      throw new InternalServerErrorException(
+        "Failed to send 'password reset' email",
+      );
+    }
+
     return await this.prisma.creator.update({
       where: { slug },
       data: { password: newPassword },
@@ -213,7 +222,7 @@ export class CreatorService {
     }
 
     const verificationToken = this.authService.signEmail(creator.email);
-    await this.mailService.requestCreatorEmailVerification(
+    this.mailService.requestCreatorEmailVerification(
       creator,
       verificationToken,
     );
@@ -354,11 +363,12 @@ export class CreatorService {
 
   async pseudoDelete(slug: string) {
     try {
-      return await this.prisma.creator.update({
+      const creator = await this.prisma.creator.update({
         where: { slug },
         data: { deletedAt: new Date() },
       });
-      // TODO v2: send email: creator account scheduled for deletion
+      this.mailService.creatorScheduledForDeletion(creator);
+      return creator;
     } catch {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
@@ -375,15 +385,20 @@ export class CreatorService {
     }
   }
 
+  // Should we only allow account deletion if the creator has no published comics and comic issues?
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearCreatorsQueuedForRemoval() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
-    const creatorsToRemove = await this.prisma.creator.findMany(where);
-    await this.prisma.creator.deleteMany(where);
+    // const creatorsToRemove = await this.prisma.creator.findMany(where);
 
-    for (const creator of creatorsToRemove) {
-      const s3Folder = getS3Folder(creator.slug);
-      await this.s3.deleteFolder(s3Folder);
-    }
+    // for (const creator of creatorsToRemove) {
+    //   await this.mailService.creatorDeleted(creator);
+
+    //   await this.prisma.creator.delete({ where: { id: creator.id } });
+
+    //   const s3Folder = getS3Folder(creator.slug);
+    //   await this.s3.deleteFolder(s3Folder);
+    // }
   }
 }

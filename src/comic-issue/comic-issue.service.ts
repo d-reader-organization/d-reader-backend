@@ -468,9 +468,6 @@ export class ComicIssueService {
     });
 
     let creatorBackupAddress: string;
-    if (!comicIssue.creatorBackupAddress) {
-      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58();
-    }
 
     const updateComicIssue = this.prisma.comicIssue.update({
       where: { id },

@@ -22,8 +22,7 @@ const geoip = require('geoip-lite');
 export class NewsletterController {
   constructor(private readonly newsletterService: NewsletterService) {}
 
-  // TODO v2: protect these routes by hashing email in the route path
-
+  // This route should have a captcha on frontend
   /* Subscribe to newsletter */
   @Throttle(2, 60)
   @Post('subscribe/:email')

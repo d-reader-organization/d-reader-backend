@@ -11,9 +11,13 @@ const logError = (template: string, recipient: string, e: any) => {
 const SUBSCRIBE_TO_NEWSLETTER = 'subscribedToNewsletter';
 const UNSUBSCRIBED_FROM_NEWSLETTER = 'unsubscribedFromNewsletter';
 const USER_REGISTERED = 'userRegistered';
+const USER_SCHEDULED_FOR_DELETION = 'userScheduledForDeletion';
+const USER_DELETED = 'userDeleted';
 const USER_PASSWORD_RESET = 'userPasswordReset';
 const USER_EMAIL_VERIFICATION = 'userEmailVerification';
 const CREATOR_REGISTERED = 'creatorRegistered';
+const CREATOR_SCHEDULED_FOR_DELETION = 'creatorScheduledForDeletion';
+const CREATOR_DELETED = 'creatorDeleted';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
 const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
 
@@ -78,6 +82,38 @@ export class MailService {
     }
   }
 
+  async userScheduledForDeletion(user: User) {
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: '🫂 Account scheduled for deletion!',
+        template: USER_SCHEDULED_FOR_DELETION,
+        context: {
+          name: user.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(USER_SCHEDULED_FOR_DELETION, user.email, e);
+    }
+  }
+
+  async userDeleted(user: User) {
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: '👋 Account deleted!',
+        template: USER_DELETED,
+        context: {
+          name: user.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(USER_DELETED, user.email, e);
+    }
+  }
+
   async userPasswordReset(user: User, newPassword: string) {
     try {
       await this.mailerService.sendMail({
@@ -136,6 +172,38 @@ export class MailService {
       });
     } catch (e) {
       logError(CREATOR_REGISTERED, creator.email, e);
+    }
+  }
+
+  async creatorScheduledForDeletion(creator: Creator) {
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: '🫂 Account scheduled for deletion!',
+        template: CREATOR_SCHEDULED_FOR_DELETION,
+        context: {
+          name: creator.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(CREATOR_SCHEDULED_FOR_DELETION, creator.email, e);
+    }
+  }
+
+  async creatorDeleted(creator: Creator) {
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: '👋 Account deleted!',
+        template: CREATOR_DELETED,
+        context: {
+          name: creator.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(CREATOR_DELETED, creator.email, e);
     }
   }
 
