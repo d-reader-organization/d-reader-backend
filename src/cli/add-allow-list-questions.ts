@@ -50,14 +50,4 @@ export class AddAllowListQuestions {
   parseWalletAddress(wallets: string): string[] {
     return JSON.parse(wallets);
   }
-
-  @Question({
-    type: 'input',
-    name: 'whitelistSupply',
-    message: 'supply of wallets to give whitelist (empty to not update)',
-  })
-  parseWhitelistSupply(supply: number): number {
-    if (typeof supply === 'string') return +supply;
-    return supply;
-  }
 }

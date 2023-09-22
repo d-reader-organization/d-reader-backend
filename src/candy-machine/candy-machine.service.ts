@@ -11,7 +11,6 @@ import {
   getMerkleRoot,
   toDateTime,
   CreateCandyMachineInput,
-  AllowListGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -355,6 +354,13 @@ export class CandyMachineService {
         itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
         baseMintPrice: comicIssue.mintPrice,
+        groups: {
+          create: {
+            displayLabel: PUBLIC_GROUP_LABEL,
+            wallets: undefined,
+            label: PUBLIC_GROUP_LABEL,
+          },
+        },
         endsAt: undefined,
       },
     });
@@ -546,11 +552,29 @@ export class CandyMachineService {
     return receipts;
   }
 
+  async addCandyMachineGroup(
+    candyMachineAddress: string,
+    label: string,
+    displayLabel: string,
+  ) {
+    await this.prisma.candyMachineGroup.create({
+      data: {
+        candyMachine: {
+          connect: {
+            address: candyMachineAddress,
+          },
+        },
+        displayLabel,
+        wallets: undefined,
+        label,
+      },
+    });
+  }
+
   async addAllowList(
     candyMachineAddress: string,
     allowList: string[],
     label: string,
-    allowListSupply: number,
   ) {
     const wallets: Prisma.WalletCandyMachineGroupCreateNestedManyWithoutCandyMachineGroupInput =
       {
@@ -566,21 +590,11 @@ export class CandyMachineService {
         }),
       };
 
-    return await this.prisma.candyMachineGroup.upsert({
+    return await this.prisma.candyMachineGroup.update({
       where: {
         label_candyMachineAddress: { label, candyMachineAddress },
       },
-      update: { wallets },
-      create: {
-        candyMachine: {
-          connect: {
-            address: candyMachineAddress,
-          },
-        },
-        wallets,
-        label,
-        allowListSupply,
-      },
+      data: { wallets },
       include: { wallets: true },
     });
   }
@@ -610,8 +624,7 @@ export class CandyMachineService {
 
         if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
 
-        const isEligible = await this.assertAllowList(
-          group.guards.allowList,
+        const { displayLabel, isEligible } = await this.checkWalletEligiblity(
           query.candyMachineAddress,
           walletPubKey,
           group.label,
@@ -624,20 +637,20 @@ export class CandyMachineService {
             label: group.label,
           },
         });
-        return [...resolvedGroups, { ...group, isEligible, itemsMinted }];
+        return [
+          ...resolvedGroups,
+          { ...group, isEligible, itemsMinted, displayLabel },
+        ];
       }, Promise.resolve([]));
     return eligibleGroups;
   }
 
-  async assertAllowList(
-    allowList: AllowListGuardSettings | undefined,
+  async checkWalletEligiblity(
     candyMachineAddress: string,
     wallet: PublicKey,
     label: string,
   ) {
-    if (!allowList) return true;
-
-    const allowListItem = await this.prisma.candyMachineGroup.findFirst({
+    const group = await this.prisma.candyMachineGroup.findFirst({
       where: {
         candyMachineAddress: candyMachineAddress,
         label,
@@ -648,6 +661,9 @@ export class CandyMachineService {
         },
       },
     });
-    return !!allowListItem;
+    return {
+      displayLabel: group.displayLabel,
+      isEligible: !!group.wallets.length,
+    };
   }
 }

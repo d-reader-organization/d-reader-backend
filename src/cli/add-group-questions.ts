@@ -35,6 +35,19 @@ export class AddGroupQuestions {
 
   @Question({
     type: 'input',
+    name: 'displayLabel',
+    message: 'display label for the group',
+    validate: async function (value: string) {
+      if (!value) return 'invalid display label';
+      return true;
+    },
+  })
+  parseDisplayLabel(label: string): string {
+    return label;
+  }
+
+  @Question({
+    type: 'input',
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })

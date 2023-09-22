@@ -323,7 +323,7 @@ async function main() {
         continue;
       } else {
         console.log(i, ': publishing comic issue ' + comicIssue.id);
-
+        
         await comicIssueService.publishOnChain(comicIssue.id, {
           supply: getRandomInt(1, 2) * 10, // 10-20 supply
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
@@ -331,6 +331,7 @@ async function main() {
           sellerFee: 5, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
+          creatorAddress:"7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD",
           royaltyWallets: [
             {
               address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
