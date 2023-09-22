@@ -13,7 +13,6 @@ interface Options {
   candyMachineAddress: string;
   label: string;
   allowList: string[];
-  whitelistSupply?: number;
 }
 
 @Command({
@@ -36,14 +35,13 @@ export class AddAllowList extends CommandRunner {
   addAllowList = async (options: Options) => {
     log('\n🏗️  updating candymachine with allowlist');
     try {
-      const { candyMachineAddress, label, allowList, whitelistSupply } =
-        options;
+      const { candyMachineAddress, label, allowList } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const candyMachine = await metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePublicKey });
       const wallets = await this.candyMachineService
-        .addAllowList(candyMachineAddress, allowList, label, whitelistSupply)
+        .addAllowList(candyMachineAddress, allowList, label)
         .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
       const allowListGuard: AllowListGuardSettings =
         wallets.length > 0

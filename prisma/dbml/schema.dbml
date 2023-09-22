@@ -266,8 +266,8 @@ Table CandyMachine {
 Table CandyMachineGroup {
   id Int [pk, increment]
   label String [not null]
+  displayLabel String [not null]
   wallets WalletCandyMachineGroup [not null]
-  allowListSupply Int [not null]
   allowListUsed Int [not null, default: 0]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]

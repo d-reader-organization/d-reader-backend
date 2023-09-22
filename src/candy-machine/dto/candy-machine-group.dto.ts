@@ -18,6 +18,9 @@ export class WalletEligibleGroupDto {
   @IsString()
   label: string;
 
+  @IsString()
+  displayLabel: string;
+
   @IsDate()
   startDate: Date;
 
@@ -78,6 +81,7 @@ export function toWalletEligibleGroupDto(group: CandyMachineGroupSettings) {
     itemsMinted: group.itemsMinted,
     mintLimit,
     itemsRemaing,
+    displayLabel: group.displayLabel,
   };
   const walletEligibleGroupDto = plainToInstance(
     WalletEligibleGroupDto,
