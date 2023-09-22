@@ -17,8 +17,14 @@ export type CandyMachineGroupSettings = {
   label: string;
   displayLabel: string;
   guards: DefaultCandyGuardSettings;
-  isEligible: boolean;
+  supply: number;
   itemsMinted: number;
+  walletSettings: WalletGroupSettings;
+};
+
+export type WalletGroupSettings = {
+  itemsMinted: number;
+  isEligible: boolean;
 };
 
 export type GuardParams = {
