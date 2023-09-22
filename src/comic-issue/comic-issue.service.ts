@@ -256,8 +256,11 @@ export class ComicIssueService {
     // fetch only previewable pages if user can't read the full comic issue
     const isPreviewable = canRead ? undefined : true;
 
-    await this.read(comicIssueId, userId); // TODO v2: do this without blocking the thread
-    return this.comicPageService.findAll(comicIssueId, isPreviewable);
+    const getPages = this.comicPageService.findAll(comicIssueId, isPreviewable);
+    const readComic = this.read(comicIssueId, userId);
+    const [pages] = await Promise.all([getPages, readComic]);
+
+    return pages;
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
