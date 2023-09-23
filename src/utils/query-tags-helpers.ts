@@ -10,7 +10,7 @@ import {
   CreatorSortTag,
 } from '../creator/dto/creator-params.dto';
 import { RawComicSortTag } from '../comic/dto/raw-comic-params.dto';
-import { RawComicIssueSortTag } from 'src/comic-issue/dto/raw-comic-issue-params.dto';
+import { RawComicIssueSortTag } from '../comic-issue/dto/raw-comic-issue-params.dto';
 
 export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
   switch (tag) {
