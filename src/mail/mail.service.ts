@@ -3,6 +3,11 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Creator, User } from '@prisma/client';
 import config from '../configs/config';
 
+// To consider:
+// send reports for critical backend errors to errors@dreader.io
+// send notifications to important@dreader.io when someone creates a comic / comic issue
+// send discord notifications when a comic has been approved?
+
 const logError = (template: string, recipient: string, e: any) => {
   console.error(`Failed to send ${template} email to ${recipient}`);
   console.error('ERROR: ', e);

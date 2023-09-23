@@ -9,6 +9,8 @@ import {
   CreatorFilterTag,
   CreatorSortTag,
 } from '../creator/dto/creator-params.dto';
+import { RawComicSortTag } from '../comic/dto/raw-comic-params.dto';
+import { RawComicIssueSortTag } from 'src/comic-issue/dto/raw-comic-issue-params.dto';
 
 export const filterComicBy = (tag: ComicFilterTag): Prisma.Sql => {
   switch (tag) {
@@ -61,6 +63,25 @@ export const sortComicBy = (tag: ComicSortTag): Prisma.Sql => {
   }
 };
 
+export const sortRawComicBy = (tag: RawComicSortTag): Prisma.Sql => {
+  switch (tag) {
+    case RawComicSortTag.Title:
+      return Prisma.sql`comic."title"`;
+    case RawComicSortTag.Likes:
+      return Prisma.sql`"favouritesCount"`;
+    case RawComicSortTag.Rating:
+      return Prisma.sql`"averageRating"`;
+    case RawComicSortTag.Readers:
+      return Prisma.sql`"readersCount"`;
+    case RawComicSortTag.Viewers:
+      return Prisma.sql`"viewersCount"`;
+    case RawComicSortTag.Published:
+      return Prisma.sql`comic."publishedAt"`;
+    default:
+      return Prisma.sql`comic."title"`;
+  }
+};
+
 export const sortComicIssueBy = (tag: ComicIssueSortTag): Prisma.Sql => {
   switch (tag) {
     case ComicIssueSortTag.Title:
@@ -74,6 +95,25 @@ export const sortComicIssueBy = (tag: ComicIssueSortTag): Prisma.Sql => {
     case ComicIssueSortTag.Readers:
       return Prisma.sql`"readersCount"`;
     case ComicIssueSortTag.Viewers:
+      return Prisma.sql`"viewersCount"`;
+    default:
+      return Prisma.sql`comicIssue."title", comic."title"`;
+  }
+};
+
+export const sortRawComicIssueBy = (tag: RawComicIssueSortTag): Prisma.Sql => {
+  switch (tag) {
+    case RawComicIssueSortTag.Title:
+      return Prisma.sql`comicIssue."title", comic."title"`;
+    case RawComicIssueSortTag.Latest:
+      return Prisma.sql`comicIssue."releaseDate"`;
+    case RawComicIssueSortTag.Likes:
+      return Prisma.sql`"favouritesCount"`;
+    case RawComicIssueSortTag.Rating:
+      return Prisma.sql`"averageRating"`;
+    case RawComicIssueSortTag.Readers:
+      return Prisma.sql`"readersCount"`;
+    case RawComicIssueSortTag.Viewers:
       return Prisma.sql`"viewersCount"`;
     default:
       return Prisma.sql`comicIssue."title", comic."title"`;

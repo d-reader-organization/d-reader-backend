@@ -6,28 +6,19 @@ import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
 import { TransformCsvToArray } from '../../utils/transform';
 
-export enum ComicIssueFilterTag {
-  Free = 'free',
-  Popular = 'popular',
-}
-
-export enum ComicIssueSortTag {
+export enum RawComicSortTag {
   Title = 'title',
-  Latest = 'latest',
   Rating = 'rating',
   Likes = 'likes',
   Readers = 'readers',
   Viewers = 'viewers',
+  Published = 'published',
 }
 
-export class ComicIssueParams extends Pagination {
+export class RawComicParams extends Pagination {
   @IsOptional()
   @IsKebabCase()
   creatorSlug?: string;
-
-  @IsOptional()
-  @IsString()
-  comicSlug?: string;
 
   @IsOptional()
   @IsString()
@@ -44,11 +35,7 @@ export class ComicIssueParams extends Pagination {
   @IsOptional()
   sortOrder?: SortOrder;
 
-  @IsEnum(ComicIssueFilterTag)
+  @IsEnum(RawComicSortTag)
   @IsOptional()
-  filterTag?: ComicIssueFilterTag;
-
-  @IsEnum(ComicIssueSortTag)
-  @IsOptional()
-  sortTag?: ComicIssueSortTag;
+  sortTag?: RawComicSortTag;
 }

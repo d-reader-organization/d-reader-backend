@@ -2,6 +2,7 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsDate,
   IsDateString,
   IsNotEmpty,
   IsOptional,
@@ -13,22 +14,15 @@ import {
 } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import {
-  ComicIssueStatsDto,
-  toComicIssueStatsDto,
-} from './comic-issue-stats.dto';
-import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
-import { toUserComicIssueDto, UserComicIssueDto } from './user-comic-issue.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ComicIssue,
-  Creator,
-  Comic,
-  UserComicIssue,
   ComicIssueCollaborator,
   StatelessCover,
   StatefulCover,
   Genre,
+  RoyaltyWallet,
+  Comic,
 } from '@prisma/client';
 import { divide } from 'lodash';
 import { IsLamport } from 'src/decorators/IsLamport';
@@ -40,24 +34,28 @@ import {
   StatelessCoverDto,
   toStatelessCoverDtoArray,
 } from './covers/stateless-cover.dto';
+import {
+  StatefulCoverDto,
+  toStatefulCoverDtoArray,
+} from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import {
-  PartialCreatorDto,
-  toPartialCreatorDto,
-} from 'src/creator/dto/partial-creator.dto';
+  RoyaltyWalletDto,
+  toRoyaltyWalletDtoArray,
+} from './royalty-wallet.dto';
+import { RawComicIssueStats } from 'src/comic/types/raw-comic-issue-stats';
+import { RawComicIssueStatsDto } from './raw-comic-issue-stats.dto';
 import {
   PartialGenreDto,
   toPartialGenreDtoArray,
 } from 'src/genre/dto/partial-genre.dto';
-import {
-  PartialComicDto,
-  toPartialComicDto,
-} from 'src/comic/dto/partial-comic.dto';
-import { ifDefined } from 'src/utils/lodash';
 import { With } from 'src/types/shared';
+import { toComicIssueStatsDto } from './comic-issue-stats.dto';
+import { ifDefined } from 'src/utils/lodash';
 
-export class ComicIssueDto {
+export class RawComicIssueDto {
   @IsPositive()
   id: number;
 
@@ -105,49 +103,38 @@ export class ComicIssueDto {
   @IsBoolean()
   isFullyUploaded: boolean;
 
-  @IsBoolean()
-  isPublished: boolean;
+  @IsDate()
+  publishedAt: Date;
 
-  @IsBoolean()
-  isPopular: boolean;
+  @IsDate()
+  popularizedAt: Date;
 
-  @IsBoolean()
-  isDeleted: boolean;
+  @IsDate()
+  deletedAt: Date;
 
-  @IsBoolean()
-  isVerified: boolean;
+  @IsDate()
+  verifiedAt: Date;
 
   @IsNotEmpty()
   @IsKebabCase()
   comicSlug: string;
 
   @IsOptional()
-  @Type(() => PartialCreatorDto)
-  creator?: PartialCreatorDto;
-
-  @IsOptional()
-  @Type(() => PartialComicDto)
-  comic?: PartialComicDto;
-
-  @IsOptional()
   @IsArray()
   @Type(() => PartialGenreDto)
-  genres?: PartialGenreDto[];
+  genres: PartialGenreDto[];
 
   @IsOptional()
-  @Type(() => ComicIssueStatsDto)
-  stats?: ComicIssueStatsDto;
+  @Type(() => RawComicIssueStatsDto)
+  stats: RawComicIssueStatsDto;
 
-  @IsOptional()
-  @Type(() => UserComicIssueDto)
-  myStats?: UserComicIssueDto;
-
-  @IsOptional()
-  @IsString()
-  candyMachineAddress?: string;
-
+  @IsOptionalString()
   @IsSolanaAddress()
   creatorAddress: string;
+
+  @IsOptionalString()
+  @IsSolanaAddress()
+  creatorBackupAddress: string;
 
   @IsOptional()
   @IsArray()
@@ -155,52 +142,50 @@ export class ComicIssueDto {
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
   collaborators?: ComicIssueCollaboratorDto[];
 
-  // @IsOptional()
-  // @IsArray()
-  // @Type(() => StatefulCoverDto)
-  // @ApiProperty({ type: [StatefulCoverDto] })
-  // statefulCovers?: StatefulCoverDto[];
-
   @IsOptional()
+  @IsArray()
+  @Type(() => StatefulCoverDto)
+  @ApiProperty({ type: [StatefulCoverDto] })
+  statefulCovers?: StatefulCoverDto[];
+
   @IsArray()
   @Type(() => StatelessCoverDto)
   @ApiProperty({ type: [StatelessCoverDto] })
-  statelessCovers?: StatelessCoverDto[];
+  statelessCovers: StatelessCoverDto[];
 
-  // @IsArray()
-  // @Type(() => RoyaltyWalletDto)
-  // @ApiProperty({ type: [RoyaltyWalletDto] })
-  // royaltyWallets: RoyaltyWalletDto[];
+  @IsOptional()
+  @IsArray()
+  @Type(() => RoyaltyWalletDto)
+  @ApiProperty({ type: [RoyaltyWalletDto] })
+  royaltyWallets?: RoyaltyWalletDto[];
 }
 
-type WithComic = { comic?: Comic & { creator?: Creator; genres?: Genre[] } };
+type WithComic = { comic?: Comic & { genres?: Genre[] } };
 type WithGenres = { genres?: Genre[] };
-type WithStats = { stats?: ComicIssueStats };
-type WithMyStats = { myStats?: UserComicIssue & { canRead: boolean } };
-type WithCandyMachineAddress = { candyMachineAddress?: string };
+type WithStats = { stats: Partial<RawComicIssueStats> };
+type WithStatelessCovers = { statelessCovers: StatelessCover[] };
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
-type WithStatelessCovers = { statelessCovers?: StatelessCover[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
+type WithRoyaltyWallets = { royaltyWallets?: RoyaltyWallet[] };
 
-export type ComicIssueInput = With<
+export type RawComicIssueInput = With<
   [
     ComicIssue,
     WithComic,
     WithGenres,
     WithStats,
-    WithMyStats,
-    WithCandyMachineAddress,
-    WithCollaborators,
     WithStatelessCovers,
+    WithCollaborators,
     WithStatefulCovers,
+    WithRoyaltyWallets,
   ]
 >;
 
-export function toComicIssueDto(issue: ComicIssueInput) {
+export function toRawComicIssueDto(issue: RawComicIssueInput) {
   const genres = issue.genres || issue.comic?.genres;
   const collaborators = issue.collaborators;
 
-  const plainComicIssueDto: ComicIssueDto = {
+  const plainRawComicIssueDto: RawComicIssueDto = {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
@@ -215,33 +200,26 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     signature: getPublicUrl(issue.signature),
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
-    // TODO: rename this to activeCandyMachineAddress
-    candyMachineAddress: issue.candyMachineAddress, // do we need this anymore?
-    // TODO: take care of this
-    // isPrimarySaleActive: true, // if there is an active candy machine
-    // isSecondarySaleActive: true, // comicIssue.isSecondarySaleActive
     isFreeToRead: issue.isFreeToRead,
     isFullyUploaded: issue.isFullyUploaded,
-    isPublished: !!issue.publishedAt,
-    isPopular: !!issue.popularizedAt,
-    isDeleted: !!issue.deletedAt,
-    isVerified: !!issue.verifiedAt,
+    publishedAt: issue.publishedAt,
+    popularizedAt: issue.popularizedAt,
+    deletedAt: issue.deletedAt,
+    verifiedAt: issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
-    creator: ifDefined(issue.comic.creator, toPartialCreatorDto),
-    comic: ifDefined(issue.comic, toPartialComicDto),
-    genres: ifDefined(genres, toPartialGenreDtoArray),
+    creatorBackupAddress: issue.creatorBackupAddress,
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
-    // statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
-    statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),
-    // royaltyWallets: ifDefined(issue.royaltyWallets, toRoyaltyWalletsDtoArray),
+    statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
+    statelessCovers: ifDefined(issue.statelessCovers, toStatelessCoverDtoArray),
+    royaltyWallets: ifDefined(issue.royaltyWallets, toRoyaltyWalletDtoArray),
+    genres: ifDefined(genres, toPartialGenreDtoArray),
     stats: ifDefined(issue.stats, toComicIssueStatsDto),
-    myStats: ifDefined(issue.myStats, toUserComicIssueDto),
   };
 
-  const issueDto = plainToInstance(ComicIssueDto, plainComicIssueDto);
+  const issueDto = plainToInstance(RawComicIssueDto, plainRawComicIssueDto);
   return issueDto;
 }
 
-export const toComicIssueDtoArray = (issues: ComicIssueInput[]) => {
-  return issues.map(toComicIssueDto);
+export const toRawComicIssueDtoArray = (issues: RawComicIssueInput[]) => {
+  return issues.map(toRawComicIssueDto);
 };

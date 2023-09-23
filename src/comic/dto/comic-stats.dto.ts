@@ -1,4 +1,7 @@
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { ComicStats } from '../types/comic-stats';
+import { round } from 'lodash';
+import { plainToInstance } from 'class-transformer';
 
 export class ComicStatsDto {
   @Min(0)
@@ -26,3 +29,21 @@ export class ComicStatsDto {
   @IsInt()
   viewersCount: number;
 }
+
+export function toComicStatsDto(stats: Partial<ComicStats>) {
+  const plainStatsDto: ComicStatsDto = {
+    favouritesCount: stats.favouritesCount,
+    ratersCount: stats.ratersCount,
+    averageRating: round(stats.averageRating),
+    issuesCount: stats.issuesCount,
+    readersCount: stats.readersCount,
+    viewersCount: stats.viewersCount,
+  };
+
+  const statsDto = plainToInstance(ComicStatsDto, plainStatsDto);
+  return statsDto;
+}
+
+export const toComicDtoArray = (statsArray: ComicStats[]) => {
+  return statsArray.map(toComicStatsDto);
+};

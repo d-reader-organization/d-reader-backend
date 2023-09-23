@@ -11,24 +11,20 @@ import {
   MaxLength,
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { CreatorStatsDto } from './creator-stats.dto';
+import { CreatorStatsDto, toCreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator, Genre } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { UserCreatorMyStatsDto } from 'src/creator/types/user-creator-my-stats.dto';
 import { UserCreatorStatsDto } from './user-creator.dto';
-import { GenreDto } from 'src/genre/dto/genre.dto';
-import { PickType } from '@nestjs/swagger';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
-
-export class PartialGenreDto extends PickType(GenreDto, [
-  'name',
-  'slug',
-  'color',
-  'icon',
-]) {}
+import {
+  PartialGenreDto,
+  toPartialGenreDtoArray,
+} from 'src/genre/dto/partial-genre.dto';
+import { ifDefined } from 'src/utils/lodash';
 
 export class CreatorDto {
   @IsPositive()
@@ -121,24 +117,11 @@ export function toCreatorDto(creator: CreatorInput) {
     twitter: creator.twitter,
     instagram: creator.instagram,
     lynkfire: creator.lynkfire,
-    stats: creator.stats
-      ? {
-          comicIssuesCount: creator.stats.comicIssuesCount,
-          totalVolume: creator.stats.totalVolume,
-          followersCount: creator.stats.followersCount,
-        }
-      : undefined,
+    stats: ifDefined(creator.stats, toCreatorStatsDto),
     myStats: creator.myStats
       ? { isFollowing: creator.myStats.isFollowing }
       : undefined,
-    genres: creator.genres?.map((genre) => {
-      return {
-        name: genre.name,
-        slug: genre.slug,
-        color: genre.color,
-        icon: getPublicUrl(genre.icon),
-      };
-    }),
+    genres: ifDefined(creator.genres, toPartialGenreDtoArray),
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);
