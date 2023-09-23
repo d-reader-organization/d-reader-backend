@@ -47,7 +47,7 @@ export const getRawComicIssuesQuery = (
     sortColumn,
     sortOrder,
   } = getQueryFilters(query);
-  return Prisma.sql`select comicIssue.*, json_agg(distinct genre.*) AS genres, json_agg(distinct statelessCover.*) AS statelessCovers
+  return Prisma.sql`select comicIssue.*, json_agg(distinct genre.*) AS genres, json_agg(distinct statelessCover.*) AS statelessCovers,
   AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT uci."favouritedAt"
