@@ -50,7 +50,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`select comicIssue.*, comic."title" as "comicTitle", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
+  return Prisma.sql`select comicIssue.*, comic."title" as "comicTitle", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres
   AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT uci."favouritedAt"
