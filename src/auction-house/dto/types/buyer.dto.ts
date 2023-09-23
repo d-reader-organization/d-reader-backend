@@ -2,10 +2,10 @@ import { User, Wallet } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { plainToInstance } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
-import { getPublicUrl } from 'src/aws/s3client';
-import { UserDto } from 'src/user/dto/user.dto';
-import { getOwnerDomain } from 'src/utils/sns';
-import { WalletDto } from 'src/wallet/dto/wallet.dto';
+import { getPublicUrl } from '../../../aws/s3client';
+import { UserDto } from '../../../user/dto/user.dto';
+import { getOwnerDomain } from '../../../utils/sns';
+import { WalletDto } from '../../../wallet/dto/wallet.dto';
 
 export class BuyerDto {
   id?: UserDto['id'];

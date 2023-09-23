@@ -166,6 +166,7 @@ CREATE TABLE "ComicIssue" (
     "publishedAt" TIMESTAMP(3),
     "popularizedAt" TIMESTAMP(3),
     "creatorAddress" TEXT NOT NULL DEFAULT '',
+    "creatorBackupAddress" TEXT NOT NULL DEFAULT '',
     "comicSlug" TEXT NOT NULL,
 
     CONSTRAINT "ComicIssue_pkey" PRIMARY KEY ("id")
@@ -251,8 +252,7 @@ CREATE TABLE "CandyMachine" (
 CREATE TABLE "CandyMachineGroup" (
     "id" SERIAL NOT NULL,
     "label" TEXT NOT NULL,
-    "allowListSupply" INTEGER NOT NULL,
-    "allowListUsed" INTEGER NOT NULL DEFAULT 0,
+    "displayLabel" TEXT NOT NULL,
     "candyMachineAddress" TEXT NOT NULL,
 
     CONSTRAINT "CandyMachineGroup_pkey" PRIMARY KEY ("id")
@@ -276,6 +276,7 @@ CREATE TABLE "CandyMachineReceipt" (
     "candyMachineAddress" TEXT NOT NULL,
     "transactionSignature" TEXT NOT NULL,
     "splTokenAddress" TEXT NOT NULL,
+    "label" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "CandyMachineReceipt_pkey" PRIMARY KEY ("nftAddress")
 );
