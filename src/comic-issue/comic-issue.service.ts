@@ -44,6 +44,10 @@ import {
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
+import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
+import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
+import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
+import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -127,6 +131,7 @@ export class ComicIssueService {
       Array<
         ComicIssue & {
           comic: Comic;
+          // TODO: add statelessCovers in the query
           statelessCovers: StatelessCover;
           comicTitle: string;
           audienceType: AudienceType;
@@ -178,12 +183,38 @@ export class ComicIssueService {
     return response;
   }
 
+  async findAllRaw(query: RawComicIssueParams): Promise<RawComicIssueInput[]> {
+    const comicIssues = await this.prisma.$queryRaw<
+      Array<
+        ComicIssue & {
+          genres: Genre[];
+          statelessCovers: StatelessCover[];
+        } & RawComicIssueStats
+      >
+    >(getRawComicIssuesQuery(query));
+
+    const normalizedComicIssues = comicIssues.map((issue) => {
+      return {
+        ...issue,
+        stats: {
+          favouritesCount: Number(issue.favouritesCount),
+          ratersCount: Number(issue.ratersCount),
+          averageRating: Number(issue.averageRating),
+          readersCount: Number(issue.readersCount),
+          viewersCount: Number(issue.viewersCount),
+          totalPagesCount: Number(issue.totalPagesCount),
+        },
+      };
+    });
+
+    return normalizedComicIssues;
+  }
+
   async findOne(id: number, userId: number) {
     const findComicIssue = this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
         comic: { include: { creator: true, genres: true } },
-        collectionNft: { select: { address: true } },
         collaborators: true,
         statelessCovers: true,
       },
@@ -215,6 +246,28 @@ export class ComicIssueService {
       myStats: { ...myStats, canRead },
       candyMachineAddress,
     };
+  }
+
+  async findOneRaw(id: number) {
+    const findComicIssue = this.prisma.comicIssue.findFirst({
+      where: { id },
+      include: {
+        comic: { include: { genres: true } },
+        collaborators: true,
+        statelessCovers: true,
+        statefulCovers: true,
+        royaltyWallets: true,
+      },
+    });
+    const getStats = this.userComicIssueService.getComicIssueStats(id);
+
+    const [comicIssue, stats] = await Promise.all([findComicIssue, getStats]);
+
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+
+    return { ...comicIssue, stats };
   }
 
   async findAllByOwner(

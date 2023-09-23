@@ -68,6 +68,12 @@ import {
 } from './dto/update-comic-issue.dto';
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
+import {
+  RawComicIssueDto,
+  toRawComicIssueDto,
+  toRawComicIssueDtoArray,
+} from './dto/raw-comic-issue.dto';
+import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -100,6 +106,16 @@ export class ComicIssueController {
     return toComicIssueDtoArray(comicIssues);
   }
 
+  /* Get all comics issues in raw format */
+  @CreatorAuth()
+  @Get('get-raw')
+  async findAllRaw(
+    @Query() query: RawComicIssueParams,
+  ): Promise<RawComicIssueDto[]> {
+    const comicIssues = await this.comicIssueService.findAllRaw(query);
+    return toRawComicIssueDtoArray(comicIssues);
+  }
+
   @Get('get/by-owner/:userId')
   async findOwnedComicIssues(
     @Param('userId') userId: string,
@@ -121,6 +137,14 @@ export class ComicIssueController {
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOne(+id, user.id);
     return toComicIssueDto(comicIssue);
+  }
+
+  /* Get specific comic issue in raw format by unique id */
+  @CreatorAuth()
+  @Get('get-raw/:id')
+  async findOneRaw(@Param('id') id: string): Promise<RawComicIssueDto> {
+    const comicIssue = await this.comicIssueService.findOneRaw(+id);
+    return toRawComicIssueDto(comicIssue);
   }
 
   /* Get specific comic issue's pages */

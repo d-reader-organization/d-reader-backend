@@ -58,3 +58,11 @@ export function memoizeDebounce<T extends (...args: any[]) => any>(
 export function insensitive(string: string): Prisma.StringFilter {
   return { equals: string, mode: 'insensitive' };
 }
+
+export function ifDefined<T, K>(
+  object: T,
+  callback: (object: T) => K | undefined,
+) {
+  if (object !== undefined) return callback(object);
+  else return undefined;
+}

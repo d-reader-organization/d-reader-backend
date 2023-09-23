@@ -27,3 +27,9 @@ export type GuardGroup = {
   label: string;
   guards: Partial<DefaultCandyGuardSettings>;
 };
+
+export type Merge<T, U> = Omit<T, keyof U> & U;
+
+export type With<T extends any[]> = T extends [infer First, ...infer Rest]
+  ? Merge<First, With<Rest>>
+  : object;

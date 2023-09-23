@@ -14,11 +14,12 @@ import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { ComicStats } from './types/comic-stats';
 import { getComicsQuery } from './comic.queries';
-import { ComicInput } from './dto/comic.dto';
 import { insensitive } from '../utils/lodash';
 import { Prisma } from '@prisma/client';
 import { subDays } from 'date-fns';
 import { isNil } from 'lodash';
+import { RawComicParams } from './dto/raw-comic-params.dto';
+import { getRawComicsQuery } from './raw-comic.queries';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -59,12 +60,7 @@ export class ComicService {
 
   async findAll(query: ComicParams) {
     const comics = await this.prisma.$queryRaw<
-      Array<
-        Comic & {
-          genres?: Genre[];
-          creator?: Creator;
-        } & ComicStats
-      >
+      Array<Comic & { genres: Genre[]; creator: Creator } & ComicStats>
     >(getComicsQuery(query));
     return comics.map((comic) => {
       return {
@@ -79,6 +75,28 @@ export class ComicService {
         },
       };
     });
+  }
+
+  async findAllRaw(query: RawComicParams) {
+    const comics = await this.prisma.$queryRaw<
+      Array<Comic & { genres: Genre[] } & ComicStats>
+    >(getRawComicsQuery(query));
+
+    const normalizedComics = comics.map((comic) => {
+      return {
+        ...comic,
+        stats: {
+          favouritesCount: Number(comic.favouritesCount),
+          ratersCount: Number(comic.ratersCount),
+          averageRating: Number(comic.averageRating),
+          issuesCount: Number(comic.issuesCount),
+          readersCount: Number(comic.readersCount),
+          viewersCount: Number(comic.viewersCount),
+        },
+      };
+    });
+
+    return normalizedComics;
   }
 
   async findOne(slug: string, userId?: number) {
@@ -102,10 +120,23 @@ export class ComicService {
     return { ...comic, stats, myStats };
   }
 
-  async findAllByOwner(
-    query: ComicParams,
-    userId: number,
-  ): Promise<ComicInput[]> {
+  async findOneRaw(slug: string) {
+    const findComic = this.prisma.comic.findUnique({
+      include: { genres: true },
+      where: { slug },
+    });
+    const getStats = this.userComicService.getComicStats(slug);
+
+    const [comic, stats] = await Promise.all([findComic, getStats]);
+
+    if (!comic) {
+      throw new NotFoundException(`Comic ${slug} does not exist`);
+    }
+
+    return { ...comic, stats };
+  }
+
+  async findAllByOwner(query: ComicParams, userId: number): Promise<Comic[]> {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },

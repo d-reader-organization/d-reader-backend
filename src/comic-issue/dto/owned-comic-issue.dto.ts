@@ -4,16 +4,6 @@ import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssue, StatelessCover } from '@prisma/client';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { NftDto } from 'src/nft/dto/nft.dto';
-import { PickType } from '@nestjs/swagger';
-
-export class PartialNftDto extends PickType(NftDto, [
-  'address',
-  'attributes',
-  'isUsed',
-  'isSigned',
-  'rarity',
-]) {}
 
 export class OwnedComicIssueDto {
   @IsPositive()

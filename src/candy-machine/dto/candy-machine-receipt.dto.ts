@@ -1,23 +1,9 @@
-import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import { CandyMachineReceipt, Nft, User, Wallet } from '@prisma/client';
-import { getPublicUrl } from '../../aws/s3client';
-import { PickType } from '@nestjs/swagger';
+import { BuyerDto, toBuyerDto } from '../../auction-house/dto/types/buyer.dto';
 import { NftDto } from '../../nft/dto/nft.dto';
-import { UserDto } from '../../user/dto/user.dto';
-import { WalletDto } from '../../wallet/dto/wallet.dto';
-import { getOwnerDomain } from '../../utils/sns';
-import { PublicKey } from '@solana/web3.js';
-
-export class BuyerDto {
-  id?: UserDto['id'];
-  avatar?: UserDto['avatar'];
-  name?: UserDto['name'];
-  address: WalletDto['address'];
-  @IsOptional()
-  @IsString()
-  sns?: string;
-}
+import { PickType } from '@nestjs/swagger';
 
 export class PartialNftDto extends PickType(NftDto, ['address', 'name']) {}
 
@@ -47,19 +33,12 @@ export type CandyMachineReceiptInput = CandyMachineReceipt & {
 };
 
 export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
-  const sns = await getOwnerDomain(new PublicKey(receipt.buyer.address));
   const plainReceiptDto: CandyMachineReceiptDto = {
     nft: {
       address: receipt.nft.address,
       name: receipt.nft.name,
     },
-    buyer: {
-      id: receipt.buyer.user?.id,
-      avatar: getPublicUrl(receipt.buyer.user?.avatar),
-      name: receipt.buyer.user?.name,
-      address: receipt.buyer.address,
-      sns,
-    },
+    buyer: await toBuyerDto(receipt.buyer),
     candyMachineAddress: receipt.candyMachineAddress,
     price: receipt.price,
     timestamp: receipt.timestamp.toISOString(),

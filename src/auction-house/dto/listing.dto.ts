@@ -24,21 +24,8 @@ import {
 } from '../../utils/nft-metadata';
 import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft, ComicRarity, User } from '@prisma/client';
+import { SellerDto, toSellerDto } from './types/seller.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserDto } from '../../user/dto/user.dto';
-import { getPublicUrl } from '../../aws/s3client';
-import { WalletDto } from '../../wallet/dto/wallet.dto';
-import { getOwnerDomain } from '../../utils/sns';
-
-export class SellerDto {
-  id?: UserDto['id'];
-  avatar?: UserDto['avatar'];
-  name?: UserDto['name'];
-  address: WalletDto['address'];
-  @IsOptional()
-  @IsString()
-  sns?: string;
-}
 
 export class ListingDto {
   @IsPositive()
@@ -131,9 +118,9 @@ export type ListingInput = Listing & {
 
 export async function toListingDto(listing: ListingInput) {
   const sellerAddress = new PublicKey(listing.nft.owner.address);
-  const [collectionMetadata, sns] = await Promise.all([
+  const [collectionMetadata, seller] = await Promise.all([
     fetchOffChainMetadata(listing.nft.uri),
-    getOwnerDomain(sellerAddress),
+    toSellerDto(listing.nft.owner),
   ]);
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     sellerAddress.toBuffer(),
@@ -146,13 +133,7 @@ export async function toListingDto(listing: ListingInput) {
     nftAddress: listing.nftAddress,
     name: listing.nft.name,
     cover: collectionMetadata.image,
-    seller: {
-      id: listing.nft.owner.user?.id,
-      avatar: getPublicUrl(listing.nft.owner.user?.avatar),
-      name: listing.nft.owner.user?.name,
-      address: listing.nft.owner.address,
-      sns,
-    },
+    seller,
     tokenAddress,
     price: listing.price,
     attributes: collectionMetadata.attributes.map((a) => ({
@@ -163,7 +144,6 @@ export async function toListingDto(listing: ListingInput) {
     isSigned: findSignedTrait(collectionMetadata),
     rarity: findRarityTrait(collectionMetadata),
     royalties: collectionMetadata.seller_fee_basis_points,
-
     // description: collectionMetadata.description, // hide this in array?
     // symbol: listing.symbol, // hide this in array?
     // createdAt: listing.createdAt.toISOString(), // hide this in array?

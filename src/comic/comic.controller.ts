@@ -34,6 +34,12 @@ import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
 import { CreateComicDto } from './dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
+import { RawComicParams } from './dto/raw-comic-params.dto';
+import {
+  RawComicDto,
+  toRawComicDto,
+  toRawComicDtoArray,
+} from './dto/raw-comic.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
@@ -63,6 +69,14 @@ export class ComicController {
     return toComicDtoArray(comics);
   }
 
+  /* Get all comics in raw format */
+  @CreatorAuth()
+  @Get('get-raw')
+  async findAllRaw(@Query() query: RawComicParams): Promise<RawComicDto[]> {
+    const comics = await this.comicService.findAllRaw(query);
+    return toRawComicDtoArray(comics);
+  }
+
   /* Get specific comic by unique slug */
   @UserAuth()
   @Get('get/:slug')
@@ -72,6 +86,14 @@ export class ComicController {
   ): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug, user.id);
     return toComicDto(comic);
+  }
+
+  /* Get specific comic in raw format by unique slug */
+  @CreatorAuth()
+  @Get('get-raw/:slug')
+  async findOneRaw(@Param('slug') slug: string): Promise<RawComicDto> {
+    const comic = await this.comicService.findOneRaw(slug);
+    return toRawComicDto(comic);
   }
 
   @Get('get/by-owner/:userId')

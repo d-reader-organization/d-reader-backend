@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
 import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
+import { TransformCsvToArray } from '../../utils/transform';
 
 export enum ComicFilterTag {
   Popular = 'popular',
@@ -31,11 +32,7 @@ export class ComicParams extends Pagination {
   @IsArray()
   @ApiProperty({ type: String })
   @Type(() => String)
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.split(',');
-    } else return value;
-  })
+  @TransformCsvToArray()
   genreSlugs?: string[];
 
   @IsEnum(SortOrder)
