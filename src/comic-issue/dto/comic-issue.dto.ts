@@ -227,7 +227,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isDeleted: !!issue.deletedAt,
     isVerified: !!issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
-    creator: ifDefined(issue.comic.creator, toPartialCreatorDto),
+    creator: ifDefined(issue.comic?.creator, toPartialCreatorDto),
     comic: ifDefined(issue.comic, toPartialComicDto),
     genres: ifDefined(genres, toPartialGenreDtoArray),
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
