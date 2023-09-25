@@ -16,7 +16,7 @@ export function TransformStringToBoolean(options?: TransformOptions) {
           key + ' must be a boolean or a boolean string',
         );
       } else return value === 'true';
-    } else value;
+    } else return value;
   }, options);
 }
 
