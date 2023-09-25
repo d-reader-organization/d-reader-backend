@@ -46,5 +46,6 @@ export function toStatelessCoverDto(cover: StatelessCover) {
 }
 
 export const toStatelessCoverDtoArray = (covers: StatelessCover[]) => {
+  // TODO: Sort covers by share percentage (by rarity)
   return covers.map(toStatelessCoverDto);
 };
