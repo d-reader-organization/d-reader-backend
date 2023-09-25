@@ -8,6 +8,6 @@ env:
     NODE_ENV: production
     SOLANA_CLUSTER: mainnet-beta
     API_URL: https://api-main-mainnet.dreader.io
-    D_READER_URL: https://main-mainnet.dreader.app
-    D_PUBLISHER_URL: https://main-mainnet.dpublisher.app
+    D_READER_URL: https://dreader.app
+    D_PUBLISHER_URL: https://dpublisher.app
     CDN_URL: 
