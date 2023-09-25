@@ -121,6 +121,12 @@ export class ComicIssueDto {
   @IsKebabCase()
   comicSlug: string;
 
+  @IsBoolean()
+  isPrimarySaleActive: boolean;
+
+  @IsBoolean()
+  isSecondarySaleActive: boolean;
+
   @IsOptional()
   @Type(() => PartialCreatorDto)
   creator?: PartialCreatorDto;
@@ -217,9 +223,8 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     releaseDate: issue.releaseDate.toISOString(),
     // TODO: rename this to activeCandyMachineAddress
     candyMachineAddress: issue.candyMachineAddress, // do we need this anymore?
-    // TODO: take care of this
-    // isPrimarySaleActive: true, // if there is an active candy machine
-    // isSecondarySaleActive: true, // comicIssue.isSecondarySaleActive
+    isPrimarySaleActive: issue.isPrimarySaleActive,
+    isSecondarySaleActive: issue.isSecondarySaleActive,
     isFreeToRead: issue.isFreeToRead,
     isFullyUploaded: issue.isFullyUploaded,
     isPublished: !!issue.publishedAt,
