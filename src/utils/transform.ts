@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Transform, TransformOptions } from 'class-transformer';
 
 export function TransformStringToNumber(options?: TransformOptions) {
@@ -8,10 +9,15 @@ export function TransformStringToNumber(options?: TransformOptions) {
 }
 
 export function TransformStringToBoolean(options?: TransformOptions) {
-  return Transform(
-    ({ value }) => (typeof value === 'string' ? Boolean(value) : value),
-    options,
-  );
+  return Transform(({ value, key }) => {
+    if (typeof value === 'string') {
+      if (value !== 'true' && value !== 'false') {
+        throw new BadRequestException(
+          key + ' must be a boolean or a boolean string',
+        );
+      } else return value === 'true';
+    } else value;
+  }, options);
 }
 
 export function TransformToFile(options?: TransformOptions) {

@@ -12,6 +12,7 @@ import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { kebabCase } from 'lodash';
 import { AudienceType } from '@prisma/client';
+import { TransformStringToBoolean } from 'src/utils/transform';
 
 export class CreateComicDto {
   @IsNotEmpty()
@@ -25,9 +26,7 @@ export class CreateComicDto {
   slug: string;
 
   @IsBoolean()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? Boolean(value) : value,
-  )
+  @TransformStringToBoolean()
   @ApiProperty({ default: true })
   isCompleted: boolean;
 
