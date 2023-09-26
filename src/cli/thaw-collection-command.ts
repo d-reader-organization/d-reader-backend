@@ -3,6 +3,7 @@ import { log, logErr } from './chalk';
 import { PublicKey } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
 
 interface Options {
   candyMachineAddress: string;
@@ -17,6 +18,7 @@ export class ThawCollectionCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
+    private readonly comicIssueService: ComicIssueService,
     private readonly prisma: PrismaService,
   ) {
     super();
@@ -49,12 +51,16 @@ export class ThawCollectionCommand extends CommandRunner {
       await this.candyMachineService.unlockFunds(
         new PublicKey(candyMachineAddress),
       );
-      await this.prisma.comicIssue.update({
-        where: { id: comicIssueId },
-        data: {
-          isSecondarySaleActive: true,
-        },
-      });
+      const activeCandyMachine =
+        await this.comicIssueService.findActiveCandyMachine(comicIssueId);
+      if (!activeCandyMachine) {
+        await this.prisma.comicIssue.update({
+          where: { id: comicIssueId },
+          data: {
+            isSecondarySaleActive: true,
+          },
+        });
+      }
     } catch (error) {
       logErr(`Error : ${error}`);
     }
