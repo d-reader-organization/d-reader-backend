@@ -112,9 +112,6 @@ export class ComicIssueDto {
   isPopular: boolean;
 
   @IsBoolean()
-  isDeleted: boolean;
-
-  @IsBoolean()
   isVerified: boolean;
 
   @IsNotEmpty()
@@ -224,7 +221,6 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isFullyUploaded: issue.isFullyUploaded,
     isPublished: !!issue.publishedAt,
     isPopular: !!issue.popularizedAt,
-    isDeleted: !!issue.deletedAt,
     isVerified: !!issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
     creator: ifDefined(issue.comic?.creator, toPartialCreatorDto),

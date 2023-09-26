@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,18 +9,16 @@ import { CreateComicDto } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { UserComicService } from './user-comic.service';
 import { Comic, Genre, Creator } from '@prisma/client';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { ComicStats } from './types/comic-stats';
 import { getComicsQuery } from './comic.queries';
 import { insensitive } from '../utils/lodash';
-import { Prisma } from '@prisma/client';
-import { subDays } from 'date-fns';
-import { isNil } from 'lodash';
 import { RawComicParams } from './dto/raw-comic-params.dto';
 import { getRawComicsQuery } from './raw-comic.queries';
+import { Prisma } from '@prisma/client';
+import { isNil } from 'lodash';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -54,7 +53,8 @@ export class ComicService {
 
       return comic;
     } catch (e) {
-      throw new BadRequestException('Bad comic data', e);
+      console.error(e);
+      throw new BadRequestException('Bad comic data');
     }
   }
 
@@ -158,7 +158,6 @@ export class ComicService {
         const issuesCount = await this.prisma.comicIssue.count({
           where: {
             comicSlug: ownedComic.slug,
-            deletedAt: null,
             verifiedAt: { not: null },
             publishedAt: { not: null },
           },
@@ -171,22 +170,8 @@ export class ComicService {
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, ...rest } = updateComicDto;
 
-    // const comic = await this.prisma.comic.findUnique({ where: { slug } });
-    // const isTitleUpdated = title && comic.title !== title;
-    // const isSlugUpdated = slug && comic.slug !== slug;
     const areGenresUpdated = !isNil(genres);
     const isCompletedUpdated = !isNil(isCompleted);
-
-    // if (isTitleUpdated) {
-    //   await this.throwIfTitleTaken(title);
-    //   await this.prisma.comic.update({ where: { slug }, data: { title } });
-    // }
-
-    // if (isSlugUpdated) {
-    //   await this.throwIfSlugTaken(title);
-    //   await this.prisma.comic.update({ where: { slug }, data: { title } });
-    //   // migrate files from deprecated s3 folder to a new one
-    // }
 
     let genresData: Prisma.ComicUpdateInput['genres'];
     if (areGenresUpdated) {
@@ -348,39 +333,18 @@ export class ComicService {
     }
   }
 
-  async pseudoDelete(slug: string) {
-    try {
-      return await this.prisma.comic.update({
-        where: { slug, publishedAt: null },
-        data: { deletedAt: new Date() },
-      });
-    } catch {
-      throw new NotFoundException(
-        `Comic ${slug} does not exist or is published`,
-      );
-    }
-  }
+  async delete(slug: string) {
+    const comic = await this.prisma.comic.findUnique({ where: { slug } });
 
-  async pseudoRecover(slug: string) {
-    try {
-      return await this.prisma.comic.update({
-        where: { slug },
-        data: { deletedAt: null },
-      });
-    } catch {
+    if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
+    } else if (!!comic.publishedAt) {
+      throw new ForbiddenException(`Published comic cannot be deleted`);
     }
-  }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async clearComicsQueuedForRemoval() {
-    const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
-    const comicsToRemove = await this.prisma.comic.findMany(where);
-    await this.prisma.comic.deleteMany(where);
+    await this.prisma.comic.delete({ where: { slug } });
 
-    for (const comic of comicsToRemove) {
-      const s3Folder = getS3Folder(comic.slug);
-      await this.s3.deleteFolder(s3Folder);
-    }
+    const s3Folder = getS3Folder(comic.slug);
+    await this.s3.deleteFolder(s3Folder);
   }
 }

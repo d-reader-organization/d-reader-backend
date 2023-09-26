@@ -87,8 +87,7 @@ export const getRawComicIssuesQuery = (
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
-  left join "StatelessCover" statelessCover on "statelessCover"."comicIssueId" = comicIssue.id
-WHERE comicIssue."deletedAt" IS NULL AND comic."deletedAt" IS NULL
+  inner join "StatelessCover" statelessCover on "statelessCover"."comicIssueId" = comicIssue.id
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorWhereCondition}
