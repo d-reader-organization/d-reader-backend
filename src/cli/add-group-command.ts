@@ -1,24 +1,26 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import {
-  DateTime,
   EndDateGuardSettings,
   FreezeSolPaymentGuardSettings,
   MintLimitGuardSettings,
   PublicKey,
   StartDateGuardSettings,
+  WRAPPED_SOL_MINT,
+  toDateTime,
 } from '@metaplex-foundation/js';
 import { initMetaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { GuardGroup } from '../types/shared';
 import { solFromLamports } from '../utils/helpers';
+import { GuardParams } from 'src/candy-machine/dto/types';
 
 interface Options {
   candyMachineAddress: string;
   label: string;
   displayLabel: string;
-  startDate: DateTime;
-  endDate: DateTime;
+  startDate: Date;
+  endDate: Date;
   mintLimit: number;
   mintPrice: number;
 }
@@ -61,10 +63,10 @@ export class AddGroupCommand extends CommandRunner {
       const candyMachineGroups = candyMachine.candyGuard.groups;
 
       const startDateGuard: StartDateGuardSettings = {
-        date: startDate,
+        date: toDateTime(startDate),
       };
       const endDateGuard: EndDateGuardSettings = {
-        date: endDate,
+        date: toDateTime(endDate),
       };
       const freezeSolPayment: FreezeSolPaymentGuardSettings = {
         amount: solFromLamports(mintPrice),
@@ -100,10 +102,18 @@ export class AddGroupCommand extends CommandRunner {
         candyMachinePublicKey,
         groups,
       );
+      const guardParams: GuardParams = {
+        startDate,
+        endDate,
+        displayLabel,
+        label,
+        mintPrice,
+        splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+        mintLimit,
+      };
       await this.candyMachineService.addCandyMachineGroup(
         candyMachineAddress,
-        label,
-        displayLabel,
+        guardParams,
       );
     } catch (error) {
       logErr(`Error : ${error}`);

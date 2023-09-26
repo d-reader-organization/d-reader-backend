@@ -29,7 +29,7 @@ import { subDays } from 'date-fns';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { getRarityShare } from '../constants';
+import { PUBLIC_GROUP_LABEL, getRarityShare } from '../constants';
 import { CreateStatelessCoverDto } from './dto/covers/create-stateless-cover.dto';
 import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
@@ -38,16 +38,16 @@ import { ComicIssueInput } from './dto/comic-issue.dto';
 import {
   getStatefulCoverName,
   getStatelessCoverName,
-  validatePrice,
   validateWeb3PublishInfo,
 } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
-import { Metaplex } from '@metaplex-foundation/js';
+import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
+import { CandyMachineDataParams } from 'src/candy-machine/dto/types';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -77,8 +77,6 @@ export class ComicIssueService {
       royaltyWallets = [],
       ...rest
     } = createComicIssueDto;
-    validatePrice(createComicIssueDto);
-
     // should this comicSlug search be case sensitive or not?
     const parentComic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
@@ -117,12 +115,19 @@ export class ComicIssueService {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
         collectionNft: { comicIssueId },
-        itemsRemaining: { gt: 0 },
-        OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
+        itemsRemaining: {
+          gt: 0,
+        },
+        groups: {
+          every: {
+            label: PUBLIC_GROUP_LABEL,
+            endDate: {
+              lt: new Date(),
+            },
+          },
+        },
       },
-      select: { address: true },
     });
-
     return candyMachine?.address;
   }
 
@@ -227,7 +232,7 @@ export class ComicIssueService {
       userId,
     );
 
-    const [comicIssue, candyMachineAddress, stats, myStats, canRead] =
+    const [comicIssue, activeCandyMachineAddress, stats, myStats, canRead] =
       await Promise.all([
         findComicIssue,
         findActiveCandyMachine,
@@ -244,7 +249,7 @@ export class ComicIssueService {
       ...comicIssue,
       stats,
       myStats: { ...myStats, canRead },
-      candyMachineAddress,
+      activeCandyMachineAddress,
     };
   }
 
@@ -324,8 +329,6 @@ export class ComicIssueService {
       creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
       ...rest
     } = updateComicIssueDto;
-
-    validatePrice(updateComicIssueDto);
 
     const isSellerFeeUpdated = !isNil(sellerFee);
     const areCollaboratorsUpdated = !isNil(collaborators);
@@ -503,8 +506,6 @@ export class ComicIssueService {
     }
 
     validateWeb3PublishInfo(publishOnChainDto);
-    validatePrice(publishOnChainDto);
-
     const {
       sellerFee,
       royaltyWallets,
@@ -512,6 +513,8 @@ export class ComicIssueService {
       endDate,
       publicMintLimit,
       freezePeriod,
+      supply,
+      mintPrice,
       ...updatePayload
     } = publishOnChainDto;
     const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
@@ -545,11 +548,24 @@ export class ComicIssueService {
       deleteRoyaltyWallets,
     ]);
 
+    const candyMachineData: CandyMachineDataParams = {
+      supply,
+      guardParams: {
+        startDate,
+        endDate,
+        mintLimit: publicMintLimit,
+        freezePeriod,
+        splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+        mintPrice,
+        label: PUBLIC_GROUP_LABEL,
+        displayLabel: PUBLIC_GROUP_LABEL,
+      },
+    };
     try {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
-        { startDate, endDate, publicMintLimit, freezePeriod },
+        candyMachineData,
       );
     } catch (e) {
       // revert in case of failure

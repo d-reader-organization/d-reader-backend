@@ -52,7 +52,6 @@ export class ThawCollectionCommand extends CommandRunner {
       await this.prisma.comicIssue.update({
         where: { id: comicIssueId },
         data: {
-          isPrimarySaleActive: false, // in case helius webhook fails to sync database
           isSecondarySaleActive: true,
         },
       });

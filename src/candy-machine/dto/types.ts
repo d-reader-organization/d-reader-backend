@@ -27,9 +27,18 @@ export type WalletGroupSettings = {
   isEligible: boolean;
 };
 
+export type CandyMachineDataParams = {
+  supply: number;
+  guardParams: GuardParams;
+};
+
 export type GuardParams = {
+  mintPrice: number;
   startDate: Date;
   endDate: Date;
-  publicMintLimit?: number;
+  label: string;
+  displayLabel: string;
+  splTokenAddress: string;
+  mintLimit?: number;
   freezePeriod?: number;
 };

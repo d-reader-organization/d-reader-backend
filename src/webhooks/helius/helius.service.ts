@@ -36,7 +36,6 @@ import * as jwt from 'jsonwebtoken';
 import { SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
-import { CandyMachine } from '@prisma/client';
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
@@ -439,7 +438,6 @@ export class HeliusService {
 
       this.websocketGateway.handleNftMinted(comicIssueId, receipt);
       this.websocketGateway.handleWalletNftMinted(receipt);
-      await this.updateComicIssue(comicIssueId, candyMachine);
     } catch (e) {
       console.error(e);
     }
@@ -563,16 +561,6 @@ export class HeliusService {
 
     this.subscribeTo(metadata.mintAddress.toString());
     return nft;
-  }
-
-  async updateComicIssue(id: number, candyMachine: CandyMachine) {
-    if (candyMachine.itemsAvailable) return;
-    await this.prisma.comicIssue.update({
-      where: { id },
-      data: {
-        isPrimarySaleActive: false,
-      },
-    });
   }
 
   // Refresh auth token each day

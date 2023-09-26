@@ -170,7 +170,6 @@ model ComicIssue {
   isFullyUploaded       Boolean                  @default(false)
   releaseDate           DateTime
   updatedAt             DateTime                 @updatedAt
-  isPrimarySaleActive   Boolean                  @default(true)
   isSecondarySaleActive Boolean                  @default(false)
   createdAt             DateTime                 @default(now())
   deletedAt             DateTime?
