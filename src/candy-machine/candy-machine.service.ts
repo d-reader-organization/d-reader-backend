@@ -365,8 +365,8 @@ export class CandyMachineService {
             displayLabel: PUBLIC_GROUP_LABEL,
             wallets: undefined,
             label: PUBLIC_GROUP_LABEL,
-            startDate: startDate.toString(),
-            endDate: endDate.toString(),
+            startDate,
+            endDate,
             mintPrice: mintPrice,
             splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
           },
@@ -381,6 +381,7 @@ export class CandyMachineService {
       royaltyWallets,
       statelessCovers.length,
       darkblockId,
+      candyMachineData.supply,
       rarityCoverFiles,
     );
 
