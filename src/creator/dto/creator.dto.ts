@@ -42,9 +42,6 @@ export class CreatorDto {
   slug: string;
 
   @IsBoolean()
-  isDeleted: boolean;
-
-  @IsBoolean()
   isVerified: boolean;
 
   @IsUrl()
@@ -105,7 +102,6 @@ export function toCreatorDto(creator: CreatorInput) {
     email: creator.email,
     name: creator.name,
     slug: creator.slug,
-    isDeleted: !!creator.deletedAt,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
     banner: getPublicUrl(creator.banner),
