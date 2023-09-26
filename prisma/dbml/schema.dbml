@@ -153,6 +153,8 @@ Table ComicIssue {
   verifiedAt DateTime
   publishedAt DateTime
   popularizedAt DateTime
+  isPrimarySaleActive Boolean [not null, default: true]
+  isSecondarySaleActive Boolean [not null, default: false]
   creatorAddress String [not null, default: '']
   creatorBackupAddress String [not null, default: '']
   comicSlug String [not null]

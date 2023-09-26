@@ -6,6 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
   candyMachineAddress: string;
+  comicIssueId: number;
 }
 
 @Command({
@@ -29,11 +30,13 @@ export class ThawCollectionCommand extends CommandRunner {
   thawCollection = async (options: Options) => {
     log('\n🏗️  thaw all nfts of collection');
     try {
-      const { candyMachineAddress } = options;
+      const { candyMachineAddress, comicIssueId } = options;
       const nfts = await this.prisma.nft.findMany({
         where: { candyMachineAddress },
       });
 
+      // TODO: should we do this in a batch ?
+      // TODO: should this be run as another script and not on backend?
       await Promise.all(
         nfts.map((nft) =>
           this.candyMachineService.thawFrozenNft(
@@ -46,6 +49,13 @@ export class ThawCollectionCommand extends CommandRunner {
       await this.candyMachineService.unlockFunds(
         new PublicKey(candyMachineAddress),
       );
+      await this.prisma.comicIssue.update({
+        where: { id: comicIssueId },
+        data: {
+          isPrimarySaleActive: false, // in case helius webhook fails to sync database
+          isSecondarySaleActive: true,
+        },
+      });
     } catch (error) {
       logErr(`Error : ${error}`);
     }
