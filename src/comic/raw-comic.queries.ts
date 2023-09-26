@@ -48,7 +48,6 @@ inner join "Genre" genre on genre.slug = "comicToGenre"."B"
 inner join "Creator" creator on creator.id = comic."creatorId"
 left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "UserComic" userComic on userComic."comicSlug" = comic.slug
-where comic."deletedAt" is null
 ${nameCondition}
 ${creatorWhereCondition}
 group by comic."title", comic.slug, creator.*

@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UploadedFiles,
   UseInterceptors,
+  Delete,
 } from '@nestjs/common';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ComicIssueService } from './comic-issue.service';
@@ -333,17 +334,10 @@ export class ComicIssueController {
     // await this.comicIssueService.unpublish(+id);
   }
 
-  /* Queue comic issue for deletion */
+  /* Delete comic issue */
   @ComicIssueOwnerAuth()
-  @Patch('delete/:id')
-  async pseudoDelete(@Param('id') id: string) {
-    await this.comicIssueService.pseudoDelete(+id);
-  }
-
-  /* Remove comic issue for deletion queue */
-  @ComicIssueOwnerAuth()
-  @Patch('recover/:id')
-  async pseudoRecover(@Param('id') id: string) {
-    await this.comicIssueService.pseudoRecover(+id);
+  @Delete('delete/:id')
+  async delete(@Param('id') id: string) {
+    await this.comicIssueService.delete(+id);
   }
 }

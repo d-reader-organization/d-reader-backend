@@ -4,7 +4,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Manga',
     slug: 'manga',
-    deletedAt: null,
     priority: 1,
     icon: 'genres/manga.svg',
     color: '#e85a5b',
@@ -12,7 +11,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Action',
     slug: 'action',
-    deletedAt: null,
     priority: 2,
     icon: 'genres/action.svg',
     color: '#e9a860',
@@ -20,7 +18,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Adventure',
     slug: 'adventure',
-    deletedAt: null,
     priority: 3,
     icon: 'genres/adventure.svg',
     color: '#87c7e4',
@@ -28,7 +25,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Romance',
     slug: 'romance',
-    deletedAt: null,
     priority: 4,
     icon: 'genres/romance.svg',
     color: '#e37c8d',
@@ -36,7 +32,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Non-fiction',
     slug: 'non-fiction',
-    deletedAt: null,
     priority: 5,
     icon: 'genres/non-fiction.svg',
     color: '#8377f2',
@@ -44,7 +39,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Comedy',
     slug: 'comedy',
-    deletedAt: null,
     priority: 6,
     icon: 'genres/comedy.svg',
     color: '#49c187',
@@ -52,7 +46,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Superhero',
     slug: 'superhero',
-    deletedAt: null,
     priority: 7,
     icon: 'genres/superhero.svg',
     color: '#3926b4',
@@ -60,7 +53,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Sci-fi',
     slug: 'sci-fi',
-    deletedAt: null,
     priority: 8,
     icon: 'genres/sci-fi.svg',
     color: '#8200ea',
@@ -68,7 +60,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Fantasy',
     slug: 'fantasy',
-    deletedAt: null,
     priority: 9,
     icon: 'genres/fantasy.svg',
     color: '#c413e0',
@@ -76,7 +67,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Drama',
     slug: 'drama',
-    deletedAt: null,
     priority: 10,
     icon: 'genres/drama.svg',
     color: '#c5186b',
@@ -84,7 +74,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'History',
     slug: 'history',
-    deletedAt: null,
     priority: 11,
     icon: 'genres/history.svg',
     color: '#764e4a',
@@ -92,7 +81,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Horror',
     slug: 'horror',
-    deletedAt: null,
     priority: 12,
     icon: 'genres/horror.svg',
     color: '#9c000e',
@@ -100,7 +88,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   {
     name: 'Crime',
     slug: 'crime',
-    deletedAt: null,
     priority: 13,
     icon: 'genres/crime.svg',
     color: '#3d3e60',
@@ -108,7 +95,6 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   // {
   //   name: 'AI',
   //   slug: 'ai',
-  //   deletedAt: null,
   //   priority: 14,
   //   icon: 'genres/ai.svg',
   //   color: '#ffffff',

@@ -79,7 +79,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
     (
       SELECT COUNT(*) as totalIssuesCount
       FROM "ComicIssue" ci
-      where "ci"."comicSlug"  = comicIssue."comicSlug" and "ci"."verifiedAt" is not null and "ci"."publishedAt" is not null and "ci"."deletedAt" is null
+      where "ci"."comicSlug"  = comicIssue."comicSlug" and "ci"."verifiedAt" is not null and "ci"."publishedAt" is not null
     ) AS "totalIssuesCount",
     (
       SELECT COUNT(*) as totalPagesCount
@@ -93,7 +93,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
-WHERE comicIssue."deletedAt" IS NULL AND comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL AND comic."deletedAt" IS NULL
+WHERE comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL
 ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}

@@ -45,8 +45,10 @@ import { SettingsModule } from './settings/settings.module';
     }),
     PrismaModule.forRoot({
       isGlobal: true,
+
       prismaServiceOptions: {
         middlewares: [loggingMiddleware()],
+        prismaOptions: { errorFormat: 'pretty' },
       },
     }),
     ScheduleModule.forRoot(),
