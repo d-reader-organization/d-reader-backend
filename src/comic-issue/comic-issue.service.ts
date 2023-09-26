@@ -557,9 +557,6 @@ export class ComicIssueService {
         where: { id },
         data: {
           publishedAt: comicIssue.publishedAt,
-          supply: comicIssue.supply,
-          mintPrice: comicIssue.mintPrice,
-          discountMintPrice: comicIssue.discountMintPrice,
           sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         },
       });

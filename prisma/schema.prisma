@@ -159,9 +159,6 @@ model RoyaltyWallet {
 model ComicIssue {
   id                   Int                      @id @default(autoincrement())
   number               Int
-  supply               Int                      @default(0)
-  discountMintPrice    Int                      @default(0)
-  mintPrice            Int                      @default(0)
   sellerFeeBasisPoints Int                      @default(0)
   title                String
   slug                 String
@@ -280,13 +277,12 @@ model CandyMachine {
   address              String                @id
   mintAuthorityAddress String
   authorityPda         String                @unique
+  supply               Int                   @default(0)
   itemsAvailable       Int
   itemsMinted          Int
   itemsRemaining       Int
   itemsLoaded          Int
   isFullyLoaded        Boolean
-  endsAt               DateTime?
-  baseMintPrice        Int
   collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   items                Nft[]
@@ -298,6 +294,10 @@ model CandyMachineGroup {
   id                  Int                       @id @default(autoincrement())
   label               String
   displayLabel        String
+  startDate           DateTime
+  endDate             DateTime
+  mintPrice           Int
+  splTokenAddress     String
   wallets             WalletCandyMachineGroup[]
   candyMachineAddress String
   candyMachine        CandyMachine              @relation(fields: [candyMachineAddress], references: [address])
