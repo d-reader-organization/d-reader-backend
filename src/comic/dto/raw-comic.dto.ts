@@ -26,9 +26,6 @@ export class RawComicDto {
   audienceType: AudienceType;
 
   @IsDate()
-  deletedAt: Date;
-
-  @IsDate()
   completedAt: Date;
 
   @IsDate()
@@ -98,7 +95,6 @@ export function toRawComicDto(comic: RawComicInput) {
     slug: comic.slug,
     audienceType: comic.audienceType,
     completedAt: comic.completedAt,
-    deletedAt: comic.deletedAt,
     verifiedAt: comic.verifiedAt,
     publishedAt: comic.publishedAt,
     popularizedAt: comic.popularizedAt,

@@ -48,9 +48,7 @@ export const validateWeb3PublishInfo = (
   } else if (!publishOnChainDto.creatorAddress) {
     throw new BadRequestException('Comic issue missing creator address');
   } else if (publishOnChainDto.mintPrice < 0) {
-    throw new BadRequestException(
-      'Mint prices must be greater than or equal to 0',
-    );
+    throw new BadRequestException('Price must be greater than or equal to 0');
   }
 };
 

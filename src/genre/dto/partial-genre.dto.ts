@@ -24,16 +24,15 @@ export function toPartialGenreDto(genre: Genre) {
 }
 
 export function toPartialGenreDtoArray(genres: Genre[]) {
+  // TODO v2: replace reduce with sort here
   const filteredSortedGenres = genres.reduce<Genre[]>((acc, genre) => {
-    if (!genre.deletedAt) {
-      const insertIndex = acc.findIndex(
-        (existingGenre) => existingGenre.priority > genre.priority,
-      );
+    const insertIndex = acc.findIndex(
+      (existingGenre) => existingGenre.priority > genre.priority,
+    );
 
-      if (insertIndex === -1) {
-        return [...acc, genre];
-      } else [...acc.slice(0, insertIndex), genre, ...acc.slice(insertIndex)];
-    }
+    if (insertIndex === -1) {
+      return [...acc, genre];
+    } else [...acc.slice(0, insertIndex), genre, ...acc.slice(insertIndex)];
     return acc;
   }, []);
 

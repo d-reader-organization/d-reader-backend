@@ -33,7 +33,6 @@ export class UserComicService {
 
     const countIssues = this.prisma.comicIssue.count({
       where: {
-        deletedAt: null,
         publishedAt: { not: null },
         verifiedAt: { not: null },
         comicSlug,

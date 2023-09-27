@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,8 +11,6 @@ import {
 } from '../genre/dto/create-genre.dto';
 import { UpdateGenreDto } from '../genre/dto/update-genre.dto';
 import { Genre } from '@prisma/client';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { subDays } from 'date-fns';
 import { GenreFilterParams } from './dto/genre-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
@@ -35,7 +34,8 @@ export class GenreService {
     let genre: Genre;
     try {
       genre = await this.prisma.genre.create({ data: { ...rest, slug } });
-    } catch {
+    } catch (e) {
+      console.error(e);
       throw new BadRequestException('Bad genre data');
     }
 
@@ -62,7 +62,6 @@ export class GenreService {
     const genres = await this.prisma.genre.findMany({
       skip: query?.skip,
       take: query?.take,
-      where: { deletedAt: null },
       orderBy: { priority: 'asc' },
     });
     return genres;
@@ -118,35 +117,19 @@ export class GenreService {
     return genre;
   }
 
-  async pseudoDelete(slug: string) {
-    try {
-      return await this.prisma.genre.update({
-        where: { slug },
-        data: { deletedAt: new Date() },
-      });
-    } catch {
+  async delete(slug: string) {
+    const genre = await this.prisma.genre.findUnique({
+      where: { slug },
+      include: { comics: true },
+    });
+
+    if (!genre) {
       throw new NotFoundException(`Genre ${slug} does not exist`);
+    } else if (genre.comics.length > 0) {
+      throw new ForbiddenException("Cannot delete genre that's being used");
     }
-  }
 
-  async pseudoRecover(slug: string) {
-    try {
-      return await this.prisma.genre.update({
-        where: { slug },
-        data: { deletedAt: null },
-      });
-    } catch {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
-    }
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async clearGenresQueuedForRemoval() {
-    const where = { where: { deletedAt: { lte: subDays(new Date(), 90) } } };
-    const genresToRemove = await this.prisma.genre.findMany(where);
-    await this.prisma.genre.deleteMany(where);
-
-    const keys = genresToRemove.map((g) => g.icon);
-    await this.s3.deleteObjects(keys);
+    await this.prisma.genre.delete({ where: { slug } });
+    await this.s3.deleteObject(genre.slug);
   }
 }

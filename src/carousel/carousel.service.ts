@@ -48,7 +48,8 @@ export class CarouselService {
           image: imageKey,
         },
       });
-    } catch {
+    } catch (e) {
+      console.error(e);
       throw new BadRequestException('Bad carousel slide data');
     }
 

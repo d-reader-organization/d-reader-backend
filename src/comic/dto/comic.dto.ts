@@ -38,9 +38,6 @@ export class ComicDto {
   audienceType: AudienceType;
 
   @IsBoolean()
-  isDeleted: boolean;
-
-  @IsBoolean()
   isCompleted: boolean;
 
   @IsBoolean()
@@ -122,7 +119,6 @@ export function toComicDto(comic: ComicInput) {
     slug: comic.slug,
     audienceType: comic.audienceType,
     isCompleted: !!comic.completedAt,
-    isDeleted: !!comic.deletedAt,
     isVerified: !!comic.verifiedAt,
     isPublished: !!comic.publishedAt,
     isPopular: !!comic.popularizedAt,

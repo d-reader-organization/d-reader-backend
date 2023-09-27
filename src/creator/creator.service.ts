@@ -10,7 +10,6 @@ import {
   UpdateCreatorFilesDto,
 } from '../creator/dto/update-creator.dto';
 import { Creator, Genre } from '@prisma/client';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
@@ -362,6 +361,7 @@ export class CreatorService {
   }
 
   async pseudoDelete(slug: string) {
+    // We should only allow account deletion if the creator has no published comics and comic issues?
     try {
       const creator = await this.prisma.creator.update({
         where: { slug },
@@ -385,20 +385,18 @@ export class CreatorService {
     }
   }
 
-  // Should we only allow account deletion if the creator has no published comics and comic issues?
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async clearCreatorsQueuedForRemoval() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
-    // const creatorsToRemove = await this.prisma.creator.findMany(where);
+    const creatorsToRemove = await this.prisma.creator.findMany(where);
 
-    // for (const creator of creatorsToRemove) {
-    //   await this.mailService.creatorDeleted(creator);
+    for (const creator of creatorsToRemove) {
+      await this.mailService.creatorDeleted(creator);
 
-    //   await this.prisma.creator.delete({ where: { id: creator.id } });
+      await this.prisma.creator.delete({ where: { id: creator.id } });
 
-    //   const s3Folder = getS3Folder(creator.slug);
-    //   await this.s3.deleteFolder(s3Folder);
-    // }
+      const s3Folder = getS3Folder(creator.slug);
+      await this.s3.deleteFolder(s3Folder);
+    }
   }
 }

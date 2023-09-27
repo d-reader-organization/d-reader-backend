@@ -110,9 +110,6 @@ export class RawComicIssueDto {
   popularizedAt: Date;
 
   @IsDate()
-  deletedAt: Date;
-
-  @IsDate()
   verifiedAt: Date;
 
   @IsNotEmpty()
@@ -204,7 +201,6 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     isFullyUploaded: issue.isFullyUploaded,
     publishedAt: issue.publishedAt,
     popularizedAt: issue.popularizedAt,
-    deletedAt: issue.deletedAt,
     verifiedAt: issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
     creatorBackupAddress: issue.creatorBackupAddress,

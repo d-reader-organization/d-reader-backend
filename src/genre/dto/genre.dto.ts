@@ -1,4 +1,4 @@
-import { plainToInstance, Transform } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { IsHexColor, IsNumber, IsString } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -19,9 +19,6 @@ export class GenreDto {
 
   @IsNumber()
   priority: number;
-
-  @Transform(({ obj }) => !!obj.deletedAt)
-  isDeleted: boolean;
 }
 
 export function toGenreDto(genre: Genre) {
@@ -31,7 +28,6 @@ export function toGenreDto(genre: Genre) {
     icon: getPublicUrl(genre.icon),
     color: genre.color,
     priority: genre.priority,
-    isDeleted: !!genre.deletedAt,
   };
 
   const genreDto = plainToInstance(GenreDto, plainGenreDto);

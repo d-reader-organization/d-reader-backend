@@ -11,7 +11,7 @@ const getQueryFilters = (
 ): {
   titleCondition: Prisma.Sql;
   comicSlugCondition: Prisma.Sql;
-  creatorWhereCondition: Prisma.Sql;
+  creatorCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
 } => {
@@ -23,7 +23,7 @@ const getQueryFilters = (
   const comicSlugCondition = !!query.comicSlug
     ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
     : Prisma.empty;
-  const creatorWhereCondition = !!query.creatorSlug
+  const creatorCondition = !!query.creatorSlug
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
@@ -31,7 +31,7 @@ const getQueryFilters = (
   return {
     titleCondition,
     comicSlugCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortOrder,
     sortColumn,
   };
@@ -43,7 +43,7 @@ export const getRawComicIssuesQuery = (
   const {
     titleCondition,
     comicSlugCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortColumn,
     sortOrder,
   } = getQueryFilters(query);
@@ -87,11 +87,10 @@ export const getRawComicIssuesQuery = (
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
-  left join "StatelessCover" statelessCover on "statelessCover"."comicIssueId" = comicIssue.id
-WHERE comicIssue."deletedAt" IS NULL AND comic."deletedAt" IS NULL
+  inner join "StatelessCover" statelessCover on "statelessCover"."comicIssueId" = comicIssue.id
 ${titleCondition}
 ${comicSlugCondition}
-${creatorWhereCondition}
+${creatorCondition}
 GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}

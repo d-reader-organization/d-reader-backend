@@ -10,6 +10,7 @@ import {
   UploadedFiles,
   UploadedFile,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
@@ -100,17 +101,10 @@ export class GenreController {
     return toGenreDto(updatedGenre);
   }
 
-  /* Pseudo delete genre */
+  /* Delete genre */
   @AdminGuard()
-  @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string) {
-    await this.genreService.pseudoDelete(slug);
-  }
-
-  /* Recover genre */
-  @AdminGuard()
-  @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string) {
-    await this.genreService.pseudoRecover(slug);
+  @Delete('delete/:slug')
+  async delete(@Param('slug') slug: string) {
+    await this.genreService.delete(slug);
   }
 }
