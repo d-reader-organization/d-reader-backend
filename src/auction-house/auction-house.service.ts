@@ -223,9 +223,7 @@ export class AuctionHouseService {
     });
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
-      where: {
-        nft: { collectionNft: { comicIssueId } },
-      },
+      where: { nft: { collectionNft: { comicIssueId } } },
       _sum: { price: true },
     });
 

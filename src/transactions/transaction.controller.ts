@@ -72,7 +72,7 @@ export class TransactionController {
   @Get('/tip-creator')
   async constructTipCreatorTransaction(@Query() query: TipCreatorParams) {
     console.log(query);
-    // TODO: construct a transaction which sends query.tipAmount of SPL token
+    // construct a transaction which sends query.tipAmount of SPL token
     // specified by splTokenAddress to a creator.tippingAddress from a
     // creator found by the query.creatorId
 

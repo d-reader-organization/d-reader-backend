@@ -178,7 +178,7 @@ export async function uploadItemMetadata(
 ) {
   const items: { uri: string; name: string }[] = [];
 
-  // TODO v2: rarityShares is not reliable, we should pick info from the database
+  // TODO v2: rarityShares is not reliable, we should pull this info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: { uri: string; name: string }[] = [];
   let supplyLeft = comicIssueSupply;

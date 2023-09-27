@@ -4,11 +4,18 @@ import { PublicKey } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
+import { pRateLimit } from 'p-ratelimit';
 
 interface Options {
   candyMachineAddress: string;
   comicIssueId: number;
 }
+
+const rateLimit = pRateLimit({
+  interval: 1000, // 1 second
+  rate: 30, // 40 API calls per interval
+  concurrency: 10, // no more than 40 running at once
+});
 
 @Command({
   name: 'thaw-collection',
@@ -37,17 +44,16 @@ export class ThawCollectionCommand extends CommandRunner {
         where: { candyMachineAddress },
       });
 
-      // TODO: should we do this in a batch ?
-      // TODO: should this be run as another script and not on backend?
-      await Promise.all(
-        nfts.map((nft) =>
-          this.candyMachineService.thawFrozenNft(
+      for (const nft of nfts) {
+        await rateLimit(() => {
+          return this.candyMachineService.thawFrozenNft(
             new PublicKey(candyMachineAddress),
             new PublicKey(nft.address),
             new PublicKey(nft.ownerAddress),
-          ),
-        ),
-      );
+          );
+        });
+      }
+
       await this.candyMachineService.unlockFunds(
         new PublicKey(candyMachineAddress),
       );
@@ -56,9 +62,7 @@ export class ThawCollectionCommand extends CommandRunner {
       if (!activeCandyMachine) {
         await this.prisma.comicIssue.update({
           where: { id: comicIssueId },
-          data: {
-            isSecondarySaleActive: true,
-          },
+          data: { isSecondarySaleActive: true },
         });
       }
     } catch (error) {
