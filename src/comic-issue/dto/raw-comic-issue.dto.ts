@@ -25,7 +25,6 @@ import {
   Comic,
 } from '@prisma/client';
 import { divide } from 'lodash';
-import { IsLamport } from 'src/decorators/IsLamport';
 import {
   ComicIssueCollaboratorDto,
   toComicIssueCollaboratorDtoArray,
@@ -61,15 +60,6 @@ export class RawComicIssueDto {
 
   @IsPositive()
   number: number;
-
-  @Min(0)
-  supply: number;
-
-  @IsLamport()
-  discountMintPrice: number;
-
-  @IsLamport()
-  mintPrice: number;
 
   @Min(0)
   @Max(1)
@@ -186,9 +176,6 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    supply: issue.supply,
-    discountMintPrice: issue.discountMintPrice,
-    mintPrice: issue.mintPrice,
     sellerFee: divide(issue.sellerFeeBasisPoints, 100),
     title: issue.title,
     slug: issue.slug,
