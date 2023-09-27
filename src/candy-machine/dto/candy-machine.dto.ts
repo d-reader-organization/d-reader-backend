@@ -2,7 +2,6 @@ import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { CandyMachine } from '@prisma/client';
-import { IsLamport } from '../../decorators/IsLamport';
 
 export class CandyMachineDto {
   @IsSolanaAddress()
@@ -16,9 +15,6 @@ export class CandyMachineDto {
   @Min(0)
   itemsMinted: number;
 
-  @IsLamport()
-  baseMintPrice: number;
-
   @IsOptional()
   @IsDateString()
   endsAt?: string;
@@ -29,9 +25,6 @@ export async function toCandyMachineDto(candyMachine: CandyMachine) {
     address: candyMachine.address,
     supply: candyMachine.itemsAvailable,
     itemsMinted: candyMachine.itemsMinted,
-    baseMintPrice: candyMachine.baseMintPrice, // TODO: deprecate this
-    // TODO: this endsAt should fetch the end date of the last group (excluding our private group)
-    endsAt: candyMachine.endsAt?.toISOString(),
   };
 
   const candyMachineDto = plainToInstance(
