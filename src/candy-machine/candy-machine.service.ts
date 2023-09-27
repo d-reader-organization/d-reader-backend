@@ -11,6 +11,7 @@ import {
   getMerkleRoot,
   toDateTime,
   CreateCandyMachineInput,
+  WRAPPED_SOL_MINT,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -59,7 +60,11 @@ import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
 import { Prisma } from '@prisma/client';
-import { CandyMachineGroupSettings, GuardParams } from './dto/types';
+import {
+  CandyMachineDataParams,
+  CandyMachineGroupSettings,
+  GuardParams,
+} from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
@@ -154,7 +159,7 @@ export class CandyMachineService {
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    guardParams: GuardParams,
+    candyMachineData: CandyMachineDataParams,
   ) {
     validateComicIssueCMInput(comicIssue);
 
@@ -260,7 +265,8 @@ export class CandyMachineService {
       }),
     );
 
-    const { startDate, endDate, publicMintLimit, freezePeriod } = guardParams;
+    const { startDate, endDate, mintLimit, freezePeriod, mintPrice } =
+      candyMachineData.guardParams;
     const candyMachineTx = await constructCandyMachineTransaction(
       this.metaplex,
       {
@@ -274,7 +280,7 @@ export class CandyMachineService {
         maxEditionSupply: toBigNumber(0),
         isMutable: true,
         sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-        itemsAvailable: toBigNumber(comicIssue.supply),
+        itemsAvailable: toBigNumber(candyMachineData.supply),
         guards: {
           botTax: {
             lamports: solFromLamports(BOT_TAX),
@@ -306,13 +312,13 @@ export class CandyMachineService {
                 date: toDateTime(endDate),
               },
               freezeSolPayment: {
-                amount: solFromLamports(comicIssue.mintPrice),
+                amount: solFromLamports(mintPrice),
                 destination: this.metaplex.identity().publicKey,
               },
-              mintLimit: publicMintLimit
+              mintLimit: mintLimit
                 ? {
                     id: PUBLIC_GROUP_MINT_LIMIT_ID,
-                    limit: publicMintLimit,
+                    limit: mintLimit,
                   }
                 : undefined,
             },
@@ -353,15 +359,18 @@ export class CandyMachineService {
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
         itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
-        baseMintPrice: comicIssue.mintPrice,
+        supply: candyMachineData.supply,
         groups: {
           create: {
             displayLabel: PUBLIC_GROUP_LABEL,
             wallets: undefined,
             label: PUBLIC_GROUP_LABEL,
+            startDate,
+            endDate,
+            mintPrice: mintPrice,
+            splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
           },
         },
-        endsAt: undefined,
       },
     });
     const items = await uploadItemMetadata(
@@ -372,6 +381,7 @@ export class CandyMachineService {
       royaltyWallets,
       statelessCovers.length,
       darkblockId,
+      candyMachineData.supply,
       rarityCoverFiles,
     );
 
@@ -552,11 +562,15 @@ export class CandyMachineService {
     return receipts;
   }
 
-  async addCandyMachineGroup(
-    candyMachineAddress: string,
-    label: string,
-    displayLabel: string,
-  ) {
+  async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
+    const {
+      displayLabel,
+      label,
+      startDate,
+      endDate,
+      splTokenAddress,
+      mintPrice,
+    } = params;
     await this.prisma.candyMachineGroup.create({
       data: {
         candyMachine: {
@@ -567,6 +581,10 @@ export class CandyMachineService {
         displayLabel,
         wallets: undefined,
         label,
+        startDate: startDate.toString(),
+        endDate: endDate.toString(),
+        splTokenAddress,
+        mintPrice,
       },
     });
   }

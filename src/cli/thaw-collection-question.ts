@@ -17,4 +17,13 @@ export class ThawCollectionQuestions {
   parseCandyMachineAddress(candyMachine: string): string {
     return candyMachine;
   }
+
+  @Question({
+    type: 'input',
+    name: 'comicIssueId',
+    message: 'ComicIssue Id of the primary sale',
+  })
+  parseComicIssueId(id: number): number {
+    return id;
+  }
 }
