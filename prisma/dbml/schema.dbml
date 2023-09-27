@@ -134,9 +134,6 @@ Table RoyaltyWallet {
 Table ComicIssue {
   id Int [pk, increment]
   number Int [not null]
-  supply Int [not null, default: 0]
-  discountMintPrice Int [not null, default: 0]
-  mintPrice Int [not null, default: 0]
   sellerFeeBasisPoints Int [not null, default: 0]
   title String [not null]
   slug String [not null]
@@ -148,6 +145,7 @@ Table ComicIssue {
   isFullyUploaded Boolean [not null, default: false]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
+  isSecondarySaleActive Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   featuredAt DateTime
   verifiedAt DateTime
@@ -246,13 +244,12 @@ Table CandyMachine {
   address String [pk]
   mintAuthorityAddress String [not null]
   authorityPda String [unique, not null]
+  supply Int [not null, default: 0]
   itemsAvailable Int [not null]
   itemsMinted Int [not null]
   itemsRemaining Int [not null]
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
-  endsAt DateTime
-  baseMintPrice Int [not null]
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
   items Nft [not null]
@@ -264,6 +261,10 @@ Table CandyMachineGroup {
   id Int [pk, increment]
   label String [not null]
   displayLabel String [not null]
+  startDate DateTime [not null]
+  endDate DateTime [not null]
+  mintPrice Int [not null]
+  splTokenAddress String [not null]
   wallets WalletCandyMachineGroup [not null]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]

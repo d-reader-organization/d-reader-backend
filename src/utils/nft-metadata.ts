@@ -173,6 +173,7 @@ export async function uploadItemMetadata(
   royaltyWallets: JsonMetadataCreators,
   numberOfRarities: number,
   darkblockId: string,
+  comicIssueSupply: number,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
   const items: { uri: string; name: string }[] = [];
@@ -180,7 +181,7 @@ export async function uploadItemMetadata(
   // TODO v2: rarityShares is not reliable, we should pick info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: { uri: string; name: string }[] = [];
-  let supplyLeft = comicIssue.supply;
+  let supplyLeft = comicIssueSupply;
 
   for (const rarityShare of rarityShares) {
     const { rarity } = rarityShare;
@@ -209,7 +210,7 @@ export async function uploadItemMetadata(
     if (index == rarityShares.length - 1) {
       supply = supplyLeft;
     } else {
-      supply = (comicIssue.supply * value) / 100;
+      supply = (supply * value) / 100;
       supplyLeft -= supply;
     }
 

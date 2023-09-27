@@ -31,7 +31,6 @@ import {
   Genre,
 } from '@prisma/client';
 import { divide } from 'lodash';
-import { IsLamport } from 'src/decorators/IsLamport';
 import {
   ComicIssueCollaboratorDto,
   toComicIssueCollaboratorDtoArray,
@@ -63,15 +62,6 @@ export class ComicIssueDto {
 
   @IsPositive()
   number: number;
-
-  @Min(0)
-  supply: number;
-
-  @IsLamport()
-  discountMintPrice: number;
-
-  @IsLamport()
-  mintPrice: number;
 
   @Min(0)
   @Max(1)
@@ -118,6 +108,9 @@ export class ComicIssueDto {
   @IsKebabCase()
   comicSlug: string;
 
+  @IsBoolean()
+  isSecondarySaleActive: boolean;
+
   @IsOptional()
   @Type(() => PartialCreatorDto)
   creator?: PartialCreatorDto;
@@ -141,7 +134,7 @@ export class ComicIssueDto {
 
   @IsOptional()
   @IsString()
-  candyMachineAddress?: string;
+  activeCandyMachineAddress?: string;
 
   @IsSolanaAddress()
   creatorAddress: string;
@@ -174,7 +167,7 @@ type WithComic = { comic?: Comic & { creator?: Creator; genres?: Genre[] } };
 type WithGenres = { genres?: Genre[] };
 type WithStats = { stats?: ComicIssueStats };
 type WithMyStats = { myStats?: UserComicIssue & { canRead: boolean } };
-type WithCandyMachineAddress = { candyMachineAddress?: string };
+type WithActiveCandyMachineAddress = { activeCandyMachineAddress?: string };
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
 type WithStatelessCovers = { statelessCovers?: StatelessCover[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
@@ -186,7 +179,7 @@ export type ComicIssueInput = With<
     WithGenres,
     WithStats,
     WithMyStats,
-    WithCandyMachineAddress,
+    WithActiveCandyMachineAddress,
     WithCollaborators,
     WithStatelessCovers,
     WithStatefulCovers,
@@ -201,9 +194,6 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    supply: issue.supply,
-    discountMintPrice: issue.discountMintPrice,
-    mintPrice: issue.mintPrice,
     sellerFee: divide(issue.sellerFeeBasisPoints, 100),
     title: issue.title,
     slug: issue.slug,
@@ -212,11 +202,8 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     signature: getPublicUrl(issue.signature),
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
-    // TODO: rename this to activeCandyMachineAddress
-    candyMachineAddress: issue.candyMachineAddress, // do we need this anymore?
-    // TODO: take care of this
-    // isPrimarySaleActive: true, // if there is an active candy machine
-    // isSecondarySaleActive: true, // comicIssue.isSecondarySaleActive
+    activeCandyMachineAddress: issue.activeCandyMachineAddress,
+    isSecondarySaleActive: issue.isSecondarySaleActive,
     isFreeToRead: issue.isFreeToRead,
     isFullyUploaded: issue.isFullyUploaded,
     isPublished: !!issue.publishedAt,

@@ -4,6 +4,7 @@ import { PickByType } from '../types/shared';
 import { UserComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssue } from '@prisma/client';
+import { PUBLIC_GROUP_LABEL } from '../constants';
 
 @Injectable()
 export class UserComicIssueService {
@@ -87,25 +88,33 @@ export class UserComicIssueService {
     // if it's a primary sale look for the public mint price
     // else look for the floor price on the auction house if it's a secondary sale
 
-    // if comic is not a web3 collection the price is 0
-    // TODO: this can be deprecated, since we're only interested in the public group price
-    if (issue.supply === 0) return issue.mintPrice;
-
-    // Wherever we have 'baseMintPrice' in the code, revise it
-
-    // TODO: we need to find the public mint price here
-    // if comic is a web3 collection price is equal to the base price
+    // if comic is a web3 collection price is equal to the public mint price
     // from the active CandyMachine
     const activeCandyMachine = await this.prisma.candyMachine.findFirst({
       where: {
         collectionNft: { comicIssueId: issue.id },
-        itemsRemaining: { gt: 0 },
-        OR: [{ endsAt: null }, { endsAt: { gt: new Date() } }],
+        itemsRemaining: {
+          gt: 0,
+        },
+        groups: {
+          every: {
+            label: PUBLIC_GROUP_LABEL,
+            endDate: {
+              lt: new Date(),
+            },
+          },
+        },
       },
-      select: { baseMintPrice: true },
+      include: {
+        groups: {
+          where: {
+            label: PUBLIC_GROUP_LABEL,
+          },
+        },
+      },
     });
 
-    if (activeCandyMachine) return activeCandyMachine.baseMintPrice;
+    if (activeCandyMachine) return activeCandyMachine.groups[0]?.mintPrice;
 
     // if there is no active candy machine, look for cheapest price on the marketplace
     const cheapestItem = await this.prisma.listing.findFirst({

@@ -1,15 +1,28 @@
 import { PickType } from '@nestjs/swagger';
 import { CreateComicIssueDto } from './create-comic-issue.dto';
-import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
+import { IsLamport } from 'src/decorators/IsLamport';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
-  'supply',
-  'mintPrice',
-  'discountMintPrice',
   'sellerFee',
   'royaltyWallets',
   'creatorAddress',
 ]) {
+  @IsOptional()
+  @IsLamport()
+  mintPrice?: number;
+
+  @Min(0)
+  // @IsDivisibleBy(100)
+  @IsNumber()
+  supply?: number;
+
   @IsDateString()
   startDate: Date;
 

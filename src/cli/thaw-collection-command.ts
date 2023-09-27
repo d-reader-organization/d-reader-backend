@@ -3,9 +3,11 @@ import { log, logErr } from './chalk';
 import { PublicKey } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
 
 interface Options {
   candyMachineAddress: string;
+  comicIssueId: number;
 }
 
 @Command({
@@ -16,6 +18,7 @@ export class ThawCollectionCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
+    private readonly comicIssueService: ComicIssueService,
     private readonly prisma: PrismaService,
   ) {
     super();
@@ -29,11 +32,13 @@ export class ThawCollectionCommand extends CommandRunner {
   thawCollection = async (options: Options) => {
     log('\n🏗️  thaw all nfts of collection');
     try {
-      const { candyMachineAddress } = options;
+      const { candyMachineAddress, comicIssueId } = options;
       const nfts = await this.prisma.nft.findMany({
         where: { candyMachineAddress },
       });
 
+      // TODO: should we do this in a batch ?
+      // TODO: should this be run as another script and not on backend?
       await Promise.all(
         nfts.map((nft) =>
           this.candyMachineService.thawFrozenNft(
@@ -46,6 +51,16 @@ export class ThawCollectionCommand extends CommandRunner {
       await this.candyMachineService.unlockFunds(
         new PublicKey(candyMachineAddress),
       );
+      const activeCandyMachine =
+        await this.comicIssueService.findActiveCandyMachine(comicIssueId);
+      if (!activeCandyMachine) {
+        await this.prisma.comicIssue.update({
+          where: { id: comicIssueId },
+          data: {
+            isSecondarySaleActive: true,
+          },
+        });
+      }
     } catch (error) {
       logErr(`Error : ${error}`);
     }

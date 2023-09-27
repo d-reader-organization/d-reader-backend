@@ -16,7 +16,6 @@ import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { RoyaltyWalletDto } from './royalty-wallet.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { IsLamport } from 'src/decorators/IsLamport';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 
@@ -44,20 +43,6 @@ export class CreateComicIssueDto {
   @IsBoolean()
   @IsOptional()
   isFullyUploaded?: boolean;
-
-  @IsOptional()
-  @Min(0)
-  // @IsDivisibleBy(100)
-  @IsNumber()
-  supply?: number;
-
-  @IsOptional()
-  @IsLamport()
-  discountMintPrice?: number;
-
-  @IsOptional()
-  @IsLamport()
-  mintPrice?: number;
 
   @IsOptional()
   @Min(0)

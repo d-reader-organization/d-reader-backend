@@ -327,7 +327,6 @@ async function main() {
         await comicIssueService.publishOnChain(comicIssue.id, {
           supply: getRandomInt(1, 2) * 10, // 10-20 supply
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
-          discountMintPrice: 0.05 * LAMPORTS_PER_SOL, // 0.05 discount price
           sellerFee: 5, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
