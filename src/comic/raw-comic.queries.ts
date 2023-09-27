@@ -9,31 +9,33 @@ import { RawComicParams } from './dto/raw-comic-params.dto';
 const getQueryFilters = (
   query: RawComicParams,
 ): {
-  nameCondition: Prisma.Sql;
-  creatorWhereCondition: Prisma.Sql;
+  titleCondition: Prisma.Sql;
+  creatorCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
 } => {
-  const nameCondition = !!query.titleSubstring
-    ? Prisma.sql`AND comic."title" ILIKE '%' || ${
+  const hasTitleFilter = !!query.titleSubstring;
+  const titleCondition = hasTitleFilter
+    ? Prisma.sql`WHERE comic."title" ILIKE '%' || ${
         query.titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
-  const creatorWhereCondition = !!query.creatorSlug
-    ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
+  const andOrWhere = hasTitleFilter ? Prisma.sql`AND` : Prisma.sql`WHERE`;
+  const creatorCondition = !!query.creatorSlug
+    ? Prisma.sql`${andOrWhere} creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortRawComicBy(query.sortTag);
   return {
-    nameCondition,
-    creatorWhereCondition,
+    titleCondition,
+    creatorCondition,
     sortOrder,
     sortColumn,
   };
 };
 
 export const getRawComicsQuery = (query: RawComicParams) => {
-  const { nameCondition, creatorWhereCondition, sortOrder, sortColumn } =
+  const { titleCondition, creatorCondition, sortOrder, sortColumn } =
     getQueryFilters(query);
   return Prisma.sql`SELECT comic.*,json_agg(distinct genre.*) AS genres,
 AVG(userComic.rating) as "averageRating",
@@ -48,8 +50,8 @@ inner join "Genre" genre on genre.slug = "comicToGenre"."B"
 inner join "Creator" creator on creator.id = comic."creatorId"
 left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "UserComic" userComic on userComic."comicSlug" = comic.slug
-${nameCondition}
-${creatorWhereCondition}
+${titleCondition}
+${creatorCondition}
 group by comic."title", comic.slug, creator.*
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}

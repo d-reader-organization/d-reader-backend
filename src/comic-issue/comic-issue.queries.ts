@@ -12,7 +12,7 @@ const getQueryFilters = (
 ): {
   titleCondition: Prisma.Sql;
   comicSlugCondition: Prisma.Sql;
-  creatorWhereCondition: Prisma.Sql;
+  creatorCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
@@ -25,7 +25,7 @@ const getQueryFilters = (
   const comicSlugCondition = !!query.comicSlug
     ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
     : Prisma.empty;
-  const creatorWhereCondition = !!query.creatorSlug
+  const creatorCondition = !!query.creatorSlug
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
@@ -34,7 +34,7 @@ const getQueryFilters = (
   return {
     titleCondition,
     comicSlugCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortOrder,
     sortColumn,
     filterCondition,
@@ -45,7 +45,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   const {
     titleCondition,
     comicSlugCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortColumn,
     sortOrder,
     filterCondition,
@@ -97,7 +97,7 @@ WHERE comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL
 ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
-${creatorWhereCondition}
+${creatorCondition}
 GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
