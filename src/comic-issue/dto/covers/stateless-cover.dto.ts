@@ -10,6 +10,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ComicRarity, StatelessCover } from '@prisma/client';
 import { getPublicUrl } from '../../../aws/s3client';
 import { plainToInstance } from 'class-transformer';
+import { orderBy } from 'lodash';
 
 export class StatelessCoverDto {
   @IsString()
@@ -46,6 +47,6 @@ export function toStatelessCoverDto(cover: StatelessCover) {
 }
 
 export const toStatelessCoverDtoArray = (covers: StatelessCover[]) => {
-  // TODO: Sort covers by share percentage (by rarity)
-  return covers.map(toStatelessCoverDto);
+  const sortedCovers = orderBy(covers, 'share', 'desc');
+  return sortedCovers.map(toStatelessCoverDto);
 };

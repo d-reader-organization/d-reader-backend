@@ -199,7 +199,6 @@ export class ComicIssueService {
       Array<
         ComicIssue & {
           genres: Genre[];
-          // TODO: is this really fetching statelessCovers? if yes, apply this to 'findAll' as well
           statelessCovers: StatelessCover[];
         } & RawComicIssueStats
       >

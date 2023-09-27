@@ -18,12 +18,6 @@ export class AuctionHouseController {
     return await toListingDtoArray(listedItems);
   }
 
-  // TODO v2: move this to /comic-issue/get/:id/collection-stats
-  // params { primarySale: boolean, secondarySale: boolean, offchainStats: boolean }
-  // primarySale (totalVolume, itemsMinted, itemsRemaining, price, endsAt, hasEnded)
-  // secondarySale (totalVolume, itemsListed, floorPrice)
-  // offchainStats (favouritesCount, ratersCount, averageRating, readersCount, viewersCount)
-  // otherStats (supply, issuesCount, uniqueOwners)
   @Get('/get/collection-stats/:comicIssueId')
   async findCollectionStats(@Param('comicIssueId') id: string) {
     const stats = await this.auctionHouseService.findCollectionStats(+id);

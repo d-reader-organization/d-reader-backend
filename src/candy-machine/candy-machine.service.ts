@@ -198,7 +198,6 @@ export class CandyMachineService {
         };
       }
 
-      // TODO: bundlr funding on mainnet is not working as intended?
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({

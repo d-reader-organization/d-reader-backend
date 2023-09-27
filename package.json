@@ -93,6 +93,7 @@
     "nestjs-prisma": "^0.22.0",
     "nestjs-real-ip": "^3.0.1",
     "nodemailer": "^6.9.3",
+    "p-ratelimit": "^1.0.1",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "prisma-dbml-generator": "^0.10.0",

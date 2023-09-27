@@ -142,7 +142,7 @@ model Genre {
   name     String  @unique
   slug     String  @id
   icon     String  @default("")
-  priority Int
+  priority Int // should this be @unique?
   color    String
   comics   Comic[]
 }
@@ -350,10 +350,10 @@ model ComicPage {
 model CarouselSlide {
   id           Int              @id @default(autoincrement())
   image        String
-  // secondaryImage String           @default("")
+  // secondaryImage String      @default("")
   title        String           @default("")
   subtitle     String           @default("")
-  priority     Int
+  priority     Int // should this be @unique?
   comicIssueId Int?
   comicSlug    String?
   creatorSlug  String?
@@ -435,7 +435,7 @@ model SplToken {
   address  String
   decimals Int
   symbol   String
-  priority Int
+  priority Int // should this be @unique?
   icon     String
 }
 
