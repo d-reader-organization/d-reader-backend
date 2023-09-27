@@ -130,7 +130,8 @@ export class ComicIssueService {
         groups: {
           every: {
             label: PUBLIC_GROUP_LABEL,
-            endDate: { lt: new Date() },
+            // startDate: { lt: new Date() },
+            endDate: { gt: new Date() },
           },
         },
       },
