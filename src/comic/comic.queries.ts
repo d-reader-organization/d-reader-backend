@@ -11,7 +11,7 @@ const getQueryFilters = (
   query: ComicParams,
 ): {
   nameCondition: Prisma.Sql;
-  creatorWhereCondition: Prisma.Sql;
+  creatorCondition: Prisma.Sql;
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
@@ -21,7 +21,7 @@ const getQueryFilters = (
         query.titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
-  const creatorWhereCondition = !!query.creatorSlug
+  const creatorCondition = !!query.creatorSlug
     ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
@@ -29,7 +29,7 @@ const getQueryFilters = (
   const filterCondition = filterComicBy(query.filterTag);
   return {
     nameCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortOrder,
     sortColumn,
     filterCondition,
@@ -39,7 +39,7 @@ const getQueryFilters = (
 export const getComicsQuery = (query: ComicParams) => {
   const {
     nameCondition,
-    creatorWhereCondition,
+    creatorCondition,
     sortOrder,
     sortColumn,
     filterCondition,
@@ -60,7 +60,7 @@ left join "UserComic" userComic on userComic."comicSlug" = comic.slug
 where comic."verifiedAt" is not null and comic."publishedAt" < now()
 ${filterCondition}
 ${nameCondition}
-${creatorWhereCondition}
+${creatorCondition}
 group by comic."title", comic.slug, creator.*
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
