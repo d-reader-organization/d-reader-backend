@@ -93,25 +93,15 @@ export class UserComicIssueService {
     const activeCandyMachine = await this.prisma.candyMachine.findFirst({
       where: {
         collectionNft: { comicIssueId: issue.id },
-        itemsRemaining: {
-          gt: 0,
-        },
+        itemsRemaining: { gt: 0 },
         groups: {
-          every: {
+          some: {
             label: PUBLIC_GROUP_LABEL,
-            endDate: {
-              lt: new Date(),
-            },
+            endDate: { gt: new Date() },
           },
         },
       },
-      include: {
-        groups: {
-          where: {
-            label: PUBLIC_GROUP_LABEL,
-          },
-        },
-      },
+      include: { groups: { where: { label: PUBLIC_GROUP_LABEL } } },
     });
 
     if (activeCandyMachine) return activeCandyMachine.groups[0]?.mintPrice;

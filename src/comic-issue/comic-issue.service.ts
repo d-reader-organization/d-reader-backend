@@ -128,7 +128,7 @@ export class ComicIssueService {
         collectionNft: { comicIssueId },
         itemsRemaining: { gt: 0 },
         groups: {
-          every: {
+          some: {
             label: PUBLIC_GROUP_LABEL,
             // startDate: { lt: new Date() },
             endDate: { gt: new Date() },
