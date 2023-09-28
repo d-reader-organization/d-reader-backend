@@ -182,7 +182,6 @@ export async function uploadItemMetadata(
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: { uri: string; name: string }[] = [];
   let supplyLeft = comicIssueSupply;
-
   for (const rarityShare of rarityShares) {
     const { rarity } = rarityShare;
     const itemMetadata = await uploadAllMetadata(
