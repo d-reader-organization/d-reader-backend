@@ -60,8 +60,8 @@ export class AddGroupQuestions {
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseStartDate(startDate: string) {
-    return startDate;
+  parseStartDate(startDate: string): Date {
+    return new Date(startDate);
   }
 
   @Question({
@@ -69,8 +69,8 @@ export class AddGroupQuestions {
     name: 'endDate',
     message: 'Enter the end date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseEndDate(endDate: string) {
-    return endDate;
+  parseEndDate(endDate: string): Date {
+    return new Date(endDate);
   }
 
   @Question({
