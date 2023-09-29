@@ -61,7 +61,7 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
   const currentDate = new Date();
   let itemsRemaing: number;
   if (group.mintLimit) {
-    itemsRemaing = group.mintLimit - group.walletSettings.itemsMinted;
+    itemsRemaing = group.mintLimit - group.walletStats.itemsMinted;
   }
   const plainCandyMachineGroupDto: CandyMachineGroupDto = {
     label: group.label,
@@ -75,9 +75,9 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     mintLimit: group.mintLimit,
     supply: group.supply,
     wallet: {
-      itemsMinted: group.walletSettings.itemsMinted,
+      itemsMinted: group.walletStats.itemsMinted,
       itemsRemaing,
-      isEligible: group.walletSettings.isEligible,
+      isEligible: group.walletStats.isEligible,
     },
   };
   const candyMachineGroupDto = plainToInstance(

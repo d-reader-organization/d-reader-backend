@@ -22,11 +22,11 @@ export type CandyMachineGroupSettings = {
   startDate: Date;
   endDate: Date;
   mintPrice: number;
-  walletSettings: WalletGroupSettings;
+  walletStats: CandyMachineGroupWalletStats;
   mintLimit?: number;
 };
 
-export type WalletGroupSettings = {
+export type CandyMachineGroupWalletStats = {
   itemsMinted: number;
   isEligible: boolean;
 };

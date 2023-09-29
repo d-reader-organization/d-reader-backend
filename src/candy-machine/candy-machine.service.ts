@@ -544,30 +544,29 @@ export class CandyMachineService {
         `Candy Machine with address ${address} does not exist`,
       );
     }
+
+    // TODO: this is 100% not type safe
     const groups: CandyMachineGroupSettings[] =
       await candyMachine.groups.reduce(
         async (promise, group): Promise<CandyMachineGroupSettings[]> => {
-          const resolvedGroups = await promise;
+          const resolvedGroups = await promise; // TODO: This code smells
 
           if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
 
-          const { displayLabel, isEligible } = await this.checkWalletEligiblity(
-            query.candyMachineAddress,
-            group.label,
-            query.walletAddress,
-          );
-          const { itemsMinted, walletItemsMinted } = await this.getMintCount(
-            query.candyMachineAddress,
-            group.label,
-            query.walletAddress,
-          );
+          const { itemsMinted, displayLabel, isEligible, walletItemsMinted } =
+            await this.getMintCount(
+              query.candyMachineAddress,
+              group.label,
+              query.walletAddress,
+            );
+
           const appendGroups: CandyMachineGroupSettings[] = [
             ...resolvedGroups,
             {
               ...group,
               itemsMinted,
               displayLabel,
-              walletSettings: {
+              walletStats: {
                 isEligible,
                 itemsMinted: walletItemsMinted,
               },
@@ -664,49 +663,41 @@ export class CandyMachineService {
   async getMintCount(
     candyMachineAddress: string,
     label: string,
-    buyer: string,
-  ): Promise<{ itemsMinted: number; walletItemsMinted: number }> {
-    const itemsMinted = await this.prisma.candyMachineReceipt.findMany({
-      where: { candyMachineAddress, label },
-    });
-    const walletItemsMinted = itemsMinted.filter(
-      (item) => item.buyerAddress === buyer,
-    );
-    return {
-      itemsMinted: itemsMinted.length,
-      walletItemsMinted: walletItemsMinted.length,
-    };
-  }
-
-  async checkWalletEligiblity(
-    candyMachineAddress: string,
-    label: string,
-    wallet: string,
+    walletAddress: string,
   ): Promise<{
+    itemsMinted: number;
+    walletItemsMinted: number;
     displayLabel: string;
     isEligible: boolean;
   }> {
-    if (label === PUBLIC_GROUP_LABEL) {
-      return {
-        displayLabel: PUBLIC_GROUP_LABEL,
-        isEligible: true,
-      };
-    }
-    const group = await this.prisma.candyMachineGroup.findFirst({
-      where: {
-        candyMachineAddress: candyMachineAddress,
-        label,
-      },
-      include: {
-        wallets: true,
-      },
+    const receipts = await this.prisma.candyMachineReceipt.findMany({
+      where: { candyMachineAddress, label },
     });
-    const isEligible = group.wallets.find(
-      (address) => address.walletAddress == wallet,
+
+    const receiptsFromBuyer = receipts.filter(
+      (receipt) => receipt.buyerAddress === walletAddress,
     );
+
+    let displayLabel = PUBLIC_GROUP_LABEL;
+    let isEligible = true;
+
+    if (label !== PUBLIC_GROUP_LABEL) {
+      const group = await this.prisma.candyMachineGroup.findFirst({
+        where: { candyMachineAddress, label },
+        include: { wallets: true },
+      });
+
+      displayLabel = group.displayLabel;
+      isEligible = !!group.wallets.find(
+        (groupWallets) => groupWallets.walletAddress == walletAddress,
+      );
+    }
+
     return {
-      displayLabel: group.displayLabel,
-      isEligible: !!isEligible,
+      itemsMinted: receipts.length,
+      walletItemsMinted: receiptsFromBuyer.length,
+      displayLabel,
+      isEligible,
     };
   }
 }
