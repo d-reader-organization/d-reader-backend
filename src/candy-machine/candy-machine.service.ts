@@ -545,37 +545,27 @@ export class CandyMachineService {
       );
     }
 
-    // TODO: this is 100% not type safe
-    const groups: CandyMachineGroupSettings[] =
-      await candyMachine.groups.reduce(
-        async (promise, group): Promise<CandyMachineGroupSettings[]> => {
-          const resolvedGroups = await promise; // TODO: This code smells
-
-          if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
-
+    const groups: CandyMachineGroupSettings[] = await Promise.all(
+      candyMachine.groups.map(
+        async (group): Promise<CandyMachineGroupSettings> => {
           const { itemsMinted, displayLabel, isEligible, walletItemsMinted } =
             await this.getMintCount(
               query.candyMachineAddress,
               group.label,
               query.walletAddress,
             );
-
-          const appendGroups: CandyMachineGroupSettings[] = [
-            ...resolvedGroups,
-            {
-              ...group,
-              itemsMinted,
-              displayLabel,
-              walletStats: {
-                isEligible,
-                itemsMinted: walletItemsMinted,
-              },
+          return {
+            ...group,
+            itemsMinted,
+            displayLabel,
+            walletStats: {
+              isEligible,
+              itemsMinted: walletItemsMinted,
             },
-          ];
-          return appendGroups;
+          };
         },
-        Promise.resolve([]),
-      );
+      ),
+    );
     return { ...candyMachine, groups };
   }
 
