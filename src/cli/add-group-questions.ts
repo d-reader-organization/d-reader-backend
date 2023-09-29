@@ -1,4 +1,3 @@
-import { DateTime, toDateTime } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
@@ -61,8 +60,8 @@ export class AddGroupQuestions {
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseStartDate(startDate: string): DateTime {
-    return toDateTime(startDate);
+  parseStartDate(startDate: string) {
+    return startDate;
   }
 
   @Question({
@@ -70,8 +69,8 @@ export class AddGroupQuestions {
     name: 'endDate',
     message: 'Enter the end date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseEndDate(endDate: string): DateTime {
-    return toDateTime(endDate);
+  parseEndDate(endDate: string) {
+    return endDate;
   }
 
   @Question({

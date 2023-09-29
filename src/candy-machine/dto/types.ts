@@ -33,8 +33,8 @@ export type WalletGroupSettings = {
 
 export type GuardParams = {
   mintPrice: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   label: string;
   displayLabel: string;
   supply: number;
