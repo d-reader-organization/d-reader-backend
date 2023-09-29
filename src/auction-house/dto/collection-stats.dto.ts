@@ -14,6 +14,10 @@ export class CollectionStatsDto {
   @IsInt()
   @Min(0)
   floorPrice: number;
+
+  @IsInt()
+  @Min(0)
+  supply: number;
 }
 
 export function toCollectionStats(stats: CollectonMarketplaceStats) {
@@ -21,6 +25,7 @@ export function toCollectionStats(stats: CollectonMarketplaceStats) {
     totalVolume: stats.totalVolume,
     itemsListed: stats.itemsListed,
     floorPrice: stats.floorPrice,
+    supply: stats.supply,
   };
   return plainToInstance(CollectionStatsDto, collectionStats);
 }

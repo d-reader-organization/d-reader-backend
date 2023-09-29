@@ -16,10 +16,14 @@ export type MintSettings = {
 export type CandyMachineGroupSettings = {
   label: string;
   displayLabel: string;
-  guards: DefaultCandyGuardSettings;
   supply: number;
   itemsMinted: number;
+  splTokenAddress: string;
+  startDate: Date;
+  endDate: Date;
+  mintPrice: number;
   walletSettings: WalletGroupSettings;
+  mintLimit?: number;
 };
 
 export type WalletGroupSettings = {
@@ -27,17 +31,13 @@ export type WalletGroupSettings = {
   isEligible: boolean;
 };
 
-export type CandyMachineDataParams = {
-  supply: number;
-  guardParams: GuardParams;
-};
-
 export type GuardParams = {
   mintPrice: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   label: string;
   displayLabel: string;
+  supply: number;
   splTokenAddress: string;
   mintLimit?: number;
   freezePeriod?: number;

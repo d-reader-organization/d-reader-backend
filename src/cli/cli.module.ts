@@ -39,6 +39,9 @@ import { s3Module } from '../aws/s3.module';
 import { PrismaModule } from 'nestjs-prisma';
 import { JwtModule } from '@nestjs/jwt';
 import config from '../configs/config';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
+import { ComicPageService } from '../comic-page/comic-page.service';
+import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 
 @Module({
   imports: [
@@ -78,6 +81,9 @@ import config from '../configs/config';
     MintOneCommand,
     MintOneQuestions,
     CandyMachineService,
+    ComicIssueService,
+    ComicPageService,
+    UserComicIssueService,
     HeliusService,
     WebSocketGateway,
     SyncWalletQuestions,

@@ -1,7 +1,13 @@
-import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
+import { IsArray, IsInt, Min } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { plainToInstance } from 'class-transformer';
+import { Type, plainToInstance } from 'class-transformer';
 import { CandyMachine } from '@prisma/client';
+import {
+  CandyMachineGroupDto,
+  toCandyMachineGroupDtoArray,
+} from './candy-machine-group.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { CandyMachineGroupSettings } from './types';
 
 export class CandyMachineDto {
   @IsSolanaAddress()
@@ -15,16 +21,21 @@ export class CandyMachineDto {
   @Min(0)
   itemsMinted: number;
 
-  @IsOptional()
-  @IsDateString()
-  endsAt?: string;
+  @IsArray()
+  @Type(() => CandyMachineGroupDto)
+  @ApiProperty({ type: [CandyMachineGroupDto] })
+  groups: CandyMachineGroupDto[];
 }
 
-export async function toCandyMachineDto(candyMachine: CandyMachine) {
+type CandyMachineWithGroups = CandyMachine & {
+  groups: CandyMachineGroupSettings[];
+};
+export async function toCandyMachineDto(candyMachine: CandyMachineWithGroups) {
   const plainCandyMachineDto: CandyMachineDto = {
     address: candyMachine.address,
-    supply: candyMachine.itemsAvailable,
+    supply: candyMachine.supply,
     itemsMinted: candyMachine.itemsMinted,
+    groups: toCandyMachineGroupDtoArray(candyMachine.groups),
   };
 
   const candyMachineDto = plainToInstance(
@@ -34,6 +45,8 @@ export async function toCandyMachineDto(candyMachine: CandyMachine) {
   return candyMachineDto;
 }
 
-export const toCandyMachineDtoArray = (candyMachines: CandyMachine[]) => {
+export const toCandyMachineDtoArray = (
+  candyMachines: CandyMachineWithGroups[],
+) => {
   return Promise.all(candyMachines.map(toCandyMachineDto));
 };

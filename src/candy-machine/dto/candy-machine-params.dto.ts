@@ -1,6 +1,6 @@
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
-export class EligibleGroupsParams {
+export class CandyMachineParams {
   @IsSolanaAddress()
   candyMachineAddress: string;
 

@@ -7,7 +7,6 @@ import {
 } from 'class-validator';
 import { CandyMachineGroupSettings } from './types';
 import { Type, plainToInstance } from 'class-transformer';
-import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class WalletGroupDto {
@@ -59,34 +58,21 @@ export class CandyMachineGroupDto {
 }
 
 export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
-  const startDate = new Date(group.guards.startDate.date.toNumber() * 1000);
-  const endDate = new Date(group.guards.endDate.date.toNumber() * 1000);
   const currentDate = new Date();
-  let mintPrice: number,
-    splTokenAddress: string,
-    mintLimit: number,
-    itemsRemaing: number;
-  if (group.guards.freezeSolPayment) {
-    mintPrice = group.guards.freezeSolPayment.amount.basisPoints.toNumber();
-    splTokenAddress = WRAPPED_SOL_MINT.toBase58();
-  } else {
-    mintPrice = group.guards.freezeTokenPayment.amount.basisPoints.toNumber();
-    splTokenAddress = group.guards.freezeTokenPayment.mint.toBase58();
-  }
-  if (group.guards.mintLimit) {
-    mintLimit = group.guards.mintLimit.limit;
-    itemsRemaing = mintLimit - group.walletSettings.itemsMinted;
+  let itemsRemaing: number;
+  if (group.mintLimit) {
+    itemsRemaing = group.mintLimit - group.walletSettings.itemsMinted;
   }
   const plainCandyMachineGroupDto: CandyMachineGroupDto = {
     label: group.label,
-    startDate,
-    endDate,
-    mintPrice,
-    isActive: startDate <= currentDate && currentDate < endDate,
-    splTokenAddress,
-    itemsMinted: group.itemsMinted,
-    mintLimit,
     displayLabel: group.displayLabel,
+    startDate: group.startDate,
+    endDate: group.endDate,
+    mintPrice: group.mintPrice,
+    isActive: group.startDate <= currentDate && currentDate < group.endDate,
+    splTokenAddress: group.splTokenAddress,
+    itemsMinted: group.itemsMinted,
+    mintLimit: group.mintLimit,
     supply: group.supply,
     wallet: {
       itemsMinted: group.walletSettings.itemsMinted,
