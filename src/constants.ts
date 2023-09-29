@@ -112,7 +112,7 @@ export const FIVE_RARITIES_SHARE: RarityShare[] = [
 
 export const ONE_RARITY_SHARE: RarityShare[] = [
   {
-    rarity: PrismaComicRarity.None,
+    rarity: PrismaComicRarity.Common,
     value: 100,
   },
 ];

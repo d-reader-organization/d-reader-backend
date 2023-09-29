@@ -261,6 +261,8 @@ Table CandyMachineGroup {
   id Int [pk, increment]
   label String [not null]
   displayLabel String [not null]
+  supply Int [not null]
+  mintLimit Int
   startDate DateTime [not null]
   endDate DateTime [not null]
   mintPrice Int [not null]

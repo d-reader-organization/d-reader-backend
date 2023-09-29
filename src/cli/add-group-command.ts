@@ -5,8 +5,10 @@ import {
   FreezeSolPaymentGuardSettings,
   MintLimitGuardSettings,
   PublicKey,
+  RedeemedAmountGuardSettings,
   StartDateGuardSettings,
   WRAPPED_SOL_MINT,
+  toBigNumber,
   toDateTime,
 } from '@metaplex-foundation/js';
 import { initMetaplex } from '../utils/metaplex';
@@ -19,8 +21,9 @@ interface Options {
   candyMachineAddress: string;
   label: string;
   displayLabel: string;
-  startDate: Date;
-  endDate: Date;
+  supply: number;
+  startDate: string;
+  endDate: string;
   mintLimit: number;
   mintPrice: number;
 }
@@ -53,6 +56,7 @@ export class AddGroupCommand extends CommandRunner {
         mintLimit,
         mintPrice,
         displayLabel,
+        supply,
       } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const metaplex = initMetaplex();
@@ -62,6 +66,9 @@ export class AddGroupCommand extends CommandRunner {
         .findByAddress({ address: candyMachinePublicKey });
       const candyMachineGroups = candyMachine.candyGuard.groups;
 
+      const redeemedAmountGuard: RedeemedAmountGuardSettings = {
+        maximum: toBigNumber(supply),
+      };
       const startDateGuard: StartDateGuardSettings = {
         date: toDateTime(startDate),
       };
@@ -88,6 +95,7 @@ export class AddGroupCommand extends CommandRunner {
         guards: {
           ...candyMachine.candyGuard.guards,
           freezeSolPayment,
+          redeemedAmount: redeemedAmountGuard,
           startDate: startDateGuard,
           endDate: endDateGuard,
           mintLimit: mintLimitGuard,
@@ -110,6 +118,7 @@ export class AddGroupCommand extends CommandRunner {
         mintPrice,
         splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
         mintLimit,
+        supply,
       };
       await this.candyMachineService.addCandyMachineGroup(
         candyMachineAddress,
