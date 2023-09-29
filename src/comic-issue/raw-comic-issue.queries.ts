@@ -6,6 +6,10 @@ import {
 } from '../utils/query-tags-helpers';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 
+const andOrWhere = (...conditions: boolean[]) => {
+  return conditions.includes(true) ? Prisma.sql`AND` : Prisma.sql`WHERE`;
+};
+
 const getQueryFilters = (
   query: RawComicIssueParams,
 ): {
@@ -15,17 +19,28 @@ const getQueryFilters = (
   sortOrder: Prisma.Sql;
   sortColumn: Prisma.Sql;
 } => {
+  const hasTitleFilter = !!query.titleSubstring;
+  const hasComicSlugFilter = !!query.comicSlug;
+
   const titleCondition = !!query.titleSubstring
-    ? Prisma.sql`AND comicIssue."title" ILIKE '%' || ${
+    ? Prisma.sql`WHERE comicIssue."title" ILIKE '%' || ${
         query.titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
+
   const comicSlugCondition = !!query.comicSlug
-    ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
+    ? Prisma.sql`${andOrWhere(hasTitleFilter)} comicIssue."comicSlug" = ${
+        query.comicSlug
+      }`
     : Prisma.empty;
+
   const creatorCondition = !!query.creatorSlug
-    ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
+    ? Prisma.sql`${andOrWhere(
+        hasTitleFilter,
+        hasComicSlugFilter,
+      )} creator."slug" = ${query.creatorSlug}`
     : Prisma.empty;
+
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortRawComicIssueBy(query.sortTag);
   return {
@@ -49,7 +64,7 @@ export const getRawComicIssuesQuery = (
   } = getQueryFilters(query);
   return Prisma.sql`select comicIssue.*,
   json_agg(distinct genre.*) AS genres,
-  json_agg(distinct statelessCover.*) AS statelessCovers,
+  json_agg(distinct "statelessCover".*) AS statelessCovers,
   AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT uci."favouritedAt"
@@ -87,7 +102,7 @@ export const getRawComicIssuesQuery = (
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
-  inner join "StatelessCover" statelessCover on "statelessCover"."comicIssueId" = comicIssue.id
+  inner join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}

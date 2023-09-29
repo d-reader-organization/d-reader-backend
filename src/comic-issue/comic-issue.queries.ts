@@ -50,7 +50,16 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
     sortOrder,
     filterCondition,
   } = getQueryFilters(query);
-  return Prisma.sql`select comicIssue.*, comic."title" as "comicTitle", comic."audienceType" , creator."name"  as "creatorName", creator.slug  as "creatorSlug", creator."verifiedAt" as "creatorVerifiedAt", creator.avatar as "creatorAvatar", collectionNft."address" as "collectionNftAddress", json_agg(distinct genre.*) AS genres,
+  return Prisma.sql`select comicIssue.*,
+  comic."title" as "comicTitle",
+  comic."audienceType" ,
+  creator."name" as "creatorName",
+  creator.slug as "creatorSlug",
+  creator."verifiedAt" as "creatorVerifiedAt",
+  creator.avatar as "creatorAvatar",
+  collectionNft."address" as "collectionNftAddress",
+  json_agg(distinct genre.*) AS genres,
+  json_agg(distinct "statelessCover".*) AS statelessCovers,
   AVG(usercomicissue.rating) as "averageRating",
   (select COUNT(*)
      from (SELECT uci."favouritedAt"
@@ -93,6 +102,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
+  inner join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id
 WHERE comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL
 ${filterCondition}
 ${titleCondition}
