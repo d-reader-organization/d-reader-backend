@@ -259,15 +259,23 @@ export class AuctionHouseService {
       select: { price: true },
     });
 
-    const [totalVolume, itemsListed, cheapestItem] = await Promise.all([
-      getTotalVolume,
-      countListed,
-      getCheapestItem,
-    ]);
+    const getSupply = this.prisma.candyMachine.findFirst({
+      where: { collectionNft: { comicIssueId } },
+      select: { supply: true },
+    });
+
+    const [totalVolume, itemsListed, cheapestItem, candyMachineSupply] =
+      await Promise.all([
+        getTotalVolume,
+        countListed,
+        getCheapestItem,
+        getSupply,
+      ]);
     return {
       totalVolume,
       itemsListed: itemsListed || 0,
       floorPrice: cheapestItem?.price || 0,
+      supply: candyMachineSupply?.supply || 0,
     };
   }
 

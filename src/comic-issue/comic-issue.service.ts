@@ -46,7 +46,7 @@ import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
-import { CandyMachineDataParams } from 'src/candy-machine/dto/types';
+import { GuardParams } from 'src/candy-machine/dto/types';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -605,24 +605,22 @@ export class ComicIssueService {
       deleteRoyaltyWallets,
     ]);
 
-    const candyMachineData: CandyMachineDataParams = {
+    const guardParams: GuardParams = {
+      startDate: startDate.toDateString(),
+      endDate: endDate.toDateString(),
+      mintLimit: publicMintLimit,
+      freezePeriod,
+      splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+      mintPrice,
+      label: PUBLIC_GROUP_LABEL,
+      displayLabel: PUBLIC_GROUP_LABEL,
       supply,
-      guardParams: {
-        startDate,
-        endDate,
-        mintLimit: publicMintLimit,
-        freezePeriod,
-        splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
-        mintPrice,
-        label: PUBLIC_GROUP_LABEL,
-        displayLabel: PUBLIC_GROUP_LABEL,
-      },
     };
     try {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
-        candyMachineData,
+        guardParams,
       );
     } catch (e) {
       // revert in case of failure

@@ -292,6 +292,8 @@ model CandyMachineGroup {
   id                  Int                       @id @default(autoincrement())
   label               String
   displayLabel        String
+  supply              Int
+  mintLimit           Int?
   startDate           DateTime
   endDate             DateTime
   mintPrice           Int
