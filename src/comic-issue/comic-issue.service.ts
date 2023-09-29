@@ -606,8 +606,8 @@ export class ComicIssueService {
     ]);
 
     const guardParams: GuardParams = {
-      startDate: startDate.toDateString(),
-      endDate: endDate.toDateString(),
+      startDate,
+      endDate,
       mintLimit: publicMintLimit,
       freezePeriod,
       splTokenAddress: WRAPPED_SOL_MINT.toBase58(),

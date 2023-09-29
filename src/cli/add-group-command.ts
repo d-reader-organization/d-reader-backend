@@ -22,8 +22,8 @@ interface Options {
   label: string;
   displayLabel: string;
   supply: number;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
   mintLimit: number;
   mintPrice: number;
 }
