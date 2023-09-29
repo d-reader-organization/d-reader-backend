@@ -58,13 +58,9 @@ import {
 } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { PUB_AUTH_TAG, pda } from './instructions/pda';
-import { EligibleGroupsParams } from './dto/eligible-groups-params.dto';
+import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { Prisma } from '@prisma/client';
-import {
-  CandyMachineDataParams,
-  CandyMachineGroupSettings,
-  GuardParams,
-} from './dto/types';
+import { CandyMachineGroupSettings, GuardParams } from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
@@ -159,7 +155,7 @@ export class CandyMachineService {
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
-    candyMachineData: CandyMachineDataParams,
+    guardParams: GuardParams,
   ) {
     validateComicIssueCMInput(comicIssue);
 
@@ -264,8 +260,8 @@ export class CandyMachineService {
       }),
     );
 
-    const { startDate, endDate, mintLimit, freezePeriod, mintPrice } =
-      candyMachineData.guardParams;
+    const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
+      guardParams;
     const candyMachineTx = await constructCandyMachineTransaction(
       this.metaplex,
       {
@@ -279,7 +275,7 @@ export class CandyMachineService {
         maxEditionSupply: toBigNumber(0),
         isMutable: true,
         sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-        itemsAvailable: toBigNumber(candyMachineData.supply),
+        itemsAvailable: toBigNumber(supply),
         guards: {
           botTax: {
             lamports: solFromLamports(BOT_TAX),
@@ -358,7 +354,7 @@ export class CandyMachineService {
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
         itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
-        supply: candyMachineData.supply,
+        supply,
         groups: {
           create: {
             displayLabel: PUBLIC_GROUP_LABEL,
@@ -367,6 +363,8 @@ export class CandyMachineService {
             startDate,
             endDate,
             mintPrice: mintPrice,
+            mintLimit,
+            supply,
             splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
           },
         },
@@ -380,7 +378,7 @@ export class CandyMachineService {
       royaltyWallets,
       statelessCovers.length,
       darkblockId,
-      candyMachineData.supply,
+      supply,
       rarityCoverFiles,
     );
 
@@ -535,18 +533,51 @@ export class CandyMachineService {
     });
   }
 
-  async findByAddress(address: string) {
+  async find(query: CandyMachineParams) {
+    const address = query.candyMachineAddress;
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address },
+      include: { groups: true },
     });
-
     if (!candyMachine) {
       throw new NotFoundException(
         `Candy Machine with address ${address} does not exist`,
       );
     }
+    const groups: CandyMachineGroupSettings[] =
+      await candyMachine.groups.reduce(
+        async (promise, group): Promise<CandyMachineGroupSettings[]> => {
+          const resolvedGroups = await promise;
 
-    return candyMachine;
+          if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
+
+          const { displayLabel, isEligible } = await this.checkWalletEligiblity(
+            query.candyMachineAddress,
+            group.label,
+            query.walletAddress,
+          );
+          const { itemsMinted, walletItemsMinted } = await this.getMintCount(
+            query.candyMachineAddress,
+            group.label,
+            query.walletAddress,
+          );
+          const appendGroups: CandyMachineGroupSettings[] = [
+            ...resolvedGroups,
+            {
+              ...group,
+              itemsMinted,
+              displayLabel,
+              walletSettings: {
+                isEligible,
+                itemsMinted: walletItemsMinted,
+              },
+            },
+          ];
+          return appendGroups;
+        },
+        Promise.resolve([]),
+      );
+    return { ...candyMachine, groups };
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
@@ -569,6 +600,8 @@ export class CandyMachineService {
       endDate,
       splTokenAddress,
       mintPrice,
+      mintLimit,
+      supply,
     } = params;
     await this.prisma.candyMachineGroup.create({
       data: {
@@ -584,6 +617,8 @@ export class CandyMachineService {
         endDate: endDate.toString(),
         splTokenAddress,
         mintPrice,
+        mintLimit,
+        supply,
       },
     });
   }
@@ -626,58 +661,6 @@ export class CandyMachineService {
       : undefined;
   }
 
-  async findWalletEligibleGroups(
-    query: EligibleGroupsParams,
-  ): Promise<CandyMachineGroupSettings[]> {
-    const candyMachinePubKey = new PublicKey(query.candyMachineAddress);
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachinePubKey });
-
-    const eligibleGroups: CandyMachineGroupSettings[] =
-      await candyMachine.candyGuard.groups.reduce(
-        async (promise, group): Promise<CandyMachineGroupSettings[]> => {
-          const resolvedGroups = await promise;
-
-          if (group.label === AUTHORITY_GROUP_LABEL) return resolvedGroups;
-
-          const { displayLabel, isEligible, allowListCount } =
-            await this.checkWalletEligiblity(
-              query.candyMachineAddress,
-              group.label,
-              query.walletAddress,
-            );
-          const { itemsMinted, walletItemsMinted } = await this.getMintCount(
-            query.candyMachineAddress,
-            group.label,
-            query.walletAddress,
-          );
-          let supply: number;
-          if (group.label === PUBLIC_GROUP_LABEL) {
-            supply = candyMachine.itemsRemaining.toNumber();
-          } else {
-            supply = allowListCount * group.guards.mintLimit.limit;
-          }
-          const appendGroups: CandyMachineGroupSettings[] = [
-            ...resolvedGroups,
-            {
-              ...group,
-              itemsMinted,
-              displayLabel,
-              supply,
-              walletSettings: {
-                isEligible,
-                itemsMinted: walletItemsMinted,
-              },
-            },
-          ];
-          return appendGroups;
-        },
-        Promise.resolve([]),
-      );
-    return eligibleGroups;
-  }
-
   async getMintCount(
     candyMachineAddress: string,
     label: string,
@@ -702,7 +685,6 @@ export class CandyMachineService {
   ): Promise<{
     displayLabel: string;
     isEligible: boolean;
-    allowListCount?: number;
   }> {
     if (label === PUBLIC_GROUP_LABEL) {
       return {
@@ -710,7 +692,6 @@ export class CandyMachineService {
         isEligible: true,
       };
     }
-
     const group = await this.prisma.candyMachineGroup.findFirst({
       where: {
         candyMachineAddress: candyMachineAddress,
@@ -726,7 +707,6 @@ export class CandyMachineService {
     return {
       displayLabel: group.displayLabel,
       isEligible: !!isEligible,
-      allowListCount: group.wallets.length,
     };
   }
 }

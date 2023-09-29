@@ -48,6 +48,16 @@ export class AddGroupQuestions {
 
   @Question({
     type: 'input',
+    name: 'supply',
+    message: 'supply of mint for the group',
+  })
+  parseSupply(supply: number): number {
+    if (typeof supply === 'string') return +supply;
+    return supply;
+  }
+
+  @Question({
+    type: 'input',
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
