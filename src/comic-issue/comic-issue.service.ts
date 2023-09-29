@@ -144,7 +144,7 @@ export class ComicIssueService {
       Array<
         ComicIssue & {
           comic: Comic;
-          statelessCovers: StatelessCover;
+          statelesscovers: StatelessCover[];
           comicTitle: string;
           audienceType: AudienceType;
           creatorName: string;
@@ -158,9 +158,6 @@ export class ComicIssueService {
 
     const response = await Promise.all(
       comicIssues.map(async (issue) => {
-        const statelessCovers = await this.prisma.statelessCover.findMany({
-          where: { comicIssueId: issue.id },
-        });
         const price = await this.userComicIssueService.getComicIssuePrice(
           issue,
         );
@@ -178,7 +175,7 @@ export class ComicIssueService {
             },
           },
           ...issue,
-          statelessCovers,
+          statelessCovers: issue.statelesscovers,
           stats: {
             favouritesCount: Number(issue.favouritesCount),
             ratersCount: Number(issue.ratersCount),
@@ -200,7 +197,7 @@ export class ComicIssueService {
       Array<
         ComicIssue & {
           genres: Genre[];
-          statelessCovers: StatelessCover[];
+          statelesscovers: StatelessCover[];
         } & RawComicIssueStats
       >
     >(getRawComicIssuesQuery(query));
@@ -208,6 +205,7 @@ export class ComicIssueService {
     const normalizedComicIssues = comicIssues.map((issue) => {
       return {
         ...issue,
+        statelessCovers: issue.statelesscovers,
         stats: {
           favouritesCount: Number(issue.favouritesCount),
           ratersCount: Number(issue.ratersCount),
