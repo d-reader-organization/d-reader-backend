@@ -429,7 +429,7 @@ export class ComicIssueService {
     }
 
     const newFileKeys: string[] = [];
-    const oldFileKeys = [comicIssue.signature, comicIssue.pdf];
+    const oldFileKeys: string[] = [];
 
     // upload files if any
     let signatureKey: string, pdfKey: string;
@@ -441,6 +441,7 @@ export class ComicIssueService {
           fileName: 'signature',
         });
         newFileKeys.push(signatureKey);
+        oldFileKeys.push(comicIssue.signature);
       }
       if (pdf) {
         pdfKey = await this.s3.uploadFile(pdf, {
@@ -448,6 +449,7 @@ export class ComicIssueService {
           fileName: comicIssue.slug,
         });
         newFileKeys.push(pdfKey);
+        oldFileKeys.push(comicIssue.pdf);
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
@@ -777,24 +779,17 @@ export class ComicIssueService {
           deleteStatelessCovers,
           createStatelessCovers,
         ]);
-      }
-    } catch (e) {
-      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
-      throw e;
-    }
-
-    try {
-      if (!areStatelessCoversUpdated) {
+      } else {
         await this.prisma.statelessCover.createMany({
           data: newStatelessCoversData,
         });
       }
     } catch (e) {
-      await this.s3.garbageCollectNewFiles(newFileKeys);
+      await this.s3.deleteObjects(newFileKeys);
       throw e;
     }
 
-    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
+    await this.s3.deleteObjects(oldFileKeys);
   }
 
   async updateStatefulCovers(

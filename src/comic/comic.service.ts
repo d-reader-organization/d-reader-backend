@@ -211,7 +211,7 @@ export class ComicService {
     }
 
     const newFileKeys: string[] = [];
-    const oldFileKeys = [comic.cover, comic.banner, comic.pfp, comic.logo];
+    const oldFileKeys: string[] = [];
 
     let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
@@ -222,6 +222,7 @@ export class ComicService {
           fileName: 'cover',
         });
         newFileKeys.push(coverKey);
+        oldFileKeys.push(comic.cover);
       }
       if (banner) {
         bannerKey = await this.s3.uploadFile(banner, {
@@ -229,10 +230,12 @@ export class ComicService {
           fileName: 'banner',
         });
         newFileKeys.push(bannerKey);
+        oldFileKeys.push(comic.banner);
       }
       if (pfp) {
         pfpKey = await this.s3.uploadFile(pfp, { s3Folder, fileName: 'pfp' });
         newFileKeys.push(pfpKey);
+        oldFileKeys.push(comic.pfp);
       }
       if (logo) {
         logoKey = await this.s3.uploadFile(logo, {
@@ -240,6 +243,7 @@ export class ComicService {
           fileName: 'logo',
         });
         newFileKeys.push(logoKey);
+        oldFileKeys.push(comic.logo);
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
