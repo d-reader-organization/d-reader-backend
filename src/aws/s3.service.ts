@@ -235,7 +235,7 @@ export class s3Service {
     if (file) {
       const s3Folder = options.s3Folder;
       const fileName = options.fileName || uuidv4();
-      const timestamp = options.timestamp || false;
+      const timestamp = options.timestamp ?? true;
       const finalFileName = timestamp ? appendTimestamp(fileName) : fileName;
       const fileKey =
         s3Folder + finalFileName + path.extname(file.originalname);

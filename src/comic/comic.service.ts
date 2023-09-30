@@ -170,8 +170,8 @@ export class ComicService {
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, ...rest } = updateComicDto;
 
-    const areGenresUpdated = !isNil(genres);
-    const isCompletedUpdated = !isNil(isCompleted);
+    const areGenresUpdated = !isNil(genres); // TODO: && genres are different from current genres
+    const isCompletedUpdated = !isNil(isCompleted); // && completedAt is different from current completedAt
 
     let genresData: Prisma.ComicUpdateInput['genres'];
     if (areGenresUpdated) {

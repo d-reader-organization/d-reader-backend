@@ -347,9 +347,9 @@ export class ComicIssueService {
     }
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
-    const isSellerFeeUpdated = !isNil(sellerFee);
-    const areCollaboratorsUpdated = !isNil(collaborators);
-    const areRoyaltyWalletsUpdated = !isNil(royaltyWallets);
+    const isSellerFeeUpdated = !isNil(sellerFee); // TODO: && sellerFee is different from current fee
+    const areCollaboratorsUpdated = !isNil(collaborators); // && collaborators are different from current collaborators
+    const areRoyaltyWalletsUpdated = !isNil(royaltyWallets); // && wallets are different from current wallets
 
     if (isNumberUpdated) {
       await this.throwIfComicSlugAndNumberTaken(comicIssue.comicSlug, number);
