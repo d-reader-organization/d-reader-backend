@@ -284,7 +284,7 @@ export class CreatorService {
     let avatarKey: string, bannerKey: string, logoKey: string;
 
     const newFileKeys: string[] = [];
-    const oldFileKeys = [creator.avatar, creator.banner, creator.logo];
+    const oldFileKeys: string[] = [];
 
     try {
       const s3Folder = getS3Folder(slug);
@@ -294,6 +294,7 @@ export class CreatorService {
           fileName: 'avatar',
         });
         newFileKeys.push(avatarKey);
+        oldFileKeys.push(creator.avatar);
       }
       if (banner) {
         bannerKey = await this.s3.uploadFile(banner, {
@@ -301,6 +302,7 @@ export class CreatorService {
           fileName: 'banner',
         });
         newFileKeys.push(bannerKey);
+        oldFileKeys.push(creator.banner);
       }
       if (logo) {
         logoKey = await this.s3.uploadFile(logo, {
@@ -308,6 +310,7 @@ export class CreatorService {
           fileName: 'logo',
         });
         newFileKeys.push(logoKey);
+        oldFileKeys.push(creator.logo);
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);

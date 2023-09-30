@@ -93,23 +93,16 @@ export class ComicPageService {
         });
 
         await this.prisma.$transaction([deleteComicPages, createComicPages]);
-      }
-    } catch (e) {
-      await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
-      throw e;
-    }
-
-    try {
-      if (!areComicPagesUpdated) {
+      } else {
         await this.prisma.comicPage.createMany({
           data: newComicPagesData,
         });
       }
     } catch (e) {
-      await this.s3.garbageCollectNewFiles(newFileKeys);
+      await this.s3.deleteObjects(newFileKeys);
       throw e;
     }
 
-    await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
+    await this.s3.deleteObjects(oldFileKeys);
   }
 }
