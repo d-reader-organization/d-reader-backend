@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
 import { Prisma } from '@prisma/client';
@@ -115,24 +111,5 @@ export class ComicPageService {
     }
 
     await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
-  }
-
-  async deleteComicPages(where: ComicPageWhereInput) {
-    const pagesToDelete = await this.prisma.comicPage.findMany({ where });
-
-    // Remove s3 assets
-    const keys = pagesToDelete.map((page) => page.image);
-    await this.s3.deleteObjects(keys);
-
-    try {
-      await this.prisma.comicPage.deleteMany({ where });
-    } catch {
-      throw new NotFoundException(
-        `Comic pages with comic issue ${
-          where.comicIssue.slug || '--'
-        } and/or id ${where.id || '--'} do not exist`,
-      );
-    }
-    return;
   }
 }

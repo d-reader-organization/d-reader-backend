@@ -292,7 +292,6 @@ export class CreatorService {
         avatarKey = await this.s3.uploadFile(avatar, {
           s3Folder,
           fileName: 'avatar',
-          timestamp: true,
         });
         newFileKeys.push(avatarKey);
       }
@@ -300,7 +299,6 @@ export class CreatorService {
         bannerKey = await this.s3.uploadFile(banner, {
           s3Folder,
           fileName: 'banner',
-          timestamp: true,
         });
         newFileKeys.push(bannerKey);
       }
@@ -308,7 +306,6 @@ export class CreatorService {
         logoKey = await this.s3.uploadFile(logo, {
           s3Folder,
           fileName: 'logo',
-          timestamp: true,
         });
         newFileKeys.push(logoKey);
       }
@@ -343,7 +340,6 @@ export class CreatorService {
     const newFileKey = await this.s3.uploadFile(file, {
       s3Folder,
       fileName: field,
-      timestamp: true,
     });
 
     try {
