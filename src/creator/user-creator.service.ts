@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/types/creator-stats';
-import { mockPromise, getRandomFloatOrInt } from '../utils/helpers';
 import { UserCreatorMyStatsDto } from './types/user-creator-my-stats.dto';
 import { UserCreator } from '@prisma/client';
 import { PickByType } from 'src/types/shared';
@@ -16,10 +15,14 @@ export class UserCreatorService {
     });
 
     const countComicIssues = this.prisma.comicIssue.count({
-      where: { comic: { creator: { slug } } },
+      where: {
+        comic: { creator: { slug } },
+        publishedAt: { not: null },
+        verifiedAt: { not: null },
+      },
     });
 
-    const calculateTotalVolume = mockPromise(getRandomFloatOrInt(1, 1000));
+    const calculateTotalVolume = this.getTotalCreatorVolume(slug);
 
     const [followersCount, comicIssuesCount, totalVolume] = await Promise.all([
       countFollowers,
@@ -28,6 +31,37 @@ export class UserCreatorService {
     ]);
 
     return { followersCount, comicIssuesCount, totalVolume };
+  }
+
+  async getTotalCreatorVolume(slug: string) {
+    const getSecondaryVolume = this.prisma.listing.aggregate({
+      where: {
+        nft: {
+          collectionNft: { comicIssue: { comic: { creator: { slug } } } },
+        },
+        soldAt: { not: null },
+      },
+      _sum: { price: true },
+    });
+
+    const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
+      where: {
+        nft: {
+          collectionNft: { comicIssue: { comic: { creator: { slug } } } },
+        },
+      },
+      _sum: { price: true },
+    });
+
+    const [primarySalesVolume, secondarySalesVolume] = await Promise.all([
+      getSecondaryVolume,
+      getPrimaryVolume,
+    ]);
+
+    const primaryVolume = primarySalesVolume._sum?.price || 0;
+    const secondaryVolume = secondarySalesVolume._sum?.price || 0;
+    const totalVolume = primaryVolume + secondaryVolume;
+    return totalVolume;
   }
 
   async getUserStats(
