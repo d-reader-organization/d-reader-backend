@@ -374,9 +374,10 @@ export class HeliusService {
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-    // Candy Machine Guard program is the 5th instruction
+    // Candy Machine Guard program is the last instruction
     // Candy Machine address is the 3rd account in the guard instruction
-    const candyMachineAddress = enrichedTransaction.instructions[3].accounts[2];
+    const candyMachineAddress =
+      enrichedTransaction.instructions.at(-1).accounts[2];
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
 
     let comicIssueId: number = undefined;
@@ -400,9 +401,8 @@ export class HeliusService {
       if (enrichedTransaction.tokenTransfers.at(1)) {
         splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
       }
-
       const ixData = mintV2Struct.deserialize(
-        bs58.decode(enrichedTransaction.instructions[3].data),
+        bs58.decode(enrichedTransaction.instructions.at(-1).data),
       );
       const receipt = await this.prisma.candyMachineReceipt.create({
         include: { nft: true, buyer: { include: { user: true } } },
