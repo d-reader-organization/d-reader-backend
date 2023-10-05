@@ -14,7 +14,6 @@ import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl
 
 import {
   createMintV2Instruction,
-  createRouteInstruction,
   GuardType,
   MintV2InstructionAccounts,
   MintV2InstructionArgs,
@@ -38,6 +37,7 @@ import {
 } from '@solana/spl-token';
 import { MintSettings } from '../dto/types';
 import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import { constructRouteInstruction } from './route';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -455,35 +455,26 @@ function constructAllowListRouteInstruction(
   const vectorSize = Buffer.alloc(4);
   vectorSize.writeUInt32LE(merkleProof.length, 0);
   const args = Buffer.concat([vectorSize, ...merkleProof]);
-
-  const routeInstruction = createRouteInstruction(
-    {
-      candyGuard: candyMachine.candyGuard.address,
-      candyMachine: candyMachine.address,
-      payer: feePayer,
-    },
-    {
-      args: {
-        guard: GuardType.AllowList, // allow list guard index
-        data: args,
-      },
-      label: label ?? null,
-    },
-    metaplex.programs().getCandyGuard().address,
+  const remainingAccounts = getAllowListRouteAccounts(
+    metaplex,
+    candyMachine.address,
+    candyMachine.candyGuard.address,
+    feePayer,
+    guards.allowList.merkleRoot,
   );
-  routeInstruction.keys.push(
-    ...getAllowListRouteAccounts(
-      metaplex,
-      candyMachine.address,
-      candyMachine.candyGuard.address,
-      feePayer,
-      guards.allowList.merkleRoot,
-    ),
+  const routeInstruction = constructRouteInstruction(
+    metaplex,
+    candyMachine,
+    feePayer,
+    label,
+    args,
+    GuardType.AllowList,
+    remainingAccounts,
   );
   return routeInstruction;
 }
 
-function getAllowListRouteAccounts(
+export function getAllowListRouteAccounts(
   metaplex: Metaplex,
   candyMachine: PublicKey,
   candyGuard: PublicKey,

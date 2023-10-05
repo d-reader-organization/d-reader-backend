@@ -1,10 +1,11 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import { PublicKey } from '@metaplex-foundation/js';
+import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { pRateLimit } from 'p-ratelimit';
+import { AUTHORITY_GROUP_LABEL } from '../constants';
 
 interface Options {
   candyMachineAddress: string;
@@ -42,21 +43,44 @@ export class ThawCollectionCommand extends CommandRunner {
       const { candyMachineAddress, comicIssueId } = options;
       const nfts = await this.prisma.nft.findMany({
         where: { candyMachineAddress },
+        include: {
+          receipt: {
+            select: {
+              label: true,
+              splTokenAddress: true,
+            },
+          },
+        },
       });
 
       for (const nft of nfts) {
         await rateLimit(() => {
+          if (nft.receipt.label === AUTHORITY_GROUP_LABEL) return;
           return this.candyMachineService.thawFrozenNft(
             new PublicKey(candyMachineAddress),
             new PublicKey(nft.address),
             new PublicKey(nft.ownerAddress),
+            nft.receipt.splTokenAddress === WRAPPED_SOL_MINT.toBase58()
+              ? 'freezeSolPayment'
+              : 'freezeTokenPayment',
+            nft.receipt.label,
           );
         });
       }
-
-      await this.candyMachineService.unlockFunds(
-        new PublicKey(candyMachineAddress),
-      );
+      const candyMachineGroups = await this.prisma.candyMachineGroup.findMany({
+        where: { candyMachineAddress },
+      });
+      for (const group of candyMachineGroups) {
+        await rateLimit(() => {
+          return this.candyMachineService.unlockFunds(
+            new PublicKey(candyMachineAddress),
+            group.splTokenAddress === WRAPPED_SOL_MINT.toBase58()
+              ? 'freezeSolPayment'
+              : 'freezeTokenPayment',
+            group.label,
+          );
+        });
+      }
       const activeCandyMachine =
         await this.comicIssueService.findActiveCandyMachine(comicIssueId);
       if (!activeCandyMachine) {
