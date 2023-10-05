@@ -1939,6 +1939,18 @@
     bn.js "^5.2.0"
     debug "^4.3.4"
 
+"@metaplex-foundation/mpl-token-metadata@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-3.1.0.tgz#7cace7541eb3bef5d4314a416a478ad889e8acfa"
+  integrity sha512-DbXuijqqhpeXa2ml6A2j38BfK/fG4c8w7vkY/+fBuZP3pOtqhB0/7/CLwXpYF5kWpjtS8FhpGpU91jGt1uzsiQ==
+  dependencies:
+    "@metaplex-foundation/mpl-toolbox" "^0.9.0"
+
+"@metaplex-foundation/mpl-toolbox@^0.9.0":
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-toolbox/-/mpl-toolbox-0.9.1.tgz#a4dfcf61fbfc2a02dec49437aa3102c79f3281bd"
+  integrity sha512-Jm98H997MrDfKItjA8bxfsQa+ijVVR6YmMapSd0l75+nKo6Ca0eve/tv2z4qudMS2A4HbH6NLKSW3JHkutzvkQ==
+
 "@nestjs-modules/mailer@^1.8.1":
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/@nestjs-modules/mailer/-/mailer-1.9.1.tgz#afa2866ce7b0ab612131b5ddc1bc4f06cb937567"

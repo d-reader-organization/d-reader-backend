@@ -62,6 +62,7 @@ import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { Prisma } from '@prisma/client';
 import { CandyMachineGroupSettings, GuardParams } from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
+import { constructThawTransaction } from './instructions/route';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -291,7 +292,7 @@ export class CandyMachineService {
                   this.metaplex.identity().publicKey.toString(),
                 ]),
               },
-              freezeSolPayment: {
+              solPayment: {
                 amount: solFromLamports(0),
                 destination: this.metaplex.identity().publicKey,
               },
@@ -499,33 +500,42 @@ export class CandyMachineService {
       newState,
     );
   }
-
+  /*
+    TODO: 
+     2). Handle DAuth label in helius
+  */
   async thawFrozenNft(
     candyMachineAddress: PublicKey,
     nftMint: PublicKey,
     nftOwner: PublicKey,
+    guard: string,
+    label: string,
+  ) {
+    const transaction = await constructThawTransaction(
+      this.metaplex,
+      candyMachineAddress,
+      nftMint,
+      nftOwner,
+      guard,
+      label,
+    );
+    await sendAndConfirmTransaction(this.metaplex.connection, transaction, [
+      this.metaplex.identity(),
+    ]);
+  }
+
+  async unlockFunds(
+    candyMachineAddress: PublicKey,
+    guard: string,
+    group: string,
   ) {
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineAddress });
     await this.metaplex.candyMachines().callGuardRoute({
       candyMachine,
-      guard: 'freezeSolPayment',
-      settings: {
-        path: 'thaw',
-        nftMint,
-        nftOwner,
-      },
-    });
-  }
-
-  async unlockFunds(candyMachineAddress: PublicKey) {
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
-    await this.metaplex.candyMachines().callGuardRoute({
-      candyMachine,
-      guard: 'freezeSolPayment',
+      guard,
+      group,
       settings: {
         path: 'unlockFunds',
         candyGuardAuthority: this.metaplex.identity(),
