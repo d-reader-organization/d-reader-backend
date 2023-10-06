@@ -500,10 +500,7 @@ export class CandyMachineService {
       newState,
     );
   }
-  /*
-    TODO: 
-     2). Handle DAuth label in helius
-  */
+
   async thawFrozenNft(
     candyMachineAddress: PublicKey,
     nftMint: PublicKey,

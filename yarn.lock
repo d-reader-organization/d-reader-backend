@@ -1939,69 +1939,6 @@
     bn.js "^5.2.0"
     debug "^4.3.4"
 
-"@metaplex-foundation/mpl-token-metadata@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-3.1.0.tgz#7cace7541eb3bef5d4314a416a478ad889e8acfa"
-  integrity sha512-DbXuijqqhpeXa2ml6A2j38BfK/fG4c8w7vkY/+fBuZP3pOtqhB0/7/CLwXpYF5kWpjtS8FhpGpU91jGt1uzsiQ==
-  dependencies:
-    "@metaplex-foundation/mpl-toolbox" "^0.9.0"
-
-"@metaplex-foundation/mpl-toolbox@^0.9.0":
-  version "0.9.1"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-toolbox/-/mpl-toolbox-0.9.1.tgz#a4dfcf61fbfc2a02dec49437aa3102c79f3281bd"
-  integrity sha512-Jm98H997MrDfKItjA8bxfsQa+ijVVR6YmMapSd0l75+nKo6Ca0eve/tv2z4qudMS2A4HbH6NLKSW3JHkutzvkQ==
-
-"@metaplex-foundation/umi-options@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-options/-/umi-options-0.8.9.tgz#9c9e269d9eee7d055ad6831dcb30a30127dcb0c5"
-  integrity sha512-jSQ61sZMPSAk/TXn8v8fPqtz3x8d0/blVZXLLbpVbo2/T5XobiI6/MfmlUosAjAUaQl6bHRF8aIIqZEFkJiy4A==
-
-"@metaplex-foundation/umi-public-keys@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-public-keys/-/umi-public-keys-0.8.9.tgz#ca7a927c924ed8e28d0f8bb3dc0f2adc1f9011ec"
-  integrity sha512-CxMzN7dgVGOq9OcNCJe2casKUpJ3RmTVoOvDFyeoTQuK+vkZ1YSSahbqC1iGuHEtKTLSjtWjKvUU6O7zWFTw3Q==
-  dependencies:
-    "@metaplex-foundation/umi-serializers-encodings" "^0.8.9"
-
-"@metaplex-foundation/umi-serializers-core@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-serializers-core/-/umi-serializers-core-0.8.9.tgz#cd5ae763a59e54dd01f1284f4a6bf4e78e4aab9c"
-  integrity sha512-WT82tkiYJ0Qmscp7uTj1Hz6aWQPETwaKLAENAUN5DeWghkuBKtuxyBKVvEOuoXerJSdhiAk0e8DWA4cxcTTQ/w==
-
-"@metaplex-foundation/umi-serializers-encodings@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-serializers-encodings/-/umi-serializers-encodings-0.8.9.tgz#0f02605ee3e6fbeac1abc4fb267a7cc96ecb4410"
-  integrity sha512-N3VWLDTJ0bzzMKcJDL08U3FaqRmwlN79FyE4BHj6bbAaJ9LEHjDQ9RJijZyWqTm0jE7I750fU7Ow5EZL38Xi6Q==
-  dependencies:
-    "@metaplex-foundation/umi-serializers-core" "^0.8.9"
-
-"@metaplex-foundation/umi-serializers-numbers@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-serializers-numbers/-/umi-serializers-numbers-0.8.9.tgz#28c10367f6aebac0276ec1bce81d0d8db54b05de"
-  integrity sha512-NtBf1fnVNQJHFQjLFzRu2i9GGnigb9hOm/Gfrk628d0q0tRJB7BOM3bs5C61VAs7kJs4yd+pDNVAERJkknQ7Lg==
-  dependencies:
-    "@metaplex-foundation/umi-serializers-core" "^0.8.9"
-
-"@metaplex-foundation/umi-serializers@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi-serializers/-/umi-serializers-0.8.9.tgz#af6c5bb1a3276cbe252fd08e359b305ed80a3343"
-  integrity sha512-Sve8Etm3zqvLSUfza+MYRkjTnCpiaAFT7VWdqeHzA3n58P0AfT3p74RrZwVt/UFkxI+ln8BslwBDJmwzcPkuHw==
-  dependencies:
-    "@metaplex-foundation/umi-options" "^0.8.9"
-    "@metaplex-foundation/umi-public-keys" "^0.8.9"
-    "@metaplex-foundation/umi-serializers-core" "^0.8.9"
-    "@metaplex-foundation/umi-serializers-encodings" "^0.8.9"
-    "@metaplex-foundation/umi-serializers-numbers" "^0.8.9"
-
-"@metaplex-foundation/umi@^0.8.9":
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/umi/-/umi-0.8.9.tgz#474364733b77b9b3dd5bda594776c30657228110"
-  integrity sha512-Gip7HPDCjsX7OakPFBiifX89AofUGcsj/ujbvOfd/6GDIL4XjX79royuT3yyxzovRxyiaPF/kCK6a2dKtm69Kw==
-  dependencies:
-    "@metaplex-foundation/umi-options" "^0.8.9"
-    "@metaplex-foundation/umi-public-keys" "^0.8.9"
-    "@metaplex-foundation/umi-serializers" "^0.8.9"
-
 "@nestjs-modules/mailer@^1.8.1":
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/@nestjs-modules/mailer/-/mailer-1.9.1.tgz#afa2866ce7b0ab612131b5ddc1bc4f06cb937567"
