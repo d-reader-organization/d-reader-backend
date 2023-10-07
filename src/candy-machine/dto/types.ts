@@ -8,9 +8,9 @@ export type MintSettings = {
   candyMachine: CandyMachine<DefaultCandyGuardSettings>;
   feePayer: PublicKey;
   mint: PublicKey;
-  destinationWallet: PublicKey;
   label?: string;
   nftGateMint?: PublicKey;
+  allowList?: string[];
 };
 
 export type CandyMachineGroupSettings = {

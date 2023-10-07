@@ -47,20 +47,25 @@ export class MintRemainingCommand extends CommandRunner {
 
   async mint(candyMachineAddress: PublicKey) {
     const authority = this.metaplex.identity();
-    const encodedTransaction = await constructMintOneTransaction(
+    const encodedTransactions = await constructMintOneTransaction(
       this.metaplex,
       authority.publicKey,
       candyMachineAddress,
       AUTHORITY_GROUP_LABEL,
       [authority.publicKey.toString()],
     );
-    const transaction = decodeTransaction(encodedTransaction, 'base64');
-    transaction.partialSign(authority);
+    const transactions = encodedTransactions.map((encodedTransaction) => {
+      const transaction = decodeTransaction(encodedTransaction, 'base64');
+      transaction.partialSign(authority);
+      return transaction;
+    });
     log(cb('⛏️  Minting'));
-    const signature = await this.metaplex.connection.sendRawTransaction(
-      transaction.serialize(),
-    );
+    for (const transaction of transactions) {
+      const signature = await metaplex.connection.sendRawTransaction(
+        transaction.serialize(),
+      );
+      log(`✍️  Signature: ${cuy(signature)}`);
+    }
     log('✅ Minted successfully');
-    log(`✍️  Signature: ${cuy(signature)}`);
   }
 }

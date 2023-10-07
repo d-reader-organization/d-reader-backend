@@ -7,14 +7,14 @@ import {
   TransactionInstruction,
   SYSVAR_INSTRUCTIONS_PUBKEY,
   AccountMeta,
-  Transaction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
 
 import {
   createMintV2Instruction,
-  GuardType,
   MintV2InstructionAccounts,
   MintV2InstructionArgs,
 } from '@metaplex-foundation/mpl-candy-guard';
@@ -22,7 +22,6 @@ import {
 import {
   CandyMachine,
   DefaultCandyGuardSettings,
-  getMerkleProof,
   Metaplex,
   NftGateGuardMintSettings,
   SolPaymentGuardSettings,
@@ -37,7 +36,7 @@ import {
 } from '@solana/spl-token';
 import { MintSettings } from '../dto/types';
 import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
-import { constructRouteInstruction } from './route';
+import { constructAllowListRouteTransaction } from './route';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -52,9 +51,7 @@ export async function constructMintInstruction(
   remainingAccounts?: AccountMeta[] | null,
   mintArgs?: Uint8Array | null,
   label?: string | null,
-  allowList?: string[],
 ): Promise<TransactionInstruction[]> {
-  // candy machine object
   const candyMachineObject: CandyMachine = await metaplex
     .candyMachines()
     .findByAddress({
@@ -144,22 +141,6 @@ export async function constructMintInstruction(
   };
 
   const instructions: TransactionInstruction[] = [];
-
-  const guards = resolveGuards(candyMachineObject, label);
-  if (guards.allowList) {
-    const merkleProof = getMerkleProof(allowList, payer.toString());
-    instructions.push(
-      constructAllowListRouteInstruction(
-        metaplex,
-        candyMachineObject,
-        payer,
-        label,
-        merkleProof,
-        guards,
-      ),
-    );
-  }
-
   instructions.push(
     SystemProgram.createAccount({
       fromPubkey: payer,
@@ -207,7 +188,7 @@ export function getRemainingAccounts(
   metaplex: Metaplex,
   mintSettings: MintSettings,
 ): AccountMeta[] {
-  const { candyMachine, feePayer, mint, destinationWallet } = mintSettings;
+  const { candyMachine, feePayer, mint } = mintSettings;
   const initialAccounts: AccountMeta[] = [];
   const candyGuard = metaplex.programs().getCandyGuard();
   const guards = resolveGuards(candyMachine, mintSettings.label);
@@ -255,7 +236,7 @@ export function getRemainingAccounts(
               metaplex,
               mint,
               feePayer,
-              destinationWallet,
+              guards.freezeSolPayment.destination,
               candyMachine.address,
               candyMachine.candyGuard.address,
             ),
@@ -288,45 +269,70 @@ export async function constructMintOneTransaction(
   candyMachineAddress: PublicKey,
   label?: string,
   allowList?: string[],
+  lookupTable?: string,
   nftGateMint?: PublicKey,
 ) {
-  const mint = Keypair.generate();
-  const candyMachine = await metaplex
-    .candyMachines()
-    .findByAddress({ address: candyMachineAddress });
+  try {
+    const mint = Keypair.generate();
+    const candyMachine = await metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
 
-  const remainingAccounts = getRemainingAccounts(metaplex, {
-    candyMachine,
-    feePayer,
-    mint: mint.publicKey,
-    destinationWallet: metaplex.identity().publicKey,
-    label,
-    nftGateMint,
-  });
-  const mintInstructions = await constructMintInstruction(
-    metaplex,
-    candyMachine.address,
-    feePayer,
-    mint,
-    metaplex.connection,
-    remainingAccounts,
-    undefined,
-    label,
-    allowList,
-  );
-  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-  const mintTransaction = new Transaction({
-    feePayer,
-    ...latestBlockhash,
-  }).add(...mintInstructions);
+    const remainingAccounts = getRemainingAccounts(metaplex, {
+      candyMachine,
+      feePayer,
+      mint: mint.publicKey,
+      label,
+      nftGateMint,
+      allowList,
+    });
+    const mintInstructions = await constructMintInstruction(
+      metaplex,
+      candyMachine.address,
+      feePayer,
+      mint,
+      metaplex.connection,
+      remainingAccounts,
+      undefined,
+      label,
+    );
 
-  mintTransaction.sign(mint);
+    const group = candyMachine.candyGuard.groups.find(
+      (group) => group.label === label,
+    );
+    const rawTransactions: string[] = [];
+    if (allowList) {
+      const routeTransaction = await constructAllowListRouteTransaction(
+        metaplex,
+        candyMachine,
+        feePayer,
+        label,
+        group.guards.allowList.merkleRoot,
+        allowList,
+      );
+      if (routeTransaction) rawTransactions.push(routeTransaction);
+    }
+    const lookupTableAccount = (
+      await metaplex.connection.getAddressLookupTable(
+        new PublicKey(lookupTable),
+      )
+    ).value;
 
-  const rawTransaction = mintTransaction.serialize({
-    requireAllSignatures: false,
-    verifySignatures: false,
-  });
-  return rawTransaction.toString('base64');
+    const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+    const mintTransaction = new TransactionMessage({
+      payerKey: feePayer,
+      recentBlockhash: latestBlockhash.blockhash,
+      instructions: mintInstructions,
+    }).compileToV0Message([lookupTableAccount]);
+    const mintTransactionV0 = new VersionedTransaction(mintTransaction);
+    mintTransactionV0.sign([mint]);
+
+    const rawTransaction = Buffer.from(mintTransactionV0.serialize());
+    rawTransactions.push(rawTransaction.toString('base64'));
+    return rawTransactions;
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 function getMintLimitAccounts(
@@ -440,62 +446,6 @@ function getFreezeSolPaymentAccounts(
       pubkey: tokenAccount,
       isSigner: false,
       isWritable: false,
-    },
-  ];
-}
-
-function constructAllowListRouteInstruction(
-  metaplex: Metaplex,
-  candyMachine: CandyMachine,
-  feePayer: PublicKey,
-  label: string,
-  merkleProof: Uint8Array[],
-  guards: DefaultCandyGuardSettings,
-) {
-  const vectorSize = Buffer.alloc(4);
-  vectorSize.writeUInt32LE(merkleProof.length, 0);
-  const args = Buffer.concat([vectorSize, ...merkleProof]);
-  const remainingAccounts = getAllowListRouteAccounts(
-    metaplex,
-    candyMachine.address,
-    candyMachine.candyGuard.address,
-    feePayer,
-    guards.allowList.merkleRoot,
-  );
-  const routeInstruction = constructRouteInstruction(
-    metaplex,
-    candyMachine,
-    feePayer,
-    label,
-    args,
-    GuardType.AllowList,
-    remainingAccounts,
-  );
-  return routeInstruction;
-}
-
-export function getAllowListRouteAccounts(
-  metaplex: Metaplex,
-  candyMachine: PublicKey,
-  candyGuard: PublicKey,
-  feePayer: PublicKey,
-  merkleRoot: Uint8Array,
-): AccountMeta[] {
-  return [
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: metaplex.candyMachines().pdas().merkleProof({
-        merkleRoot,
-        user: feePayer,
-        candyMachine,
-        candyGuard,
-      }),
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: metaplex.programs().getSystem().address,
     },
   ];
 }

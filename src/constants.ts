@@ -68,6 +68,7 @@ export const SAGA_COLLECTION_ADDRESS =
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
+export const LIMITED_FREE_MINT_GROUP_LABEL = 'dLimit';
 export const PUBLIC_GROUP_LABEL = 'public';
 export const PUBLIC_GROUP_MINT_LIMIT = 2;
 export const PUBLIC_GROUP_MINT_LIMIT_ID = 1;
