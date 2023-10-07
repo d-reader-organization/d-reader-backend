@@ -4,10 +4,10 @@ import {
   Connection,
   Keypair,
   PublicKey,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { decodeTransaction } from '../utils/transactions';
 import { cb, cuy, log, logErr } from './chalk';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
@@ -47,22 +47,27 @@ export class MintOneCommand extends CommandRunner {
     const keypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
-    const encodedTransaction =
+    const encodedTransactions =
       await this.candyMachineService.createMintOneTransaction(
         keypair.publicKey,
         options.candyMachineAddress,
         options.label,
       );
-    const transaction = decodeTransaction(encodedTransaction, 'base64');
-    transaction.partialSign(keypair);
-
+    const transactions = encodedTransactions.map((encodedTransaction) => {
+      const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
+      const transaction = VersionedTransaction.deserialize(transactionBuffer);
+      transaction.sign([keypair]);
+      return transaction;
+    });
     try {
       log(cb('⛏️  Minting'));
-      const signature = await connection.sendRawTransaction(
-        transaction.serialize(),
-      );
+      for (const transaction of transactions) {
+        const signature = await connection.sendRawTransaction(
+          transaction.serialize(),
+        );
+        log(`✍️  Signature: ${cuy(signature)}`);
+      }
       log('✅ Minted successfully');
-      log(`✍️  Signature: ${cuy(signature)}`);
     } catch (e) {
       logErr(
         `Failed to mint from ${options.candyMachineAddress.toBase58()}: ${e}`,

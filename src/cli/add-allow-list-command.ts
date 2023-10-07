@@ -61,7 +61,6 @@ export class AddAllowList extends CommandRunner {
         (group) => group.label != label,
       );
       const groups = [...resolvedGroups, group];
-
       await this.candyMachineService.updateCandyMachine(
         candyMachinePublicKey,
         groups,

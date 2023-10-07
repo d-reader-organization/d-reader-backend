@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Keypair, PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
+import {
+  Keypair,
+  PublicKey,
+  SYSVAR_SLOT_HASHES_PUBKEY,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
   Metaplex,
@@ -63,6 +68,11 @@ import { Prisma } from '@prisma/client';
 import { CandyMachineGroupSettings, GuardParams } from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 import { constructThawTransaction } from './instructions/route';
+import { createLookupTable } from '../utils/lookup-table';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -149,7 +159,7 @@ export class CandyMachineService {
         period: (freezePeriod ?? FREEZE_NFT_DAYS) * DAY_SECONDS,
         candyGuardAuthority: this.metaplex.identity(),
       },
-      group: AUTHORITY_GROUP_LABEL,
+      group: PUBLIC_GROUP_LABEL,
     });
   }
 
@@ -343,7 +353,16 @@ export class CandyMachineService {
       .pdas()
       .authority({ candyMachine: candyMachine.address })
       .toString();
-
+    const lookupTable = await createLookupTable(metaplex, [
+      candyMachine.address,
+      metaplex.identity().publicKey,
+      candyMachine.candyGuard.address,
+      collectionNftAddress,
+      metaplex.programs().getTokenMetadata().address,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      SYSVAR_SLOT_HASHES_PUBKEY,
+    ]);
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
@@ -356,6 +375,7 @@ export class CandyMachineService {
         itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
         supply,
+        lookupTable,
         groups: {
           create: {
             displayLabel: PUBLIC_GROUP_LABEL,
@@ -416,7 +436,6 @@ export class CandyMachineService {
         );
       }),
     );
-
     this.heliusService.subscribeTo(candyMachine.address.toBase58());
     return await this.metaplex.candyMachines().refresh(candyMachine);
   }
@@ -442,7 +461,7 @@ export class CandyMachineService {
     label: string,
     mintCount?: number,
   ) {
-    const transactions: Promise<string>[] = [];
+    const transactions: Promise<string[]>[] = [];
     for (let i = 0; i < mintCount; i++) {
       transactions.push(
         this.createMintOneTransaction(feePayer, candyMachineAddress, label),
@@ -456,7 +475,7 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
   ) {
-    const allowList = await this.findAllowList(
+    const { allowList, lookupTable } = await this.findCandyMachineData(
       candyMachineAddress.toString(),
       label,
     );
@@ -466,6 +485,7 @@ export class CandyMachineService {
       candyMachineAddress,
       label,
       allowList,
+      lookupTable,
     );
   }
 
@@ -647,14 +667,17 @@ export class CandyMachineService {
     });
   }
 
-  async findAllowList(candyMachineAddress: string, label: string) {
-    const allowList = await this.prisma.candyMachineGroup.findFirst({
+  async findCandyMachineData(candyMachineAddress: string, label: string) {
+    const data = await this.prisma.candyMachineGroup.findFirst({
       where: { candyMachineAddress, label },
-      include: { wallets: true },
+      include: { wallets: true, candyMachine: true },
     });
-    return allowList
-      ? allowList.wallets.map((item) => item.walletAddress)
-      : undefined;
+    return {
+      allowList: data.wallets.length
+        ? data.wallets.map((item) => item.walletAddress)
+        : undefined,
+      lookupTable: data.candyMachine.lookupTable,
+    };
   }
 
   async getMintCount(

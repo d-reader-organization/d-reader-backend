@@ -1,4 +1,9 @@
-import { CandyMachine, Metaplex, PublicKey } from '@metaplex-foundation/js';
+import {
+  CandyMachine,
+  Metaplex,
+  PublicKey,
+  getMerkleProof,
+} from '@metaplex-foundation/js';
 import {
   GuardType,
   createRouteInstruction,
@@ -9,6 +14,8 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
   Transaction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 import {
@@ -42,6 +49,80 @@ export function constructRouteInstruction(
   );
   if (remainingAccounts) routeInstruction.keys.push(...remainingAccounts);
   return routeInstruction;
+}
+
+export async function constructAllowListRouteTransaction(
+  metaplex: Metaplex,
+  candyMachine: CandyMachine,
+  feePayer: PublicKey,
+  label: string,
+  merkleRoot: Uint8Array,
+  allowList: string[],
+) {
+  const proofPda = metaplex.candyMachines().pdas().merkleProof({
+    merkleRoot,
+    user: feePayer,
+    candyMachine: candyMachine.address,
+    candyGuard: candyMachine.candyGuard.address,
+  });
+  const proofInfo = await metaplex.connection.getAccountInfo(proofPda);
+  if (proofInfo) return;
+
+  const merkleProof = getMerkleProof(allowList, feePayer.toString());
+  const vectorSize = Buffer.alloc(4);
+  vectorSize.writeUInt32LE(merkleProof.length, 0);
+  const args = Buffer.concat([vectorSize, ...merkleProof]);
+  const remainingAccounts = getAllowListRouteAccounts(
+    metaplex,
+    candyMachine.address,
+    candyMachine.candyGuard.address,
+    feePayer,
+    merkleRoot,
+  );
+  const routeInstruction = constructRouteInstruction(
+    metaplex,
+    candyMachine,
+    feePayer,
+    label,
+    args,
+    GuardType.AllowList,
+    remainingAccounts,
+  );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const routeTransaction = new TransactionMessage({
+    payerKey: feePayer,
+    recentBlockhash: latestBlockhash.blockhash,
+    instructions: [routeInstruction],
+  }).compileToV0Message();
+  const routeTransactionV0 = new VersionedTransaction(routeTransaction);
+  const rawTransaction = Buffer.from(routeTransactionV0.serialize());
+  return rawTransaction.toString('base64');
+}
+
+export function getAllowListRouteAccounts(
+  metaplex: Metaplex,
+  candyMachine: PublicKey,
+  candyGuard: PublicKey,
+  user: PublicKey,
+  merkleRoot: Uint8Array,
+): AccountMeta[] {
+  return [
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.candyMachines().pdas().merkleProof({
+        merkleRoot,
+        user,
+        candyMachine,
+        candyGuard,
+      }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.programs().getSystem().address,
+    },
+  ];
 }
 
 export async function constructThawTransaction(
