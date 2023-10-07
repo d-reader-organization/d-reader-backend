@@ -281,6 +281,7 @@ model CandyMachine {
   itemsRemaining       Int
   itemsLoaded          Int
   isFullyLoaded        Boolean
+  lookupTable          String?
   collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   items                Nft[]
