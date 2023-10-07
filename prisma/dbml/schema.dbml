@@ -250,6 +250,7 @@ Table CandyMachine {
   itemsRemaining Int [not null]
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
+  lookupTable String
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
   items Nft [not null]
