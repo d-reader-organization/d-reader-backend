@@ -137,7 +137,6 @@ export class AuctionHouseService {
   ) {
     const auctionHouse = await this.throttledFindOurAuctionHouse();
     await this.validateMint(mintAccount);
-
     return await constructListTransaction(
       this.metaplex,
       auctionHouse,

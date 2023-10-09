@@ -34,7 +34,7 @@ export function getRandomFloatOrInt(min: number, max: number) {
 }
 
 export function solFromLamports(lamports: number) {
-  return sol(lamports / LAMPORTS_PER_SOL);
+  return sol(parseFloat((lamports / LAMPORTS_PER_SOL).toFixed(9)));
 }
 
 export function mockPromise<T>(value: T) {

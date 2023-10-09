@@ -1,4 +1,4 @@
-import { IsOptional, IsBooleanString } from 'class-validator';
+import { IsOptional, IsBooleanString, IsNumber } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 
@@ -10,6 +10,7 @@ export class ListParams {
   mintAccount: string;
 
   @TransformStringToNumber()
+  @IsNumber()
   price: number;
 
   @IsBooleanString()
