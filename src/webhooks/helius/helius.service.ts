@@ -262,7 +262,7 @@ export class HeliusService {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
-      const tokenMetadata = transaction.instructions.at(-1).accounts[2]; // token metadata is found in the last instruction
+      const tokenMetadata = transaction.instructions.at(-2).accounts[2]; // token metadata is found in the second last instruction
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
@@ -271,7 +271,6 @@ export class HeliusService {
         .getAccount(new PublicKey(tokenMetadata));
       const metadata = toMetadata(toMetadataAccount(info));
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
-
       const nft = await this.prisma.nft.update({
         where: { address: mint },
         include: {

@@ -11,13 +11,16 @@ import {
 } from '@metaplex-foundation/js';
 import {
   CancelInstructionAccounts,
+  SellInstructionAccounts,
   createCancelInstruction,
   createCancelListingReceiptInstruction,
   createPrintListingReceiptInstruction,
   createSellInstruction,
 } from '@metaplex-foundation/mpl-auction-house';
 import {
+  AccountMeta,
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
@@ -25,8 +28,11 @@ import { PublicKey } from '@solana/web3.js';
 import { solFromLamports } from '../../utils/helpers';
 import { Nft, Listing } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
+import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import { getAuctionHouseProgramAsSigner } from '../../utils/auction-house';
+import { metaplex } from '../../utils/metaplex';
 
-export function constructListInstruction(
+export async function constructListInstruction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   mintAccount: PublicKey,
@@ -34,7 +40,7 @@ export function constructListInstruction(
   priceObject: SolAmount | SplTokenAmount,
   printReceipt: boolean,
   tokens: SplTokenAmount,
-): TransactionInstruction[] {
+): Promise<TransactionInstruction[]> {
   const priceBasisPoint = priceObject.basisPoints ?? 0;
 
   const price = lamports(priceBasisPoint);
@@ -72,7 +78,7 @@ export function constructListInstruction(
 
   const programAsSigner = metaplex.auctionHouse().pdas().programAsSigner();
 
-  const accounts = {
+  const accounts: SellInstructionAccounts = {
     wallet: seller,
     tokenAccount,
     metadata,
@@ -82,6 +88,11 @@ export function constructListInstruction(
     sellerTradeState,
     freeSellerTradeState,
     programAsSigner,
+    anchorRemainingAccounts: await getSellRemainingAccounts(
+      metaplex,
+      mintAccount,
+      seller,
+    ),
   };
 
   const args = {
@@ -102,6 +113,12 @@ export function constructListInstruction(
   );
   sellInstruction.keys[signerKeyIndex].isSigner = true;
   sellInstruction.keys[signerKeyIndex].isWritable = true;
+
+  // Make metadata mutable since createSellInstruction don't assign it as mutable
+  const metadataKeyIndex = sellInstruction.keys.findIndex((key) =>
+    key.pubkey.equals(metadata),
+  );
+  sellInstruction.keys[metadataKeyIndex].isWritable = true;
 
   instructions.push(sellInstruction);
 
@@ -125,6 +142,59 @@ export function constructListInstruction(
   return instructions;
 }
 
+async function getSellRemainingAccounts(
+  metaplex: Metaplex,
+  mint: PublicKey,
+  owner: PublicKey,
+): Promise<AccountMeta[]> {
+  const token = metaplex.tokens().pdas().associatedTokenAccount({
+    mint,
+    owner,
+  });
+  return [
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.programs().getTokenMetadata().address,
+    },
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token }),
+    },
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: mint,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.nfts().pdas().masterEdition({ mint }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: AUTH_RULES_ID,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: AUTH_RULES,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: SYSVAR_INSTRUCTIONS_PUBKEY,
+    },
+  ];
+}
+
 export async function constructListTransaction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
@@ -133,7 +203,7 @@ export async function constructListTransaction(
   price: number,
   printReceipt: boolean,
 ) {
-  const listInstruction = constructListInstruction(
+  const listInstruction = await constructListInstruction(
     metaplex,
     auctionHouse,
     mintAccount,
@@ -142,7 +212,6 @@ export async function constructListTransaction(
     printReceipt,
     token(1, 0),
   );
-
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
   const listTransaction = new Transaction({
     feePayer: seller,
@@ -180,6 +249,11 @@ export function constructCancelListingInstruction(
     auctionHouse: address,
     auctionHouseFeeAccount: feeAccountAddress,
     tradeState: tradeStateAddress,
+    anchorRemainingAccounts: getCancelRemainingAccounts(
+      metaplex,
+      asset.address,
+      sellerAddress,
+    ),
   };
 
   const args = {
@@ -200,6 +274,77 @@ export function constructCancelListingInstruction(
   }
 
   return instructions;
+}
+
+export function getCancelRemainingAccounts(
+  metaplex: Metaplex,
+  mint: PublicKey,
+  owner: PublicKey,
+): AccountMeta[] {
+  const token = metaplex.tokens().pdas().associatedTokenAccount({
+    mint,
+    owner,
+  });
+  const metadata = metaplex.nfts().pdas().metadata({
+    mint,
+  });
+  return [
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.programs().getTokenMetadata().address,
+    },
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: getAuctionHouseProgramAsSigner(metaplex),
+    },
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metadata,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: metaplex.nfts().pdas().masterEdition({ mint }),
+    },
+    {
+      isSigner: false,
+      isWritable: true,
+      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token }),
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: mint,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: AUTH_RULES_ID,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: AUTH_RULES,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: SYSVAR_INSTRUCTIONS_PUBKEY,
+    },
+    {
+      isSigner: false,
+      isWritable: false,
+      pubkey: SystemProgram.programId,
+    },
+  ];
 }
 
 export async function constructCancelListingTransaction(
