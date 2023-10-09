@@ -160,6 +160,7 @@ async function main() {
   await prisma.comicIssueCollaborator.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
+  await prisma.walletCandyMachineGroup.deleteMany();
   await prisma.candyMachineGroup.deleteMany();
   await prisma.nft.deleteMany();
   await prisma.candyMachine.deleteMany();
