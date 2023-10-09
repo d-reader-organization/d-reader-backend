@@ -9,6 +9,8 @@ import {
   AccountMeta,
   TransactionMessage,
   VersionedTransaction,
+  RpcResponseAndContext,
+  AddressLookupTableAccount,
 } from '@solana/web3.js';
 
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
@@ -312,18 +314,18 @@ export async function constructMintOneTransaction(
       );
       if (routeTransaction) rawTransactions.push(routeTransaction);
     }
-    const lookupTableAccount = (
-      await metaplex.connection.getAddressLookupTable(
+    let lookupTableAccount: RpcResponseAndContext<AddressLookupTableAccount>;
+    if (lookupTable) {
+      lookupTableAccount = await metaplex.connection.getAddressLookupTable(
         new PublicKey(lookupTable),
-      )
-    ).value;
-
+      );
+    }
     const latestBlockhash = await metaplex.connection.getLatestBlockhash();
     const mintTransaction = new TransactionMessage({
       payerKey: feePayer,
       recentBlockhash: latestBlockhash.blockhash,
       instructions: mintInstructions,
-    }).compileToV0Message([lookupTableAccount]);
+    }).compileToV0Message(lookupTableAccount ? [lookupTableAccount.value] : []);
     const mintTransactionV0 = new VersionedTransaction(mintTransaction);
     mintTransactionV0.sign([mint]);
 
