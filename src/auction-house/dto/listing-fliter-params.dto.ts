@@ -1,4 +1,4 @@
-import { IsOptional, Min } from 'class-validator';
+import { IsNumber, IsOptional, Min } from 'class-validator';
 import { Pagination } from 'src/types/pagination.dto';
 import { Transform } from 'class-transformer';
 import { TransformStringToNumber } from 'src/utils/transform';
@@ -13,5 +13,6 @@ export class ListingFilterParams extends Pagination {
 
   @Min(0)
   @TransformStringToNumber()
+  @IsNumber()
   comicIssueId: number;
 }

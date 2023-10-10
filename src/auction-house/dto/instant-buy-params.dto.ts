@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumberString } from 'class-validator';
+import { IsNumber } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class InstantBuyParams {
   @IsSolanaAddress()
@@ -9,7 +10,8 @@ export class InstantBuyParams {
   @IsSolanaAddress()
   mintAccount: string;
 
-  @IsNumberString()
+  @TransformStringToNumber()
+  @IsNumber()
   price: number;
 
   @IsSolanaAddress()

@@ -13,6 +13,7 @@ import {
   token,
 } from '@metaplex-foundation/js';
 import {
+  BuyInstructionAccounts,
   CancelInstructionAccounts,
   createBuyInstruction,
   createCancelBidReceiptInstruction,
@@ -80,7 +81,7 @@ export const constructPrivateBidInstruction = async (
     tokenAccount,
   });
 
-  const accounts = {
+  const accounts: BuyInstructionAccounts = {
     wallet: buyer,
     paymentAccount: buyer,
     transferAuthority: buyer,
@@ -91,6 +92,7 @@ export const constructPrivateBidInstruction = async (
     auctionHouse: auctionHouse.address,
     auctionHouseFeeAccount: auctionHouse.feeAccountAddress,
     buyerTradeState,
+    tokenAccount,
   };
 
   const args = {
@@ -101,12 +103,7 @@ export const constructPrivateBidInstruction = async (
   };
 
   const instructions: TransactionInstruction[] = [];
-
-  // Buy Instruction.
-  const buyInstruction = createBuyInstruction(
-    { ...accounts, tokenAccount },
-    args,
-  );
+  const buyInstruction = createBuyInstruction(accounts, args);
 
   // Make buyer as signer since createBuyInstruction don't assign a signer.
   const signerKeyIndex = buyInstruction.keys.findIndex(({ pubkey }) =>
@@ -114,7 +111,6 @@ export const constructPrivateBidInstruction = async (
   );
 
   buyInstruction.keys[signerKeyIndex].isSigner = true;
-
   instructions.push(buyInstruction);
 
   if (printReceipt) {
@@ -164,7 +160,7 @@ export async function constructInstantBuyTransaction(
     auctionHouse,
     buyer,
     mintAccount,
-    solFromLamports(price),
+    lamports(price),
     token(1),
     false,
     seller,
@@ -193,6 +189,7 @@ export async function constructInstantBuyTransaction(
   })
     .add(...bidInstruction)
     .add(executeSaleInstruction);
+  instantBuyTransaction.partialSign(metaplex.identity());
 
   const rawTransaction = instantBuyTransaction.serialize({
     requireAllSignatures: false,
@@ -323,7 +320,7 @@ export function toBid(
   symbol: string,
   seller: PublicKey,
 ): BidModel {
-  const price = solFromLamports(amount);
+  const price = lamports(amount);
   const tokens = token(1, 0, symbol); // only considers nfts
   const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
     mint: address,
