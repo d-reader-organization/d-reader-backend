@@ -29,7 +29,6 @@ import { solFromLamports } from '../../utils/helpers';
 import { Nft, Listing } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
 import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
-import { getAuctionHouseProgramAsSigner } from '../../utils/auction-house';
 import { metaplex } from '../../utils/metaplex';
 
 export async function constructListInstruction(
@@ -302,7 +301,7 @@ export function getCancelRemainingAccounts(
     {
       isSigner: false,
       isWritable: false,
-      pubkey: getAuctionHouseProgramAsSigner(metaplex),
+      pubkey: metaplex.auctionHouse().pdas().programAsSigner(),
     },
     {
       isSigner: false,
@@ -382,7 +381,7 @@ export async function toListing(
     owner: sellerAddress,
   });
 
-  const price = solFromLamports(listing.price);
+  const price = lamports(listing.price);
   const tokens = token(1, 0, listing.symbol); // only considers nfts
   const tradeStateAddress = metaplex.auctionHouse().pdas().tradeState({
     auctionHouse: auctionHouse.address,

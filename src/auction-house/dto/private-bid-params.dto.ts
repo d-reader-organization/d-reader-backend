@@ -1,4 +1,4 @@
-import { IsBooleanString, IsOptional } from 'class-validator';
+import { IsBooleanString, IsNumber, IsOptional } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 
@@ -10,6 +10,7 @@ export class PrivateBidParams {
   mintAccount: string;
 
   @TransformStringToNumber()
+  @IsNumber()
   price: number;
 
   @IsSolanaAddress()
