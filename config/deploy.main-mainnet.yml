@@ -10,4 +10,4 @@ env:
     API_URL: https://api-main-mainnet.dreader.io
     D_READER_URL: https://dreader.app
     D_PUBLISHER_URL: https://dpublisher.app
-    CDN_URL: 
+    CDN_URL: https://d323dls9ny69nf.cloudfront.net
