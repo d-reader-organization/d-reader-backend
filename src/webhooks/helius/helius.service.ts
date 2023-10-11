@@ -113,8 +113,7 @@ export class HeliusService {
             return this.handleCancelListing(transaction);
           case TransactionType.NFT_SALE:
             return this.handleInstantBuy(transaction);
-          // helius-sdk still hasn't updated their TransactionType enum with our transaction type
-          case 'CHANGE_COMIC_STATE' as TransactionType:
+          case TransactionType.CHANGE_COMIC_STATE:
             return this.handleChangeComicState(transaction);
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
@@ -131,8 +130,7 @@ export class HeliusService {
   private async handleChangeComicState(transaction: EnrichedTransaction) {
     try {
       // metadata address is found in the last instruction
-      const metadataAddress =
-        transaction.instructions.at(-1).innerInstructions[0].accounts[0];
+      const metadataAddress = transaction.instructions.at(-1).accounts[0];
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
@@ -165,7 +163,9 @@ export class HeliusService {
         },
       });
       this.websocketGateway.handleWalletNftUsed(nft);
-    } catch (e) {}
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   private async handleInstantBuy(transaction: EnrichedTransaction) {
