@@ -12,6 +12,7 @@ import {
   SystemProgram,
   Transaction,
 } from '@solana/web3.js';
+import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -51,6 +52,8 @@ export async function constructChangeComicStateInstruction(
     recordAuthority,
     signer,
     mint,
+    authorizationRules: AUTH_RULES,
+    authorizationRulesProgram: AUTH_RULES_ID,
     sysvarInstruction: SYSVAR_INSTRUCTIONS_PUBKEY,
     systemProgram: SystemProgram.programId,
   };
