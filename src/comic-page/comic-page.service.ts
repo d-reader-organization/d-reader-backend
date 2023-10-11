@@ -70,7 +70,7 @@ export class ComicPageService {
     const oldComicPages = comicIssue.pages;
     const areComicPagesUpdated = !!oldComicPages;
 
-    const s3Folder = getS3Folder(comicIssue.slug, comicIssue.slug);
+    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
 
     // upload comic pages to S3 and format data for INSERT
     const newComicPagesData = await this.createMany(
