@@ -204,15 +204,13 @@ export async function uploadItemMetadata(
   let index = 0;
   for (const metadata of itemMetadatas) {
     let supply: number;
-
     const { value } = rarityShares[index];
     if (index == rarityShares.length - 1) {
       supply = supplyLeft;
     } else {
-      supply = (supply * value) / 100;
+      supply = Math.floor((comicIssueSupply * value) / 100);
       supplyLeft -= supply;
     }
-
     const indexArray = Array.from(Array(supply).keys());
     const itemsInserted = await Promise.all(
       indexArray.map((i) => ({

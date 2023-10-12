@@ -151,6 +151,15 @@ export const getRarityShare = (numberOfCovers: number, rarity: string) => {
   return shareTable.find((share) => share.rarity.toString() === rarity).value;
 };
 
+export const minSupply = (numberOfRarities: number) => {
+  const rarityShareTable = getRarityShareTable(numberOfRarities);
+  const minShare = Math.min(
+    ...rarityShareTable.map((rarityShare) => rarityShare.value),
+  );
+  const supply = Math.ceil(100 / minShare);
+  return supply;
+};
+
 export const RARITY_MAP: { [key in PrismaComicRarity]: ComicRarity } = {
   [PrismaComicRarity.None]: ComicRarity.None,
   [PrismaComicRarity.Common]: ComicRarity.Common,

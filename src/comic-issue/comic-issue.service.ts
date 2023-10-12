@@ -28,7 +28,7 @@ import { UserComicIssueService } from './user-comic-issue.service';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { PUBLIC_GROUP_LABEL, getRarityShare } from '../constants';
+import { PUBLIC_GROUP_LABEL, getRarityShare, minSupply } from '../constants';
 import { CreateStatelessCoverDto } from './dto/covers/create-stateless-cover.dto';
 import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
@@ -563,7 +563,17 @@ export class ComicIssueService {
     } else if (!!comicIssue.statefulCovers) {
       throw new BadRequestException('Comic issue missing stateful covers');
     }
-
+    if (
+      minSupply(comicIssue.statelessCovers.length) > publishOnChainDto.supply
+    ) {
+      throw new BadRequestException(
+        `Comic issue with ${
+          comicIssue.statelessCovers.length
+        } rarities must have atleast ${minSupply(
+          comicIssue.statelessCovers.length,
+        )} supply`,
+      );
+    }
     validateWeb3PublishInfo(publishOnChainDto);
     const {
       sellerFee,
