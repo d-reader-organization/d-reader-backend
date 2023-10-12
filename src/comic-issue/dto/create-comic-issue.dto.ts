@@ -46,7 +46,7 @@ export class CreateComicIssueDto {
 
   @IsOptional()
   @Min(0)
-  @Max(1)
+  @Max(100)
   @IsNumber()
   sellerFee?: number;
 

@@ -32,7 +32,7 @@ export class BundlrFundCommand extends CommandRunner {
     const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
     log(`💰  Current bundlr balance: ${solBalance}`);
 
-    await bundlr.fund(options.fundAmount);
+    await bundlr.fund(options.fundAmount * LAMPORTS_PER_SOL);
     log(cg('💻 Funded bundlr! '));
 
     const newBalance = await bundlr.getBalance(treasuryPubKey);

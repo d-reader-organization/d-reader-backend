@@ -13,6 +13,6 @@ export class BundlrFundQuestions {
     },
   })
   parseFundAmount(fundAmount: string): number {
-    return parseInt(fundAmount, 10);
+    return parseFloat(fundAmount);
   }
 }

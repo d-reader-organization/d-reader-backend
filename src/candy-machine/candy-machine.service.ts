@@ -32,7 +32,7 @@ import {
   MAX_METADATA_LEN,
   CREATOR_ARRAY_START,
   D_PUBLISHER_SYMBOL,
-  HUNDRED_PERCENT_TAX,
+  HUNDRED,
   D_READER_FRONTEND_URL,
   MAX_SIGNATURES_PERCENT,
   MIN_SIGNATURES,
@@ -211,14 +211,14 @@ export class CandyMachineService {
           name: comicIssue.title,
           symbol: D_PUBLISHER_SYMBOL,
           description: comicIssue.description,
-          seller_fee_basis_points: HUNDRED_PERCENT_TAX,
+          seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
           image: coverImage,
           external_url: D_READER_FRONTEND_URL,
           properties: {
             creators: [
               {
                 address: this.metaplex.identity().publicKey.toBase58(),
-                share: HUNDRED_PERCENT_TAX,
+                share: HUNDRED,
               },
             ],
             files: [
@@ -231,7 +231,7 @@ export class CandyMachineService {
       const { nft: newCollectionNft } = await this.metaplex.nfts().create({
         uri: collectionNftUri,
         name: comicIssue.title,
-        sellerFeeBasisPoints: HUNDRED_PERCENT_TAX,
+        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         symbol: D_PUBLISHER_SYMBOL,
         isCollection: true,
       });
