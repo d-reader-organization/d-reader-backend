@@ -95,6 +95,9 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
+  // TODO: this should work similar to verify-email
+  // it should send an auth token in an email (as a magic link)
+  // which user could visit in order to reset/update their password
   /* Reset specific user's password */
   @UserOwnerAuth()
   @Patch('reset-password/:id')

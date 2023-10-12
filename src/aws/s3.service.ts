@@ -30,7 +30,7 @@ export type UploadFileOptions = {
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const timekeeper = require('timekeeper');
 
-type s3File = {
+export type s3File = {
   fieldname: Express.Multer.File['fieldname'];
   originalname: Express.Multer.File['originalname'];
   mimetype: Express.Multer.File['mimetype'];

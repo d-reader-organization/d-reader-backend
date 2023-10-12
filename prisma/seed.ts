@@ -201,6 +201,7 @@ async function main() {
   const saC = await prisma.creator.create({ data: await saucerpen() });
   const mmC = await prisma.creator.create({ data: await madMuse() });
   const tsC = await prisma.creator.create({ data: await tsukiverse() });
+  const llC = await prisma.creator.create({ data: await longwood() });
   console.log('Added creators');
 
   // SEED COMICS
@@ -220,6 +221,7 @@ async function main() {
   const watersC = await prisma.comic.create({ data: watersData(mmC.id) });
   const versusC = await prisma.comic.create({ data: versusData(mmC.id) });
   const tsukiC = await prisma.comic.create({ data: tsukiData(tsC.id) });
+  const heistC = await prisma.comic.create({ data: heistData(llC.id) });
   console.log('Added comics');
 
   // SEED COMIC ISSUES
@@ -241,6 +243,7 @@ async function main() {
   await prisma.comicIssue.create({ data: watersEp1Data(watersC.slug) });
   await prisma.comicIssue.create({ data: versusEp1Data(versusC.slug) });
   await prisma.comicIssue.create({ data: tsukiEp1Data(tsukiC.slug) });
+  await prisma.comicIssue.create({ data: heistEp1Data(heistC.slug) });
   console.log('Added comic issues');
 
   const comics = await prisma.comic.findMany();
@@ -293,12 +296,9 @@ async function main() {
   if (isDevnet) {
     await tryAirdropping();
 
-    const llC = await prisma.creator.create({ data: await longwood() });
     const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
-    const heistC = await prisma.comic.create({ data: heistData(llC.id) });
 
     await prisma.comicIssue.create({ data: portalEp1Data(portalC.slug) });
-    await prisma.comicIssue.create({ data: heistEp1Data(heistC.slug) });
     await prisma.comicIssue.create({ data: birthEp1Data(birthC.slug) });
     await prisma.comicIssue.create({ data: wretchesEp2Data(wretchesC.slug) });
     await prisma.comicIssue.create({ data: wretchesEp3Data(wretchesC.slug) });
