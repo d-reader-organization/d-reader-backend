@@ -7,7 +7,7 @@ import {
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateUserDto } from '../types/update-user.dto';
 import * as jdenticon from 'jdenticon';
-import { s3Service } from '../aws/s3.service';
+import { s3File, s3Service } from '../aws/s3.service';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { PickFields } from '../types/shared';
 import { isEmail, isNumberString } from 'class-validator';
@@ -409,13 +409,14 @@ export class UserService {
   }
 
   async generateAvatar(id: number) {
-    const buffer = jdenticon.toPng(id, 400);
-    const file = {
+    const buffer = jdenticon.toPng(id, 500);
+    const file: s3File = {
       fieldname: 'avatar.png',
-      originalname: 'con',
+      originalname: 'avatar.png',
       mimetype: 'image/png',
       buffer,
     };
+
     const s3Folder = getS3Folder(id);
     return this.s3.uploadFile(file, {
       s3Folder,
