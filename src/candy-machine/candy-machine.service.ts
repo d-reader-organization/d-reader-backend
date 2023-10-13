@@ -581,8 +581,15 @@ export class CandyMachineService {
               group.label,
               query.walletAddress,
             );
+          let supply: number;
+          if (group.label === PUBLIC_GROUP_LABEL) {
+            supply = candyMachine.itemsRemaining + itemsMinted;
+          } else {
+            supply = group.supply;
+          }
           return {
             ...group,
+            supply,
             itemsMinted,
             displayLabel,
             walletStats: {

@@ -1,6 +1,5 @@
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import { decodeTransaction } from '../utils/transactions';
 import { cb, cuy, log, logErr } from './chalk';
 import { constructMintOneTransaction } from '../candy-machine/instructions';
 import { Metaplex } from '@metaplex-foundation/js';
@@ -55,8 +54,9 @@ export class MintRemainingCommand extends CommandRunner {
       [authority.publicKey.toString()],
     );
     const transactions = encodedTransactions.map((encodedTransaction) => {
-      const transaction = decodeTransaction(encodedTransaction, 'base64');
-      transaction.partialSign(authority);
+      const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
+      const transaction = VersionedTransaction.deserialize(transactionBuffer);
+      transaction.sign([authority]);
       return transaction;
     });
     log(cb('⛏️  Minting'));
