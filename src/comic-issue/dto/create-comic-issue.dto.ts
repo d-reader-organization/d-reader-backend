@@ -5,12 +5,9 @@ import {
   IsBoolean,
   IsDateString,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsPositive,
-  Max,
   MaxLength,
-  Min,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
@@ -18,6 +15,7 @@ import { RoyaltyWalletDto } from './royalty-wallet.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
+import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -45,10 +43,8 @@ export class CreateComicIssueDto {
   isFullyUploaded?: boolean;
 
   @IsOptional()
-  @Min(0)
-  @Max(100)
-  @IsNumber()
-  sellerFee?: number;
+  @IsBasisPoints()
+  sellerFeeBasisPoints?: number;
 
   @IsOptional()
   @MaxLength(256)

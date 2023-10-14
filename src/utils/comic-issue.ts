@@ -3,9 +3,12 @@ import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { StatelessCoverDto } from '../comic-issue/dto/covers/stateless-cover.dto';
-import { BadRequestException } from '@nestjs/common';
 import { CreateStatelessCoverBodyDto } from '../comic-issue/dto/covers/create-stateless-cover.dto';
 import { CreateStatefulCoverBodyDto } from '../comic-issue/dto/covers/create-stateful-cover.dto';
+import { isSolanaAddress } from '../decorators/IsSolanaAddress';
+import { isBasisPoints } from '../decorators/IsBasisPoints';
+import { BadRequestException } from '@nestjs/common';
+import { min } from 'class-validator';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
@@ -35,11 +38,11 @@ export const getStatefulCoverName = (
 export const validateWeb3PublishInfo = (
   publishOnChainDto: PublishOnChainDto,
 ) => {
-  if (publishOnChainDto.sellerFee < 0 || publishOnChainDto.sellerFee > 100) {
-    throw new BadRequestException('Seller fee must be in range of 0-100%');
-  } else if (!publishOnChainDto.creatorAddress) {
-    throw new BadRequestException('Comic issue missing creator address');
-  } else if (publishOnChainDto.mintPrice < 0) {
+  if (isBasisPoints(publishOnChainDto.sellerFeeBasisPoints)) {
+    throw new BadRequestException('Seller fee bps should be in range 0-10,000');
+  } else if (!isSolanaAddress(publishOnChainDto.creatorAddress)) {
+    throw new BadRequestException('Comic issue missing valid creator address');
+  } else if (min(publishOnChainDto.mintPrice, 0)) {
     throw new BadRequestException('Price must be greater than or equal to 0');
   }
 };
@@ -51,10 +54,7 @@ export const findCover = (covers: StatefulCover[], rarity: ComicRarity) => {
 };
 
 export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
-  if (
-    comicIssue.sellerFeeBasisPoints < 0 ||
-    comicIssue.sellerFeeBasisPoints > 10000
-  ) {
+  if (isBasisPoints(comicIssue.sellerFeeBasisPoints)) {
     throw new BadRequestException('Invalid seller fee value');
   }
 
@@ -67,15 +67,11 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
     throw new BadRequestException('Unsupported rarity count: ' + raritiesCount);
   }
 
-  if (!comicIssue.creatorAddress) {
-    throw new BadRequestException('Missing necessary creator address');
+  if (!isSolanaAddress(comicIssue.creatorAddress)) {
+    throw new BadRequestException('Missing valid creator address');
   }
 
-  if (!comicIssue.creatorBackupAddress) {
-    throw new BadRequestException('Missing necessary creator backup address');
-  }
-
-  if (!comicIssue.creatorBackupAddress) {
-    throw new BadRequestException('Missing necessary creator backup address');
+  if (!isSolanaAddress(comicIssue.creatorBackupAddress)) {
+    throw new BadRequestException('Missing valid creator backup address');
   }
 };

@@ -73,7 +73,6 @@ export class ComicIssueService {
       number,
       comicSlug,
       creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
-      sellerFee = 0,
       collaborators = [],
       royaltyWallets = [],
       ...rest
@@ -106,7 +105,6 @@ export class ComicIssueService {
           title,
           number,
           creatorBackupAddress,
-          sellerFeeBasisPoints: sellerFee * 100,
           comic: { connect: { slug: comicSlug } },
           collaborators: { createMany: { data: collaborators } },
           royaltyWallets: { createMany: { data: royaltyWallets } },
@@ -329,7 +327,6 @@ export class ComicIssueService {
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
     const {
       number,
-      sellerFee,
       collaborators,
       royaltyWallets,
       creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
@@ -347,17 +344,11 @@ export class ComicIssueService {
     }
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
-    const isSellerFeeUpdated = !isNil(sellerFee); // TODO: && sellerFee is different from current fee
     const areCollaboratorsUpdated = !isNil(collaborators); // && collaborators are different from current collaborators
     const areRoyaltyWalletsUpdated = !isNil(royaltyWallets); // && wallets are different from current wallets
 
     if (isNumberUpdated) {
       await this.throwIfComicSlugAndNumberTaken(comicIssue.comicSlug, number);
-    }
-
-    let sellerFeeBasisPointsData: Prisma.ComicIssueUpdateInput['sellerFeeBasisPoints'];
-    if (isSellerFeeUpdated) {
-      sellerFeeBasisPointsData = sellerFee * 100;
     }
 
     if (areCollaboratorsUpdated) {
@@ -401,12 +392,7 @@ export class ComicIssueService {
           statelessCovers: true,
         },
         where: { id, publishedAt: null },
-        data: {
-          number,
-          ...rest,
-          sellerFeeBasisPoints: sellerFeeBasisPointsData,
-          creatorBackupAddress,
-        },
+        data: { number, ...rest, creatorBackupAddress },
       });
 
       return updatedComicIssue;
@@ -576,7 +562,6 @@ export class ComicIssueService {
     }
     validateWeb3PublishInfo(publishOnChainDto);
     const {
-      sellerFee,
       royaltyWallets,
       startDate,
       endDate,
@@ -586,8 +571,6 @@ export class ComicIssueService {
       mintPrice,
       ...updatePayload
     } = publishOnChainDto;
-    const sellerFeeBasisPoints = isNil(sellerFee) ? undefined : sellerFee * 100;
-
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
       where: { comicIssueId: id },
     });
@@ -598,7 +581,6 @@ export class ComicIssueService {
       where: { id },
       data: {
         publishedAt: new Date(),
-        sellerFeeBasisPoints,
         royaltyWallets: { createMany: { data: royaltyWallets } },
         creatorBackupAddress,
         ...updatePayload,
@@ -635,14 +617,9 @@ export class ComicIssueService {
         guardParams,
       );
     } catch (e) {
-      // revert in case of failure
-      await this.prisma.comicIssue.update({
-        where: { id },
-        data: {
-          publishedAt: comicIssue.publishedAt,
-          sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-        },
-      });
+      // revert in case of failure, handle it gracefully:
+      // revert comic issue back to the initial state,
+      // destroy collection NFT and CM inserted items etc.
       throw e;
     }
   }
