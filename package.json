@@ -82,7 +82,7 @@
     "class-validator": "^0.14.0",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
-    "dreader-comic-verse": "^1.0.0",
+    "dreader-comic-verse": "^2.0.0",
     "ejs": "^3.1.2",
     "geoip-lite": "^1.4.7",
     "handlebars": "^4.7.6",

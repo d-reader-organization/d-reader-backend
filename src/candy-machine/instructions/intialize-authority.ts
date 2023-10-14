@@ -15,22 +15,32 @@ import {
 
 export async function constructInitializeComicAuthorityInstruction(
   metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
   collectionMint: PublicKey,
   rarity: ComicRarity,
   comicStates: ComicStates,
 ) {
-  const recordAuthority = await pda(
-    [Buffer.from(PUB_AUTH_TAG), collectionMint.toBuffer()],
+  const recordAuthority = pda(
+    [
+      Buffer.from(PUB_AUTH_TAG),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
   const rarityString = ComicRarity[rarity].toLowerCase();
-  const authority = await pda(
-    [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
+  const authority = pda(
+    [
+      Buffer.from(AUTH_TAG + rarityString),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
   const accounts: InitializeAuthorityInstructionAccounts = {
     authority,
     recordAuthority,
+    generator: candyMachineAddress,
     updateAuthority: metaplex.identity().publicKey,
     collectionMint,
     systemProgram: SystemProgram.programId,
@@ -43,12 +53,14 @@ export async function constructInitializeComicAuthorityInstruction(
 
 export async function initializeAuthority(
   metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
   collectionMint: PublicKey,
   rarity: ComicRarity,
   comicStates: ComicStates,
 ) {
   const instruction = await constructInitializeComicAuthorityInstruction(
     metaplex,
+    candyMachineAddress,
     collectionMint,
     rarity,
     comicStates,

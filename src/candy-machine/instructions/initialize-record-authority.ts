@@ -14,19 +14,23 @@ import { PUB_AUTH_TAG, pda } from './pda';
 
 export async function constructInitializeRecordAuthorityInstruction(
   metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
   collectionMint: PublicKey,
   creator: PublicKey,
   creatorAuthority: PublicKey,
   maxSignatures: number,
-  minSignatures: number,
 ) {
   const collectionMetadata = metaplex
     .nfts()
     .pdas()
     .metadata({ mint: collectionMint });
 
-  const recordAuthority = await pda(
-    [Buffer.from(PUB_AUTH_TAG), collectionMint.toBuffer()],
+  const recordAuthority = pda(
+    [
+      Buffer.from(PUB_AUTH_TAG),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
 
@@ -39,6 +43,7 @@ export async function constructInitializeRecordAuthorityInstruction(
     });
   const accounts: InitializeRecordAuthorityInstructionAccounts = {
     collectionMint: collectionMint,
+    generator: candyMachineAddress,
     systemProgram: SystemProgram.programId,
     recordAuthority,
     updateAuthority: metaplex.identity().publicKey,
@@ -50,7 +55,6 @@ export async function constructInitializeRecordAuthorityInstruction(
 
   const args: InitializeRecordAuthorityInstructionArgs = {
     maxSignatures,
-    minSignatures,
   };
 
   return createInitializeRecordAuthorityInstruction(accounts, args);
@@ -58,19 +62,19 @@ export async function constructInitializeRecordAuthorityInstruction(
 
 export async function initializeRecordAuthority(
   metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
   collectionMint: PublicKey,
   creator: PublicKey,
   creatorAuthority: PublicKey,
   maxSignature: number,
-  minSignatures: number,
 ) {
   const instruction = await constructInitializeRecordAuthorityInstruction(
     metaplex,
+    candyMachineAddress,
     collectionMint,
     creator,
     creatorAuthority,
     maxSignature,
-    minSignatures,
   );
   const tx = new Transaction().add(instruction);
   await sendAndConfirmTransaction(metaplex.connection, tx, [

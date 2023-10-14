@@ -118,8 +118,6 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
   },
 ];
 
-export const MAX_SIGNATURES_PERCENT = 10;
-export const MIN_SIGNATURES = 10;
 export const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
 
 export const getRarityShareTable = (numberOfCovers: number) => {

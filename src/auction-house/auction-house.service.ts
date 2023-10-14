@@ -310,10 +310,12 @@ export class AuctionHouseService {
       where: { address: metadata.mintAddress.toString() },
       include: { metadata: true },
     });
+    const candyMachine = new PublicKey(nft.candyMachineAddress);
     const collectionAddress = new PublicKey(nft.collectionNftAddress);
-    const updateAuthorityAddress = await pda(
+    const updateAuthorityAddress = pda(
       [
         Buffer.from(AUTH_TAG + nft.metadata.rarity.toLowerCase()),
+        candyMachine.toBuffer(),
         collectionAddress.toBuffer(),
       ],
       COMIC_VERSE_ID,

@@ -4,9 +4,8 @@ import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
 import { StatelessCoverDto } from '../comic-issue/dto/covers/stateless-cover.dto';
 import { BadRequestException } from '@nestjs/common';
-import { MIN_SIGNATURES } from '../constants';
-import { CreateStatelessCoverBodyDto } from 'src/comic-issue/dto/covers/create-stateless-cover.dto';
-import { CreateStatefulCoverBodyDto } from 'src/comic-issue/dto/covers/create-stateful-cover.dto';
+import { CreateStatelessCoverBodyDto } from '../comic-issue/dto/covers/create-stateless-cover.dto';
+import { CreateStatefulCoverBodyDto } from '../comic-issue/dto/covers/create-stateful-cover.dto';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
@@ -36,14 +35,7 @@ export const getStatefulCoverName = (
 export const validateWeb3PublishInfo = (
   publishOnChainDto: PublishOnChainDto,
 ) => {
-  if (publishOnChainDto.supply < MIN_SIGNATURES) {
-    throw new BadRequestException(
-      `Cannot create an NFT collection with supply lower than ${MIN_SIGNATURES}`,
-    );
-  } else if (
-    publishOnChainDto.sellerFee < 0 ||
-    publishOnChainDto.sellerFee > 100
-  ) {
+  if (publishOnChainDto.sellerFee < 0 || publishOnChainDto.sellerFee > 100) {
     throw new BadRequestException('Seller fee must be in range of 0-100%');
   } else if (!publishOnChainDto.creatorAddress) {
     throw new BadRequestException('Comic issue missing creator address');
