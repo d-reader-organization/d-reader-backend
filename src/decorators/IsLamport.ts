@@ -2,6 +2,8 @@ import { ValidationOptions, buildMessage, ValidateBy } from 'class-validator';
 
 export const IS_LAMPORT = 'isLamport';
 
+// Address the upper boundary limitation: https://solana.stackexchange.com/questions/3660/can-we-safely-represent-lamport-amounts-in-javascript-using-a-number
+
 /**
  * Check if the number value is a valid lamport unit
  */

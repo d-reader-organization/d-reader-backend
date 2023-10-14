@@ -10,7 +10,7 @@ import {
 import { IsLamport } from 'src/decorators/IsLamport';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
-  'sellerFee',
+  'sellerFeeBasisPoints',
   'royaltyWallets',
   'creatorAddress',
 ]) {

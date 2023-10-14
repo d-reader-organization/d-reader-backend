@@ -194,7 +194,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    sellerFee: divide(issue.sellerFeeBasisPoints, 100),
+    sellerFee: divide(issue.sellerFeeBasisPoints, 10000),
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
