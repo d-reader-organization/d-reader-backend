@@ -25,12 +25,20 @@ export async function constructChangeComicStateInstruction(
   newState: ComicStateArgs,
 ) {
   const rarityString = ComicRarity[numberedRarity].toString().toLowerCase();
-  const authority = await pda(
-    [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
+  const authority = pda(
+    [
+      Buffer.from(AUTH_TAG + rarityString),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
-  const recordAuthority = await pda(
-    [Buffer.from(PUB_AUTH_TAG), collectionMint.toBuffer()],
+  const recordAuthority = pda(
+    [
+      Buffer.from(PUB_AUTH_TAG),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
 
@@ -47,7 +55,7 @@ export async function constructChangeComicStateInstruction(
     tokenMetadataProgram: token_metadata_id,
     collectionMint,
     metadata,
-    candyMachine: candyMachineAddress,
+    generator: candyMachineAddress,
     tokenAccount,
     recordAuthority,
     signer,

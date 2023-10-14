@@ -489,12 +489,14 @@ export class HeliusService {
   }
 
   async delegateAuthority(
+    candyMachineAddress: PublicKey,
     collectionMint: PublicKey,
     rarity: string,
     mint: PublicKey,
   ) {
     const instruction = await constructDelegateAuthorityInstruction(
       this.metaplex,
+      candyMachineAddress,
       collectionMint,
       ComicRarity[rarity],
       mint,
@@ -514,6 +516,7 @@ export class HeliusService {
     try {
       await Promise.all([
         this.delegateAuthority(
+          new PublicKey(candMachineAddress),
           metadata.collection.address,
           findRarityTrait(collectionMetadata).toString(),
           metadata.mintAddress,

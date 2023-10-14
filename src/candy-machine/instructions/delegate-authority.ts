@@ -11,13 +11,18 @@ import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
 export async function constructDelegateAuthorityInstruction(
   metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
   collectionMint: PublicKey,
   rarity: ComicRarity,
   mint: PublicKey,
 ) {
   const rarityString = ComicRarity[rarity].toLowerCase();
-  const authority = await pda(
-    [Buffer.from(AUTH_TAG + rarityString), collectionMint.toBuffer()],
+  const authority = pda(
+    [
+      Buffer.from(AUTH_TAG + rarityString),
+      candyMachineAddress.toBuffer(),
+      collectionMint.toBuffer(),
+    ],
     COMIC_VERSE_ID,
   );
   const metadata = metaplex.nfts().pdas().metadata({ mint });
@@ -27,6 +32,7 @@ export async function constructDelegateAuthorityInstruction(
     authority,
     updateAuthority: metaplex.identity().publicKey,
     tokenMetadataProgram,
+    generator: candyMachineAddress,
     collectionMint,
     metadata,
     mint,

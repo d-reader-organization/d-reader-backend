@@ -34,8 +34,6 @@ import {
   D_PUBLISHER_SYMBOL,
   HUNDRED,
   D_READER_FRONTEND_URL,
-  MAX_SIGNATURES_PERCENT,
-  MIN_SIGNATURES,
   BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
@@ -57,12 +55,8 @@ import {
   generatePropertyName,
   uploadItemMetadata,
 } from '../utils/nft-metadata';
-import {
-  ComicStateArgs,
-  PROGRAM_ID as COMIC_VERSE_ID,
-} from 'dreader-comic-verse';
+import { ComicStateArgs } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
-import { PUB_AUTH_TAG, pda } from './instructions/pda';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { Prisma } from '@prisma/client';
 import { CandyMachineGroupSettings, GuardParams } from './dto/types';
@@ -245,24 +239,6 @@ export class CandyMachineService {
       });
       collectionNftAddress = newCollectionNft.address;
     }
-    const recordAuthorityPda = await pda(
-      [Buffer.from(PUB_AUTH_TAG), collectionNftAddress.toBuffer()],
-      COMIC_VERSE_ID,
-    );
-    const recordAuthority = await this.metaplex.connection.getAccountInfo(
-      recordAuthorityPda,
-    );
-
-    if (!recordAuthority) {
-      await initializeRecordAuthority(
-        this.metaplex,
-        collectionNftAddress,
-        new PublicKey(creatorAddress),
-        new PublicKey(creatorBackupAddress),
-        MAX_SIGNATURES_PERCENT,
-        MIN_SIGNATURES,
-      );
-    }
 
     const creators: CreateCandyMachineInput['creators'] = royaltyWallets.map(
       (wallet) => ({
@@ -270,9 +246,18 @@ export class CandyMachineService {
         share: wallet.share,
       }),
     );
-
     const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
       guardParams;
+
+    await initializeRecordAuthority(
+      this.metaplex,
+      candyMachineKey.publicKey,
+      collectionNftAddress,
+      new PublicKey(creatorAddress),
+      new PublicKey(creatorBackupAddress),
+      supply,
+    );
+
     const candyMachineTx = await constructCandyMachineTransaction(
       this.metaplex,
       {
@@ -393,6 +378,7 @@ export class CandyMachineService {
     });
     const items = await uploadItemMetadata(
       metaplex,
+      candyMachine.address,
       comicIssue,
       collectionNftAddress,
       comicName,

@@ -5710,10 +5710,10 @@ dotenv@16.1.4:
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.1.4.tgz#67ac1a10cd9c25f5ba604e4e08bc77c0ebe0ca8c"
   integrity sha512-m55RtE8AsPeJBpOIFKihEmqUcoVncQIwo7x9U8ZwLEZw9ZpXboz2c+rvog+jUaJvVrZ5kBOeYQBX5+8Aa/OZQw==
 
-dreader-comic-verse@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/dreader-comic-verse/-/dreader-comic-verse-1.0.0.tgz#e13faeef3cbce8d4a6b86c9f23bcd9af1c5c9fab"
-  integrity sha512-FXSFQoNeMYVPkxwcICPsIpnqOmLMPF97ivINNM9bv7aiu/ZyrgUfOZDZz+zGYvCtuS0uA0HDA9G/ahTORtQ4tg==
+dreader-comic-verse@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/dreader-comic-verse/-/dreader-comic-verse-2.0.0.tgz#737cbfb1cf39a418e59b94f46c53247b1bafc87e"
+  integrity sha512-gCpGgc5Q89j/XZ++0aD2q/9yQsgu08j5lKkY1ALEY8HRD+dNSA7lsPDmp3gDSElybhITLja4+EM39ee4g5ojvQ==
   dependencies:
     "@metaplex-foundation/beet" "^0.7.1"
     "@metaplex-foundation/beet-solana" "^0.4.0"
