@@ -23,7 +23,7 @@ export class ThawCollectionQuestions {
     name: 'comicIssueId',
     message: 'ComicIssue Id of the primary sale',
   })
-  parseComicIssueId(id: number): number {
-    return id;
+  parseComicIssueId(id: string): number {
+    return +id;
   }
 }
