@@ -514,6 +514,7 @@ export class CandyMachineService {
     guard: string,
     label: string,
   ) {
+    if (label === AUTHORITY_GROUP_LABEL) return;
     const transaction = await constructThawTransaction(
       this.metaplex,
       candyMachineAddress,
@@ -522,9 +523,11 @@ export class CandyMachineService {
       guard,
       label,
     );
-    await sendAndConfirmTransaction(this.metaplex.connection, transaction, [
-      this.metaplex.identity(),
-    ]);
+    return await sendAndConfirmTransaction(
+      this.metaplex.connection,
+      transaction,
+      [this.metaplex.identity()],
+    );
   }
 
   async unlockFunds(
