@@ -38,11 +38,11 @@ export const getStatefulCoverName = (
 export const validateWeb3PublishInfo = (
   publishOnChainDto: PublishOnChainDto,
 ) => {
-  if (isBasisPoints(publishOnChainDto.sellerFeeBasisPoints)) {
+  if (!isBasisPoints(publishOnChainDto.sellerFeeBasisPoints)) {
     throw new BadRequestException('Seller fee bps should be in range 0-10,000');
   } else if (!isSolanaAddress(publishOnChainDto.creatorAddress)) {
     throw new BadRequestException('Comic issue missing valid creator address');
-  } else if (min(publishOnChainDto.mintPrice, 0)) {
+  } else if (!min(publishOnChainDto.mintPrice, 0)) {
     throw new BadRequestException('Price must be greater than or equal to 0');
   }
 };
@@ -54,7 +54,7 @@ export const findCover = (covers: StatefulCover[], rarity: ComicRarity) => {
 };
 
 export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
-  if (isBasisPoints(comicIssue.sellerFeeBasisPoints)) {
+  if (!isBasisPoints(comicIssue.sellerFeeBasisPoints)) {
     throw new BadRequestException('Invalid seller fee value');
   }
 

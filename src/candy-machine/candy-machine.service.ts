@@ -41,6 +41,7 @@ import {
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
+  rateLimitQuota,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -67,6 +68,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { pRateLimit } from 'p-ratelimit';
 
 type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -410,18 +412,20 @@ export class CandyMachineService {
       transactionBuilders.push(transactionBuilder);
       iteration = iteration + 1;
     }
-
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
-    await Promise.all(
-      transactionBuilders.map((transactionBuilder) => {
-        const transaction = transactionBuilder.toTransaction(latestBlockhash);
+    const rateLimit = pRateLimit(rateLimitQuota);
+    for (const transactionBuilder of transactionBuilders) {
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+      const transaction = transactionBuilder.toTransaction(latestBlockhash);
+      rateLimit(() => {
         return sendAndConfirmTransaction(
           this.metaplex.connection,
           transaction,
           [this.metaplex.identity()],
         );
-      }),
-    );
+      });
+    }
+
     this.heliusService.subscribeTo(candyMachine.address.toBase58());
     return await this.metaplex.candyMachines().refresh(candyMachine);
   }

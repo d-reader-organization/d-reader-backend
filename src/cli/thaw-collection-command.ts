@@ -5,18 +5,14 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { PrismaService } from 'nestjs-prisma';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { pRateLimit } from 'p-ratelimit';
+import { rateLimitQuota } from '../constants';
 
 interface Options {
   candyMachineAddress: string;
   comicIssueId: number;
 }
 
-const rateLimit = pRateLimit({
-  interval: 1000, // 1 second
-  rate: 30, // 40 API calls per interval
-  concurrency: 10, // no more than 40 running at once
-});
-
+const rateLimit = pRateLimit(rateLimitQuota);
 @Command({
   name: 'thaw-collection',
   description: 'thaw whole collection after candymachine mint',
