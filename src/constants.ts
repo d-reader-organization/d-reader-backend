@@ -181,3 +181,9 @@ export const AUTH_RULES = new PublicKey(
 export const AUTH_RULES_ID = new PublicKey(
   'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg',
 );
+
+export const rateLimitQuota = {
+  interval: 1000, // 1 second
+  rate: 40, // 40 API calls per interval
+  concurrency: 10, // no more than 10 running at once
+};
