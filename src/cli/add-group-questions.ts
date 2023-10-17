@@ -60,8 +60,8 @@ export class AddGroupQuestions {
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseStartDate(startDate: string): Date {
-    return new Date(startDate);
+  parseStartDate(startDate?: string): Date | undefined {
+    if (startDate) return new Date(startDate);
   }
 
   @Question({
@@ -69,8 +69,8 @@ export class AddGroupQuestions {
     name: 'endDate',
     message: 'Enter the end date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
-  parseEndDate(endDate: string): Date {
-    return new Date(endDate);
+  parseEndDate(endDate?: string): Date | undefined {
+    if (endDate) return new Date(endDate);
   }
 
   @Question({
@@ -78,7 +78,8 @@ export class AddGroupQuestions {
     name: 'mintLimit',
     message: 'Allotted Minting Limit per Wallet',
   })
-  parseMintLimit(mintLimit: number): number {
+  parseMintLimit(mintLimit?: number): number | undefined {
+    if (!mintLimit) return;
     if (typeof mintLimit === 'string') return +mintLimit;
     return mintLimit;
   }
