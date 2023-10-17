@@ -339,6 +339,7 @@ async function main() {
               share: 100,
             },
           ],
+          shouldBePublic:false
         });
         i++;
       }

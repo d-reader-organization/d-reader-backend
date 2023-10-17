@@ -29,6 +29,7 @@ model User {
   lastActiveAt       DateTime?
   emailVerifiedAt    DateTime?
   createdAt          DateTime         @default(now())
+  rewardClaimedAt    DateTime?
   comics             UserComic[]
   comicIssues        UserComicIssue[]
   creators           UserCreator[]
@@ -295,8 +296,8 @@ model CandyMachineGroup {
   displayLabel        String
   supply              Int
   mintLimit           Int?
-  startDate           DateTime
-  endDate             DateTime
+  startDate           DateTime?
+  endDate             DateTime?
   mintPrice           Int
   splTokenAddress     String
   wallets             WalletCandyMachineGroup[]

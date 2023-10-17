@@ -1,7 +1,8 @@
 import { PickType } from '@nestjs/swagger';
 import { CreateComicIssueDto } from './create-comic-issue.dto';
 import {
-  IsDateString,
+  IsBoolean,
+  IsDate,
   IsInt,
   IsNumber,
   IsOptional,
@@ -23,10 +24,10 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsNumber()
   supply?: number;
 
-  @IsDateString()
+  @IsDate()
   startDate: Date;
 
-  @IsDateString()
+  @IsDate()
   endDate: Date;
 
   @IsOptional()
@@ -38,4 +39,8 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsInt()
   @Min(1)
   freezePeriod?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  shouldBePublic?: boolean;
 }

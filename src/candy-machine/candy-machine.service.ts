@@ -163,6 +163,7 @@ export class CandyMachineService {
     comicIssue: ComicIssueCMInput,
     comicName: string,
     guardParams: GuardParams,
+    shouldBePublic?: boolean,
   ) {
     validateComicIssueCMInput(comicIssue);
 
@@ -259,7 +260,48 @@ export class CandyMachineService {
       new PublicKey(creatorBackupAddress),
       supply,
     );
-
+    const groups: {
+      label: string;
+      guards: Partial<DefaultCandyGuardSettings>;
+    }[] = [
+      {
+        label: AUTHORITY_GROUP_LABEL,
+        guards: {
+          allowList: {
+            merkleRoot: getMerkleRoot([
+              this.metaplex.identity().publicKey.toString(),
+            ]),
+          },
+          solPayment: {
+            amount: solFromLamports(0),
+            destination: this.metaplex.identity().publicKey,
+          },
+        },
+      },
+    ];
+    if (!!shouldBePublic) {
+      groups.push({
+        label: PUBLIC_GROUP_LABEL,
+        guards: {
+          startDate: {
+            date: toDateTime(startDate),
+          },
+          endDate: {
+            date: toDateTime(endDate),
+          },
+          freezeSolPayment: {
+            amount: solFromLamports(mintPrice),
+            destination: this.metaplex.identity().publicKey,
+          },
+          mintLimit: mintLimit
+            ? {
+                id: PUBLIC_GROUP_MINT_LIMIT_ID,
+                limit: mintLimit,
+              }
+            : undefined,
+        },
+      });
+    }
     const candyMachineTx = await constructCandyMachineTransaction(
       this.metaplex,
       {
@@ -280,43 +322,7 @@ export class CandyMachineService {
             lastInstruction: true,
           },
         },
-        groups: [
-          {
-            label: AUTHORITY_GROUP_LABEL,
-            guards: {
-              allowList: {
-                merkleRoot: getMerkleRoot([
-                  this.metaplex.identity().publicKey.toString(),
-                ]),
-              },
-              solPayment: {
-                amount: solFromLamports(0),
-                destination: this.metaplex.identity().publicKey,
-              },
-            },
-          },
-          {
-            label: PUBLIC_GROUP_LABEL,
-            guards: {
-              startDate: {
-                date: toDateTime(startDate),
-              },
-              endDate: {
-                date: toDateTime(endDate),
-              },
-              freezeSolPayment: {
-                amount: solFromLamports(mintPrice),
-                destination: this.metaplex.identity().publicKey,
-              },
-              mintLimit: mintLimit
-                ? {
-                    id: PUBLIC_GROUP_MINT_LIMIT_ID,
-                    limit: mintLimit,
-                  }
-                : undefined,
-            },
-          },
-        ],
+        groups,
         creators: [
           {
             address: this.metaplex.identity().publicKey,
@@ -334,7 +340,8 @@ export class CandyMachineService {
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineKey.publicKey });
-    await this.initializeGuardAccounts(candyMachine, freezePeriod);
+    if (shouldBePublic)
+      await this.initializeGuardAccounts(candyMachine, freezePeriod);
     const authorityPda = this.metaplex
       .candyMachines()
       .pdas()
@@ -363,19 +370,21 @@ export class CandyMachineService {
         isFullyLoaded: candyMachine.isFullyLoaded,
         supply,
         lookupTable,
-        groups: {
-          create: {
-            displayLabel: PUBLIC_GROUP_LABEL,
-            wallets: undefined,
-            label: PUBLIC_GROUP_LABEL,
-            startDate,
-            endDate,
-            mintPrice: mintPrice,
-            mintLimit,
-            supply,
-            splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
-          },
-        },
+        groups: !!shouldBePublic
+          ? {
+              create: {
+                displayLabel: PUBLIC_GROUP_LABEL,
+                wallets: undefined,
+                label: PUBLIC_GROUP_LABEL,
+                startDate,
+                endDate,
+                mintPrice: mintPrice,
+                mintLimit,
+                supply,
+                splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+              },
+            }
+          : undefined,
       },
     });
     const items = await uploadItemMetadata(

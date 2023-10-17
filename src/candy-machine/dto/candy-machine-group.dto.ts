@@ -28,11 +28,13 @@ export class CandyMachineGroupDto {
   @IsString()
   displayLabel: string;
 
+  @IsOptional()
   @IsDate()
-  startDate: Date;
+  startDate?: Date;
 
+  @IsOptional()
   @IsDate()
-  endDate: Date;
+  endDate?: Date;
 
   @IsNumber()
   mintPrice: number;
@@ -67,7 +69,9 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     startDate: group.startDate,
     endDate: group.endDate,
     mintPrice: group.mintPrice,
-    isActive: group.startDate <= currentDate && currentDate < group.endDate,
+    isActive: group.startDate
+      ? group.startDate <= currentDate && currentDate < group.endDate
+      : true,
     splTokenAddress: group.splTokenAddress,
     itemsMinted: group.itemsMinted,
     mintLimit: group.mintLimit,
