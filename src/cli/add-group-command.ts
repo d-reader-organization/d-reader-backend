@@ -22,9 +22,9 @@ interface Options {
   label: string;
   displayLabel: string;
   supply: number;
-  startDate: Date;
-  endDate: Date;
-  mintLimit: number;
+  startDate?: Date;
+  endDate?: Date;
+  mintLimit?: number;
   mintPrice: number;
 }
 
@@ -71,20 +71,19 @@ export class AddGroupCommand extends CommandRunner {
       const redeemedAmountGuard: RedeemedAmountGuardSettings = {
         maximum: toBigNumber(supply),
       };
-      const startDateGuard: StartDateGuardSettings = {
-        date: toDateTime(startDate),
-      };
-      const endDateGuard: EndDateGuardSettings = {
-        date: toDateTime(endDate),
-      };
+      let startDateGuard: StartDateGuardSettings;
+      if (startDate) startDateGuard = { date: toDateTime(startDate) };
+
+      let endDateGuard: EndDateGuardSettings;
+      if (endDate) endDateGuard = { date: toDateTime(endDate) };
+
       const freezeSolPayment: FreezeSolPaymentGuardSettings = {
         amount: solFromLamports(mintPrice),
         destination: metaplex.identity().publicKey,
       };
-      const mintLimitGuard: MintLimitGuardSettings = {
-        id: candyMachineGroups.length,
-        limit: mintLimit,
-      };
+      let mintLimitGuard: MintLimitGuardSettings;
+      if (mintLimit)
+        mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
 
       const existingGroup = candyMachineGroups.find(
         (group) => group.label === label,
