@@ -18,6 +18,7 @@ Table User {
   lastActiveAt DateTime
   emailVerifiedAt DateTime
   createdAt DateTime [default: `now()`, not null]
+  rewardClaimedAt DateTime
   comics UserComic [not null]
   comicIssues UserComicIssue [not null]
   creators UserCreator [not null]
@@ -264,8 +265,8 @@ Table CandyMachineGroup {
   displayLabel String [not null]
   supply Int [not null]
   mintLimit Int
-  startDate DateTime [not null]
-  endDate DateTime [not null]
+  startDate DateTime
+  endDate DateTime
   mintPrice Int [not null]
   splTokenAddress String [not null]
   wallets WalletCandyMachineGroup [not null]

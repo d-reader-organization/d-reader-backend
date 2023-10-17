@@ -33,8 +33,8 @@ export type CandyMachineGroupWalletStats = {
 
 export type GuardParams = {
   mintPrice: number;
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date;
+  endDate?: Date;
   label: string;
   displayLabel: string;
   supply: number;
