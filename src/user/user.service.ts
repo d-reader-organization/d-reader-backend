@@ -25,9 +25,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
-import { FREE_MINT_GROUP_LABEL } from '../constants';
-import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { sortBy } from 'lodash';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -41,7 +38,6 @@ export class UserService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
-    private readonly candyMachineService: CandyMachineService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -280,38 +276,12 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
     if (!user.rewardClaimedAt && user.wallets.length) {
-      await this.addUserReward(user);
+      await this.walletService.rewardWallet(user.wallets);
     }
     return await this.prisma.user.update({
       where: { email },
       data: { emailVerifiedAt: new Date() },
     });
-  }
-
-  async addUserReward<T>(
-    user: T & {
-      wallets: {
-        address: string;
-        label: string;
-        userId: number;
-        createdAt: Date;
-        connectedAt: Date;
-      }[];
-    },
-  ) {
-    const candyMachines =
-      await this.candyMachineService.findActiveRewardCandyMachine();
-    const lastConnectedWallet = sortBy(user.wallets, (wallet) =>
-      wallet.connectedAt.getTime(),
-    );
-    const addWallet = candyMachines.map((candyMachine) =>
-      this.candyMachineService.addAllowList(
-        candyMachine.candyMachineAddress,
-        [lastConnectedWallet.at(-1).address],
-        FREE_MINT_GROUP_LABEL,
-      ),
-    );
-    await Promise.all(addWallet);
   }
 
   async throwIfNameTaken(name: string) {
