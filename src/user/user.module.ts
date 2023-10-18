@@ -8,8 +8,10 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { CandyMachineModule } from '../candy-machine/candy-machine.module';
 
 @Module({
+  imports: [CandyMachineModule],
   controllers: [UserController],
   providers: [
     UserService,

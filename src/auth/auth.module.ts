@@ -11,10 +11,10 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { UserService } from '../user/user.service';
-import { WalletService } from '../wallet/wallet.service';
 import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
 import { MailModule } from '../mail/mail.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -42,6 +42,7 @@ import { MailModule } from '../mail/mail.module';
       },
     }),
     MailModule,
+    WalletModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -53,7 +54,6 @@ import { MailModule } from '../mail/mail.module';
     UserService,
     CreatorService,
     UserCreatorService,
-    WalletService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })

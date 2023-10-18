@@ -5,8 +5,10 @@ import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
+  imports: [WalletModule],
   controllers: [NewsletterController],
   providers: [
     NewsletterService,

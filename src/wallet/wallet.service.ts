@@ -16,8 +16,11 @@ import {
   findUsedTrait,
 } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { SAGA_COLLECTION_ADDRESS } from '../constants';
+import { FREE_MINT_GROUP_LABEL, SAGA_COLLECTION_ADDRESS } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
+import { Prisma } from '@prisma/client';
+import { sortBy } from 'lodash';
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
 
 @Injectable()
 export class WalletService {
@@ -27,6 +30,7 @@ export class WalletService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
+    private readonly candyMachineService: CandyMachineService,
   ) {
     this.metaplex = metaplex;
   }
@@ -103,6 +107,20 @@ export class WalletService {
         .authority({ candyMachine: new PublicKey(cm.address) })
         .equals(metadata.creators[0].address),
     )?.address;
+  }
+
+  async rewardWallet(wallets: Prisma.WalletCreateInput[]) {
+    const candyMachines =
+      await this.candyMachineService.findActiveRewardCandyMachine();
+    const lastConnectedWallet = sortBy(wallets, (wallet) => wallet.connectedAt);
+    const addWallet = candyMachines.map((candyMachine) =>
+      this.candyMachineService.addAllowList(
+        candyMachine.candyMachineAddress,
+        [lastConnectedWallet.at(-1).address],
+        FREE_MINT_GROUP_LABEL,
+      ),
+    );
+    await Promise.all(addWallet);
   }
 
   async reindexNft(

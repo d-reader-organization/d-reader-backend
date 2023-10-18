@@ -4,8 +4,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { memoizeThrottle } from 'src/utils/lodash';
-import { WalletOwnerAuth } from 'src/guards/wallet-owner.guard';
+import { memoizeThrottle } from '../utils/lodash';
+import { WalletOwnerAuth } from '../guards/wallet-owner.guard';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 
 @UseGuards(ThrottlerGuard)
