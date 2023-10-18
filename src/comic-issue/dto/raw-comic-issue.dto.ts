@@ -9,8 +9,6 @@ import {
   IsPositive,
   IsString,
   IsUrl,
-  Max,
-  Min,
 } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -24,7 +22,6 @@ import {
   RoyaltyWallet,
   Comic,
 } from '@prisma/client';
-import { divide } from 'lodash';
 import {
   ComicIssueCollaboratorDto,
   toComicIssueCollaboratorDtoArray,
@@ -52,6 +49,7 @@ import {
 } from 'src/genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
 import { toComicIssueStatsDto } from './comic-issue-stats.dto';
+import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
 import { ifDefined } from 'src/utils/lodash';
 
 export class RawComicIssueDto {
@@ -61,9 +59,8 @@ export class RawComicIssueDto {
   @IsPositive()
   number: number;
 
-  @Min(0)
-  @Max(1)
-  sellerFee: number;
+  @IsBasisPoints()
+  sellerFeeBasisPoints: number;
 
   @IsNotEmpty()
   title: string;
@@ -176,7 +173,7 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    sellerFee: divide(issue.sellerFeeBasisPoints, 100),
+    sellerFeeBasisPoints: issue.sellerFeeBasisPoints,
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
