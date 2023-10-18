@@ -33,7 +33,7 @@ import {
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
-import { SOL_ADDRESS } from '../../constants';
+import { FREE_MINT_GROUP_LABEL, SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 @Injectable()
@@ -422,7 +422,14 @@ export class HeliusService {
           label: ixData[0].label,
         },
       });
-
+      if (ixData[0].label === FREE_MINT_GROUP_LABEL) {
+        await this.prisma.user.update({
+          where: { id: receipt.buyer.userId },
+          data: {
+            rewardClaimedAt: new Date(),
+          },
+        });
+      }
       const candyMachine = await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
