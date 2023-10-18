@@ -8,6 +8,7 @@ import {
 import { CandyMachineGroupSettings } from './types';
 import { Type, plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { sortBy } from 'lodash';
 
 export class WalletGroupDto {
   @IsNumber()
@@ -92,5 +93,9 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
 export function toCandyMachineGroupDtoArray(
   groups: CandyMachineGroupSettings[],
 ) {
-  return groups.map(toCandyMachineGroupDto);
+  const sortedGroups = sortBy(groups, (group) => {
+    if (group.startDate) return group.startDate.getTime();
+    else return new Date(0);
+  });
+  return sortedGroups.map(toCandyMachineGroupDto);
 }
