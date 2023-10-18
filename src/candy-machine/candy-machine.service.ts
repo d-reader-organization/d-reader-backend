@@ -709,7 +709,7 @@ export class CandyMachineService {
 
       displayLabel = group.displayLabel;
       isEligible = !!group.wallets.find(
-        (groupWallets) => groupWallets.walletAddress == walletAddress,
+        (groupWallet) => groupWallet.walletAddress == walletAddress,
       );
     }
 

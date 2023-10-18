@@ -28,6 +28,8 @@ interface Options {
   mintPrice: number;
 }
 
+// TODO v2: move this to an API endpoint
+// make sure the newly added group does not override an existing one
 @Command({
   name: 'add-group',
   description: 'add group in a candymachine',

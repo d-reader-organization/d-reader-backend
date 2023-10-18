@@ -18,8 +18,9 @@ export class WalletGroupDto {
 
   @IsOptional()
   @IsNumber()
-  itemsRemaing?: number;
+  supply?: number;
 }
+
 export class CandyMachineGroupDto {
   @IsString()
   label: string;
@@ -59,10 +60,7 @@ export class CandyMachineGroupDto {
 
 export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
   const currentDate = new Date();
-  let itemsRemaing: number;
-  if (group.mintLimit) {
-    itemsRemaing = group.mintLimit - group.walletStats.itemsMinted;
-  }
+
   const plainCandyMachineGroupDto: CandyMachineGroupDto = {
     label: group.label,
     displayLabel: group.displayLabel,
@@ -76,8 +74,8 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     supply: group.supply,
     wallet: {
       itemsMinted: group.walletStats.itemsMinted,
-      itemsRemaing,
       isEligible: group.walletStats.isEligible,
+      supply: group.mintLimit,
     },
   };
   const candyMachineGroupDto = plainToInstance(
