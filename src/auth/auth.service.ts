@@ -15,6 +15,7 @@ import { Creator, User } from '@prisma/client';
 import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
+import { UserService } from '../user/user.service';
 
 const sanitizePayload = (payload: JwtPayload) => {
   return pick(payload, 'type', 'id', 'email', 'name', 'role');
@@ -28,13 +29,13 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly passwordService: PasswordService,
+    private readonly userService: UserService,
   ) {}
 
   async connectWallet(userId: number, address: string, encoding: string) {
     await this.passwordService.validateWallet(userId, address, encoding);
     const publicKey = new PublicKey(address);
-
-    return await this.prisma.wallet.upsert({
+    const wallet = await this.prisma.wallet.upsert({
       where: { address },
       create: {
         address,
@@ -43,7 +44,15 @@ export class AuthService {
         connectedAt: new Date(),
       },
       update: { userId: userId, connectedAt: new Date() },
+      include: {
+        user: true,
+      },
     });
+
+    if (wallet.user.emailVerifiedAt && !wallet.user.rewardClaimedAt) {
+      await this.userService.addUserReward({ wallets: [wallet] });
+    }
+    return wallet;
   }
 
   async disconnectWallet(address: string) {

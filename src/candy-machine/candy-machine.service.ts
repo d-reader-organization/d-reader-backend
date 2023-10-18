@@ -42,6 +42,7 @@ import {
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
   rateLimitQuota,
+  FREE_MINT_GROUP_LABEL,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -646,6 +647,16 @@ export class CandyMachineService {
         supply,
       },
     });
+  }
+
+  async findActiveRewardCandyMachine() {
+    const candyMachines = await this.prisma.candyMachineGroup.findMany({
+      where: {
+        label: FREE_MINT_GROUP_LABEL,
+        candyMachine: { itemsRemaining: { gt: 0 } },
+      },
+    });
+    return candyMachines;
   }
 
   async addAllowList(
