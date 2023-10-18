@@ -81,7 +81,7 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     if (metaplex.cluster === ClusterEnum.MainnetBeta) {
       logErr(
         `Please run the ${cg(
-          "'yarn create-auction-house'",
+          "'yarn create-ah'",
         )} command in order to create an auction house.\nMake sure to top up the treasury wallet with a small amount of Sol`,
       );
     }
