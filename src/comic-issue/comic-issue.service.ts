@@ -391,7 +391,8 @@ export class ComicIssueService {
           collaborators: true,
           statelessCovers: true,
         },
-        where: { id, publishedAt: null },
+        where: { id },
+        // where: { id, publishedAt: null },
         data: { number, ...rest, creatorBackupAddress },
       });
 
