@@ -403,24 +403,20 @@ export class CandyMachineService {
 
     const INSERT_CHUNK_SIZE = 8;
     const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
-    let iteration = 0;
+    let index = 0;
     const transactionBuilders: TransactionBuilder[] = [];
     for (const itemsChunk of itemChunks) {
-      console.info(
-        `Inserting items ${iteration * INSERT_CHUNK_SIZE}-${
-          (iteration + 1) * INSERT_CHUNK_SIZE - 1
-        } `,
-      );
+      console.info(`Inserting items ${index}-${index + itemChunks.length} `);
       const transactionBuilder = this.metaplex
         .candyMachines()
         .builders()
         .insertItems({
           candyMachine,
-          index: iteration * INSERT_CHUNK_SIZE,
+          index,
           items: itemsChunk,
         });
+      index = itemsChunk.length;
       transactionBuilders.push(transactionBuilder);
-      iteration = iteration + 1;
     }
     const rateLimit = pRateLimit(rateLimitQuota);
     for (const transactionBuilder of transactionBuilders) {
@@ -688,16 +684,21 @@ export class CandyMachineService {
   }
 
   async findCandyMachineData(candyMachineAddress: string, label: string) {
-    const data = await this.prisma.candyMachineGroup.findFirst({
-      where: { candyMachineAddress, label },
-      include: { wallets: true, candyMachine: true },
-    });
-    return {
-      allowList: data.wallets.length
-        ? data.wallets.map((item) => item.walletAddress)
-        : undefined,
-      lookupTable: data.candyMachine.lookupTable,
-    };
+    try {
+      const data = await this.prisma.candyMachineGroup.findFirst({
+        where: { candyMachineAddress, label },
+        include: { wallets: true, candyMachine: true },
+      });
+      return {
+        allowList:
+          data.wallets && data.wallets.length
+            ? data.wallets.map((item) => item.walletAddress)
+            : undefined,
+        lookupTable: data.candyMachine.lookupTable,
+      };
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async getMintCount(
