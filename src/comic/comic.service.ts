@@ -185,7 +185,8 @@ export class ComicService {
 
     try {
       const updatedComic = await this.prisma.comic.update({
-        where: { slug, publishedAt: null },
+        where: { slug },
+        // where: { slug, publishedAt: null },
         data: {
           ...rest,
           completedAt: isCompletedData,
@@ -316,7 +317,8 @@ export class ComicService {
   async publish(slug: string) {
     try {
       return await this.prisma.comic.update({
-        where: { slug, publishedAt: null },
+        where: { slug },
+        // where: { slug, publishedAt: null },
         data: { publishedAt: new Date() },
       });
     } catch {
