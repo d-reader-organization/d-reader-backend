@@ -20,10 +20,7 @@ import { UserCreatorMyStatsDto } from 'src/creator/types/user-creator-my-stats.d
 import { UserCreatorStatsDto } from './user-creator.dto';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
-import {
-  PartialGenreDto,
-  toPartialGenreDtoArray,
-} from 'src/genre/dto/partial-genre.dto';
+import { PartialGenreDto } from 'src/genre/dto/partial-genre.dto';
 import { ifDefined } from 'src/utils/lodash';
 
 export class CreatorDto {
@@ -117,7 +114,6 @@ export function toCreatorDto(creator: CreatorInput) {
     myStats: creator.myStats
       ? { isFollowing: creator.myStats.isFollowing }
       : undefined,
-    genres: ifDefined(creator.genres, toPartialGenreDtoArray),
   };
 
   const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);
