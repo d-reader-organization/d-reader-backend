@@ -41,6 +41,7 @@ import {
   toRawComicDto,
   toRawComicDtoArray,
 } from './dto/raw-comic.dto';
+import { VerifiedUserAuth } from '../guards/verified-user-auth-guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
@@ -205,7 +206,7 @@ export class ComicController {
   }
 
   /* Rate specific comic */
-  @UserAuth()
+  @VerifiedUserAuth()
   @Patch('rate/:slug')
   async rate(
     @Param('slug') slug: string,
