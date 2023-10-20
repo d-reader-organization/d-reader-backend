@@ -16,7 +16,7 @@ import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { CreatorStats } from '../comic/types/creator-stats';
-import { getCreatorsQuery } from './creator.queries';
+import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
 import { getRandomFloatOrInt } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
@@ -90,19 +90,28 @@ export class CreatorService {
   }
 
   async findAll(query: CreatorFilterParams) {
-    const creators = await this.prisma.$queryRaw<
-      Array<Creator & { genres: Genre[] } & CreatorStats>
-    >(getCreatorsQuery(query));
-    return creators.map((creator) => {
-      return {
-        ...creator,
-        stats: {
-          totalVolume: getRandomFloatOrInt(1, 1000),
-          followersCount: Number(creator.followersCount),
-          comicIssuesCount: 0,
-        },
-      };
-    });
+    const creators = await this.prisma.$queryRaw<Array<Creator & CreatorStats>>(
+      getCreatorsQuery(query),
+    );
+    const filteredCreators = [];
+
+    for (const creator of creators) {
+      const genresResult = await this.prisma.$queryRaw<[{ genres: Genre[] }]>(
+        getCreatorGenresQuery(creator.id, query.genreSlugs),
+      );
+      if (!!genresResult.length) {
+        filteredCreators.push({
+          ...creator,
+          genres: genresResult.at(0).genres,
+          stats: {
+            totalVolume: getRandomFloatOrInt(1, 1000),
+            followersCount: Number(creator.followersCount),
+            comicIssuesCount: 0,
+          },
+        });
+      }
+    }
+    return filteredCreators;
   }
 
   async findMe(id: number) {
