@@ -102,7 +102,6 @@ export class CreatorService {
       if (!!genresResult.length) {
         filteredCreators.push({
           ...creator,
-          genres: genresResult.at(0).genres,
           stats: {
             totalVolume: getRandomFloatOrInt(1, 1000),
             followersCount: Number(creator.followersCount),
