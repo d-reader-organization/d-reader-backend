@@ -543,11 +543,9 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     } else if (!!comicIssue.publishedAt) {
       // throw new BadRequestException('Comic issue already published');
-    } else if (!!comicIssue.collectionNft) {
-      throw new BadRequestException('Comic issue already on chain');
-    } else if (!!comicIssue.statelessCovers) {
+    } else if (!comicIssue.statelessCovers) {
       throw new BadRequestException('Comic issue missing stateless covers');
-    } else if (!!comicIssue.statefulCovers) {
+    } else if (!comicIssue.statefulCovers) {
       throw new BadRequestException('Comic issue missing stateful covers');
     }
     if (
