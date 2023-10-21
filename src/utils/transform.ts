@@ -35,3 +35,7 @@ export function TransformCsvToArray(options?: TransformOptions) {
 export function TransformDateStringToIsoString(options?: TransformOptions) {
   return Transform(({ value }) => new Date(value).toISOString(), options);
 }
+
+export function TransformDateStringToDate(options?: TransformOptions) {
+  return Transform(({ value }) => new Date(value), options);
+}
