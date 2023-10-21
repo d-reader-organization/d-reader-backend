@@ -8,7 +8,8 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
-import { IsLamport } from 'src/decorators/IsLamport';
+import { IsLamport } from '../../decorators/IsLamport';
+import { TransformDateStringToDate } from '../../utils/transform';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'sellerFeeBasisPoints',
@@ -24,9 +25,11 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsNumber()
   supply?: number;
 
+  @TransformDateStringToDate()
   @IsDate()
   startDate: Date;
 
+  @TransformDateStringToDate()
   @IsDate()
   endDate: Date;
 
