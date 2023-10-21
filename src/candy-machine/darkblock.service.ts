@@ -53,6 +53,7 @@ export class DarkblockService {
 
       return response.data.tx_id;
     } catch (e) {
+      console.log(e);
       throw new InternalServerErrorException('Failed to mint a Darkblock', e);
     }
   }
