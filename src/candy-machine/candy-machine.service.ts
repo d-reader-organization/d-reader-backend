@@ -415,7 +415,7 @@ export class CandyMachineService {
           index,
           items: itemsChunk,
         });
-      index = itemsChunk.length;
+      index += itemsChunk.length;
       transactionBuilders.push(transactionBuilder);
     }
     const rateLimit = pRateLimit(rateLimitQuota);
