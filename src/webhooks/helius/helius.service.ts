@@ -119,9 +119,6 @@ export class HeliusService {
             return this.handleMintRejectedEvent(transaction);
           default:
             console.log('Unhandled webhook', JSON.stringify(transaction));
-
-            // this is here in case Helius still hasn't parsted our transactions
-            return this.handleChangeComicState(transaction);
         }
       }),
     );
