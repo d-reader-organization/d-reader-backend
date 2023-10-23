@@ -1,0 +1,13 @@
+extends creatorBase.pug
+
+block title
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') Hello #{name}
+
+block content
+    p(style='font-size: 18px; margin: 8px 0;') You might've forgotten to verify your email address! Best to do it as soon as possible so we can process your account
+    p(style='font-size: 18px; margin: 8px 0;') If you've created your account by a mistake and wish to delete it, respond to this email with "DELETE" 
+    br
+    p(style='font-size: 18px; margin: 8px 0;') Please verify your email by clicking on the button below
+
+block action
+    a.action-link.green-bg(href=actionUrl) Verify email

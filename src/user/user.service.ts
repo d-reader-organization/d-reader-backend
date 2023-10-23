@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { subDays } from 'date-fns';
+import { sleep } from 'src/utils/helpers';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -66,8 +67,7 @@ export class UserService {
       console.info('Failed to generate random avatar: ', e);
     }
 
-    const verificationToken = this.authService.signEmail(email);
-    this.mailService.userRegistered(user, verificationToken);
+    this.mailService.userRegistered(user);
     return user;
   }
 
@@ -185,8 +185,7 @@ export class UserService {
         data: { email, emailVerifiedAt: null },
       });
 
-      const verificationToken = this.authService.signEmail(user.email);
-      this.mailService.requestUserEmailVerification(user, verificationToken);
+      this.mailService.requestUserEmailVerification(user);
     }
 
     if (isNameUpdated) {
@@ -252,8 +251,7 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
 
-    const verificationToken = this.authService.signEmail(user.email);
-    this.mailService.requestUserEmailVerification(user, verificationToken);
+    this.mailService.requestUserEmailVerification(user);
   }
 
   async verifyEmail(verificationToken: string) {
@@ -453,10 +451,30 @@ export class UserService {
     }
   }
 
+  @Cron(CronExpression.EVERY_DAY_AT_NOON)
+  protected async bumpNewUsersWithUnverifiedEmails() {
+    const newUnverifiedUsers = await this.prisma.user.findMany({
+      where: {
+        emailVerifiedAt: null,
+        createdAt: {
+          // created more than 3 days ago, but not longer than 4 days ago
+          lte: subDays(new Date(), 3),
+          gte: subDays(new Date(), 4),
+        },
+      },
+    });
+
+    for (const user of newUnverifiedUsers) {
+      // TODO v2: maybe add sleep between sending different emails
+      this.mailService.bumpUserWithEmailVerification(user);
+      await sleep(10000); // sleep 10 seconds
+    }
+  }
+
   // Should we first check if user has some dangling relations with Wallets etc?
   // onDelete: Cascade should/could be used in the schema
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async clearUsersQueuedForRemoval() {
+  protected async clearUsersQueuedForRemoval() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const where = { where: { deletedAt: { lte: subDays(new Date(), 60) } } };
     // const usersToRemove = await this.prisma.user.findMany(where);

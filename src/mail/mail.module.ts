@@ -7,6 +7,14 @@ import {
   AuthenticationTypeLogin,
   AuthenticationTypeOAuth2,
 } from 'nodemailer/lib/smtp-connection';
+import { AuthService } from '../auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
+import { PasswordService } from '../auth/password.service';
+import { WalletService } from '../wallet/wallet.service';
+import { HeliusService } from '../webhooks/helius/helius.service';
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { DarkblockService } from 'src/candy-machine/darkblock.service';
 
 type SupportedAuthType =
   | AuthenticationTypeLogin['type']
@@ -49,7 +57,17 @@ type SupportedAuthType =
       inject: [ConfigService],
     }),
   ],
-  providers: [MailService],
+  providers: [
+    MailService,
+    AuthService,
+    JwtService,
+    PasswordService,
+    WalletService,
+    HeliusService,
+    CandyMachineService,
+    WebSocketGateway,
+    DarkblockService,
+  ],
   exports: [MailService],
 })
 export class MailModule {}
