@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Creator, User } from '@prisma/client';
 import config from '../configs/config';
+import { AuthService } from '../auth/auth.service';
 
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
@@ -19,11 +20,13 @@ const USER_REGISTERED = 'userRegistered';
 const USER_SCHEDULED_FOR_DELETION = 'userScheduledForDeletion';
 const USER_DELETED = 'userDeleted';
 const USER_PASSWORD_RESET = 'userPasswordReset';
+const BUMP_USER_WITH_EMAIL_VERIFICATION = 'bumpUserWithEmailVerification';
 const USER_EMAIL_VERIFICATION = 'userEmailVerification';
 const CREATOR_REGISTERED = 'creatorRegistered';
 const CREATOR_SCHEDULED_FOR_DELETION = 'creatorScheduledForDeletion';
 const CREATOR_DELETED = 'creatorDeleted';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
+const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
 const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
 
 @Injectable()
@@ -32,7 +35,10 @@ export class MailService {
   private readonly dReaderUrl: string;
   private readonly dPublisherUrl: string;
 
-  constructor(private readonly mailerService: MailerService) {
+  constructor(
+    private readonly mailerService: MailerService,
+    private readonly authService: AuthService,
+  ) {
     this.apiUrl = config().nest.apiUrl;
     this.dReaderUrl = config().client.dReaderUrl;
     this.dPublisherUrl = config().client.dPublisherUrl;
@@ -70,7 +76,9 @@ export class MailService {
     }
   }
 
-  async userRegistered(user: User, verificationToken: string) {
+  async userRegistered(user: User) {
+    const verificationToken = this.authService.signEmail(user.email);
+
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -140,7 +148,31 @@ export class MailService {
     }
   }
 
-  async requestUserEmailVerification(user: User, verificationToken: string) {
+  async bumpUserWithEmailVerification(user: User) {
+    const verificationToken = this.authService.signEmail(user.email);
+
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: '🕵️‍♂️ e-mail verification!',
+        template: BUMP_USER_WITH_EMAIL_VERIFICATION,
+        context: {
+          name: user.name,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+        },
+      });
+    } catch (e) {
+      logError(BUMP_USER_WITH_EMAIL_VERIFICATION, user.email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "bump e-mail verification" email',
+      );
+    }
+  }
+
+  async requestUserEmailVerification(user: User) {
+    const verificationToken = this.authService.signEmail(user.email);
+
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -160,7 +192,9 @@ export class MailService {
     }
   }
 
-  async creatorRegistered(creator: Creator, verificationToken: string) {
+  async creatorRegistered(creator: Creator) {
+    const verificationToken = this.authService.signEmail(creator.email);
+
     try {
       await this.mailerService.sendMail({
         to: creator.email,
@@ -233,10 +267,31 @@ export class MailService {
     }
   }
 
-  async requestCreatorEmailVerification(
-    creator: Creator,
-    verificationToken: string,
-  ) {
+  async bumpCreatorWithEmailVerification(creator: Creator) {
+    const verificationToken = this.authService.signEmail(creator.email);
+
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: '🕵️‍♂️ e-mail verification!',
+        template: BUMP_CREATOR_WITH_EMAIL_VERIFICATION,
+        context: {
+          name: creator.name,
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+        },
+      });
+    } catch (e) {
+      logError(BUMP_CREATOR_WITH_EMAIL_VERIFICATION, creator.email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "bump e-mail verification" email',
+      );
+    }
+  }
+
+  async requestCreatorEmailVerification(creator: Creator) {
+    const verificationToken = this.authService.signEmail(creator.email);
+
     try {
       await this.mailerService.sendMail({
         to: creator.email,

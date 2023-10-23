@@ -17,7 +17,7 @@ import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
-import { getRandomFloatOrInt } from '../utils/helpers';
+import { getRandomFloatOrInt, sleep } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
 import { UpdatePasswordDto } from '../types/update-password.dto';
@@ -29,6 +29,7 @@ import { insensitive } from '../utils/lodash';
 import { isEmail } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
@@ -62,8 +63,7 @@ export class CreatorService {
       data: { name, email, password: hashedPassword, slug },
     });
 
-    const verificationToken = this.authService.signEmail(email);
-    this.mailService.creatorRegistered(creator, verificationToken);
+    this.mailService.creatorRegistered(creator);
     return creator;
   }
 
@@ -164,11 +164,7 @@ export class CreatorService {
         data: { email, emailVerifiedAt: null },
       });
 
-      const verificationToken = this.authService.signEmail(creator.email);
-      this.mailService.requestCreatorEmailVerification(
-        creator,
-        verificationToken,
-      );
+      this.mailService.requestCreatorEmailVerification(creator);
     }
 
     const updatedCreator = await this.prisma.creator.update({
@@ -228,11 +224,7 @@ export class CreatorService {
       throw new BadRequestException('Email already verified');
     }
 
-    const verificationToken = this.authService.signEmail(creator.email);
-    this.mailService.requestCreatorEmailVerification(
-      creator,
-      verificationToken,
-    );
+    this.mailService.requestCreatorEmailVerification(creator);
   }
 
   async verifyEmail(verificationToken: string) {
@@ -392,8 +384,28 @@ export class CreatorService {
     }
   }
 
+  @Cron(CronExpression.EVERY_DAY_AT_NOON)
+  protected async bumpNewCreatorsWithUnverifiedEmails() {
+    const newUnverifiedCreators = await this.prisma.creator.findMany({
+      where: {
+        emailVerifiedAt: null,
+        createdAt: {
+          // created more than 3 days ago, but not longer than 4 days ago
+          lte: subDays(new Date(), 2),
+          gte: subDays(new Date(), 500),
+        },
+      },
+    });
+
+    for (const creator of newUnverifiedCreators) {
+      // TODO v2: maybe add sleep between sending different emails
+      this.mailService.bumpCreatorWithEmailVerification(creator);
+      await sleep(10000); // sleep 10 seconds
+    }
+  }
+
   // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async clearCreatorsQueuedForRemoval() {
+  protected async clearCreatorsQueuedForRemoval() {
     const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
     const creatorsToRemove = await this.prisma.creator.findMany(where);
 

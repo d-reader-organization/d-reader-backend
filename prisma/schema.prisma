@@ -155,6 +155,10 @@ model RoyaltyWallet {
   comicIssueId Int
 }
 
+// TODO v2: Find attributes on GlobalComix
+// creator.type (publisher, indie)
+// comicIssue.readingType (vertical, page by page...)
+// ...
 model ComicIssue {
   id                    Int                      @id @default(autoincrement())
   number                Int
