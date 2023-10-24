@@ -22,6 +22,7 @@ import {
 } from '@metaplex-foundation/mpl-auction-house';
 import { createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import {
+  ComputeBudgetProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
   Transaction,
   TransactionInstruction,
@@ -188,7 +189,8 @@ export async function constructInstantBuyTransaction(
     ...latestBlockhash,
   })
     .add(...bidInstruction)
-    .add(executeSaleInstruction);
+    .add(executeSaleInstruction)
+    .add(ComputeBudgetProgram.setComputeUnitLimit({ units: 500000 }));
   instantBuyTransaction.partialSign(metaplex.identity());
 
   const rawTransaction = instantBuyTransaction.serialize({
