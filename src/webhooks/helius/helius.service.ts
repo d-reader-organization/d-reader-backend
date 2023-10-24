@@ -331,7 +331,17 @@ export class HeliusService {
       const nft = await this.prisma.nft.update({
         where: { address },
         data: {
-          ownerAddress,
+          owner: {
+            connectOrCreate: {
+              where: {
+                address: ownerAddress,
+              },
+              create: {
+                address: ownerAddress,
+                createdAt: new Date(enrichedTransaction.timestamp * 1000),
+              },
+            },
+          },
           ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
         },
       });
