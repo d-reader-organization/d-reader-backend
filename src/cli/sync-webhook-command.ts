@@ -82,9 +82,13 @@ export class SyncWebhookCommand extends CommandRunner {
     const foundNfts = await this.prisma.nft.findMany({
       select: { address: true },
     });
+
+    // find all CMs that are active
     const foundCandyMachines = await this.prisma.candyMachine.findMany({
+      where: { itemsRemaining: { gt: 0 } },
       select: { address: true },
     });
+
     const nftAddresses = foundNfts.map((nft) => nft.address);
     const candyMachineAddresses = foundCandyMachines.map((cm) => cm.address);
 

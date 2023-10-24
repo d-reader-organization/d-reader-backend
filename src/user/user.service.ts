@@ -24,8 +24,8 @@ import { User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
-import { sleep } from 'src/utils/helpers';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;

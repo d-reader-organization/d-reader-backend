@@ -14,7 +14,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { DarkblockService } from 'src/candy-machine/darkblock.service';
+import { DarkblockService } from '../candy-machine/darkblock.service';
 
 type SupportedAuthType =
   | AuthenticationTypeLogin['type']
