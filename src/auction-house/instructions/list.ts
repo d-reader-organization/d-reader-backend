@@ -19,6 +19,7 @@ import {
 } from '@metaplex-foundation/mpl-auction-house';
 import {
   AccountMeta,
+  ComputeBudgetProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
   Transaction,
@@ -215,7 +216,10 @@ export async function constructListTransaction(
   const listTransaction = new Transaction({
     feePayer: seller,
     ...latestBlockhash,
-  }).add(...listInstruction);
+  }).add(
+    ...listInstruction,
+    ComputeBudgetProgram.setComputeUnitLimit({ units: 500000 }),
+  );
 
   const rawTransaction = listTransaction.serialize({
     requireAllSignatures: false,
