@@ -406,7 +406,7 @@ export class CandyMachineService {
     let index = 0;
     const transactionBuilders: TransactionBuilder[] = [];
     for (const itemsChunk of itemChunks) {
-      console.info(`Inserting items ${index}-${index + itemChunks.length} `);
+      console.info(`Inserting items ${index}-${index + itemsChunk.length} `);
       const transactionBuilder = this.metaplex
         .candyMachines()
         .builders()
