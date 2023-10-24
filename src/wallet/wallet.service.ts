@@ -66,14 +66,18 @@ export class WalletService {
         (nft) => nft.address === metadata.mintAddress.toString(),
       );
     }
-
     const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
-    const unsyncedMetadatas = onChainMetadatas.filter(
-      (metadata) =>
-        this.findOurCandyMachine(candyMachines, metadata) &&
-        !doesWalletIndexCorrectly(metadata),
-    );
-
+    let unsyncedMetadatas: Metadata<JsonMetadata<string>>[];
+    try {
+      unsyncedMetadatas = onChainMetadatas.filter((metadata) => {
+        return (
+          this.findOurCandyMachine(candyMachines, metadata) &&
+          !doesWalletIndexCorrectly(metadata)
+        );
+      });
+    } catch (e) {
+      console.log(e);
+    }
     for (const metadata of unsyncedMetadatas) {
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
 
@@ -100,13 +104,16 @@ export class WalletService {
     candyMachines: { address: string }[],
     metadata: Metadata,
   ) {
-    return candyMachines.find((cm) =>
-      this.metaplex
-        .candyMachines()
-        .pdas()
-        .authority({ candyMachine: new PublicKey(cm.address) })
-        .equals(metadata.creators[0].address),
-    )?.address;
+    const candyMachine = candyMachines.find(
+      (cm) =>
+        metadata?.creators?.length > 0 &&
+        this.metaplex
+          .candyMachines()
+          .pdas()
+          .authority({ candyMachine: new PublicKey(cm.address) })
+          .equals(metadata.creators[0].address),
+    );
+    return candyMachine?.address;
   }
 
   async rewardWallet(wallets: Prisma.WalletCreateInput[]) {
