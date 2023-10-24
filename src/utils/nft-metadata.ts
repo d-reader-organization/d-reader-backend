@@ -192,7 +192,8 @@ export async function uploadItemMetadata(
     });
   }
 
-  let index = 0;
+  let index = 0,
+    nameIndex = 0;
   for (const metadata of itemMetadatas) {
     let supply: number;
     const { value } = rarityShares[index];
@@ -203,12 +204,13 @@ export async function uploadItemMetadata(
       supplyLeft -= supply;
     }
     const indexArray = Array.from(Array(supply).keys());
-    const itemsInserted = await Promise.all(
-      indexArray.map((i) => ({
+    const itemsInserted = indexArray.map(() => {
+      nameIndex++;
+      return {
         uri: metadata.uri,
-        name: `${metadata.name} #${i + 1}`,
-      })),
-    );
+        name: `${metadata.name} #${nameIndex}`,
+      };
+    });
 
     items.push(...itemsInserted);
     index++;
