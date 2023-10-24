@@ -16,7 +16,7 @@ import {
 } from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
 import { Nft, Listing, ComicRarity, CollectionNft } from '@prisma/client';
-import { isNil } from 'lodash';
+import { divide, isNil } from 'lodash';
 
 export class NftAttributeDto {
   trait: string;
@@ -88,7 +88,7 @@ export async function toNftDto(nft: NftInput) {
     name: nft.name,
     description: offChainMetadata.description,
     ownerAddress: nft.ownerAddress,
-    royalties: offChainMetadata.seller_fee_basis_points / 100,
+    royalties: divide(offChainMetadata.seller_fee_basis_points, 100),
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
     isUsed: findUsedTrait(offChainMetadata),

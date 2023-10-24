@@ -26,6 +26,7 @@ import { NftAttributeDto } from '../../nft/dto/nft.dto';
 import { Listing, Wallet, Nft, ComicRarity, User } from '@prisma/client';
 import { SellerDto, toSellerDto } from './types/seller.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { divide } from 'lodash';
 
 export class ListingDto {
   @IsPositive()
@@ -143,7 +144,7 @@ export async function toListingDto(listing: ListingInput) {
     isUsed: findUsedTrait(collectionMetadata),
     isSigned: findSignedTrait(collectionMetadata),
     rarity: findRarityTrait(collectionMetadata),
-    royalties: collectionMetadata.seller_fee_basis_points,
+    royalties: divide(collectionMetadata.seller_fee_basis_points, 100),
     // description: collectionMetadata.description, // hide this in array?
     // symbol: listing.symbol, // hide this in array?
     // createdAt: listing.createdAt.toISOString(), // hide this in array?
