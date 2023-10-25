@@ -19,8 +19,8 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { FREE_MINT_GROUP_LABEL, SAGA_COLLECTION_ADDRESS } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { Prisma } from '@prisma/client';
-import { sortBy } from 'lodash';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { sortBy } from 'lodash';
 
 @Injectable()
 export class WalletService {
@@ -116,22 +116,25 @@ export class WalletService {
     return candyMachine?.address;
   }
 
-  async rewardWallet(userId: number, wallets: Prisma.WalletCreateInput[]) {
-    const receipt = await this.prisma.candyMachineReceipt.findFirst({
-      where: { label: FREE_MINT_GROUP_LABEL, userId },
-    });
-    if (receipt) return;
+  async rewardUserWallet(wallets: Prisma.WalletCreateInput[], label: string) {
     const candyMachines =
-      await this.candyMachineService.findActiveRewardCandyMachine();
+      await this.candyMachineService.findActiveRewardCandyMachine(label);
     const lastConnectedWallet = sortBy(wallets, (wallet) => wallet.connectedAt);
     const addWallet = candyMachines.map((candyMachine) =>
       this.candyMachineService.addAllowList(
         candyMachine.candyMachineAddress,
         [lastConnectedWallet.at(-1).address],
-        FREE_MINT_GROUP_LABEL,
+        label,
       ),
     );
     await Promise.all(addWallet);
+  }
+
+  async checkIfRewardClaimed(userId: number) {
+    const receipt = await this.prisma.candyMachineReceipt.findFirst({
+      where: { label: FREE_MINT_GROUP_LABEL, userId },
+    });
+    return !!receipt;
   }
 
   async reindexNft(

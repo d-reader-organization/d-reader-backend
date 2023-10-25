@@ -20,12 +20,17 @@ import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
-import { User } from '@prisma/client';
+import { User, Wallet } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
+import {
+  FREE_MINT_GROUP_LABEL,
+  REFERRAL_REWARD_GROUP_LABEL,
+  REFERRAL_REWARD_LIMIT,
+} from '../constants';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -273,8 +278,14 @@ export class UserService {
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
-    if (user.wallets.length) {
-      await this.walletService.rewardWallet(user.id, user.wallets);
+    if (
+      user.wallets.length &&
+      this.walletService.checkIfRewardClaimed(user.id)
+    ) {
+      await this.walletService.rewardUserWallet(
+        user.wallets,
+        FREE_MINT_GROUP_LABEL,
+      );
     }
     return await this.prisma.user.update({
       where: { email },
@@ -338,24 +349,34 @@ export class UserService {
     // if the search string is of type email, search by email
     // if the search string is of type number, search by id
     // if the search string is of type string, search by name
-    let referrer: User;
+    let referrer: { referrals: User[]; wallets: Wallet[] } & User;
     if (isSolanaAddress(referrerId)) {
       const wallet = await this.prisma.wallet.findUnique({
         where: { address: referrerId },
-        include: { user: true },
+        include: {
+          user: {
+            include: {
+              referrals: true,
+              wallets: true,
+            },
+          },
+        },
       });
       referrer = wallet.user;
     } else if (isEmail(referrerId)) {
       referrer = await this.prisma.user.findFirst({
         where: { email: insensitive(referrerId) },
+        include: { referrals: true, wallets: true },
       });
     } else if (isNumberString(referrerId)) {
       referrer = await this.prisma.user.findUnique({
         where: { id: +referrerId },
+        include: { referrals: true, wallets: true },
       });
     } else {
       referrer = await this.prisma.user.findFirst({
         where: { name: insensitive(referrerId) },
+        include: { referrals: true, wallets: true },
       });
     }
 
@@ -375,6 +396,15 @@ export class UserService {
       throw new BadRequestException(`User ${user.name} is already referred`);
     }
 
+    if (
+      referrer.referrals.length % REFERRAL_REWARD_LIMIT ===
+      REFERRAL_REWARD_LIMIT - 1
+    ) {
+      await this.walletService.rewardUserWallet(
+        referrer.wallets,
+        REFERRAL_REWARD_GROUP_LABEL,
+      );
+    }
     user = await this.prisma.user.update({
       where: { id: referrer.id },
       data: {
