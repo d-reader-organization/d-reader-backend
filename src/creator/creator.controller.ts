@@ -33,6 +33,7 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { plainToInstance } from 'class-transformer';
+import { memoizeThrottle } from '../utils/lodash';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -100,11 +101,16 @@ export class CreatorController {
     await this.creatorService.resetPassword(slug);
   }
 
+  private throttledRequestEmailVerification = memoizeThrottle(
+    (email: string) => this.creatorService.requestEmailVerification(email),
+    2 * 60 * 1000, // cache for 2 minutes
+  );
+
   /* Verify your email address */
   @CreatorOwnerAuth()
   @Patch('request-email-verification')
   async requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
-    await this.creatorService.requestEmailVerification(creator.email);
+    return this.throttledRequestEmailVerification(creator.email);
   }
 
   /* Verify an email address */

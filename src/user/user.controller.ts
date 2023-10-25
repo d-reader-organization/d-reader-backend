@@ -105,11 +105,16 @@ export class UserController {
     await this.userService.resetPassword(+id);
   }
 
+  private throttledRequestEmailVerification = memoizeThrottle(
+    (email: string) => this.userService.requestEmailVerification(email),
+    2 * 60 * 1000, // cache for 2 minutes
+  );
+
   /* Verify your email address */
   @UserOwnerAuth()
   @Patch('request-email-verification')
   async requestEmailVerification(@UserEntity() user: UserPayload) {
-    await this.userService.requestEmailVerification(user.email);
+    return this.throttledRequestEmailVerification(user.email);
   }
 
   /* Verify an email address */
