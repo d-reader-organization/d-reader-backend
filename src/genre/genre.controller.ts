@@ -60,7 +60,7 @@ export class GenreController {
       const genres = await this.genreService.findAll(query);
       return toGenreDtoArray(genres);
     },
-    24 * 60 * 60 * 1000, // 24 hours,
+    12 * 60 * 60 * 1000, // 12 hours,
   );
 
   /* Get all genres */

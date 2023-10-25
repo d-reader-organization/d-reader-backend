@@ -64,7 +64,7 @@ export class CarouselController {
       const carouselSlides = await this.carouselService.findAll();
       return toCarouselSlideDtoArray(carouselSlides);
     },
-    24 * 60 * 60 * 1000, // 24 hours
+    1 * 60 * 60 * 1000, // 1 hour
   );
 
   /* Get all carousel slides */
