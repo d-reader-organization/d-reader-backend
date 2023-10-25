@@ -94,3 +94,11 @@ jobs:
         env:
           ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+      - name: Cleanup old docker images
+        continue-on-error: true
+        run: |
+          ./config/scripts/ssh.sh $ENV docker image prune -a --filter "until=48h" -f
+        env:
+          ENV: ${{ github.ref_name }}-${{ matrix.solana-cluster }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
