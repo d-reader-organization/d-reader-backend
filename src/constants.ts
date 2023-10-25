@@ -65,6 +65,9 @@ export const USERNAME_MIN_SIZE = 2;
 export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
+export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
+  '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj',
+);
 export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';

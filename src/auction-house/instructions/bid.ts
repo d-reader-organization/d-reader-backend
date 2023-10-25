@@ -26,14 +26,17 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   Transaction,
   TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { withdrawFromBuyerEscrow } from './withdrawFromBuyerEscrow';
-import { solFromLamports } from 'src/utils/helpers';
+import { solFromLamports } from '../../utils/helpers';
 import { BidModel } from '../dto/types/bid-model';
 import { BuyArgs } from '../dto/types/buy-args';
 import { toListing } from './list';
 import { Listing, Nft } from '@prisma/client';
 import { constructExecuteSaleInstruction } from './executeSale';
+import { AUCTION_HOUSE_LOOK_UP_TABLE } from '../../constants';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -184,20 +187,22 @@ export async function constructInstantBuyTransaction(
   );
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
 
-  const instantBuyTransaction = new Transaction({
-    feePayer: buyer,
-    ...latestBlockhash,
-  })
-    .add(...bidInstruction)
-    .add(executeSaleInstruction)
-    .add(ComputeBudgetProgram.setComputeUnitLimit({ units: 500000 }));
-  instantBuyTransaction.partialSign(metaplex.identity());
+  const lookupTableAccount = await metaplex.connection.getAddressLookupTable(
+    AUCTION_HOUSE_LOOK_UP_TABLE,
+  );
+  const instantBuyTransaction = new TransactionMessage({
+    payerKey: buyer,
+    recentBlockhash: latestBlockhash.blockhash,
+    instructions: [
+      ...bidInstruction,
+      executeSaleInstruction,
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 800000 }),
+    ],
+  }).compileToV0Message([lookupTableAccount.value]);
+  const mintTransactionV0 = new VersionedTransaction(instantBuyTransaction);
+  // mintTransactionV0.sign([metaplex.identity()]);
 
-  const rawTransaction = instantBuyTransaction.serialize({
-    requireAllSignatures: false,
-    verifySignatures: false,
-  });
-
+  const rawTransaction = Buffer.from(mintTransactionV0.serialize());
   return rawTransaction.toString('base64');
 }
 
