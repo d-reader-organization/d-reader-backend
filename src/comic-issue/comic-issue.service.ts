@@ -658,7 +658,6 @@ export class ComicIssueService {
     return await this.userComicIssueService.read(userId, id);
   }
 
-  // TODO: make sure we also delete all the related pages
   async delete(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },

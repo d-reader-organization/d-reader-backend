@@ -18,7 +18,7 @@ import { insensitive } from '../utils/lodash';
 import { RawComicParams } from './dto/raw-comic-params.dto';
 import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
-import { isNil } from 'lodash';
+import { isEqual, isNil, sortBy } from 'lodash';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -170,8 +170,18 @@ export class ComicService {
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, ...rest } = updateComicDto;
 
-    const areGenresUpdated = !isNil(genres); // TODO: && genres are different from current genres
-    const isCompletedUpdated = !isNil(isCompleted); // && completedAt is different from current completedAt
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug },
+      include: { genres: true },
+    });
+
+    const sortedCurrentGenres = sortBy(comic.genres.map((g) => g.slug));
+    const sortedNewGenres = sortBy(genres);
+    const areGenresEqual = !isEqual(sortedCurrentGenres, sortedNewGenres);
+    const isCompletedDifferent = isCompleted !== !!comic.completedAt;
+
+    const areGenresUpdated = !isNil(genres) && !areGenresEqual;
+    const isCompletedUpdated = !isNil(isCompleted) && isCompletedDifferent;
 
     let genresData: Prisma.ComicUpdateInput['genres'];
     if (areGenresUpdated) {

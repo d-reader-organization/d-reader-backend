@@ -465,7 +465,6 @@ export class UserService {
     });
 
     for (const user of newUnverifiedUsers) {
-      // TODO v2: maybe add sleep between sending different emails
       this.mailService.bumpUserWithEmailVerification(user);
       await sleep(10000); // sleep 10 seconds
     }
