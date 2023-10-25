@@ -116,7 +116,11 @@ export class WalletService {
     return candyMachine?.address;
   }
 
-  async rewardWallet(wallets: Prisma.WalletCreateInput[]) {
+  async rewardWallet(userId: number, wallets: Prisma.WalletCreateInput[]) {
+    const receipt = await this.prisma.candyMachineReceipt.findFirst({
+      where: { label: FREE_MINT_GROUP_LABEL, userId },
+    });
+    if (receipt) return;
     const candyMachines =
       await this.candyMachineService.findActiveRewardCandyMachine();
     const lastConnectedWallet = sortBy(wallets, (wallet) => wallet.connectedAt);

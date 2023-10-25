@@ -273,8 +273,8 @@ export class UserService {
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
-    if (!user.rewardClaimedAt && user.wallets.length) {
-      await this.walletService.rewardWallet(user.wallets);
+    if (user.wallets.length) {
+      await this.walletService.rewardWallet(user.id, user.wallets);
     }
     return await this.prisma.user.update({
       where: { email },

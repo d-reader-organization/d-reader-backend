@@ -49,8 +49,8 @@ export class AuthService {
       },
     });
 
-    if (user.emailVerifiedAt && !user.rewardClaimedAt) {
-      await this.walletService.rewardWallet([wallet]);
+    if (user.emailVerifiedAt) {
+      await this.walletService.rewardWallet(user.id, [wallet]);
     }
     return wallet;
   }

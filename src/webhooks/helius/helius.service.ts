@@ -33,7 +33,7 @@ import {
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
-import { FREE_MINT_GROUP_LABEL, SOL_ADDRESS } from '../../constants';
+import { SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 @Injectable()
@@ -386,7 +386,8 @@ export class HeliusService {
       enrichedTransaction.instructions.at(-1).accounts[2];
     const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
 
-    let comicIssueId: number = undefined;
+    let comicIssueId: number = undefined,
+      userId: number = undefined;
     try {
       const comicIssueNft = await this.indexNft(
         metadata,
@@ -396,6 +397,7 @@ export class HeliusService {
       );
 
       comicIssueId = comicIssueNft.collectionNft.comicIssueId;
+      userId = comicIssueNft.owner?.userId;
       this.subscribeTo(comicIssueNft.address);
     } catch (e) {
       console.error(e);
@@ -421,6 +423,9 @@ export class HeliusService {
               create: { address: nftTransactionInfo.buyer },
             },
           },
+          user: {
+            connect: { id: userId },
+          },
           price: nftTransactionInfo.amount,
           timestamp: new Date(nftTransactionInfo.timestamp * 1000),
           description: enrichedTransaction.description,
@@ -429,14 +434,6 @@ export class HeliusService {
           label: ixData[0].label,
         },
       });
-      if (ixData[0].label === FREE_MINT_GROUP_LABEL) {
-        await this.prisma.user.update({
-          where: { id: receipt.buyer.userId },
-          data: {
-            rewardClaimedAt: new Date(),
-          },
-        });
-      }
       const candyMachine = await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
@@ -545,6 +542,7 @@ export class HeliusService {
       select: {
         address: true,
         collectionNft: { select: { comicIssueId: true } },
+        owner: { select: { userId: true } },
       },
       data: {
         address: metadata.mintAddress.toString(),
