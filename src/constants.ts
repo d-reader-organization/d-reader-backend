@@ -69,10 +69,13 @@ export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽ
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
 export const FREE_MINT_GROUP_LABEL = 'dFree';
+export const REFERRAL_REWARD_GROUP_LABEL = 'dRefer';
+export const REFERRAL_REWARD_DISPLAY_LABEL = 'Referrals Giveaway';
 export const FREE_MINT_DISPLAY_LABEL = 'Welcome';
 export const PUBLIC_GROUP_LABEL = 'public';
 export const PUBLIC_GROUP_MINT_LIMIT = 2;
 export const PUBLIC_GROUP_MINT_LIMIT_ID = 1;
+export const REFERRAL_REWARD_LIMIT = 3;
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {

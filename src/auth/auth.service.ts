@@ -15,7 +15,8 @@ import { Creator, User } from '@prisma/client';
 import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
-import { WalletService } from '../wallet/wallet.service';
+import { FREE_MINT_GROUP_LABEL } from '../constants';
+import { WalletService } from 'src/wallet/wallet.service';
 
 const sanitizePayload = (payload: JwtPayload) => {
   return pick(payload, 'type', 'id', 'email', 'name', 'role');
@@ -49,8 +50,14 @@ export class AuthService {
       },
     });
 
-    if (user.emailVerifiedAt) {
-      await this.walletService.rewardWallet(user.id, [wallet]);
+    if (
+      user.emailVerifiedAt &&
+      this.walletService.checkIfRewardClaimed(user.id)
+    ) {
+      await this.walletService.rewardUserWallet(
+        [wallet],
+        FREE_MINT_GROUP_LABEL,
+      );
     }
     return wallet;
   }
