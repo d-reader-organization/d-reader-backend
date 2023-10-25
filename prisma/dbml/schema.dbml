@@ -18,7 +18,7 @@ Table User {
   lastActiveAt DateTime
   emailVerifiedAt DateTime
   createdAt DateTime [default: `now()`, not null]
-  rewardClaimedAt DateTime
+  mintReceipts CandyMachineReceipt [not null]
   comics UserComic [not null]
   comicIssues UserComicIssue [not null]
   creators UserCreator [not null]
@@ -293,6 +293,8 @@ Table CandyMachineReceipt {
   nftAddress String [pk]
   nft Nft [not null]
   buyer Wallet [not null]
+  userId Int
+  user User
   buyerAddress String [not null]
   price Int [not null]
   timestamp DateTime [not null]
@@ -510,6 +512,8 @@ Ref: WalletCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 
 Ref: CandyMachineReceipt.buyerAddress > Wallet.address
+
+Ref: CandyMachineReceipt.userId > User.id
 
 Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
 
