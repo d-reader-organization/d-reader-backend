@@ -145,7 +145,7 @@ export class TransactionController {
   })
   async createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
     const buyParams = validateAndFormatParams(query.instantBuyParams);
-    const publicKey = new PublicKey(query[0].buyer);
+    const publicKey = new PublicKey(query.instantBuyParams[0].buyerAddress);
     return await this.auctionHouseService.createMultipleBuys(
       publicKey,
       buyParams,
