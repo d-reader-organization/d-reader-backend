@@ -101,7 +101,7 @@ export function constructExecuteSaleInstruction(
     ),
   );
 
-  //Make auction house authoirity as signer
+  // //Make auction house authoirity as signer
   const authorityIndex = executeSaleInstruction.keys.findIndex((key) =>
     key.pubkey.equals(authorityAddress),
   );
