@@ -91,7 +91,7 @@ Table Comic {
   publishedAt DateTime
   popularizedAt DateTime
   completedAt DateTime
-  genres ComicToGenre [not null]
+  genres Genre [not null]
   issues ComicIssue [not null]
   users UserComic [not null]
   creator Creator [not null]
@@ -122,18 +122,7 @@ Table Genre {
   icon String [not null, default: '']
   priority Int [not null]
   color String [not null]
-  comics ComicToGenre [not null]
-}
-
-Table ComicToGenre {
-  comic Comic [not null]
-  comicSlug String [not null]
-  genre Genre [not null]
-  genreSlug String [not null]
-
-  indexes {
-    (comicSlug, genreSlug) [pk]
-  }
+  comics Comic [not null]
 }
 
 Table RoyaltyWallet {
@@ -491,10 +480,6 @@ Ref: Comic.creatorId > Creator.id [delete: Cascade]
 Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: UserComic.userId > User.id [delete: Cascade]
-
-Ref: ComicToGenre.comicSlug > Comic.slug
-
-Ref: ComicToGenre.genreSlug > Genre.slug
 
 Ref: RoyaltyWallet.comicIssueId > ComicIssue.id
 
