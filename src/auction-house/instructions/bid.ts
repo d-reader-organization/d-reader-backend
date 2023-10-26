@@ -199,10 +199,12 @@ export async function constructInstantBuyTransaction(
       ComputeBudgetProgram.setComputeUnitLimit({ units: 800000 }),
     ],
   }).compileToV0Message([lookupTableAccount.value]);
-  const mintTransactionV0 = new VersionedTransaction(instantBuyTransaction);
-  // mintTransactionV0.sign([metaplex.identity()]);
+  const instantBuyTransactionV0 = new VersionedTransaction(
+    instantBuyTransaction,
+  );
+  instantBuyTransactionV0.sign([metaplex.identity()]);
 
-  const rawTransaction = Buffer.from(mintTransactionV0.serialize());
+  const rawTransaction = Buffer.from(instantBuyTransactionV0.serialize());
   return rawTransaction.toString('base64');
 }
 
