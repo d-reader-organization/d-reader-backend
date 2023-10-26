@@ -11,8 +11,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { sortBy } from 'lodash';
 
 export class WalletGroupDto {
+  @IsOptional()
   @IsNumber()
-  itemsMinted: number;
+  itemsMinted?: number;
 
   @IsBoolean()
   isEligible: boolean;
