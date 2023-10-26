@@ -54,8 +54,8 @@ export const getCreatorGenresQuery = (
 ) => {
   const filterCondition = Prisma.sql`where comic."creatorId" = ${creatorId}`;
   return Prisma.sql`select jsonb_agg(DISTINCT genre.*) FILTER (WHERE genre.slug IS NOT NULL) AS genres from "Genre" genre 
-inner join "_ComicToGenre" ctg on genre.slug  = ctg."B" 
-inner join "Comic" comic on comic.slug = ctg."A" 
+inner join "ComicToGenre" ctg on genre.slug  = ctg."comicSlug" 
+inner join "Comic" comic on comic.slug = ctg."genreSlug" 
 ${filterCondition}
 ${havingGenreSlugsCondition(genreSlugs)};`;
 };

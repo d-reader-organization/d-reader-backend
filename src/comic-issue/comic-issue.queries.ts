@@ -100,8 +100,8 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   inner join "Creator" creator on creator.id = comic."creatorId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
   left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
-  inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
-  inner join "Genre" genre on "comicToGenre"."B" = genre.slug
+  inner join "ComicToGenre" "comicToGenre" on "comicToGenre"."comicSlug" = comicIssue."comicSlug"
+  inner join "Genre" genre on "comicToGenre"."genreSlug" = genre.slug
   inner join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id
 WHERE comicIssue."publishedAt" < NOW() AND comicIssue."verifiedAt" IS NOT NULL
 ${filterCondition}

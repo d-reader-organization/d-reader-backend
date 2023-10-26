@@ -45,8 +45,8 @@ AVG(userComic.rating) as "averageRating",
 (select COUNT(*) from "UserComicIssue" uci inner join "ComicIssue" ci  on ci.id = uci."comicIssueId" where ci."comicSlug" = comic.slug and uci."readAt" is not null) as "readersCount",
 (select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug) issuesResult) as "issuesCount"
 FROM "Comic" comic
-inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
-inner join "Genre" genre on genre.slug = "comicToGenre"."B"
+inner join "ComicToGenre" "comicToGenre" on "comicToGenre"."comicSlug" = comic.slug 
+inner join "Genre" genre on genre.slug = "comicToGenre"."genreSlug"
 inner join "Creator" creator on creator.id = comic."creatorId"
 left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "UserComic" userComic on userComic."comicSlug" = comic.slug
