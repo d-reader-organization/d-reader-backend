@@ -116,7 +116,7 @@ model Comic {
   publishedAt   DateTime?
   popularizedAt DateTime?
   completedAt   DateTime?
-  genres        ComicToGenre[]
+  genres        Genre[]
   issues        ComicIssue[]
   users         UserComic[]
   creator       Creator             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -140,21 +140,12 @@ model UserComic {
 }
 
 model Genre {
-  name     String         @unique
-  slug     String         @id
-  icon     String         @default("")
+  name     String  @unique
+  slug     String  @id
+  icon     String  @default("")
   priority Int // should this be @unique?
   color    String
-  comics   ComicToGenre[]
-}
-
-model ComicToGenre {
-  comic     Comic  @relation(fields: [comicSlug], references: [slug])
-  comicSlug String
-  genre     Genre  @relation(fields: [genreSlug], references: [slug])
-  genreSlug String
-
-  @@id([comicSlug, genreSlug])
+  comics   Comic[]
 }
 
 model RoyaltyWallet {
