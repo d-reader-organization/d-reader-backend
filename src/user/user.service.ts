@@ -496,7 +496,7 @@ export class UserService {
 
     for (const user of newUnverifiedUsers) {
       this.mailService.bumpUserWithEmailVerification(user);
-      await sleep(10000); // sleep 10 seconds
+      await sleep(5000); // sleep 5 seconds to prevent spam
     }
   }
 
