@@ -25,13 +25,15 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsNumber()
   supply?: number;
 
-  @TransformDateStringToDate()
   @IsDate()
-  startDate: Date;
+  @IsOptional()
+  @TransformDateStringToDate()
+  startDate?: Date;
 
-  @TransformDateStringToDate()
   @IsDate()
-  endDate: Date;
+  @IsOptional()
+  @TransformDateStringToDate()
+  endDate?: Date;
 
   @IsOptional()
   @IsInt()
