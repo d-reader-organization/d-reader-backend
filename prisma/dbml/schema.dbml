@@ -481,17 +481,17 @@ Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: UserComic.userId > User.id [delete: Cascade]
 
-Ref: RoyaltyWallet.comicIssueId > ComicIssue.id
+Ref: RoyaltyWallet.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: ComicCollaborator.comicSlug > Comic.slug
+Ref: ComicCollaborator.comicSlug > Comic.slug [delete: Cascade]
 
-Ref: ComicIssueCollaborator.comicIssueId > ComicIssue.id
+Ref: ComicIssueCollaborator.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: StatelessCover.comicIssueId > ComicIssue.id
+Ref: StatelessCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: StatefulCover.comicIssueId > ComicIssue.id
+Ref: StatefulCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: Nft.uri > Metadata.uri
 
@@ -507,7 +507,7 @@ Ref: CandyMachineGroup.candyMachineAddress > CandyMachine.address
 
 Ref: WalletCandyMachineGroup.walletAddress > Wallet.address
 
-Ref: WalletCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id
+Ref: WalletCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id [delete: Cascade]
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 
