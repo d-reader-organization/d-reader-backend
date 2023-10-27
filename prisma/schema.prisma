@@ -151,7 +151,7 @@ model Genre {
 model RoyaltyWallet {
   address      String     @unique
   share        Int
-  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id])
+  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
 }
 
@@ -210,7 +210,7 @@ model ComicCollaborator {
   role      CollaboratorRole
   name      String
   comicSlug String
-  comic     Comic            @relation(fields: [comicSlug], references: [slug])
+  comic     Comic            @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
 
   @@unique([role, name, comicSlug])
 }
@@ -220,7 +220,7 @@ model ComicIssueCollaborator {
   role         CollaboratorRole
   name         String
   comicIssueId Int
-  comicIssue   ComicIssue       @relation(fields: [comicIssueId], references: [id])
+  comicIssue   ComicIssue       @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
 
   @@unique([role, name, comicIssueId])
 }
@@ -229,7 +229,7 @@ model StatelessCover {
   id           Int         @id @default(autoincrement())
   image        String
   rarity       ComicRarity
-  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id])
+  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
   artist       String
   share        Int
@@ -244,7 +244,7 @@ model StatefulCover {
   isSigned     Boolean
   isUsed       Boolean
   rarity       ComicRarity
-  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id])
+  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
   artist       String
 
@@ -314,7 +314,7 @@ model CandyMachineGroup {
 model WalletCandyMachineGroup {
   wallet              Wallet            @relation(fields: [walletAddress], references: [address])
   walletAddress       String
-  candyMachineGroup   CandyMachineGroup @relation(fields: [candyMachineGroupId], references: [id])
+  candyMachineGroup   CandyMachineGroup @relation(fields: [candyMachineGroupId], references: [id], onDelete: Cascade)
   candyMachineGroupId Int
 
   @@id([candyMachineGroupId, walletAddress])
