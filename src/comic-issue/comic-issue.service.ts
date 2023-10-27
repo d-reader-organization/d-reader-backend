@@ -127,8 +127,6 @@ export class ComicIssueService {
         itemsRemaining: { gt: 0 },
         groups: {
           some: {
-            label: PUBLIC_GROUP_LABEL,
-            // startDate: { lt: new Date() },
             endDate: { gt: new Date() },
           },
         },
