@@ -398,9 +398,8 @@ export class CreatorService {
     });
 
     for (const creator of newUnverifiedCreators) {
-      // TODO v2: maybe add sleep between sending different emails
       this.mailService.bumpCreatorWithEmailVerification(creator);
-      await sleep(10000); // sleep 10 seconds
+      await sleep(10000); // sleep 10 seconds to prevent spam
     }
   }
 

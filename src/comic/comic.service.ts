@@ -349,7 +349,6 @@ export class ComicService {
     }
   }
 
-  // TODO: make sure we also delete all the related comic issues and their assets
   async delete(slug: string) {
     const comic = await this.prisma.comic.findUnique({ where: { slug } });
 
