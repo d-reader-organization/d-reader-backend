@@ -36,6 +36,7 @@ import * as jwt from 'jsonwebtoken';
 import { SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
+import { Prisma } from '@prisma/client';
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
@@ -412,27 +413,31 @@ export class HeliusService {
       const ixData = mintV2Struct.deserialize(
         bs58.decode(enrichedTransaction.instructions.at(-1).data),
       );
+      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+        nft: { connect: { address: mint.toBase58() } },
+        candyMachine: { connect: { address: candyMachineAddress } },
+        buyer: {
+          connectOrCreate: {
+            where: { address: nftTransactionInfo.buyer },
+            create: { address: nftTransactionInfo.buyer },
+          },
+        },
+        price: nftTransactionInfo.amount,
+        timestamp: new Date(nftTransactionInfo.timestamp * 1000),
+        description: enrichedTransaction.description,
+        transactionSignature: nftTransactionInfo.signature,
+        splTokenAddress,
+        label: ixData[0].label,
+      };
+
+      if (userId) {
+        receiptData.user = {
+          connect: { id: userId },
+        };
+      }
       const receipt = await this.prisma.candyMachineReceipt.create({
         include: { nft: true, buyer: { include: { user: true } } },
-        data: {
-          nft: { connect: { address: mint.toBase58() } },
-          candyMachine: { connect: { address: candyMachineAddress } },
-          buyer: {
-            connectOrCreate: {
-              where: { address: nftTransactionInfo.buyer },
-              create: { address: nftTransactionInfo.buyer },
-            },
-          },
-          user: {
-            connect: { id: userId },
-          },
-          price: nftTransactionInfo.amount,
-          timestamp: new Date(nftTransactionInfo.timestamp * 1000),
-          description: enrichedTransaction.description,
-          transactionSignature: nftTransactionInfo.signature,
-          splTokenAddress,
-          label: ixData[0].label,
-        },
+        data: receiptData,
       });
       const candyMachine = await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },

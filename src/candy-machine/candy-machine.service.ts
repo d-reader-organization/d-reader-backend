@@ -578,6 +578,7 @@ export class CandyMachineService {
               query.candyMachineAddress,
               group.label,
               query.walletAddress,
+              group.mintLimit,
             );
           let supply: number;
           if (group.label === PUBLIC_GROUP_LABEL) {
@@ -704,6 +705,7 @@ export class CandyMachineService {
     candyMachineAddress: string,
     label: string,
     walletAddress?: string,
+    mintLimit?: number,
   ): Promise<{
     itemsMinted: number;
     displayLabel: string;
@@ -731,9 +733,10 @@ export class CandyMachineService {
 
       displayLabel = group.displayLabel;
       if (walletAddress) {
-        isEligible = !!group.wallets.find(
-          (groupWallet) => groupWallet.walletAddress == walletAddress,
-        );
+        isEligible =
+          !!group.wallets.find(
+            (groupWallet) => groupWallet.walletAddress == walletAddress,
+          ) && receiptsFromBuyer.length < mintLimit;
       }
     }
 
