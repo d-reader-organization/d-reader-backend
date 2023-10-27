@@ -16,7 +16,7 @@ import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
 import { FREE_MINT_GROUP_LABEL } from '../constants';
-import { WalletService } from 'src/wallet/wallet.service';
+import { WalletService } from '../wallet/wallet.service';
 
 const sanitizePayload = (payload: JwtPayload) => {
   return pick(payload, 'type', 'id', 'email', 'name', 'role');
