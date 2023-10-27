@@ -33,7 +33,6 @@ export class ListingDto {
   id: number;
 
   @IsSolanaAddress()
-  @IsString()
   nftAddress: string;
 
   @IsString()

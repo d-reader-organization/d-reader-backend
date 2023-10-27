@@ -366,7 +366,7 @@ export class CandyMachineService {
         itemsAvailable: candyMachine.itemsAvailable.toNumber(),
         itemsMinted: candyMachine.itemsMinted.toNumber(),
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
-        itemsLoaded: candyMachine.itemsLoaded,
+        itemsLoaded: candyMachine.itemsLoaded, // TODO: this value should be loaded after inserting items?
         isFullyLoaded: candyMachine.isFullyLoaded,
         supply,
         lookupTable,

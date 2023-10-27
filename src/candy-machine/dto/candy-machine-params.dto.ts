@@ -1,11 +1,11 @@
-import { IsOptional } from 'class-validator';
+import { IsOptionalString } from '../../decorators/IsOptionalString';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class CandyMachineParams {
   @IsSolanaAddress()
   candyMachineAddress: string;
 
-  @IsOptional()
+  @IsOptionalString()
   @IsSolanaAddress()
   walletAddress?: string;
 }
