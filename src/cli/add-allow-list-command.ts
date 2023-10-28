@@ -1,13 +1,6 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import {
-  AllowListGuardSettings,
-  PublicKey,
-  getMerkleRoot,
-} from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { GuardGroup } from '../types/shared';
 
 interface Options {
   candyMachineAddress: string;
@@ -36,34 +29,10 @@ export class AddAllowList extends CommandRunner {
     log('\n🏗️  updating candymachine with allowlist');
     try {
       const { candyMachineAddress, label, allowList } = options;
-      const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-      const candyMachine = await metaplex
-        .candyMachines()
-        .findByAddress({ address: candyMachinePublicKey });
-      const wallets = await this.candyMachineService
-        .addAllowList(candyMachineAddress, allowList, label)
-        .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
-      const allowListGuard: AllowListGuardSettings =
-        wallets.length > 0
-          ? {
-              merkleRoot: getMerkleRoot(wallets),
-            }
-          : null;
-
-      const existingGroup = candyMachine.candyGuard.groups.find(
-        (group) => group.label === label,
-      );
-      const group: GuardGroup = {
+      await this.candyMachineService.addAllowList(
+        candyMachineAddress,
+        allowList,
         label,
-        guards: { ...existingGroup.guards, allowList: allowListGuard },
-      };
-      const resolvedGroups = candyMachine.candyGuard.groups.filter(
-        (group) => group.label != label,
-      );
-      const groups = [...resolvedGroups, group];
-      await this.candyMachineService.updateCandyMachine(
-        candyMachinePublicKey,
-        groups,
       );
     } catch (error) {
       logErr(`Error : ${error}`);
