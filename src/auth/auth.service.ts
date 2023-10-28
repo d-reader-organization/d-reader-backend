@@ -51,6 +51,7 @@ export class AuthService {
     });
 
     if (
+      !user.rewardedAt &&
       user.emailVerifiedAt &&
       this.walletService.checkIfRewardClaimed(user.id)
     ) {
@@ -58,6 +59,10 @@ export class AuthService {
         [wallet],
         FREE_MINT_GROUP_LABEL,
       );
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { rewardedAt: new Date() },
+      });
     }
     return wallet;
   }

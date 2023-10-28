@@ -29,6 +29,7 @@ model User {
   lastActiveAt       DateTime?
   emailVerifiedAt    DateTime?
   createdAt          DateTime              @default(now())
+  rewardedAt         DateTime?
   mintReceipts       CandyMachineReceipt[]
   comics             UserComic[]
   comicIssues        UserComicIssue[]
