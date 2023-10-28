@@ -17,6 +17,7 @@ import {
   toDateTime,
   CreateCandyMachineInput,
   WRAPPED_SOL_MINT,
+  AllowListGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -673,14 +674,39 @@ export class CandyMachineService {
           };
         }),
       };
+    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+    const candyMachine = await metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachinePublicKey });
+    const allowlist = await this.prisma.candyMachineGroup
+      .update({
+        where: {
+          label_candyMachineAddress: { label, candyMachineAddress },
+        },
+        data: { wallets },
+        include: { wallets: true },
+      })
+      .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
 
-    return await this.prisma.candyMachineGroup.update({
-      where: {
-        label_candyMachineAddress: { label, candyMachineAddress },
-      },
-      data: { wallets },
-      include: { wallets: true },
-    });
+    const allowListGuard: AllowListGuardSettings =
+      allowlist.length > 0
+        ? {
+            merkleRoot: getMerkleRoot(allowlist),
+          }
+        : null;
+
+    const existingGroup = candyMachine.candyGuard.groups.find(
+      (group) => group.label === label,
+    );
+    const group: GuardGroup = {
+      label,
+      guards: { ...existingGroup.guards, allowList: allowListGuard },
+    };
+    const resolvedGroups = candyMachine.candyGuard.groups.filter(
+      (group) => group.label != label,
+    );
+    const groups = [...resolvedGroups, group];
+    await this.updateCandyMachine(candyMachinePublicKey, groups);
   }
 
   async findCandyMachineData(candyMachineAddress: string, label: string) {
