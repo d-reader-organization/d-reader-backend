@@ -472,7 +472,7 @@ export class CandyMachineService {
     label: string,
   ) {
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    if (balance < 0.03) {
+    if (balance < 30000000) {
       throw new Error("Wallet don't have enough funds!");
     }
     const { allowList, lookupTable } = await this.findCandyMachineData(
