@@ -665,56 +665,67 @@ export class CandyMachineService {
     return candyMachines;
   }
 
+  // TODO: fix this all up and rename stuff
   async addAllowList(
     candyMachineAddress: string,
     allowList: string[],
     label: string,
   ) {
-    const wallets: Prisma.WalletCandyMachineGroupCreateNestedManyWithoutCandyMachineGroupInput =
-      {
-        create: allowList.map((address) => {
-          return {
-            wallet: {
-              connectOrCreate: {
-                where: { address },
-                create: { address },
-              },
-            },
-          };
-        }),
-      };
     const candyMachinePublicKey = new PublicKey(candyMachineAddress);
     const candyMachine = await metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePublicKey });
+
+    const alreadyAllowlistedWallets = await this.prisma.wallet.findMany({
+      where: {
+        candyMachineGroups: {
+          some: { candyMachineGroup: { label, candyMachineAddress } },
+        },
+      },
+    });
+    const allowlistedWallets = alreadyAllowlistedWallets.map((w) => w.address);
+
+    const filteredAllowlist = allowList.filter((address) =>
+      allowlistedWallets.includes(address),
+    );
+
+    // TODO: why do we have a variable allowList and allowlist, what's the difference between them?
     const allowlist = await this.prisma.candyMachineGroup
       .update({
-        where: {
-          label_candyMachineAddress: { label, candyMachineAddress },
+        where: { label_candyMachineAddress: { label, candyMachineAddress } },
+        data: {
+          wallets: {
+            create: filteredAllowlist.map((address) => ({
+              wallet: {
+                connectOrCreate: {
+                  where: { address },
+                  create: { address },
+                },
+              },
+            })),
+          },
         },
-        data: { wallets },
         include: { wallets: true },
       })
       .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
 
     const allowListGuard: AllowListGuardSettings =
-      allowlist.length > 0
-        ? {
-            merkleRoot: getMerkleRoot(allowlist),
-          }
-        : null;
+      allowlist.length > 0 ? { merkleRoot: getMerkleRoot(allowlist) } : null;
 
     const existingGroup = candyMachine.candyGuard.groups.find(
       (group) => group.label === label,
     );
+
     const group: GuardGroup = {
       label,
       guards: { ...existingGroup.guards, allowList: allowListGuard },
     };
+
     const resolvedGroups = candyMachine.candyGuard.groups.filter(
       (group) => group.label != label,
     );
     const groups = [...resolvedGroups, group];
+
     await this.updateCandyMachine(candyMachinePublicKey, groups);
   }
 

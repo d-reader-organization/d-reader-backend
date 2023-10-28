@@ -278,6 +278,9 @@ export class UserService {
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
+
+    let rewardedAt: Date = undefined;
+    // TODO: this should all be fixed up
     if (
       !user.rewardedAt &&
       user.wallets.length &&
@@ -287,14 +290,13 @@ export class UserService {
         user.wallets,
         FREE_MINT_GROUP_LABEL,
       );
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { rewardedAt: new Date() },
-      });
+
+      rewardedAt = new Date();
     }
+
     return await this.prisma.user.update({
       where: { email },
-      data: { emailVerifiedAt: new Date() },
+      data: { emailVerifiedAt: new Date(), rewardedAt },
     });
   }
 
