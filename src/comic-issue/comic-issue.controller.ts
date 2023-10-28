@@ -75,7 +75,7 @@ import {
   toRawComicIssueDtoArray,
 } from './dto/raw-comic-issue.dto';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
-import { VerifiedUserAuth } from '../guards/verified-user-auth-guard';
+import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -293,7 +293,7 @@ export class ComicIssueController {
   }
 
   /* Rate specific comic issue */
-  @VerifiedUserAuth()
+  @VerifiedUserAuthGuard()
   @Patch('rate/:id')
   async rate(
     @Param('id') id: string,
