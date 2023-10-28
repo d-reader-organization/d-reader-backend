@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Keypair,
   PublicKey,
@@ -472,8 +476,9 @@ export class CandyMachineService {
     label: string,
   ) {
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    if (balance < 30000000) {
-      throw new Error("Wallet don't have enough funds!");
+    // 0.029 $SOL in lamports, aprox amount necessary to mint an NFT with price 0
+    if (balance < 29000000) {
+      throw new BadRequestException('Not enough funds in the wallet');
     }
     const { allowList, lookupTable } = await this.findCandyMachineData(
       candyMachineAddress.toString(),
