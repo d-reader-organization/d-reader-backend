@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { s3Service } from '../aws/s3.service';
 import {
   JsonMetadata,
   Metadata,
@@ -27,7 +26,6 @@ export class WalletService {
   private readonly metaplex: Metaplex;
 
   constructor(
-    private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
     private readonly candyMachineService: CandyMachineService,
@@ -48,6 +46,7 @@ export class WalletService {
     }
   }
 
+  // TODO: this command should also give it's best to store the CM receipt in out db
   async syncWallet(address: string) {
     const findAllByOwnerResult = await this.metaplex
       .nfts()
