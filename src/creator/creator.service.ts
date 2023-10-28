@@ -389,11 +389,12 @@ export class CreatorService {
     const newUnverifiedCreators = await this.prisma.creator.findMany({
       where: {
         emailVerifiedAt: null,
-        createdAt: {
-          // created more than 3 days ago, but not longer than 4 days ago
-          lte: subDays(new Date(), 2),
-          gte: subDays(new Date(), 500),
-        },
+        AND: [
+          // created more than 3 days ago
+          { createdAt: { lte: subDays(new Date(), 3) } },
+          // created not longer than 4 days ago
+          { createdAt: { gte: subDays(new Date(), 4) } },
+        ],
       },
     });
 
