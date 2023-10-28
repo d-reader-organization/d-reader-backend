@@ -18,6 +18,7 @@ Table User {
   lastActiveAt DateTime
   emailVerifiedAt DateTime
   createdAt DateTime [default: `now()`, not null]
+  rewardedAt DateTime
   mintReceipts CandyMachineReceipt [not null]
   comics UserComic [not null]
   comicIssues UserComicIssue [not null]

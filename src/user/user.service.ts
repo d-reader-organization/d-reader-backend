@@ -279,6 +279,7 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
     if (
+      !user.rewardedAt &&
       user.wallets.length &&
       this.walletService.checkIfRewardClaimed(user.id)
     ) {
@@ -286,6 +287,10 @@ export class UserService {
         user.wallets,
         FREE_MINT_GROUP_LABEL,
       );
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { rewardedAt: new Date() },
+      });
     }
     return await this.prisma.user.update({
       where: { email },
