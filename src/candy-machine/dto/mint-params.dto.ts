@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class MintParams {
@@ -13,6 +13,6 @@ export class MintParams {
   label?: string;
 
   @IsOptional()
-  @IsString()
+  @IsNumberString()
   mintCount?: string;
 }

@@ -115,7 +115,7 @@ export class AuthController {
   }
 
   // WALLET ENDPOINTS
-  @Throttle(10, 30)
+  @Throttle(5, 30)
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
