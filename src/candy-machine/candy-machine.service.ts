@@ -684,13 +684,10 @@ export class CandyMachineService {
       },
     });
     const allowlistedWallets = alreadyAllowlistedWallets.map((w) => w.address);
-
-    const filteredAllowlist = allowList.filter((address) =>
-      allowlistedWallets.includes(address),
+    const filteredAllowlist = allowList.filter(
+      (address) => !allowlistedWallets.includes(address),
     );
-
-    // TODO: why do we have a variable allowList and allowlist, what's the difference between them?
-    const allowlist = await this.prisma.candyMachineGroup
+    const wallets = await this.prisma.candyMachineGroup
       .update({
         where: { label_candyMachineAddress: { label, candyMachineAddress } },
         data: {
@@ -710,7 +707,7 @@ export class CandyMachineService {
       .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
 
     const allowListGuard: AllowListGuardSettings =
-      allowlist.length > 0 ? { merkleRoot: getMerkleRoot(allowlist) } : null;
+      wallets.length > 0 ? { merkleRoot: getMerkleRoot(wallets) } : null;
 
     const existingGroup = candyMachine.candyGuard.groups.find(
       (group) => group.label === label,
