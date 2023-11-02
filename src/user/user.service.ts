@@ -488,12 +488,12 @@ export class UserService {
     }
   }
 
-  // @Cron(CronExpression.EVERY_DAY_AT_NOON)
+  @Cron(CronExpression.EVERY_DAY_AT_NOON)
   protected async bumpNewUsersWithUnverifiedEmails() {
     const newUnverifiedUsers = await this.prisma.user.findMany({
       where: {
-        emailVerifiedAt: null,
         AND: [
+          { emailVerifiedAt: null },
           // created more than 3 days ago
           { createdAt: { lte: subDays(new Date(), 3) } },
           // created not longer than 4 days ago

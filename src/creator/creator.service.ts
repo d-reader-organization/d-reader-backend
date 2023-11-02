@@ -384,12 +384,13 @@ export class CreatorService {
     }
   }
 
+  // TODO: check if this cron job is working correctly and is sending only a single email per person
   @Cron(CronExpression.EVERY_DAY_AT_NOON)
   protected async bumpNewCreatorsWithUnverifiedEmails() {
     const newUnverifiedCreators = await this.prisma.creator.findMany({
       where: {
-        emailVerifiedAt: null,
         AND: [
+          { emailVerifiedAt: null },
           // created more than 3 days ago
           { createdAt: { lte: subDays(new Date(), 3) } },
           // created not longer than 4 days ago
