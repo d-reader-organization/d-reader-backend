@@ -198,12 +198,20 @@ model ComicIssue {
 }
 
 enum CollaboratorRole {
-  Writer
+  Advisor
+  Arist
   Artist
+  CoWriter
   Colorist
-  Editor
-  Letterer
+  Cover
   CoverArtist
+  Editor
+  Illustrator
+  Inker
+  Letterer
+  Penciler
+  Translator
+  Writer
 }
 
 model ComicCollaborator {
