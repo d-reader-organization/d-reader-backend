@@ -478,8 +478,16 @@ export class CandyMachineService {
     const balance = await this.metaplex.connection.getBalance(feePayer);
     // 0.029 $SOL in lamports, aprox amount necessary to mint an NFT with price 0
     if (balance < 29000000) {
-      throw new BadRequestException('Not enough funds in the wallet');
+      throw new BadRequestException('0.029 SOL is necessary for protocol fees');
     }
+    // TODO: change the error handling above in the following fashion:
+    // if the price of the NFT is 0 and user does not have enough to cover for protocol fees show the error:
+    // `{0.029 - balance} SOL is missing to pay for protocol fees`
+    // otherwise if the price of the NFT is greater than 0 and user does not have enough funds to pay for the NFT (excluding protocol fees):
+    // `{nft.price + 0.029 - balance} SOL missing to pay for the purchase`
+    // otherwise if the price of the NFT is greater than 0 and user has enough funds to pay for the NFT but not for the protocol fees as well:
+    // `{nft.price + 0.029 - balance} SOL missing to pay for protocol fees`
+
     const { allowList, lookupTable } = await this.findCandyMachineData(
       candyMachineAddress.toString(),
       label,
