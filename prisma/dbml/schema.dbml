@@ -445,11 +445,9 @@ Enum AudienceType {
 
 Enum CollaboratorRole {
   Advisor
-  Arist
   Artist
   CoWriter
   Colorist
-  Cover
   CoverArtist
   Editor
   Illustrator
