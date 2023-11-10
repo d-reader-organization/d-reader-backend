@@ -449,6 +449,7 @@ Enum CollaboratorRole {
   CoWriter
   Colorist
   CoverArtist
+  CreativeDirector
   Editor
   Illustrator
   Inker
