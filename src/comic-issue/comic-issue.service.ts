@@ -46,7 +46,7 @@ import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
-import { GuardParams } from 'src/candy-machine/dto/types';
+import { GuardParams } from '../candy-machine/dto/types';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -539,14 +539,15 @@ export class ComicIssueService {
 
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    } else if (!!comicIssue.publishedAt) {
-      // throw new BadRequestException('Comic issue already published');
-    } else if (!comicIssue.statelessCovers) {
+    }
+    // else if (!!comicIssue.publishedAt) {
+    // throw new BadRequestException('Comic issue already published');
+    // }
+    else if (!comicIssue.statelessCovers) {
       throw new BadRequestException('Comic issue missing stateless covers');
     } else if (!comicIssue.statefulCovers) {
       throw new BadRequestException('Comic issue missing stateful covers');
-    }
-    if (
+    } else if (
       minSupply(comicIssue.statelessCovers.length) > publishOnChainDto.supply
     ) {
       throw new BadRequestException(

@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -16,10 +17,11 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
+import { MAX_CREATOR_LIMIT, MAX_ISSUE_TITLE_LENGTH } from 'src/constants';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
-  @MaxLength(48)
+  @MaxLength(MAX_ISSUE_TITLE_LENGTH)
   title: string;
 
   @Expose()
@@ -74,6 +76,7 @@ export class CreateComicIssueDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(MAX_CREATOR_LIMIT)
   @Type(() => RoyaltyWalletDto)
   @ApiProperty({ type: [RoyaltyWalletDto] })
   royaltyWallets?: RoyaltyWalletDto[];
