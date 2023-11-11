@@ -32,10 +32,7 @@ import {
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import { chunk } from 'lodash';
-import * as bs58 from 'bs58';
 import {
-  MAX_METADATA_LEN,
-  CREATOR_ARRAY_START,
   D_PUBLISHER_SYMBOL,
   HUNDRED,
   D_READER_FRONTEND_URL,
@@ -87,41 +84,6 @@ export class CandyMachineService {
     private readonly darkblockService: DarkblockService,
   ) {
     this.metaplex = metaplex;
-  }
-
-  async findMintedNfts(candyMachineAddress: string) {
-    const candyMachineId = new PublicKey(candyMachineAddress);
-    const candyMachineCreator = PublicKey.findProgramAddressSync(
-      [Buffer.from('candy_machine'), candyMachineId.toBuffer()],
-      this.metaplex.programs().getCandyMachine().address,
-    );
-
-    return await this.getMintAddresses(candyMachineCreator[0]);
-  }
-
-  async getMintAddresses(firstCreatorAddress: PublicKey) {
-    const metadataAccounts = await this.metaplex.connection.getProgramAccounts(
-      this.metaplex.programs().getTokenMetadata().address,
-      {
-        // The mint address is located at byte 33 and lasts for 32 bytes.
-        dataSlice: { offset: 33, length: 32 },
-        filters: [
-          // Only get Metadata accounts.
-          { dataSize: MAX_METADATA_LEN },
-          // Filter using the first creator.
-          {
-            memcmp: {
-              offset: CREATOR_ARRAY_START,
-              bytes: firstCreatorAddress.toBase58(),
-            },
-          },
-        ],
-      },
-    );
-
-    return metadataAccounts.map((metadataAccountInfo) =>
-      bs58.encode(metadataAccountInfo.account.data),
-    );
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
@@ -673,7 +635,6 @@ export class CandyMachineService {
     return candyMachines;
   }
 
-  // TODO: fix this all up and rename stuff
   async addAllowList(
     candyMachineAddress: string,
     allowList: string[],
@@ -797,5 +758,22 @@ export class CandyMachineService {
       displayLabel,
       isEligible,
     };
+  }
+
+  async findMintedNfts(address: string) {
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address },
+    });
+    const authorityPda = this.metaplex
+      .candyMachines()
+      .pdas()
+      .authority({ candyMachine: new PublicKey(address) })
+      .toString();
+    return await this.heliusService.helius.getMintlist({
+      query: {
+        verifiedCollectionAddresses: [candyMachine.collectionNftAddress],
+        firstVerifiedCreators: [authorityPda],
+      },
+    });
   }
 }
