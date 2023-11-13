@@ -188,7 +188,7 @@ export class CandyMachineService {
             ],
             files: [
               ...writeFiles(coverImage, ...statefulCovers, ...statelessCovers),
-              darkblockMetadataFile,
+              ...(darkblockMetadataFile ? [darkblockMetadataFile] : []),
             ],
           },
         });
