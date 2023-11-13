@@ -42,6 +42,10 @@ import config from '../configs/config';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
+import { AddCollectionDarkblockCommand } from './add-collection-darkblock-command';
+import { AddCollectionDarkblockQuestion } from './add-collection-darkblock-questions';
+import { UpdateDateCommand } from './update-date-command';
+import { UpdateDateQuestions } from './update-date-questions';
 
 @Module({
   imports: [
@@ -97,6 +101,10 @@ import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
     UserService,
     AddGroupQuestions,
     AddGroupCommand,
+    AddCollectionDarkblockCommand,
+    AddCollectionDarkblockQuestion,
+    UpdateDateCommand,
+    UpdateDateQuestions,
   ],
 })
 export class CLIModule {}
