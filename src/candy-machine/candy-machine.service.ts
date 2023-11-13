@@ -129,6 +129,7 @@ export class CandyMachineService {
   async createComicIssueCM(
     comicIssue: ComicIssueCMInput,
     comicName: string,
+    onChainName: string,
     guardParams: GuardParams,
     shouldBePublic?: boolean,
   ) {
@@ -194,7 +195,7 @@ export class CandyMachineService {
 
       const { nft: newCollectionNft } = await this.metaplex.nfts().create({
         uri: collectionNftUri,
-        name: comicIssue.title,
+        name: onChainName,
         sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
         symbol: D_PUBLISHER_SYMBOL,
         isCollection: true,
@@ -364,6 +365,7 @@ export class CandyMachineService {
       statelessCovers.length,
       darkblockId,
       supply,
+      onChainName,
       rarityCoverFiles,
     );
 

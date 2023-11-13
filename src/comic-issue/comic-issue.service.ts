@@ -560,6 +560,7 @@ export class ComicIssueService {
     }
     validateWeb3PublishInfo(publishOnChainDto);
     const {
+      onChainName,
       royaltyWallets,
       startDate,
       endDate,
@@ -613,6 +614,7 @@ export class ComicIssueService {
       await this.candyMachineService.createComicIssueCM(
         updatedComicIssue,
         updatedComicIssue.comic.title,
+        onChainName,
         guardParams,
         shouldBePublic ?? true,
       );

@@ -17,11 +17,11 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
-import { MAX_CREATOR_LIMIT, MAX_ISSUE_TITLE_LENGTH } from 'src/constants';
+import { MAX_CREATOR_LIMIT } from 'src/constants';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
-  @MaxLength(MAX_ISSUE_TITLE_LENGTH)
+  @MaxLength(48)
   title: string;
 
   @Expose()

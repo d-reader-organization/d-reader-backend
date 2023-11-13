@@ -12,7 +12,7 @@ export const MAX_SYMBOL_LENGTH = 10;
 export const MAX_CREATOR_LIMIT = 5;
 export const MIN_SUPPLY_LIMIT = 5;
 
-export const MAX_ISSUE_TITLE_LENGTH = MAX_NAME_LENGTH - MIN_SUPPLY_LIMIT - 2;
+export const MAX_ON_CHAIN_TITLE_LENGTH = MAX_NAME_LENGTH - MIN_SUPPLY_LIMIT - 2;
 export const D_READER_SYMBOL = 'dReader';
 export const D_PUBLISHER_SYMBOL = 'dPublisher';
 

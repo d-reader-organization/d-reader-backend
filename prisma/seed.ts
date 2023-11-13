@@ -76,6 +76,7 @@ import {
 } from './comic-issues';
 import { addDays } from 'date-fns';
 import { splTokensToSeed } from './spl-tokens';
+import { MAX_ON_CHAIN_TITLE_LENGTH } from '../src/constants';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -327,6 +328,7 @@ async function main() {
         console.log(i, ': publishing comic issue ' + comicIssue.id);
 
         await comicIssueService.publishOnChain(comicIssue.id, {
+          onChainName: comicIssue.title.slice(0,MAX_ON_CHAIN_TITLE_LENGTH),
           supply: getRandomInt(1, 2) * 10, // 10-20 supply
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
           sellerFeeBasisPoints: 500, // 5%

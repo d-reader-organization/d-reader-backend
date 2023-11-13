@@ -164,6 +164,7 @@ export async function uploadItemMetadata(
   numberOfRarities: number,
   darkblockId: string,
   comicIssueSupply: number,
+  onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
   const items: { uri: string; name: string }[] = [];
@@ -188,7 +189,7 @@ export async function uploadItemMetadata(
     const { unusedUnsigned } = itemMetadata;
     itemMetadatas.push({
       uri: unusedUnsigned.uri,
-      name: unusedUnsigned.metadata.name,
+      name: onChainName,
     });
   }
 

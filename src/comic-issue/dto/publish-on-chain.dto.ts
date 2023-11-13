@@ -6,16 +6,23 @@ import {
   IsInt,
   IsNumber,
   IsOptional,
+  IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { IsLamport } from '../../decorators/IsLamport';
 import { TransformDateStringToDate } from '../../utils/transform';
+import { MAX_ON_CHAIN_TITLE_LENGTH } from '../../constants';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'sellerFeeBasisPoints',
   'royaltyWallets',
   'creatorAddress',
 ]) {
+  @IsString()
+  @MaxLength(MAX_ON_CHAIN_TITLE_LENGTH)
+  onChainName: string;
+
   @IsOptional()
   @IsLamport()
   mintPrice?: number;
