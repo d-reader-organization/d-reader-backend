@@ -42,3 +42,8 @@ export type GuardParams = {
   mintLimit?: number;
   freezePeriod?: number;
 };
+
+export type DarkblockTraits = {
+  name: string;
+  value: string;
+};
