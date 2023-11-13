@@ -88,3 +88,7 @@ export const shortenString = (string: string, chars = 3): string => {
 /** returns the string with a Date.now() as suffixs for uniqueness
  * @example 'avatar-1688122756821' */
 export const appendTimestamp = (string: string) => string + '-' + Date.now();
+export const importDynamic = new Function(
+  'modulePath',
+  'return import(modulePath)',
+);
