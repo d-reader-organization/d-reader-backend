@@ -46,7 +46,7 @@ export class WalletService {
     }
   }
 
-  // TODO: this command should also give it's best to store the CM receipt in out db
+  // TODO: this command should also give it's best to store the CM receipt in our db
   async syncWallet(address: string) {
     const findAllByOwnerResult = await this.metaplex
       .nfts()
