@@ -15,11 +15,17 @@ import {
   BuyParamsArray,
 } from '../auction-house/dto/instant-buy-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
-import { NotYetImplementedError, PublicKey } from '@metaplex-foundation/js';
+import {
+  NotYetImplementedError,
+  PublicKey,
+  WRAPPED_SOL_MINT,
+} from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PUBLIC_GROUP_LABEL } from '../constants';
-import { TipCreatorParams } from 'src/candy-machine/dto/tip-creator-params.dto';
+import { TipCreatorParams } from '../candy-machine/dto/tip-creator-params.dto';
+import { CreatorTipParams } from '../creator/dto/creator-tip-params.dto';
+import { CreatorTransactionService } from '../creator/creator-transaction.service';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -28,6 +34,7 @@ export class TransactionController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
     private readonly auctionHouseService: AuctionHouseService,
+    private readonly creatorTransactionService: CreatorTransactionService,
   ) {}
 
   /** @deprecated */
@@ -177,5 +184,20 @@ export class TransactionController {
       receiptAddress,
       nftAddress,
     );
+  }
+
+  @Get('/creator/tip')
+  async createTippingTransaction(@Query() query: CreatorTipParams) {
+    const user = new PublicKey(query.user);
+    const tippingAddress = new PublicKey(query.tippingAddress);
+    const mint = query.mint ? new PublicKey(query.mint) : WRAPPED_SOL_MINT;
+    const tippingTransaction =
+      await this.creatorTransactionService.createTippingTransaction(
+        user,
+        tippingAddress,
+        query.amount,
+        mint,
+      );
+    return tippingTransaction;
   }
 }
