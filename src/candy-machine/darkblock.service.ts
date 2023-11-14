@@ -62,6 +62,7 @@ export class DarkblockService {
     }
   }
 
+  // TODO: Fix darkblock 502 error response issue
   async addCollectionDarkblock(
     fileKey: string,
     description: string,

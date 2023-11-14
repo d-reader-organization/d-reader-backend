@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import {
   Keypair,
+  LAMPORTS_PER_SOL,
   PublicKey,
   SYSVAR_SLOT_HASHES_PUBKEY,
   sendAndConfirmTransaction,
@@ -44,6 +45,7 @@ import {
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
   rateLimitQuota,
+  MIN_MINT_PROTOCOL_FEE,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -439,23 +441,10 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
   ) {
+    const { allowList, lookupTable, mintPrice } =
+      await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    // 0.029 $SOL in lamports, aprox amount necessary to mint an NFT with price 0
-    if (balance < 29000000) {
-      throw new BadRequestException('0.029 SOL is necessary for protocol fees');
-    }
-    // TODO: change the error handling above in the following fashion:
-    // if the price of the NFT is 0 and user does not have enough to cover for protocol fees show the error:
-    // `{0.029 - balance} SOL is missing to pay for protocol fees`
-    // otherwise if the price of the NFT is greater than 0 and user does not have enough funds to pay for the NFT (excluding protocol fees):
-    // `{nft.price + 0.029 - balance} SOL missing to pay for the purchase`
-    // otherwise if the price of the NFT is greater than 0 and user has enough funds to pay for the NFT but not for the protocol fees as well:
-    // `{nft.price + 0.029 - balance} SOL missing to pay for protocol fees`
-
-    const { allowList, lookupTable } = await this.findCandyMachineData(
-      candyMachineAddress.toString(),
-      label,
-    );
+    this.validateBalanceForMint(mintPrice, balance);
     return await constructMintOneTransaction(
       this.metaplex,
       feePayer,
@@ -464,6 +453,38 @@ export class CandyMachineService {
       allowList,
       lookupTable,
     );
+  }
+
+  validateBalanceForMint(mintPrice: number, balance: number): void {
+    // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
+    const protocolFee = MIN_MINT_PROTOCOL_FEE;
+    const missingFunds = mintPrice
+      ? mintPrice + protocolFee - balance
+      : protocolFee - balance;
+
+    if (!mintPrice && balance < protocolFee) {
+      throw new BadRequestException(
+        `${this.calculateMissingSOL(
+          missingFunds,
+        )} SOL is missing to pay for protocol fees`,
+      );
+    } else if (mintPrice && balance < mintPrice) {
+      throw new BadRequestException(
+        `${this.calculateMissingSOL(
+          missingFunds,
+        )} SOL missing to pay for the purchase`,
+      );
+    } else if (mintPrice && balance < mintPrice + protocolFee) {
+      throw new BadRequestException(
+        `${this.calculateMissingSOL(
+          missingFunds,
+        )} SOL missing to pay for protocol fees`,
+      );
+    }
+  }
+
+  private calculateMissingSOL(missingFunds: number): number {
+    return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
   }
 
   async createChangeComicStateTransaction(
@@ -709,6 +730,7 @@ export class CandyMachineService {
             ? data.wallets.map((item) => item.walletAddress)
             : undefined,
         lookupTable: data.candyMachine.lookupTable,
+        mintPrice: data.mintPrice,
       };
     } catch (e) {
       console.error(e);
