@@ -20,7 +20,7 @@ export const D_READER_FRONTEND_URL = 'https://dreader.app';
 
 export const HUNDRED = 100;
 export const HUNDRED_PERCENT_TAX = 10000;
-
+export const MIN_MINT_PROTOCOL_FEE = 29000000;
 // export const GLOBAL_BOT_TAX = 0.01;
 
 export const USED_TRAIT = 'used';
