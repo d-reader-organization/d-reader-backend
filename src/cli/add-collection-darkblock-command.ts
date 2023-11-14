@@ -45,7 +45,6 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
         issue.pdf,
         issue.description,
         issue.collectionNft.name,
-        issue.collectionNft.address,
         [{ name: 'used', value: 'true' }],
       );
       console.log(`Darkblock added succesfully ${response}`);

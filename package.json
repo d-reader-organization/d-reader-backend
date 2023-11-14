@@ -41,7 +41,8 @@
     "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw",
     "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
     "add-group": "npx ts-node src/cli/main.ts add-group",
-    "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock"
+    "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
+    "update-date": "npx ts-node src/cli/main.ts update-date"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -81,6 +82,7 @@
     "bs58": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+    "crypto": "^1.0.1",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
     "dreader-comic-verse": "^2.0.0",

@@ -9,8 +9,11 @@ import { metaplex } from '../utils/metaplex';
 import { getS3Object } from '../aws/s3client';
 import axios from 'axios';
 import * as FormData from 'form-data';
-import { SHA256, enc } from 'crypto-js';
 import { DarkblockTraits } from './dto/types';
+import * as nacl from 'tweetnacl';
+import { GetObjectCommandOutput } from '@aws-sdk/client-s3';
+import { createHash } from 'crypto';
+
 @Injectable()
 export class DarkblockService {
   private readonly metaplex: Metaplex;
@@ -59,11 +62,11 @@ export class DarkblockService {
     }
   }
 
+  // TODO: Fix darkblock 502 error response issue
   async addCollectionDarkblock(
     fileKey: string,
     description: string,
-    collectionName: string,
-    collectionAddress: string,
+    collection: string,
     traits: DarkblockTraits[],
   ) {
     try {
@@ -77,42 +80,22 @@ export class DarkblockService {
       const getFileFromS3 = await getS3Object({ Key: fileKey });
       const nftPlatform =
         process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
-      const fileString = enc.Base64.parse(
-        await getFileFromS3.Body.transformToString(),
+      const darkblock_signature = await this.createCollectionSignature(
+        getFileFromS3,
+        collection,
+        nftPlatform,
+        traits,
       );
-      const sha256 = SHA256(fileString).toString();
-      let formattedTraits: string = '';
-      traits.forEach((trait, index) => {
-        formattedTraits += trait.name + '=' + trait.value;
-        if (index < traits.length - 1) {
-          formattedTraits += ':';
-        }
-      });
-      console.log('formatted traits', formattedTraits);
-      const encoder = new TextEncoder();
-      const payload = encoder.encode(
-        `${nftPlatform}${sha256}${collectionName}${formattedTraits}`,
-      );
-      const uint8ArraytoHex = (array: Uint8Array) =>
-        Buffer.from(array).toString('hex');
-      console.log(`${nftPlatform}${sha256}${collectionName}${formattedTraits}`);
-      const ed25519 = await import('@noble/ed25519');
-      const signature = ed25519.sign(
-        uint8ArraytoHex(payload),
-        uint8ArraytoHex(this.metaplex.identity().secretKey).slice(0, 32),
-      );
-      console.log(signature);
       const data = {
         file: getFileFromS3.Body,
         creator_address: this.metaplex.identity().publicKey.toString(),
         nft_platform: nftPlatform,
         nft_standard: 'Metaplex',
         traits: JSON.stringify(traits),
-        collection: collectionAddress,
-        darkblock_signature: signature,
+        collection,
+        darkblock_signature,
         darkblock_description: description,
       };
-      console.log('data', data);
       Object.entries(data).forEach((entry) => {
         form.append(entry[0], entry[1]);
       });
@@ -121,7 +104,6 @@ export class DarkblockService {
         `${DARKBLOCK_API}/darkblock/upgrade/collection?${query}`,
         form,
       );
-
       return response.data.tx_id;
     } catch (e) {
       console.log(e);
@@ -130,5 +112,31 @@ export class DarkblockService {
         e,
       );
     }
+  }
+
+  async createCollectionSignature(
+    getFileFromS3: GetObjectCommandOutput,
+    collection: string,
+    nftPlatform: string,
+    traits: DarkblockTraits[],
+  ) {
+    const file = await getFileFromS3.Body.transformToByteArray();
+    const hash = createHash('sha256').update(file).digest('hex');
+    let formattedTraits: string = '';
+    traits.forEach((trait, index) => {
+      formattedTraits += trait.name + '=' + trait.value;
+      if (index < traits.length - 1) {
+        formattedTraits += ':';
+      }
+    });
+    const encoder = new TextEncoder();
+    const payload = encoder.encode(
+      nftPlatform.concat(hash, collection, formattedTraits),
+    );
+    const signature = nacl.sign.detached(
+      payload,
+      this.metaplex.identity().secretKey,
+    );
+    return Buffer.from(signature).toString('base64');
   }
 }
