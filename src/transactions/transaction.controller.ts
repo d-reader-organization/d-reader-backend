@@ -133,14 +133,13 @@ export class TransactionController {
 
   @Get('/instant-buy')
   async createInstantBuyTransaction(@Query() query: InstantBuyParams) {
-    const publicKey = new PublicKey(query.buyerAddress);
     const buyArguments: BuyArgs = {
+      buyer: new PublicKey(query.buyerAddress),
       mintAccount: new PublicKey(query.mintAccount),
       price: query.price,
       seller: new PublicKey(query.sellerAddress),
     };
     return await this.auctionHouseService.createInstantBuyTransaction(
-      publicKey,
       buyArguments,
     );
   }
@@ -152,18 +151,7 @@ export class TransactionController {
   })
   async createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
     const buyParams = validateAndFormatParams(query.instantBuyParams);
-
-    // TODO: this is ugly and should be prettified
-    let buyerAddress = '';
-    if (typeof query.instantBuyParams[0] === 'string') {
-      buyerAddress = JSON.parse(query.instantBuyParams[0]).buyerAddress;
-    }
-    const publicKey = new PublicKey(buyerAddress);
-
-    return await this.auctionHouseService.createMultipleBuys(
-      publicKey,
-      buyParams,
-    );
+    return await this.auctionHouseService.createMultipleBuys(buyParams);
   }
 
   @Get('/cancel-bid')
