@@ -94,14 +94,12 @@ export class AuctionHouseService {
     return rawTransaction.toString('base64');
   }
 
-  async createMultipleBuys(buyer: PublicKey, buyArguments: BuyArgs[]) {
-    const transactions = buyArguments.map((args) =>
-      this.createInstantBuyTransaction(buyer, args),
-    );
+  async createMultipleBuys(buyArguments: BuyArgs[]) {
+    const transactions = buyArguments.map(this.createInstantBuyTransaction);
     return await Promise.all(transactions);
   }
 
-  async createInstantBuyTransaction(buyer: PublicKey, buyArguments: BuyArgs) {
+  async createInstantBuyTransaction(buyArguments: BuyArgs) {
     const listing = await this.prisma.listing.findUnique({
       where: {
         nftAddress_canceledAt: {
@@ -118,11 +116,9 @@ export class AuctionHouseService {
     }
 
     const auctionHouse = await this.throttledFindOurAuctionHouse();
-
     return await constructInstantBuyTransaction(
       this.metaplex,
       auctionHouse,
-      buyer,
       buyArguments,
       listing,
     );

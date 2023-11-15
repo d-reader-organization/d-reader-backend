@@ -24,6 +24,8 @@ export const validateAndFormatParams = (
 };
 
 const validate = (param: InstantBuyParams) => {
+  if (!param.buyerAddress || !PublicKey.isOnCurve(param.buyerAddress))
+    throw new BadRequestException('Buyer Account must be a Solana address');
   if (!param.mintAccount || !PublicKey.isOnCurve(param.mintAccount))
     throw new BadRequestException('Mint Account must be a Solana address');
   if (!param.sellerAddress || !PublicKey.isOnCurve(param.sellerAddress))
@@ -34,6 +36,7 @@ const validate = (param: InstantBuyParams) => {
 
 const format = (param: InstantBuyParams): BuyArgs => {
   return {
+    buyer: new PublicKey(param.buyerAddress),
     mintAccount: new PublicKey(param.mintAccount),
     price: +param.price,
     seller: new PublicKey(param.sellerAddress),
