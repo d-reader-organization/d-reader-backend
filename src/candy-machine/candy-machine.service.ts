@@ -43,7 +43,7 @@ import {
   PUBLIC_GROUP_MINT_LIMIT_ID,
   MIN_MINT_PROTOCOL_FEE,
 } from '../constants';
-import { solFromLamports } from '../utils/helpers';
+import { sleep, solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
 import {
   findDefaultCover,
@@ -335,6 +335,7 @@ export class CandyMachineService {
         onChainName,
         rarityCoverFiles,
       );
+      await sleep(1000); // wait for data to update before refetching candymachine.
     } catch (e) {
       console.error(e);
     }
