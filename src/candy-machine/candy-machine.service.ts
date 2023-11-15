@@ -14,10 +14,8 @@ import { PrismaService } from 'nestjs-prisma';
 import {
   Metaplex,
   toBigNumber,
-  TransactionBuilder,
   DefaultCandyGuardSettings,
   CandyMachine,
-  JsonMetadata,
   getMerkleRoot,
   toDateTime,
   CreateCandyMachineInput,
@@ -32,7 +30,6 @@ import {
 } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
-import { chunk } from 'lodash';
 import {
   D_PUBLISHER_SYMBOL,
   HUNDRED,
@@ -44,7 +41,6 @@ import {
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
-  rateLimitQuota,
   MIN_MINT_PROTOCOL_FEE,
 } from '../constants';
 import { solFromLamports } from '../utils/helpers';
@@ -58,8 +54,9 @@ import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { GuardGroup, RarityCoverFiles } from '../types/shared';
 import {
   generatePropertyName,
-  uploadItemMetadata,
-} from '../utils/nft-metadata';
+  insertItems,
+  JsonMetadataCreators,
+} from '../utils/candy-machine';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
@@ -72,9 +69,6 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { pRateLimit } from 'p-ratelimit';
-
-type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
 @Injectable()
 export class CandyMachineService {
@@ -307,7 +301,7 @@ export class CandyMachineService {
       candyMachineKey,
     ]);
 
-    const candyMachine = await this.metaplex
+    let candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineKey.publicKey });
     if (shouldBePublic)
@@ -327,6 +321,24 @@ export class CandyMachineService {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       SYSVAR_SLOT_HASHES_PUBKEY,
     ]);
+    try {
+      await insertItems(
+        this.metaplex,
+        candyMachine,
+        comicIssue,
+        collectionNftAddress,
+        comicName,
+        royaltyWallets,
+        statelessCovers,
+        darkblockId,
+        supply,
+        onChainName,
+        rarityCoverFiles,
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    candyMachine = await this.metaplex.candyMachines().refresh(candyMachine);
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
@@ -336,7 +348,7 @@ export class CandyMachineService {
         itemsAvailable: candyMachine.itemsAvailable.toNumber(),
         itemsMinted: candyMachine.itemsMinted.toNumber(),
         itemsRemaining: candyMachine.itemsRemaining.toNumber(),
-        itemsLoaded: candyMachine.itemsLoaded, // TODO: this value should be loaded after inserting items?
+        itemsLoaded: candyMachine.itemsLoaded,
         isFullyLoaded: candyMachine.isFullyLoaded,
         supply,
         lookupTable,
@@ -357,53 +369,8 @@ export class CandyMachineService {
           : undefined,
       },
     });
-    const items = await uploadItemMetadata(
-      metaplex,
-      candyMachine.address,
-      comicIssue,
-      collectionNftAddress,
-      comicName,
-      royaltyWallets,
-      statelessCovers.length,
-      darkblockId,
-      supply,
-      onChainName,
-      rarityCoverFiles,
-    );
-
-    const INSERT_CHUNK_SIZE = 8;
-    const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
-    let index = 0;
-    const transactionBuilders: TransactionBuilder[] = [];
-    for (const itemsChunk of itemChunks) {
-      console.info(`Inserting items ${index}-${index + itemsChunk.length} `);
-      const transactionBuilder = this.metaplex
-        .candyMachines()
-        .builders()
-        .insertItems({
-          candyMachine,
-          index,
-          items: itemsChunk,
-        });
-      index += itemsChunk.length;
-      transactionBuilders.push(transactionBuilder);
-    }
-    const rateLimit = pRateLimit(rateLimitQuota);
-    for (const transactionBuilder of transactionBuilders) {
-      const latestBlockhash =
-        await this.metaplex.connection.getLatestBlockhash();
-      const transaction = transactionBuilder.toTransaction(latestBlockhash);
-      rateLimit(() => {
-        return sendAndConfirmTransaction(
-          this.metaplex.connection,
-          transaction,
-          [this.metaplex.identity()],
-        );
-      });
-    }
-
     this.heliusService.subscribeTo(candyMachine.address.toBase58());
-    return await this.metaplex.candyMachines().refresh(candyMachine);
+    return candyMachine;
   }
 
   async updateCandyMachine(
