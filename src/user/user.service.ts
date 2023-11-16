@@ -280,7 +280,7 @@ export class UserService {
     }
 
     let rewardedAt: Date = undefined;
-    // TODO: this should all be fixed up
+    // TODO v2:: this should all be fixed up
     if (
       !user.rewardedAt &&
       user.wallets.length &&

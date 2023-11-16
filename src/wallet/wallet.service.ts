@@ -20,7 +20,7 @@ import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { Prisma } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
-
+import { IndexedNft } from './dto/types';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -46,7 +46,7 @@ export class WalletService {
     }
   }
 
-  // TODO: this command should also give it's best to store the CM receipt in our db
+  // TODO v2: this command should also give it's best to update UNKNOWN's,price and CM.
   async syncWallet(address: string) {
     const findAllByOwnerResult = await this.metaplex
       .nfts()
@@ -83,18 +83,48 @@ export class WalletService {
       const nft = await this.prisma.nft.findFirst({
         where: { address: metadata.mintAddress.toString() },
       });
-
+      const candyMachine = this.findOurCandyMachine(candyMachines, metadata);
+      let indexedNft: IndexedNft;
       if (nft) {
-        this.reindexNft(metadata, collectionMetadata, address);
+        indexedNft = await this.reindexNft(
+          metadata,
+          collectionMetadata,
+          address,
+        );
       } else {
-        const candyMachine = this.findOurCandyMachine(candyMachines, metadata);
-        this.heliusService.indexNft(
+        indexedNft = await this.heliusService.indexNft(
           metadata,
           collectionMetadata,
           address,
           candyMachine,
         );
       }
+      const UNKNOWN = 'UNKOWN';
+      const userId: number = indexedNft.owner?.userId;
+      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+        nft: { connect: { address: indexedNft.address } },
+        candyMachine: { connect: { address: candyMachine } },
+        buyer: {
+          connectOrCreate: {
+            where: { address: indexedNft.ownerAddress },
+            create: { address: indexedNft.ownerAddress },
+          },
+        },
+        price: 0,
+        timestamp: new Date(),
+        description: `${indexedNft.address} minted ${metadata.name} for ${UNKNOWN} SOL.`,
+        splTokenAddress: UNKNOWN,
+        transactionSignature: UNKNOWN,
+        label: UNKNOWN,
+      };
+      if (userId) {
+        receiptData.user = {
+          connect: { id: userId },
+        };
+      }
+      await this.prisma.candyMachineReceipt.create({
+        data: receiptData,
+      });
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
   }
@@ -141,8 +171,11 @@ export class WalletService {
     collectionMetadata: JsonMetadata,
     walletAddress: string,
   ) {
-    await this.prisma.nft.update({
+    return await this.prisma.nft.update({
       where: { address: metadata.mintAddress.toString() },
+      include: {
+        owner: { select: { userId: true } },
+      },
       data: {
         // TODO v2: this should fetch the info on when the owner changed from chain
         ownerChangedAt: new Date(0),
