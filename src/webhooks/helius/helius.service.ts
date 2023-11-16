@@ -544,8 +544,7 @@ export class HeliusService {
     }
 
     const nft = await this.prisma.nft.create({
-      select: {
-        address: true,
+      include: {
         collectionNft: { select: { comicIssueId: true } },
         owner: { select: { userId: true } },
       },
@@ -577,7 +576,6 @@ export class HeliusService {
         },
       },
     });
-
     this.subscribeTo(metadata.mintAddress.toString());
     return nft;
   }
