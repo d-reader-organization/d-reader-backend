@@ -12,13 +12,14 @@ import * as FormData from 'form-data';
 import { DarkblockTraits } from './dto/types';
 import * as nacl from 'tweetnacl';
 import { GetObjectCommandOutput } from '@aws-sdk/client-s3';
-import { createHash } from 'crypto';
+import * as CryptoJS from 'crypto-js';
+import { s3Service } from '../aws/s3.service';
 
 @Injectable()
 export class DarkblockService {
   private readonly metaplex: Metaplex;
 
-  constructor() {
+  constructor(private readonly s3: s3Service) {
     this.metaplex = metaplex;
   }
 
@@ -66,6 +67,7 @@ export class DarkblockService {
   async addCollectionDarkblock(
     fileKey: string,
     description: string,
+    collectionAddress:string,
     collection: string,
     traits: DarkblockTraits[],
   ) {
@@ -99,7 +101,7 @@ export class DarkblockService {
       Object.entries(data).forEach((entry) => {
         form.append(entry[0], entry[1]);
       });
-
+      console.log(data);
       const response = await axios.post(
         `${DARKBLOCK_API}/darkblock/upgrade/collection?${query}`,
         form,
@@ -121,7 +123,9 @@ export class DarkblockService {
     traits: DarkblockTraits[],
   ) {
     const file = await getFileFromS3.Body.transformToByteArray();
-    const hash = createHash('sha256').update(file).digest('hex');
+    const wordArray = this.uint8ArrayToWordArray(file);
+    const hash = CryptoJS.SHA256(wordArray).toString();
+    console.log(hash);
     let formattedTraits: string = '';
     traits.forEach((trait, index) => {
       formattedTraits += trait.name + '=' + trait.value;
@@ -137,6 +141,55 @@ export class DarkblockService {
       payload,
       this.metaplex.identity().secretKey,
     );
-    return Buffer.from(signature).toString('base64');
+    return btoa(
+      String.fromCharCode.apply(null,signature)
+    );
   }
+
+  async getSHA256OfFileChunks(fileKey: string): Promise<string> {
+    let SHA256 = CryptoJS.algo.SHA256.create();
+    let counter = 0;
+
+    return new Promise(async(resolve, reject) => {
+      try {
+        // Fetch file from S3
+        const getFileFromS3 = (await (this.s3.getObject({ Key: fileKey }))).Body.transformToWebStream();
+
+        // Closure to capture the file information
+        const callbackProgress = (data: Buffer) => {
+          let wordBuffer = this.uint8ArrayToWordArray(data);
+          SHA256.update(wordBuffer);
+          counter += data.length;
+        };
+
+        const callbackFinal = () => {
+          let encrypted = SHA256.finalize().toString();
+          resolve(encrypted);
+        };
+
+        // Attach event handlers to the stream
+        getFileFromS3
+        // @ts-ignore
+          .on('data', callbackProgress)
+          .on('end', callbackFinal)
+          .on('error', (error) => {
+            reject(error);
+          });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+ uint8ArrayToWordArray(uint8Array: Uint8Array) {
+  const words = [];
+  for (let i = 0; i < uint8Array.length; i += 4) {
+    let word = 0;
+    for (let j = 0; j < 4; j++) {
+      word += uint8Array[i + j] << (8 * (3 - j));
+    }
+    words.push(word >>> 0); // Ensure it's an unsigned 32-bit integer
+  }
+  return CryptoJS.lib.WordArray.create(words, uint8Array.length);
+}
 }

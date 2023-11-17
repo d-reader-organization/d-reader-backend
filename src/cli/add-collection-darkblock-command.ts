@@ -44,6 +44,7 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
       const response = await this.darkblockService.addCollectionDarkblock(
         issue.pdf,
         issue.description,
+        issue.collectionNft.address,
         issue.collectionNft.name,
         [{ name: 'used', value: 'true' }],
       );
