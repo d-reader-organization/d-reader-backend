@@ -5,6 +5,7 @@ import { DarkblockService } from '../candy-machine/darkblock.service';
 
 interface Options {
   comicIssueId: number;
+  fileHash: string;
 }
 
 @Command({
@@ -31,7 +32,7 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
   addCollectionDarkblock = async (options: Options) => {
     log('\n🏗️  add darkblock for used nfts in the collection');
     try {
-      const { comicIssueId } = options;
+      const { comicIssueId, fileHash } = options;
       const issue = await this.prisma.comicIssue.findUnique({
         where: { id: comicIssueId },
         include: { collectionNft: true },
@@ -43,8 +44,9 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
       }
       const response = await this.darkblockService.addCollectionDarkblock(
         issue.pdf,
+        fileHash,
         issue.description,
-        issue.collectionNft.name,
+        issue.collectionNft.address,
         [{ name: 'used', value: 'true' }],
       );
       console.log(`Darkblock added succesfully ${response}`);

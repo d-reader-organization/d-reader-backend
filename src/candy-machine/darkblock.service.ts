@@ -11,14 +11,12 @@ import axios from 'axios';
 import * as FormData from 'form-data';
 import { DarkblockTraits } from './dto/types';
 import * as nacl from 'tweetnacl';
-import { GetObjectCommandOutput } from '@aws-sdk/client-s3';
-import { createHash } from 'crypto';
-
+import { s3Service } from '../aws/s3.service';
 @Injectable()
 export class DarkblockService {
   private readonly metaplex: Metaplex;
 
-  constructor() {
+  constructor(private readonly s3: s3Service) {
     this.metaplex = metaplex;
   }
 
@@ -62,9 +60,10 @@ export class DarkblockService {
     }
   }
 
-  // TODO: Fix darkblock 502 error response issue
+  // TODO v2: Correctly Hash file with SHA256
   async addCollectionDarkblock(
     fileKey: string,
+    fileHash: string,
     description: string,
     collection: string,
     traits: DarkblockTraits[],
@@ -81,10 +80,10 @@ export class DarkblockService {
       const nftPlatform =
         process.env.SOLANA_CLUSTER === 'devnet' ? 'Solana-Devnet' : 'Solana';
       const darkblock_signature = await this.createCollectionSignature(
-        getFileFromS3,
         collection,
         nftPlatform,
         traits,
+        fileHash,
       );
       const data = {
         file: getFileFromS3.Body,
@@ -99,7 +98,6 @@ export class DarkblockService {
       Object.entries(data).forEach((entry) => {
         form.append(entry[0], entry[1]);
       });
-
       const response = await axios.post(
         `${DARKBLOCK_API}/darkblock/upgrade/collection?${query}`,
         form,
@@ -115,13 +113,11 @@ export class DarkblockService {
   }
 
   async createCollectionSignature(
-    getFileFromS3: GetObjectCommandOutput,
     collection: string,
     nftPlatform: string,
     traits: DarkblockTraits[],
+    fileHash: string,
   ) {
-    const file = await getFileFromS3.Body.transformToByteArray();
-    const hash = createHash('sha256').update(file).digest('hex');
     let formattedTraits: string = '';
     traits.forEach((trait, index) => {
       formattedTraits += trait.name + '=' + trait.value;
@@ -130,13 +126,19 @@ export class DarkblockService {
       }
     });
     const encoder = new TextEncoder();
+    const message =
+      'You are interacting with the Darkblock Protocol.\n\nAttention: You are attempting to upgrade an entire NFT collection!\n\nPlease sign to continue.\n\nThis request will not trigger a blockchain transaction or cost any fee.\nAuthentication Token: ';
     const payload = encoder.encode(
-      nftPlatform.concat(hash, collection, formattedTraits),
+      message.concat(nftPlatform, fileHash, collection, formattedTraits),
+    );
+    console.log(
+      'Payload to sign: ',
+      message.concat(nftPlatform, fileHash, collection, formattedTraits),
     );
     const signature = nacl.sign.detached(
       payload,
       this.metaplex.identity().secretKey,
     );
-    return Buffer.from(signature).toString('base64');
+    return btoa(String.fromCharCode.apply(null, signature));
   }
 }

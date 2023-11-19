@@ -10,4 +10,14 @@ export class AddCollectionDarkblockQuestion {
   parseComicIssueId(id: string): number {
     return +id;
   }
+
+  @Question({
+    type: 'input',
+    name: 'fileHash',
+    message:
+      'SHA256 hash of the file to be attached. You can hash your file here: https://random-crap-public.s3.amazonaws.com/standalone_upgrader.html',
+  })
+  parseFileHash(fileHash: string): string {
+    return fileHash;
+  }
 }
