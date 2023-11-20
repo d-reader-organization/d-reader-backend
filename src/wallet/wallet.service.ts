@@ -99,6 +99,7 @@ export class WalletService {
           candyMachine,
         );
       }
+
       const UNKNOWN = 'UNKOWN';
       const userId: number = indexedNft.owner?.userId;
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
@@ -117,10 +118,9 @@ export class WalletService {
         transactionSignature: UNKNOWN,
         label: UNKNOWN,
       };
+
       if (userId) {
-        receiptData.user = {
-          connect: { id: userId },
-        };
+        receiptData.user = { connect: { id: userId } };
       }
       await this.prisma.candyMachineReceipt.create({
         data: receiptData,
@@ -173,9 +173,7 @@ export class WalletService {
   ) {
     return await this.prisma.nft.update({
       where: { address: metadata.mintAddress.toString() },
-      include: {
-        owner: { select: { userId: true } },
-      },
+      include: { owner: { select: { userId: true } } },
       data: {
         // TODO v2: this should fetch the info on when the owner changed from chain
         ownerChangedAt: new Date(0),

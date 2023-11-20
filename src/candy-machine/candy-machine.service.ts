@@ -213,6 +213,7 @@ export class CandyMachineService {
         share: wallet.share,
       }),
     );
+
     const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
       guardParams;
 
@@ -224,6 +225,7 @@ export class CandyMachineService {
       new PublicKey(creatorBackupAddress),
       supply,
     );
+
     const groups: {
       label: string;
       guards: Partial<DefaultCandyGuardSettings>;
@@ -243,16 +245,13 @@ export class CandyMachineService {
         },
       },
     ];
+
     if (!!shouldBePublic) {
       groups.push({
         label: PUBLIC_GROUP_LABEL,
         guards: {
-          startDate: {
-            date: toDateTime(startDate),
-          },
-          endDate: {
-            date: toDateTime(endDate),
-          },
+          startDate: { date: toDateTime(startDate) },
+          endDate: { date: toDateTime(endDate) },
           freezeSolPayment: {
             amount: solFromLamports(mintPrice),
             destination: this.metaplex.identity().publicKey,
@@ -266,7 +265,8 @@ export class CandyMachineService {
         },
       });
     }
-    const candyMachineTx = await constructCandyMachineTransaction(
+
+    const candyMachineTransaction = await constructCandyMachineTransaction(
       this.metaplex,
       {
         candyMachine: candyMachineKey,
@@ -296,21 +296,26 @@ export class CandyMachineService {
         ],
       },
     );
-    await sendAndConfirmTransaction(metaplex.connection, candyMachineTx, [
-      metaplex.identity(),
-      candyMachineKey,
-    ]);
+
+    await sendAndConfirmTransaction(
+      metaplex.connection,
+      candyMachineTransaction,
+      [metaplex.identity(), candyMachineKey],
+    );
 
     let candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineKey.publicKey });
-    if (shouldBePublic)
+    if (shouldBePublic) {
       await this.initializeGuardAccounts(candyMachine, freezePeriod);
+    }
+
     const authorityPda = this.metaplex
       .candyMachines()
       .pdas()
       .authority({ candyMachine: candyMachine.address })
       .toString();
+
     const lookupTable = await createLookupTable(metaplex, [
       candyMachine.address,
       metaplex.identity().publicKey,
@@ -321,6 +326,7 @@ export class CandyMachineService {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       SYSVAR_SLOT_HASHES_PUBKEY,
     ]);
+
     try {
       await insertItems(
         this.metaplex,
@@ -339,6 +345,7 @@ export class CandyMachineService {
     } catch (e) {
       console.error(e);
     }
+
     candyMachine = await this.metaplex.candyMachines().refresh(candyMachine);
     await this.prisma.candyMachine.create({
       data: {
