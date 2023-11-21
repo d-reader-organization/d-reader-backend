@@ -5,14 +5,14 @@ import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { CreatorTransactionService } from '../creator/creator-transaction.service';
+import { TransactionService } from './transaction.service';
 
 @Module({
   controllers: [TransactionController],
   providers: [
     CandyMachineService,
     AuctionHouseService,
-    CreatorTransactionService,
+    TransactionService,
     HeliusService,
     DarkblockService,
     WebSocketGateway,

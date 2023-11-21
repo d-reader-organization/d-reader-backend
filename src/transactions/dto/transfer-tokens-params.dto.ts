@@ -2,12 +2,12 @@ import { IsNumber, IsOptional, Min } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { TransformStringToNumber } from '../../utils/transform';
 
-export class CreatorTipParams {
+export class TransferTokensParams {
   @IsSolanaAddress()
-  user: string;
+  senderAddress: string;
 
   @IsSolanaAddress()
-  tippingAddress: string;
+  receiverAddress: string;
 
   @TransformStringToNumber()
   @IsNumber()
@@ -16,5 +16,5 @@ export class CreatorTipParams {
 
   @IsOptional()
   @IsSolanaAddress()
-  mint?: string;
+  tokenAddress?: string;
 }
