@@ -2,30 +2,30 @@ import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { Transaction, PublicKey, SystemProgram } from '@solana/web3.js';
 import { metaplex } from '../utils/metaplex';
 
-export class CreatorTransactionService {
+export class TransactionService {
   private readonly metaplex: Metaplex;
   constructor() {
     this.metaplex = metaplex;
   }
 
-  async createTippingTransaction(
-    user: PublicKey,
-    tippingAddress: PublicKey,
+  async createTransferTransaction(
+    senderAddress: PublicKey,
+    receiverAddress: PublicKey,
     amount: number,
-    mint: PublicKey,
+    tokenAddress: PublicKey,
   ) {
-    if (!mint.equals(WRAPPED_SOL_MINT)) {
+    if (!tokenAddress.equals(WRAPPED_SOL_MINT)) {
       throw new Error('Unsupported tipping currency !');
     }
 
     const instruction = SystemProgram.transfer({
-      fromPubkey: user,
-      toPubkey: tippingAddress,
+      fromPubkey: senderAddress,
+      toPubkey: receiverAddress,
       lamports: amount,
     });
     const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
     const transaction = new Transaction({
-      feePayer: user,
+      feePayer: senderAddress,
       ...latestBlockhash,
     }).add(instruction);
     const rawTransaction = transaction.serialize({
