@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Creator } from '@prisma/client';
 import { WebhookClient } from 'discord.js';
 import config from '../../configs/config';
 import { CREATOR_REGISTERED } from './templates/creatorRegistered';
 import { MessagePayload } from 'discord.js';
 import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
-import { CreatorFiles } from './dto/types';
-import { CREATOR_VERIFIED } from './templates/creatorVerified';
+import { CreatorFile } from './dto/types';
+import { validateEnvironment } from '../../utils/discord';
 
 @Injectable()
 export class DiscordService {
@@ -25,25 +25,38 @@ export class DiscordService {
       this.discord.options,
     );
   }
-  async notifyCreatorRegistration(creator: Prisma.CreatorCreateInput) {
+
+  async notifyCreatorRegistration(creator: Creator) {
     try {
+      if (!validateEnvironment()) return;
       await this.discord.send(
         CREATOR_REGISTERED(creator, this.apiUrl, this.payload),
       );
-    } catch (e) {}
+    } catch (e) {
+      console.log('Error sending notification for creator registration', e);
+    }
   }
 
-  async notifyCreatorFilesUpdate(name: string, files: CreatorFiles) {
+  async notifyCreatorFilesUpdate(name: string, files: CreatorFile[]) {
     try {
+      if (!validateEnvironment()) return;
       await this.discord.send(CREATOR_FILES_UPDATED(name, this.payload, files));
-    } catch (e) {}
+    } catch (e) {
+      console.log('Error sending notification for creator file updates', e);
+    }
   }
 
-  async notifyCreatorEmailVerification(creator: Prisma.CreatorCreateInput) {
+  async notifyCreatorEmailVerification(creator: Creator) {
     try {
+      if (!validateEnvironment()) return;
       await this.discord.send(
-        CREATOR_VERIFIED(creator, this.apiUrl, this.payload),
+        `Creator ${creator.name} (${creator.email}) has verified their email address!`,
       );
-    } catch (e) {}
+    } catch (e) {
+      console.log(
+        "Error sending notification for creator's email verification",
+        e,
+      );
+    }
   }
 }

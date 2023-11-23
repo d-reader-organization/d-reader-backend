@@ -1,8 +1,9 @@
-import { Prisma } from '@prisma/client';
+import { Creator } from '@prisma/client';
 import { MessagePayload } from 'discord.js';
+import { format } from 'date-fns';
 
 export const CREATOR_REGISTERED = (
-  creator: Prisma.CreatorCreateInput,
+  creator: Creator,
   apiUrl: string,
   payload: MessagePayload,
 ): MessagePayload => {
@@ -24,8 +25,8 @@ export const CREATOR_REGISTERED = (
             inline: false,
           },
           {
-            name: 'Registration Time',
-            value: creator.createdAt.toString(),
+            name: 'Registered on',
+            value: format(creator.createdAt, 'dd-MM-yyyy'),
             inline: false,
           },
         ],

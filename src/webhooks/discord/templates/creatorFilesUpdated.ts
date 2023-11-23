@@ -1,14 +1,18 @@
 import { MessagePayload, APIEmbed } from 'discord.js';
 import { getPublicUrl } from '../../../aws/s3client';
-import { CreatorFiles } from '../dto/types';
+import { CreatorFile } from '../dto/types';
+import { findCreatorFile } from 'src/utils/discord';
 
 export const CREATOR_FILES_UPDATED = (
   name: string,
   payload: MessagePayload,
-  files: CreatorFiles,
+  files: CreatorFile[],
 ): MessagePayload => {
-  const { avatar, banner, logo } = files;
+  const avatar = findCreatorFile(files, 'avatar');
+  const banner = findCreatorFile(files, 'banner');
+  const logo = findCreatorFile(files, 'logo');
   const embeds: APIEmbed[] = [];
+
   if (avatar) {
     embeds.push({
       title: 'Avatar',
@@ -16,6 +20,7 @@ export const CREATOR_FILES_UPDATED = (
       image: { url: getPublicUrl(avatar) },
     });
   }
+
   if (banner) {
     embeds.push({
       title: 'Banner',
@@ -23,6 +28,7 @@ export const CREATOR_FILES_UPDATED = (
       image: { url: getPublicUrl(banner) },
     });
   }
+
   if (logo) {
     embeds.push({
       title: 'Logo',
@@ -30,6 +36,7 @@ export const CREATOR_FILES_UPDATED = (
       image: { url: getPublicUrl(logo) },
     });
   }
+
   payload.body = {
     content: `Creator "${name}" has updated their files`,
     embeds,
