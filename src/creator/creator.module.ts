@@ -7,6 +7,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { WalletModule } from '../wallet/wallet.module';
+import { DiscordService } from '../webhooks/discord/discord.service';
 
 @Module({
   imports: [WalletModule],
@@ -18,6 +19,7 @@ import { WalletModule } from '../wallet/wallet.module';
     MailService,
     AuthService,
     JwtService,
+    DiscordService,
   ],
 })
 export class CreatorModule {}

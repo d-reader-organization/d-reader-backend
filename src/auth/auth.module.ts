@@ -15,6 +15,7 @@ import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
 import { MailModule } from '../mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
+import { DiscordService } from '../webhooks/discord/discord.service';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { WalletModule } from '../wallet/wallet.module';
     UserService,
     CreatorService,
     UserCreatorService,
+    DiscordService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })
