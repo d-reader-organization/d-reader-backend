@@ -13,15 +13,14 @@ export class DiscordService {
   private readonly payload: MessagePayload;
 
   constructor() {
-    if (process.env.DISCORD_WEBHOOK_URL) {
-      this.discord = new WebhookClient({
-        url: process.env.DISCORD_WEBHOOK_URL,
-      });
-    } else {
+    this.apiUrl = config().client.dPublisherUrl;
+
+    if (!process.env.DISCORD_WEBHOOK_URL) {
       console.warn('DISCORD_WEBHOOK_URL is undefined');
+      return;
     }
 
-    this.apiUrl = config().client.dPublisherUrl;
+    this.discord = new WebhookClient({ url: process.env.DISCORD_WEBHOOK_URL });
     this.payload = new MessagePayload(
       this.discord.client,
       this.discord.options,
