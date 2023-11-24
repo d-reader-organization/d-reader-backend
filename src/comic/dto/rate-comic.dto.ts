@@ -1,10 +1,6 @@
-import { IsInt, Max, Min } from 'class-validator';
+import { IsIntRange } from '../../decorators/IsIntRange';
 
 export class RateComicDto {
-  // TODO v2: Max should be 10
-  // add IsStarRating() decorator
-  @Min(1)
-  @Max(5)
-  @IsInt()
+  @IsIntRange(1, 5)
   rating: number;
 }

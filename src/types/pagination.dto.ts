@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Max, Min } from 'class-validator';
+import { Min } from 'class-validator';
 import { TransformStringToNumber } from '../utils/transform';
+import { IsIntRange } from 'src/decorators/IsIntRange';
 
 export class Pagination {
   @Min(0)
@@ -8,8 +9,7 @@ export class Pagination {
   @ApiProperty({ default: 0 })
   skip: number;
 
-  @Min(1)
-  @Max(20)
+  @IsIntRange(1, 20)
   @TransformStringToNumber()
   @ApiProperty({ default: 20 })
   take: number;

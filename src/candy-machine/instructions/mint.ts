@@ -274,67 +274,64 @@ export async function constructMintOneTransaction(
   lookupTable?: string,
   nftGateMint?: PublicKey,
 ) {
-  try {
-    const mint = Keypair.generate();
-    const candyMachine = await metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
+  const mint = Keypair.generate();
+  const candyMachine = await metaplex
+    .candyMachines()
+    .findByAddress({ address: candyMachineAddress });
 
-    const remainingAccounts = getRemainingAccounts(metaplex, {
+  const remainingAccounts = getRemainingAccounts(metaplex, {
+    candyMachine,
+    feePayer,
+    mint: mint.publicKey,
+    label,
+    nftGateMint,
+    allowList,
+  });
+  const mintInstructions = await constructMintInstruction(
+    metaplex,
+    candyMachine.address,
+    feePayer,
+    mint,
+    metaplex.connection,
+    remainingAccounts,
+    undefined,
+    label,
+  );
+
+  const group = candyMachine.candyGuard.groups.find(
+    (group) => group.label === label,
+  );
+  const rawTransactions: string[] = [];
+  if (allowList) {
+    const routeTransaction = await constructAllowListRouteTransaction(
+      metaplex,
       candyMachine,
       feePayer,
-      mint: mint.publicKey,
       label,
-      nftGateMint,
+      group.guards.allowList.merkleRoot,
       allowList,
-    });
-    const mintInstructions = await constructMintInstruction(
-      metaplex,
-      candyMachine.address,
-      feePayer,
-      mint,
-      metaplex.connection,
-      remainingAccounts,
-      undefined,
-      label,
     );
-
-    const group = candyMachine.candyGuard.groups.find(
-      (group) => group.label === label,
-    );
-    const rawTransactions: string[] = [];
-    if (allowList) {
-      const routeTransaction = await constructAllowListRouteTransaction(
-        metaplex,
-        candyMachine,
-        feePayer,
-        label,
-        group.guards.allowList.merkleRoot,
-        allowList,
-      );
-      if (routeTransaction) rawTransactions.push(routeTransaction);
-    }
-    let lookupTableAccount: RpcResponseAndContext<AddressLookupTableAccount>;
-    if (lookupTable) {
-      lookupTableAccount = await metaplex.connection.getAddressLookupTable(
-        new PublicKey(lookupTable),
-      );
-    }
-    const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-    const mintTransaction = new TransactionMessage({
-      payerKey: feePayer,
-      recentBlockhash: latestBlockhash.blockhash,
-      instructions: mintInstructions,
-    }).compileToV0Message(lookupTableAccount ? [lookupTableAccount.value] : []);
-    const mintTransactionV0 = new VersionedTransaction(mintTransaction);
-    mintTransactionV0.sign([mint]);
-
-    const rawTransaction = Buffer.from(mintTransactionV0.serialize());
-    rawTransactions.push(rawTransaction.toString('base64'));
-    return rawTransactions;
-  } catch (e) {
-    console.log(e);
+    if (routeTransaction) rawTransactions.push(routeTransaction);
   }
+  let lookupTableAccount: RpcResponseAndContext<AddressLookupTableAccount>;
+  if (lookupTable) {
+    lookupTableAccount = await metaplex.connection.getAddressLookupTable(
+      new PublicKey(lookupTable),
+    );
+  }
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  const mintTransaction = new TransactionMessage({
+    payerKey: feePayer,
+    recentBlockhash: latestBlockhash.blockhash,
+    instructions: mintInstructions,
+  }).compileToV0Message(lookupTableAccount ? [lookupTableAccount.value] : []);
+  const mintTransactionV0 = new VersionedTransaction(mintTransaction);
+  mintTransactionV0.sign([mint]);
+
+  const rawTransaction = Buffer.from(mintTransactionV0.serialize());
+  rawTransactions.push(rawTransaction.toString('base64'));
+
+  return rawTransactions;
 }
 
 function getMintLimitAccounts(

@@ -16,7 +16,7 @@ import { CreatorStats } from 'src/comic/types/creator-stats';
 import { Creator, Genre } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
-import { UserCreatorMyStatsDto } from 'src/creator/types/user-creator-my-stats.dto';
+import { UserCreatorMyStatsDto } from 'src/creator/dto/types';
 import { UserCreatorStatsDto } from './user-creator.dto';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';

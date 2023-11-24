@@ -84,7 +84,7 @@ const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
 const heliusService = new HeliusService(prismaService, webSocketGateway);
 const comicPageService = new ComicPageService(s3, prismaService);
-const darkblockService = new DarkblockService();
+const darkblockService = new DarkblockService(s3);
 const candyMachineService = new CandyMachineService(
   prismaService,
   heliusService,

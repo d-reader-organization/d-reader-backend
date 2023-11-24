@@ -1,7 +1,8 @@
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Min } from 'class-validator';
 import { ComicStats } from '../types/comic-stats';
-import { round } from 'lodash';
 import { plainToInstance } from 'class-transformer';
+import { IsNumberRange } from '../../decorators/IsNumberRange';
+import { round } from 'lodash';
 
 export class ComicStatsDto {
   @Min(0)
@@ -12,8 +13,7 @@ export class ComicStatsDto {
   @IsInt()
   ratersCount: number;
 
-  @Min(1)
-  @Max(5)
+  @IsNumberRange(1, 5)
   @IsOptional()
   averageRating: number | null;
 

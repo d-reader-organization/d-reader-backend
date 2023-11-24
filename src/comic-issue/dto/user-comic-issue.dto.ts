@@ -1,10 +1,10 @@
 import { UserComicIssue } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsBoolean, IsDate, IsOptional, Max, Min } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional } from 'class-validator';
+import { IsNumberRange } from '../../decorators/IsNumberRange';
 
 export class UserComicIssueDto {
-  @Min(1)
-  @Max(5)
+  @IsNumberRange(1, 5)
   @IsOptional()
   rating: number | null;
 

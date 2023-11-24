@@ -38,6 +38,7 @@ export class TransactionController {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
     const label = query.label ?? PUBLIC_GROUP_LABEL;
+
     return await this.candyMachineService.createMintOneTransaction(
       publicKey,
       candyMachineAddress,

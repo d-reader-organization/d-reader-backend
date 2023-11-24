@@ -14,7 +14,6 @@ import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
-import { PickFields } from '../types/shared';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
 import { getRandomFloatOrInt, sleep } from '../utils/helpers';
@@ -30,9 +29,11 @@ import { isEmail } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { DiscordService } from '../webhooks/discord/discord.service';
+import { CreatorFile } from '../webhooks/discord/dto/types';
+import { CreatorFileProperty } from './dto/types';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
-type CreatorFileProperty = PickFields<Creator, 'avatar' | 'banner' | 'logo'>;
 
 @Injectable()
 export class CreatorService {
@@ -43,6 +44,7 @@ export class CreatorService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
+    private readonly discordService: DiscordService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -62,8 +64,8 @@ export class CreatorService {
     const creator = await this.prisma.creator.create({
       data: { name, email, password: hashedPassword, slug },
     });
-
     this.mailService.creatorRegistered(creator);
+    this.discordService.notifyCreatorRegistration(creator);
     return creator;
   }
 
@@ -246,6 +248,7 @@ export class CreatorService {
       throw new BadRequestException('Email already verified');
     }
 
+    this.discordService.notifyCreatorEmailVerification(creator);
     return await this.prisma.creator.update({
       where: { email },
       data: { emailVerifiedAt: new Date() },
@@ -312,6 +315,12 @@ export class CreatorService {
         newFileKeys.push(logoKey);
         oldFileKeys.push(creator.logo);
       }
+      const creatorFiles: CreatorFile[] = [
+        { type: 'avatar', value: avatarKey },
+        { type: 'banner', value: bannerKey },
+        { type: 'logo', value: logoKey },
+      ];
+      this.discordService.notifyCreatorFilesUpdate(creator.name, creatorFiles);
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException('Malformed file upload');
@@ -355,7 +364,10 @@ export class CreatorService {
       throw new BadRequestException('Malformed file upload');
     }
 
+    const creatorFiles: CreatorFile[] = [{ type: field, value: newFileKey }];
+    this.discordService.notifyCreatorFilesUpdate(creator.name, creatorFiles);
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
+
     return creator;
   }
 

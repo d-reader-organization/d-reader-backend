@@ -55,7 +55,7 @@ export class DarkblockService {
 
       return response.data.tx_id;
     } catch (e) {
-      console.log(e);
+      console.error('Error while minting a Darkblock: ', e);
       throw new InternalServerErrorException('Failed to mint a Darkblock', e);
     }
   }
@@ -104,7 +104,7 @@ export class DarkblockService {
       );
       return response.data.tx_id;
     } catch (e) {
-      console.log(e);
+      console.error('Failed to add a Darkblock for collection: ', e);
       throw new InternalServerErrorException(
         'Failed to add a Darkblock for collection',
         e,
@@ -129,10 +129,6 @@ export class DarkblockService {
     const message =
       'You are interacting with the Darkblock Protocol.\n\nAttention: You are attempting to upgrade an entire NFT collection!\n\nPlease sign to continue.\n\nThis request will not trigger a blockchain transaction or cost any fee.\nAuthentication Token: ';
     const payload = encoder.encode(
-      message.concat(nftPlatform, fileHash, collection, formattedTraits),
-    );
-    console.log(
-      'Payload to sign: ',
       message.concat(nftPlatform, fileHash, collection, formattedTraits),
     );
     const signature = nacl.sign.detached(

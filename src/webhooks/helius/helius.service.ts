@@ -119,7 +119,7 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
-            console.log('Unhandled webhook', JSON.stringify(transaction));
+            console.error('Unhandled webhook', JSON.stringify(transaction));
         }
       }),
     );
@@ -162,7 +162,7 @@ export class HeliusService {
       });
       this.websocketGateway.handleWalletNftUsed(nft);
     } catch (e) {
-      console.log(e);
+      console.error('Failed to handle comic state update', e);
     }
   }
 
@@ -219,7 +219,7 @@ export class HeliusService {
       });
       this.websocketGateway.handleWalletNftBought(nft.ownerAddress, nft);
     } catch (e) {
-      console.log('Failed to handle instant buy', e);
+      console.error('Failed to handle instant buy', e);
     }
   }
 
@@ -252,7 +252,7 @@ export class HeliusService {
           listing.nft,
         );
     } catch (e) {
-      console.log('Failed to handle cancel listing', e);
+      console.error('Failed to handle cancel listing', e);
     }
   }
 
@@ -308,7 +308,7 @@ export class HeliusService {
       });
       this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
     } catch (e) {
-      console.log('Failed to handle NFT listing', e);
+      console.error('Failed to handle NFT listing', e);
     }
   }
 
@@ -362,7 +362,7 @@ export class HeliusService {
       this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
       this.websocketGateway.handleWalletNftSent(previousOwner, nft);
     } catch (e) {
-      console.log('Failed to handle NFT transfer', e);
+      console.error('Failed to handle NFT transfer', e);
     }
   }
 
