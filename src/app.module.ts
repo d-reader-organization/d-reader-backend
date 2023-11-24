@@ -27,6 +27,7 @@ import { NftModule } from './nft/nft.module';
 import { s3Module } from './aws/s3.module';
 import config from './configs/config';
 import { SettingsModule } from './settings/settings.module';
+import { DiscordModule } from './webhooks/discord/discord.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { SettingsModule } from './settings/settings.module';
     s3Module,
     UserModule,
     SettingsModule,
+    DiscordModule,
   ],
   controllers: [AppController],
   providers: [AppService],

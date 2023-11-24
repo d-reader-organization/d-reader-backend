@@ -17,7 +17,7 @@ import {
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { FREE_MINT_GROUP_LABEL, SAGA_COLLECTION_ADDRESS } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Prisma } from '@prisma/client';
+import { Nft, Prisma } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
 import { IndexedNft } from './dto/types';
@@ -46,7 +46,11 @@ export class WalletService {
     }
   }
 
-  // TODO v2: this command should also give it's best to update UNKNOWN's,price and CM.
+  doesWalletIndexCorrectly(metadata: Metadata, nfts: Nft[]) {
+    return nfts.find((nft) => nft.address === metadata.mintAddress.toString());
+  }
+
+  // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
     const findAllByOwnerResult = await this.metaplex
       .nfts()
@@ -60,23 +64,15 @@ export class WalletService {
       select: { address: true },
     });
 
-    function doesWalletIndexCorrectly(metadata: Metadata) {
-      return nfts.find(
-        (nft) => nft.address === metadata.mintAddress.toString(),
-      );
-    }
     const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
-    let unsyncedMetadatas: Metadata<JsonMetadata<string>>[];
-    try {
-      unsyncedMetadatas = onChainMetadatas.filter((metadata) => {
-        return (
-          this.findOurCandyMachine(candyMachines, metadata) &&
-          !doesWalletIndexCorrectly(metadata)
-        );
-      });
-    } catch (e) {
-      console.log(e);
-    }
+
+    const unsyncedMetadatas = onChainMetadatas.filter((metadata) => {
+      return (
+        this.findOurCandyMachine(candyMachines, metadata) &&
+        !this.doesWalletIndexCorrectly(metadata, nfts)
+      );
+    });
+
     for (const metadata of unsyncedMetadatas) {
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
 
@@ -84,6 +80,7 @@ export class WalletService {
         where: { address: metadata.mintAddress.toString() },
       });
       const candyMachine = this.findOurCandyMachine(candyMachines, metadata);
+
       let indexedNft: IndexedNft;
       if (nft) {
         indexedNft = await this.reindexNft(
@@ -102,6 +99,7 @@ export class WalletService {
 
       const UNKNOWN = 'UNKOWN';
       const userId: number = indexedNft.owner?.userId;
+
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
         nft: { connect: { address: indexedNft.address } },
         candyMachine: { connect: { address: candyMachine } },
@@ -122,9 +120,16 @@ export class WalletService {
       if (userId) {
         receiptData.user = { connect: { id: userId } };
       }
+
       await this.prisma.candyMachineReceipt.create({
         data: receiptData,
       });
+
+      // TODO: I wonder if this would have the same effect as lines 120-126
+      // await this.prisma.candyMachineReceipt.create({
+      //   data: { ...receiptData, user: { connect: { id: userId } } },
+      // });
+
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
   }

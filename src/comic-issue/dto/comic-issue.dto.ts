@@ -8,8 +8,6 @@ import {
   IsPositive,
   IsString,
   IsUrl,
-  Max,
-  Min,
 } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
@@ -55,6 +53,7 @@ import {
 } from 'src/comic/dto/partial-comic.dto';
 import { ifDefined } from 'src/utils/lodash';
 import { With } from 'src/types/shared';
+import { IsNumberRange } from 'src/decorators/IsNumberRange';
 
 export class ComicIssueDto {
   @IsPositive()
@@ -63,8 +62,7 @@ export class ComicIssueDto {
   @IsPositive()
   number: number;
 
-  @Min(0)
-  @Max(1)
+  @IsNumberRange(0, 1)
   sellerFee: number;
 
   @IsNotEmpty()

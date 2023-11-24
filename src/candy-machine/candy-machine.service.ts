@@ -420,6 +420,7 @@ export class CandyMachineService {
       await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
     this.validateBalanceForMint(mintPrice, balance);
+
     return await constructMintOneTransaction(
       this.metaplex,
       feePayer,
