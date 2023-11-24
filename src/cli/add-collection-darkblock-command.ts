@@ -49,7 +49,7 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
         issue.collectionNft.address,
         [{ name: 'used', value: 'true' }],
       );
-      console.log(`Darkblock added succesfully ${response}`);
+      log(`Darkblock added succesfully ${response}`);
     } catch (error) {
       logErr(`Error : ${error}`);
     }

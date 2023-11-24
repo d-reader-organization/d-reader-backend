@@ -1,15 +1,13 @@
 import { RoyaltyWallet } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsInt, Max, Min } from 'class-validator';
+import { IsIntRange } from 'src/decorators/IsIntRange';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class RoyaltyWalletDto {
   @IsSolanaAddress()
   address: string;
 
-  @Min(0)
-  @Max(100)
-  @IsInt()
+  @IsIntRange(1, 100)
   share: number;
 }
 
