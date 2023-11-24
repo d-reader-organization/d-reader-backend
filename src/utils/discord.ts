@@ -10,4 +10,4 @@ export const findCreatorFile = (
 };
 
 export const validateEnvironment = () =>
-  process.env.AWS_BUCKET_NAME == 'd-reader-main-mainnet';
+  process.env.DISCORD_CLIENT_ID && process.env.DISCORD_WEBHOOK_TOKEN;

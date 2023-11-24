@@ -15,45 +15,47 @@ export class DiscordService {
   private readonly payload: MessagePayload;
 
   constructor() {
-    this.discord = new WebhookClient({
-      id: process.env.DISCORD_CLIENT_ID,
-      token: process.env.DISCORD_WEBHOOK_TOKEN,
-    });
-    this.apiUrl = config().client.dPublisherUrl;
-    this.payload = new MessagePayload(
-      this.discord.client,
-      this.discord.options,
-    );
+    if (validateEnvironment()) {
+      this.discord = new WebhookClient({
+        id: process.env.DISCORD_CLIENT_ID,
+        token: process.env.DISCORD_WEBHOOK_TOKEN,
+      });
+
+      this.apiUrl = config().client.dPublisherUrl;
+      this.payload = new MessagePayload(
+        this.discord.client,
+        this.discord.options,
+      );
+    }
   }
 
   async notifyCreatorRegistration(creator: Creator) {
     try {
-      if (!validateEnvironment()) return;
-      await this.discord.send(
+      await this.discord?.send(
         CREATOR_REGISTERED(creator, this.apiUrl, this.payload),
       );
     } catch (e) {
-      console.log('Error sending notification for creator registration', e);
+      console.error('Error sending notification for creator registration', e);
     }
   }
 
   async notifyCreatorFilesUpdate(name: string, files: CreatorFile[]) {
     try {
-      if (!validateEnvironment()) return;
-      await this.discord.send(CREATOR_FILES_UPDATED(name, this.payload, files));
+      await this.discord?.send(
+        CREATOR_FILES_UPDATED(name, this.payload, files),
+      );
     } catch (e) {
-      console.log('Error sending notification for creator file updates', e);
+      console.error('Error sending notification for creator file updates', e);
     }
   }
 
   async notifyCreatorEmailVerification(creator: Creator) {
     try {
-      if (!validateEnvironment()) return;
-      await this.discord.send(
+      await this.discord?.send(
         `Creator ${creator.name} (${creator.email}) has verified their email address!`,
       );
     } catch (e) {
-      console.log(
+      console.error(
         "Error sending notification for creator's email verification",
         e,
       );
