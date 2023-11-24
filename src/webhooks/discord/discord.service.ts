@@ -1,32 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { Creator } from '@prisma/client';
-import { WebhookClient } from 'discord.js';
 import config from '../../configs/config';
 import { CREATOR_REGISTERED } from './templates/creatorRegistered';
-import { MessagePayload } from 'discord.js';
 import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
+import { MessagePayload, WebhookClient } from 'discord.js';
 import { CreatorFile } from './dto/types';
-import { validateEnvironment } from '../../utils/discord';
 
 @Injectable()
 export class DiscordService {
   private readonly apiUrl: string;
-  private readonly discord: WebhookClient;
+  private readonly discord?: WebhookClient;
   private readonly payload: MessagePayload;
 
   constructor() {
-    if (validateEnvironment()) {
+    if (process.env.DISCORD_WEBHOOK_URL) {
       this.discord = new WebhookClient({
-        id: process.env.DISCORD_CLIENT_ID,
-        token: process.env.DISCORD_WEBHOOK_TOKEN,
+        url: process.env.DISCORD_WEBHOOK_URL,
       });
-
-      this.apiUrl = config().client.dPublisherUrl;
-      this.payload = new MessagePayload(
-        this.discord.client,
-        this.discord.options,
-      );
+    } else {
+      console.warn('DISCORD_WEBHOOK_URL is undefined');
     }
+
+    this.apiUrl = config().client.dPublisherUrl;
+    this.payload = new MessagePayload(
+      this.discord.client,
+      this.discord.options,
+    );
   }
 
   async notifyCreatorRegistration(creator: Creator) {
