@@ -185,6 +185,9 @@ export class UserService {
     if (isEmailUpdated) {
       validateEmail(email);
       await this.throwIfEmailTaken(email);
+
+      // TODO: instead of updating the email here and marking it as unverified...
+      // send a new verification email to the new address and if it's confirmed from there, update the email to a new one
       await this.prisma.user.update({
         where: { id },
         data: { email, emailVerifiedAt: null },

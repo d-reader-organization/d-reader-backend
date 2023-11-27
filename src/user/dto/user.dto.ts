@@ -21,6 +21,9 @@ export class UserDto {
   @IsBoolean()
   isEmailVerified: boolean;
 
+  @IsBoolean()
+  hasBetaAccess: boolean;
+
   @IsString()
   name: string;
 
@@ -30,6 +33,8 @@ export class UserDto {
   @IsEnum(Role)
   @ApiProperty({ enum: Role })
   role: Role;
+
+  //TODO: referrer: string
 }
 
 export function toUserDto(user: User) {
@@ -37,6 +42,7 @@ export function toUserDto(user: User) {
     id: user.id,
     email: user.email,
     isEmailVerified: !!user.emailVerifiedAt,
+    hasBetaAccess: !!user.referredAt,
     name: user.name,
     avatar: getPublicUrl(user.avatar),
     role: user.role,
