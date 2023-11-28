@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsInt,
   IsPositive,
   IsString,
   IsUrl,
@@ -24,6 +25,9 @@ export class UserDto {
   @IsBoolean()
   hasBetaAccess: boolean;
 
+  @IsInt()
+  referralsRemaining: number;
+
   @IsString()
   name: string;
 
@@ -33,8 +37,6 @@ export class UserDto {
   @IsEnum(Role)
   @ApiProperty({ enum: Role })
   role: Role;
-
-  //TODO: referrer: string
 }
 
 export function toUserDto(user: User) {
@@ -43,6 +45,7 @@ export function toUserDto(user: User) {
     email: user.email,
     isEmailVerified: !!user.emailVerifiedAt,
     hasBetaAccess: !!user.referredAt,
+    referralsRemaining: user.referralsRemaining,
     name: user.name,
     avatar: getPublicUrl(user.avatar),
     role: user.role,
