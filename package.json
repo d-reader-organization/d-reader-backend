@@ -53,6 +53,8 @@
     "@aws-sdk/lib-storage": "^3.370.0",
     "@aws-sdk/s3-request-presigner": "^3.370.0",
     "@bonfida/spl-name-service": "^1.1.1",
+    "@discord-nestjs/common": "^5.2.10",
+    "@discord-nestjs/core": "^5.3.12",
     "@metaplex-foundation/js": "^0.19.4",
     "@metaplex-foundation/mpl-auction-house": "^2.5.0",
     "@metaplex-foundation/mpl-candy-guard": "^0.5.0",

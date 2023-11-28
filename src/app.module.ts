@@ -27,13 +27,18 @@ import { NftModule } from './nft/nft.module';
 import { s3Module } from './aws/s3.module';
 import config from './configs/config';
 import { SettingsModule } from './settings/settings.module';
-import { DiscordModule } from './webhooks/discord/discord.module';
-
+import { DiscordModule } from '@discord-nestjs/core';
+import { DiscordConfigService } from './discord/discord-config.service';
+import { DiscordNotificationModule } from './discord/notification/notification.module';
+import { DiscordCommandsModule } from './discord/command/command.module';
 @Module({
   imports: [
     AuthModule,
     ConfigModule.forRoot({ isGlobal: true, load: [config] }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    DiscordModule.forRootAsync({
+      useClass: DiscordConfigService,
+    }),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => {
         const securityConfig = configService.get<SecurityConfig>('security');
@@ -83,7 +88,8 @@ import { DiscordModule } from './webhooks/discord/discord.module';
     s3Module,
     UserModule,
     SettingsModule,
-    DiscordModule,
+    DiscordNotificationModule,
+    DiscordCommandsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

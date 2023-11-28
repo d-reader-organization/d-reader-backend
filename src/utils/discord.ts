@@ -1,5 +1,5 @@
 import { CreatorFileProperty } from '../creator/dto/types';
-import { CreatorFile } from '../webhooks/discord/dto/types';
+import { CreatorFile } from '../discord/dto/types';
 
 export const findCreatorFile = (
   files: CreatorFile[],
