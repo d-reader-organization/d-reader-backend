@@ -403,7 +403,7 @@ export class UserService {
     });
 
     if (!!user.referredAt) {
-      throw new BadRequestException(`User ${user.name} is already referred`);
+      throw new BadRequestException(`User '${user.name}' already referred`);
     }
 
     if (
@@ -415,8 +415,9 @@ export class UserService {
         REFERRAL_REWARD_GROUP_LABEL,
       );
     }
+
     user = await this.prisma.user.update({
-      where: { id: referrer.id },
+      where: { id: refereeId },
       data: {
         referredAt: new Date(),
         referrer: {
