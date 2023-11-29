@@ -1,7 +1,7 @@
 import { RoyaltyWallet } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsIntRange } from 'src/decorators/IsIntRange';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { IsIntRange } from '../../decorators/IsIntRange';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class RoyaltyWalletDto {
   @IsSolanaAddress()

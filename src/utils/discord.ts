@@ -1,7 +1,8 @@
 import { PublicKey } from '@metaplex-foundation/js';
 import { CreatorFileProperty } from '../creator/dto/types';
-import { CreatorFile, SignComicCommandParams } from '../discord/dto/types';
+import { CreatorFile } from '../discord/dto/types';
 import { BadRequestException } from '@nestjs/common';
+import { SignComicCommandParams } from '../discord/dto/types';
 
 export const findCreatorFile = (
   files: CreatorFile[],
