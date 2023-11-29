@@ -5,11 +5,11 @@ import { initMetaplex } from '../../utils/metaplex';
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { decodeTransaction } from '../../utils/transactions';
-import { SlashCommandPipe } from '@discord-nestjs/common';
 import { SignComicParams } from '../dto/sign-comics-params.dto';
 import { TransactionService } from '../../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
 import { fetchOffChainMetadata } from '../../utils/nft-metadata';
+import { UserSlashCommandPipe } from '../../pipes/user-slash-command-pipe';
 
 @Command({
   name: 'sign-comic',
@@ -26,18 +26,16 @@ export class SignComicCommnad {
 
   @Handler()
   async onSignComic(
-    @InteractionEvent(SlashCommandPipe) options: SignComicParams,
+    @InteractionEvent(UserSlashCommandPipe) options: SignComicParams,
   ): Promise<string> {
     try {
       const publicKey = this.metaplex.identity().publicKey;
       const { address } = options;
-
       if (!PublicKey.isOnCurve(new PublicKey(address))) {
         throw new BadRequestException(
           'Please provide a valid Comic NFT address.',
         );
       }
-
       const rawTransaction =
         await this.transactionService.createChangeComicStateTransaction(
           new PublicKey(address),
