@@ -1,16 +1,16 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Metaplex } from '@metaplex-foundation/js';
 import { initMetaplex } from '../../utils/metaplex';
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { decodeTransaction } from '../../utils/transactions';
-import { SignComicParams } from '../dto/sign-comics-params.dto';
 import { TransactionService } from '../../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
 import { fetchOffChainMetadata } from '../../utils/nft-metadata';
 import { UserSlashCommandPipe } from '../../pipes/user-slash-command-pipe';
-
+import { SignComicCommandParams } from '../dto/types';
+import { validateSignComicCommandParams } from '../../utils/discord';
 @Command({
   name: 'sign-comic',
   description: 'Sign the Comic',
@@ -26,16 +26,13 @@ export class SignComicCommnad {
 
   @Handler()
   async onSignComic(
-    @InteractionEvent(UserSlashCommandPipe) options: SignComicParams,
+    @InteractionEvent(UserSlashCommandPipe) options: SignComicCommandParams,
   ): Promise<string> {
     try {
+      validateSignComicCommandParams(options);
+
       const publicKey = this.metaplex.identity().publicKey;
       const { address } = options;
-      if (!PublicKey.isOnCurve(new PublicKey(address))) {
-        throw new BadRequestException(
-          'Please provide a valid Comic NFT address.',
-        );
-      }
       const rawTransaction =
         await this.transactionService.createChangeComicStateTransaction(
           new PublicKey(address),
