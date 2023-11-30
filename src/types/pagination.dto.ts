@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Min } from 'class-validator';
 import { TransformStringToNumber } from '../utils/transform';
-import { IsIntRange } from 'src/decorators/IsIntRange';
+import { IsIntRange } from '../decorators/IsIntRange';
 
 export class Pagination {
   @Min(0)

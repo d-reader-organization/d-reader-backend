@@ -24,7 +24,6 @@ import {
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
-  constructChangeComicStateTransaction,
   constructMintOneTransaction,
   initializeRecordAuthority,
 } from './instructions';
@@ -37,7 +36,6 @@ import {
   BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
-  RARITY_MAP,
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
@@ -57,7 +55,6 @@ import {
   insertItems,
   JsonMetadataCreators,
 } from '../utils/candy-machine';
-import { ComicStateArgs } from 'dreader-comic-verse';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { Prisma } from '@prisma/client';
@@ -461,38 +458,6 @@ export class CandyMachineService {
 
   private calculateMissingSOL(missingFunds: number): number {
     return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
-  }
-
-  async createChangeComicStateTransaction(
-    mint: PublicKey,
-    feePayer: PublicKey,
-    newState: ComicStateArgs,
-  ) {
-    const {
-      ownerAddress,
-      collectionNftAddress,
-      candyMachineAddress,
-      metadata,
-    } = await this.prisma.nft.findUnique({
-      where: { address: mint.toString() },
-      include: { metadata: true },
-    });
-
-    const owner = new PublicKey(ownerAddress);
-    const collectionMintPubKey = new PublicKey(collectionNftAddress);
-    const candyMachinePubKey = new PublicKey(candyMachineAddress);
-    const numberedRarity = RARITY_MAP[metadata.rarity];
-
-    return await constructChangeComicStateTransaction(
-      this.metaplex,
-      owner,
-      collectionMintPubKey,
-      candyMachinePubKey,
-      numberedRarity,
-      mint,
-      feePayer,
-      newState,
-    );
   }
 
   async thawFrozenNft(

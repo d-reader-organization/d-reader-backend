@@ -2,7 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
-import { SignComicParams } from '../candy-machine/dto/sign-comic-params.dto';
+import { SignComicParams } from './dto/sign-comic-params.dto';
 import { UseComicParams } from '../candy-machine/dto/use-comic-params.dto';
 import { CancelParams } from '../auction-house/dto/cancel-bid-params.dto';
 import { ListParams } from '../auction-house/dto/list-params.dto';
@@ -65,7 +65,7 @@ export class TransactionController {
     const publicKey = new PublicKey(query.signerAddress);
     const nftPubKey = new PublicKey(query.nftAddress);
 
-    return await this.candyMachineService.createChangeComicStateTransaction(
+    return await this.transactionService.createChangeComicStateTransaction(
       nftPubKey,
       publicKey,
       ComicStateArgs.Sign,
@@ -96,7 +96,7 @@ export class TransactionController {
     const publicKey = new PublicKey(query.ownerAddress);
     const nftPubKey = new PublicKey(query.nftAddress);
 
-    return await this.candyMachineService.createChangeComicStateTransaction(
+    return await this.transactionService.createChangeComicStateTransaction(
       nftPubKey,
       publicKey,
       ComicStateArgs.Use,

@@ -29,8 +29,8 @@ import { isEmail } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DiscordService } from '../webhooks/discord/discord.service';
-import { CreatorFile } from '../webhooks/discord/dto/types';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
@@ -44,7 +44,7 @@ export class CreatorService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
-    private readonly discordService: DiscordService,
+    private readonly discordService: DiscordNotificationService,
   ) {}
 
   async register(registerDto: RegisterDto) {

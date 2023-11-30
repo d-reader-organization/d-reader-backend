@@ -55,6 +55,7 @@ Table Creator {
   twitter String [not null, default: '']
   instagram String [not null, default: '']
   lynkfire String [not null, default: '']
+  discordUsername String [not null, default: '']
   tippingAddress String [not null, default: '']
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
