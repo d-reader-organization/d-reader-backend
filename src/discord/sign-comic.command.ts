@@ -7,13 +7,18 @@ import { ComicStateArgs } from 'dreader-comic-verse';
 import { decodeTransaction } from '../utils/transactions';
 import { TransactionService } from '../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
-import { fetchOffChainMetadata } from '../utils/nft-metadata';
+import {
+  fetchOffChainMetadata,
+  findRarityTrait,
+  findSignedTrait,
+  findUsedTrait,
+} from '../utils/nft-metadata';
 import { UserSlashCommandPipe } from '../pipes/user-slash-command-pipe';
 import { validateSignComicCommandParams } from '../utils/discord';
 import { SignComicParams } from './dto/sign-comics-params.dto';
 import { SignComicCommandParams } from './dto/types';
 import { InteractionReplyOptions } from 'discord.js';
-import { sleep } from '../utils/helpers';
+import { getPublicUrl } from '../aws/s3client';
 
 @Command({
   name: 'sign-comic',
@@ -66,6 +71,18 @@ export class SignComicCommand {
         );
       }
 
+      const { collectionNft, ...nft } = await this.prisma.nft.findUnique({
+        where: { address: address },
+        include: { collectionNft: { include: { collectionItems: true } } },
+      });
+
+      const oldMetadata = await fetchOffChainMetadata(nft.uri);
+      if (findSignedTrait(oldMetadata)) {
+        return {
+          content: `Your comic is already signed 😎 `,
+          embeds: [{ image: { url: oldMetadata.image } }],
+        };
+      }
       const rawTransaction =
         await this.transactionService.createChangeComicStateTransaction(
           new PublicKey(address),
@@ -81,14 +98,18 @@ export class SignComicCommand {
         { commitment: 'confirmed' },
       );
 
-      await sleep(1000);
-      const nft = await this.prisma.nft.findUnique({
-        where: { address: address },
+      const cover = await this.prisma.statefulCover.findFirst({
+        where: {
+          comicIssueId: collectionNft.comicIssueId,
+          isSigned: true,
+          isUsed: findUsedTrait(oldMetadata),
+          rarity: findRarityTrait(oldMetadata),
+        },
       });
-      const metadata = await fetchOffChainMetadata(nft.uri);
+
       return {
         content: `Congratulations 🎉!\nYour comic has been successfully signed`,
-        embeds: [{ image: { url: metadata.image } }],
+        embeds: [{ image: { url: getPublicUrl(cover.image) } }],
       };
     } catch (e) {
       console.error('Error signing comic', e);
