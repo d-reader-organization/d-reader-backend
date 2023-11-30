@@ -52,7 +52,7 @@ export class SignComicCommand {
         },
       });
 
-      if (!creator.discordUsername) {
+      if (!creator) {
         throw new UnauthorizedException(
           'Creator does not have discord account connected!',
         );
