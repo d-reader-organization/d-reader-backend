@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "Creator" ADD COLUMN     "discord" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Creator" ADD COLUMN "discordUsername" TEXT NOT NULL DEFAULT '';

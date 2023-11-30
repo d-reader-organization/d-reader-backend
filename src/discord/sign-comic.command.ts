@@ -36,11 +36,10 @@ export class SignComicCommand {
       const params = options as SignComicCommandParams;
       validateSignComicCommandParams(params);
 
-      const publicKey = this.metaplex.identity().publicKey;
       const { address, user } = params;
       const creator = await this.prisma.creator.findFirst({
         where: {
-          discord: user.username,
+          discordUsername: user.username,
           comics: {
             some: {
               issues: {
@@ -53,15 +52,22 @@ export class SignComicCommand {
         },
       });
 
-      if (creator?.discord !== user.username) {
+      if (!creator.discordUsername) {
         throw new UnauthorizedException(
-          "You're unauthorized to sign this comic",
+          'Creator does not have discord account connected!',
         );
       }
+
+      if (creator.discordUsername !== user.username) {
+        throw new UnauthorizedException(
+          `${user.username} is not authorized to sign the comic `,
+        );
+      }
+
       const rawTransaction =
         await this.transactionService.createChangeComicStateTransaction(
           new PublicKey(address),
-          publicKey,
+          this.metaplex.identity().publicKey,
           ComicStateArgs.Sign,
         );
 

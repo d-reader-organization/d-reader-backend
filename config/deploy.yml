@@ -43,6 +43,8 @@ env:
     - DARKBLOCK_API_KEY
     # Discord
     - DISCORD_WEBHOOK_URL
+    - DISCORD_BOT_TOKEN
+    - DISCORD_GUILD_ID
 
 accessories:
   node-exporter:
