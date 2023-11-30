@@ -5,6 +5,9 @@ import { metaplex } from '../utils/metaplex';
 import { PrismaService } from 'nestjs-prisma';
 import { constructChangeComicStateTransaction } from '../candy-machine/instructions';
 import { RARITY_MAP } from '../constants';
+import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
+import { Injectable } from '@nestjs/common';
+@Injectable()
 export class TransactionService {
   private readonly metaplex: Metaplex;
   constructor(private readonly prisma: PrismaService) {
@@ -67,6 +70,25 @@ export class TransactionService {
       mint,
       feePayer,
       newState,
+    );
+  }
+
+  async createDelegateCreatorTransaction(
+    candyMachineAddress: PublicKey,
+    newCreator: PublicKey,
+    creatorAuthority: PublicKey,
+  ) {
+    const collection = await this.prisma.collectionNft.findFirst({
+      where: {
+        candyMachines: { some: { address: candyMachineAddress.toString() } },
+      },
+    });
+    return await constructDelegateCreatorTransaction(
+      this.metaplex,
+      candyMachineAddress,
+      new PublicKey(collection.address),
+      newCreator,
+      creatorAuthority,
     );
   }
 }

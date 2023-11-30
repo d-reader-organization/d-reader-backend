@@ -2,7 +2,7 @@ import { CreatorFileProperty } from '../creator/dto/types';
 import { CreatorFile } from '../discord/dto/types';
 import { BadRequestException } from '@nestjs/common';
 import { SignComicCommandParams } from '../discord/dto/types';
-import { isSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 
 export const findCreatorFile = (
   files: CreatorFile[],

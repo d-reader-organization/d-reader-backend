@@ -42,7 +42,8 @@
     "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
     "add-group": "npx ts-node src/cli/main.ts add-group",
     "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
-    "update-date": "npx ts-node src/cli/main.ts update-date"
+    "update-date": "npx ts-node src/cli/main.ts update-date",
+    "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
