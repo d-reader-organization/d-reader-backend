@@ -15,10 +15,12 @@ import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
 import { MailModule } from '../mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
-import { DiscordService } from '../webhooks/discord/discord.service';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordModule } from '@discord-nestjs/core';
 
 @Module({
   imports: [
+    DiscordModule.forFeature(),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: async (configService: ConfigService) => {
@@ -55,7 +57,7 @@ import { DiscordService } from '../webhooks/discord/discord.service';
     UserService,
     CreatorService,
     UserCreatorService,
-    DiscordService,
+    DiscordNotificationService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })

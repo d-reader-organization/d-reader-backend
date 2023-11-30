@@ -73,6 +73,7 @@ model Creator {
   twitter         String        @default("")
   instagram       String        @default("")
   lynkfire        String        @default("")
+  discordUsername String        @default("")
   tippingAddress  String        @default("")
   createdAt       DateTime      @default(now())
   deletedAt       DateTime?

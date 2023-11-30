@@ -114,22 +114,22 @@ const copyFromSeedBucket = async () => {
   });
 
   await s3.deleteObjects(keysToDelete);
-  console.log(`✅ Emptied '${s3.bucket}' s3 bucket! Cloning from seed...`);
+  console.info(`✅ Emptied '${s3.bucket}' s3 bucket! Cloning from seed...`);
 
   const copyFiles = filesToSeed.map((key) => {
     return s3.copyObject({ CopySource: `/${seedBucket}/${key}`, Key: key });
   });
 
   await Promise.all(copyFiles);
-  console.log(`✅ Copied files from the seed bucket`);
+  console.info(`✅ Copied files from the seed bucket`);
 };
 
 const tryAirdropping = async () => {
   try {
     await solanaMetaplex.rpc().airdrop(treasuryPubKey, sol(2));
-    console.log('Airdropped 2 sol');
+    console.info('Airdropped 2 sol');
   } catch {
-    console.log('Failed to airdrop 2 sol to the treasury wallet');
+    console.info('Failed to airdrop 2 sol to the treasury wallet');
   }
 };
 
@@ -138,14 +138,14 @@ const refillBundlr = async () => {
     const bundlr = await storage.bundlr();
     const balance = await bundlr.getBalance(treasuryPubKey.toBase58());
     const solBalance = balance.toNumber() / LAMPORTS_PER_SOL;
-    console.log('Bundlr balance: ', solBalance);
+    console.info('Bundlr balance: ', solBalance);
 
     if (solBalance < 0.3) {
       bundlr.fund(0.2 * LAMPORTS_PER_SOL);
-      console.log('Funded bundlr storage');
+      console.info('Funded bundlr storage');
     }
   } catch (e) {
-    console.log('Failed to fund bundlr storage');
+    console.info('Failed to fund bundlr storage');
   }
 };
 
@@ -154,7 +154,7 @@ async function main() {
     throw new Error('process.env.WEBHOOK_ID undefined');
   }
 
-  console.log('Emptying the database...');
+  console.info('Emptying the database...');
   await prisma.statefulCover.deleteMany();
   await prisma.statelessCover.deleteMany();
   await prisma.comicCollaborator.deleteMany();
@@ -178,22 +178,22 @@ async function main() {
   await prisma.genre.deleteMany();
   await prisma.carouselSlide.deleteMany();
   await prisma.user.deleteMany();
-  console.log('Emptied database!');
+  console.info('Emptied database!');
 
   // CLEAR S3 BUCKET AND RESEED FROM THE SEED BUCKET
   if (process.env.SEED_S3 === 'true') await copyFromSeedBucket();
 
   // SEED CAROUSEL SLIDES
   await prisma.carouselSlide.createMany({ data: carouselSlidesToSeed });
-  console.log('Added carousel slides');
+  console.info('Added carousel slides');
 
   // SEED GENRES
   await prisma.genre.createMany({ data: genresToSeed });
-  console.log('Added genres');
+  console.info('Added genres');
 
   // SEED USERS
   await prisma.user.createMany({ data: await usersToSeed() });
-  console.log('Added users');
+  console.info('Added users');
 
   // SEED CREATORS
   const nxC = await prisma.creator.create({ data: await studioNx() });
@@ -203,7 +203,7 @@ async function main() {
   const mmC = await prisma.creator.create({ data: await madMuse() });
   const tsC = await prisma.creator.create({ data: await tsukiverse() });
   const llC = await prisma.creator.create({ data: await longwood() });
-  console.log('Added creators');
+  console.info('Added creators');
 
   // SEED COMICS
   const gorecatsC = await prisma.comic.create({ data: gorecatsData(nxC.id) });
@@ -223,7 +223,7 @@ async function main() {
   const versusC = await prisma.comic.create({ data: versusData(mmC.id) });
   const tsukiC = await prisma.comic.create({ data: tsukiData(tsC.id) });
   const heistC = await prisma.comic.create({ data: heistData(llC.id) });
-  console.log('Added comics');
+  console.info('Added comics');
 
   // SEED COMIC ISSUES
   await prisma.comicIssue.create({ data: gorecatsEp1Data(gorecatsC.slug) });
@@ -245,7 +245,7 @@ async function main() {
   await prisma.comicIssue.create({ data: versusEp1Data(versusC.slug) });
   await prisma.comicIssue.create({ data: tsukiEp1Data(tsukiC.slug) });
   await prisma.comicIssue.create({ data: heistEp1Data(heistC.slug) });
-  console.log('Added comic issues');
+  console.info('Added comic issues');
 
   const comics = await prisma.comic.findMany();
   const comicSlugs = comics.map((c) => c.slug);
@@ -287,7 +287,7 @@ async function main() {
         },
       });
     }
-    console.log('Added dummy user: ' + dummyUserData.name);
+    console.info('Added dummy user: ' + dummyUserData.name);
   }
 
   // SEED SUPPORTED SPL TOKENS
@@ -322,13 +322,13 @@ async function main() {
         (comicIssue.comicSlug === lupersC.slug &&
           comicIssue.slug === 'tome-of-knowledge')
       ) {
-        console.log('Skipping comic issue ', comicIssue.id);
+        console.info('Skipping comic issue ', comicIssue.id);
         continue;
       } else {
-        console.log(i, ': publishing comic issue ' + comicIssue.id);
+        console.info(i, ': publishing comic issue ' + comicIssue.id);
 
         await comicIssueService.publishOnChain(comicIssue.id, {
-          onChainName: comicIssue.title.slice(0,MAX_ON_CHAIN_TITLE_LENGTH),
+          onChainName: comicIssue.title.slice(0, MAX_ON_CHAIN_TITLE_LENGTH),
           supply: getRandomInt(1, 2) * 10, // 10-20 supply
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
           sellerFeeBasisPoints: 500, // 5%
@@ -347,7 +347,7 @@ async function main() {
     }
   }
 
-  console.log(
+  console.info(
     "⚠️ Please make sure to run 'yarn sync-webhook' command in order to set Helius webhooks correctly",
   );
 }

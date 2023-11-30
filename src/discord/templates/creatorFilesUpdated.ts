@@ -1,5 +1,5 @@
 import { MessagePayload, APIEmbed } from 'discord.js';
-import { getPublicUrl } from '../../../aws/s3client';
+import { getPublicUrl } from '../../aws/s3client';
 import { CreatorFile } from '../dto/types';
 import { findCreatorFile } from 'src/utils/discord';
 
