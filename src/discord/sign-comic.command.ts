@@ -19,11 +19,12 @@ import { SignComicCommandParams } from './dto/types';
 })
 @Injectable()
 export class SignComicCommand {
-  private readonly transactionService: TransactionService;
   private readonly metaplex: Metaplex;
-  private readonly prisma: PrismaService;
 
-  constructor() {
+  constructor(
+    private readonly transactionService: TransactionService,
+    private readonly prisma: PrismaService,
+  ) {
     this.metaplex = metaplex;
   }
 
@@ -35,7 +36,6 @@ export class SignComicCommand {
     try {
       const params = options as SignComicCommandParams;
       validateSignComicCommandParams(params);
-
       const { address, user } = params;
       const creator = await this.prisma.creator.findFirst({
         where: {
