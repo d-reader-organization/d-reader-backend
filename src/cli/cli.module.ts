@@ -46,6 +46,11 @@ import { AddCollectionDarkblockCommand } from './add-collection-darkblock-comman
 import { AddCollectionDarkblockQuestion } from './add-collection-darkblock-questions';
 import { UpdateDateCommand } from './update-date-command';
 import { UpdateDateQuestions } from './update-date-questions';
+import { TransactionService } from '../transactions/transaction.service';
+import { DelegateCreatorCommand } from './delegate-creator-command';
+import { DelegateCreatorQuestions } from './delegate-creator-questions';
+import { DiscordModule } from '@discord-nestjs/core';
+import { DiscordConfigService } from '../discord/config.service';
 
 @Module({
   imports: [
@@ -63,6 +68,7 @@ import { UpdateDateQuestions } from './update-date-questions';
       inject: [ConfigService],
     }),
     PrismaModule.forRoot({ isGlobal: true }),
+    DiscordModule.forRootAsync({ useClass: DiscordConfigService }),
     s3Module,
     MailModule,
   ],
@@ -105,6 +111,9 @@ import { UpdateDateQuestions } from './update-date-questions';
     AddCollectionDarkblockQuestion,
     UpdateDateCommand,
     UpdateDateQuestions,
+    TransactionService,
+    DelegateCreatorCommand,
+    DelegateCreatorQuestions,
   ],
 })
 export class CLIModule {}
