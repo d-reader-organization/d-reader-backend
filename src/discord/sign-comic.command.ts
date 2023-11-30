@@ -12,6 +12,8 @@ import { UserSlashCommandPipe } from '../pipes/user-slash-command-pipe';
 import { validateSignComicCommandParams } from '../utils/discord';
 import { SignComicParams } from './dto/sign-comics-params.dto';
 import { SignComicCommandParams } from './dto/types';
+import { InteractionReplyOptions } from 'discord.js';
+import { sleep } from '../utils/helpers';
 
 @Command({
   name: 'sign-comic',
@@ -32,7 +34,7 @@ export class SignComicCommand {
   async onSignComic(
     @InteractionEvent(UserSlashCommandPipe)
     options: SignComicParams,
-  ): Promise<string> {
+  ): Promise<InteractionReplyOptions> {
     try {
       const params = options as SignComicCommandParams;
       validateSignComicCommandParams(params);
@@ -72,15 +74,22 @@ export class SignComicCommand {
         );
 
       const transaction = decodeTransaction(rawTransaction, 'base64');
-      await sendAndConfirmTransaction(this.metaplex.connection, transaction, [
-        this.metaplex.identity(),
-      ]);
+      await sendAndConfirmTransaction(
+        this.metaplex.connection,
+        transaction,
+        [this.metaplex.identity()],
+        { commitment: 'confirmed' },
+      );
+
+      await sleep(1000);
       const nft = await this.prisma.nft.findUnique({
         where: { address: address },
       });
-
       const metadata = await fetchOffChainMetadata(nft.uri);
-      return `Congratulations 🎉! Your comic has been successfully signed: ${metadata.image}`;
+      return {
+        content: `Congratulations 🎉!\nYour comic has been successfully signed`,
+        embeds: [{ image: { url: metadata.image } }],
+      };
     } catch (e) {
       console.error('Error signing comic', e);
     }
