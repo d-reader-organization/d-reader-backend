@@ -7,10 +7,10 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { WalletModule } from '../wallet/wallet.module';
-import { DiscordService } from '../webhooks/discord/discord.service';
-
+import { DiscordNotificationService } from '../discord/notification/notification.service';
+import { DiscordModule } from '@discord-nestjs/core';
 @Module({
-  imports: [WalletModule],
+  imports: [WalletModule, DiscordModule.forFeature()],
   controllers: [CreatorController],
   providers: [
     CreatorService,
@@ -19,7 +19,7 @@ import { DiscordService } from '../webhooks/discord/discord.service';
     MailService,
     AuthService,
     JwtService,
-    DiscordService,
+    DiscordNotificationService,
   ],
 })
 export class CreatorModule {}

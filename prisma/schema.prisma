@@ -72,6 +72,7 @@ model Creator {
   website         String        @default("")
   twitter         String        @default("")
   instagram       String        @default("")
+  discord         String        @default("")
   lynkfire        String        @default("")
   tippingAddress  String        @default("")
   createdAt       DateTime      @default(now())

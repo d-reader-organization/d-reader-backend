@@ -1064,6 +1064,22 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+"@discord-nestjs/common@^5.2.10":
+  version "5.2.10"
+  resolved "https://registry.yarnpkg.com/@discord-nestjs/common/-/common-5.2.10.tgz#07ba433db1b2065fbf5dcf5e749b6d9474785679"
+  integrity sha512-6jD6tlGa5yku8UlUpmoAmr68d0i7zM9ZDZ5JhZ9ywgTEexcUAHPVnUX6hPhNV20RAssxWnyB6cukElHmxYCmZg==
+  dependencies:
+    "@nestjs/mapped-types" "2.0.3"
+    class-transformer "0.5.1"
+    class-validator "0.14.0"
+
+"@discord-nestjs/core@^5.3.12":
+  version "5.3.12"
+  resolved "https://registry.yarnpkg.com/@discord-nestjs/core/-/core-5.3.12.tgz#7ba32f394523c811ec22c74156ff8f29c099dd0d"
+  integrity sha512-r/7r27h0YOT4T710igH6DpzwDXr+utCgj4V9QkR408VXY/Pe95qFf4CxTXgGlVv2ifhkghSwBZCzSY5f68/fXw==
+  dependencies:
+    class-transformer "0.5.1"
+
 "@discordjs/builders@^1.7.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@discordjs/builders/-/builders-1.7.0.tgz#e2478c7e55b0f4c40837edb8f102bce977323a37"
@@ -2282,6 +2298,11 @@
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.0.2.tgz#c8a090a8d22145b85ed977414c158534210f2e4f"
   integrity sha512-V0izw6tWs6fTp9+KiiPUbGHWALy563Frn8X6Bm87ANLRuE46iuBMD5acKBDP5lKL/75QFvrzSJT7HkCbB0jTpg==
+
+"@nestjs/mapped-types@2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@nestjs/mapped-types/-/mapped-types-2.0.3.tgz#f400432da6c98d02b94b14e893fd7fa46c152403"
+  integrity sha512-40Zdqg98lqoF0+7ThWIZFStxgzisK6GG22+1ABO4kZiGF/Tu2FE+DYLw+Q9D94vcFWizJ+MSjNN4ns9r6hIGxw==
 
 "@nestjs/passport@^10.0.0":
   version "10.0.0"
@@ -5047,12 +5068,12 @@ cjs-module-lexer@^1.0.0:
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.3.tgz#6c370ab19f8a3394e318fe682686ec0ac684d107"
   integrity sha512-0TNiGstbQmCFwt4akjjBg5pLRTSyj/PkWQ1ZoO2zntmg9yLqSRxwEa4iCfQLGjqhiqBfOJa7W/E8wfGrTDmlZQ==
 
-class-transformer@^0.5.1:
+class-transformer@0.5.1, class-transformer@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/class-transformer/-/class-transformer-0.5.1.tgz#24147d5dffd2a6cea930a3250a677addf96ab336"
   integrity sha512-SQa1Ws6hUbfC98vKGxZH3KFY0Y1lm5Zm0SY8XX9zbK7FJCyVEac3ATW0RIpwzW+oOfmHE5PMPufDG9hCfoEOMw==
 
-class-validator@^0.14.0:
+class-validator@0.14.0, class-validator@^0.14.0:
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/class-validator/-/class-validator-0.14.0.tgz#40ed0ecf3c83b2a8a6a320f4edb607be0f0df159"
   integrity sha512-ct3ltplN8I9fOwUd8GrP8UQixwff129BkEtuWDKL5W45cQuLd19xqmTLu5ge78YDm/fdje6FMt0hGOhl0lii3A==
