@@ -1,29 +1,30 @@
 import { Command, Handler, InteractionEvent } from '@discord-nestjs/core';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Metaplex } from '@metaplex-foundation/js';
-import { initMetaplex } from '../../utils/metaplex';
+import { metaplex } from '../utils/metaplex';
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { ComicStateArgs } from 'dreader-comic-verse';
-import { decodeTransaction } from '../../utils/transactions';
-import { TransactionService } from '../../transactions/transaction.service';
+import { decodeTransaction } from '../utils/transactions';
+import { TransactionService } from '../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
-import { fetchOffChainMetadata } from '../../utils/nft-metadata';
-import { UserSlashCommandPipe } from '../../pipes/user-slash-command-pipe';
-import { validateSignComicCommandParams } from '../../utils/discord';
-import { SignComicParams } from '../dto/sign-comics-params.dto';
-import { SignComicCommandParams } from '../dto/types';
+import { fetchOffChainMetadata } from '../utils/nft-metadata';
+import { UserSlashCommandPipe } from '../pipes/user-slash-command-pipe';
+import { validateSignComicCommandParams } from '../utils/discord';
+import { SignComicParams } from './dto/sign-comics-params.dto';
+import { SignComicCommandParams } from './dto/types';
 
 @Command({
   name: 'sign-comic',
   description: 'Sign the Comic',
 })
 @Injectable()
-export class SignComicCommnad {
+export class SignComicCommand {
   private readonly transactionService: TransactionService;
   private readonly metaplex: Metaplex;
   private readonly prisma: PrismaService;
+
   constructor() {
-    this.metaplex = initMetaplex();
+    this.metaplex = metaplex;
   }
 
   @Handler()

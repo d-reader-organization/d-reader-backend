@@ -28,9 +28,8 @@ import { s3Module } from './aws/s3.module';
 import config from './configs/config';
 import { SettingsModule } from './settings/settings.module';
 import { DiscordModule } from '@discord-nestjs/core';
-import { DiscordConfigService } from './discord/discord-config.service';
-import { DiscordNotificationModule } from './discord/notification/notification.module';
-import { DiscordCommandsModule } from './discord/command/command.module';
+import { DiscordConfigService } from './discord/config.service';
+import { DiscordModule as DModule } from './discord/discord.module';
 @Module({
   imports: [
     AuthModule,
@@ -88,8 +87,7 @@ import { DiscordCommandsModule } from './discord/command/command.module';
     s3Module,
     UserModule,
     SettingsModule,
-    DiscordNotificationModule,
-    DiscordCommandsModule,
+    DModule,
   ],
   controllers: [AppController],
   providers: [AppService],

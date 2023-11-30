@@ -29,7 +29,7 @@ import { isEmail } from 'class-validator';
 import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DiscordNotificationService } from '../discord/notification/notification.service';
+import { DiscordNotificationService } from '../discord/notification.service';
 import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 

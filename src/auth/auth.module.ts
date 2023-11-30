@@ -15,8 +15,9 @@ import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
 import { MailModule } from '../mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
-import { DiscordNotificationService } from '../discord/notification/notification.service';
+import { DiscordNotificationService } from '../discord/notification.service';
 import { DiscordModule } from '@discord-nestjs/core';
+
 @Module({
   imports: [
     DiscordModule.forFeature(),

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Creator } from '@prisma/client';
-import config from '../../configs/config';
-import { CREATOR_REGISTERED } from '../templates/creatorRegistered';
-import { CREATOR_FILES_UPDATED } from '../templates/creatorFilesUpdated';
+import config from '../configs/config';
+import { CREATOR_REGISTERED } from './templates/creatorRegistered';
+import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
 import { MessagePayload, WebhookClient } from 'discord.js';
-import { CreatorFile } from '../dto/types';
+import { CreatorFile } from './dto/types';
 
 @Injectable()
 export class DiscordNotificationService {
