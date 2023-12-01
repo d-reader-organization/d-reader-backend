@@ -19,6 +19,7 @@ import { SignComicParams } from './dto/sign-comics-params.dto';
 import { SignComicCommandParams } from './dto/types';
 import { InteractionReplyOptions } from 'discord.js';
 import { getPublicUrl } from '../aws/s3client';
+import { NFT_EMBEDDED_RESPONSE } from './templates/nftEmbededResponse';
 
 @Command({
   name: 'sign-comic',
@@ -43,6 +44,7 @@ export class SignComicCommand {
     try {
       const params = options as SignComicCommandParams;
       validateSignComicCommandParams(params);
+
       const { address, user } = params;
       const creator = await this.prisma.creator.findFirst({
         where: {
@@ -77,12 +79,17 @@ export class SignComicCommand {
       });
 
       const oldMetadata = await fetchOffChainMetadata(nft.uri);
+      const rarity = findRarityTrait(oldMetadata);
+
       if (findSignedTrait(oldMetadata)) {
-        return {
+        return NFT_EMBEDDED_RESPONSE({
           content: `Your comic is already signed 😎 `,
-          embeds: [{ image: { url: oldMetadata.image } }],
-        };
+          imageUrl: oldMetadata.image,
+          nftName: nft.name,
+          rarity,
+        });
       }
+
       const rawTransaction =
         await this.transactionService.createChangeComicStateTransaction(
           new PublicKey(address),
@@ -103,14 +110,16 @@ export class SignComicCommand {
           comicIssueId: collectionNft.comicIssueId,
           isSigned: true,
           isUsed: findUsedTrait(oldMetadata),
-          rarity: findRarityTrait(oldMetadata),
+          rarity,
         },
       });
 
-      return {
+      return NFT_EMBEDDED_RESPONSE({
         content: `Congratulations 🎉!\nYour comic has been successfully signed`,
-        embeds: [{ image: { url: getPublicUrl(cover.image) } }],
-      };
+        imageUrl: getPublicUrl(cover.image),
+        nftName: nft.name,
+        rarity,
+      });
     } catch (e) {
       console.error('Error signing comic', e);
     }
