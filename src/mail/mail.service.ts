@@ -127,7 +127,7 @@ export class MailService {
     }
   }
 
-  async userPasswordReset(user: User, verificationToken: string) {
+  async requestUserPasswordReset(user: User, verificationToken: string) {
     try {
       await this.mailerService.sendMail({
         to: user.email,

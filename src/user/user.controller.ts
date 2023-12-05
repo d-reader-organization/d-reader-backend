@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../types/update-user.dto';
@@ -15,7 +16,10 @@ import { ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { toUserDto, toUserDtoArray, UserDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UpdatePasswordDto } from 'src/types/update-password.dto';
+import {
+  ResetPasswordDto,
+  UpdatePasswordDto,
+} from 'src/types/update-password.dto';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
@@ -95,14 +99,14 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
-  // TODO: this should work similar to verify-email
-  // it should send an auth token in an email (as a magic link)
-  // which user could visit in order to reset/update their password
-  /* Reset specific user's password */
-  @UserOwnerAuth()
-  @Patch('reset-password/:id')
-  async resetPassword(@Param('id') id: string) {
-    await this.userService.resetPassword(+id);
+  @Post('request-reset-password')
+  async requestResetPassword(@Body() { email }: { email: string }) {
+    await this.userService.requestResetPassword(email);
+  }
+
+  @Patch('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.userService.resetPassword(resetPasswordDto);
   }
 
   private throttledRequestEmailVerification = memoizeThrottle(

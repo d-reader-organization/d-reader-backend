@@ -13,7 +13,10 @@ import { PickFields } from '../types/shared';
 import { isEmail, isNumberString } from 'class-validator';
 import { RegisterDto } from '../types/register.dto';
 import { LoginDto } from '../types/login.dto';
-import { UpdatePasswordDto } from '../types/update-password.dto';
+import {
+  ResetPasswordDto,
+  UpdatePasswordDto,
+} from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
@@ -233,16 +236,41 @@ export class UserService {
     return updatedUser;
   }
 
-  async resetPassword(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+  async requestResetPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException(`User with email ${email} doesn't exists.`);
+    }
     const verificationToken = this.authService.signEmail(user.email);
 
     try {
-      await this.mailService.userPasswordReset(user, verificationToken);
+      await this.mailService.requestUserPasswordReset(user, verificationToken);
     } catch {
       throw new InternalServerErrorException(
         "Failed to send 'password reset' email",
       );
+    }
+  }
+
+  async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
+    const email = this.authService.decodeEmail(verificationToken);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException(`User with email ${email} doesn't exists.`);
+    }
+
+    const hashedPassword = await this.passwordService.hash(newPassword);
+    try {
+      await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          password: hashedPassword,
+        },
+      });
+    } catch (e) {
+      throw e;
     }
   }
 
