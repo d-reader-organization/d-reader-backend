@@ -234,22 +234,16 @@ export class UserService {
   }
 
   async resetPassword(id: number) {
-    const newPassword = uuidv4();
-    const hashedPassword = await this.passwordService.hash(newPassword);
-
     const user = await this.prisma.user.findUnique({ where: { id } });
+    const verificationToken = this.authService.signEmail(user.email);
+
     try {
-      await this.mailService.userPasswordReset(user, hashedPassword);
+      await this.mailService.userPasswordReset(user, verificationToken);
     } catch {
       throw new InternalServerErrorException(
         "Failed to send 'password reset' email",
       );
     }
-
-    return await this.prisma.user.update({
-      where: { id },
-      data: { password: newPassword },
-    });
   }
 
   async requestEmailVerification(email: string) {
