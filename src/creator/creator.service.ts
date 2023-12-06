@@ -9,7 +9,7 @@ import {
   UpdateCreatorDto,
   UpdateCreatorFilesDto,
 } from '../creator/dto/update-creator.dto';
-import { Creator, Genre } from '@prisma/client';
+import { Creator, Genre, Prisma } from '@prisma/client';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
@@ -32,6 +32,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
+import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -140,6 +141,29 @@ export class CreatorService {
     }
 
     return { ...creator, stats, myStats };
+  }
+
+  // TODO : Add support for more filters and include important aggregations
+  async findAllRaw(query: RawCreatorFilterParams) {
+    let where: Prisma.CreatorWhereInput;
+    if (query.nameSubstring) {
+      where = { name: { contains: query.nameSubstring } };
+    }
+    return await this.prisma.creator.findMany({
+      where,
+      take: query.take,
+      skip: query.skip,
+    });
+  }
+
+  async findOneRaw(slug: string) {
+    const creator = this.prisma.creator.findUnique({ where: { slug } });
+
+    if (!creator) {
+      throw new NotFoundException(`Creator ${slug} does not exist`);
+    }
+
+    return creator;
   }
 
   async findByEmail(email: string) {
