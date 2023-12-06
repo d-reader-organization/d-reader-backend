@@ -34,6 +34,12 @@ import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { plainToInstance } from 'class-transformer';
 import { memoizeThrottle } from '../utils/lodash';
+import {
+  RawCreatorDto,
+  toRawCreatorDto,
+  toRawCreatorDtoArray,
+} from './dto/raw-creator.dto';
+import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -68,6 +74,24 @@ export class CreatorController {
   ): Promise<CreatorDto> {
     const creator = await this.creatorService.findOne(slug, user.id);
     return toCreatorDto(creator);
+  }
+
+  /* Get all creator in raw format*/
+  @CreatorAuth()
+  @Get('get-raw')
+  async findAllRaw(
+    @Query() query: RawCreatorFilterParams,
+  ): Promise<RawCreatorDto[]> {
+    const creator = await this.creatorService.findAllRaw(query);
+    return toRawCreatorDtoArray(creator);
+  }
+
+  /* Get specific creator in raw format by unique slug */
+  @CreatorAuth()
+  @Get('get-raw/:slug')
+  async findOneRaw(@Param('slug') slug: string): Promise<RawCreatorDto> {
+    const creator = await this.creatorService.findOneRaw(slug);
+    return toRawCreatorDto(creator);
   }
 
   /* Update specific creator */
