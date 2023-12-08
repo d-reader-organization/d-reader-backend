@@ -13,7 +13,10 @@ import { PickFields } from '../types/shared';
 import { isEmail, isNumberString } from 'class-validator';
 import { RegisterDto } from '../types/register.dto';
 import { LoginDto } from '../types/login.dto';
-import { UpdatePasswordDto } from '../types/update-password.dto';
+import {
+  ResetPasswordDto,
+  UpdatePasswordDto,
+} from '../types/update-password.dto';
 import { validateEmail, validateName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
@@ -233,22 +236,37 @@ export class UserService {
     return updatedUser;
   }
 
-  async resetPassword(id: number) {
-    const newPassword = uuidv4();
-    const hashedPassword = await this.passwordService.hash(newPassword);
+  async requestPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException(`User with email ${email} doesn't exists.`);
+    }
+    const verificationToken = this.authService.signEmail(user.email);
 
-    const user = await this.prisma.user.findUnique({ where: { id } });
     try {
-      await this.mailService.userPasswordReset(user, hashedPassword);
+      await this.mailService.requestUserPasswordReset(user, verificationToken);
     } catch {
       throw new InternalServerErrorException(
         "Failed to send 'password reset' email",
       );
     }
+  }
 
-    return await this.prisma.user.update({
-      where: { id },
-      data: { password: newPassword },
+  async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
+    const email = this.authService.decodeEmail(verificationToken);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException(`User with email ${email} doesn't exists.`);
+    }
+
+    const hashedPassword = await this.passwordService.hash(newPassword);
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
     });
   }
 

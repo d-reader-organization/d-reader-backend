@@ -127,7 +127,7 @@ export class MailService {
     }
   }
 
-  async userPasswordReset(user: User, newPassword: string) {
+  async requestUserPasswordReset(user: User, verificationToken: string) {
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -135,9 +135,8 @@ export class MailService {
         template: USER_PASSWORD_RESET,
         context: {
           name: user.name,
-          newPassword,
           apiUrl: this.apiUrl,
-          actionUrl: this.loginUrl(this.dReaderUrl),
+          actionUrl: this.resetPasswordUrl(this.dReaderUrl, verificationToken),
         },
       });
     } catch (e) {
@@ -320,6 +319,10 @@ export class MailService {
 
   verificationUrl(clientUrl: string, verificationToken: string) {
     return `${clientUrl}/verify-email/${verificationToken}`;
+  }
+
+  resetPasswordUrl(clientUrl: string, verificationToken: string): string {
+    return `${clientUrl}/reset-password/${verificationToken}`;
   }
 
   loginUrl(clientUrl: string) {
