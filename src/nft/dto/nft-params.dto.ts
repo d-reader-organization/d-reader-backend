@@ -10,7 +10,7 @@ export class NftFilterParams extends PartialType(Pagination) {
 
   @IsOptional()
   @IsString()
-  userId: string;
+  userId?: string;
 
   @IsOptional()
   @IsString()
