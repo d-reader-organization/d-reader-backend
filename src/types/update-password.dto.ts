@@ -8,3 +8,11 @@ export class UpdatePasswordDto {
   @IsStrongPassword(PASSWORD_OPTIONS)
   newPassword: string;
 }
+
+export class ResetPasswordDto {
+  @IsString()
+  verificationToken: string;
+
+  @IsStrongPassword(PASSWORD_OPTIONS)
+  newPassword: string;
+}
