@@ -236,7 +236,7 @@ export class UserService {
     return updatedUser;
   }
 
-  async requestResetPassword(email: string) {
+  async requestPasswordReset(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new BadRequestException(`User with email ${email} doesn't exists.`);
@@ -260,18 +260,14 @@ export class UserService {
     }
 
     const hashedPassword = await this.passwordService.hash(newPassword);
-    try {
-      await this.prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          password: hashedPassword,
-        },
-      });
-    } catch (e) {
-      throw e;
-    }
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
   }
 
   async requestEmailVerification(email: string) {

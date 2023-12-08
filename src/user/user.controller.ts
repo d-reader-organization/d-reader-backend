@@ -8,7 +8,6 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
-  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../types/update-user.dto';
@@ -99,9 +98,9 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
-  @Post('request-reset-password')
-  async requestResetPassword(@Body() { email }: { email: string }) {
-    await this.userService.requestResetPassword(email);
+  @Patch('request-password-reset')
+  async requestPasswordReset(@Body() { email }: { email: string }) {
+    await this.userService.requestPasswordReset(email);
   }
 
   @Patch('reset-password')
