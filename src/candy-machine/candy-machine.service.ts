@@ -713,7 +713,7 @@ export class CandyMachineService {
         isEligible =
           !!group.wallets.find(
             (groupWallet) => groupWallet.walletAddress == walletAddress,
-          ) && receiptsFromBuyer.length < mintLimit;
+          ) && (mintLimit ? receiptsFromBuyer.length < mintLimit : true);
       }
     }
 
