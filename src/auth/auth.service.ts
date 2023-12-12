@@ -15,7 +15,10 @@ import { Creator, User } from '@prisma/client';
 import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
-import { FREE_MINT_GROUP_LABEL } from '../constants';
+import {
+  FREE_MINT_GROUP_LABEL,
+  REFERRAL_REWARD_GROUP_LABEL,
+} from '../constants';
 import { WalletService } from '../wallet/wallet.service';
 
 const sanitizePayload = (payload: JwtPayload) => {
@@ -46,9 +49,46 @@ export class AuthService {
       },
       update: { userId: userId, connectedAt: new Date() },
       include: {
-        user: true,
+        user: {
+          include: {
+            referrals: { include: { wallets: true } },
+            referrer: {
+              include: { referrals: { include: { wallets: true } } },
+            },
+          },
+        },
       },
     });
+    let rewardedAt: Date = undefined,
+      referCompeletedAt = undefined;
+
+    // Check the refer reward for current user
+    if (
+      user.emailVerifiedAt &&
+      this.walletService.checkIfUserIsEligibleForReferrerReward(user)
+    ) {
+      await this.walletService.rewardUserWallet(
+        [wallet],
+        REFERRAL_REWARD_GROUP_LABEL,
+      );
+      referCompeletedAt = new Date();
+    }
+
+    // Check the refer reward for referrer
+    if (
+      user.referrer &&
+      user.referrer.emailVerifiedAt &&
+      this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
+    ) {
+      await this.walletService.rewardUserWallet(
+        [wallet],
+        REFERRAL_REWARD_GROUP_LABEL,
+      );
+      await this.prisma.user.update({
+        where: { id: user.referrerId },
+        data: { referCompeletedAt: new Date() },
+      });
+    }
 
     if (
       !user.rewardedAt &&
@@ -59,11 +99,14 @@ export class AuthService {
         [wallet],
         FREE_MINT_GROUP_LABEL,
       );
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { rewardedAt: new Date() },
-      });
+      rewardedAt = new Date();
     }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { rewardedAt, referCompeletedAt },
+    });
+
     return wallet;
   }
 
