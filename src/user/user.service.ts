@@ -310,40 +310,55 @@ export class UserService {
     }
 
     // Check the refer reward for current user
-    if (
-      wallets.length &&
-      this.walletService.checkIfUserIsEligibleForReferrerReward(user)
-    ) {
-      await this.walletService.rewardUserWallet(
-        wallets,
-        REFERRAL_REWARD_GROUP_LABEL,
-      );
-      referCompeletedAt = new Date();
+    try {
+      if (
+        wallets.length &&
+        this.walletService.checkIfUserIsEligibleForReferrerReward(user)
+      ) {
+        await this.walletService.rewardUserWallet(
+          wallets,
+          REFERRAL_REWARD_GROUP_LABEL,
+        );
+        referCompeletedAt = new Date();
+      }
+    } catch (e) {
+      console.error(`Error giving refer reward to user ${user.id}`);
     }
 
     // Check the refer reward for referrer
-    if (
-      user.referrer &&
-      user.referrer.wallets.length > 0 &&
-      this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
-    ) {
-      await this.walletService.rewardUserWallet(
-        user.referrer.wallets,
-        REFERRAL_REWARD_GROUP_LABEL,
-      );
-      await this.prisma.user.update({
-        where: { id: user.referrerId },
-        data: { referCompeletedAt: new Date() },
-      });
+    try {
+      if (
+        user.referrer &&
+        user.referrer.wallets.length > 0 &&
+        this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
+      ) {
+        await this.walletService.rewardUserWallet(
+          user.referrer.wallets,
+          REFERRAL_REWARD_GROUP_LABEL,
+        );
+        await this.prisma.user.update({
+          where: { id: user.referrerId },
+          data: { referCompeletedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      console.error(`Error giving refer reward to user ${user.referrerId}`);
     }
 
-    if (
-      !user.rewardedAt &&
-      wallets.length &&
-      this.walletService.checkIfRewardClaimed(user.id)
-    ) {
-      await this.walletService.rewardUserWallet(wallets, FREE_MINT_GROUP_LABEL);
-      rewardedAt = new Date();
+    try {
+      if (
+        !user.rewardedAt &&
+        wallets.length &&
+        this.walletService.checkIfRewardClaimed(user.id)
+      ) {
+        await this.walletService.rewardUserWallet(
+          wallets,
+          FREE_MINT_GROUP_LABEL,
+        );
+        rewardedAt = new Date();
+      }
+    } catch (e) {
+      console.error(`Error giving free reward to user ${user.id}`);
     }
 
     return await this.prisma.user.update({
@@ -458,21 +473,25 @@ export class UserService {
 
     // Check referrer and the referee here because at the moment referee is not fully referred and need to be seprately verified
     let referCompeletedAt: Date = undefined;
-    if (
-      user.emailVerifiedAt &&
-      user.wallets.length &&
-      referrer.emailVerifiedAt &&
-      referrer.wallets.length &&
-      this.walletService.checkIfUserIsEligibleForReferrerReward(
-        referrer,
-        REFERRAL_REWARD_LIMIT - 1,
-      )
-    ) {
-      await this.walletService.rewardUserWallet(
-        referrer.wallets,
-        REFERRAL_REWARD_GROUP_LABEL,
-      );
-      referCompeletedAt = new Date();
+    try {
+      if (
+        user.emailVerifiedAt &&
+        user.wallets.length &&
+        referrer.emailVerifiedAt &&
+        referrer.wallets.length &&
+        this.walletService.checkIfUserIsEligibleForReferrerReward(
+          referrer,
+          REFERRAL_REWARD_LIMIT - 1,
+        )
+      ) {
+        await this.walletService.rewardUserWallet(
+          referrer.wallets,
+          REFERRAL_REWARD_GROUP_LABEL,
+        );
+        referCompeletedAt = new Date();
+      }
+    } catch (e) {
+      console.error(`Error giving refer reward to user ${referrerId}`);
     }
 
     return await this.prisma.user.update({
