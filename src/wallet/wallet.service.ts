@@ -15,12 +15,16 @@ import {
   findUsedTrait,
 } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { FREE_MINT_GROUP_LABEL, SAGA_COLLECTION_ADDRESS } from '../constants';
+import {
+  FREE_MINT_GROUP_LABEL,
+  REFERRAL_REWARD_LIMIT,
+  SAGA_COLLECTION_ADDRESS,
+} from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Nft, Prisma } from '@prisma/client';
+import { Nft, Prisma, User } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
-import { IndexedNft } from './dto/types';
+import { IndexedNft, Referee } from './dto/types';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -169,6 +173,20 @@ export class WalletService {
       where: { label: FREE_MINT_GROUP_LABEL, userId },
     });
     return !!receipt;
+  }
+
+  checkIfUserIsEligibleForReferrerReward(
+    user: User & { referrals: Referee[] },
+  ) {
+    const isRefereesVerified = user.referrals.find(
+      (referee) => !referee.emailVerifiedAt || !referee.wallets.length,
+    );
+    return (
+      !isRefereesVerified &&
+      !user.referCompeletedAt &&
+      user.referrals.length % REFERRAL_REWARD_LIMIT ===
+        REFERRAL_REWARD_LIMIT - 1
+    );
   }
 
   async reindexNft(

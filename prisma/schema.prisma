@@ -30,6 +30,7 @@ model User {
   emailVerifiedAt    DateTime?
   createdAt          DateTime              @default(now())
   rewardedAt         DateTime?
+  referCompeletedAt  DateTime?
   mintReceipts       CandyMachineReceipt[]
   comics             UserComic[]
   comicIssues        UserComicIssue[]

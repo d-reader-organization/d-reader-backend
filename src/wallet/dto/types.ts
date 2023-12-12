@@ -1,3 +1,5 @@
+import { User, Wallet } from '@prisma/client';
+
 export type IndexedNft = {
   owner: {
     userId: number;
@@ -14,3 +16,5 @@ export type IndexedNft = {
   candyMachineAddress: string;
   collectionNftAddress: string;
 };
+
+export type Referee = User & { wallets: Wallet[] };

@@ -24,7 +24,6 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
 import { User, Wallet } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
@@ -291,33 +290,65 @@ export class UserService {
       throw e;
     }
 
-    const user = await this.prisma.user.findFirst({
+    const { wallets, ...user } = await this.prisma.user.findFirst({
       where: { email: insensitive(email) },
-      include: { wallets: true },
+      include: {
+        wallets: true,
+        referrer: {
+          include: { referrals: { include: { wallets: true } }, wallets: true },
+        },
+        referrals: { include: { wallets: true } },
+      },
     });
+
+    // TODO v2: this should all be fixed up
+    let rewardedAt: Date = undefined,
+      referCompeletedAt = undefined;
 
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
 
-    let rewardedAt: Date = undefined;
-    // TODO v2: this should all be fixed up
+    // Check the refer reward for current user
     if (
-      !user.rewardedAt &&
-      user.wallets.length &&
-      this.walletService.checkIfRewardClaimed(user.id)
+      wallets.length &&
+      this.walletService.checkIfUserIsEligibleForReferrerReward(user)
     ) {
       await this.walletService.rewardUserWallet(
-        user.wallets,
-        FREE_MINT_GROUP_LABEL,
+        wallets,
+        REFERRAL_REWARD_GROUP_LABEL,
       );
+      referCompeletedAt = new Date();
+    }
 
+    // Check the refer reward for referrer
+    if (
+      user.referrer &&
+      user.referrer.wallets.length > 0 &&
+      this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
+    ) {
+      await this.walletService.rewardUserWallet(
+        user.referrer.wallets,
+        REFERRAL_REWARD_GROUP_LABEL,
+      );
+      await this.prisma.user.update({
+        where: { id: user.referrerId },
+        data: { referCompeletedAt: new Date() },
+      });
+    }
+
+    if (
+      !user.rewardedAt &&
+      wallets.length &&
+      this.walletService.checkIfRewardClaimed(user.id)
+    ) {
+      await this.walletService.rewardUserWallet(wallets, FREE_MINT_GROUP_LABEL);
       rewardedAt = new Date();
     }
 
     return await this.prisma.user.update({
       where: { email },
-      data: { emailVerifiedAt: new Date(), rewardedAt },
+      data: { emailVerifiedAt: new Date(), rewardedAt, referCompeletedAt },
     });
   }
 
