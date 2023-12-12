@@ -65,28 +65,31 @@ export class PasswordService {
         throw new UnauthorizedException('Malformed message!');
       } else return true;
     } catch (e) {
-      console.info('Failed to construct a Message object: ', e);
+      console.error('Failed to construct a Message object: ', e);
     }
 
     // Try to construct a Transaction and match its instruction data against OTP bytes
     try {
+      console.log('Trying fallback for the ledger');
       const transaction = Transaction.from(signatureBytes);
 
       const txHasOnlyOneSigner = transaction.signatures.length === 1;
-      const txHasOnlyOneInstruction = transaction.instructions.length === 1;
       const txSignerMatchesPublicKey = transaction.signatures[0].publicKey
         .toBuffer()
         .equals(publicKeyBytes);
-      const txInstructionMatchesOTP =
-        transaction.instructions[0].data.equals(oneTimePasswordBytes);
+      const txInstructionMatchesOTP = transaction.instructions
+        .at(-1)
+        .data.equals(oneTimePasswordBytes);
 
+      console.log('before if condition');
       if (
         txHasOnlyOneSigner &&
         txSignerMatchesPublicKey &&
-        txHasOnlyOneInstruction &&
         txInstructionMatchesOTP
       ) {
+        console.log('before isVerified');
         const isVerified = transaction.verifySignatures();
+        console.log('after isVerified: ', isVerified);
 
         if (!isVerified) {
           throw new UnauthorizedException('Malformed transaction!');
