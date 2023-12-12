@@ -24,7 +24,8 @@ import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { Nft, Prisma, User } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
-import { IndexedNft, Referee } from './dto/types';
+import { IndexedNft } from './dto/types';
+import { Referee } from '../types/shared';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -177,6 +178,7 @@ export class WalletService {
 
   checkIfUserIsEligibleForReferrerReward(
     user: User & { referrals: Referee[] },
+    referralLimit = REFERRAL_REWARD_LIMIT,
   ) {
     const isRefereesVerified = user.referrals.find(
       (referee) => !referee.emailVerifiedAt || !referee.wallets.length,
@@ -184,8 +186,7 @@ export class WalletService {
     return (
       !isRefereesVerified &&
       !user.referCompeletedAt &&
-      user.referrals.length % REFERRAL_REWARD_LIMIT ===
-        REFERRAL_REWARD_LIMIT - 1
+      user.referrals.length === referralLimit
     );
   }
 
