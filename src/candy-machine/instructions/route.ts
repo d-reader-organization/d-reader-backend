@@ -14,10 +14,16 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import {
+  ALLOW_LIST_PROOF_COMPUTE_PRICE,
+  ALLOW_LIST_PROOF_COMPUTE_UNITS,
+  AUTH_RULES,
+  AUTH_RULES_ID,
+} from '../../constants';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -79,6 +85,17 @@ export async function constructAllowListRouteTransaction(
     feePayer,
     merkleRoot,
   );
+  const instructions: TransactionInstruction[] = [];
+  instructions.push(
+    ComputeBudgetProgram.setComputeUnitLimit({
+      units: ALLOW_LIST_PROOF_COMPUTE_UNITS,
+    }),
+  );
+  instructions.push(
+    ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: ALLOW_LIST_PROOF_COMPUTE_PRICE,
+    }),
+  );
   const routeInstruction = constructRouteInstruction(
     metaplex,
     candyMachine,
@@ -88,11 +105,13 @@ export async function constructAllowListRouteTransaction(
     GuardType.AllowList,
     remainingAccounts,
   );
+  instructions.push(routeInstruction);
+
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
   const routeTransaction = new TransactionMessage({
     payerKey: feePayer,
     recentBlockhash: latestBlockhash.blockhash,
-    instructions: [routeInstruction],
+    instructions,
   }).compileToV0Message();
   const routeTransactionV0 = new VersionedTransaction(routeTransaction);
   const rawTransaction = Buffer.from(routeTransactionV0.serialize());
