@@ -456,6 +456,7 @@ export class CandyMachineService {
     }
   }
 
+  // TODO: this should be a util function in /utils folder
   private calculateMissingSOL(missingFunds: number): number {
     return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
   }
