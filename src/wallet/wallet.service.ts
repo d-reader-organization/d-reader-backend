@@ -180,14 +180,11 @@ export class WalletService {
     user: User & { referrals: Referee[] },
     referralLimit = REFERRAL_REWARD_LIMIT,
   ) {
-    const isRefereesVerified = user.referrals.find(
-      (referee) => !referee.emailVerifiedAt || !referee.wallets.length,
+    const verifiedReferees = user.referrals.filter(
+      (referee) => referee.emailVerifiedAt && referee.wallets.length,
     );
-    return (
-      !isRefereesVerified &&
-      !user.referCompeletedAt &&
-      user.referrals.length === referralLimit
-    );
+    const isRefereesVerified = verifiedReferees.length >= referralLimit;
+    return isRefereesVerified && !user.referCompeletedAt;
   }
 
   async reindexNft(

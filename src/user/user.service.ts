@@ -323,7 +323,28 @@ export class UserService {
       console.error(`Error giving refer reward to user ${user.id}`);
     }
 
-    // Check the refer reward for referrer
+    try {
+      if (
+        !user.rewardedAt &&
+        wallets.length &&
+        this.walletService.checkIfRewardClaimed(user.id)
+      ) {
+        await this.walletService.rewardUserWallet(
+          wallets,
+          FREE_MINT_GROUP_LABEL,
+        );
+        rewardedAt = new Date();
+      }
+    } catch (e) {
+      console.error(`Error giving free reward to user ${user.id}`);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { email },
+      data: { emailVerifiedAt: new Date(), rewardedAt, referCompeletedAt },
+    });
+
+    // Check the refer reward for referrer after email verification of referral (current user)
     try {
       if (
         user.referrer &&
@@ -342,27 +363,7 @@ export class UserService {
     } catch (e) {
       console.error(`Error giving refer reward to user ${user.referrerId}`);
     }
-
-    try {
-      if (
-        !user.rewardedAt &&
-        wallets.length &&
-        this.walletService.checkIfRewardClaimed(user.id)
-      ) {
-        await this.walletService.rewardUserWallet(
-          wallets,
-          FREE_MINT_GROUP_LABEL,
-        );
-        rewardedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving free reward to user ${user.id}`);
-    }
-
-    return await this.prisma.user.update({
-      where: { email },
-      data: { emailVerifiedAt: new Date(), rewardedAt, referCompeletedAt },
-    });
+    return updatedUser;
   }
 
   async throwIfNameTaken(name: string) {
