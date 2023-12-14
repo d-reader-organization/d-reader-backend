@@ -589,7 +589,7 @@ export class UserService {
 
     if (existingUser) {
       throw new BadRequestException(
-        `User with email ${newEmail} aready exists.`,
+        `User with email ${newEmail} already exists.`,
       );
     }
     await this.mailService.requestUserEmailChange({
@@ -616,7 +616,7 @@ export class UserService {
     const existingUser = await this.prisma.user.findFirst({ where: { email } });
     if (existingUser) {
       throw new BadRequestException(
-        `Failed to verify email change. User with email ${email} aready exists.`,
+        `Failed to verify email change. User with email ${email} already exists.`,
       );
     }
     try {

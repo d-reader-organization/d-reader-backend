@@ -183,7 +183,7 @@ export class AuthService {
       });
     } catch {
       throw new UnauthorizedException(
-        'Token expired, new email change link is sent to your inbox',
+        'Token expired, submit a new change email request',
       );
     }
 

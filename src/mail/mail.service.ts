@@ -257,7 +257,7 @@ export class MailService {
     } catch (e) {
       logError(SUCCESS_EMAIL_CHANGE, email, e);
       throw new InternalServerErrorException(
-        'Unable to send "email change" email',
+        'Unable to send "success email change" email',
       );
     }
   }
