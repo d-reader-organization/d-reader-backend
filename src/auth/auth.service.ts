@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { EmailJwtDto, JwtDto, JwtPayload } from './dto/authorization.dto';
+import {
+  ChangeEmailJwtDto,
+  EmailJwtDto,
+  JwtDto,
+  JwtPayload,
+} from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
@@ -149,6 +154,49 @@ export class AuthService {
       { secret: this.configService.get('JWT_ACCESS_SECRET'), expiresIn },
     );
     return signedEmail;
+  }
+
+  generateTokenForEmailChange({
+    email,
+    userId,
+  }: {
+    email: string;
+    userId: number;
+  }) {
+    return this.jwtService.sign(
+      {
+        email,
+        userId,
+      },
+      {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn: '1d',
+      },
+    );
+  }
+
+  verifyChangeEmailToken(token: string): { email: string; userId: number } {
+    let changeEmailJwtDto: ChangeEmailJwtDto;
+    try {
+      changeEmailJwtDto = this.jwtService.verify<ChangeEmailJwtDto>(token, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException(
+        'Token expired, new email change link is sent to your inbox',
+      );
+    }
+
+    if (
+      typeof changeEmailJwtDto === 'object' &&
+      'email' in changeEmailJwtDto &&
+      'userId' in changeEmailJwtDto
+    ) {
+      return {
+        email: changeEmailJwtDto.email,
+        userId: changeEmailJwtDto.userId,
+      };
+    } else throw new BadRequestException('Malformed email token');
   }
 
   /** @deprecated */

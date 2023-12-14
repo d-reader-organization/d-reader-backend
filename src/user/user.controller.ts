@@ -32,6 +32,7 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { WalletDto, toWalletDtoArray } from 'src/wallet/dto/wallet.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UserFilterParams } from './dto/user-params.dto';
+import { ChangeEmailDto } from 'src/types/change-email.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('User')
@@ -112,6 +113,22 @@ export class UserController {
     (email: string) => this.userService.requestEmailVerification(email),
     2 * 60 * 1000, // cache for 2 minutes
   );
+
+  @UserOwnerAuth()
+  @Patch('request-email-change')
+  async requestEmailChange(
+    @UserEntity() user: UserPayload,
+    @Body() { newEmail }: ChangeEmailDto,
+  ) {
+    await this.userService.requestEmailChange({ newEmail, user });
+  }
+
+  @Patch('verify-updated-email/:verificationToken')
+  async verifyUpdatedEmail(
+    @Param('verificationToken') verificationToken: string,
+  ) {
+    await this.userService.verifyUpdatedEmail(verificationToken);
+  }
 
   /* Verify your email address */
   @UserOwnerAuth()

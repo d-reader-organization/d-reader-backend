@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -32,6 +33,7 @@ import {
   REFERRAL_REWARD_GROUP_LABEL,
   REFERRAL_REWARD_LIMIT,
 } from '../constants';
+import { UserPayload } from '../auth/dto/authorization.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -564,6 +566,70 @@ export class UserService {
     } catch {
       throw new NotFoundException(`User with id ${id} not found`);
     }
+  }
+
+  async requestEmailChange({
+    user,
+    newEmail,
+  }: {
+    user: UserPayload;
+    newEmail: string;
+  }) {
+    if (user.email === newEmail) {
+      throw new BadRequestException(
+        `Email must be different from the current email.`,
+      );
+    }
+    validateEmail(newEmail);
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        email: newEmail,
+      },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(
+        `User with email ${newEmail} aready exists.`,
+      );
+    }
+    await this.mailService.requestUserEmailChange({
+      newEmail,
+      userId: user.id,
+    });
+  }
+
+  async verifyUpdatedEmail(verificationToken: string) {
+    let email: string;
+    let userId: number;
+    try {
+      const result = this.authService.verifyChangeEmailToken(verificationToken);
+      email = result.email;
+      userId = result.userId;
+    } catch (error) {
+      throw new BadRequestException(
+        `Your verification link has expired. Please submit a new request.`,
+      );
+    }
+
+    validateEmail(email);
+
+    const existingUser = await this.prisma.user.findFirst({ where: { email } });
+    if (existingUser) {
+      throw new BadRequestException(
+        `Failed to verify email change. User with email ${email} aready exists.`,
+      );
+    }
+    try {
+      await this.prisma.user.update({
+        data: { email, emailVerifiedAt: new Date() },
+        where: { id: userId },
+      });
+    } catch (e) {
+      console.error(e);
+      throw new InternalServerErrorException(`Failed to update user`);
+    }
+
+    await this.mailService.emailChangeSuccess(email);
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_NOON)

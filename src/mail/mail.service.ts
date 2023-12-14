@@ -28,6 +28,8 @@ const CREATOR_DELETED = 'creatorDeleted';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
 const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
 const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
+const REQUEST_EMAIL_CHANGE = 'requestEmailChange';
+const SUCCESS_EMAIL_CHANGE = 'successEmailChange';
 
 @Injectable()
 export class MailService {
@@ -210,6 +212,56 @@ export class MailService {
     }
   }
 
+  async requestUserEmailChange({
+    newEmail,
+    userId,
+  }: {
+    newEmail: string;
+    userId: number;
+  }) {
+    const verificationToken = this.authService.generateTokenForEmailChange({
+      email: newEmail,
+      userId,
+    });
+    try {
+      await this.mailerService.sendMail({
+        to: newEmail,
+        subject: '🕵️‍♂️ change e-mail verification!',
+        template: REQUEST_EMAIL_CHANGE,
+        context: {
+          apiUrl: this.apiUrl,
+          actionUrl: this.verifyUpdatedEmailUrl(
+            this.dReaderUrl,
+            verificationToken,
+          ),
+        },
+      });
+    } catch (e) {
+      logError(REQUEST_EMAIL_CHANGE, newEmail, e);
+      throw new InternalServerErrorException(
+        'Unable to send "email change" email',
+      );
+    }
+  }
+
+  async emailChangeSuccess(email: string) {
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: '🕵️‍♂️ Successfully changed email',
+        template: SUCCESS_EMAIL_CHANGE,
+        context: {
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(SUCCESS_EMAIL_CHANGE, email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "email change" email',
+      );
+    }
+  }
+
   async creatorRegistered(creator: Creator) {
     const verificationToken = this.authService.signEmail(creator.email);
 
@@ -346,5 +398,9 @@ export class MailService {
 
   loginUrl(clientUrl: string) {
     return `${clientUrl}/login`;
+  }
+
+  verifyUpdatedEmailUrl(clientUrl: string, verificationToken: string) {
+    return `${clientUrl}/verify-updated-email/${verificationToken}`;
   }
 }

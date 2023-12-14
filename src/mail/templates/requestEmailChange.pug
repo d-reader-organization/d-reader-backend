@@ -1,0 +1,10 @@
+extends userBase.pug
+
+block title
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') Dear dReader reader!
+
+block content
+    p(style='font-size: 18px; margin: 8px 0;') Please verify your change email by clicking on button below
+
+block action
+    a.action-link.yellow-bg(href=actionUrl) Verify email

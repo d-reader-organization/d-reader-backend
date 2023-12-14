@@ -34,3 +34,7 @@ export type EmailJwtDto = {
   iat: number;
   exp: number;
 };
+
+export type ChangeEmailJwtDto = EmailJwtDto & {
+  userId: number;
+};
