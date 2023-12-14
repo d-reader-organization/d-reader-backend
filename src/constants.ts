@@ -32,6 +32,9 @@ export const RARITY_TRAIT = 'rarity';
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
 
+export const MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY = 140_000;
+export const MINT_COMPUTE_UNITS = 700_000;
+
 export const BUNDLR_ADDRESS =
   process.env.SOLANA_CLUSTER === 'devnet'
     ? 'https://devnet.bundlr.network'
