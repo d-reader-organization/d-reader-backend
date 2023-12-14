@@ -11,6 +11,7 @@ import {
   VersionedTransaction,
   RpcResponseAndContext,
   AddressLookupTableAccount,
+  ComputeBudgetProgram,
 } from '@solana/web3.js';
 
 import { PROGRAM_ID as CANDY_MACHINE_PROGRAM_ID } from '@metaplex-foundation/mpl-candy-machine-core';
@@ -37,7 +38,12 @@ import {
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { MintSettings } from '../dto/types';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import {
+  AUTH_RULES,
+  AUTH_RULES_ID,
+  MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
+  MINT_COMPUTE_UNITS,
+} from '../../constants';
 import { constructAllowListRouteTransaction } from './route';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
@@ -143,6 +149,16 @@ export async function constructMintInstruction(
   };
 
   const instructions: TransactionInstruction[] = [];
+  instructions.push(
+    ComputeBudgetProgram.setComputeUnitLimit({
+      units: MINT_COMPUTE_UNITS,
+    }),
+  );
+  instructions.push(
+    ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
+    }),
+  );
   instructions.push(
     SystemProgram.createAccount({
       fromPubkey: payer,
@@ -327,7 +343,6 @@ export async function constructMintOneTransaction(
   }).compileToV0Message(lookupTableAccount ? [lookupTableAccount.value] : []);
   const mintTransactionV0 = new VersionedTransaction(mintTransaction);
   mintTransactionV0.sign([mint]);
-
   const rawTransaction = Buffer.from(mintTransactionV0.serialize());
   rawTransactions.push(rawTransaction.toString('base64'));
 
