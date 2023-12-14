@@ -26,9 +26,7 @@ export class NewsletterService {
   }
 
   async unsubscribe(verificationToken: string) {
-    // we don't need to check if the verification token is expired or not
-    // when unsubscribing from newsletter
-    const email = this.authService.decodeEmail(verificationToken);
+    const email = this.authService.verifyEmailToken(verificationToken);
 
     try {
       await this.prisma.newsletter.delete({ where: { email } });

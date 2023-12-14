@@ -7,7 +7,6 @@ import { AuthService } from '../auth/auth.service';
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
 // send notifications to important@dreader.io when someone creates a comic / comic issue
-// send discord notifications when a comic has been approved?
 
 const logError = (template: string, recipient: string, e: any) => {
   console.error(`Failed to send ${template} email to ${recipient}`);
@@ -20,6 +19,7 @@ const USER_REGISTERED = 'userRegistered';
 const USER_SCHEDULED_FOR_DELETION = 'userScheduledForDeletion';
 const USER_DELETED = 'userDeleted';
 const USER_PASSWORD_RESET = 'userPasswordReset';
+const USER_PASSWORD_RESET_REQUESTED = 'userPasswordResetRequested';
 const BUMP_USER_WITH_EMAIL_VERIFICATION = 'bumpUserWithEmailVerification';
 const USER_EMAIL_VERIFICATION = 'userEmailVerification';
 const CREATOR_REGISTERED = 'creatorRegistered';
@@ -131,12 +131,31 @@ export class MailService {
     try {
       await this.mailerService.sendMail({
         to: user.email,
+        subject: '🔐 Password reset requested!',
+        template: USER_PASSWORD_RESET_REQUESTED,
+        context: {
+          name: user.name,
+          apiUrl: this.apiUrl,
+          actionUrl: this.resetPasswordUrl(this.dReaderUrl, verificationToken),
+        },
+      });
+    } catch (e) {
+      logError(USER_PASSWORD_RESET_REQUESTED, user.email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "password reset requested" email',
+      );
+    }
+  }
+
+  async userPasswordReset(user: User) {
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
         subject: '🔐 Password reset!',
         template: USER_PASSWORD_RESET,
         context: {
           name: user.name,
           apiUrl: this.apiUrl,
-          actionUrl: this.resetPasswordUrl(this.dReaderUrl, verificationToken),
         },
       });
     } catch (e) {

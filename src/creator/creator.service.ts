@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -223,19 +222,13 @@ export class CreatorService {
     });
   }
 
+  // TODO: update this logic to match the password reset logic from Users
   async resetPassword(slug: string) {
     const newPassword = uuidv4();
     const hashedPassword = await this.passwordService.hash(newPassword);
 
     const creator = await this.prisma.creator.findUnique({ where: { slug } });
-
-    try {
-      await this.mailService.creatorPasswordReset(creator, hashedPassword);
-    } catch {
-      throw new InternalServerErrorException(
-        "Failed to send 'password reset' email",
-      );
-    }
+    await this.mailService.creatorPasswordReset(creator, hashedPassword);
 
     return await this.prisma.creator.update({
       where: { slug },
@@ -254,10 +247,10 @@ export class CreatorService {
   }
 
   async verifyEmail(verificationToken: string) {
-    const email = this.authService.decodeEmail(verificationToken);
+    let email: string;
 
     try {
-      this.authService.verifyEmail(verificationToken);
+      email = this.authService.verifyEmailToken(verificationToken);
     } catch (e) {
       // resend 'request email verification' email if token verification failed
       this.requestEmailVerification(email);

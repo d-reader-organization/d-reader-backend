@@ -143,17 +143,15 @@ export class AuthService {
     };
   }
 
-  signEmail(email: string): string {
+  signEmail(email: string, expiresIn = '7d'): string {
     const signedEmail = this.jwtService.sign(
       { email },
-      {
-        secret: this.configService.get('JWT_ACCESS_SECRET'),
-        expiresIn: '1d',
-      },
+      { secret: this.configService.get('JWT_ACCESS_SECRET'), expiresIn },
     );
     return signedEmail;
   }
 
+  /** @deprecated */
   decodeEmail(emailToken: string) {
     const emailJwtDto = this.jwtService.decode(emailToken);
 
@@ -166,7 +164,7 @@ export class AuthService {
     } else throw new BadRequestException('Malformed email token');
   }
 
-  verifyEmail(emailToken: string) {
+  verifyEmailToken(emailToken: string) {
     let emailJwtDto: EmailJwtDto;
     try {
       emailJwtDto = this.jwtService.verify<EmailJwtDto>(emailToken, {
@@ -174,7 +172,7 @@ export class AuthService {
       });
     } catch {
       throw new UnauthorizedException(
-        'Token expired, new verification link is sent to your inbox',
+        'Token expired, new mail is sent to your inbox',
       );
     }
 

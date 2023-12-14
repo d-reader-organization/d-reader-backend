@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -188,8 +187,6 @@ export class UserService {
       validateEmail(email);
       await this.throwIfEmailTaken(email);
 
-      // TODO: instead of updating the email here and marking it as unverified...
-      // send a new verification email to the new address and if it's confirmed from there, update the email to a new one
       await this.prisma.user.update({
         where: { id },
         data: { email, emailVerifiedAt: null },
@@ -240,33 +237,34 @@ export class UserService {
     if (!user) {
       throw new BadRequestException(`User with email ${email} doesn't exists.`);
     }
-    const verificationToken = this.authService.signEmail(user.email);
 
-    try {
-      await this.mailService.requestUserPasswordReset(user, verificationToken);
-    } catch {
-      throw new InternalServerErrorException(
-        "Failed to send 'password reset' email",
-      );
-    }
+    const verificationToken = this.authService.signEmail(user.email, '10min');
+    await this.mailService.requestUserPasswordReset(user, verificationToken);
   }
 
   async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
-    const email = this.authService.decodeEmail(verificationToken);
+    let email: string;
+
+    try {
+      email = this.authService.verifyEmailToken(verificationToken);
+    } catch (e) {
+      // resend 'request password reset' email if token verification failed
+      this.requestPasswordReset(email);
+      throw e;
+    }
+
     const user = await this.prisma.user.findUnique({ where: { email } });
+
     if (!user) {
       throw new BadRequestException(`User with email ${email} doesn't exists.`);
     }
 
     const hashedPassword = await this.passwordService.hash(newPassword);
     await this.prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        password: hashedPassword,
-      },
+      where: { id: user.id },
+      data: { password: hashedPassword },
     });
+    await this.mailService.userPasswordReset(user);
   }
 
   async requestEmailVerification(email: string) {
@@ -280,10 +278,10 @@ export class UserService {
   }
 
   async verifyEmail(verificationToken: string) {
-    const email = this.authService.decodeEmail(verificationToken);
+    let email: string;
 
     try {
-      this.authService.verifyEmail(verificationToken);
+      email = this.authService.verifyEmailToken(verificationToken);
     } catch (e) {
       // resend 'request email verification' email if token verification failed
       this.requestEmailVerification(email);
