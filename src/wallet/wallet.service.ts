@@ -176,54 +176,69 @@ export class WalletService {
   async makeEligibleForCompletedAccountBonus(userId: number) {
     if (!userId) return;
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { wallets: true },
-    });
-
-    const isUserReady = hasCompletedSetup(user);
-    const isEligible = isUserReady && !user.rewardedAt;
-
-    if (isEligible) {
-      await this.allowlistUserWallet(user.wallets, FREE_MINT_GROUP_LABEL);
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { rewardedAt: new Date() },
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { wallets: true },
       });
+
+      const isUserReady = hasCompletedSetup(user);
+      const isEligible = isUserReady && !user.rewardedAt;
+
+      if (isEligible) {
+        await this.allowlistUserWallet(user.wallets, FREE_MINT_GROUP_LABEL);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { rewardedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      console.error(
+        `Error while making the user eligible for a completed account bonus: ${e}`,
+      );
     }
   }
 
   async makeEligibleForReferralBonus(userId: number) {
     if (!userId) return;
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        wallets: true,
-        referrals: { include: { wallets: true } },
-        // TODO rely on _count instead of wallets: true
-        // _count: { select: { wallets: true } },
-      },
-    });
-
-    const isUserReady = hasCompletedSetup(user);
-
-    const verifiedRefereesCount = user.referrals.filter(
-      (referee) => referee.emailVerifiedAt && referee.wallets.length,
-    ).length;
-
-    const hasUserReferredEnoughNewUsers =
-      verifiedRefereesCount >= REFERRAL_REWARD_THRESHOLD;
-
-    const isEligible =
-      isUserReady && hasUserReferredEnoughNewUsers && !user.referCompeletedAt;
-
-    if (isEligible) {
-      await this.allowlistUserWallet(user.wallets, REFERRAL_REWARD_GROUP_LABEL);
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { referCompeletedAt: new Date() },
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          wallets: true,
+          referrals: { include: { wallets: true } },
+          // TODO rely on _count instead of wallets: true
+          // _count: { select: { wallets: true } },
+        },
       });
+
+      const isUserReady = hasCompletedSetup(user);
+
+      const verifiedRefereesCount = user.referrals.filter(
+        (referee) => referee.emailVerifiedAt && referee.wallets.length,
+      ).length;
+
+      const hasUserReferredEnoughNewUsers =
+        verifiedRefereesCount >= REFERRAL_REWARD_THRESHOLD;
+
+      const isEligible =
+        isUserReady && hasUserReferredEnoughNewUsers && !user.referCompeletedAt;
+
+      if (isEligible) {
+        await this.allowlistUserWallet(
+          user.wallets,
+          REFERRAL_REWARD_GROUP_LABEL,
+        );
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { referCompeletedAt: new Date() },
+        });
+      }
+    } catch (e) {
+      console.error(
+        `Error while making the user eligible for a referral bonus: ${e}`,
+      );
     }
   }
 
