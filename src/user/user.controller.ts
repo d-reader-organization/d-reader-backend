@@ -16,6 +16,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { toUserDto, toUserDtoArray, UserDto } from './dto/user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  RequestPasswordResetDto,
   ResetPasswordDto,
   UpdatePasswordDto,
 } from 'src/types/update-password.dto';
@@ -99,8 +100,10 @@ export class UserController {
   }
 
   @Patch('request-password-reset')
-  async requestPasswordReset(@Body() { email }: { email: string }) {
-    await this.userService.requestPasswordReset(email);
+  async requestPasswordReset(
+    @Body() requestPasswordResetDto: RequestPasswordResetDto,
+  ) {
+    await this.userService.requestPasswordReset(requestPasswordResetDto.email);
   }
 
   @Patch('reset-password')

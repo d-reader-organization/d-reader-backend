@@ -274,7 +274,7 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
 
-    this.mailService.requestUserEmailVerification(user);
+    await this.mailService.requestUserEmailVerification(user);
   }
 
   async verifyEmail(verificationToken: string) {

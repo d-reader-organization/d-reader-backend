@@ -243,7 +243,7 @@ export class CreatorService {
       throw new BadRequestException('Email already verified');
     }
 
-    this.mailService.requestCreatorEmailVerification(creator);
+    await this.mailService.requestCreatorEmailVerification(creator);
   }
 
   async verifyEmail(verificationToken: string) {
