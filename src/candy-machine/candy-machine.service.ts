@@ -304,6 +304,7 @@ export class CandyMachineService {
       .candyMachines()
       .findByAddress({ address: candyMachineKey.publicKey });
     if (shouldBePublic) {
+      await sleep(1000);
       await this.initializeGuardAccounts(candyMachine, freezePeriod);
     }
 
