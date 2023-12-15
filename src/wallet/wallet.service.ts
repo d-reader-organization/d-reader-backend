@@ -17,15 +17,16 @@ import {
 import { HeliusService } from '../webhooks/helius/helius.service';
 import {
   FREE_MINT_GROUP_LABEL,
-  REFERRAL_REWARD_LIMIT,
+  REFERRAL_REWARD_GROUP_LABEL,
+  REFERRAL_REWARD_THRESHOLD,
   SAGA_COLLECTION_ADDRESS,
 } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Nft, Prisma, User } from '@prisma/client';
+import { Nft, Prisma, Wallet } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
 import { IndexedNft } from './dto/types';
-import { Referee } from '../types/shared';
+import { hasCompletedSetup } from '../utils/user';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -155,10 +156,13 @@ export class WalletService {
     return candyMachine?.address;
   }
 
-  async rewardUserWallet(wallets: Prisma.WalletCreateInput[], label: string) {
+  /** This function allowlists a wallet on all the active Candy Machines
+   * which have a group with the specified label */
+  async allowlistUserWallet(wallets: Wallet[], label: string) {
     const candyMachines =
       await this.candyMachineService.findActiveRewardCandyMachine(label);
     const lastConnectedWallet = sortBy(wallets, (wallet) => wallet.connectedAt);
+
     const addWallet = candyMachines.map((candyMachine) =>
       this.candyMachineService.addAllowList(
         candyMachine.candyMachineAddress,
@@ -169,22 +173,54 @@ export class WalletService {
     await Promise.all(addWallet);
   }
 
-  async checkIfRewardClaimed(userId: number) {
-    const receipt = await this.prisma.candyMachineReceipt.findFirst({
-      where: { label: FREE_MINT_GROUP_LABEL, userId },
+  async makeEligibleForCompletedAccountBonus(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallets: true },
     });
-    return !!receipt;
+
+    const isUserReady = hasCompletedSetup(user);
+    const isEligible = isUserReady && !user.rewardedAt;
+
+    if (isEligible) {
+      await this.allowlistUserWallet(user.wallets, FREE_MINT_GROUP_LABEL);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { rewardedAt: new Date() },
+      });
+    }
   }
 
-  checkIfUserIsEligibleForReferrerReward(
-    user: User & { referrals: Referee[] },
-    referralLimit = REFERRAL_REWARD_LIMIT,
-  ) {
-    const verifiedReferees = user.referrals.filter(
+  async makeEligibleForReferralBonus(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        wallets: true,
+        referrals: { include: { wallets: true } },
+        // TODO rely on _count instead of wallets: true
+        // _count: { select: { wallets: true } },
+      },
+    });
+
+    const isUserReady = hasCompletedSetup(user);
+
+    const verifiedRefereesCount = user.referrals.filter(
       (referee) => referee.emailVerifiedAt && referee.wallets.length,
-    );
-    const isRefereesVerified = verifiedReferees.length >= referralLimit;
-    return isRefereesVerified && !user.referCompeletedAt;
+    ).length;
+
+    const hasUserReferredEnoughNewUsers =
+      verifiedRefereesCount >= REFERRAL_REWARD_THRESHOLD;
+
+    const isEligible =
+      isUserReady && hasUserReferredEnoughNewUsers && !user.referCompeletedAt;
+
+    if (isEligible) {
+      await this.allowlistUserWallet(user.wallets, REFERRAL_REWARD_GROUP_LABEL);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { referCompeletedAt: new Date() },
+      });
+    }
   }
 
   async reindexNft(

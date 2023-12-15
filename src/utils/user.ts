@@ -3,6 +3,7 @@ import { maxLength, minLength, isEmail } from 'class-validator';
 import { USERNAME_MAX_SIZE, USERNAME_MIN_SIZE } from '../constants';
 import { isValidUsername } from '../decorators/IsValidUsername';
 import { naughtyWords } from './naughty-words';
+import { User, Wallet } from '@prisma/client';
 
 export function validateName(name: string) {
   if (typeof name !== 'string') {
@@ -36,4 +37,8 @@ export function validateEmail(email: string) {
   } else if (!isEmail(email)) {
     throw new BadRequestException('Incorrect email format');
   }
+}
+
+export function hasCompletedSetup(user: User & { wallets: Wallet[] }) {
+  return user.emailVerifiedAt && user.wallets.length;
 }
