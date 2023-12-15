@@ -205,7 +205,7 @@ export class MailService {
     } catch (e) {
       logError(USER_EMAIL_VERIFICATION, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "e-mail verification" email',
+        'Unable to send "e-mail verification" mail, check your email address',
       );
     }
   }
@@ -327,7 +327,7 @@ export class MailService {
     } catch (e) {
       logError(CREATOR_EMAIL_VERIFICATION, creator.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "e-mail verification" email',
+        'Unable to send "e-mail verification" mail, check your email address',
       );
     }
   }

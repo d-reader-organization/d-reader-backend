@@ -1,4 +1,4 @@
-import { IsString, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
 import { PASSWORD_OPTIONS } from '../constants';
 
 export class UpdatePasswordDto {
@@ -15,4 +15,9 @@ export class ResetPasswordDto {
 
   @IsStrongPassword(PASSWORD_OPTIONS)
   newPassword: string;
+}
+
+export class RequestPasswordResetDto {
+  @IsEmail()
+  email: string;
 }
