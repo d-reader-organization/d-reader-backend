@@ -174,6 +174,8 @@ export class WalletService {
   }
 
   async makeEligibleForCompletedAccountBonus(userId: number) {
+    if (!userId) return;
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { wallets: true },
@@ -192,6 +194,8 @@ export class WalletService {
   }
 
   async makeEligibleForReferralBonus(userId: number) {
+    if (!userId) return;
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
