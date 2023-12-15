@@ -15,10 +15,6 @@ import { Creator, User } from '@prisma/client';
 import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
-import {
-  FREE_MINT_GROUP_LABEL,
-  REFERRAL_REWARD_GROUP_LABEL,
-} from '../constants';
 import { WalletService } from '../wallet/wallet.service';
 
 const sanitizePayload = (payload: JwtPayload) => {
@@ -39,87 +35,25 @@ export class AuthService {
   async connectWallet(userId: number, address: string, encoding: string) {
     await this.passwordService.validateWallet(userId, address, encoding);
     const publicKey = new PublicKey(address);
-    const { user, ...wallet } = await this.prisma.wallet.upsert({
+    const wallet = await this.prisma.wallet.upsert({
       where: { address },
       create: {
         address,
-        userId: userId,
+        userId,
         label: await getOwnerDomain(publicKey),
         connectedAt: new Date(),
       },
       update: { userId: userId, connectedAt: new Date() },
-      include: {
-        user: {
-          include: {
-            referrals: { include: { wallets: true } },
-            referrer: {
-              include: { referrals: { include: { wallets: true } } },
-            },
-          },
-        },
-      },
-    });
-    let rewardedAt: Date = undefined,
-      referCompeletedAt = undefined;
-
-    // Check the refer reward for current user
-    try {
-      if (
-        user.emailVerifiedAt &&
-        this.walletService.checkIfUserIsEligibleForReferrerReward(user)
-      ) {
-        await this.walletService.rewardUserWallet(
-          [wallet],
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
-        referCompeletedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving refer reward to user ${user.id}`);
-    }
-
-    // Check the refer reward for referrer
-    try {
-      if (
-        user.referrer &&
-        user.referrer.emailVerifiedAt &&
-        this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
-      ) {
-        await this.walletService.rewardUserWallet(
-          [wallet],
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
-        await this.prisma.user.update({
-          where: { id: user.referrerId },
-          data: { referCompeletedAt: new Date() },
-        });
-      }
-    } catch (e) {
-      console.error(`Error giving refer reward to user ${user.referrerId}`);
-    }
-
-    try {
-      if (
-        !user.rewardedAt &&
-        user.emailVerifiedAt &&
-        this.walletService.checkIfRewardClaimed(user.id)
-      ) {
-        await this.walletService.rewardUserWallet(
-          [wallet],
-          FREE_MINT_GROUP_LABEL,
-        );
-        rewardedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving free reward to user ${user.id}`);
-    }
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { rewardedAt, referCompeletedAt },
+      include: { user: true },
     });
 
-    return wallet;
+    await this.walletService.makeEligibleForReferralBonus(userId);
+    await this.walletService.makeEligibleForReferralBonus(
+      wallet.user.referrerId,
+    );
+    await this.walletService.makeEligibleForCompletedAccountBonus(
+      wallet.user.referrerId,
+    );
   }
 
   async disconnectWallet(address: string) {

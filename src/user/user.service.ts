@@ -27,11 +27,6 @@ import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
-import {
-  FREE_MINT_GROUP_LABEL,
-  REFERRAL_REWARD_GROUP_LABEL,
-  REFERRAL_REWARD_LIMIT,
-} from '../constants';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -288,81 +283,22 @@ export class UserService {
       throw e;
     }
 
-    const { wallets, ...user } = await this.prisma.user.findFirst({
+    const user = await this.prisma.user.findFirst({
       where: { email: insensitive(email) },
-      include: {
-        wallets: true,
-        referrer: {
-          include: { referrals: { include: { wallets: true } }, wallets: true },
-        },
-        referrals: { include: { wallets: true } },
-      },
     });
-
-    // TODO v2: this should all be fixed up
-    let rewardedAt: Date = undefined,
-      referCompeletedAt = undefined;
 
     if (!!user.emailVerifiedAt) {
       throw new BadRequestException('Email already verified');
     }
-
-    // Check the refer reward for current user
-    try {
-      if (
-        wallets.length &&
-        this.walletService.checkIfUserIsEligibleForReferrerReward(user)
-      ) {
-        await this.walletService.rewardUserWallet(
-          wallets,
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
-        referCompeletedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving refer reward to user ${user.id}`);
-    }
-
-    try {
-      if (
-        !user.rewardedAt &&
-        wallets.length &&
-        this.walletService.checkIfRewardClaimed(user.id)
-      ) {
-        await this.walletService.rewardUserWallet(
-          wallets,
-          FREE_MINT_GROUP_LABEL,
-        );
-        rewardedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving free reward to user ${user.id}`);
-    }
-
     const updatedUser = await this.prisma.user.update({
       where: { email },
-      data: { emailVerifiedAt: new Date(), rewardedAt, referCompeletedAt },
+      data: { emailVerifiedAt: new Date() },
     });
 
-    // Check the refer reward for referrer after email verification of referral (current user)
-    try {
-      if (
-        user.referrer &&
-        user.referrer.wallets.length > 0 &&
-        this.walletService.checkIfUserIsEligibleForReferrerReward(user.referrer)
-      ) {
-        await this.walletService.rewardUserWallet(
-          user.referrer.wallets,
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
-        await this.prisma.user.update({
-          where: { id: user.referrerId },
-          data: { referCompeletedAt: new Date() },
-        });
-      }
-    } catch (e) {
-      console.error(`Error giving refer reward to user ${user.referrerId}`);
-    }
+    await this.walletService.makeEligibleForReferralBonus(user.id);
+    await this.walletService.makeEligibleForReferralBonus(user.referrerId);
+    await this.walletService.makeEligibleForCompletedAccountBonus(user.id);
+
     return updatedUser;
   }
 
@@ -470,39 +406,19 @@ export class UserService {
       throw new BadRequestException(`User '${user.name}' already referred`);
     }
 
-    // Check referrer and the referee here because at the moment referee is not fully referred and need to be seprately verified
-    let referCompeletedAt: Date = undefined;
-    try {
-      if (
-        user.emailVerifiedAt &&
-        user.wallets.length &&
-        referrer.emailVerifiedAt &&
-        referrer.wallets.length &&
-        this.walletService.checkIfUserIsEligibleForReferrerReward(
-          referrer,
-          REFERRAL_REWARD_LIMIT - 1,
-        )
-      ) {
-        await this.walletService.rewardUserWallet(
-          referrer.wallets,
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
-        referCompeletedAt = new Date();
-      }
-    } catch (e) {
-      console.error(`Error giving refer reward to user ${referrerId}`);
-    }
-
-    return await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: refereeId },
       data: {
         referredAt: new Date(),
         referrer: {
           connect: { id: referrer.id },
-          update: { referralsRemaining: { decrement: 1 }, referCompeletedAt },
+          update: { referralsRemaining: { decrement: 1 } },
         },
       },
     });
+
+    await this.walletService.makeEligibleForReferralBonus(referrer.id);
+    return updatedUser;
   }
 
   async validateSagaUser(id: number) {
