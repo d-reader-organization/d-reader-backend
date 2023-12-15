@@ -47,11 +47,9 @@ export class AuthService {
       include: { user: true },
     });
 
+    await this.walletService.makeEligibleForCompletedAccountBonus(userId);
     await this.walletService.makeEligibleForReferralBonus(userId);
     await this.walletService.makeEligibleForReferralBonus(
-      wallet.user.referrerId,
-    );
-    await this.walletService.makeEligibleForCompletedAccountBonus(
       wallet.user.referrerId,
     );
   }
