@@ -32,8 +32,10 @@ export const RARITY_TRAIT = 'rarity';
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
 
-export const MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY = 140_000;
+export const MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY = 130_000;
 export const MINT_COMPUTE_UNITS = 700_000;
+export const ALLOW_LIST_PROOF_COMPUTE_UNITS = 40000;
+export const ALLOW_LIST_PROOF_COMPUTE_PRICE = 150_000;
 
 export const BUNDLR_ADDRESS =
   process.env.SOLANA_CLUSTER === 'devnet'
@@ -57,7 +59,7 @@ export const FREE_MINT_DISPLAY_LABEL = 'Welcome';
 export const PUBLIC_GROUP_LABEL = 'public';
 export const PUBLIC_GROUP_MINT_LIMIT = 2;
 export const PUBLIC_GROUP_MINT_LIMIT_ID = 1;
-export const REFERRAL_REWARD_LIMIT = 3;
+export const REFERRAL_REWARD_LIMIT = 2;
 
 export const THREE_RARITIES_SHARE: RarityShare[] = [
   {

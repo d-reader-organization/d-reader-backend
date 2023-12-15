@@ -25,7 +25,7 @@ import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { writeFiles } from './metaplex';
 import { chunk } from 'lodash';
 import { pRateLimit } from 'p-ratelimit';
-import { sendAndConfirmTransaction } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -248,4 +248,8 @@ export async function insertItems(
       );
     });
   }
+}
+
+export function calculateMissingSOL(missingFunds: number): number {
+  return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
 }

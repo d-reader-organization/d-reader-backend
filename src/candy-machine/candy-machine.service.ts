@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import {
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   SYSVAR_SLOT_HASHES_PUBKEY,
   sendAndConfirmTransaction,
@@ -51,6 +50,7 @@ import {
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { GuardGroup, RarityCoverFiles } from '../types/shared';
 import {
+  calculateMissingSOL,
   generatePropertyName,
   insertItems,
   JsonMetadataCreators,
@@ -437,28 +437,23 @@ export class CandyMachineService {
 
     if (!mintPrice && balance < protocolFee) {
       throw new BadRequestException(
-        `${this.calculateMissingSOL(
+        `${calculateMissingSOL(
           missingFunds,
         )} SOL is missing to pay for protocol fees`,
       );
     } else if (mintPrice && balance < mintPrice) {
       throw new BadRequestException(
-        `${this.calculateMissingSOL(
+        `${calculateMissingSOL(
           missingFunds,
         )} SOL missing to pay for the purchase`,
       );
     } else if (mintPrice && balance < mintPrice + protocolFee) {
       throw new BadRequestException(
-        `${this.calculateMissingSOL(
+        `${calculateMissingSOL(
           missingFunds,
         )} SOL missing to pay for protocol fees`,
       );
     }
-  }
-
-  // TODO: this should be a util function in /utils folder
-  private calculateMissingSOL(missingFunds: number): number {
-    return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
   }
 
   async thawFrozenNft(
