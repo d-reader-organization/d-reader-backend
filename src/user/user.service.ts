@@ -9,7 +9,7 @@ import * as jdenticon from 'jdenticon';
 import { s3File, s3Service } from '../aws/s3.service';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { PickFields, Referee } from '../types/shared';
-import { isEmail, isNumberString } from 'class-validator';
+import { isEmail } from 'class-validator';
 import { RegisterDto } from '../types/register.dto';
 import { LoginDto } from '../types/login.dto';
 import {
@@ -349,14 +349,13 @@ export class UserService {
 
   async redeemReferral(referrerId: string, refereeId: number) {
     if (!referrerId) {
-      throw new BadRequestException('Referrer id, name, or address undefined');
+      throw new BadRequestException('Referrer name, or address undefined');
     } else if (!refereeId) {
       throw new BadRequestException('Referee id missing');
     }
 
     // if the search string is of type Solana address, search by address
     // if the search string is of type email, search by email
-    // if the search string is of type number, search by id
     // if the search string is of type string, search by name
     let referrer: { referrals: Referee[]; wallets: Wallet[] } & User;
     if (isSolanaAddress(referrerId)) {
@@ -375,11 +374,6 @@ export class UserService {
     } else if (isEmail(referrerId)) {
       referrer = await this.prisma.user.findFirst({
         where: { email: insensitive(referrerId) },
-        include: { referrals: { include: { wallets: true } }, wallets: true },
-      });
-    } else if (isNumberString(referrerId)) {
-      referrer = await this.prisma.user.findUnique({
-        where: { id: +referrerId },
         include: { referrals: { include: { wallets: true } }, wallets: true },
       });
     } else {
