@@ -11,6 +11,7 @@ import {
   ATTRIBUTE_COMBINATIONS,
   D_PUBLISHER_SYMBOL,
   D_READER_FRONTEND_URL,
+  MIN_MINT_PROTOCOL_FEE,
   RARITY_MAP,
   RARITY_TRAIT,
   SIGNED_TRAIT,
@@ -26,6 +27,7 @@ import { writeFiles } from './metaplex';
 import { chunk } from 'lodash';
 import { pRateLimit } from 'p-ratelimit';
 import { LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
+import { BadRequestException } from '@nestjs/common';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -251,5 +253,36 @@ export async function insertItems(
 }
 
 export function calculateMissingSOL(missingFunds: number): number {
-  return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(9));
+  return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(3)) + 0.001;
+}
+
+export function validateBalanceForMint(
+  mintPrice: number,
+  balance: number,
+): void {
+  // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
+  const protocolFee = MIN_MINT_PROTOCOL_FEE;
+  const missingFunds = mintPrice
+    ? mintPrice + protocolFee - balance
+    : protocolFee - balance;
+
+  if (!mintPrice && balance < protocolFee) {
+    throw new BadRequestException(
+      `You need ~${calculateMissingSOL(
+        missingFunds,
+      )} more SOL in your wallet to pay for protocol fees`,
+    );
+  } else if (mintPrice && balance < mintPrice) {
+    throw new BadRequestException(
+      `You need ~${calculateMissingSOL(
+        missingFunds,
+      )} more SOL in your wallet to pay for purchase`,
+    );
+  } else if (mintPrice && balance < mintPrice + protocolFee) {
+    throw new BadRequestException(
+      `You need ~${calculateMissingSOL(
+        missingFunds,
+      )} more SOL in your wallet to pay for protocol fees`,
+    );
+  }
 }

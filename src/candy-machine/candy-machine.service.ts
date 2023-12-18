@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   Keypair,
   PublicKey,
@@ -38,7 +34,6 @@ import {
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
-  MIN_MINT_PROTOCOL_FEE,
 } from '../constants';
 import { sleep, solFromLamports } from '../utils/helpers';
 import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
@@ -50,10 +45,10 @@ import {
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { GuardGroup, RarityCoverFiles } from '../types/shared';
 import {
-  calculateMissingSOL,
   generatePropertyName,
   insertItems,
   JsonMetadataCreators,
+  validateBalanceForMint,
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
@@ -417,7 +412,7 @@ export class CandyMachineService {
     const { allowList, lookupTable, mintPrice } =
       await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    this.validateBalanceForMint(mintPrice, balance);
+    validateBalanceForMint(mintPrice, balance);
 
     return await constructMintOneTransaction(
       this.metaplex,
@@ -427,34 +422,6 @@ export class CandyMachineService {
       allowList,
       lookupTable,
     );
-  }
-
-  validateBalanceForMint(mintPrice: number, balance: number): void {
-    // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
-    const protocolFee = MIN_MINT_PROTOCOL_FEE;
-    const missingFunds = mintPrice
-      ? mintPrice + protocolFee - balance
-      : protocolFee - balance;
-
-    if (!mintPrice && balance < protocolFee) {
-      throw new BadRequestException(
-        `${calculateMissingSOL(
-          missingFunds,
-        )} SOL is missing to pay for protocol fees`,
-      );
-    } else if (mintPrice && balance < mintPrice) {
-      throw new BadRequestException(
-        `${calculateMissingSOL(
-          missingFunds,
-        )} SOL missing to pay for the purchase`,
-      );
-    } else if (mintPrice && balance < mintPrice + protocolFee) {
-      throw new BadRequestException(
-        `${calculateMissingSOL(
-          missingFunds,
-        )} SOL missing to pay for protocol fees`,
-      );
-    }
   }
 
   async thawFrozenNft(
