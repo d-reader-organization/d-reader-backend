@@ -150,6 +150,9 @@ const refillBundlr = async () => {
 };
 
 async function main() {
+  if (!isDevnet) {
+    throw new Error(`Are you seeding on mainnet 😨 ? I can't allow that.`);
+  }
   if (!process.env.WEBHOOK_ID) {
     throw new Error('process.env.WEBHOOK_ID undefined');
   }
