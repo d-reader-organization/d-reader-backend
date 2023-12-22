@@ -61,6 +61,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { createCollectionNft } from './instructions/create-collection';
 
 @Injectable()
 export class CandyMachineService {
@@ -181,14 +182,12 @@ export class CandyMachineService {
           },
         });
 
-      const { nft: newCollectionNft } = await this.metaplex.nfts().create({
-        uri: collectionNftUri,
-        name: onChainName,
-        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-        symbol: D_PUBLISHER_SYMBOL,
-        isCollection: true,
-      });
-
+      const newCollectionNft = await createCollectionNft(
+        this.metaplex,
+        onChainName,
+        collectionNftUri,
+        comicIssue.sellerFeeBasisPoints,
+      );
       await this.prisma.collectionNft.create({
         data: {
           address: newCollectionNft.address.toBase58(),

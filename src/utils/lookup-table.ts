@@ -6,6 +6,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from '@solana/web3.js';
+import { MIN_COMPUTE_PRICE_IX } from '../constants';
 
 export async function createLookupTable(
   metaplex: Metaplex,
@@ -26,15 +27,16 @@ export async function createLookupTable(
       lookupTable: address,
       addresses: [...addresses, SystemProgram.programId],
     });
-
     const messageV0 = new TransactionMessage({
       payerKey: metaplex.identity().publicKey,
       recentBlockhash: latestBlockhash.blockhash,
-      instructions: [instruction, extendInstruction],
+      instructions: [MIN_COMPUTE_PRICE_IX, instruction, extendInstruction],
     }).compileToV0Message();
+
     const transaction = new VersionedTransaction(messageV0);
     transaction.sign([metaplex.identity()]);
     const txid = await metaplex.connection.sendTransaction(transaction);
+
     await metaplex.connection.confirmTransaction({
       signature: txid,
       blockhash: latestBlockhash.blockhash,

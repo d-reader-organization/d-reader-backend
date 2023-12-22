@@ -29,7 +29,11 @@ import { PublicKey } from '@solana/web3.js';
 import { solFromLamports } from '../../utils/helpers';
 import { Nft, Listing } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import {
+  AUTH_RULES,
+  AUTH_RULES_ID,
+  MIN_COMPUTE_PRICE_IX,
+} from '../../constants';
 import { metaplex } from '../../utils/metaplex';
 
 export async function constructListInstruction(
@@ -217,8 +221,9 @@ export async function constructListTransaction(
     feePayer: seller,
     ...latestBlockhash,
   }).add(
-    ...listInstruction,
     ComputeBudgetProgram.setComputeUnitLimit({ units: 500000 }),
+    MIN_COMPUTE_PRICE_IX,
+    ...listInstruction,
   );
 
   const rawTransaction = listTransaction.serialize({

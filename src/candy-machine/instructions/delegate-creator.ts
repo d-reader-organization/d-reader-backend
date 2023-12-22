@@ -6,6 +6,7 @@ import {
   createDelegateCreatorInstruction,
 } from 'dreader-comic-verse';
 import { Transaction } from '@solana/web3.js';
+import { MIN_COMPUTE_PRICE_IX } from '../../constants';
 
 export async function constructDelegateCreatorInstruction(
   candyMachineAddress: PublicKey,
@@ -50,7 +51,7 @@ export async function constructDelegateCreatorTransaction(
   const tx = new Transaction({
     feePayer: creatorAuthority,
     ...latestBlockhash,
-  }).add(instruction);
+  }).add(MIN_COMPUTE_PRICE_IX, instruction);
 
   const rawTransaction = tx.serialize({
     requireAllSignatures: false,
