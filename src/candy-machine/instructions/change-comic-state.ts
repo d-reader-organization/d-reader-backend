@@ -8,9 +8,11 @@ import {
   createChangeComicStateInstruction,
 } from 'dreader-comic-verse';
 import {
+  ComputeBudgetProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from '@solana/web3.js';
 import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
 
@@ -81,22 +83,34 @@ export async function constructChangeComicStateTransaction(
   feePayer: PublicKey,
   newState: ComicStateArgs,
 ) {
-  const instruction = await constructChangeComicStateInstruction(
-    metaplex,
-    collectionMint,
-    candyMachineAddress,
-    numberedRarity,
-    mint,
-    feePayer,
-    owner,
-    newState,
+  const changeComicStateInstruction =
+    await constructChangeComicStateInstruction(
+      metaplex,
+      collectionMint,
+      candyMachineAddress,
+      numberedRarity,
+      mint,
+      feePayer,
+      owner,
+      newState,
+    );
+
+  const instructions: TransactionInstruction[] = [];
+  instructions.push(
+    ComputeBudgetProgram.setComputeUnitLimit({
+      units: 200000,
+    }),
+    ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: 400000,
+    }),
   );
+  instructions.push(changeComicStateInstruction);
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
 
   const tx = new Transaction({
     feePayer,
     ...latestBlockhash,
-  }).add(instruction);
+  }).add(...instructions);
 
   const rawTransaction = tx.serialize({
     requireAllSignatures: false,
