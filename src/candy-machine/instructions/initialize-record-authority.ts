@@ -11,6 +11,7 @@ import {
   createInitializeRecordAuthorityInstruction,
 } from 'dreader-comic-verse';
 import { PUB_AUTH_TAG, pda } from './pda';
+import { MIN_COMPUTE_PRICE_IX } from '../../constants';
 
 export async function constructInitializeRecordAuthorityInstruction(
   metaplex: Metaplex,
@@ -76,7 +77,7 @@ export async function initializeRecordAuthority(
     creatorAuthority,
     maxSignature,
   );
-  const tx = new Transaction().add(instruction);
+  const tx = new Transaction().add(MIN_COMPUTE_PRICE_IX, instruction);
   await sendAndConfirmTransaction(metaplex.connection, tx, [
     metaplex.identity(),
   ]);

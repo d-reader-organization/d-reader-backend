@@ -19,18 +19,27 @@ import {
 } from '@metaplex-foundation/mpl-candy-guard';
 import { createInitializeV2Instruction as createInitializeCandyMachineInstruction } from '@metaplex-foundation/mpl-candy-machine-core';
 import { TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import {
+  AUTH_RULES,
+  AUTH_RULES_ID,
+  MIN_COMPUTE_PRICE_IX,
+} from '../../constants';
 
 export async function constructCandyMachineTransaction(
   metaplex: Metaplex,
   data: CreateCandyMachineInput,
 ) {
-  const instructions = await constructCandyMachineInstructions(
+  const instructions: TransactionInstruction[] = [];
+  const candyMachineInstructions = await constructCandyMachineInstructions(
     metaplex,
     data,
     metaplex.identity().publicKey,
   );
+
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+  instructions.push(MIN_COMPUTE_PRICE_IX);
+  instructions.push(...candyMachineInstructions);
+
   const transaction = new Transaction({
     feePayer: metaplex.identity().publicKey,
     ...latestBlockhash,

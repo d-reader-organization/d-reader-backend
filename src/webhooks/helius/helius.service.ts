@@ -33,7 +33,7 @@ import {
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
-import { SOL_ADDRESS } from '../../constants';
+import { MIN_COMPUTE_PRICE_IX, SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
@@ -517,7 +517,7 @@ export class HeliusService {
       ComicRarity[rarity],
       mint,
     );
-    const tx = new Transaction().add(instruction);
+    const tx = new Transaction().add(MIN_COMPUTE_PRICE_IX, instruction);
     await sendAndConfirmTransaction(this.metaplex.connection, tx, [
       this.metaplex.identity(),
     ]);

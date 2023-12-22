@@ -36,7 +36,10 @@ import { BuyArgs } from '../dto/types/buy-args';
 import { toListing } from './list';
 import { Listing, Nft } from '@prisma/client';
 import { constructExecuteSaleInstruction } from './executeSale';
-import { AUCTION_HOUSE_LOOK_UP_TABLE } from '../../constants';
+import {
+  AUCTION_HOUSE_LOOK_UP_TABLE,
+  MIN_COMPUTE_PRICE_IX,
+} from '../../constants';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -193,9 +196,10 @@ export async function constructInstantBuyTransaction(
     payerKey: buyer,
     recentBlockhash: latestBlockhash.blockhash,
     instructions: [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 800000 }),
+      MIN_COMPUTE_PRICE_IX,
       ...bidInstruction,
       executeSaleInstruction,
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 800000 }),
     ],
   }).compileToV0Message([lookupTableAccount.value]);
   const instantBuyTransactionV0 = new VersionedTransaction(

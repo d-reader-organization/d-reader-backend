@@ -2,7 +2,7 @@ import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { IsStrongPasswordOptions } from 'class-validator';
-import { PublicKey } from '@solana/web3.js';
+import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -32,10 +32,10 @@ export const RARITY_TRAIT = 'rarity';
 export const LOW_VALUE = 127;
 export const HIGH_VALUE = 16383;
 
-export const MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY = 40_000;
+export const MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY = 600_000;
 export const MINT_COMPUTE_UNITS = 700_000;
 export const ALLOW_LIST_PROOF_COMPUTE_UNITS = 80_000;
-export const ALLOW_LIST_PROOF_COMPUTE_PRICE = 500_000;
+export const ALLOW_LIST_PROOF_COMPUTE_PRICE = 80_00_000;
 
 export const BUNDLR_ADDRESS =
   process.env.SOLANA_CLUSTER === 'devnet'
@@ -107,6 +107,9 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
 ];
 
 export const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
+export const MIN_COMPUTE_PRICE_IX = ComputeBudgetProgram.setComputeUnitPrice({
+  microLamports: 600_000,
+});
 
 export const getRarityShareTable = (numberOfCovers: number) => {
   switch (numberOfCovers) {

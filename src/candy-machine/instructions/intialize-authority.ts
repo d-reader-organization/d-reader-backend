@@ -12,6 +12,7 @@ import {
   Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
+import { MIN_COMPUTE_PRICE_IX } from '../../constants';
 
 export async function constructInitializeComicAuthorityInstruction(
   metaplex: Metaplex,
@@ -65,7 +66,7 @@ export async function initializeAuthority(
     rarity,
     comicStates,
   );
-  const tx = new Transaction().add(instruction);
+  const tx = new Transaction().add(MIN_COMPUTE_PRICE_IX, instruction);
   await sendAndConfirmTransaction(metaplex.connection, tx, [
     metaplex.identity(),
   ]);
