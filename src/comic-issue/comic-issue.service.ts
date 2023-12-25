@@ -216,6 +216,32 @@ export class ComicIssueService {
     return normalizedComicIssues;
   }
 
+  async findOnePublic(slug: string) {
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { slug },
+      include: {
+        comic: { include: { creator: true, genres: true } },
+        collaborators: true,
+        statelessCovers: true,
+      },
+    });
+
+    if (!comicIssue) {
+      throw new NotFoundException(
+        `Comic issue with slug ${slug} does not exist`,
+      );
+    }
+
+    const activeCandyMachineAddress = await this.findActiveCandyMachine(
+      comicIssue.id,
+    );
+
+    return {
+      ...comicIssue,
+      activeCandyMachineAddress,
+    };
+  }
+
   async findOne(id: number, userId: number) {
     const findComicIssue = this.prisma.comicIssue.findFirst({
       where: { id },
