@@ -260,7 +260,7 @@ export class HeliusService {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
-      const tokenMetadata = transaction.instructions.at(-2).accounts[2]; // token metadata is found in the second last instruction
+      const tokenMetadata = transaction.instructions.at(-1).accounts[2]; // token metadata is found in the second last instruction
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);

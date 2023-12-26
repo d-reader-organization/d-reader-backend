@@ -107,7 +107,7 @@ export class TransactionController {
   async createListTransaction(@Query() query: ListParams) {
     const publicKey = new PublicKey(query.sellerAddress);
     const mintAccount = new PublicKey(query.mintAccount);
-    const printReceipt = query.printReceipt == 'false' ? false : true;
+    const printReceipt = query.printReceipt == 'true' ? true : false;
     return await this.auctionHouseService.createListTransaction(
       publicKey,
       mintAccount,
