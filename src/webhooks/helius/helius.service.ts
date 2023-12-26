@@ -194,7 +194,15 @@ export class HeliusService {
           owner: { include: { user: true } },
         },
         data: {
-          ownerAddress: buyerAddress,
+          owner: {
+            connectOrCreate: {
+              where: { address: buyerAddress },
+              create: {
+                address: buyerAddress,
+                createdAt: new Date(transaction.timestamp * 1000),
+              },
+            },
+          },
           ownerChangedAt: new Date(transaction.timestamp * 1000),
           listing: {
             update: {
