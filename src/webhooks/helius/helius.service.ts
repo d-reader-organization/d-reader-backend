@@ -340,6 +340,7 @@ export class HeliusService {
 
       const nft = await this.prisma.nft.update({
         where: { address },
+        include: { listing: { where: { canceledAt: new Date(0) } } },
         data: {
           owner: {
             connectOrCreate: {
@@ -356,17 +357,19 @@ export class HeliusService {
         },
       });
 
-      await this.prisma.listing.update({
-        where: {
-          nftAddress_canceledAt: {
-            nftAddress: address,
-            canceledAt: new Date(0),
+      if (nft.listing && nft.listing.length > 0) {
+        await this.prisma.listing.update({
+          where: {
+            nftAddress_canceledAt: {
+              nftAddress: address,
+              canceledAt: new Date(0),
+            },
           },
-        },
-        data: {
-          canceledAt: new Date(enrichedTransaction.timestamp * 1000),
-        },
-      });
+          data: {
+            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+          },
+        });
+      }
 
       this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
       this.websocketGateway.handleWalletNftSent(previousOwner, nft);
