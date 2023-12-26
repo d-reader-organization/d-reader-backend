@@ -287,13 +287,27 @@ export class HeliusService {
         },
         data: {
           listing: {
-            create: {
-              price,
-              symbol: metadata.symbol,
-              feePayer,
-              signature,
-              createdAt,
-              canceledAt: new Date(0),
+            upsert: {
+              where: {
+                nftAddress_canceledAt: {
+                  nftAddress: mint,
+                  canceledAt: new Date(0),
+                },
+              },
+              update: {
+                price,
+                feePayer,
+                signature,
+                createdAt: new Date(),
+              },
+              create: {
+                price,
+                symbol: metadata.symbol,
+                feePayer,
+                signature,
+                createdAt,
+                canceledAt: new Date(0),
+              },
             },
           },
           metadata: {
