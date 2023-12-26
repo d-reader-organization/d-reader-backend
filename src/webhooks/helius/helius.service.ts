@@ -169,6 +169,7 @@ export class HeliusService {
   private async handleInstantBuy(transaction: EnrichedTransaction) {
     try {
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      const buyerAddress = transaction.instructions.at(-1).accounts[0];
       const { value } = await this.metaplex
         .rpc()
         .confirmTransaction(
@@ -179,7 +180,7 @@ export class HeliusService {
       if (!!value.err) {
         throw new Error('Sale transaction failed to finalize');
       }
-      const nftAddress = transaction.events.nft.nfts[0].mint;
+      const nftAddress = transaction.instructions.at(-1).accounts[3];
       const nft = await this.prisma.nft.update({
         where: { address: nftAddress },
         include: {
@@ -193,7 +194,7 @@ export class HeliusService {
           owner: { include: { user: true } },
         },
         data: {
-          ownerAddress: transaction.tokenTransfers[0].toUserAccount,
+          ownerAddress: buyerAddress,
           ownerChangedAt: new Date(transaction.timestamp * 1000),
           listing: {
             update: {
