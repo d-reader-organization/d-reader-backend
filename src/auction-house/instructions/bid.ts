@@ -188,7 +188,6 @@ export async function constructInstantBuyTransaction(
     bid,
   );
   const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-
   const lookupTableAccount = await metaplex.connection.getAddressLookupTable(
     AUCTION_HOUSE_LOOK_UP_TABLE,
   );
