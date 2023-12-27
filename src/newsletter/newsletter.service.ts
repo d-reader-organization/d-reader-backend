@@ -26,14 +26,14 @@ export class NewsletterService {
   }
 
   async unsubscribe(verificationToken: string) {
-    const email = this.authService.verifyEmailToken(verificationToken);
+    const payload = this.authService.verifyEmailToken(verificationToken);
 
     try {
-      await this.prisma.newsletter.delete({ where: { email } });
+      await this.prisma.newsletter.delete({ where: { email: payload.email } });
     } catch {
       throw new BadRequestException('email not subscribed to newsletter');
     }
 
-    this.mailService.unsubscribedFromNewsletter(email);
+    this.mailService.unsubscribedFromNewsletter(payload.email);
   }
 }
