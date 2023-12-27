@@ -141,6 +141,12 @@ export class ComicIssueController {
     return toComicIssueDto(comicIssue);
   }
 
+  @Get('get-public/:slug')
+  async findOnePublic(@Param('slug') slug: string): Promise<ComicIssueDto> {
+    const comicIssue = await this.comicIssueService.findOnePublic(slug);
+    return toComicIssueDto(comicIssue);
+  }
+
   /* Get specific comic issue in raw format by unique id */
   @CreatorAuth()
   @Get('get-raw/:id')
