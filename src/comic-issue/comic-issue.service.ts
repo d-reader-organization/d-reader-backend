@@ -216,9 +216,9 @@ export class ComicIssueService {
     return normalizedComicIssues;
   }
 
-  async findOnePublic(slug: string) {
-    const comicIssue = await this.prisma.comicIssue.findFirst({
-      where: { slug },
+  async findOnePublic(id: number) {
+    const findComicIssue = this.prisma.comicIssue.findFirst({
+      where: { id },
       include: {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
@@ -226,20 +226,18 @@ export class ComicIssueService {
       },
     });
 
+    const findActiveCandyMachine = this.findActiveCandyMachine(id);
+
+    const [comicIssue, activeCandyMachineAddress] = await Promise.all([
+      findComicIssue,
+      findActiveCandyMachine,
+    ]);
+
     if (!comicIssue) {
-      throw new NotFoundException(
-        `Comic issue with slug ${slug} does not exist`,
-      );
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    const activeCandyMachineAddress = await this.findActiveCandyMachine(
-      comicIssue.id,
-    );
-
-    return {
-      ...comicIssue,
-      activeCandyMachineAddress,
-    };
+    return { ...comicIssue, activeCandyMachineAddress };
   }
 
   async findOne(id: number, userId: number) {
