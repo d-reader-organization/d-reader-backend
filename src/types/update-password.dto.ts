@@ -5,7 +5,9 @@ export class UpdatePasswordDto {
   @IsString()
   oldPassword: string;
 
-  @IsStrongPassword(PASSWORD_OPTIONS)
+  @IsStrongPassword(PASSWORD_OPTIONS, {
+    message: 'Password is not strong enough',
+  })
   newPassword: string;
 }
 
