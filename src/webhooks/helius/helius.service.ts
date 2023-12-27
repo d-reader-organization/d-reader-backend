@@ -33,7 +33,11 @@ import {
 import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
 import { ComicRarity } from 'dreader-comic-verse';
 import * as jwt from 'jsonwebtoken';
-import { MIN_COMPUTE_PRICE_IX, SOL_ADDRESS } from '../../constants';
+import {
+  D_PUBLISHER_SYMBOL,
+  MIN_COMPUTE_PRICE_IX,
+  SOL_ADDRESS,
+} from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
@@ -169,7 +173,7 @@ export class HeliusService {
   private async handleInstantBuy(transaction: EnrichedTransaction) {
     try {
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
-      const buyerAddress = transaction.instructions.at(-1).accounts[0];
+      const buyerAddress = transaction.events.nft.buyer;
       const { value } = await this.metaplex
         .rpc()
         .confirmTransaction(
@@ -180,7 +184,7 @@ export class HeliusService {
       if (!!value.err) {
         throw new Error('Sale transaction failed to finalize');
       }
-      const nftAddress = transaction.instructions.at(-1).accounts[3];
+      const nftAddress = transaction.events.nft.nfts[0].mint;
       const nft = await this.prisma.nft.update({
         where: { address: nftAddress },
         include: {
@@ -269,15 +273,9 @@ export class HeliusService {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
-      const tokenMetadata = transaction.instructions.at(-1).accounts[2]; // token metadata is found in the second last instruction
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
-      const info = await this.metaplex
-        .rpc()
-        .getAccount(new PublicKey(tokenMetadata));
-      const metadata = toMetadata(toMetadataAccount(info));
-      const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
       const nft = await this.prisma.nft.update({
         where: { address: mint },
         include: {
@@ -302,23 +300,11 @@ export class HeliusService {
               },
               create: {
                 price,
-                symbol: metadata.symbol,
+                symbol: D_PUBLISHER_SYMBOL,
                 feePayer,
                 signature,
                 createdAt,
                 canceledAt: new Date(0),
-              },
-            },
-          },
-          metadata: {
-            connectOrCreate: {
-              where: { uri: metadata.uri },
-              create: {
-                collectionName: collectionMetadata.collection.name,
-                uri: metadata.uri,
-                isUsed: findUsedTrait(collectionMetadata),
-                isSigned: findSignedTrait(collectionMetadata),
-                rarity: findRarityTrait(collectionMetadata),
               },
             },
           },
