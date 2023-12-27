@@ -32,6 +32,7 @@ import { DiscordNotificationService } from '../discord/notification.service';
 import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
+import { EmailPayload } from '../auth/dto/authorization.dto';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -246,19 +247,20 @@ export class CreatorService {
     await this.mailService.requestCreatorEmailVerification(creator);
   }
 
+  // TODO: change this to work the same way as on the user.service
   async verifyEmail(verificationToken: string) {
-    let email: string;
+    let payload: EmailPayload;
 
     try {
-      email = this.authService.verifyEmailToken(verificationToken);
+      payload = this.authService.verifyEmailToken(verificationToken);
     } catch (e) {
       // resend 'request email verification' email if token verification failed
-      this.requestEmailVerification(email);
+      this.requestEmailVerification(payload.email);
       throw e;
     }
 
     const creator = await this.prisma.creator.findFirst({
-      where: { email: insensitive(email) },
+      where: { id: payload.id },
     });
 
     if (!!creator.emailVerifiedAt) {
@@ -267,8 +269,8 @@ export class CreatorService {
 
     this.discordService.notifyCreatorEmailVerification(creator);
     return await this.prisma.creator.update({
-      where: { email },
-      data: { emailVerifiedAt: new Date() },
+      where: { id: payload.id },
+      data: { email: payload.email, emailVerifiedAt: new Date() },
     });
   }
 
