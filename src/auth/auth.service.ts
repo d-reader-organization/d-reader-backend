@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
-import { EmailJwtDto, JwtDto, JwtPayload } from './dto/authorization.dto';
+import {
+  EmailJwtDto,
+  JwtDto,
+  JwtPayload,
+  EmailPayload,
+} from './dto/authorization.dto';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
@@ -75,6 +80,7 @@ export class AuthService {
     };
   }
 
+  /** @deprecated */
   signEmail(email: string, expiresIn = '7d'): string {
     const signedEmail = this.jwtService.sign(
       { email },
@@ -96,23 +102,6 @@ export class AuthService {
     } else throw new BadRequestException('Malformed email token');
   }
 
-  verifyEmailToken(emailToken: string) {
-    let emailJwtDto: EmailJwtDto;
-    try {
-      emailJwtDto = this.jwtService.verify<EmailJwtDto>(emailToken, {
-        secret: this.configService.get('JWT_ACCESS_SECRET'),
-      });
-    } catch {
-      throw new UnauthorizedException(
-        'Token expired, new mail is sent to your inbox',
-      );
-    }
-
-    if (typeof emailJwtDto === 'object' && 'email' in emailJwtDto) {
-      return emailJwtDto.email;
-    } else throw new BadRequestException('Malformed email token');
-  }
-
   private generateAccessToken(payload: JwtPayload): string {
     const sanitizedPayload = sanitizePayload(payload);
     const accessToken = `Bearer ${this.jwtService.sign(sanitizedPayload)}`;
@@ -129,6 +118,38 @@ export class AuthService {
     });
 
     return refreshToken;
+  }
+
+  generateEmailToken(id: number, email: string, expiresIn = '7d') {
+    return this.jwtService.sign(
+      { email, id },
+      {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn,
+      },
+    );
+  }
+
+  verifyEmailToken(token: string): EmailPayload {
+    let emailJwtDto: EmailJwtDto;
+    try {
+      emailJwtDto = this.jwtService.verify<EmailJwtDto>(token, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('Session token expired, new email sent');
+    }
+
+    if (
+      typeof emailJwtDto === 'object' &&
+      'email' in emailJwtDto &&
+      'id' in emailJwtDto
+    ) {
+      return {
+        email: emailJwtDto.email,
+        id: emailJwtDto.id,
+      };
+    } else throw new BadRequestException('Malformed email token');
   }
 
   async refreshAccessToken(token: string) {

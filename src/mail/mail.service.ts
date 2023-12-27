@@ -21,13 +21,16 @@ const USER_DELETED = 'userDeleted';
 const USER_PASSWORD_RESET = 'userPasswordReset';
 const USER_PASSWORD_RESET_REQUESTED = 'userPasswordResetRequested';
 const BUMP_USER_WITH_EMAIL_VERIFICATION = 'bumpUserWithEmailVerification';
-const USER_EMAIL_VERIFICATION = 'userEmailVerification';
+const USER_EMAIL_VERIFICATION_REQUESTED = 'userEmailVerificationRequested';
 const CREATOR_REGISTERED = 'creatorRegistered';
 const CREATOR_SCHEDULED_FOR_DELETION = 'creatorScheduledForDeletion';
 const CREATOR_DELETED = 'creatorDeleted';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
 const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
-const CREATOR_EMAIL_VERIFICATION = 'creatorEmailVerification';
+const CREATOR_EMAIL_VERIFICATION_REQUESTED =
+  'creatorEmailVerificationRequested';
+const USER_EMAIL_CHANGE_REQUESTED = 'userEmailChangeRequested';
+const USER_EMAIL_CHANGED = 'userEmailChanged';
 
 @Injectable()
 export class MailService {
@@ -77,7 +80,10 @@ export class MailService {
   }
 
   async userRegistered(user: User) {
-    const verificationToken = this.authService.signEmail(user.email);
+    const verificationToken = this.authService.generateEmailToken(
+      user.id,
+      user.email,
+    );
 
     try {
       await this.mailerService.sendMail({
@@ -167,7 +173,10 @@ export class MailService {
   }
 
   async bumpUserWithEmailVerification(user: User) {
-    const verificationToken = this.authService.signEmail(user.email);
+    const verificationToken = this.authService.generateEmailToken(
+      user.id,
+      user.email,
+    );
 
     try {
       await this.mailerService.sendMail({
@@ -189,13 +198,16 @@ export class MailService {
   }
 
   async requestUserEmailVerification(user: User) {
-    const verificationToken = this.authService.signEmail(user.email);
+    const verificationToken = this.authService.generateEmailToken(
+      user.id,
+      user.email,
+    );
 
     try {
       await this.mailerService.sendMail({
         to: user.email,
         subject: '🕵️‍♂️ e-mail verification!',
-        template: USER_EMAIL_VERIFICATION,
+        template: USER_EMAIL_VERIFICATION_REQUESTED,
         context: {
           name: user.name,
           apiUrl: this.apiUrl,
@@ -203,15 +215,59 @@ export class MailService {
         },
       });
     } catch (e) {
-      logError(USER_EMAIL_VERIFICATION, user.email, e);
+      logError(USER_EMAIL_VERIFICATION_REQUESTED, user.email, e);
       throw new InternalServerErrorException(
         'Unable to send "e-mail verification" mail, check your email address',
       );
     }
   }
 
+  async requestUserEmailChange(user: User, newEmail: string) {
+    const verificationToken = this.authService.generateEmailToken(
+      user.id,
+      newEmail,
+      '3d',
+    );
+
+    try {
+      await this.mailerService.sendMail({
+        to: newEmail,
+        subject: '🚨 email change requested!',
+        template: USER_EMAIL_CHANGE_REQUESTED,
+        context: {
+          apiUrl: this.apiUrl,
+          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+        },
+      });
+    } catch (e) {
+      logError(USER_EMAIL_CHANGE_REQUESTED, newEmail, e);
+      throw new InternalServerErrorException(
+        'Unable to send "request email change" email',
+      );
+    }
+  }
+
+  async userEmailChanged(user: User) {
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: '📧 Successfully changed email',
+        template: USER_EMAIL_CHANGED,
+        context: { name: user.name, apiUrl: this.apiUrl },
+      });
+    } catch (e) {
+      logError(USER_EMAIL_CHANGED, user.email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "email email changed" email',
+      );
+    }
+  }
+
   async creatorRegistered(creator: Creator) {
-    const verificationToken = this.authService.signEmail(creator.email);
+    const verificationToken = this.authService.generateEmailToken(
+      creator.id,
+      creator.email,
+    );
 
     try {
       await this.mailerService.sendMail({
@@ -286,7 +342,10 @@ export class MailService {
   }
 
   async bumpCreatorWithEmailVerification(creator: Creator) {
-    const verificationToken = this.authService.signEmail(creator.email);
+    const verificationToken = this.authService.generateEmailToken(
+      creator.id,
+      creator.email,
+    );
 
     try {
       await this.mailerService.sendMail({
@@ -308,13 +367,16 @@ export class MailService {
   }
 
   async requestCreatorEmailVerification(creator: Creator) {
-    const verificationToken = this.authService.signEmail(creator.email);
+    const verificationToken = this.authService.generateEmailToken(
+      creator.id,
+      creator.email,
+    );
 
     try {
       await this.mailerService.sendMail({
         to: creator.email,
         subject: '🕵️‍♂️ e-mail verification!',
-        template: CREATOR_EMAIL_VERIFICATION,
+        template: CREATOR_EMAIL_VERIFICATION_REQUESTED,
         context: {
           name: creator.name,
           apiUrl: this.apiUrl,
@@ -325,7 +387,7 @@ export class MailService {
         },
       });
     } catch (e) {
-      logError(CREATOR_EMAIL_VERIFICATION, creator.email, e);
+      logError(CREATOR_EMAIL_VERIFICATION_REQUESTED, creator.email, e);
       throw new InternalServerErrorException(
         'Unable to send "e-mail verification" mail, check your email address',
       );

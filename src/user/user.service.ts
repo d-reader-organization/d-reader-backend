@@ -27,6 +27,7 @@ import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
+import { EmailPayload, UserPayload } from '../auth/dto/authorization.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -233,26 +234,26 @@ export class UserService {
       throw new BadRequestException(`User with email ${email} doesn't exists.`);
     }
 
-    const verificationToken = this.authService.signEmail(user.email, '10min');
+    const verificationToken = this.authService.generateEmailToken(
+      user.id,
+      user.email,
+      '10min',
+    );
     await this.mailService.requestUserPasswordReset(user, verificationToken);
   }
 
   async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
-    let email: string;
+    let payload: EmailPayload;
 
     try {
-      email = this.authService.verifyEmailToken(verificationToken);
+      payload = this.authService.verifyEmailToken(verificationToken);
     } catch (e) {
       // resend 'request password reset' email if token verification failed
-      this.requestPasswordReset(email);
+      this.requestPasswordReset(payload.email);
       throw e;
     }
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      throw new BadRequestException(`User with email ${email} doesn't exists.`);
-    }
+    const user = await this.findOne(payload.id);
 
     const hashedPassword = await this.passwordService.hash(newPassword);
     await this.prisma.user.update({
@@ -272,28 +273,50 @@ export class UserService {
     await this.mailService.requestUserEmailVerification(user);
   }
 
+  async requestEmailChange({ email, id }: UserPayload, newEmail: string) {
+    if (email === newEmail) {
+      throw new BadRequestException(
+        `Email must be different from the current email.`,
+      );
+    }
+    validateEmail(newEmail);
+    await this.throwIfEmailTaken(newEmail);
+
+    const user = await this.findOne(id);
+    await this.mailService.requestUserEmailChange(user, newEmail);
+  }
+
   async verifyEmail(verificationToken: string) {
-    let email: string;
+    let payload: EmailPayload;
 
     try {
-      email = this.authService.verifyEmailToken(verificationToken);
+      payload = this.authService.verifyEmailToken(verificationToken);
     } catch (e) {
       // resend 'request email verification' email if token verification failed
-      this.requestEmailVerification(email);
+      this.requestEmailVerification(payload.email);
       throw e;
     }
 
-    const user = await this.prisma.user.findFirst({
-      where: { email: insensitive(email) },
-    });
+    const user = await this.findOne(payload.id);
+    validateEmail(payload.email);
 
-    if (!!user.emailVerifiedAt) {
+    // if verificationToken holds the new email address, user has updated it
+    const isEmailUpdated = user.email !== payload.email;
+    if (isEmailUpdated) {
+      await this.throwIfEmailTaken(payload.email); // make sure new email is not taken
+    } else if (!!user.emailVerifiedAt) {
+      // if email is not updated, stop here if it's already verified
       throw new BadRequestException('Email already verified');
     }
+
     const updatedUser = await this.prisma.user.update({
-      where: { email },
-      data: { emailVerifiedAt: new Date() },
+      where: { id: payload.id },
+      data: { email: payload.email, emailVerifiedAt: new Date() },
     });
+
+    if (isEmailUpdated) {
+      await this.mailService.userEmailChanged(updatedUser);
+    }
 
     await this.walletService.makeEligibleForReferralBonus(user.id);
     await this.walletService.makeEligibleForReferralBonus(user.referrerId);
