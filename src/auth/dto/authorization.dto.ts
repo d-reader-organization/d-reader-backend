@@ -5,6 +5,13 @@ export class Authorization {
   refreshToken: string;
 }
 
+export type BaseJwtPayload = {
+  /** Issued at */
+  iat: number;
+  /** Expiration time */
+  exp: number;
+};
+
 export type UserPayload = {
   type: 'user';
   id: User['id'];
@@ -21,16 +28,10 @@ export type CreatorPayload = {
 };
 
 export type JwtPayload = UserPayload | CreatorPayload;
+export type JwtDto = JwtPayload & BaseJwtPayload;
 
-export type JwtDto = JwtPayload & {
-  /** Issued at */
-  iat: number;
-  /** Expiration time */
-  exp: number;
-};
-
-export type EmailJwtDto = {
+export type EmailPayload = {
   email: string;
-  iat: number;
-  exp: number;
+  id: number; // user or creator id
 };
+export type EmailJwtDto = EmailPayload & BaseJwtPayload;

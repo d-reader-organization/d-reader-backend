@@ -1,0 +1,13 @@
+extends userBase.pug
+
+block title
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') Important notice!
+
+block content
+    p(style='font-size: 18px; margin: 8px 0;') You have requested an email change 📧
+    p(style='font-size: 18px; margin: 8px 0;') If you haven't triggered this action, please reach out to support@dreader.io as soon as possible
+    br
+    p(style='font-size: 18px; margin: 8px 0;') Please verify your new email by clicking on the button below
+
+block action
+    a.action-link.yellow-bg(href=actionUrl) Verify email
