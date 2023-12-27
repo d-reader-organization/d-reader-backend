@@ -33,6 +33,7 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { WalletDto, toWalletDtoArray } from 'src/wallet/dto/wallet.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UserFilterParams } from './dto/user-params.dto';
+import { RequestEmailChangeDto } from 'src/types/request-email-change.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('User')
@@ -99,6 +100,7 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
+  @Throttle(5, 60)
   @Patch('request-password-reset')
   async requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
@@ -115,6 +117,16 @@ export class UserController {
     (email: string) => this.userService.requestEmailVerification(email),
     2 * 60 * 1000, // cache for 2 minutes
   );
+
+  @Throttle(5, 60)
+  @UserOwnerAuth()
+  @Patch('request-email-change')
+  async requestEmailChange(
+    @UserEntity() user: UserPayload,
+    @Body() { newEmail }: RequestEmailChangeDto,
+  ) {
+    await this.userService.requestEmailChange(user, newEmail);
+  }
 
   /* Verify your email address */
   @UserOwnerAuth()
