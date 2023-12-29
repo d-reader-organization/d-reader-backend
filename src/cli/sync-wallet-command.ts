@@ -30,22 +30,19 @@ export class SyncWalletCommand extends CommandRunner {
 
     const { address } = options;
 
-    let addresses: string[] = [];
+    let addresses: string[] = [address];
     try {
       if (!address) {
-        const wallets = await this.prisma.wallet.findMany({
-          select: {
-            address: true,
-          },
-        });
+        const wallets = await this.prisma.wallet.findMany();
         addresses = wallets.map((w) => w.address);
-      } else {
-        addresses = [address];
       }
 
-      await Promise.all(
-        addresses.map((address) => this.walletService.syncWallet(address)),
-      );
+      let i = 1;
+      for (const address of addresses) {
+        log(`syncing wallet (${i}/${addresses.length}): ${address}`);
+        await this.walletService.syncWallet(address);
+        i += 1;
+      }
     } catch (error) {
       logErr(`Error syncing wallet ${address}: ${error}`);
     }

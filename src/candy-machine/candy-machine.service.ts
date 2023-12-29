@@ -689,9 +689,9 @@ export class CandyMachineService {
   }
 
   async findMintedNfts(address: string) {
-    const candyMachine = await this.prisma.candyMachine.findUnique({
-      where: { address },
-    });
+    // const candyMachine = await this.prisma.candyMachine.findUnique({
+    //   where: { address },
+    // });
     const authorityPda = this.metaplex
       .candyMachines()
       .pdas()
@@ -699,7 +699,7 @@ export class CandyMachineService {
       .toString();
     return await this.heliusService.helius.getMintlist({
       query: {
-        verifiedCollectionAddresses: [candyMachine.collectionNftAddress],
+        // verifiedCollectionAddresses: [candyMachine.collectionNftAddress],
         firstVerifiedCreators: [authorityPda],
       },
     });
