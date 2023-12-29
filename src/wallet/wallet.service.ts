@@ -189,7 +189,10 @@ export class WalletService {
         await this.allowlistUserWallet(user.wallets, FREE_MINT_GROUP_LABEL);
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { rewardedAt: new Date() },
+          data: {
+            rewardedAt: new Date(),
+            referralsRemaining: { increment: 2 },
+          },
         });
       }
     } catch (e) {
