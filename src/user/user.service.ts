@@ -500,8 +500,28 @@ export class UserService {
     }
   }
 
+  /** make sure all verified users have at least 1 referral remaining each week */
+  @Cron(CronExpression.EVERY_WEEK)
+  protected async refillUserRemainingReferrals() {
+    await this.prisma.user.updateMany({
+      where: {
+        emailVerifiedAt: { not: null },
+        referralsRemaining: { lt: 2 },
+      },
+      data: { referralsRemaining: 2 },
+    });
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_NOON)
   protected async bumpNewUsersWithUnverifiedEmails() {
+    // TODO: can this replace the code block below (AND)?
+    // const newUnverifiedUsers = await this.prisma.user.findMany({
+    //   where: {
+    //     emailVerifiedAt: null,
+    //     createdAt: { lte: subDays(new Date(), 3), gte: subDays(new Date(), 4) },
+    //   },
+    // });
+
     const newUnverifiedUsers = await this.prisma.user.findMany({
       where: {
         AND: [
