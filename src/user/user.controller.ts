@@ -100,12 +100,18 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
-  @Throttle(5, 60)
+  private throttledRequestPasswordReset = memoizeThrottle(
+    (email: string) => {
+      return this.userService.requestPasswordReset(email);
+    },
+    3 * 60 * 1000, // cache for 3 minutes
+  );
+
   @Patch('request-password-reset')
   async requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
   ) {
-    await this.userService.requestPasswordReset(requestPasswordResetDto.email);
+    return this.throttledRequestPasswordReset(requestPasswordResetDto.email);
   }
 
   @Patch('reset-password')
@@ -113,9 +119,11 @@ export class UserController {
     await this.userService.resetPassword(resetPasswordDto);
   }
 
-  private throttledRequestEmailVerification = memoizeThrottle(
-    (email: string) => this.userService.requestEmailVerification(email),
-    2 * 60 * 1000, // cache for 2 minutes
+  private throttledRequestEmailChange = memoizeThrottle(
+    (user: UserPayload, newEmail: string) => {
+      return this.userService.requestEmailChange(user, newEmail);
+    },
+    10 * 60 * 1000, // cache for 10 minutes
   );
 
   @Throttle(5, 60)
@@ -125,8 +133,13 @@ export class UserController {
     @UserEntity() user: UserPayload,
     @Body() { newEmail }: RequestEmailChangeDto,
   ) {
-    await this.userService.requestEmailChange(user, newEmail);
+    return this.throttledRequestEmailChange(user, newEmail);
   }
+
+  private throttledRequestEmailVerification = memoizeThrottle(
+    (email: string) => this.userService.requestEmailVerification(email),
+    10 * 60 * 1000, // cache for 10 minutes
+  );
 
   /* Verify your email address */
   @UserOwnerAuth()
