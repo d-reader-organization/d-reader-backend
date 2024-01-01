@@ -191,7 +191,7 @@ export class WalletService {
           where: { id: user.id },
           data: {
             rewardedAt: new Date(),
-            referralsRemaining: { increment: 2 },
+            referralsRemaining: { increment: 1 },
           },
         });
       }
