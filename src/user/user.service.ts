@@ -228,10 +228,12 @@ export class UserService {
     return updatedUser;
   }
 
-  async requestPasswordReset(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      throw new BadRequestException(`User with email ${email} doesn't exists.`);
+  async requestPasswordReset(nameOrEmail: string) {
+    let user: User;
+    if (isEmail(nameOrEmail)) {
+      user = await this.findByEmail(nameOrEmail);
+    } else {
+      user = await this.findByName(nameOrEmail);
     }
 
     const verificationToken = this.authService.generateEmailToken(

@@ -111,7 +111,9 @@ export class UserController {
   async requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
   ) {
-    return this.throttledRequestPasswordReset(requestPasswordResetDto.email);
+    return this.throttledRequestPasswordReset(
+      requestPasswordResetDto.nameOrEmail,
+    );
   }
 
   @Patch('reset-password')
