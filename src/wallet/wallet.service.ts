@@ -27,6 +27,8 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { sortBy } from 'lodash';
 import { IndexedNft } from './dto/types';
 import { hasCompletedSetup } from '../utils/user';
+import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
+import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -52,8 +54,28 @@ export class WalletService {
     }
   }
 
-  doesWalletIndexCorrectly(metadata: Metadata, nfts: Nft[]) {
-    return nfts.find((nft) => nft.address === metadata.mintAddress.toString());
+  async doesWalletIndexCorrectly(metadata: Metadata, nfts: Nft[]) {
+    for (const nft of nfts) {
+      const doesNftExists = nft.address === metadata.mintAddress.toString();
+      if (doesNftExists) {
+        const updateAuthority = metadata.updateAuthorityAddress;
+        const offChainMetadata = await fetchOffChainMetadata(nft.uri);
+        const rarity = findRarityTrait(offChainMetadata);
+        const authority = pda(
+          [
+            Buffer.from(AUTH_TAG + rarity.toLowerCase()),
+            new PublicKey(nft.candyMachineAddress).toBuffer(),
+            metadata.collection.address.toBuffer(),
+          ],
+          COMIC_VERSE_ID,
+        );
+
+        if (updateAuthority.equals(authority)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
@@ -71,13 +93,25 @@ export class WalletService {
     });
 
     const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
-
-    const unsyncedMetadatas = onChainMetadatas.filter((metadata) => {
-      return (
-        this.findOurCandyMachine(candyMachines, metadata) &&
-        !this.doesWalletIndexCorrectly(metadata, nfts)
-      );
-    });
+    const unsyncedMetadatas = (
+      await Promise.all(
+        onChainMetadatas.map(async (metadata) => {
+          const candyMachineAddress = this.findOurCandyMachine(
+            candyMachines,
+            metadata,
+          );
+          if (candyMachineAddress) {
+            const isIndexed = await this.doesWalletIndexCorrectly(
+              metadata,
+              nfts,
+            );
+            if (!isIndexed) {
+              return metadata;
+            }
+          }
+        }),
+      )
+    ).filter(Boolean);
 
     for (const metadata of unsyncedMetadatas) {
       const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
@@ -93,6 +127,7 @@ export class WalletService {
           metadata,
           collectionMetadata,
           address,
+          candyMachine,
         );
       } else {
         indexedNft = await this.heliusService.indexNft(
@@ -103,33 +138,41 @@ export class WalletService {
         );
       }
 
-      const UNKNOWN = 'UNKOWN';
-      const userId: number = indexedNft.owner?.userId;
-
-      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-        nft: { connect: { address: indexedNft.address } },
-        candyMachine: { connect: { address: candyMachine } },
-        buyer: {
-          connectOrCreate: {
-            where: { address: indexedNft.ownerAddress },
-            create: { address: indexedNft.ownerAddress },
-          },
+      const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
+        {
+          where: { nftAddress: indexedNft.address },
         },
-        price: 0,
-        timestamp: new Date(),
-        description: `${indexedNft.address} minted ${metadata.name} for ${UNKNOWN} SOL.`,
-        splTokenAddress: UNKNOWN,
-        transactionSignature: UNKNOWN,
-        label: UNKNOWN,
-      };
+      );
 
-      if (userId) {
-        receiptData.user = { connect: { id: userId } };
+      if (!doesReceiptExists) {
+        const UNKNOWN = 'UNKOWN';
+        const userId: number = indexedNft.owner?.userId;
+
+        const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+          nft: { connect: { address: indexedNft.address } },
+          candyMachine: { connect: { address: candyMachine } },
+          buyer: {
+            connectOrCreate: {
+              where: { address: indexedNft.ownerAddress },
+              create: { address: indexedNft.ownerAddress },
+            },
+          },
+          price: 0,
+          timestamp: new Date(),
+          description: `${indexedNft.address} minted ${metadata.name} for ${UNKNOWN} SOL.`,
+          splTokenAddress: UNKNOWN,
+          transactionSignature: UNKNOWN,
+          label: UNKNOWN,
+        };
+
+        if (userId) {
+          receiptData.user = { connect: { id: userId } };
+        }
+
+        await this.prisma.candyMachineReceipt.create({
+          data: receiptData,
+        });
       }
-
-      await this.prisma.candyMachineReceipt.create({
-        data: receiptData,
-      });
 
       // TODO: I wonder if this would have the same effect as lines 120-126
       // await this.prisma.candyMachineReceipt.create({
@@ -249,7 +292,21 @@ export class WalletService {
     metadata: Metadata<JsonMetadata<string>>,
     collectionMetadata: JsonMetadata,
     walletAddress: string,
+    candMachineAddress: string,
   ) {
+    try {
+      await Promise.all([
+        this.heliusService.delegateAuthority(
+          new PublicKey(candMachineAddress),
+          metadata.collection.address,
+          findRarityTrait(collectionMetadata).toString(),
+          metadata.mintAddress,
+        ),
+        this.heliusService.verifyMintCreator(metadata.mintAddress),
+      ]);
+    } catch (e) {
+      console.error(e);
+    }
     return await this.prisma.nft.update({
       where: { address: metadata.mintAddress.toString() },
       include: { owner: { select: { userId: true } } },
