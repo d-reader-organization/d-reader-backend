@@ -145,7 +145,7 @@ export class WalletService {
       );
 
       if (!doesReceiptExists) {
-        const UNKNOWN = 'UNKOWN';
+        const UNKNOWN = 'UNKNOWN';
         const userId: number = indexedNft.owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
