@@ -6,8 +6,17 @@ import {
   ComicRarity,
   createAssignAuthorityToProgramInstruction,
 } from 'dreader-comic-verse';
-import { SYSVAR_INSTRUCTIONS_PUBKEY, SystemProgram } from '@solana/web3.js';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+import {
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
+import {
+  AUTH_RULES,
+  AUTH_RULES_ID,
+  MIN_COMPUTE_PRICE_IX,
+} from '../../constants';
 
 export async function constructDelegateAuthorityInstruction(
   metaplex: Metaplex,
@@ -42,4 +51,31 @@ export async function constructDelegateAuthorityInstruction(
     systemProgram: SystemProgram.programId,
   };
   return createAssignAuthorityToProgramInstruction(accounts, { rarity });
+}
+
+export async function verifyMintCreator(metaplex: Metaplex, mint: PublicKey) {
+  await metaplex.nfts().verifyCreator({
+    mintAddress: mint,
+    creator: metaplex.identity(),
+  });
+}
+
+export async function delegateAuthority(
+  metaplex: Metaplex,
+  candyMachineAddress: PublicKey,
+  collectionMint: PublicKey,
+  rarity: string,
+  mint: PublicKey,
+) {
+  const instruction = await constructDelegateAuthorityInstruction(
+    metaplex,
+    candyMachineAddress,
+    collectionMint,
+    ComicRarity[rarity],
+    mint,
+  );
+  const tx = new Transaction().add(MIN_COMPUTE_PRICE_IX, instruction);
+  await sendAndConfirmTransaction(metaplex.connection, tx, [
+    metaplex.identity(),
+  ]);
 }

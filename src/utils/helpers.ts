@@ -1,4 +1,4 @@
-import { sol } from '@metaplex-foundation/js';
+import { Metadata, Metaplex, PublicKey, sol } from '@metaplex-foundation/js';
 import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
 
@@ -92,3 +92,20 @@ export const importDynamic = new Function(
   'modulePath',
   'return import(modulePath)',
 );
+
+export function findOurCandyMachine(
+  metaplex: Metaplex,
+  candyMachines: { address: string }[],
+  metadata: Metadata,
+) {
+  const candyMachine = candyMachines.find(
+    (cm) =>
+      metadata?.creators?.length > 0 &&
+      metaplex
+        .candyMachines()
+        .pdas()
+        .authority({ candyMachine: new PublicKey(cm.address) })
+        .equals(metadata.creators[0].address),
+  );
+  return candyMachine?.address;
+}

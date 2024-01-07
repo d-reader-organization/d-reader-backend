@@ -29,6 +29,11 @@ import { IndexedNft } from './dto/types';
 import { hasCompletedSetup } from '../utils/user';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
+import { findOurCandyMachine } from '../utils/helpers';
+import {
+  delegateAuthority,
+  verifyMintCreator,
+} from '../candy-machine/instructions';
 @Injectable()
 export class WalletService {
   private readonly metaplex: Metaplex;
@@ -96,7 +101,8 @@ export class WalletService {
     const unsyncedMetadatas = (
       await Promise.all(
         onChainMetadatas.map(async (metadata) => {
-          const candyMachineAddress = this.findOurCandyMachine(
+          const candyMachineAddress = findOurCandyMachine(
+            this.metaplex,
             candyMachines,
             metadata,
           );
@@ -119,7 +125,11 @@ export class WalletService {
       const nft = await this.prisma.nft.findFirst({
         where: { address: metadata.mintAddress.toString() },
       });
-      const candyMachine = this.findOurCandyMachine(candyMachines, metadata);
+      const candyMachine = findOurCandyMachine(
+        this.metaplex,
+        candyMachines,
+        metadata,
+      );
 
       let indexedNft: IndexedNft;
       if (nft) {
@@ -181,22 +191,6 @@ export class WalletService {
 
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
-  }
-
-  findOurCandyMachine(
-    candyMachines: { address: string }[],
-    metadata: Metadata,
-  ) {
-    const candyMachine = candyMachines.find(
-      (cm) =>
-        metadata?.creators?.length > 0 &&
-        this.metaplex
-          .candyMachines()
-          .pdas()
-          .authority({ candyMachine: new PublicKey(cm.address) })
-          .equals(metadata.creators[0].address),
-    );
-    return candyMachine?.address;
   }
 
   /** This function allowlists a wallet on all the active Candy Machines
@@ -296,13 +290,14 @@ export class WalletService {
   ) {
     try {
       await Promise.all([
-        this.heliusService.delegateAuthority(
+        delegateAuthority(
+          this.metaplex,
           new PublicKey(candMachineAddress),
           metadata.collection.address,
           findRarityTrait(collectionMetadata).toString(),
           metadata.mintAddress,
         ),
-        this.heliusService.verifyMintCreator(metadata.mintAddress),
+        verifyMintCreator(this.metaplex, metadata.mintAddress),
       ]);
     } catch (e) {
       console.error(e);
