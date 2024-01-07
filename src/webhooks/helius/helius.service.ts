@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Cluster,
-  PublicKey,
-  Transaction,
-  sendAndConfirmTransaction,
-} from '@solana/web3.js';
+import { Cluster, PublicKey } from '@solana/web3.js';
 import {
   EnrichedTransaction,
   Helius,
@@ -30,14 +25,12 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
-import { constructDelegateAuthorityInstruction } from '../../candy-machine/instructions';
-import { ComicRarity } from 'dreader-comic-verse';
-import * as jwt from 'jsonwebtoken';
 import {
-  D_PUBLISHER_SYMBOL,
-  MIN_COMPUTE_PRICE_IX,
-  SOL_ADDRESS,
-} from '../../constants';
+  delegateAuthority,
+  verifyMintCreator,
+} from '../../candy-machine/instructions';
+import * as jwt from 'jsonwebtoken';
+import { D_PUBLISHER_SYMBOL, SOL_ADDRESS } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
@@ -509,32 +502,6 @@ export class HeliusService {
     );
   }
 
-  async verifyMintCreator(mint: PublicKey) {
-    await this.metaplex.nfts().verifyCreator({
-      mintAddress: mint,
-      creator: this.metaplex.identity(),
-    });
-  }
-
-  async delegateAuthority(
-    candyMachineAddress: PublicKey,
-    collectionMint: PublicKey,
-    rarity: string,
-    mint: PublicKey,
-  ) {
-    const instruction = await constructDelegateAuthorityInstruction(
-      this.metaplex,
-      candyMachineAddress,
-      collectionMint,
-      ComicRarity[rarity],
-      mint,
-    );
-    const tx = new Transaction().add(MIN_COMPUTE_PRICE_IX, instruction);
-    await sendAndConfirmTransaction(this.metaplex.connection, tx, [
-      this.metaplex.identity(),
-    ]);
-  }
-
   async indexNft(
     metadata: Metadata<JsonMetadata<string>>,
     collectionMetadata: JsonMetadata,
@@ -543,13 +510,14 @@ export class HeliusService {
   ) {
     try {
       await Promise.all([
-        this.delegateAuthority(
+        delegateAuthority(
+          this.metaplex,
           new PublicKey(candMachineAddress),
           metadata.collection.address,
           findRarityTrait(collectionMetadata).toString(),
           metadata.mintAddress,
         ),
-        this.verifyMintCreator(metadata.mintAddress),
+        verifyMintCreator(this.metaplex, metadata.mintAddress),
       ]);
     } catch (e) {
       console.error(e);

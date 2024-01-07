@@ -21,6 +21,7 @@ type NftEmbededArgs = {
 } & {
   ephemeral?: boolean;
   components?: InteractionComponent;
+  mentionedUsers?: string[];
 };
 
 export const NFT_EMBEDDED_RESPONSE = ({
@@ -30,6 +31,7 @@ export const NFT_EMBEDDED_RESPONSE = ({
   rarity,
   components,
   ephemeral,
+  mentionedUsers,
 }: NftEmbededArgs): InteractionReplyOptions => {
   return {
     content,
@@ -52,5 +54,6 @@ export const NFT_EMBEDDED_RESPONSE = ({
     ],
     components,
     ephemeral,
+    allowedMentions: { users: mentionedUsers },
   };
 };

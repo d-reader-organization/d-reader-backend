@@ -1,4 +1,4 @@
-import { Command, Handler, IA } from '@discord-nestjs/core';
+import { Command, EventParams, Handler, IA, On } from '@discord-nestjs/core';
 import {
   JsonMetadata,
   Metadata,
@@ -7,13 +7,14 @@ import {
   toMetadataAccount,
 } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { TransactionService } from '../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
 import {
   fetchOffChainMetadata,
   findRarityTrait,
   findSignedTrait,
+  findUsedTrait,
 } from '../utils/nft-metadata';
 import { UserSlashCommandPipe } from '../pipes/user-slash-command-pipe';
 import { GetSignedComicParams } from './dto/sign-comics-params.dto';
@@ -21,12 +22,35 @@ import { GetSignedComicCommandParams } from './dto/types';
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
+  ClientEvents,
   InteractionReplyOptions,
   MessageActionRowComponentBuilder,
+  User,
 } from 'discord.js';
 import { NFT_EMBEDDED_RESPONSE } from './templates/nftEmbededResponse';
-
+import { UseGuards } from '@nestjs/common';
+import { IsSignButtonInteractionGuard } from '../guards/sign-button-interaction.guard';
+import { findOurCandyMachine } from '../utils/helpers';
+import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
+import {
+  PROGRAM_ID as COMIC_VERSE_ID,
+  ComicStateArgs,
+} from 'dreader-comic-verse';
+import {
+  delegateAuthority,
+  verifyMintCreator,
+} from '../candy-machine/instructions';
+import { validateSignComicCommandParams } from '../utils/discord';
+import { decodeTransaction } from 'src/utils/transactions';
+import { getPublicUrl } from 'src/aws/s3client';
+import {
+  CollectionNft,
+  Nft,
+  StatefulCover,
+  ComicRarity as PrismaComicRarity,
+} from '@prisma/client';
 @Command({
   name: 'get-sign',
   description: 'Get your comic signed',
@@ -45,28 +69,82 @@ export class GetSignCommand {
   async onGetSignedComic(
     @IA(UserSlashCommandPipe) options: GetSignedComicParams,
   ): Promise<InteractionReplyOptions> {
-    const { user, address } = options as GetSignedComicCommandParams;
+    const params = options as GetSignedComicCommandParams;
 
     let metadata: Metadata<JsonMetadata>;
+    let address: string;
+    let user: User;
+
     try {
+      validateSignComicCommandParams(params);
+
+      user = params.user;
+      address = params.address;
+
       const metadataAddress = this.metaplex
         .nfts()
         .pdas()
         .metadata({ mint: new PublicKey(address) });
+
       const info = await this.metaplex
         .rpc()
         .getAccount(new PublicKey(metadataAddress));
 
       if (!info) {
-        throw Error(`Metdata account ${metadataAddress} doesn't exists`);
+        throw new Error(`Metadata account ${metadataAddress} doesn't exist`);
       }
+
       metadata = toMetadata(toMetadataAccount(info));
     } catch (e) {
+      console.error('Error', e);
       return {
-        content:
-          '```fix\n Error finding Nft, Make sure your Nft address is correct.``',
+        content: '```fix\n Please provide a valid NFT address.```',
         ephemeral: true,
       };
+    }
+
+    const candyMachines = await this.prisma.candyMachine.findMany({
+      select: { address: true },
+    });
+    const candyMachine = findOurCandyMachine(
+      this.metaplex,
+      candyMachines,
+      metadata,
+    );
+
+    if (!candyMachine) {
+      return {
+        content:
+          '```fix\n Error finding Nft, Make sure your Nft address is correct.```',
+        ephemeral: true,
+      };
+    }
+    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+    const rarity = findRarityTrait(offChainMetadata);
+    const authority = pda(
+      [
+        Buffer.from(AUTH_TAG + rarity.toLowerCase()),
+        new PublicKey(candyMachine).toBuffer(),
+        metadata.collection.address.toBuffer(),
+      ],
+      COMIC_VERSE_ID,
+    );
+
+    if (!metadata.updateAuthorityAddress.equals(authority)) {
+      try {
+        await Promise.all([
+          delegateAuthority(
+            this.metaplex,
+            new PublicKey(candyMachine),
+            metadata.collection.address,
+            rarity.toString(),
+            metadata.mintAddress,
+          ),
+          verifyMintCreator(this.metaplex, metadata.mintAddress),
+        ]);
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     const creator = await this.prisma.creator.findFirst({
@@ -99,9 +177,6 @@ export class GetSignCommand {
       };
     }
 
-    const rarity = findRarityTrait(metadata);
-    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-
     if (findSignedTrait(metadata)) {
       return NFT_EMBEDDED_RESPONSE({
         content: `Your comic is already signed 😎 `,
@@ -115,7 +190,7 @@ export class GetSignCommand {
     const component =
       new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
         new ButtonBuilder()
-          .setCustomId('sign')
+          .setCustomId(address)
           .setLabel(`Sign Comic ${metadata.name} ✍🏼`)
           .setStyle(ButtonStyle.Success),
       );
@@ -127,5 +202,121 @@ export class GetSignCommand {
       rarity,
       components: [component],
     });
+  }
+
+  @On('interactionCreate')
+  @UseGuards(IsSignButtonInteractionGuard)
+  async onSignButtonClicked(
+    @EventParams() eventArgs: ClientEvents['interactionCreate'],
+  ): Promise<InteractionReplyOptions> {
+    const buttonInteraction = eventArgs[0] as ButtonInteraction;
+    const address = buttonInteraction.customId;
+    const user = buttonInteraction.message.interaction.user.username;
+    const creatorDiscord = buttonInteraction.user.username;
+    let transactionSignature: string;
+    let latestBlockhash: Readonly<{
+      blockhash: string;
+      lastValidBlockHeight: number;
+    }>;
+    let cover: StatefulCover;
+    let nft: Nft & { collectionNft: CollectionNft };
+    let rarity: PrismaComicRarity;
+    try {
+      const creator = await this.prisma.creator.findFirst({
+        where: {
+          discordUsername: creatorDiscord,
+          comics: {
+            some: {
+              issues: {
+                some: {
+                  collectionNft: { collectionItems: { some: { address } } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!creator) {
+        return {
+          content:
+            '```fix\n Unauthorized creator, Make sure your discord is verified```',
+          ephemeral: true,
+        };
+      }
+
+      nft = await this.prisma.nft.findUnique({
+        where: { address: address },
+        include: { collectionNft: true },
+      });
+
+      const oldMetadata = await fetchOffChainMetadata(nft.uri);
+      rarity = findRarityTrait(oldMetadata);
+      if (findSignedTrait(oldMetadata)) {
+        return NFT_EMBEDDED_RESPONSE({
+          content: `The comic is already signed 😎 `,
+          imageUrl: oldMetadata.image,
+          nftName: nft.name,
+          rarity,
+        });
+      }
+
+      const rawTransaction =
+        await this.transactionService.createChangeComicStateTransaction(
+          new PublicKey(address),
+          this.metaplex.identity().publicKey,
+          ComicStateArgs.Sign,
+        );
+
+      const transaction = decodeTransaction(rawTransaction, 'base64');
+      transactionSignature = await sendAndConfirmTransaction(
+        this.metaplex.connection,
+        transaction,
+        [this.metaplex.identity()],
+        { commitment: 'confirmed' },
+      );
+
+      latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      cover = await this.prisma.statefulCover.findFirst({
+        where: {
+          comicIssueId: nft.collectionNft.comicIssueId,
+          isSigned: true,
+          isUsed: findUsedTrait(oldMetadata),
+          rarity,
+        },
+      });
+
+      return NFT_EMBEDDED_RESPONSE({
+        content: ` @${user} got their comic signed! Amazing 🎉`,
+        imageUrl: getPublicUrl(cover.image),
+        nftName: nft.name,
+        rarity,
+        mentionedUsers: [user],
+      });
+    } catch (e) {
+      if (transactionSignature) {
+        const reponse = await this.metaplex
+          .rpc()
+          .confirmTransaction(
+            transactionSignature,
+            { ...latestBlockhash },
+            'confirmed',
+          );
+        if (!reponse.value.err) {
+          return NFT_EMBEDDED_RESPONSE({
+            content: ` @${user} got their comic signed! Amazing 🎉`,
+            imageUrl: getPublicUrl(cover.image),
+            nftName: nft.name,
+            rarity,
+            mentionedUsers: [user],
+          });
+        }
+      }
+      console.error('Error signing comic', e);
+      return {
+        content: '```fix\n Error Signing, Please try again in sometime```',
+        ephemeral: true,
+      };
+    }
   }
 }
