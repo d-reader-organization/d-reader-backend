@@ -1,7 +1,26 @@
-import { InteractionReplyOptions } from 'discord.js';
+import {
+  APIActionRowComponent,
+  APIMessageActionRowComponent,
+  ActionRowData,
+  InteractionReplyOptions,
+  JSONEncodable,
+  MessageActionRowComponentBuilder,
+  MessageActionRowComponentData,
+} from 'discord.js';
+
+type InteractionComponent = (
+  | JSONEncodable<APIActionRowComponent<APIMessageActionRowComponent>>
+  | ActionRowData<
+      MessageActionRowComponentData | MessageActionRowComponentBuilder
+    >
+  | APIActionRowComponent<APIMessageActionRowComponent>
+)[];
 
 type NftEmbededArgs = {
   [Key in 'content' | 'imageUrl' | 'nftName' | 'rarity']: string;
+} & {
+  ephemeral?: boolean;
+  components?: InteractionComponent;
 };
 
 export const NFT_EMBEDDED_RESPONSE = ({
@@ -9,6 +28,8 @@ export const NFT_EMBEDDED_RESPONSE = ({
   imageUrl,
   nftName,
   rarity,
+  components,
+  ephemeral,
 }: NftEmbededArgs): InteractionReplyOptions => {
   return {
     content,
@@ -29,5 +50,7 @@ export const NFT_EMBEDDED_RESPONSE = ({
         ],
       },
     ],
+    components,
+    ephemeral,
   };
 };
