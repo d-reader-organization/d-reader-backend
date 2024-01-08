@@ -45,6 +45,7 @@ env:
     - DISCORD_WEBHOOK_URL
     - DISCORD_BOT_TOKEN
     - DISCORD_GUILD_ID
+    - DISCORD_VERIFIED_CREATOR_ROLE_ID
 
 accessories:
   node-exporter:
