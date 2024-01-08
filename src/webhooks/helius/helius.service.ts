@@ -374,6 +374,8 @@ export class HeliusService {
   private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
     const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
+
+    // Put this into a separate function and place it in an exponential backoff
     const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
     await this.metaplex
       .rpc()
@@ -382,6 +384,7 @@ export class HeliusService {
         { ...latestBlockhash },
         'confirmed',
       );
+
     const info = await this.metaplex.rpc().getAccount(metadataPda);
     const metadata = toMetadata(toMetadataAccount(info));
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
