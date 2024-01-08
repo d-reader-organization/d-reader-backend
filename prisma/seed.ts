@@ -338,10 +338,10 @@ async function main() {
           sellerFeeBasisPoints: 500, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
-          creatorAddress: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
+          creatorAddress: metaplex.identity().publicKey.toString(),
           royaltyWallets: [
             {
-              address: '7aLBCrbn4jDNSxLLJYRRnKbkqA5cuaeaAzn74xS7eKPD',
+              address: metaplex.identity().publicKey.toString(),
               share: 100,
             },
           ],

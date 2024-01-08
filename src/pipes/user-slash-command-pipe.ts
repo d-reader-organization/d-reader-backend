@@ -1,7 +1,15 @@
 import { ParamType, ReflectMetadataProvider } from '@discord-nestjs/core';
 import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
-import { Attachment, Interaction, User } from 'discord.js';
-type ExtendedType = unknown & { user: User };
+import {
+  Attachment,
+  ChatInputCommandInteraction,
+  Interaction,
+  User,
+} from 'discord.js';
+type ExtendedType = unknown & {
+  user: User;
+  interaction: ChatInputCommandInteraction;
+};
 
 /**
  * Note: "user" is a reserved field and should not be manually added to your DTO.
@@ -64,7 +72,7 @@ export class UserSlashCommandPipe implements PipeTransform {
         }
       }
     });
-
+    plainObject['interaction'] = interaction;
     const resultDto = plainObject as ExtendedType;
     return Object.assign(resultDto, assignWithoutTransform);
   }
