@@ -196,14 +196,14 @@ export class GetSignCommand {
       new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId(`${user.id};${address}`)
-          .setLabel(`Sign Comic ${metadata.name} ✍🏼`)
+          .setLabel(`Sign Comic ✍🏼`)
           .setStyle(ButtonStyle.Success),
       );
 
     await interaction.editReply('All Checks done ✅');
     await interaction.followUp(
       NFT_EMBEDDED_RESPONSE({
-        content: `${user.username} requested ${creator.discordUsername} to sign their ${metadata.name}`,
+        content: `**${user.username}** requested **${creator.discordUsername}** to sign their **${metadata.name}**`,
         imageUrl: offChainMetadata.image,
         nftName: metadata.name,
         rarity,
@@ -311,7 +311,7 @@ export class GetSignCommand {
       await buttonInteraction.editReply('All Checks done ✅');
       await buttonInteraction.followUp(
         NFT_EMBEDDED_RESPONSE({
-          content: ` <@${user}> got their comic signed! Amazing 🎉`,
+          content: `<@${user}> got their comic signed! Amazing 🎉`,
           imageUrl: getPublicUrl(cover.image),
           nftName: nft.name,
           rarity,
