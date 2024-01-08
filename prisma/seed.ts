@@ -181,6 +181,7 @@ async function main() {
   await prisma.genre.deleteMany();
   await prisma.carouselSlide.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.splToken.deleteMany();
   console.info('Emptied database!');
 
   // CLEAR S3 BUCKET AND RESEED FROM THE SEED BUCKET

@@ -7,6 +7,7 @@ import { AuthService } from '../auth/auth.service';
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
 // send notifications to important@dreader.io when someone creates a comic / comic issue
+// https://github.com/nodemailer/nodemailer/issues/487
 
 const logError = (template: string, recipient: string, e: any) => {
   console.error(`Failed to send ${template} email to ${recipient}`);
