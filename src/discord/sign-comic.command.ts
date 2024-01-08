@@ -70,6 +70,8 @@ export class GetSignCommand {
     @IA(UserSlashCommandPipe) options: GetSignedComicParams,
   ): Promise<InteractionReplyOptions> {
     const params = options as GetSignedComicCommandParams;
+    const { interaction } = params;
+    await interaction.deferReply({ ephemeral: true });
 
     let metadata: Metadata<JsonMetadata>;
     let address: string;
@@ -77,7 +79,6 @@ export class GetSignCommand {
 
     try {
       validateSignComicCommandParams(params);
-
       user = params.user;
       address = params.address;
 
@@ -162,46 +163,55 @@ export class GetSignCommand {
     });
 
     if (!creator) {
-      return {
+      console.log(creator);
+      await interaction.editReply({
         content:
-          '```fix\n Creator does not exists! Make sure your nft address is correct.``',
-        ephemeral: true,
-      };
+          '```fix\n Creator does not exists! Make sure your nft address is correct or try running sync wallet in app``',
+      });
+      return;
     }
 
     if (!creator.discordUsername) {
-      return {
+      await interaction.editReply({
         content:
           '```fix\n Creator discord account verification is pending, Signing will begin soon !```',
-        ephemeral: true,
-      };
+      });
+      return;
     }
 
-    if (findSignedTrait(metadata)) {
-      return NFT_EMBEDDED_RESPONSE({
-        content: `Your comic is already signed 😎 `,
-        imageUrl: offChainMetadata.image,
-        nftName: metadata.name,
-        rarity,
-        ephemeral: true,
-      });
+    if (findSignedTrait(offChainMetadata)) {
+      await interaction.followUp(
+        NFT_EMBEDDED_RESPONSE({
+          content: `Your comic is already signed 😎 `,
+          imageUrl: offChainMetadata.image,
+          nftName: metadata.name,
+          rarity,
+          ephemeral: true,
+        }),
+      );
+      return;
     }
 
     const component =
       new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
         new ButtonBuilder()
-          .setCustomId(address)
+          .setCustomId(`${user.id};${address}`)
           .setLabel(`Sign Comic ${metadata.name} ✍🏼`)
           .setStyle(ButtonStyle.Success),
       );
 
-    return NFT_EMBEDDED_RESPONSE({
-      content: `${user.username} requested ${creator.discordUsername} to sign their ${metadata.name}`,
-      imageUrl: offChainMetadata.image,
-      nftName: metadata.name,
-      rarity,
-      components: [component],
-    });
+    await interaction.editReply('All Checks done ✅');
+    await interaction.followUp(
+      NFT_EMBEDDED_RESPONSE({
+        content: `${user.username} requested ${creator.discordUsername} to sign their ${metadata.name}`,
+        imageUrl: offChainMetadata.image,
+        nftName: metadata.name,
+        rarity,
+        components: [component],
+        ephemeral: false,
+      }),
+    );
+    return;
   }
 
   @On('interactionCreate')
@@ -210,8 +220,16 @@ export class GetSignCommand {
     @EventParams() eventArgs: ClientEvents['interactionCreate'],
   ): Promise<InteractionReplyOptions> {
     const buttonInteraction = eventArgs[0] as ButtonInteraction;
-    const address = buttonInteraction.customId;
-    const user = buttonInteraction.message.interaction.user.username;
+    await buttonInteraction.deferReply({ ephemeral: true });
+    const user = buttonInteraction.customId.split(';')[0];
+    const address = buttonInteraction.customId.split(';')[1];
+    if (!user) {
+      await buttonInteraction.editReply({
+        content:
+          '```fix\n Invalid User, Please try again or ask user to run get-sign command again !```',
+      });
+      return;
+    }
     const creatorDiscord = buttonInteraction.user.username;
     let transactionSignature: string;
     let latestBlockhash: Readonly<{
@@ -238,11 +256,11 @@ export class GetSignCommand {
       });
 
       if (!creator) {
-        return {
+        await buttonInteraction.editReply({
           content:
             '```fix\n Unauthorized creator, Make sure your discord is verified```',
-          ephemeral: true,
-        };
+        });
+        return;
       }
 
       nft = await this.prisma.nft.findUnique({
@@ -253,12 +271,17 @@ export class GetSignCommand {
       const oldMetadata = await fetchOffChainMetadata(nft.uri);
       rarity = findRarityTrait(oldMetadata);
       if (findSignedTrait(oldMetadata)) {
-        return NFT_EMBEDDED_RESPONSE({
-          content: `The comic is already signed 😎 `,
-          imageUrl: oldMetadata.image,
-          nftName: nft.name,
-          rarity,
-        });
+        await buttonInteraction.editReply('All Checks done ✅');
+        await buttonInteraction.followUp(
+          NFT_EMBEDDED_RESPONSE({
+            content: `The comic is already signed 😎 `,
+            imageUrl: oldMetadata.image,
+            nftName: nft.name,
+            rarity,
+            ephemeral: false,
+          }),
+        );
+        return;
       }
 
       const rawTransaction =
@@ -285,14 +308,18 @@ export class GetSignCommand {
           rarity,
         },
       });
-
-      return NFT_EMBEDDED_RESPONSE({
-        content: ` @${user} got their comic signed! Amazing 🎉`,
-        imageUrl: getPublicUrl(cover.image),
-        nftName: nft.name,
-        rarity,
-        mentionedUsers: [user],
-      });
+      await buttonInteraction.editReply('All Checks done ✅');
+      await buttonInteraction.followUp(
+        NFT_EMBEDDED_RESPONSE({
+          content: ` <@${user}> got their comic signed! Amazing 🎉`,
+          imageUrl: getPublicUrl(cover.image),
+          nftName: nft.name,
+          rarity,
+          mentionedUsers: [user],
+          ephemeral: false,
+        }),
+      );
+      return;
     } catch (e) {
       if (transactionSignature) {
         const reponse = await this.metaplex
@@ -303,20 +330,25 @@ export class GetSignCommand {
             'confirmed',
           );
         if (!reponse.value.err) {
-          return NFT_EMBEDDED_RESPONSE({
-            content: ` @${user} got their comic signed! Amazing 🎉`,
-            imageUrl: getPublicUrl(cover.image),
-            nftName: nft.name,
-            rarity,
-            mentionedUsers: [user],
-          });
+          await buttonInteraction.editReply('All Checks done ✅');
+          await buttonInteraction.followUp(
+            NFT_EMBEDDED_RESPONSE({
+              content: `<@${user}> got their comic signed! Amazing 🎉`,
+              imageUrl: getPublicUrl(cover.image),
+              nftName: nft.name,
+              rarity,
+              ephemeral: false,
+              mentionedUsers: [user],
+            }),
+          );
+          return;
         }
       }
       console.error('Error signing comic', e);
-      return {
+      await buttonInteraction.editReply({
         content: '```fix\n Error Signing, Please try again in sometime```',
-        ephemeral: true,
-      };
+      });
+      return;
     }
   }
 }
