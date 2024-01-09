@@ -431,19 +431,25 @@ export class CandyMachineService {
     label: string,
   ) {
     if (label === AUTHORITY_GROUP_LABEL) return;
-    const transaction = await constructThawTransaction(
-      this.metaplex,
-      candyMachineAddress,
-      nftMint,
-      nftOwner,
-      guard,
-      label,
-    );
-    return await sendAndConfirmTransaction(
-      this.metaplex.connection,
-      transaction,
-      [this.metaplex.identity()],
-    );
+    try {
+      const transaction = await constructThawTransaction(
+        this.metaplex,
+        candyMachineAddress,
+        nftMint,
+        nftOwner,
+        guard,
+        label,
+      );
+      console.log(`Thaw in process : ${nftMint.toString()}`);
+      return await sendAndConfirmTransaction(
+        this.metaplex.connection,
+        transaction,
+        [this.metaplex.identity()],
+      );
+    } catch (e) {
+      console.log(`${nftMint} failed to thawed`);
+      console.error(e);
+    }
   }
 
   async unlockFunds(
@@ -451,18 +457,23 @@ export class CandyMachineService {
     guard: string,
     group: string,
   ) {
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
-    await this.metaplex.candyMachines().callGuardRoute({
-      candyMachine,
-      guard,
-      group,
-      settings: {
-        path: 'unlockFunds',
-        candyGuardAuthority: this.metaplex.identity(),
-      },
-    });
+    try {
+      const candyMachine = await this.metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachineAddress });
+      await this.metaplex.candyMachines().callGuardRoute({
+        candyMachine,
+        guard,
+        group,
+        settings: {
+          path: 'unlockFunds',
+          candyGuardAuthority: this.metaplex.identity(),
+        },
+      });
+      console.log(`Funds unlocked: ${group}`);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async find(query: CandyMachineParams) {

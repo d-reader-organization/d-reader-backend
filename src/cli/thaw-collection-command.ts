@@ -37,7 +37,9 @@ export class ThawCollectionCommand extends CommandRunner {
     try {
       const { candyMachineAddress, comicIssueId } = options;
       const nfts = await this.prisma.nft.findMany({
-        where: { candyMachineAddress },
+        where: {
+          candyMachineAddress,
+        },
         include: {
           receipt: {
             select: {
