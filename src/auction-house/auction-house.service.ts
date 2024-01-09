@@ -27,6 +27,7 @@ import { metaplex } from '../utils/metaplex';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { PartialListing } from './dto/types/partial-listing';
+import { Source } from 'helius-sdk';
 
 @Injectable()
 export class AuctionHouseService {
@@ -282,6 +283,7 @@ export class AuctionHouseService {
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
         nft: { collectionNft: { comicIssueId: query.comicIssueId } },
+        source: Source.METAPLEX,
       },
       include: { nft: { include: { owner: { include: { user: true } } } } },
       take: query.take,
