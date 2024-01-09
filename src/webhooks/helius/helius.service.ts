@@ -290,6 +290,7 @@ export class HeliusService {
                 feePayer,
                 signature,
                 createdAt: new Date(),
+                source: transaction.source,
               },
               create: {
                 price,
@@ -298,6 +299,7 @@ export class HeliusService {
                 signature,
                 createdAt,
                 canceledAt: new Date(0),
+                source: transaction.source,
               },
             },
           },
