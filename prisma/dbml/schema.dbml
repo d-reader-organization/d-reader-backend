@@ -408,6 +408,7 @@ Table Listing {
   canceledAt DateTime [not null]
   soldAt DateTime
   saleTransactionSignature String
+  source String
 
   indexes {
     (nftAddress, canceledAt) [unique]

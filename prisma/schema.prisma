@@ -441,6 +441,7 @@ model Listing {
   canceledAt               DateTime
   soldAt                   DateTime?
   saleTransactionSignature String?
+  source                   String?
 
   @@unique([nftAddress, canceledAt])
 }
