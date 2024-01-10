@@ -90,13 +90,13 @@ SELECT pg_catalog.setval(
     false
 );
 
-ALTER TABLE "ComicPage" ALTER pageNumber DROP DEFAULT;
+ALTER TABLE "ComicPage" ALTER "pageNumber" DROP DEFAULT;
 DROP SEQUENCE "ComicPage_pageNumber_seq";
 
-ALTER TABLE "ComicPage" ALTER COLUMN pageNumber ADD GENERATED ALWAYS AS IDENTITY;
+ALTER TABLE "ComicPage" ALTER COLUMN "pageNumber" ADD GENERATED ALWAYS AS IDENTITY;
 SELECT pg_catalog.setval(
     pg_get_serial_sequence('"ComicPage"', 'pageNumber'),
-    COALESCE((SELECT MAX(pageNumber) + 1 FROM "ComicPage"), 1),
+    COALESCE((SELECT MAX("pageNumber") + 1 FROM "ComicPage"), 1),
     false
 );
 
