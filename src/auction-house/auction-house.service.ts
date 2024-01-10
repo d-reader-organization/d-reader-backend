@@ -96,7 +96,9 @@ export class AuctionHouseService {
   }
 
   async createMultipleBuys(buyArguments: BuyArgs[]) {
-    const transactions = buyArguments.map(this.createInstantBuyTransaction);
+    const transactions = buyArguments.map((buyArg) => {
+      return this.createInstantBuyTransaction(buyArg);
+    });
     return await Promise.all(transactions);
   }
 

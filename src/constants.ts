@@ -47,7 +47,7 @@ export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
-  process.env.SOLANA_CLUSTER === 'mainnet'
+  process.env.SOLANA_CLUSTER === 'mainnet-beta'
     ? '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj'
     : '9GfMG415sgpzGajfTZyt7qcDo6Xxoa97MyxTFuHuY7od',
 );
