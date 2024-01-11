@@ -320,7 +320,7 @@ Table CollectionNft {
 
 Table ComicPage {
   id Int [pk, increment]
-  pageNumber Int [increment, not null]
+  pageNumber Int [not null]
   isPreviewable Boolean [not null, default: false]
   image String [not null]
   comicIssue ComicIssue [not null]
