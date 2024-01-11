@@ -35,8 +35,8 @@ const config: Config = {
     },
   },
   throttle: {
-    ttl: 30,
-    limit: 120,
+    ttl: 10,
+    limit: 300,
     ignoreUserAgents: [],
   },
 };
