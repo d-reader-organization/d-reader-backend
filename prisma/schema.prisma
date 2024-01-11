@@ -354,7 +354,7 @@ model CollectionNft {
 
 model ComicPage {
   id            Int        @id @default(autoincrement())
-  pageNumber    Int        @default(autoincrement())
+  pageNumber    Int
   isPreviewable Boolean    @default(false)
   image         String
   comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
