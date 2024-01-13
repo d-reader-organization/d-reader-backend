@@ -51,6 +51,8 @@ import { DelegateCreatorCommand } from './delegate-creator-command';
 import { DelegateCreatorQuestions } from './delegate-creator-questions';
 import { DiscordModule } from '@discord-nestjs/core';
 import { DiscordConfigService } from '../discord/config.service';
+import { SyncCollectionQuestions } from './sync-collection-questions';
+import { SyncCollectionCommand } from './sync-collection-command';
 
 @Module({
   imports: [
@@ -114,6 +116,8 @@ import { DiscordConfigService } from '../discord/config.service';
     TransactionService,
     DelegateCreatorCommand,
     DelegateCreatorQuestions,
+    SyncCollectionQuestions,
+    SyncCollectionCommand,
   ],
 })
 export class CLIModule {}

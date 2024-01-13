@@ -43,7 +43,8 @@
     "add-group": "npx ts-node src/cli/main.ts add-group",
     "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
     "update-date": "npx ts-node src/cli/main.ts update-date",
-    "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator"
+    "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
+    "sync-collection": "npx ts-node src/cli/main.ts sync-collection"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
