@@ -1,6 +1,21 @@
-import { Metadata, Metaplex, PublicKey, sol } from '@metaplex-foundation/js';
-import { LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
+import {
+  Metadata,
+  Metaplex,
+  Nft,
+  PublicKey,
+  isNft,
+  sol,
+} from '@metaplex-foundation/js';
+import {
+  Connection,
+  LAMPORTS_PER_SOL,
+  ParsedAccountData,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
+import { fetchOffChainMetadata, findRarityTrait } from './nft-metadata';
+import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
+import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -96,7 +111,7 @@ export const importDynamic = new Function(
 export function findOurCandyMachine(
   metaplex: Metaplex,
   candyMachines: { address: string }[],
-  metadata: Metadata,
+  metadata: Metadata | Nft,
 ) {
   const candyMachine = candyMachines.find(
     (cm) =>
@@ -108,4 +123,50 @@ export function findOurCandyMachine(
         .equals(metadata.creators[0].address),
   );
   return candyMachine?.address;
+}
+
+export async function doesWalletIndexCorrectly(
+  metadataOrNft: Metadata | Nft,
+  nfts: string[],
+  candyMachineAddress: string,
+) {
+  const mintAddress = isNft(metadataOrNft)
+    ? metadataOrNft.address
+    : metadataOrNft.mintAddress;
+  for (const nft of nfts) {
+    const doesNftExists = nft === mintAddress.toString();
+    if (doesNftExists) {
+      const updateAuthority = metadataOrNft.updateAuthorityAddress;
+      const offChainMetadata = await fetchOffChainMetadata(metadataOrNft.uri);
+      const rarity = findRarityTrait(offChainMetadata);
+      const authority = pda(
+        [
+          Buffer.from(AUTH_TAG + rarity.toLowerCase()),
+          new PublicKey(candyMachineAddress).toBuffer(),
+          metadataOrNft.collection.address.toBuffer(),
+        ],
+        COMIC_VERSE_ID,
+      );
+
+      if (
+        updateAuthority.equals(authority) &&
+        metadataOrNft.creators[1].verified
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export async function findOwnerByMint(
+  connection: Connection,
+  mintAddress: PublicKey,
+) {
+  const largestAccounts = await connection.getTokenLargestAccounts(mintAddress);
+  const largestAccountInfo = await connection.getParsedAccountInfo(
+    largestAccounts.value[0].address,
+  );
+  const data = largestAccountInfo.value.data as ParsedAccountData;
+  return data.parsed.info.owner;
 }
