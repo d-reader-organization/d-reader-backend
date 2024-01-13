@@ -30,6 +30,9 @@ import { SettingsModule } from './settings/settings.module';
 import { DiscordModule } from '@discord-nestjs/core';
 import { DiscordConfigService } from './discord/config.service';
 import { DiscordModule as DModule } from './discord/discord.module';
+import { ThrottlerBehindProxyGuard } from './guards/throttler-behind-proxy.guard';
+import { APP_GUARD } from '@nestjs/core';
+
 @Module({
   imports: [
     AuthModule,
@@ -90,6 +93,12 @@ import { DiscordModule as DModule } from './discord/discord.module';
     DModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerBehindProxyGuard,
+    },
+  ],
 })
 export class AppModule {}
