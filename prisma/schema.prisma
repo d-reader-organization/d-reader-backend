@@ -38,6 +38,7 @@ model User {
   wallets            Wallet[]
   referrer           User?                 @relation("ReferrerToReferral", fields: [referrerId], references: [id])
   referrals          User[]                @relation("ReferrerToReferral")
+  notifications      UserNotification[]
 }
 
 model Wallet {
@@ -468,4 +469,23 @@ model GlobalStatus {
   type      GlobalStatusType
   message   String
   expiresAt DateTime?
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  title     String
+  body      String
+  image  String?
+  createdAt DateTime           @default(now())
+  users     UserNotification[]
+}
+
+model UserNotification {
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  notificationId Int
+  readAt         DateTime?
+
+  @@id([userId, notificationId])
 }
