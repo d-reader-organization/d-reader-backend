@@ -476,7 +476,7 @@ model Notification {
   title     String
   body      String
   imageUrl  String?
-  createdAt DateTime
+  createdAt DateTime           @default(now())
   users     UserNotification[]
 }
 

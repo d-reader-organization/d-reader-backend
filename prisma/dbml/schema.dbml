@@ -438,7 +438,7 @@ Table Notification {
   title String [not null]
   body String [not null]
   imageUrl String
-  createdAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
   users UserNotification [not null]
 }
 

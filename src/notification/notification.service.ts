@@ -1,19 +1,44 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { PrismaService } from 'nestjs-prisma';
+import { Notification } from '@prisma/client';
+import { UserNotificationReturnType } from './types';
+import { Pagination } from 'src/types/pagination.dto';
 
 @Injectable()
 export class NotificationService {
-  create(createNotificationDto: CreateNotificationDto) {
-    return 'This action adds a new notification';
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(
+    createNotificationDto: CreateNotificationDto,
+  ): Promise<Notification> {
+    return await this.prisma.notification.create({
+      data: createNotificationDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all notification`;
+  async findAll({ skip, take }: Pagination): Promise<Notification[]> {
+    const result = await this.prisma.notification.findMany({
+      skip,
+      take,
+    });
+    return result;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notification`;
+  async findUserNotifications(
+    userId: number,
+  ): Promise<UserNotificationReturnType[]> {
+    const notifications = await this.prisma.userNotification.findMany({
+      where: { userId },
+      include: { notification: true },
+    });
+
+    return notifications;
+  }
+
+  findOne(id: number): Promise<Notification | undefined> {
+    return this.prisma.notification.findFirst({ where: { id } });
   }
 
   update(id: number, updateNotificationDto: UpdateNotificationDto) {
