@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { PrismaService } from 'nestjs-prisma';
-import { Notification } from '@prisma/client';
+import { Notification, UserNotification } from '@prisma/client';
 import { UserNotificationReturnType } from './types';
 import { Pagination } from 'src/types/pagination.dto';
 
@@ -41,11 +40,25 @@ export class NotificationService {
     return this.prisma.notification.findFirst({ where: { id } });
   }
 
-  update(id: number, updateNotificationDto: UpdateNotificationDto) {
-    return `This action updates a #${id} notification`;
+  async read({
+    notificationId,
+    userId,
+  }: {
+    notificationId: number;
+    userId: number;
+  }): Promise<UserNotification> {
+    return this.prisma.userNotification.update({
+      data: { readAt: new Date() },
+      where: {
+        userId_notificationId: {
+          notificationId,
+          userId,
+        },
+      },
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} notification`;
+    return this.prisma.notification.delete({ where: { id } });
   }
 }

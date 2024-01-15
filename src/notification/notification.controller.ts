@@ -11,8 +11,7 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { Notification } from '@prisma/client';
+import { Notification, UserNotification } from '@prisma/client';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { Pagination } from 'src/types/pagination.dto';
 import { UserEntity } from 'src/decorators/user.decorator';
@@ -45,16 +44,20 @@ export class NotificationController {
     return toUserNotificationsDtoArray(userNotifications);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateNotificationDto: UpdateNotificationDto,
-  ) {
-    return this.notificationService.update(+id, updateNotificationDto);
+  @UserAuth()
+  @Patch('read/:notificationId')
+  async read(
+    @Param('notificationId') notificationId: number,
+    @UserEntity() user: UserPayload,
+  ): Promise<UserNotification> {
+    return await this.notificationService.read({
+      notificationId,
+      userId: user.id,
+    });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.notificationService.remove(id);
   }
 }

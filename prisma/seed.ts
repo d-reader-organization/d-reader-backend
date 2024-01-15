@@ -297,59 +297,59 @@ async function main() {
   // SEED SUPPORTED SPL TOKENS
   await prisma.splToken.createMany({ data: splTokensToSeed });
 
-  // SEED MORE DATA ON DEVNET
-  if (isDevnet) {
-    await tryAirdropping();
+  // // SEED MORE DATA ON DEVNET
+  // if (isDevnet) {
+  //   await tryAirdropping();
 
-    const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
+  //   const portalC = await prisma.comic.create({ data: portalData(nxC.id) });
 
-    await prisma.comicIssue.create({ data: portalEp1Data(portalC.slug) });
-    await prisma.comicIssue.create({ data: birthEp1Data(birthC.slug) });
-    await prisma.comicIssue.create({ data: wretchesEp2Data(wretchesC.slug) });
-    await prisma.comicIssue.create({ data: wretchesEp3Data(wretchesC.slug) });
-    await prisma.comicIssue.create({ data: wretchesEp4Data(wretchesC.slug) });
-    await prisma.comicIssue.create({ data: wretchesEp5Data(wretchesC.slug) });
-    await prisma.comicIssue.create({ data: wretchesEp6Data(wretchesC.slug) });
-    await prisma.comicIssue.create({ data: janaEp2Data(janaC.slug) });
-    await prisma.comicIssue.create({ data: countyEp2Data(countyC.slug) });
+  //   await prisma.comicIssue.create({ data: portalEp1Data(portalC.slug) });
+  //   await prisma.comicIssue.create({ data: birthEp1Data(birthC.slug) });
+  //   await prisma.comicIssue.create({ data: wretchesEp2Data(wretchesC.slug) });
+  //   await prisma.comicIssue.create({ data: wretchesEp3Data(wretchesC.slug) });
+  //   await prisma.comicIssue.create({ data: wretchesEp4Data(wretchesC.slug) });
+  //   await prisma.comicIssue.create({ data: wretchesEp5Data(wretchesC.slug) });
+  //   await prisma.comicIssue.create({ data: wretchesEp6Data(wretchesC.slug) });
+  //   await prisma.comicIssue.create({ data: janaEp2Data(janaC.slug) });
+  //   await prisma.comicIssue.create({ data: countyEp2Data(countyC.slug) });
 
-    let i = 1;
-    for (const comicIssue of comicIssues) {
-      await refillBundlr();
+  //   let i = 1;
+  //   for (const comicIssue of comicIssues) {
+  //     await refillBundlr();
 
-      if (
-        (comicIssue.comicSlug === portalC.slug &&
-          comicIssue.slug === 'concept-art') ||
-        (comicIssue.comicSlug === countyC.slug &&
-          comicIssue.slug === 'issue-2') ||
-        comicIssue.comicSlug === wretchesC.slug ||
-        (comicIssue.comicSlug === lupersC.slug &&
-          comicIssue.slug === 'tome-of-knowledge')
-      ) {
-        console.info('Skipping comic issue ', comicIssue.id);
-        continue;
-      } else {
-        console.info(i, ': publishing comic issue ' + comicIssue.id);
+  //     if (
+  //       (comicIssue.comicSlug === portalC.slug &&
+  //         comicIssue.slug === 'concept-art') ||
+  //       (comicIssue.comicSlug === countyC.slug &&
+  //         comicIssue.slug === 'issue-2') ||
+  //       comicIssue.comicSlug === wretchesC.slug ||
+  //       (comicIssue.comicSlug === lupersC.slug &&
+  //         comicIssue.slug === 'tome-of-knowledge')
+  //     ) {
+  //       console.info('Skipping comic issue ', comicIssue.id);
+  //       continue;
+  //     } else {
+  //       console.info(i, ': publishing comic issue ' + comicIssue.id);
 
-        await comicIssueService.publishOnChain(comicIssue.id, {
-          onChainName: comicIssue.title.slice(0, MAX_ON_CHAIN_TITLE_LENGTH),
-          supply: getRandomInt(1, 2) * 10, // 10-20 supply
-          mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
-          sellerFeeBasisPoints: 500, // 5%
-          startDate: new Date(),
-          endDate: addDays(new Date(), 7),
-          creatorAddress: metaplex.identity().publicKey.toString(),
-          royaltyWallets: [
-            {
-              address: metaplex.identity().publicKey.toString(),
-              share: 100,
-            },
-          ],
-        });
-        i++;
-      }
-    }
-  }
+  //       await comicIssueService.publishOnChain(comicIssue.id, {
+  //         onChainName: comicIssue.title.slice(0, MAX_ON_CHAIN_TITLE_LENGTH),
+  //         supply: getRandomInt(1, 2) * 10, // 10-20 supply
+  //         mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
+  //         sellerFeeBasisPoints: 500, // 5%
+  //         startDate: new Date(),
+  //         endDate: addDays(new Date(), 7),
+  //         creatorAddress: metaplex.identity().publicKey.toString(),
+  //         royaltyWallets: [
+  //           {
+  //             address: metaplex.identity().publicKey.toString(),
+  //             share: 100,
+  //           },
+  //         ],
+  //       });
+  //       i++;
+  //     }
+  //   }
+  // }
 
   console.info(
     "⚠️ Please make sure to run 'yarn sync-webhook' command in order to set Helius webhooks correctly",
