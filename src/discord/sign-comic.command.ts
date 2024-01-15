@@ -51,8 +51,11 @@ import {
   StatefulCover,
   ComicRarity as PrismaComicRarity,
 } from '@prisma/client';
+import { SkipThrottle } from '@nestjs/throttler';
+
+@SkipThrottle()
 @Command({
-  name: 'get-sign',
+  name: 'get-signature',
   description: 'Get your comic signed',
 })
 export class GetSignCommand {
@@ -226,7 +229,7 @@ export class GetSignCommand {
     if (!user) {
       await buttonInteraction.editReply({
         content:
-          '```fix\n Invalid User, Please try again or ask user to run get-sign command again !```',
+          '```fix\n Invalid User, Please try again or ask user to run get-signature command again !```',
       });
       return;
     }
