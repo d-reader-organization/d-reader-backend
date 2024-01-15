@@ -27,6 +27,7 @@ Table User {
   wallets Wallet [not null]
   referrer User
   referrals User [not null]
+  notifications UserNotification [not null]
 }
 
 Table Wallet {
@@ -432,6 +433,27 @@ Table GlobalStatus {
   expiresAt DateTime
 }
 
+Table Notification {
+  id Int [pk, increment]
+  title String [not null]
+  body String [not null]
+  imageUrl String
+  createdAt DateTime [not null]
+  users UserNotification [not null]
+}
+
+Table UserNotification {
+  user User [not null]
+  userId Int [not null]
+  notification Notification [not null]
+  notificationId Int [not null]
+  readAt DateTime
+
+  indexes {
+    (userId, notificationId) [pk]
+  }
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -541,3 +563,7 @@ Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
 Ref: Listing.nftAddress > Nft.address
+
+Ref: UserNotification.userId > User.id [delete: Cascade]
+
+Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
