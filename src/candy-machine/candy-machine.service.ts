@@ -687,28 +687,25 @@ export class CandyMachineService {
         (receipt) => receipt.buyerAddress === walletAddress,
       );
     }
-    let displayLabel = PUBLIC_GROUP_LABEL;
     let isEligible = !!walletAddress;
+    const group = await this.prisma.candyMachineGroup.findFirst({
+      where: { candyMachineAddress, label },
+      include: { wallets: true },
+    });
 
-    if (label !== PUBLIC_GROUP_LABEL) {
-      const group = await this.prisma.candyMachineGroup.findFirst({
-        where: { candyMachineAddress, label },
-        include: { wallets: true },
-      });
-
-      displayLabel = group.displayLabel;
-      if (walletAddress) {
-        isEligible =
-          !!group.wallets.find(
-            (groupWallet) => groupWallet.walletAddress == walletAddress,
-          ) && (mintLimit ? receiptsFromBuyer.length < mintLimit : true);
-      }
+    if (walletAddress) {
+      isEligible =
+        (!group.hasAllowList ||
+          group.wallets.some(
+            (groupWallet) => groupWallet.walletAddress === walletAddress,
+          )) &&
+        (!mintLimit || receiptsFromBuyer.length < mintLimit);
     }
 
     return {
       itemsMinted: receipts.length,
       walletItemsMinted: receiptsFromBuyer?.length,
-      displayLabel,
+      displayLabel: group.displayLabel,
       isEligible,
     };
   }

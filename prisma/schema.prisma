@@ -309,6 +309,7 @@ model CandyMachineGroup {
   mintLimit           Int?
   startDate           DateTime?
   endDate             DateTime?
+  hasAllowList        Boolean                   @default(false)
   mintPrice           Int
   splTokenAddress     String
   wallets             WalletCandyMachineGroup[]
@@ -475,7 +476,7 @@ model Notification {
   id        Int                @id @default(autoincrement())
   title     String
   body      String
-  image  String?
+  image     String?
   createdAt DateTime           @default(now())
   users     UserNotification[]
 }

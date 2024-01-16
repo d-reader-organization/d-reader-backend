@@ -271,6 +271,7 @@ Table CandyMachineGroup {
   mintLimit Int
   startDate DateTime
   endDate DateTime
+  hasAllowList Boolean [not null, default: false]
   mintPrice Int [not null]
   splTokenAddress String [not null]
   wallets WalletCandyMachineGroup [not null]
