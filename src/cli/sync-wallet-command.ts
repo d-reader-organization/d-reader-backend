@@ -38,7 +38,7 @@ export class SyncWalletCommand extends CommandRunner {
       }
 
       let i = 1;
-      for (const address of addresses) {
+      for await (const address of addresses) {
         log(`syncing wallet (${i}/${addresses.length}): ${address}`);
         await this.walletService.syncWallet(address);
         i += 1;
