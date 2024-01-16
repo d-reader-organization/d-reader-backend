@@ -53,6 +53,8 @@ import { DiscordModule } from '@discord-nestjs/core';
 import { DiscordConfigService } from '../discord/config.service';
 import { SyncCollectionQuestions } from './sync-collection-questions';
 import { SyncCollectionCommand } from './sync-collection-command';
+import { DeleteCandyMachineCommand } from './delete-candy-machine-command';
+import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
 
 @Module({
   imports: [
@@ -118,6 +120,8 @@ import { SyncCollectionCommand } from './sync-collection-command';
     DelegateCreatorQuestions,
     SyncCollectionQuestions,
     SyncCollectionCommand,
+    DeleteCandyMachineCommand,
+    DeleteCandyMachineQuestions,
   ],
 })
 export class CLIModule {}

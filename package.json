@@ -44,7 +44,8 @@
     "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
     "update-date": "npx ts-node src/cli/main.ts update-date",
     "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
-    "sync-collection": "npx ts-node src/cli/main.ts sync-collection"
+    "sync-collection": "npx ts-node src/cli/main.ts sync-collection",
+    "delete-candy-machine": "npx ts-node src/cli/main.ts delete-candy-machine"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

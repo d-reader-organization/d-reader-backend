@@ -827,6 +827,10 @@ export class CandyMachineService {
     }
   }
 
+  async deleteCandyMachine(address: PublicKey) {
+    await this.metaplex.candyMachines().delete({ candyMachine: address });
+  }
+
   async findMintedNfts(address: string) {
     // const candyMachine = await this.prisma.candyMachine.findUnique({
     //   where: { address },
