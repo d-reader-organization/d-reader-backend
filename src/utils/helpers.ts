@@ -162,7 +162,7 @@ export async function doesWalletIndexCorrectly(
 export async function findOwnerByMint(
   connection: Connection,
   mintAddress: PublicKey,
-) {
+): Promise<string> {
   const largestAccounts = await connection.getTokenLargestAccounts(mintAddress);
   const largestAccountInfo = await connection.getParsedAccountInfo(
     largestAccounts.value[0].address,
