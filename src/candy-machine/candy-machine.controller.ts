@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { CandyMachineService } from './candy-machine.service';
 import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
 import {
@@ -15,12 +15,6 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('candy-machine')
 export class CandyMachineController {
   constructor(private readonly candyMachineService: CandyMachineService) {}
-
-  /* this endpoint is not used in production */
-  @Get('get/minted-nfts/:address')
-  async findMintedNfts(@Param('address') address: string) {
-    return await this.candyMachineService.findMintedNfts(address);
-  }
 
   @Get('get/receipts')
   async findReceipts(
