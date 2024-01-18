@@ -60,7 +60,7 @@ export class UserCreatorService {
 
     const primaryVolume = primarySalesVolume._sum?.price || 0;
     const secondaryVolume = secondarySalesVolume._sum?.price || 0;
-    const totalVolume = primaryVolume + secondaryVolume;
+    const totalVolume = Number(primaryVolume) + Number(secondaryVolume);
     return totalVolume;
   }
 

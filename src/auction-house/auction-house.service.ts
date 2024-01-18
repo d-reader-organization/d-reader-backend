@@ -232,7 +232,7 @@ export class AuctionHouseService {
 
     const primaryVolume = primarySalesVolume._sum?.price || 0;
     const secondaryVolume = secondarySalesVolume._sum?.price || 0;
-    const totalVolume = primaryVolume + secondaryVolume;
+    const totalVolume = Number(primaryVolume) + Number(secondaryVolume);
     return totalVolume;
   }
 
@@ -272,7 +272,7 @@ export class AuctionHouseService {
     return {
       totalVolume,
       itemsListed: itemsListed || 0,
-      floorPrice: cheapestItem?.price || 0,
+      floorPrice: cheapestItem?.price ? Number(cheapestItem.price) : 0,
       supply: candyMachineSupply?.supply || 0,
     };
   }

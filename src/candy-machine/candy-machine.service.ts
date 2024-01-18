@@ -515,6 +515,7 @@ export class CandyMachineService {
           }
           return {
             ...group,
+            mintPrice: Number(group.mintPrice),
             supply,
             itemsMinted,
             displayLabel,
@@ -659,7 +660,7 @@ export class CandyMachineService {
             ? data.wallets.map((item) => item.walletAddress)
             : undefined,
         lookupTable: data.candyMachine.lookupTable,
-        mintPrice: data.mintPrice,
+        mintPrice: Number(data.mintPrice),
       };
     } catch (e) {
       console.error(e);

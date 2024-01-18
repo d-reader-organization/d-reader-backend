@@ -40,7 +40,7 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
     },
     buyer: await toBuyerDto(receipt.buyer),
     candyMachineAddress: receipt.candyMachineAddress,
-    price: receipt.price,
+    price: Number(receipt.price),
     timestamp: receipt.timestamp.toISOString(),
     splTokenAddress: receipt.splTokenAddress,
   };
