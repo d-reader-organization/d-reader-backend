@@ -724,7 +724,6 @@ export class CandyMachineService {
       )
     ).filter(isNft);
 
-    console.log('Nfts fetched');
     const candyMachines = await this.prisma.candyMachine.findMany({
       select: { address: true },
     });
@@ -753,7 +752,6 @@ export class CandyMachineService {
     ).filter(Boolean);
 
     for await (const unSyncedNft of unsyncedNfts) {
-      console.log(`Syncing nft : ${unSyncedNft.address.toString()}`);
       try {
         const collectionMetadata = await fetchOffChainMetadata(unSyncedNft.uri);
 
@@ -829,22 +827,5 @@ export class CandyMachineService {
 
   async deleteCandyMachine(address: PublicKey) {
     await this.metaplex.candyMachines().delete({ candyMachine: address });
-  }
-
-  async findMintedNfts(address: string) {
-    // const candyMachine = await this.prisma.candyMachine.findUnique({
-    //   where: { address },
-    // });
-    const authorityPda = this.metaplex
-      .candyMachines()
-      .pdas()
-      .authority({ candyMachine: new PublicKey(address) })
-      .toString();
-    return await this.heliusService.helius.getMintlist({
-      query: {
-        // verifiedCollectionAddresses: [candyMachine.collectionNftAddress],
-        firstVerifiedCreators: [authorityPda],
-      },
-    });
   }
 }
