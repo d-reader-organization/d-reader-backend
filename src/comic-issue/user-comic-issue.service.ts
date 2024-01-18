@@ -103,8 +103,8 @@ export class UserComicIssueService {
       },
       include: { groups: { where: { label: PUBLIC_GROUP_LABEL } } },
     });
-
-    if (activeCandyMachine) return activeCandyMachine.groups[0]?.mintPrice;
+    const mintPrice = activeCandyMachine.groups[0]?.mintPrice;
+    if (activeCandyMachine) return mintPrice ? Number(mintPrice) : undefined;
 
     // if there is no active candy machine, look for cheapest price on the marketplace
     const cheapestItem = await this.prisma.listing.findFirst({
@@ -117,7 +117,7 @@ export class UserComicIssueService {
     });
 
     if (!cheapestItem) return null;
-    return cheapestItem.price;
+    return Number(cheapestItem.price);
   }
 
   getUserStats(comicIssueId: number, userId: number): Promise<UserComicIssue> {

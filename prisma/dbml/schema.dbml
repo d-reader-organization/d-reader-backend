@@ -272,7 +272,7 @@ Table CandyMachineGroup {
   startDate DateTime
   endDate DateTime
   hasAllowList Boolean [not null, default: false]
-  mintPrice Int [not null]
+  mintPrice BigInt [not null]
   splTokenAddress String [not null]
   wallets WalletCandyMachineGroup [not null]
   candyMachineAddress String [not null]
@@ -301,7 +301,7 @@ Table CandyMachineReceipt {
   userId Int
   user User
   buyerAddress String [not null]
-  price Int [not null]
+  price BigInt [not null]
   timestamp DateTime [not null]
   description String [not null]
   candyMachine CandyMachine [not null]
@@ -402,7 +402,7 @@ Table Listing {
   id Int [pk, increment]
   nftAddress String [not null]
   nft Nft [not null]
-  price Int [not null]
+  price BigInt [not null]
   feePayer String [not null]
   signature String [not null]
   symbol String [not null]

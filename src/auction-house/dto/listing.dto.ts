@@ -135,7 +135,7 @@ export async function toListingDto(listing: ListingInput) {
     cover: collectionMetadata.image,
     seller,
     tokenAddress,
-    price: listing.price,
+    price: Number(listing.price),
     attributes: collectionMetadata.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,

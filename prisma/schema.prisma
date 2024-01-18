@@ -310,7 +310,7 @@ model CandyMachineGroup {
   startDate           DateTime?
   endDate             DateTime?
   hasAllowList        Boolean                   @default(false)
-  mintPrice           Int
+  mintPrice           BigInt
   splTokenAddress     String
   wallets             WalletCandyMachineGroup[]
   candyMachineAddress String
@@ -335,7 +335,7 @@ model CandyMachineReceipt {
   userId               Int?
   user                 User?        @relation(fields: [userId], references: [id])
   buyerAddress         String
-  price                Int
+  price                BigInt
   timestamp            DateTime
   description          String
   candyMachine         CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
@@ -435,7 +435,7 @@ model Listing {
   id                       Int       @id @default(autoincrement())
   nftAddress               String
   nft                      Nft       @relation(fields: [nftAddress], references: [address])
-  price                    Int
+  price                    BigInt
   feePayer                 String
   signature                String
   symbol                   String

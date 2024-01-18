@@ -390,7 +390,7 @@ export async function toListing(
     owner: sellerAddress,
   });
 
-  const price = lamports(listing.price);
+  const price = lamports(Number(listing.price));
   const tokens = token(1, 0, listing.symbol); // only considers nfts
   const tradeStateAddress = metaplex.auctionHouse().pdas().tradeState({
     auctionHouse: auctionHouse.address,
