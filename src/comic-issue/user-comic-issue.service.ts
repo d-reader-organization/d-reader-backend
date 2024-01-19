@@ -103,8 +103,11 @@ export class UserComicIssueService {
       },
       include: { groups: { where: { label: PUBLIC_GROUP_LABEL } } },
     });
-    const mintPrice = activeCandyMachine.groups[0]?.mintPrice;
-    if (activeCandyMachine) return mintPrice ? Number(mintPrice) : undefined;
+
+    if (activeCandyMachine) {
+      const mintPrice = activeCandyMachine.groups[0]?.mintPrice;
+      return mintPrice ? Number(mintPrice) : undefined;
+    }
 
     // if there is no active candy machine, look for cheapest price on the marketplace
     const cheapestItem = await this.prisma.listing.findFirst({
