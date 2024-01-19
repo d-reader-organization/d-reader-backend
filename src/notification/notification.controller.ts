@@ -19,12 +19,18 @@ import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { toUserNotificationsDtoArray } from './dto/user-notification.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { FirebaseService } from 'src/third-party/firebase/firebase.service';
+import { SendMessageToTopicDto } from './dto/send-notification-to-topic.dto';
+import { SendMessageToDevicesDto } from './dto/send-notification-to-devices.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Notification')
 @Controller('notification')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly firebaseService: FirebaseService,
+  ) {}
 
   @Post()
   create(@Body() createNotificationDto: CreateNotificationDto) {
@@ -59,5 +65,15 @@ export class NotificationController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.notificationService.remove(id);
+  }
+
+  @Post('send-to-topic')
+  async sendMessageToTopic(@Body() sendMessageTopicDto: SendMessageToTopicDto) {
+    return this.firebaseService.sendMessageToTopic(sendMessageTopicDto);
+  }
+
+  @Post('send-to-devices')
+  async sendMessageToDevices(@Body() input: SendMessageToDevicesDto) {
+    return this.firebaseService.sendMessageToDevices(input);
   }
 }

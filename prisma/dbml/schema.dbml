@@ -28,7 +28,7 @@ Table User {
   referrer User
   referrals User [not null]
   notifications UserNotification [not null]
-  deviceIds Device [not null]
+  devices Device [not null]
 }
 
 Table Wallet {
@@ -457,7 +457,7 @@ Table UserNotification {
 
 Table Device {
   id Int [pk, increment]
-  token String [not null]
+  token String [unique, not null]
   user User [not null]
   userId Int [not null]
 }

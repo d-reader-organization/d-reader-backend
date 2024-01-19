@@ -28,6 +28,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
 import { EmailPayload, UserPayload } from '../auth/dto/authorization.dto';
+import { GetMeResult } from './types';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -114,10 +115,11 @@ export class UserService {
     return users;
   }
 
-  async findMe(id: number) {
+  async findMe(id: number): Promise<GetMeResult> {
     const user = await this.prisma.user.update({
       where: { id },
       data: { lastActiveAt: new Date() },
+      include: { devices: true },
     });
 
     return user;
@@ -500,6 +502,30 @@ export class UserService {
     } catch {
       throw new NotFoundException(`User with id ${id} not found`);
     }
+  }
+
+  async insertDeviceToken({
+    deviceToken,
+    userId,
+  }: {
+    deviceToken: string;
+    userId: number;
+  }) {
+    const device = await this.prisma.device.findFirst({
+      where: {
+        token: deviceToken,
+        userId,
+      },
+    });
+    if (device) {
+      return;
+    }
+    await this.prisma.device.create({
+      data: {
+        token: deviceToken,
+        userId,
+      },
+    });
   }
 
   /** make sure all verified users have at least 1 referral remaining each week */
