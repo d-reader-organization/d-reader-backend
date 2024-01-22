@@ -22,6 +22,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { FirebaseService } from 'src/third-party/firebase/firebase.service';
 import { SendMessageToTopicDto } from './dto/send-notification-to-topic.dto';
 import { SendMessageToDevicesDto } from './dto/send-notification-to-devices.dto';
+import { AdminGuard } from 'src/guards/roles.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Notification')
@@ -67,11 +68,13 @@ export class NotificationController {
     return this.notificationService.remove(id);
   }
 
+  @AdminGuard()
   @Post('send-to-topic')
   async sendMessageToTopic(@Body() sendMessageTopicDto: SendMessageToTopicDto) {
     return this.firebaseService.sendMessageToTopic(sendMessageTopicDto);
   }
 
+  @AdminGuard()
   @Post('send-to-devices')
   async sendMessageToDevices(@Body() input: SendMessageToDevicesDto) {
     return this.firebaseService.sendMessageToDevices(input);
