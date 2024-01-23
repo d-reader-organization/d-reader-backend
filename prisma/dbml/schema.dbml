@@ -28,6 +28,7 @@ Table User {
   referrer User
   referrals User [not null]
   notifications UserNotification [not null]
+  devices Device [not null]
 }
 
 Table Wallet {
@@ -454,6 +455,13 @@ Table UserNotification {
   }
 }
 
+Table Device {
+  id Int [pk, increment]
+  token String [unique, not null]
+  user User [not null]
+  userId Int [not null]
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -567,3 +575,5 @@ Ref: Listing.nftAddress > Nft.address
 Ref: UserNotification.userId > User.id [delete: Cascade]
 
 Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
+
+Ref: Device.userId > User.id

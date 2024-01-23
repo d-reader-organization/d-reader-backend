@@ -1,16 +1,19 @@
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
   IsInt,
+  IsOptional,
   IsPositive,
   IsString,
   IsUrl,
 } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
+import { Type, plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { User, Role } from '@prisma/client';
+import { User, Role, Device } from '@prisma/client';
 import { getPublicUrl } from '../../aws/s3client';
+import { With } from 'src/types/shared';
 
 export class UserDto {
   @IsPositive()
@@ -37,9 +40,19 @@ export class UserDto {
   @IsEnum(Role)
   @ApiProperty({ enum: Role })
   role: Role;
+
+  @IsArray()
+  @IsOptional()
+  @ApiProperty({ type: String })
+  @Type(() => String)
+  deviceTokens?: string[];
 }
 
-export function toUserDto(user: User) {
+type WithDeviceIds = { devices?: Device[] };
+
+export type UserInput = With<[User, WithDeviceIds]>;
+
+export function toUserDto(user: UserInput) {
   const plainUserDto: UserDto = {
     id: user.id,
     email: user.email,
@@ -49,12 +62,13 @@ export function toUserDto(user: User) {
     name: user.name,
     avatar: getPublicUrl(user.avatar),
     role: user.role,
+    deviceTokens: user.devices?.map((device) => device.token) ?? [],
   };
 
   const userDto = plainToInstance(UserDto, plainUserDto);
   return userDto;
 }
 
-export const toUserDtoArray = (users: User[]) => {
+export const toUserDtoArray = (users: UserInput[]) => {
   return users.map(toUserDto);
 };
