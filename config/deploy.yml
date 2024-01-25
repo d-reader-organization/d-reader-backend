@@ -46,6 +46,10 @@ env:
     - DISCORD_BOT_TOKEN
     - DISCORD_GUILD_ID
     - DISCORD_VERIFIED_CREATOR_ROLE_ID
+    # Firebase
+    - FIREBASE_PRIVATE_KEY
+    - FIREBASE_CLIENT_EMAIL
+    - FIREBASE_PROJECT_ID
 
 accessories:
   node-exporter:

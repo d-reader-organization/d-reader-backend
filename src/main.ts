@@ -10,6 +10,7 @@ import {
   SwaggerConfig,
 } from './configs/config.interface';
 import * as express from 'express';
+import { initializeFirebase } from './utils/firebase';
 
 // Boot Strap
 async function bootstrap() {
@@ -78,6 +79,8 @@ async function bootstrap() {
   if (corsConfig.enabled) {
     app.enableCors();
   }
+
+  initializeFirebase();
 
   app.use(express.static('public'));
   await app.listen(process.env.PORT || nestConfig.port || 3005);

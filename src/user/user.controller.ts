@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from '../types/update-user.dto';
@@ -215,5 +216,14 @@ export class UserController {
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string) {
     await this.userService.pseudoRecover(+id);
+  }
+
+  @UserAuth()
+  @Post('device/:token')
+  async insertDeviceToken(
+    @Param('token') deviceToken: string,
+    @UserEntity() user: UserPayload,
+  ) {
+    await this.userService.insertDeviceToken({ deviceToken, userId: user.id });
   }
 }
