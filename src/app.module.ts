@@ -33,6 +33,7 @@ import { DiscordModule as DModule } from './discord/discord.module';
 import { ThrottlerBehindProxyGuard } from './guards/throttler-behind-proxy.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { NotificationModule } from './notification/notification.module';
+import { ThirdPartyModule } from './third-party/third-party.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { NotificationModule } from './notification/notification.module';
     SettingsModule,
     DModule,
     NotificationModule,
+    ThirdPartyModule,
   ],
   controllers: [AppController],
   providers: [

@@ -39,6 +39,7 @@ model User {
   referrer           User?                 @relation("ReferrerToReferral", fields: [referrerId], references: [id])
   referrals          User[]                @relation("ReferrerToReferral")
   notifications      UserNotification[]
+  devices            Device[]
 }
 
 model Wallet {
@@ -489,4 +490,11 @@ model UserNotification {
   readAt         DateTime?
 
   @@id([userId, notificationId])
+}
+
+model Device {
+  id     Int    @id @default(autoincrement())
+  token  String @unique
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int
 }
