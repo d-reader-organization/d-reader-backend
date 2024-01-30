@@ -43,7 +43,6 @@ export async function createCollectionNft(
   })
     .add(...instructions)
     .add(collectionNftTransaction);
-
   transaction.partialSign(metaplex.identity(), mintKeypair);
   const rawTransaction = transaction.serialize({
     requireAllSignatures: false,
