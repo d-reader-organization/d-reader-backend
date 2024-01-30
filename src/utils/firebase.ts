@@ -6,7 +6,8 @@ export const initializeFirebase = () => {
     !process.env.FIREBASE_CLIENT_EMAIL ||
     !process.env.FIREBASE_PROJECT_ID
   ) {
-    throw Error('Missing Firebase credentials');
+    console.error('Error: Missing Firebase credentials');
+    return;
   }
   admin.initializeApp({
     credential: admin.credential.cert({

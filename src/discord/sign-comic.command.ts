@@ -14,7 +14,6 @@ import {
   fetchOffChainMetadata,
   findRarityTrait,
   findSignedTrait,
-  findUsedTrait,
 } from '../utils/nft-metadata';
 import { UserSlashCommandPipe } from '../pipes/user-slash-command-pipe';
 import { GetSignedComicParams } from './dto/sign-comics-params.dto';
@@ -50,8 +49,10 @@ import {
   Nft,
   StatefulCover,
   ComicRarity as PrismaComicRarity,
+  Metadata as PrismaMetadata,
 } from '@prisma/client';
 import { SkipThrottle } from '@nestjs/throttler';
+import { LOCKED_COLLECTIONS } from 'src/constants';
 
 @SkipThrottle()
 @Command({
@@ -240,7 +241,9 @@ export class GetSignCommand {
       lastValidBlockHeight: number;
     }>;
     let cover: StatefulCover;
-    let nft: Nft & { collectionNft: CollectionNft };
+    let nft: Nft & { collectionNft: CollectionNft } & {
+      metadata: PrismaMetadata;
+    };
     let rarity: PrismaComicRarity;
     try {
       const creator = await this.prisma.creator.findFirst({
@@ -268,17 +271,24 @@ export class GetSignCommand {
 
       nft = await this.prisma.nft.findUnique({
         where: { address: address },
-        include: { collectionNft: true },
+        include: { collectionNft: true, metadata: true },
       });
 
-      const oldMetadata = await fetchOffChainMetadata(nft.uri);
-      rarity = findRarityTrait(oldMetadata);
-      if (findSignedTrait(oldMetadata)) {
+      cover = await this.prisma.statefulCover.findFirst({
+        where: {
+          comicIssueId: nft.collectionNft.comicIssueId,
+          isSigned: nft.metadata.isSigned,
+          isUsed: nft.metadata.isUsed,
+          rarity,
+        },
+      });
+
+      if (nft.metadata.isSigned) {
         await buttonInteraction.editReply('All Checks done ✅');
         await buttonInteraction.followUp(
           NFT_EMBEDDED_RESPONSE({
             content: `The comic is already signed 😎 `,
-            imageUrl: oldMetadata.image,
+            imageUrl: cover.image,
             nftName: nft.name,
             rarity,
             ephemeral: false,
@@ -287,27 +297,48 @@ export class GetSignCommand {
         return;
       }
 
-      const rawTransaction =
-        await this.transactionService.createChangeComicStateTransaction(
-          new PublicKey(address),
-          this.metaplex.identity().publicKey,
-          ComicStateArgs.Sign,
+      if (
+        !LOCKED_COLLECTIONS.find(
+          (collectionAddress) => nft.collectionNftAddress === collectionAddress,
+        )
+      ) {
+        const rawTransaction =
+          await this.transactionService.createChangeComicStateTransaction(
+            new PublicKey(address),
+            this.metaplex.identity().publicKey,
+            ComicStateArgs.Sign,
+          );
+
+        const transaction = decodeTransaction(rawTransaction, 'base64');
+        transactionSignature = await sendAndConfirmTransaction(
+          this.metaplex.connection,
+          transaction,
+          [this.metaplex.identity()],
+          { commitment: 'confirmed' },
         );
 
-      const transaction = decodeTransaction(rawTransaction, 'base64');
-      transactionSignature = await sendAndConfirmTransaction(
-        this.metaplex.connection,
-        transaction,
-        [this.metaplex.identity()],
-        { commitment: 'confirmed' },
-      );
+        latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
+      } else {
+        const signedMetadata = await this.prisma.metadata.findFirst({
+          where: {
+            collectionName: nft.collectionNft.name,
+            isSigned: true,
+            isUsed: nft.metadata.isUsed,
+          },
+        });
+        await this.prisma.nft.update({
+          where: { address: nft.address },
+          data: {
+            metadata: { connect: { uri: signedMetadata.uri } },
+          },
+        });
+      }
 
-      latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       cover = await this.prisma.statefulCover.findFirst({
         where: {
           comicIssueId: nft.collectionNft.comicIssueId,
           isSigned: true,
-          isUsed: findUsedTrait(oldMetadata),
+          isUsed: nft.metadata.isUsed,
           rarity,
         },
       });

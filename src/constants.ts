@@ -180,3 +180,12 @@ export const rateLimitQuota = {
   rate: 40, // 40 API calls per interval
   concurrency: 10, // no more than 10 running at once
 };
+
+export const LOCKED_COLLECTIONS = [
+  '2CvYjVeo69sYVi4ahKRDdbdYJRfdyuc1ES98auREAk9B',
+  '7qdnJrEDmds4aFGDdUKyE7QjGEp7NX6NSsitJRLvfxi7',
+  '8U8QqgDQW72W8iXpLJJ33F7xZvrHiDCujqXJ4WSamte9',
+  'EUmjXBhULWuGwfwCDBGKFDuC8DGzo5iHhJNpXuAooYvD',
+  'BNdPNtqsuMxyVQM9GhfAAJMUsiD1SzRAgQtV4FU8Go3k',
+  'A7yZDHff1hGDpzn5LXATTNUJY7SEgEE51mos8ZTGXUjL',
+];
