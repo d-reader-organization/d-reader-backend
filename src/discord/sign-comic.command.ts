@@ -273,6 +273,7 @@ export class GetSignCommand {
         where: { address: address },
         include: { collectionNft: true, metadata: true },
       });
+      rarity = nft.metadata.rarity;
 
       cover = await this.prisma.statefulCover.findFirst({
         where: {
@@ -288,20 +289,18 @@ export class GetSignCommand {
         await buttonInteraction.followUp(
           NFT_EMBEDDED_RESPONSE({
             content: `The comic is already signed 😎 `,
-            imageUrl: cover.image,
+            imageUrl: getPublicUrl(cover.image),
             nftName: nft.name,
-            rarity,
+            rarity: rarity.toString(),
             ephemeral: false,
           }),
         );
         return;
       }
-
-      if (
-        !LOCKED_COLLECTIONS.find(
-          (collectionAddress) => nft.collectionNftAddress === collectionAddress,
-        )
-      ) {
+      const isCollectionLocked = LOCKED_COLLECTIONS.some(
+        (collectionAddress) => nft.collectionNftAddress === collectionAddress,
+      );
+      if (!isCollectionLocked) {
         const rawTransaction =
           await this.transactionService.createChangeComicStateTransaction(
             new PublicKey(address),
@@ -319,9 +318,10 @@ export class GetSignCommand {
 
         latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       } else {
+        const collectionOnChainName = nft.name.split('#')[0].trim();
         const signedMetadata = await this.prisma.metadata.findFirst({
           where: {
-            collectionName: nft.collectionNft.name,
+            collectionName: collectionOnChainName,
             isSigned: true,
             isUsed: nft.metadata.isUsed,
           },
@@ -348,7 +348,7 @@ export class GetSignCommand {
           content: `<@${user}> got their comic signed! Amazing 🎉`,
           imageUrl: getPublicUrl(cover.image),
           nftName: nft.name,
-          rarity,
+          rarity: rarity.toString(),
           mentionedUsers: [user],
           ephemeral: false,
         }),
@@ -370,7 +370,7 @@ export class GetSignCommand {
               content: `<@${user}> got their comic signed! Amazing 🎉`,
               imageUrl: getPublicUrl(cover.image),
               nftName: nft.name,
-              rarity,
+              rarity: rarity.toString(),
               ephemeral: false,
               mentionedUsers: [user],
             }),
