@@ -247,12 +247,13 @@ export class CandyMachineService {
     ];
 
     if (!!shouldBePublic) {
+      const paymentGuard = freezePeriod ? 'freezeSolPayment' : 'solPayment';
       groups.push({
         label: PUBLIC_GROUP_LABEL,
         guards: {
           startDate: { date: toDateTime(startDate) },
           endDate: { date: toDateTime(endDate) },
-          freezeSolPayment: {
+          [paymentGuard]: {
             amount: solFromLamports(mintPrice),
             destination: this.metaplex.identity().publicKey,
           },
@@ -306,7 +307,7 @@ export class CandyMachineService {
     let candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineKey.publicKey });
-    if (shouldBePublic) {
+    if (freezePeriod) {
       await sleep(1000);
       await this.initializeGuardAccounts(candyMachine, freezePeriod);
     }
