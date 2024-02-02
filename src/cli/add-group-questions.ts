@@ -57,6 +57,16 @@ export class AddGroupQuestions {
 
   @Question({
     type: 'input',
+    name: 'mintPrice',
+    message: 'price of the nft (in lamports)',
+  })
+  parseMintPrice(amount: number): number {
+    if (typeof amount === 'string') return +amount;
+    return amount;
+  }
+
+  @Question({
+    type: 'input',
     name: 'startDate',
     message: 'Enter the start date and time (YYYY-MM-DDTH:M:S) in UTC',
   })
@@ -85,12 +95,11 @@ export class AddGroupQuestions {
   }
 
   @Question({
-    type: 'input',
-    name: 'mintPrice',
-    message: 'price of the nft (in lamports)',
+    type: 'confirm',
+    name: 'frozen',
+    message: 'Do you want the minted nfts from this group to be frozen',
   })
-  parseMintPrice(amount: number): number {
-    if (typeof amount === 'string') return +amount;
-    return amount;
+  parseFrozen(frozen: string): boolean {
+    return frozen.toLowerCase() === 'yes';
   }
 }

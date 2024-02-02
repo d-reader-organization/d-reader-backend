@@ -2,7 +2,6 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import {
   EndDateGuardSettings,
-  FreezeSolPaymentGuardSettings,
   MintLimitGuardSettings,
   PublicKey,
   RedeemedAmountGuardSettings,
@@ -22,10 +21,11 @@ interface Options {
   label: string;
   displayLabel: string;
   supply: number;
+  mintPrice: number;
   startDate?: Date;
   endDate?: Date;
   mintLimit?: number;
-  mintPrice: number;
+  frozen?: boolean;
 }
 
 @Command({
@@ -57,6 +57,7 @@ export class AddGroupCommand extends CommandRunner {
         mintPrice,
         displayLabel,
         supply,
+        frozen,
       } = options;
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const metaplex = initMetaplex();
@@ -75,10 +76,7 @@ export class AddGroupCommand extends CommandRunner {
       let endDateGuard: EndDateGuardSettings;
       if (endDate) endDateGuard = { date: toDateTime(endDate) };
 
-      const freezeSolPayment: FreezeSolPaymentGuardSettings = {
-        amount: solFromLamports(mintPrice),
-        destination: metaplex.identity().publicKey,
-      };
+      const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
       let mintLimitGuard: MintLimitGuardSettings;
       if (mintLimit)
         mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
@@ -93,7 +91,10 @@ export class AddGroupCommand extends CommandRunner {
         label,
         guards: {
           ...candyMachine.candyGuard.guards,
-          freezeSolPayment,
+          [paymentGuard]: {
+            amount: solFromLamports(mintPrice),
+            destination: metaplex.identity().publicKey,
+          },
           redeemedAmount: redeemedAmountGuard,
           startDate: startDateGuard,
           endDate: endDateGuard,
