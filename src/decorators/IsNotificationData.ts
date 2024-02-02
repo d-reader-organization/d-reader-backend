@@ -5,6 +5,7 @@ const notificationDataKeys = [
   'comicSlug',
   'creatorSlug',
   'nftAddress',
+  'externalUrl',
 ];
 
 export const IS_NOTIFICATION_DATA = 'isNotificationData';
