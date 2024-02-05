@@ -4,7 +4,7 @@ import { PickByType } from '../types/shared';
 import { UserComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssue } from '@prisma/client';
-import { PUBLIC_GROUP_LABEL } from '../constants';
+import { LOCKED_COLLECTIONS, PUBLIC_GROUP_LABEL } from '../constants';
 
 @Injectable()
 export class UserComicIssueService {
@@ -139,18 +139,25 @@ export class UserComicIssueService {
     comicIssueId: number,
     userId: number,
   ): Promise<boolean> {
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id: comicIssueId },
-    });
+    const { collectionNft, ...comicIssue } =
+      await this.prisma.comicIssue.findUnique({
+        where: { id: comicIssueId },
+        include: { collectionNft: true },
+      });
 
     if (comicIssue.isFreeToRead) return true;
+
+    // check if collection is locked
+    const isCollectionLocked = LOCKED_COLLECTIONS.some(
+      (address) => address === collectionNft.address,
+    );
 
     // find all NFTs that token gate the comic issue and are owned by the wallet
     const ownedUsedComicIssueNfts = await this.prisma.nft.findMany({
       where: {
-        collectionNft: { comicIssueId },
+        collectionNftAddress: collectionNft.address,
         owner: { userId },
-        metadata: { isUsed: true }, // only take into account "unwrapped" comics
+        metadata: { isUsed: isCollectionLocked ? undefined : true }, // only take into account "unwrapped" comics
       },
     });
 
