@@ -147,21 +147,22 @@ export class UserComicIssueService {
 
     if (comicIssue.isFreeToRead) return true;
 
-    // check if collection is locked
-    const isCollectionLocked = LOCKED_COLLECTIONS.some(
-      (address) => address === collectionNft.address,
-    );
+    if (collectionNft) {
+      const isCollectionLocked = LOCKED_COLLECTIONS.has(collectionNft.address);
 
-    // find all NFTs that token gate the comic issue and are owned by the wallet
-    const ownedUsedComicIssueNfts = await this.prisma.nft.findMany({
-      where: {
-        collectionNftAddress: collectionNft.address,
-        owner: { userId },
-        metadata: { isUsed: isCollectionLocked ? undefined : true }, // only take into account "unwrapped" comics
-      },
-    });
+      // find all NFTs that token gate the comic issue and are owned by the wallet
+      const ownedUsedComicIssueNfts = await this.prisma.nft.findMany({
+        where: {
+          collectionNftAddress: collectionNft.address,
+          owner: { userId },
+          metadata: { isUsed: isCollectionLocked ? undefined : true }, // only take into account "unwrapped" comics
+        },
+      });
 
-    if (!!ownedUsedComicIssueNfts.length) return true;
+      if (ownedUsedComicIssueNfts.length > 0) {
+        return true;
+      }
+    }
 
     // if wallet does not own the issue, see if the user is whitelisted per comic issue basis
     // if (!ownedUsedComicIssueNfts.length) {

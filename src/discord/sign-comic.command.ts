@@ -297,8 +297,8 @@ export class GetSignCommand {
         );
         return;
       }
-      const isCollectionLocked = LOCKED_COLLECTIONS.some(
-        (collectionAddress) => nft.collectionNftAddress === collectionAddress,
+      const isCollectionLocked = LOCKED_COLLECTIONS.has(
+        nft.collectionNftAddress,
       );
       if (!isCollectionLocked) {
         const rawTransaction =
