@@ -36,3 +36,27 @@ export function IsSolanaAddress(
     validationOptions,
   );
 }
+
+/**
+ * Check if each string in array is a solana address.
+ */
+export function ArraySolanaAddress(
+  validationOptions?: ValidationOptions,
+): PropertyDecorator {
+  return ValidateBy(
+    {
+      name: 'ArraySolanaAddress',
+      validator: {
+        validate: (value): boolean => {
+          if (!Array.isArray(value)) return false;
+          return value.every((item) => isSolanaAddress(item));
+        },
+        defaultMessage: buildMessage(
+          (eachPrefix) => eachPrefix + '$property must be a Solana address',
+          validationOptions,
+        ),
+      },
+    },
+    validationOptions,
+  );
+}
