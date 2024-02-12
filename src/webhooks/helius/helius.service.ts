@@ -118,7 +118,10 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
-            console.error('Unhandled webhook', JSON.stringify(transaction));
+            console.log('Unhandled webhook', JSON.stringify(transaction));
+
+            // this is here in case Helius still hasn't parsted our transactions for new contract
+            return this.handleChangeComicState(transaction);
         }
       }),
     );
