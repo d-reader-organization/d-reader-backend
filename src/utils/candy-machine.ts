@@ -24,7 +24,7 @@ import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
 import { ComicStates, ComicRarity } from 'dreader-comic-verse';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { writeFiles } from './metaplex';
-import { chunk } from 'lodash';
+import { chunk, shuffle } from 'lodash';
 import { pRateLimit } from 'p-ratelimit';
 import { LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
 import { BadRequestException } from '@nestjs/common';
@@ -194,7 +194,7 @@ export async function uploadItemMetadata(
     items.push(...itemsInserted);
     index++;
   }
-  return items;
+  return shuffle(items);
 }
 
 export async function insertItems(
