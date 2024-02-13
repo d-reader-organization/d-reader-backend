@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { CandyMachineService } from './candy-machine.service';
 import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
 import {
@@ -9,7 +9,7 @@ import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
-import { AddAllowListParams } from './dto/add-allow-list-params.dto';
+import { AddAllowListDto } from './dto/add-allow-list-params.dto';
 import { AdminGuard } from '../guards/roles.guard';
 
 @UseGuards(ThrottlerGuard)
@@ -34,8 +34,8 @@ export class CandyMachineController {
 
   @AdminGuard()
   @Post('add-allow-list')
-  async addAllowList(@Query() query: AddAllowListParams) {
-    const { candyMachineAddress, label, allowList } = query;
+  async addAllowList(@Body() addAllowListDto: AddAllowListDto) {
+    const { candyMachineAddress, label, allowList } = addAllowListDto;
     await this.candyMachineService.addAllowList(
       candyMachineAddress,
       allowList,

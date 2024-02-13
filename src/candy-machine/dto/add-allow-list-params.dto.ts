@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsString } from 'class-validator';
-import { ArraySolanaAddress } from '../../decorators/IsSolanaAddress';
 
-export class AddAllowListParams {
+export class AddAllowListDto {
   @IsNotEmpty()
   @IsString()
   candyMachineAddress: string;
@@ -13,8 +12,7 @@ export class AddAllowListParams {
   label: string;
 
   @IsArray()
-  @ArraySolanaAddress()
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: [String] })
   @Type(() => String)
   allowList: string[];
 }
