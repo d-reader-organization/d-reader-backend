@@ -51,7 +51,7 @@ export class CreatorDto {
   logo: string;
 
   @IsString()
-  @MaxLength(256)
+  @MaxLength(512)
   description: string;
 
   @IsString()

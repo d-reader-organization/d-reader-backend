@@ -27,7 +27,7 @@ export class UpdateCreatorDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(256)
+  @MaxLength(512)
   description?: string;
 
   @IsString()

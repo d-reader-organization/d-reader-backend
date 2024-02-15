@@ -50,7 +50,7 @@ export class RawCreatorDto {
   logo: string;
 
   @IsString()
-  @MaxLength(256)
+  @MaxLength(512)
   description: string;
 
   @IsString()
