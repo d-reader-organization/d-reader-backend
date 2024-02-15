@@ -32,10 +32,15 @@ import {
   verifyMintCreator,
 } from '../../candy-machine/instructions';
 import * as jwt from 'jsonwebtoken';
-import { D_PUBLISHER_SYMBOL, SOL_ADDRESS } from '../../constants';
+import {
+  CHANGE_COMIC_STATE_ACCOUNT_LEN,
+  D_PUBLISHER_SYMBOL,
+  SOL_ADDRESS,
+} from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
+import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
@@ -129,40 +134,47 @@ export class HeliusService {
 
   private async handleChangeComicState(transaction: EnrichedTransaction) {
     try {
-      // metadata address is found in the last instruction
-      const metadataAddress = transaction.instructions.at(-1).accounts[0];
-      const info = await this.metaplex
-        .rpc()
-        .getAccount(new PublicKey(metadataAddress));
+      if (
+        transaction.instructions.at(-1).programId ==
+          COMIC_VERSE_ID.toString() &&
+        transaction.instructions.at(-1).accounts.length ===
+          CHANGE_COMIC_STATE_ACCOUNT_LEN
+      ) {
+        // metadata address is found in the last instruction
+        const metadataAddress = transaction.instructions.at(-1).accounts[0];
+        const info = await this.metaplex
+          .rpc()
+          .getAccount(new PublicKey(metadataAddress));
 
-      const metadata = toMetadata(toMetadataAccount(info));
-      const collection = metadata.collection;
-      const isVerified = await this.verifyMetadataAccount(collection);
-      if (!isVerified) {
-        throw new Error(`Unverified metadata account ${metadataAddress}`);
-      }
+        const metadata = toMetadata(toMetadataAccount(info));
+        const collection = metadata.collection;
+        const isVerified = await this.verifyMetadataAccount(collection);
+        if (!isVerified) {
+          throw new Error(`Unverified metadata account ${metadataAddress}`);
+        }
 
-      const mint = metadata.mintAddress.toString();
-      const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+        const mint = metadata.mintAddress.toString();
+        const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-      const nft = await this.prisma.nft.update({
-        where: { address: mint },
-        data: {
-          metadata: {
-            connectOrCreate: {
-              where: { uri: metadata.uri },
-              create: {
-                collectionName: offChainMetadata.collection.name,
-                uri: metadata.uri,
-                isUsed: findUsedTrait(offChainMetadata),
-                isSigned: findSignedTrait(offChainMetadata),
-                rarity: findRarityTrait(offChainMetadata),
+        const nft = await this.prisma.nft.update({
+          where: { address: mint },
+          data: {
+            metadata: {
+              connectOrCreate: {
+                where: { uri: metadata.uri },
+                create: {
+                  collectionName: offChainMetadata.collection.name,
+                  uri: metadata.uri,
+                  isUsed: findUsedTrait(offChainMetadata),
+                  isSigned: findSignedTrait(offChainMetadata),
+                  rarity: findRarityTrait(offChainMetadata),
+                },
               },
             },
           },
-        },
-      });
-      this.websocketGateway.handleWalletNftUsed(nft);
+        });
+        this.websocketGateway.handleWalletNftUsed(nft);
+      }
     } catch (e) {
       console.error('Failed to handle comic state update', e);
     }
