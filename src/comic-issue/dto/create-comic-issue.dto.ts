@@ -49,7 +49,7 @@ export class CreateComicIssueDto {
   sellerFeeBasisPoints?: number;
 
   @IsOptional()
-  @MaxLength(256)
+  @MaxLength(1024)
   description?: string;
 
   @IsOptional()

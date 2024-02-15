@@ -35,7 +35,7 @@ export class CreateComicDto {
   audienceType: AudienceType;
 
   @IsOptional()
-  @MaxLength(256)
+  @MaxLength(1024)
   description?: string;
 
   @IsOptional()
