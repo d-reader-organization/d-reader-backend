@@ -494,7 +494,9 @@ model UserNotification {
 
 model Device {
   id     Int    @id @default(autoincrement())
-  token  String @unique
+  token  String
   user   User   @relation(fields: [userId], references: [id])
   userId Int
+
+  @@unique([token, userId])
 }
