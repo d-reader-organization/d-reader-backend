@@ -17,6 +17,10 @@ import {
   WRAPPED_SOL_MINT,
   AllowListGuardSettings,
   isNft,
+  RedeemedAmountGuardSettings,
+  StartDateGuardSettings,
+  EndDateGuardSettings,
+  MintLimitGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -554,7 +558,58 @@ export class CandyMachineService {
       mintPrice,
       mintLimit,
       supply,
+      frozen,
     } = params;
+    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachinePublicKey });
+    const candyMachineGroups = candyMachine.candyGuard.groups;
+
+    const redeemedAmountGuard: RedeemedAmountGuardSettings = {
+      maximum: toBigNumber(supply),
+    };
+    let startDateGuard: StartDateGuardSettings;
+    if (startDate) startDateGuard = { date: toDateTime(startDate) };
+
+    let endDateGuard: EndDateGuardSettings;
+    if (endDate) endDateGuard = { date: toDateTime(endDate) };
+
+    let mintLimitGuard: MintLimitGuardSettings;
+    if (mintLimit)
+      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+
+    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
+    const existingGroup = candyMachineGroups.find(
+      (group) => group.label === label,
+    );
+
+    if (existingGroup) {
+      throw new Error(`A group with label ${label} already exists`);
+    }
+
+    const group: GuardGroup = {
+      label,
+      guards: {
+        ...candyMachine.candyGuard.guards,
+        [paymentGuard]: {
+          amount: solFromLamports(mintPrice),
+          destination: this.metaplex.identity().publicKey,
+        },
+        redeemedAmount: redeemedAmountGuard,
+        startDate: startDateGuard,
+        endDate: endDateGuard,
+        mintLimit: mintLimitGuard,
+      },
+    };
+    const resolvedGroups = candyMachineGroups.filter(
+      (group) => group.label != label,
+    );
+
+    const groups = [...resolvedGroups, group];
+    await this.updateCandyMachine(candyMachinePublicKey, groups);
+
     await this.prisma.candyMachineGroup.create({
       data: {
         candyMachine: {
