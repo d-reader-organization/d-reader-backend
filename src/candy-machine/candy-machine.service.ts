@@ -263,6 +263,7 @@ export class CandyMachineService {
                 limit: mintLimit,
               }
             : undefined,
+          redeemedAmount: { maximum: toBigNumber(supply) },
         },
       });
     }
