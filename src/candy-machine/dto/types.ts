@@ -41,6 +41,7 @@ export type GuardParams = {
   splTokenAddress: string;
   mintLimit?: number;
   freezePeriod?: number;
+  frozen?: boolean;
 };
 
 export type DarkblockTraits = {

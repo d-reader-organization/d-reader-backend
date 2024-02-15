@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CandyMachineService } from './candy-machine.service';
 import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
 import {
@@ -9,8 +17,10 @@ import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
-import { AddAllowListDto } from './dto/add-allow-list-params.dto';
+import { AddAllowListDto } from './dto/add-allow-list.dto';
 import { AdminGuard } from '../guards/roles.guard';
+import { AddGroupDto } from './dto/add-group.dto';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -41,5 +51,19 @@ export class CandyMachineController {
       allowList,
       label,
     );
+  }
+
+  @AdminGuard()
+  @Post('add-group/:candyMachineAddress')
+  async addGroup(
+    @Param('candyMachineAddress') candyMachineAddress: string,
+    @Body() addGroupDto: AddGroupDto,
+  ) {
+    const splTokenAddress =
+      addGroupDto.splTokenAddress ?? WRAPPED_SOL_MINT.toBase58();
+    await this.candyMachineService.addCandyMachineGroup(candyMachineAddress, {
+      ...addGroupDto,
+      splTokenAddress,
+    });
   }
 }

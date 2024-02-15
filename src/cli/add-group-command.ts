@@ -1,21 +1,7 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import {
-  EndDateGuardSettings,
-  MintLimitGuardSettings,
-  PublicKey,
-  RedeemedAmountGuardSettings,
-  StartDateGuardSettings,
-  WRAPPED_SOL_MINT,
-  toBigNumber,
-  toDateTime,
-} from '@metaplex-foundation/js';
-import { initMetaplex } from '../utils/metaplex';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { GuardGroup } from '../types/shared';
-import { solFromLamports } from '../utils/helpers';
-import { GuardParams } from 'src/candy-machine/dto/types';
-
 interface Options {
   candyMachineAddress: string;
   label: string;
@@ -48,82 +34,11 @@ export class AddGroupCommand extends CommandRunner {
   addGroup = async (options: Options) => {
     log('\n🏗️  add new group in candymachine');
     try {
-      const {
-        candyMachineAddress,
-        label,
-        startDate,
-        endDate,
-        mintLimit,
-        mintPrice,
-        displayLabel,
-        supply,
-        frozen,
-      } = options;
-      const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-      const metaplex = initMetaplex();
-
-      const candyMachine = await metaplex
-        .candyMachines()
-        .findByAddress({ address: candyMachinePublicKey });
-      const candyMachineGroups = candyMachine.candyGuard.groups;
-
-      const redeemedAmountGuard: RedeemedAmountGuardSettings = {
-        maximum: toBigNumber(supply),
-      };
-      let startDateGuard: StartDateGuardSettings;
-      if (startDate) startDateGuard = { date: toDateTime(startDate) };
-
-      let endDateGuard: EndDateGuardSettings;
-      if (endDate) endDateGuard = { date: toDateTime(endDate) };
-
-      const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
-      let mintLimitGuard: MintLimitGuardSettings;
-      if (mintLimit)
-        mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
-
-      const existingGroup = candyMachineGroups.find(
-        (group) => group.label === label,
-      );
-      if (existingGroup) {
-        throw new Error(`A group with label ${label} already exists`);
-      }
-      const group: GuardGroup = {
-        label,
-        guards: {
-          ...candyMachine.candyGuard.guards,
-          [paymentGuard]: {
-            amount: solFromLamports(mintPrice),
-            destination: metaplex.identity().publicKey,
-          },
-          redeemedAmount: redeemedAmountGuard,
-          startDate: startDateGuard,
-          endDate: endDateGuard,
-          mintLimit: mintLimitGuard,
-        },
-      };
-      const resolvedGroups = candyMachineGroups.filter(
-        (group) => group.label != label,
-      );
-
-      const groups = [...resolvedGroups, group];
-      await this.candyMachineService.updateCandyMachine(
-        candyMachinePublicKey,
-        groups,
-      );
-      const guardParams: GuardParams = {
-        startDate,
-        endDate,
-        displayLabel,
-        label,
-        mintPrice,
+      const { candyMachineAddress } = options;
+      await this.candyMachineService.addCandyMachineGroup(candyMachineAddress, {
+        ...options,
         splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
-        mintLimit,
-        supply,
-      };
-      await this.candyMachineService.addCandyMachineGroup(
-        candyMachineAddress,
-        guardParams,
-      );
+      });
     } catch (error) {
       logErr(`Error : ${error}`);
     }
