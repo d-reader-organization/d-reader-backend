@@ -506,24 +506,17 @@ export class CandyMachineService {
     const groups: CandyMachineGroupSettings[] = await Promise.all(
       candyMachine.groups.map(
         async (group): Promise<CandyMachineGroupSettings> => {
-          const { itemsMinted, displayLabel, isEligible, walletItemsMinted } =
+          const { displayLabel, isEligible, walletItemsMinted } =
             await this.getMintCount(
               query.candyMachineAddress,
               group.label,
               query.walletAddress,
               group.mintLimit,
             );
-          let supply: number;
-          if (group.label === PUBLIC_GROUP_LABEL) {
-            supply = candyMachine.itemsRemaining + itemsMinted;
-          } else {
-            supply = group.supply;
-          }
           return {
             ...group,
             mintPrice: Number(group.mintPrice),
-            supply,
-            itemsMinted,
+            itemsMinted: candyMachine.itemsMinted,
             displayLabel,
             walletStats: {
               isEligible,
@@ -730,20 +723,16 @@ export class CandyMachineService {
     walletAddress?: string,
     mintLimit?: number,
   ): Promise<{
-    itemsMinted: number;
     displayLabel: string;
     isEligible: boolean;
     walletItemsMinted?: number;
   }> {
-    const receipts = await this.prisma.candyMachineReceipt.findMany({
-      where: { candyMachineAddress, label },
-    });
-
     let receiptsFromBuyer: Prisma.CandyMachineReceiptCreateManyCandyMachineInput[];
+
     if (walletAddress) {
-      receiptsFromBuyer = receipts.filter(
-        (receipt) => receipt.buyerAddress === walletAddress,
-      );
+      receiptsFromBuyer = await this.prisma.candyMachineReceipt.findMany({
+        where: { candyMachineAddress, label, buyerAddress: walletAddress },
+      });
     }
     let isEligible = !!walletAddress;
     const group = await this.prisma.candyMachineGroup.findFirst({
@@ -761,7 +750,6 @@ export class CandyMachineService {
     }
 
     return {
-      itemsMinted: receipts.length,
       walletItemsMinted: receiptsFromBuyer?.length,
       displayLabel: group.displayLabel,
       isEligible,
