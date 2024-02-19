@@ -3,10 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import {
   Listing,
   Metaplex,
+  toBigNumber,
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
@@ -28,15 +29,25 @@ import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { PartialListing } from './dto/types/partial-listing';
 import { Source } from 'helius-sdk';
+import { TensorSwapSDK } from '@tensor-oss/tensorswap-sdk';
+import { AnchorProvider } from '@project-serum/anchor';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private readonly auctionHouseAddress: PublicKey;
+  private readonly tensorSwap: TensorSwapSDK;
 
   constructor(private readonly prisma: PrismaService) {
     this.metaplex = metaplex;
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
+    const provider = new AnchorProvider(
+      this.metaplex.connection,
+      this.metaplex.identity(),
+      { commitment: 'confirmed' },
+    );
+    this.tensorSwap = new TensorSwapSDK({ provider });
   }
 
   async findOurAuctionHouse() {
@@ -102,6 +113,37 @@ export class AuctionHouseService {
     return await Promise.all(transactions);
   }
 
+  async createBuyFromTensor(buyArguments: BuyArgs) {
+    const { mintAccount, buyer, seller, price } = buyArguments;
+    const nftBuyerAcc = this.metaplex
+      .tokens()
+      .pdas()
+      .associatedTokenAccount({ mint: mintAccount, owner: buyer });
+
+    const {
+      tx: { ixs },
+    } = await this.tensorSwap.buySingleListing({
+      nftMint: mintAccount,
+      nftBuyerAcc,
+      owner: seller,
+      buyer,
+      maxPrice: toBigNumber(price),
+      tokenProgram: TOKEN_PROGRAM_ID,
+    });
+
+    const latestBlockhash = await metaplex.connection.getLatestBlockhash();
+    const buyTx = new Transaction({ feePayer: buyer, ...latestBlockhash }).add(
+      ...ixs,
+    );
+
+    const rawTransaction = buyTx.serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    });
+
+    return rawTransaction.toString('base64');
+  }
+
   async createInstantBuyTransaction(buyArguments: BuyArgs) {
     const listing = await this.prisma.listing.findUnique({
       where: {
@@ -116,6 +158,10 @@ export class AuctionHouseService {
       throw new NotFoundException(
         `Cannot find listing with address ${buyArguments.mintAccount.toString()}`,
       );
+    }
+
+    if (listing.source === Source.TENSOR) {
+      return await this.createBuyFromTensor(buyArguments);
     }
 
     const auctionHouse = await this.throttledFindOurAuctionHouse();
@@ -285,7 +331,7 @@ export class AuctionHouseService {
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
         nft: { collectionNft: { comicIssueId: query.comicIssueId } },
-        source: Source.METAPLEX,
+        source: { in: [Source.METAPLEX, Source.TENSOR] },
       },
       include: { nft: { include: { owner: { include: { user: true } } } } },
       take: query.take,
