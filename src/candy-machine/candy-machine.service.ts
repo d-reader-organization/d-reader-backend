@@ -39,6 +39,7 @@ import {
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
+  FUNDS_DESTINATION_ADDRESS,
 } from '../constants';
 import {
   doesWalletIndexCorrectly,
@@ -136,7 +137,6 @@ export class CandyMachineService {
     shouldBePublic?: boolean,
   ) {
     validateComicIssueCMInput(comicIssue);
-
     const creatorAddress = comicIssue.creatorAddress;
     const creatorBackupAddress = comicIssue.creatorBackupAddress;
     const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
@@ -244,7 +244,7 @@ export class CandyMachineService {
           },
           solPayment: {
             amount: solFromLamports(0),
-            destination: this.metaplex.identity().publicKey,
+            destination: FUNDS_DESTINATION_ADDRESS,
           },
         },
       },
@@ -259,7 +259,7 @@ export class CandyMachineService {
           endDate: { date: toDateTime(endDate) },
           [paymentGuard]: {
             amount: solFromLamports(mintPrice),
-            destination: this.metaplex.identity().publicKey,
+            destination: FUNDS_DESTINATION_ADDRESS,
           },
           mintLimit: mintLimit
             ? {
@@ -588,7 +588,7 @@ export class CandyMachineService {
         ...candyMachine.candyGuard.guards,
         [paymentGuard]: {
           amount: solFromLamports(mintPrice),
-          destination: this.metaplex.identity().publicKey,
+          destination: FUNDS_DESTINATION_ADDRESS,
         },
         redeemedAmount: redeemedAmountGuard,
         startDate: startDateGuard,

@@ -190,4 +190,10 @@ export const LOCKED_COLLECTIONS = new Set([
   'A7yZDHff1hGDpzn5LXATTNUJY7SEgEE51mos8ZTGXUjL',
 ]);
 
+// Warning: Make sure to not touch these addresses without discussion.
+export const FUNDS_DESTINATION_ADDRESS =
+  process.env.SOLANA_CLUSTER === 'devnet'
+    ? new PublicKey('BA6j4AW2SM7DmGg4HYRhKrXyFEqdhhFuLYjqWFUw1ZUV')
+    : new PublicKey('ERyuU5aVyNvE4rbZngt8GpXNmtXex3TdyfxtceZzS5De');
+
 export const CHANGE_COMIC_STATE_ACCOUNT_LEN = 13;
