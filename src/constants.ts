@@ -191,3 +191,10 @@ export const LOCKED_COLLECTIONS = new Set([
 ]);
 
 export const CHANGE_COMIC_STATE_ACCOUNT_LEN = 13;
+export const RARITY_PRECEDENCE = [
+  'Common',
+  'Uncommon',
+  'Rare',
+  'Epic',
+  'Legendary',
+];

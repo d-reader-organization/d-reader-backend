@@ -21,8 +21,11 @@ import {
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
-import { ListingFilterParams } from './dto/listing-fliter-params.dto';
-import { isBoolean, throttle } from 'lodash';
+import {
+  ListingFilterParams,
+  ListingSortTag,
+} from './dto/listing-fliter-params.dto';
+import { isBoolean, sortBy, throttle } from 'lodash';
 import { BuyArgs } from './dto/types/buy-args';
 import { metaplex } from '../utils/metaplex';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
@@ -32,6 +35,8 @@ import { Source } from 'helius-sdk';
 import { TensorSwapSDK } from '@tensor-oss/tensorswap-sdk';
 import { AnchorProvider } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { SortOrder } from '../types/sort-order';
+import { RARITY_PRECEDENCE } from 'src/constants';
 
 @Injectable()
 export class AuctionHouseService {
@@ -324,19 +329,44 @@ export class AuctionHouseService {
   }
 
   async findListedItems(query: ListingFilterParams) {
-    return await this.prisma.listing.findMany({
+    const sortTag = query.sortTag ?? ListingSortTag.Price;
+    const sortOrder = query.sortOrder ?? SortOrder.ASC;
+
+    let listings = await this.prisma.listing.findMany({
       where: {
         canceledAt: new Date(0),
         soldAt: isBoolean(query.isSold)
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
-        nft: { collectionNft: { comicIssueId: query.comicIssueId } },
+        nft: {
+          collectionNft: { comicIssueId: query.comicIssueId },
+          metadata: {
+            rarity: query.rarity,
+            isUsed: query.isUsed,
+            isSigned: query.isSigned,
+          },
+        },
         source: { in: [Source.METAPLEX, Source.TENSOR] },
       },
-      include: { nft: { include: { owner: { include: { user: true } } } } },
+      orderBy: {
+        price: sortTag == ListingSortTag.Price ? sortOrder : SortOrder.ASC,
+      },
+      include: {
+        nft: {
+          include: { owner: { include: { user: true } }, metadata: true },
+        },
+      },
       take: query.take,
       skip: query.skip,
     });
+
+    if (sortTag == ListingSortTag.Rarity) {
+      listings = sortBy(listings, (item) => {
+        const rarityIndex = RARITY_PRECEDENCE.indexOf(item.nft.metadata.rarity);
+        return sortOrder == SortOrder.DESC ? -rarityIndex : rarityIndex;
+      });
+    }
+    return listings;
   }
 
   async validateMint(nftAddress: PublicKey) {

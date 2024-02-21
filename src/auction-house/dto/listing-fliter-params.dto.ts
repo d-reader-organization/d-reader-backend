@@ -1,7 +1,18 @@
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
 import { Pagination } from 'src/types/pagination.dto';
 import { Transform } from 'class-transformer';
-import { TransformStringToNumber } from 'src/utils/transform';
+import {
+  TransformStringToBoolean,
+  TransformStringToNumber,
+} from 'src/utils/transform';
+import { SortOrder } from 'src/types/sort-order';
+import { ComicRarity } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
+
+export enum ListingSortTag {
+  Rarity = 'rarity',
+  Price = 'price',
+}
 
 export class ListingFilterParams extends Pagination {
   @IsOptional()
@@ -15,4 +26,27 @@ export class ListingFilterParams extends Pagination {
   @TransformStringToNumber()
   @IsNumber()
   comicIssueId: number;
+
+  @IsEnum(SortOrder)
+  @IsOptional()
+  sortOrder?: SortOrder;
+
+  @IsEnum(ComicRarity)
+  @ApiProperty({ enum: ComicRarity })
+  @IsOptional()
+  rarity?: ComicRarity;
+
+  @IsOptional()
+  @IsBoolean()
+  @TransformStringToBoolean()
+  isUsed?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @TransformStringToBoolean()
+  isSigned?: boolean;
+
+  @IsEnum(ListingSortTag)
+  @IsOptional()
+  sortTag?: ListingSortTag;
 }
