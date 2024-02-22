@@ -5,6 +5,7 @@ import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cuy, log, logEnv, logErr } from './chalk';
 import { sleep } from '../utils/helpers';
 import { initMetaplex } from '../utils/metaplex';
+import { FUNDS_DESTINATION_ADDRESS } from '../constants';
 
 interface Options {
   cluster: Cluster;
@@ -45,7 +46,6 @@ export class CreateAuctionHouseCommand extends CommandRunner {
     }
 
     const identityKey = metaplex.identity().publicKey;
-
     try {
       const response = await metaplex.auctionHouse().create({
         sellerFeeBasisPoints: 200, // 2%
@@ -54,7 +54,7 @@ export class CreateAuctionHouseCommand extends CommandRunner {
         treasuryMint: WRAPPED_SOL_MINT,
         authority: metaplex.identity(),
         feeWithdrawalDestination: identityKey,
-        treasuryWithdrawalDestinationOwner: identityKey,
+        treasuryWithdrawalDestinationOwner: FUNDS_DESTINATION_ADDRESS,
         auctioneerAuthority: undefined, // out of scope for now
         auctioneerScopes: undefined,
       });
