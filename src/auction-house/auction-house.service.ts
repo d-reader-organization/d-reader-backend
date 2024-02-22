@@ -36,7 +36,7 @@ import { TensorSwapSDK } from '@tensor-oss/tensorswap-sdk';
 import { AnchorProvider } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { SortOrder } from '../types/sort-order';
-import { RARITY_PRECEDENCE } from 'src/constants';
+import { RARITY_PRECEDENCE } from '../constants';
 
 @Injectable()
 export class AuctionHouseService {
