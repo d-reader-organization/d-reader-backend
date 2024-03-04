@@ -1,11 +1,11 @@
 import { IsBoolean, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
-import { Pagination } from 'src/types/pagination.dto';
+import { Pagination } from '../../types/pagination.dto';
 import { Transform } from 'class-transformer';
 import {
   TransformStringToBoolean,
   TransformStringToNumber,
-} from 'src/utils/transform';
-import { SortOrder } from 'src/types/sort-order';
+} from '../../utils/transform';
+import { SortOrder } from '../../types/sort-order';
 import { ComicRarity } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
