@@ -45,6 +45,7 @@
     "update-date": "npx ts-node src/cli/main.ts update-date",
     "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
     "sync-collection": "npx ts-node src/cli/main.ts sync-collection",
+    "sync-listings": "npx ts-node src/cli/main.ts sync-listings",
     "delete-candy-machine": "npx ts-node src/cli/main.ts delete-candy-machine"
   },
   "prisma": {

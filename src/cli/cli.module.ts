@@ -55,6 +55,9 @@ import { SyncCollectionQuestions } from './sync-collection-questions';
 import { SyncCollectionCommand } from './sync-collection-command';
 import { DeleteCandyMachineCommand } from './delete-candy-machine-command';
 import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
+import { SyncListingsCommand } from './sync-listings-command';
+import { SyncListingsQuestions } from './sync-listings-questions';
+import { AuctionHouseService } from '../auction-house/auction-house.service';
 
 @Module({
   imports: [
@@ -122,6 +125,9 @@ import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
     SyncCollectionCommand,
     DeleteCandyMachineCommand,
     DeleteCandyMachineQuestions,
+    SyncListingsCommand,
+    SyncListingsQuestions,
+    AuctionHouseService,
   ],
 })
 export class CLIModule {}

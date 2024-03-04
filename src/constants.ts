@@ -204,3 +204,4 @@ export const RARITY_PRECEDENCE = [
   'Epic',
   'Legendary',
 ];
+export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';

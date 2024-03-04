@@ -36,7 +36,8 @@ import { TensorSwapSDK } from '@tensor-oss/tensorswap-sdk';
 import { AnchorProvider } from '@project-serum/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { SortOrder } from '../types/sort-order';
-import { RARITY_PRECEDENCE } from '../constants';
+import { D_PUBLISHER_SYMBOL, RARITY_PRECEDENCE } from '../constants';
+import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 
 @Injectable()
 export class AuctionHouseService {
@@ -367,6 +368,69 @@ export class AuctionHouseService {
       });
     }
     return listings;
+  }
+
+  async syncListings(listings: TENSOR_LISTING_RESPONSE[]) {
+    for await (const listing of listings) {
+      await this.prisma.listing.upsert({
+        where: {
+          nftAddress_canceledAt: {
+            nftAddress: listing.mint.onchainId,
+            canceledAt: new Date(0),
+          },
+        },
+        update: {
+          price: +listing.tx.grossAmount,
+          feePayer: listing.tx.sellerId,
+          createdAt: new Date(),
+          signature: listing.tx.txId,
+          source:
+            listing.tx.source === 'TENSORSWAP'
+              ? Source.TENSOR
+              : Source.MAGIC_EDEN,
+        },
+        create: {
+          nftAddress: listing.mint.onchainId,
+          symbol: D_PUBLISHER_SYMBOL,
+          price: +listing.tx.grossAmount,
+          feePayer: listing.tx.sellerId,
+          createdAt: new Date(),
+          signature: listing.tx.txId,
+          source:
+            listing.tx.source === 'TENSORSWAP'
+              ? Source.TENSOR
+              : Source.MAGIC_EDEN,
+          canceledAt: new Date(0),
+        },
+      });
+    }
+
+    // NOTE: Uncomment and use as per required.
+    // const allListings = await this.prisma.nft.findMany({
+    //   where: {
+    //     listing: { some: { canceledAt: new Date(0), source: Source.TENSOR || Source.MAGIC_EDEN } },
+    //     collectionNftAddress: '<COLLECTION_ADDRESS>',
+    //   },
+    // });
+    // let count = 0;
+    // for await (const listing of allListings) {
+    //   const doesExist = listings.find(
+    //     (item) => item.mint.onchainId === listing.address,
+    //   );
+    //   if (!doesExist) {
+    //     await this.prisma.listing.update({
+    //       where: {
+    //         nftAddress_canceledAt: {
+    //           nftAddress: listing.address,
+    //           canceledAt: new Date(0),
+    //         },
+    //       },
+    //       data: {
+    //         canceledAt: new Date(),
+    //       },
+    //     });
+    //   }
+    // }
   }
 
   async validateMint(nftAddress: PublicKey) {
