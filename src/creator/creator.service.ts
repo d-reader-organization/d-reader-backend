@@ -143,7 +143,6 @@ export class CreatorService {
     return { ...creator, stats, myStats };
   }
 
-  // TODO : Add support for more filters and include important aggregations
   async findAllRaw(query: RawCreatorFilterParams) {
     let where: Prisma.CreatorWhereInput;
     if (query.nameSubstring) {
