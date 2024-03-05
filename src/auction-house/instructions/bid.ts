@@ -160,7 +160,9 @@ export async function constructInstantBuyTransaction(
   buyArguments: BuyArgs,
   listing: Listing & { nft: Nft },
 ) {
-  const { mintAccount, seller, price, buyer } = buyArguments;
+  const { mintAccount, buyer } = buyArguments;
+  const price = Number(listing.price);
+  const seller = new PublicKey(listing.feePayer);
   const bidInstruction = await constructPrivateBidInstruction(
     metaplex,
     auctionHouse,
