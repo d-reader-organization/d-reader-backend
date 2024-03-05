@@ -139,8 +139,6 @@ export class TransactionController {
     const buyArguments: BuyArgs = {
       buyer: new PublicKey(query.buyerAddress),
       mintAccount: new PublicKey(query.mintAccount),
-      price: query.price,
-      seller: new PublicKey(query.sellerAddress),
     };
     return await this.auctionHouseService.createInstantBuyTransaction(
       buyArguments,

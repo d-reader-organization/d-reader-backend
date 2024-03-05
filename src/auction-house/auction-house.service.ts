@@ -119,8 +119,12 @@ export class AuctionHouseService {
     return await Promise.all(transactions);
   }
 
-  async createBuyFromTensor(buyArguments: BuyArgs) {
-    const { mintAccount, buyer, seller, price } = buyArguments;
+  async createBuyFromTensor(
+    seller: PublicKey,
+    price: number,
+    buyArguments: BuyArgs,
+  ) {
+    const { mintAccount, buyer } = buyArguments;
     const nftBuyerAcc = this.metaplex
       .tokens()
       .pdas()
@@ -167,7 +171,11 @@ export class AuctionHouseService {
     }
 
     if (listing.source === Source.TENSOR) {
-      return await this.createBuyFromTensor(buyArguments);
+      return await this.createBuyFromTensor(
+        new PublicKey(listing.feePayer),
+        Number(listing.price),
+        buyArguments,
+      );
     }
 
     const auctionHouse = await this.throttledFindOurAuctionHouse();
