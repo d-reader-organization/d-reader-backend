@@ -20,7 +20,7 @@ import {
   rateLimitQuota,
 } from '../constants';
 import { initializeAuthority } from '../candy-machine/instructions';
-import { CoverFiles, ItemMedata, RarityCoverFiles } from '../types/shared';
+import { CoverFiles, ItemMetadata, RarityCoverFiles } from '../types/shared';
 import { ComicStates, ComicRarity } from 'dreader-comic-verse';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { writeFiles } from './metaplex';
@@ -86,21 +86,19 @@ export async function uploadMetadata(
 
 export async function uploadAllMetadata(
   metaplex: Metaplex,
-  candyMachineAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: JsonMetadataCreators,
   rarityCoverFiles: CoverFiles,
   darkblockId: string,
   rarity: ComicRarity,
-  collectionNftAddress: PublicKey,
 ) {
-  const itemMetadata: ItemMedata = {} as ItemMedata;
+  const itemMetadata: ItemMetadata[] = [];
   await Promise.all(
     ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
       const property = generatePropertyName(isUsed, isSigned);
       const darkblock = isUsed ? darkblockId : undefined;
-      itemMetadata[property] = await uploadMetadata(
+      const metadata = await uploadMetadata(
         metaplex,
         comicIssue,
         comicName,
@@ -111,30 +109,48 @@ export async function uploadAllMetadata(
         rarity,
         darkblock,
       );
+      itemMetadata.push({
+        metadata,
+        isUsed,
+        isSigned,
+        rarity,
+      });
     }),
-  );
-
-  const comicStates: ComicStates = {
-    unusedSigned: itemMetadata.unusedSigned.uri,
-    unusedUnsigned: itemMetadata.unusedUnsigned.uri,
-    usedSigned: itemMetadata.usedSigned.uri,
-    usedUnsigned: itemMetadata.usedUnsigned.uri,
-  };
-
-  await initializeAuthority(
-    metaplex,
-    candyMachineAddress,
-    collectionNftAddress,
-    rarity,
-    comicStates,
   );
 
   return itemMetadata;
 }
 
+export async function uploadCovers(
+  metaplex: Metaplex,
+  comicIssue: ComicIssueCMInput,
+  comicName: string,
+  royaltyWallets: JsonMetadataCreators,
+  numberOfRarities: number,
+  darkblockId: string,
+  rarityCoverFiles?: RarityCoverFiles,
+) {
+  const rarityShares = getRarityShareTable(numberOfRarities);
+  const itemMetadatas: ItemMetadata[] = [];
+  for (const rarityShare of rarityShares) {
+    const { rarity } = rarityShare;
+    const itemMetadata = await uploadAllMetadata(
+      metaplex,
+      comicIssue,
+      comicName,
+      royaltyWallets,
+      rarityCoverFiles[rarity],
+      darkblockId,
+      RARITY_MAP[rarity],
+    );
+    itemMetadatas.push(...itemMetadata);
+  }
+  return itemMetadatas;
+}
+
 export async function uploadItemMetadata(
   metaplex: Metaplex,
-  candMachineAddress: PublicKey,
+  candyMachineAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
   collectionNftAddress: PublicKey,
   comicName: string,
@@ -149,31 +165,49 @@ export async function uploadItemMetadata(
 
   // TODO v2: rarityShares is not reliable, we should pull this info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
-  const itemMetadatas: { uri: string; name: string }[] = [];
-  let supplyLeft = comicIssueSupply;
-  for (const rarityShare of rarityShares) {
-    const { rarity } = rarityShare;
-    const itemMetadata = await uploadAllMetadata(
-      metaplex,
-      candMachineAddress,
-      comicIssue,
-      comicName,
-      royaltyWallets,
-      rarityCoverFiles[rarity],
-      darkblockId,
-      RARITY_MAP[rarity],
-      collectionNftAddress,
+  const itemMetadatas = await uploadCovers(
+    metaplex,
+    comicIssue,
+    comicName,
+    royaltyWallets,
+    numberOfRarities,
+    darkblockId,
+    rarityCoverFiles,
+  );
+
+  // initialize comic authority
+  for await (const rarityShare of rarityShares) {
+    const allData = itemMetadatas.filter(
+      (item) => item.rarity === RARITY_MAP[rarityShare.rarity],
     );
-    const { unusedUnsigned } = itemMetadata;
-    itemMetadatas.push({
-      uri: unusedUnsigned.uri,
-      name: onChainName,
-    });
+    const comicStates: ComicStates = {
+      unusedSigned: allData.find((data) => !data.isUsed && data.isSigned)
+        .metadata.uri,
+      unusedUnsigned: allData.find((data) => !data.isUsed && !data.isSigned)
+        .metadata.uri,
+      usedSigned: allData.find((data) => data.isUsed && data.isSigned).metadata
+        .uri,
+      usedUnsigned: allData.find((data) => data.isUsed && !data.isSigned)
+        .metadata.uri,
+    };
+
+    await initializeAuthority(
+      metaplex,
+      candyMachineAddress,
+      collectionNftAddress,
+      RARITY_MAP[rarityShare.rarity],
+      comicStates,
+    );
   }
 
+  const unusedUnsignedMetadatas = itemMetadatas.filter(
+    (item) => !item.isUsed && !item.isSigned,
+  );
+
+  let supplyLeft = comicIssueSupply;
   let index = 0,
     nameIndex = 0;
-  for (const metadata of itemMetadatas) {
+  for (const metadata of unusedUnsignedMetadatas) {
     let supply: number;
     const { value } = rarityShares[index];
     if (index == rarityShares.length - 1) {
@@ -186,15 +220,15 @@ export async function uploadItemMetadata(
     const itemsInserted = indexArray.map(() => {
       nameIndex++;
       return {
-        uri: metadata.uri,
-        name: `${metadata.name} #${nameIndex}`,
+        uri: metadata.metadata.uri,
+        name: `${onChainName} #${nameIndex}`,
       };
     });
 
     items.push(...itemsInserted);
     index++;
   }
-  return shuffle(items);
+  return { items: shuffle(items), itemMetadatas };
 }
 
 export async function insertItems(
@@ -210,7 +244,7 @@ export async function insertItems(
   onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
-  const items = await uploadItemMetadata(
+  const { items, itemMetadatas } = await uploadItemMetadata(
     metaplex,
     candyMachine.address,
     comicIssue,
@@ -250,6 +284,7 @@ export async function insertItems(
       );
     });
   }
+  return itemMetadatas;
 }
 
 export function calculateMissingSOL(missingFunds: number): number {
