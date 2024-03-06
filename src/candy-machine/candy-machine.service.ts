@@ -64,7 +64,7 @@ import {
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { CandyMachineGroupSettings, GuardParams } from './dto/types';
 import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
 import { constructThawTransaction } from './instructions/route';
@@ -76,6 +76,7 @@ import {
 import { createCollectionNft } from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
+import { ComicRarity } from 'dreader-comic-verse';
 
 @Injectable()
 export class CandyMachineService {
@@ -335,7 +336,7 @@ export class CandyMachineService {
     ]);
 
     try {
-      await insertItems(
+      const itemMetadatas = await insertItems(
         this.metaplex,
         candyMachine,
         comicIssue,
@@ -348,6 +349,17 @@ export class CandyMachineService {
         onChainName,
         rarityCoverFiles,
       );
+      const metadataCreateData = itemMetadatas.map((item) => ({
+        uri: item.metadata.uri,
+        isUsed: item.isUsed,
+        isSigned: item.isSigned,
+        rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+        collectionName: onChainName,
+      }));
+      await this.prisma.metadata.createMany({
+        data: metadataCreateData,
+        skipDuplicates: true,
+      });
       await sleep(1000); // wait for data to update before refetching candymachine.
     } catch (e) {
       console.error(e);
