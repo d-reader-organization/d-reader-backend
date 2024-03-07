@@ -55,4 +55,8 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsOptional()
   @IsBoolean()
   shouldBePublic?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  compressed?: boolean;
 }
