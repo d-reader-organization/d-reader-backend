@@ -9,6 +9,11 @@ import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { BUNDLR_ADDRESS } from '../constants';
 import { heliusClusterApiUrl } from 'helius-sdk';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { keypairIdentity as umiKeypairIdentity } from '@metaplex-foundation/umi';
+import { mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
+import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 
 export type MetdataFile = {
   type?: string;
@@ -58,6 +63,19 @@ export function initMetaplex(customEndpoint?: string) {
 }
 
 export const metaplex = initMetaplex();
+
+export function initUmi(customEndpoint?: string) {
+  const connection = getConnection(customEndpoint);
+  const treasuryKeypair = getTreasuryKeypair();
+  const umi = createUmi(connection.rpcEndpoint)
+    .use(mplBubblegum())
+    .use(mplTokenMetadata())
+    .use(umiKeypairIdentity(fromWeb3JsKeypair(treasuryKeypair)));
+
+  return umi;
+}
+
+export const umi = initUmi();
 
 export function writeFiles(...files: MetaplexFile[]): MetdataFile[] {
   return files.map((file) => ({

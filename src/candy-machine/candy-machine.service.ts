@@ -48,7 +48,7 @@ import {
   sleep,
   solFromLamports,
 } from '../utils/helpers';
-import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
+import { MetdataFile, metaplex, umi, writeFiles } from '../utils/metaplex';
 import {
   findDefaultCover,
   getStatefulCoverName,
@@ -60,6 +60,7 @@ import {
   generatePropertyName,
   insertItems,
   JsonMetadataCreators,
+  uploadCovers,
   validateBalanceForMint,
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
@@ -77,10 +78,19 @@ import { createCollectionNft } from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
 import { ComicRarity } from 'dreader-comic-verse';
+import { Umi } from '@metaplex-foundation/umi';
+import { createTreeTransaction } from './instructions/create-tree';
+import {
+  MPL_BUBBLEGUM_PROGRAM_ID,
+  fetchMerkleTree,
+  fetchTreeConfig,
+  findTreeConfigPda,
+} from '@metaplex-foundation/mpl-bubblegum';
 
 @Injectable()
 export class CandyMachineService {
   private readonly metaplex: Metaplex;
+  private readonly umi: Umi;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -88,6 +98,7 @@ export class CandyMachineService {
     private readonly darkblockService: DarkblockService,
   ) {
     this.metaplex = metaplex;
+    this.umi = umi;
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
@@ -136,6 +147,7 @@ export class CandyMachineService {
     onChainName: string,
     guardParams: GuardParams,
     shouldBePublic?: boolean,
+    compressed?: boolean,
   ) {
     validateComicIssueCMInput(comicIssue);
     const creatorAddress = comicIssue.creatorAddress;
@@ -221,6 +233,78 @@ export class CandyMachineService {
 
     const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
       guardParams;
+
+    if (compressed) {
+      // create merkle tree and store groups in db
+      const merkleTreeAddress = await createTreeTransaction(this.umi, supply);
+      const lookupTable = await createLookupTable(metaplex, [
+        new PublicKey(merkleTreeAddress),
+        metaplex.identity().publicKey,
+        collectionNftAddress,
+        metaplex.programs().getTokenMetadata().address,
+        new PublicKey(MPL_BUBBLEGUM_PROGRAM_ID),
+      ]);
+      const merkleTreeConfigAddress = findTreeConfigPda(umi, {
+        merkleTree: merkleTreeAddress,
+      });
+      const merkleTreeConfig = await fetchTreeConfig(
+        umi,
+        merkleTreeConfigAddress,
+        { commitment: 'confirmed' },
+      );
+      await this.prisma.candyMachine.create({
+        data: {
+          address: merkleTreeAddress.toString(),
+          mintAuthorityAddress: merkleTreeConfig.treeDelegate.toString(),
+          collectionNftAddress: collectionNftAddress.toBase58(),
+          authorityPda: merkleTreeConfigAddress.toString(),
+          itemsAvailable: Number(merkleTreeConfig.totalMintCapacity),
+          itemsMinted: Number(merkleTreeConfig.numMinted),
+          itemsRemaining: Number(merkleTreeConfig.totalMintCapacity),
+          itemsLoaded: Number(merkleTreeConfig.totalMintCapacity),
+          isFullyLoaded: true,
+          supply: Number(merkleTreeConfig.totalMintCapacity),
+          lookupTable,
+          groups: !!shouldBePublic
+            ? {
+                create: {
+                  displayLabel: PUBLIC_GROUP_LABEL,
+                  wallets: undefined,
+                  label: PUBLIC_GROUP_LABEL,
+                  startDate,
+                  endDate,
+                  mintPrice: mintPrice,
+                  mintLimit,
+                  supply: Number(merkleTreeConfig.totalMintCapacity),
+                  splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                },
+              }
+            : undefined,
+        },
+      });
+      const itemMetadatas = await uploadCovers(
+        metaplex,
+        comicIssue,
+        comicName,
+        royaltyWallets,
+        statelessCovers.length,
+        darkblockId,
+        rarityCoverFiles,
+      );
+      const metadataCreateData = itemMetadatas.map((item) => ({
+        uri: item.metadata.uri,
+        isUsed: item.isUsed,
+        isSigned: item.isSigned,
+        rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+        collectionName: onChainName,
+      }));
+      await this.prisma.metadata.createMany({
+        data: metadataCreateData,
+        skipDuplicates: true,
+      });
+      this.heliusService.subscribeTo(merkleTreeAddress.toString());
+      return merkleTreeAddress;
+    }
 
     await initializeRecordAuthority(
       this.metaplex,
@@ -312,7 +396,10 @@ export class CandyMachineService {
 
     let candyMachine = await this.metaplex
       .candyMachines()
-      .findByAddress({ address: candyMachineKey.publicKey });
+      .findByAddress(
+        { address: candyMachineKey.publicKey },
+        { commitment: 'confirmed' },
+      );
     if (freezePeriod) {
       await sleep(1000);
       await this.initializeGuardAccounts(candyMachine, freezePeriod);
@@ -365,7 +452,9 @@ export class CandyMachineService {
       console.error(e);
     }
 
-    candyMachine = await this.metaplex.candyMachines().refresh(candyMachine);
+    candyMachine = await this.metaplex
+      .candyMachines()
+      .refresh(candyMachine, { commitment: 'confirmed' });
     await this.prisma.candyMachine.create({
       data: {
         address: candyMachine.address.toBase58(),
