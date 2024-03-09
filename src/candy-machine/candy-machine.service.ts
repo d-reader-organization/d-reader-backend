@@ -3,6 +3,7 @@ import {
   Keypair,
   PublicKey,
   SYSVAR_SLOT_HASHES_PUBKEY,
+  Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
@@ -40,6 +41,7 @@ import {
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
   FUNDS_DESTINATION_ADDRESS,
+  MIN_COMPUTE_PRICE_IX,
 } from '../constants';
 import {
   doesWalletIndexCorrectly,
@@ -869,6 +871,43 @@ export class CandyMachineService {
   }
 
   async deleteCandyMachine(address: PublicKey) {
-    await this.metaplex.candyMachines().delete({ candyMachine: address });
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address });
+
+    const deleteCandyMachineBuilder = this.metaplex
+      .candyMachines()
+      .builders()
+      .delete({ candyMachine: address });
+
+    const deleteCandyGuardBuilder = this.metaplex
+      .candyMachines()
+      .builders()
+      .deleteCandyGuard({ candyGuard: candyMachine.mintAuthorityAddress });
+
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+
+    const deleteCandyMachineTransaction =
+      deleteCandyMachineBuilder.toTransaction(latestBlockhash);
+    const deleteCandyGuardTransaction =
+      deleteCandyGuardBuilder.toTransaction(latestBlockhash);
+
+    const transaction = new Transaction({
+      feePayer: this.metaplex.identity().publicKey,
+      ...latestBlockhash,
+    }).add(
+      MIN_COMPUTE_PRICE_IX,
+      deleteCandyMachineTransaction,
+      deleteCandyGuardTransaction,
+    );
+
+    const signature = await sendAndConfirmTransaction(
+      this.metaplex.connection,
+      transaction,
+      [this.metaplex.identity()],
+    );
+    return signature;
   }
 }
