@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { cb, log, logErr } from './chalk';
+import { cb, cuy, log, logErr } from './chalk';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -9,7 +9,7 @@ interface Options {
 
 @Command({
   name: 'delete-candy-machine',
-  description: 'Delete thye provided candymachine',
+  description: 'Delete the provided candymachine and candyguard',
 })
 export class DeleteCandyMachineCommand extends CommandRunner {
   constructor(
@@ -25,16 +25,17 @@ export class DeleteCandyMachineCommand extends CommandRunner {
   }
 
   async deleteCandyMachine(options: Options) {
-    log("🏗️  Starting 'mint one' command...");
+    log("🏗️  Starting 'delete-candy-machine' command...");
     const { candyMachineAddress } = options;
-    await this.candyMachineService.deleteCandyMachine(candyMachineAddress);
     try {
-      log(cb('⛏️  Delete the candymachine'));
-
-      log('✅ Minted successfully');
+      const signature = await this.candyMachineService.deleteCandyMachine(
+        candyMachineAddress,
+      );
+      log(cb('⛏️  CandyMachine deleted successfully'));
+      log(`✍️  Signature: ${cuy(signature)}`);
     } catch (e) {
       logErr(
-        `Failed to mint from ${options.candyMachineAddress.toBase58()}: ${e}`,
+        `Failed to delete candymachine ${options.candyMachineAddress.toBase58()}: ${e}`,
       );
     }
   }
