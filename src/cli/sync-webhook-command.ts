@@ -38,7 +38,6 @@ export class SyncWebhookCommand extends CommandRunner {
     );
 
     const accountAddresses = await this.collectAddresses();
-
     // if webhookID is not specified, create a new one
     if (!webhookID || webhookID === 'REPLACE_THIS') {
       await this.createNewWebhook(webhookID, accountAddresses);
@@ -46,7 +45,9 @@ export class SyncWebhookCommand extends CommandRunner {
 
     try {
       const webhook = await helius.getWebhookByID(webhookID);
+
       const updatedWebhook = await this.heliusService.updateWebhook(webhookID, {
+        ...webhook,
         accountAddresses,
         // override the webhookURL if it was provided
         webhookURL: options.webhookURL || webhook.webhookURL,
@@ -54,6 +55,7 @@ export class SyncWebhookCommand extends CommandRunner {
       log(`✅ Found webhook with ID: ${cuy(webhookID)}`);
       log(`⛓️  WebhookURL is: ${cb(updatedWebhook.webhookURL)}`);
     } catch (e) {
+      console.log(e);
       logErr(`Couldn't find the webhook with ID: ${webhookURL}`);
       await this.createNewWebhook(webhookURL, accountAddresses);
     }

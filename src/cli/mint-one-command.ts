@@ -11,6 +11,9 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { cb, cuy, log, logErr } from './chalk';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
+import { constructMintOneTransaction } from '../candy-machine/instructions';
+import { Metaplex } from '@metaplex-foundation/js';
+import { metaplex } from '../utils/metaplex';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -22,11 +25,13 @@ interface Options {
   description: 'Mint one NFT from the specified CM to the treasury wallet',
 })
 export class MintOneCommand extends CommandRunner {
+  private readonly metaplex: Metaplex;
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
   ) {
     super();
+    this.metaplex = metaplex;
   }
 
   async run(_: string[], options: Options): Promise<void> {
@@ -38,6 +43,7 @@ export class MintOneCommand extends CommandRunner {
     log("🏗️  Starting 'mint one' command...");
     const endpoint = clusterApiUrl(process.env.SOLANA_CLUSTER as Cluster);
     const connection = new Connection(endpoint, 'confirmed');
+    const { candyMachineAddress, label } = options;
 
     const wallet = AES.decrypt(
       process.env.TREASURY_PRIVATE_KEY,
@@ -47,16 +53,40 @@ export class MintOneCommand extends CommandRunner {
     const keypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
-    const encodedTransactions =
-      await this.candyMachineService.createMintOneTransaction(
-        keypair.publicKey,
-        options.candyMachineAddress,
-        options.label,
+    const { allowList, candyMachine, mintPrice } =
+      await this.candyMachineService.findCandyMachineData(
+        candyMachineAddress.toString(),
+        label,
       );
+    const { compressed, collectionNftAddress } = candyMachine;
+
+    let encodedTransactions: string[];
+    if (compressed) {
+      encodedTransactions =
+        await this.candyMachineService.createMintCnftTransaction(
+          keypair.publicKey.toString(),
+          candyMachineAddress.toString(),
+          collectionNftAddress.toString(),
+          candyMachine.supply,
+          mintPrice,
+        );
+    } else {
+      encodedTransactions = await constructMintOneTransaction(
+        metaplex,
+        keypair.publicKey,
+        candyMachineAddress,
+        label,
+        allowList,
+        candyMachine.lookupTable,
+      );
+    }
+
     const transactions = encodedTransactions.map((encodedTransaction) => {
       const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
       const transaction = VersionedTransaction.deserialize(transactionBuffer);
-      transaction.sign([keypair]);
+      if (!compressed) {
+        transaction.sign([keypair]);
+      }
       return transaction;
     });
     try {

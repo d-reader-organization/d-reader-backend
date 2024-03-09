@@ -154,10 +154,12 @@ model Genre {
 }
 
 model RoyaltyWallet {
-  address      String     @unique
+  address      String
   share        Int
   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
+
+  @@unique([address, comicIssueId])
 }
 
 model ComicIssue {
@@ -295,6 +297,7 @@ model CandyMachine {
   itemsLoaded          Int
   isFullyLoaded        Boolean
   lookupTable          String?
+  compressed           Boolean               @default(false)
   collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
   collectionNftAddress String
   items                Nft[]
@@ -424,12 +427,13 @@ model UserCreator {
 }
 
 model Metadata {
-  uri            String      @id
-  nft            Nft[]
-  collectionName String
-  isUsed         Boolean
-  isSigned       Boolean
-  rarity         ComicRarity
+  uri               String      @id
+  nft               Nft[]
+  collectionName    String
+  collectionAddress String?
+  isUsed            Boolean
+  isSigned          Boolean
+  rarity            ComicRarity
 }
 
 model Listing {

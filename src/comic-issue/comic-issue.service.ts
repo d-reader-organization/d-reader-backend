@@ -619,10 +619,11 @@ export class ComicIssueService {
       },
     });
 
-    const [updatedComicIssue] = await this.prisma.$transaction([
-      updateComicIssue,
+    const data = await this.prisma.$transaction([
       deleteRoyaltyWallets,
+      updateComicIssue,
     ]);
+    const updatedComicIssue = data[1];
 
     const guardParams: GuardParams = {
       startDate,

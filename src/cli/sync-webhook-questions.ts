@@ -1,7 +1,8 @@
 import { Connection } from '@solana/web3.js';
 import { isURL } from 'class-validator';
 import { QuestionSet, Question } from 'nest-commander';
-import { heliusClusterApiUrl } from 'helius-sdk';
+import { clusterHeliusApiUrl } from '../utils/helius';
+import { Cluster } from '../types/cluster';
 
 @QuestionSet({ name: 'sync-webhook' })
 export class SyncWebhookQuestions {
@@ -30,7 +31,7 @@ export class SyncWebhookQuestions {
         return 'WebhookURL must be a valid URL';
       }
 
-      const endpoint = heliusClusterApiUrl(heliusApiKey, 'devnet');
+      const endpoint = clusterHeliusApiUrl(heliusApiKey, Cluster.Devnet);
       const connection = new Connection(endpoint, 'confirmed');
 
       try {

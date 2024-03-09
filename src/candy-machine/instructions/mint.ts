@@ -41,10 +41,23 @@ import { MintSettings } from '../dto/types';
 import {
   AUTH_RULES,
   AUTH_RULES_ID,
+  FUNDS_DESTINATION_ADDRESS,
   MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
   MINT_COMPUTE_UNITS,
 } from '../../constants';
 import { constructAllowListRouteTransaction } from './route';
+import {
+  createNoopSigner,
+  lamports as umiLamports,
+  publicKey,
+  Umi,
+} from '@metaplex-foundation/umi';
+import {
+  Creator as UmiCreator,
+  mintToCollectionV1,
+} from '@metaplex-foundation/mpl-bubblegum';
+import { base64 } from '@metaplex-foundation/umi/serializers';
+import { transferSol } from '@metaplex-foundation/mpl-toolbox';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -507,4 +520,45 @@ function resolveGuards(
   ) as Partial<DefaultCandyGuardSettings>;
 
   return { ...defaultGuards, ...activeGroupGuards };
+}
+
+export async function constructMintCnftTransaction(
+  umi: Umi,
+  minter: string,
+  tree: string,
+  collection: string,
+  name: string,
+  uri: string,
+  price: number,
+  sellerFeeBasisPoints: number,
+  creators: UmiCreator[],
+) {
+  const signer = createNoopSigner(publicKey(minter));
+
+  const transferBuilder = transferSol(umi, {
+    source: signer,
+    destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+    amount: umiLamports(price),
+  });
+
+  const transaction = await mintToCollectionV1(umi, {
+    leafOwner: publicKey(minter),
+    merkleTree: publicKey(tree),
+    collectionMint: publicKey(collection),
+    metadata: {
+      name,
+      uri,
+      sellerFeeBasisPoints,
+      collection: { key: publicKey(collection), verified: true },
+      creators: [
+        { address: umi.identity.publicKey, verified: true, share: 0 },
+        ...creators,
+      ],
+    },
+    payer: signer,
+  })
+    .add(transferBuilder)
+    .buildAndSign(umi);
+
+  return [base64.deserialize(umi.transactions.serialize(transaction))[0]];
 }

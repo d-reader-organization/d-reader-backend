@@ -1,12 +1,10 @@
-type TreeConfig = {
-  canopyDepth: number;
-  maxBufferSize: number;
-  maxDepth: number;
-};
+import { TreeConfigData } from '../types/compression';
 
-export function getTreeConfig(supply: number): TreeConfig {
+export function getTreeConfig(supply: number): TreeConfigData {
   const exponent = nearestPowerOf2(supply);
   switch (exponent) {
+    case 5:
+      return { canopyDepth: 0, maxBufferSize: 8, maxDepth: exponent };
     case 10:
       return { canopyDepth: 5, maxBufferSize: 32, maxDepth: exponent };
     case 14:
