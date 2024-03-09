@@ -131,10 +131,14 @@ Table Genre {
 }
 
 Table RoyaltyWallet {
-  address String [unique, not null]
+  address String [not null]
   share Int [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
+
+  indexes {
+    (address, comicIssueId) [unique]
+  }
 }
 
 Table ComicIssue {
@@ -257,6 +261,7 @@ Table CandyMachine {
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
   lookupTable String
+  compressed Boolean [not null, default: false]
   collectionNft CollectionNft [not null]
   collectionNftAddress String [not null]
   items Nft [not null]
@@ -394,6 +399,7 @@ Table Metadata {
   uri String [pk]
   nft Nft [not null]
   collectionName String [not null]
+  collectionAddress String
   isUsed Boolean [not null]
   isSigned Boolean [not null]
   rarity ComicRarity [not null]

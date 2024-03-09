@@ -8,12 +8,12 @@ import { Cluster, Connection, Keypair } from '@solana/web3.js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { BUNDLR_ADDRESS } from '../constants';
-import { heliusClusterApiUrl } from 'helius-sdk';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { keypairIdentity as umiKeypairIdentity } from '@metaplex-foundation/umi';
 import { mplBubblegum } from '@metaplex-foundation/mpl-bubblegum';
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
+import { clusterHeliusApiUrl } from './helius';
 
 export type MetdataFile = {
   type?: string;
@@ -39,7 +39,7 @@ export const getTreasuryPublicKey = () => {
 export function getConnection(customEndpoint?: string) {
   const endpoint =
     customEndpoint ||
-    heliusClusterApiUrl(
+    clusterHeliusApiUrl(
       process.env.HELIUS_API_KEY,
       process.env.SOLANA_CLUSTER as Cluster,
     );

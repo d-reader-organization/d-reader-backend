@@ -24,6 +24,7 @@ import {
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
+  constructMintCnftTransaction,
   constructMintOneTransaction,
   initializeRecordAuthority,
 } from './instructions';
@@ -40,6 +41,8 @@ import {
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
   FUNDS_DESTINATION_ADDRESS,
+  getRarityShare,
+  getRarityShareTable,
 } from '../constants';
 import {
   doesWalletIndexCorrectly,
@@ -78,14 +81,15 @@ import { createCollectionNft } from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
 import { ComicRarity } from 'dreader-comic-verse';
-import { Umi } from '@metaplex-foundation/umi';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { createTreeTransaction } from './instructions/create-tree';
 import {
+  Creator as UmiCreator,
   MPL_BUBBLEGUM_PROGRAM_ID,
-  fetchMerkleTree,
   fetchTreeConfig,
   findTreeConfigPda,
 } from '@metaplex-foundation/mpl-bubblegum';
+import { random } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -252,6 +256,7 @@ export class CandyMachineService {
         merkleTreeConfigAddress,
         { commitment: 'confirmed' },
       );
+
       await this.prisma.candyMachine.create({
         data: {
           address: merkleTreeAddress.toString(),
@@ -265,6 +270,7 @@ export class CandyMachineService {
           isFullyLoaded: true,
           supply: Number(merkleTreeConfig.totalMintCapacity),
           lookupTable,
+          compressed,
           groups: !!shouldBePublic
             ? {
                 create: {
@@ -291,13 +297,17 @@ export class CandyMachineService {
         darkblockId,
         rarityCoverFiles,
       );
-      const metadataCreateData = itemMetadatas.map((item) => ({
-        uri: item.metadata.uri,
-        isUsed: item.isUsed,
-        isSigned: item.isSigned,
-        rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
-        collectionName: onChainName,
-      }));
+
+      const metadataCreateData = itemMetadatas.map((item) => {
+        return {
+          uri: item.metadata.uri,
+          isUsed: item.isUsed,
+          isSigned: item.isSigned,
+          rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+          collectionName: onChainName,
+          collectionAddress: collectionNftAddress.toString(),
+        };
+      });
       await this.prisma.metadata.createMany({
         data: metadataCreateData,
         skipDuplicates: true,
@@ -442,7 +452,9 @@ export class CandyMachineService {
         isSigned: item.isSigned,
         rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
         collectionName: onChainName,
+        collectionAddress: collectionNftAddress.toString(),
       }));
+
       await this.prisma.metadata.createMany({
         data: metadataCreateData,
         skipDuplicates: true,
@@ -519,15 +531,126 @@ export class CandyMachineService {
     return await Promise.all(transactions);
   }
 
+  async createMintCnftTransaction(
+    minter: string,
+    candyMachineAddress: string,
+    collectionAddress: string,
+    supply: number,
+    mintPrice: number,
+  ) {
+    //todo: check from helius from last rarity cnft
+    let supplyLeft = supply;
+    const merkleTreeConfigAddress = findTreeConfigPda(this.umi, {
+      merkleTree: publicKey(candyMachineAddress),
+    });
+    const merkleTreeConfig = await fetchTreeConfig(
+      umi,
+      merkleTreeConfigAddress,
+      { commitment: 'confirmed' },
+    );
+    const itemsMinted = merkleTreeConfig.numMinted;
+    if (itemsMinted >= supply) {
+      throw new Error('Maximum items redeemed');
+    }
+    const mintedItems = await this.prisma.nft.findMany({
+      where: { candyMachineAddress },
+      include: { metadata: true },
+    });
+
+    const itemMetadatas = await this.prisma.metadata.findMany({
+      where: { collectionAddress, isUsed: false, isSigned: false },
+    });
+    const rarityCount = itemMetadatas.length;
+
+    const rarities = getRarityShareTable(rarityCount);
+    const compressionData = rarities.map((item, index) => {
+      const rarityShare = getRarityShare(rarityCount, item.rarity);
+      const raritySupply = Math.floor((supply * rarityShare) / 100);
+      if (index != rarities.length - 1) {
+        supplyLeft -= raritySupply;
+      }
+      const rarityItemMinted = mintedItems.filter(
+        (rarityItem) => rarityItem.metadata.rarity === item.rarity,
+      );
+      const countOfRarityItems = rarityItemMinted.length;
+      const currentSupply =
+        (index == rarities.length - 1 ? supplyLeft : raritySupply) -
+        countOfRarityItems;
+      return {
+        supply: currentSupply,
+        rarity: item.rarity,
+      };
+    });
+    console.log(compressionData);
+
+    const randomIndex = random(1, supply - Number(itemsMinted));
+    let curr = 0;
+    const rarityData = compressionData.find((item) => {
+      curr += item.supply;
+      if (curr >= randomIndex) return item;
+    });
+
+    const itemMetadata = itemMetadatas.find(
+      (item) =>
+        item.rarity == rarityData.rarity && !item.isSigned && !item.isUsed,
+    );
+
+    const { royaltyWallets, ...comicIssue } =
+      await this.prisma.comicIssue.findFirst({
+        where: { collectionNft: { address: collectionAddress } },
+        include: { royaltyWallets: true },
+      });
+
+    const { uri, collectionName } = itemMetadata;
+    const creators: UmiCreator[] = royaltyWallets.map((wallet) => ({
+      address: publicKey(wallet.address),
+      verified: false,
+      share: wallet.share,
+    }));
+
+    return await constructMintCnftTransaction(
+      this.umi,
+      minter,
+      candyMachineAddress,
+      collectionAddress,
+      collectionName,
+      uri,
+      mintPrice,
+      comicIssue.sellerFeeBasisPoints,
+      creators,
+    );
+  }
+
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
     label: string,
   ) {
-    const { allowList, lookupTable, mintPrice } =
+    const { allowList, candyMachine, mintPrice } =
       await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
     validateBalanceForMint(mintPrice, balance);
+
+    const { lookupTable, collectionNftAddress, compressed } = candyMachine;
+    const { isEligible } = await this.getMintCount(
+      candyMachineAddress.toString(),
+      label,
+      feePayer.toString(),
+    );
+
+    if (!isEligible || feePayer.equals(metaplex.identity().publicKey)) {
+      throw new Error('Wallet is not eligible for mint');
+    }
+
+    if (compressed) {
+      return await this.createMintCnftTransaction(
+        feePayer.toString(),
+        candyMachineAddress.toString(),
+        collectionNftAddress.toString(),
+        candyMachine.supply,
+        mintPrice,
+      );
+    }
 
     return await constructMintOneTransaction(
       this.metaplex,
@@ -612,7 +735,6 @@ export class CandyMachineService {
               query.candyMachineAddress,
               group.label,
               query.walletAddress,
-              group.mintLimit,
             );
           return {
             ...group,
@@ -803,15 +925,18 @@ export class CandyMachineService {
     try {
       const data = await this.prisma.candyMachineGroup.findFirst({
         where: { candyMachineAddress, label },
-        include: { wallets: true, candyMachine: true },
+        include: {
+          wallets: true,
+          candyMachine: true,
+        },
       });
       return {
         allowList:
           data.wallets && data.wallets.length
             ? data.wallets.map((item) => item.walletAddress)
             : undefined,
-        lookupTable: data.candyMachine.lookupTable,
         mintPrice: Number(data.mintPrice),
+        candyMachine: data.candyMachine,
       };
     } catch (e) {
       console.error(e);
@@ -822,7 +947,6 @@ export class CandyMachineService {
     candyMachineAddress: string,
     label: string,
     walletAddress?: string,
-    mintLimit?: number,
   ): Promise<{
     displayLabel: string;
     isEligible: boolean;
@@ -847,7 +971,7 @@ export class CandyMachineService {
           group.wallets.some(
             (groupWallet) => groupWallet.walletAddress === walletAddress,
           )) &&
-        (!mintLimit || receiptsFromBuyer.length < mintLimit);
+        (!group.mintLimit || receiptsFromBuyer.length < group.mintLimit);
     }
 
     return {
