@@ -1,17 +1,24 @@
 import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { Transaction, PublicKey, SystemProgram } from '@solana/web3.js';
 import { ComicStateArgs } from 'dreader-comic-verse';
-import { metaplex } from '../utils/metaplex';
+import { metaplex, umi } from '../utils/metaplex';
 import { PrismaService } from 'nestjs-prisma';
-import { constructChangeComicStateTransaction } from '../candy-machine/instructions';
+import {
+  constructChangeComicStateTransaction,
+  constructChangeCompressedComicStateTransaction,
+} from '../candy-machine/instructions';
 import { RARITY_MAP } from '../constants';
 import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
 import { Injectable } from '@nestjs/common';
+import { Umi } from '@metaplex-foundation/umi';
 @Injectable()
 export class TransactionService {
   private readonly metaplex: Metaplex;
+  private readonly umi: Umi;
+
   constructor(private readonly prisma: PrismaService) {
     this.metaplex = metaplex;
+    this.umi = umi;
   }
 
   async createTransferTransaction(
@@ -49,17 +56,70 @@ export class TransactionService {
     const {
       ownerAddress,
       collectionNftAddress,
-      candyMachineAddress,
       metadata,
+      candyMachine,
+      collectionNft,
     } = await this.prisma.nft.findUnique({
       where: { address: mint.toString() },
-      include: { metadata: true },
+      include: {
+        metadata: true,
+        candyMachine: true,
+        collectionNft: { include: { comicIssue: true } },
+      },
     });
+
+    const { address: candyMachineAddress, compressed } = candyMachine;
+    const comicIssue = collectionNft.comicIssue;
 
     const owner = new PublicKey(ownerAddress);
     const collectionMintPubKey = new PublicKey(collectionNftAddress);
     const candyMachinePubKey = new PublicKey(candyMachineAddress);
     const numberedRarity = RARITY_MAP[metadata.rarity];
+
+    if (compressed) {
+      if (feePayer.equals(metaplex.identity().publicKey)) {
+        throw new Error('Wallet is not eligible for unwrapping or signing');
+      }
+
+      let isUsed = metadata.isUsed;
+      let isSigned = metadata.isSigned;
+
+      let signer = owner;
+      if (newState === ComicStateArgs.Sign) {
+        if (metadata.isSigned) {
+          throw new Error('Comic is already signed');
+        }
+        if (feePayer.toString() != comicIssue.creatorAddress) {
+          throw new Error('Only verified creator can sign a comic');
+        }
+        isSigned = true;
+        signer = feePayer;
+      } else {
+        if (metadata.isUsed) {
+          throw new Error('Comic is already unwrapped');
+        }
+        isUsed = true;
+      }
+
+      const itemMetadata = await this.prisma.metadata.findFirst({
+        where: {
+          isUsed,
+          isSigned,
+          rarity: metadata.rarity,
+          collectionAddress: collectionNftAddress,
+        },
+      });
+
+      return await constructChangeCompressedComicStateTransaction(
+        this.umi,
+        signer,
+        mint,
+        candyMachinePubKey,
+        collectionMintPubKey,
+        itemMetadata.uri,
+        newState,
+      );
+    }
 
     return await constructChangeComicStateTransaction(
       this.metaplex,

@@ -42,7 +42,10 @@ import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
-import { HeliusCompressedNftMetadata } from '../../types/compression';
+import {
+  HeliusCompressedNftMetadata,
+  HeliusCompressedNftUpdateArgs,
+} from '../../types/compression';
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
@@ -126,6 +129,8 @@ export class HeliusService {
             return this.handleMintRejectedEvent(transaction);
           case TransactionType.COMPRESSED_NFT_MINT:
             return this.handleCompressedNftMint(transaction);
+          case 'COMPRESSED_NFT_UPDATE_METADATA' as TransactionType:
+            return this.handleChangeCompressedComicState(transaction);
           default:
             console.log('Unhandled webhook', JSON.stringify(transaction));
 
@@ -134,6 +139,38 @@ export class HeliusService {
         }
       }),
     );
+  }
+
+  private async handleChangeCompressedComicState(
+    transaction: EnrichedTransaction,
+  ) {
+    const compressed = transaction.events
+      .compressed[0] as CompressedNftEvent & {
+      metadata: HeliusCompressedNftMetadata;
+      updateArgs: HeliusCompressedNftUpdateArgs;
+    };
+    const { metadata, updateArgs } = compressed;
+    const offChainMetadata = await fetchOffChainMetadata(updateArgs.uri);
+
+    const nft = await this.prisma.nft.update({
+      where: { address: compressed.assetId },
+      data: {
+        metadata: {
+          connectOrCreate: {
+            where: { uri: updateArgs.uri },
+            create: {
+              collectionName: metadata.collection.key,
+              uri: updateArgs.uri,
+              collectionAddress: metadata.collection.key,
+              isUsed: findUsedTrait(offChainMetadata),
+              isSigned: findSignedTrait(offChainMetadata),
+              rarity: findRarityTrait(offChainMetadata),
+            },
+          },
+        },
+      },
+    });
+    this.websocketGateway.handleWalletNftUsed(nft);
   }
 
   private async handleCompressedNftMint(transaction: EnrichedTransaction) {

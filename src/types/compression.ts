@@ -25,3 +25,8 @@ export type HeliusCompressedNftMetadata = {
   tokenStandard: string;
   uri: string;
 };
+
+export type HeliusCompressedNftUpdateArgs = {
+  name?: string;
+  uri?: string;
+};

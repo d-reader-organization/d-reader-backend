@@ -1,7 +1,8 @@
+import { IsString } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class SignComicParams {
-  @IsSolanaAddress()
+  @IsString()
   nftAddress: string;
 
   @IsSolanaAddress()
