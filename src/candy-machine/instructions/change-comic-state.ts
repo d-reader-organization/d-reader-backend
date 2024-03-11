@@ -17,6 +17,24 @@ import {
   AUTH_RULES_ID,
   MIN_COMPUTE_PRICE_IX,
 } from '../../constants';
+import {
+  Umi,
+  createNoopSigner,
+  publicKey,
+  some,
+} from '@metaplex-foundation/umi';
+import {
+  UpdateArgsArgs,
+  fetchMerkleTree,
+  getAssetWithProof,
+  updateMetadata,
+} from '@metaplex-foundation/mpl-bubblegum';
+import { base64 } from '@metaplex-foundation/umi/serializers';
+import {
+  fetchOffChainMetadata,
+  findSignedTrait,
+  findUsedTrait,
+} from '../../utils/nft-metadata';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -108,4 +126,61 @@ export async function constructChangeComicStateTransaction(
     verifySignatures: false,
   });
   return rawTransaction.toString('base64');
+}
+
+export async function constructChangeCompressedComicStateTransaction(
+  umi: Umi,
+  signer: PublicKey,
+  mint: PublicKey,
+  candMachineAddress: PublicKey,
+  collectionMint: PublicKey,
+  uri: string,
+  newState: ComicStateArgs,
+) {
+  const assetWithProof = await getAssetWithProof(umi, publicKey(mint));
+  if (
+    newState === ComicStateArgs.Use &&
+    !signer.equals(new PublicKey(assetWithProof.leafOwner))
+  ) {
+    //todo: sync database for this cnft
+    throw Error('Invalid Owner');
+  }
+
+  const offChainMetadata = await fetchOffChainMetadata(
+    assetWithProof.metadata.uri,
+  );
+
+  const isUsed = findUsedTrait(offChainMetadata);
+  const isSigned = findSignedTrait(offChainMetadata);
+
+  const newSignedState = newState === ComicStateArgs.Sign;
+  const newUsedState = newState === ComicStateArgs.Use;
+
+  if ((isUsed && newUsedState) || (isSigned && newSignedState)) {
+    throw new Error('Invalid Comic State');
+  }
+
+  const merkleTree = await fetchMerkleTree(umi, publicKey(candMachineAddress), {
+    commitment: 'confirmed',
+  });
+
+  const updateArgs: UpdateArgsArgs = {
+    uri: some(uri),
+  };
+
+  const { canopy } = merkleTree;
+  const canopyDepth = canopy.length;
+  const { proof } = assetWithProof;
+
+  const payer = createNoopSigner(publicKey(signer));
+  const transaction = await updateMetadata(umi, {
+    ...assetWithProof,
+    proof: proof.slice(0, proof.length - canopyDepth),
+    currentMetadata: assetWithProof.metadata,
+    collectionMint: publicKey(collectionMint),
+    updateArgs,
+    payer,
+  }).buildAndSign(umi);
+
+  return base64.deserialize(umi.transactions.serialize(transaction))[0];
 }
