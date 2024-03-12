@@ -1,3 +1,4 @@
+import { difference, range, sample } from 'lodash';
 import { TreeConfigData } from '../types/compression';
 
 export function getTreeConfig(supply: number): TreeConfigData {
@@ -22,4 +23,13 @@ function nearestPowerOf2(number: number) {
   return nearestGreater - number < number - nearestLess
     ? bitCount
     : bitCount - 1;
+}
+
+export function randomExcluding(min: number, max: number, exclude: number[]) {
+  const rangeArray = range(min, max + 1);
+  // Remove the excluded numbers from the range
+  const availableNumbers = difference(rangeArray, exclude);
+  console.log(availableNumbers);
+  // Return a random number from the available numbers
+  return sample(availableNumbers);
 }

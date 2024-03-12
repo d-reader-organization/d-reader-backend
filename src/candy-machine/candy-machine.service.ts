@@ -90,6 +90,7 @@ import {
   findTreeConfigPda,
 } from '@metaplex-foundation/mpl-bubblegum';
 import { random } from 'lodash';
+import { randomExcluding } from '../utils/compression';
 
 @Injectable()
 export class CandyMachineService {
@@ -608,6 +609,9 @@ export class CandyMachineService {
       verified: false,
       share: wallet.share,
     }));
+    // todo: shift to different method of obtaining tag so same tag cannot be minted in high traffic conditions
+    const exclude = mintedItems.map((item) => +item.name.split('#')[1]);
+    const tag = randomExcluding(1, supply, exclude);
 
     return await constructMintCnftTransaction(
       this.umi,
@@ -615,7 +619,7 @@ export class CandyMachineService {
       candyMachineAddress,
       collectionAddress,
       lookupTable,
-      collectionName,
+      `${collectionName} #${tag}`,
       uri,
       mintPrice,
       comicIssue.sellerFeeBasisPoints,
