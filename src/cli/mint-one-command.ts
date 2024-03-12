@@ -69,6 +69,7 @@ export class MintOneCommand extends CommandRunner {
           collectionNftAddress.toString(),
           candyMachine.supply,
           mintPrice,
+          candyMachine.lookupTable,
         );
     } else {
       encodedTransactions = await constructMintOneTransaction(
