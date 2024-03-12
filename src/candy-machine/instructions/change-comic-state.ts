@@ -30,6 +30,7 @@ import {
   updateMetadata,
 } from '@metaplex-foundation/mpl-bubblegum';
 import { base64 } from '@metaplex-foundation/umi/serializers';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import {
   fetchOffChainMetadata,
   findSignedTrait,
@@ -171,16 +172,19 @@ export async function constructChangeCompressedComicStateTransaction(
   const { canopy } = merkleTree;
   const canopyDepth = canopy.length;
   const { proof } = assetWithProof;
-
   const payer = createNoopSigner(publicKey(signer));
-  const transaction = await updateMetadata(umi, {
+
+  const updateBuilder = updateMetadata(umi, {
     ...assetWithProof,
     proof: proof.slice(0, proof.length - canopyDepth),
     currentMetadata: assetWithProof.metadata,
     collectionMint: publicKey(collectionMint),
     updateArgs,
     payer,
-  }).buildAndSign(umi);
+  });
 
+  const transaction = await setComputeUnitPrice(umi, { microLamports: 600_000 })
+    .add(updateBuilder)
+    .buildAndSign({ ...umi, payer });
   return base64.deserialize(umi.transactions.serialize(transaction))[0];
 }

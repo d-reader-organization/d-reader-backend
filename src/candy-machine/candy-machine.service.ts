@@ -537,6 +537,7 @@ export class CandyMachineService {
     collectionAddress: string,
     supply: number,
     mintPrice: number,
+    lookupTable: string,
   ) {
     //todo: check from helius from last rarity cnft
     let supplyLeft = supply;
@@ -613,6 +614,7 @@ export class CandyMachineService {
       minter,
       candyMachineAddress,
       collectionAddress,
+      lookupTable,
       collectionName,
       uri,
       mintPrice,
@@ -649,6 +651,7 @@ export class CandyMachineService {
         collectionNftAddress.toString(),
         candyMachine.supply,
         mintPrice,
+        lookupTable,
       );
     }
 

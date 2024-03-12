@@ -57,7 +57,11 @@ import {
   mintToCollectionV1,
 } from '@metaplex-foundation/mpl-bubblegum';
 import { base64 } from '@metaplex-foundation/umi/serializers';
-import { transferSol } from '@metaplex-foundation/mpl-toolbox';
+import {
+  transferSol,
+  setComputeUnitPrice,
+  fetchAddressLookupTable,
+} from '@metaplex-foundation/mpl-toolbox';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -527,21 +531,26 @@ export async function constructMintCnftTransaction(
   minter: string,
   tree: string,
   collection: string,
+  lookupTable: string,
   name: string,
   uri: string,
   price: number,
   sellerFeeBasisPoints: number,
   creators: UmiCreator[],
 ) {
-  const signer = createNoopSigner(publicKey(minter));
+  const lookupTableAccount = await fetchAddressLookupTable(
+    umi,
+    publicKey(lookupTable),
+  );
+  const payer = createNoopSigner(publicKey(minter));
 
   const transferBuilder = transferSol(umi, {
-    source: signer,
+    source: payer,
     destination: publicKey(FUNDS_DESTINATION_ADDRESS),
     amount: umiLamports(price),
   });
 
-  const transaction = await mintToCollectionV1(umi, {
+  const mintBuilder = mintToCollectionV1(umi, {
     leafOwner: publicKey(minter),
     merkleTree: publicKey(tree),
     collectionMint: publicKey(collection),
@@ -555,10 +564,16 @@ export async function constructMintCnftTransaction(
         ...creators,
       ],
     },
-    payer: signer,
+    payer,
+  });
+
+  const transaction = await setComputeUnitPrice(umi, {
+    microLamports: MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
   })
+    .add(mintBuilder)
     .add(transferBuilder)
-    .buildAndSign(umi);
+    .setAddressLookupTables([lookupTableAccount])
+    .buildAndSign({ ...umi, payer });
 
   return [base64.deserialize(umi.transactions.serialize(transaction))[0]];
 }
