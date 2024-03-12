@@ -182,7 +182,6 @@ export async function constructChangeCompressedComicStateTransaction(
     updateArgs,
     payer,
   });
-
   const transaction = await setComputeUnitPrice(umi, { microLamports: 600_000 })
     .add(updateBuilder)
     .buildAndSign({ ...umi, payer });

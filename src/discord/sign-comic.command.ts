@@ -6,7 +6,7 @@ import {
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
+import { metaplex, umi } from '../utils/metaplex';
 import { PublicKey, sendAndConfirmTransaction } from '@solana/web3.js';
 import { TransactionService } from '../transactions/transaction.service';
 import { PrismaService } from 'nestjs-prisma';
@@ -31,7 +31,6 @@ import {
 import { NFT_EMBEDDED_RESPONSE } from './templates/nftEmbededResponse';
 import { UseGuards } from '@nestjs/common';
 import { IsSignButtonInteractionGuard } from '../guards/sign-button-interaction.guard';
-import { findOurCandyMachine } from '../utils/helpers';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import {
   PROGRAM_ID as COMIC_VERSE_ID,
@@ -42,18 +41,24 @@ import {
   verifyMintCreator,
 } from '../candy-machine/instructions';
 import { validateSignComicCommandParams } from '../utils/discord';
-import { decodeTransaction } from 'src/utils/transactions';
-import { getPublicUrl } from 'src/aws/s3client';
+import { decodeTransaction } from '../utils/transactions';
+import { getPublicUrl } from '../aws/s3client';
 import {
   CollectionNft,
   Nft,
   StatefulCover,
   ComicRarity as PrismaComicRarity,
   Metadata as PrismaMetadata,
+  CandyMachine,
 } from '@prisma/client';
 import { SkipThrottle } from '@nestjs/throttler';
-import { LOCKED_COLLECTIONS } from 'src/constants';
-
+import { LOCKED_COLLECTIONS } from '../constants';
+import {
+  MetadataArgs,
+  getAssetWithProof,
+} from '@metaplex-foundation/mpl-bubblegum';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
+import { base58 } from '@metaplex-foundation/umi/serializers';
 @SkipThrottle()
 @Command({
   name: 'get-signature',
@@ -61,12 +66,14 @@ import { LOCKED_COLLECTIONS } from 'src/constants';
 })
 export class GetSignCommand {
   private readonly metaplex: Metaplex;
+  private readonly umi: Umi;
 
   constructor(
     private readonly transactionService: TransactionService,
     private readonly prisma: PrismaService,
   ) {
     this.metaplex = metaplex;
+    this.umi = umi;
   }
 
   @Handler()
@@ -77,79 +84,92 @@ export class GetSignCommand {
     const { interaction } = params;
     await interaction.deferReply({ ephemeral: true });
 
-    let metadata: Metadata<JsonMetadata>;
+    let metadata: Metadata<JsonMetadata> | MetadataArgs;
     let address: string;
     let user: User;
+    let offChainMetadata: JsonMetadata;
+    let rarity: string;
 
     try {
       validateSignComicCommandParams(params);
       user = params.user;
       address = params.address;
 
-      const metadataAddress = this.metaplex
-        .nfts()
-        .pdas()
-        .metadata({ mint: new PublicKey(address) });
+      const candyMachine = await this.prisma.candyMachine.findFirst({
+        where: { collectionNft: { collectionItems: { some: { address } } } },
+      });
 
-      const info = await this.metaplex
-        .rpc()
-        .getAccount(new PublicKey(metadataAddress));
-
-      if (!info) {
-        throw new Error(`Metadata account ${metadataAddress} doesn't exist`);
+      if (!candyMachine) {
+        return {
+          content:
+            '```fix\n Error finding Nft, Make sure your Nft address is correct.```',
+          ephemeral: true,
+        };
       }
 
-      metadata = toMetadata(toMetadataAccount(info));
+      const { compressed } = candyMachine;
+
+      if (!compressed) {
+        try {
+          const metadataAddress = this.metaplex
+            .nfts()
+            .pdas()
+            .metadata({ mint: new PublicKey(address) });
+
+          const info = await this.metaplex
+            .rpc()
+            .getAccount(new PublicKey(metadataAddress));
+
+          if (!info) {
+            throw new Error(
+              `Metadata account ${metadataAddress} doesn't exist`,
+            );
+          }
+
+          metadata = toMetadata(toMetadataAccount(info));
+        } catch (e) {
+          console.error('Error', e);
+          return {
+            content: '```fix\n Please provide a valid NFT address.```',
+            ephemeral: true,
+          };
+        }
+
+        offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+        rarity = findRarityTrait(offChainMetadata);
+        const authority = pda(
+          [
+            Buffer.from(AUTH_TAG + rarity.toLowerCase()),
+            new PublicKey(candyMachine).toBuffer(),
+            metadata.collection.address.toBuffer(),
+          ],
+          COMIC_VERSE_ID,
+        );
+
+        if (!metadata.updateAuthorityAddress.equals(authority)) {
+          try {
+            await Promise.all([
+              delegateAuthority(
+                this.metaplex,
+                new PublicKey(candyMachine),
+                metadata.collection.address,
+                rarity.toString(),
+                metadata.mintAddress,
+              ),
+              verifyMintCreator(this.metaplex, metadata.mintAddress),
+            ]);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } else {
+        const asset = await getAssetWithProof(umi, publicKey(address));
+        metadata = asset.metadata;
+        offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+        rarity = findRarityTrait(offChainMetadata);
+      }
     } catch (e) {
-      console.error('Error', e);
-      return {
-        content: '```fix\n Please provide a valid NFT address.```',
-        ephemeral: true,
-      };
-    }
-
-    const candyMachines = await this.prisma.candyMachine.findMany({
-      select: { address: true },
-    });
-    const candyMachine = findOurCandyMachine(
-      this.metaplex,
-      candyMachines,
-      metadata,
-    );
-
-    if (!candyMachine) {
-      return {
-        content:
-          '```fix\n Error finding Nft, Make sure your Nft address is correct.```',
-        ephemeral: true,
-      };
-    }
-    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-    const rarity = findRarityTrait(offChainMetadata);
-    const authority = pda(
-      [
-        Buffer.from(AUTH_TAG + rarity.toLowerCase()),
-        new PublicKey(candyMachine).toBuffer(),
-        metadata.collection.address.toBuffer(),
-      ],
-      COMIC_VERSE_ID,
-    );
-
-    if (!metadata.updateAuthorityAddress.equals(authority)) {
-      try {
-        await Promise.all([
-          delegateAuthority(
-            this.metaplex,
-            new PublicKey(candyMachine),
-            metadata.collection.address,
-            rarity.toString(),
-            metadata.mintAddress,
-          ),
-          verifyMintCreator(this.metaplex, metadata.mintAddress),
-        ]);
-      } catch (e) {
-        console.error(e);
-      }
+      console.error;
     }
 
     const creator = await this.prisma.creator.findFirst({
@@ -167,7 +187,6 @@ export class GetSignCommand {
     });
 
     if (!creator) {
-      console.log(creator);
       await interaction.editReply({
         content:
           '```fix\n Creator does not exists! Make sure your nft address is correct or try running sync wallet in app``',
@@ -243,7 +262,8 @@ export class GetSignCommand {
     let cover: StatefulCover;
     let nft: Nft & { collectionNft: CollectionNft } & {
       metadata: PrismaMetadata;
-    };
+    } & { candyMachine: CandyMachine };
+
     let rarity: PrismaComicRarity;
     try {
       const creator = await this.prisma.creator.findFirst({
@@ -271,7 +291,7 @@ export class GetSignCommand {
 
       nft = await this.prisma.nft.findUnique({
         where: { address: address },
-        include: { collectionNft: true, metadata: true },
+        include: { collectionNft: true, metadata: true, candyMachine: true },
       });
       rarity = nft.metadata.rarity;
 
@@ -306,16 +326,31 @@ export class GetSignCommand {
             new PublicKey(address),
             this.metaplex.identity().publicKey,
             ComicStateArgs.Sign,
+            true,
           );
-
-        const transaction = decodeTransaction(rawTransaction, 'base64');
-        transactionSignature = await sendAndConfirmTransaction(
-          this.metaplex.connection,
-          transaction,
-          [this.metaplex.identity()],
-          { commitment: 'confirmed' },
-        );
-
+        if (nft.candyMachine.compressed) {
+          const transaction = this.umi.transactions.deserialize(
+            Buffer.from(rawTransaction, 'base64'),
+          );
+          const signedTransaction = await this.umi.identity.signTransaction(
+            transaction,
+          );
+          const signature = await this.umi.rpc.sendTransaction(
+            signedTransaction,
+            {
+              commitment: 'confirmed',
+            },
+          );
+          transactionSignature = base58.deserialize(signature)[0];
+        } else {
+          const transaction = decodeTransaction(rawTransaction, 'base64');
+          transactionSignature = await sendAndConfirmTransaction(
+            this.metaplex.connection,
+            transaction,
+            [this.metaplex.identity()],
+            { commitment: 'confirmed' },
+          );
+        }
         latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       } else {
         const collectionOnChainName = nft.name.split('#')[0].trim();

@@ -2,7 +2,6 @@ import { CreatorFileProperty } from '../creator/dto/types';
 import { CreatorFile } from '../discord/dto/types';
 import { BadRequestException } from '@nestjs/common';
 import { GetSignedComicCommandParams } from '../discord/dto/types';
-import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 
 export const findCreatorFile = (
   files: CreatorFile[],
@@ -18,7 +17,7 @@ export const validateSignComicCommandParams = (
   const { address, user } = params;
   if (!user) {
     throw new BadRequestException('User initiated the command is invalid');
-  } else if (!isSolanaAddress(address)) {
+  } else if (!address) {
     throw new BadRequestException('Please provide a valid NFT address.');
   }
 };
