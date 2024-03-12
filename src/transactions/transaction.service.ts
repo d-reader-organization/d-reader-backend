@@ -52,6 +52,7 @@ export class TransactionService {
     mint: PublicKey,
     feePayer: PublicKey,
     newState: ComicStateArgs,
+    eligible?: boolean,
   ) {
     const {
       ownerAddress,
@@ -77,7 +78,7 @@ export class TransactionService {
     const numberedRarity = RARITY_MAP[metadata.rarity];
 
     if (compressed) {
-      if (feePayer.equals(metaplex.identity().publicKey)) {
+      if (!eligible && feePayer.equals(metaplex.identity().publicKey)) {
         throw new Error('Wallet is not eligible for unwrapping or signing');
       }
 
