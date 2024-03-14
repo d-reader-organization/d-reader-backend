@@ -11,6 +11,7 @@ import {
   ATTRIBUTE_COMBINATIONS,
   D_PUBLISHER_SYMBOL,
   D_READER_FRONTEND_URL,
+  MIN_COMPUTE_PRICE_IX,
   MIN_MINT_PROTOCOL_FEE,
   RARITY_MAP,
   RARITY_TRAIT,
@@ -26,7 +27,11 @@ import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { writeFiles } from './metaplex';
 import { chunk, shuffle } from 'lodash';
 import { pRateLimit } from 'p-ratelimit';
-import { LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js';
+import {
+  LAMPORTS_PER_SOL,
+  Transaction,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import { BadRequestException } from '@nestjs/common';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
@@ -240,7 +245,14 @@ export async function insertItems(
   const rateLimit = pRateLimit(rateLimitQuota);
   for (const transactionBuilder of transactionBuilders) {
     const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-    const transaction = transactionBuilder.toTransaction(latestBlockhash);
+    const insertItemTransaction =
+      transactionBuilder.toTransaction(latestBlockhash);
+
+    const transaction = new Transaction({
+      feePayer: metaplex.identity().publicKey,
+      ...latestBlockhash,
+    }).add(MIN_COMPUTE_PRICE_IX, insertItemTransaction);
+
     rateLimit(() => {
       return sendAndConfirmTransaction(
         metaplex.connection,
