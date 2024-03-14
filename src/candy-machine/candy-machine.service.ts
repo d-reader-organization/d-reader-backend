@@ -398,11 +398,26 @@ export class CandyMachineService {
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachineAddress });
-    await this.metaplex.candyMachines().update({
+    const builder = this.metaplex.candyMachines().builders().update({
       candyMachine,
       groups,
       guards,
     });
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const transaction = new Transaction({
+      feePayer: this.metaplex.identity().publicKey,
+      ...latestBlockhash,
+    }).add(MIN_COMPUTE_PRICE_IX, builder.toTransaction(latestBlockhash));
+
+    const signature = await sendAndConfirmTransaction(
+      this.metaplex.connection,
+      transaction,
+      [this.metaplex.identity()],
+      { commitment: 'confirmed' },
+    );
+    console.log(`CandyMachine updated : ${signature}`);
   }
 
   async createMintTransaction(
