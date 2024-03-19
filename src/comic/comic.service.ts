@@ -167,6 +167,41 @@ export class ComicService {
     );
   }
 
+  async findFavorites({
+    query,
+    userId,
+  }: {
+    query: ComicParams;
+    userId: number;
+  }): Promise<Comic[]> {
+    const comics = (
+      await this.prisma.userComic.findMany({
+        where: {
+          userId,
+          favouritedAt: {
+            not: null,
+          },
+        },
+        include: { comic: true },
+        skip: query.skip,
+        take: query.take,
+      })
+    ).map((userComic) => userComic.comic);
+
+    return await Promise.all(
+      comics.map(async (comic) => {
+        const issuesCount = await this.prisma.comicIssue.count({
+          where: {
+            comicSlug: comic.slug,
+            verifiedAt: { not: null },
+            publishedAt: { not: null },
+          },
+        });
+        return { ...comic, stats: { issuesCount } };
+      }),
+    );
+  }
+
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, ...rest } = updateComicDto;
 

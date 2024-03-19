@@ -107,6 +107,18 @@ export class ComicController {
     return toComicDtoArray(comics);
   }
 
+  @Get('get/favorites/:userId')
+  async findFavoriteComics(
+    @Param('userId') userId: string,
+    @Query() query: ComicParams,
+  ): Promise<ComicDto[]> {
+    const comics = await this.comicService.findFavorites({
+      query,
+      userId: +userId,
+    });
+    return toComicDtoArray(comics);
+  }
+
   /* Update specific comic */
   @ComicOwnerAuth()
   @Patch('update/:slug')
