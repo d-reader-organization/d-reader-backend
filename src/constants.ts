@@ -51,7 +51,9 @@ export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
     ? '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj'
     : '9GfMG415sgpzGajfTZyt7qcDo6Xxoa97MyxTFuHuY7od',
 );
-export const USERNAME_VALIDATOR_REGEX = new RegExp(/^[a-zA-Z0-9-čćžšđČĆŽŠĐ]+$/);
+export const USERNAME_VALIDATOR_REGEX = new RegExp(
+  /^[a-zA-Z0-9-_čćžšđČĆŽŠĐ]+$/,
+);
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
 export const FREE_MINT_GROUP_LABEL = 'dFree';

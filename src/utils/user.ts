@@ -13,7 +13,7 @@ export function validateName(name: string) {
   } else if (!minLength(name, USERNAME_MIN_SIZE)) {
     throw new BadRequestException(`Min ${USERNAME_MIN_SIZE} characters`);
   } else if (!isValidUsername(name)) {
-    throw new BadRequestException('Only have A-Z,0-9,- characters allowed');
+    throw new BadRequestException('Only have A-Z,0-9,_,- characters allowed');
   } else if (naughtyWords.includes(name.toLowerCase())) {
     throw new BadRequestException(
       'Naughty word detected. Please use another username or contact us if you think this is a mistake',
