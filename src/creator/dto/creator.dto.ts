@@ -87,7 +87,7 @@ export class CreatorDto {
   genres?: PartialGenreDto[];
 }
 
-type CreatorInput = Creator & {
+export type CreatorInput = Creator & {
   stats?: CreatorStats;
   myStats?: UserCreatorMyStatsDto;
   genres?: Genre[];
