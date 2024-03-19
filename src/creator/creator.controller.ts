@@ -94,6 +94,18 @@ export class CreatorController {
     return toRawCreatorDto(creator);
   }
 
+  @Get('get/followed-by-user/:userId')
+  async findFollowedByUser(
+    @Param('userId') userId: string,
+    @Query() query: CreatorFilterParams,
+  ) {
+    const creators = await this.userCreatorService.getCreatorsFollowedByUser({
+      query,
+      userId: +userId,
+    });
+    return toCreatorDtoArray(creators);
+  }
+
   /* Update specific creator */
   @CreatorOwnerAuth()
   @Patch('update/:slug')

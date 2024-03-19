@@ -4,6 +4,8 @@ import { CreatorStats } from '../comic/types/creator-stats';
 import { UserCreatorMyStatsDto } from './dto/types';
 import { UserCreator } from '@prisma/client';
 import { PickByType } from 'src/types/shared';
+import { CreatorFilterParams } from './dto/creator-params.dto';
+import { CreatorInput } from './dto/creator.dto';
 
 @Injectable()
 export class UserCreatorService {
@@ -95,5 +97,61 @@ export class UserCreatorService {
       create: { creatorSlug, userId, [property]: new Date() },
       update: { [property]: updatedDate },
     });
+  }
+
+  async getCreatorsFollowedByUser({
+    userId,
+    query,
+  }: {
+    userId: number;
+    query: CreatorFilterParams;
+  }): Promise<CreatorInput[]> {
+    const creators = (
+      await this.prisma.userCreator.findMany({
+        where: {
+          userId,
+          followedAt: {
+            not: null,
+          },
+        },
+        include: {
+          creator: true,
+        },
+        skip: query.skip,
+        take: query.take,
+      })
+    ).map((userCreator) => userCreator.creator);
+
+    return await Promise.all(
+      creators.map(async (creator) => {
+        const followersCountQuery = this.prisma.userCreator.count({
+          where: {
+            creatorSlug: creator.slug,
+            followedAt: {
+              not: null,
+            },
+          },
+        });
+        const comicCountsQuery = this.prisma.comic.count({
+          where: {
+            creatorId: creator.id,
+          },
+        });
+        const [followersCount, comicsCount] = await Promise.all([
+          followersCountQuery,
+          comicCountsQuery,
+        ]);
+
+        return {
+          ...creator,
+          stats: {
+            followersCount,
+            comicsCount,
+            comicIssuesCount: 0,
+            totalVolume: 0,
+          },
+        };
+      }),
+    );
   }
 }
