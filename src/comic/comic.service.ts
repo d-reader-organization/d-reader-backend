@@ -178,7 +178,7 @@ export class ComicService {
       await this.prisma.userComic.findMany({
         where: {
           userId,
-          favouritedAt: {
+          bookmarkedAt: {
             not: null,
           },
         },
