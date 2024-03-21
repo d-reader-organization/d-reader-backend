@@ -6,13 +6,20 @@ import {
   MetaplexFile,
   PublicKey,
   TransactionBuilder,
+  getMerkleRoot,
+  toBigNumber,
+  toDateTime,
 } from '@metaplex-foundation/js';
 import {
   ATTRIBUTE_COMBINATIONS,
+  AUTHORITY_GROUP_LABEL,
   D_PUBLISHER_SYMBOL,
   D_READER_FRONTEND_URL,
+  FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE_IX,
   MIN_MINT_PROTOCOL_FEE,
+  PUBLIC_GROUP_LABEL,
+  PUBLIC_GROUP_MINT_LIMIT_ID,
   RARITY_MAP,
   RARITY_TRAIT,
   SIGNED_TRAIT,
@@ -33,6 +40,9 @@ import {
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { BadRequestException } from '@nestjs/common';
+import { GuardParams } from 'src/candy-machine/dto/types';
+import { solFromLamports } from './helpers';
+import { TokenStandard } from '@prisma/client';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -99,6 +109,7 @@ export async function uploadAllMetadata(
   darkblockId: string,
   rarity: ComicRarity,
   collectionNftAddress: PublicKey,
+  tokenStandard?: TokenStandard,
 ) {
   const itemMetadata: ItemMedata = {} as ItemMedata;
   await Promise.all(
@@ -126,13 +137,15 @@ export async function uploadAllMetadata(
     usedUnsigned: itemMetadata.usedUnsigned.uri,
   };
 
-  await initializeAuthority(
-    metaplex,
-    candyMachineAddress,
-    collectionNftAddress,
-    rarity,
-    comicStates,
-  );
+  if (!tokenStandard || tokenStandard == TokenStandard.Legacy) {
+    await initializeAuthority(
+      metaplex,
+      candyMachineAddress,
+      collectionNftAddress,
+      rarity,
+      comicStates,
+    );
+  }
 
   return itemMetadata;
 }
@@ -149,6 +162,7 @@ export async function uploadItemMetadata(
   comicIssueSupply: number,
   onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
+  tokenStandard?: TokenStandard,
 ) {
   const items: { uri: string; name: string }[] = [];
 
@@ -168,6 +182,7 @@ export async function uploadItemMetadata(
       darkblockId,
       RARITY_MAP[rarity],
       collectionNftAddress,
+      tokenStandard,
     );
     const { unusedUnsigned } = itemMetadata;
     itemMetadatas.push({
@@ -262,6 +277,57 @@ export async function insertItems(
       );
     });
   }
+}
+
+export function toLegacyGroups(
+  metaplex: Metaplex,
+  guardParams: GuardParams,
+  isPublic: boolean,
+) {
+  const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
+    guardParams;
+
+  const groups: {
+    label: string;
+    guards: Partial<DefaultCandyGuardSettings>;
+  }[] = [
+    {
+      label: AUTHORITY_GROUP_LABEL,
+      guards: {
+        allowList: {
+          merkleRoot: getMerkleRoot([metaplex.identity().publicKey.toString()]),
+        },
+        solPayment: {
+          amount: solFromLamports(0),
+          destination: FUNDS_DESTINATION_ADDRESS,
+        },
+      },
+    },
+  ];
+
+  if (isPublic) {
+    const paymentGuard = freezePeriod ? 'freezeSolPayment' : 'solPayment';
+    groups.push({
+      label: PUBLIC_GROUP_LABEL,
+      guards: {
+        startDate: { date: toDateTime(startDate) },
+        endDate: { date: toDateTime(endDate) },
+        [paymentGuard]: {
+          amount: solFromLamports(mintPrice),
+          destination: FUNDS_DESTINATION_ADDRESS,
+        },
+        mintLimit: mintLimit
+          ? {
+              id: PUBLIC_GROUP_MINT_LIMIT_ID,
+              limit: mintLimit,
+            }
+          : undefined,
+        redeemedAmount: { maximum: toBigNumber(supply) },
+      },
+    });
+  }
+
+  return groups;
 }
 
 export function calculateMissingSOL(missingFunds: number): number {

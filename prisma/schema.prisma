@@ -303,6 +303,13 @@ model CandyMachine {
   items                Nft[]
   receipts             CandyMachineReceipt[]
   groups               CandyMachineGroup[]
+  standard             TokenStandard         @default(Legacy)
+}
+
+enum TokenStandard {
+  Legacy
+  Compression
+  Core
 }
 
 model CandyMachineGroup {
