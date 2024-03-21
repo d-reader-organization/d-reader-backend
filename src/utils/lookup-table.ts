@@ -42,7 +42,7 @@ export async function createLookupTable(
       blockhash: latestBlockhash.blockhash,
       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
     });
-    return address.toBase58();
+    return address;
   } catch (e) {
     console.error('Create Lookup Table failed :', e);
   }
