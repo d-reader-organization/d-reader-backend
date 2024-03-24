@@ -39,12 +39,41 @@ import {
 } from '@solana/spl-token';
 import { MintSettings } from '../dto/types';
 import {
+  ALLOW_LIST_PROOF_COMPUTE_PRICE,
+  ALLOW_LIST_PROOF_COMPUTE_UNITS,
   AUTH_RULES,
   AUTH_RULES_ID,
   MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
   MINT_COMPUTE_UNITS,
 } from '../../constants';
 import { constructAllowListRouteTransaction } from './route';
+import {
+  createNoopSigner,
+  generateSigner,
+  some,
+  transactionBuilder,
+  Umi,
+  PublicKey as UmiPublicKey,
+  AddressLookupTableInput,
+  publicKey,
+} from '@metaplex-foundation/umi';
+import {
+  mintV2,
+  CandyMachine as CoreCandyMachine,
+  fetchCandyGuard,
+  DefaultGuardSetMintArgs,
+  DefaultGuardSet,
+  getMerkleRoot,
+  route,
+  getMerkleProof,
+  fetchCandyMachine,
+} from 'cma-preview';
+import {
+  fetchAddressLookupTable,
+  setComputeUnitLimit,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
+import { base64 } from '@metaplex-foundation/umi/serializers';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -507,4 +536,176 @@ function resolveGuards(
   ) as Partial<DefaultCandyGuardSettings>;
 
   return { ...defaultGuards, ...activeGroupGuards };
+}
+
+export async function constructCoreMintTransaction(
+  umi: Umi,
+  candyMachineAddress: UmiPublicKey,
+  minter: UmiPublicKey,
+  label: string,
+  allowList?: string[],
+  lookupTableAddress?: string,
+) {
+  try {
+    const transactions: string[] = [];
+    const asset = generateSigner(umi);
+    const signer = createNoopSigner(minter);
+
+    const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
+
+    if (allowList) {
+      const allowListTransaction = await transactionBuilder()
+        .add(
+          setComputeUnitLimit(umi, { units: ALLOW_LIST_PROOF_COMPUTE_UNITS }),
+        )
+        .add(
+          setComputeUnitPrice(umi, {
+            microLamports: ALLOW_LIST_PROOF_COMPUTE_PRICE,
+          }),
+        )
+        .add(
+          route(umi, {
+            candyMachine: candyMachine.publicKey,
+            guard: 'allowList',
+            routeArgs: {
+              path: 'proof',
+              merkleRoot: getMerkleRoot(allowList),
+              merkleProof: getMerkleProof(allowList, minter),
+            },
+          }),
+        )
+        .buildAndSign({ ...umi, payer: signer });
+
+      const encodedTransaction = base64.deserialize(
+        umi.transactions.serialize(allowListTransaction),
+      )[0];
+      transactions.push(encodedTransaction);
+    }
+
+    let lookupTable: AddressLookupTableInput;
+    if (lookupTableAddress) {
+      lookupTable = await fetchAddressLookupTable(
+        umi,
+        publicKey(lookupTableAddress),
+        { commitment: 'confirmed' },
+      );
+    }
+    const mintArgs = await getMintArgs(umi, candyMachine, label);
+    const mintTransaction = await transactionBuilder()
+      .add(
+        setComputeUnitPrice(umi, {
+          microLamports: MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
+        }),
+      )
+      .add(
+        mintV2(umi, {
+          candyMachine: candyMachine.publicKey,
+          minter: signer,
+          collection: candyMachine.collectionMint,
+          asset,
+          group: some(label),
+          payer: signer,
+          mintArgs,
+        }),
+      )
+      .setAddressLookupTables(lookupTable ? [lookupTable] : [])
+      .buildAndSign({ ...umi, payer: signer });
+
+    const encodedMintTransaction = base64.deserialize(
+      umi.transactions.serialize(mintTransaction),
+    )[0];
+    transactions.push(encodedMintTransaction);
+
+    return transactions;
+  } catch (e) {
+    console.error(`Error constructing mint transaction ${e}`);
+  }
+}
+
+async function getMintArgs(
+  umi: Umi,
+  candyMachine: CoreCandyMachine,
+  label: string,
+) {
+  const candyGuard = await fetchCandyGuard(umi, candyMachine.mintAuthority);
+  const defaultGuards = candyGuard.guards;
+  const group = candyGuard.groups.find((group) => group.label == label);
+
+  if (!group) {
+    throw new Error(
+      `Group with label ${label} does not exist on Candy Machine ${candyMachine.publicKey.toString()}`,
+    );
+  }
+
+  // remove null to overwrite default guards with only specified guards in group
+  const activeGroupGuards = Object.fromEntries(
+    Object.entries(group.guards).filter(([, v]) => v.__option == 'Some'),
+  ) as Partial<DefaultGuardSet>;
+
+  const resolvedGuards = { ...defaultGuards, ...activeGroupGuards };
+  const availableGuards = Object.entries(resolvedGuards).map(
+    (guard) => guard[0],
+  );
+
+  const mintArgsEntries = availableGuards
+    .map((guard) => {
+      if (resolvedGuards[guard].__option == 'Some') {
+        switch (guard) {
+          case 'allowlist':
+            if (resolvedGuards.allowList.__option == 'Some') {
+              return [
+                guard,
+                some({ merkleRoot: resolvedGuards.allowList.value.merkleRoot }),
+              ];
+            }
+            break;
+          case 'freezeSolPayment':
+            if (resolvedGuards.freezeSolPayment.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  lamports: resolvedGuards.freezeSolPayment.value.lamports,
+                  destination:
+                    resolvedGuards.freezeSolPayment.value.destination,
+                }),
+              ];
+            }
+            break;
+
+          case 'mintLimit':
+            if (resolvedGuards.mintLimit.__option == 'Some') {
+              return [guard, some({ id: resolvedGuards.mintLimit.value.id })];
+            }
+            break;
+
+          case 'redeemedAmount':
+            if (resolvedGuards.redeemedAmount.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  maximum: Number(resolvedGuards.redeemedAmount.value.maximum),
+                }),
+              ];
+            }
+            break;
+          case 'solPayment':
+            if (resolvedGuards.solPayment.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  lamports: resolvedGuards.solPayment.value.lamports,
+                  destination: resolvedGuards.solPayment.value.destination,
+                }),
+              ];
+            }
+            break;
+        }
+      }
+    })
+    .filter(Boolean);
+
+  const mintArgs: Partial<DefaultGuardSetMintArgs> =
+    Object.fromEntries(mintArgsEntries);
+
+  return mintArgs;
 }

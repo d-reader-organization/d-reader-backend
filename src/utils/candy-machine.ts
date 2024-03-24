@@ -17,6 +17,7 @@ import {
   D_READER_FRONTEND_URL,
   FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE_IX,
+  MIN_CORE_MINT_PROTOCOL_FEE,
   MIN_MINT_PROTOCOL_FEE,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
@@ -337,9 +338,14 @@ export function calculateMissingSOL(missingFunds: number): number {
 export function validateBalanceForMint(
   mintPrice: number,
   balance: number,
+  tokenStandard?: TokenStandard,
 ): void {
   // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
-  const protocolFee = MIN_MINT_PROTOCOL_FEE;
+  const protocolFee =
+    tokenStandard == TokenStandard.Core
+      ? MIN_CORE_MINT_PROTOCOL_FEE
+      : MIN_MINT_PROTOCOL_FEE;
+
   const missingFunds = mintPrice
     ? mintPrice + protocolFee - balance
     : protocolFee - balance;

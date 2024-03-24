@@ -21,7 +21,10 @@ import {
   MintLimitGuardSettings,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
-import { constructMintOneTransaction } from './instructions';
+import {
+  constructCoreMintTransaction,
+  constructMintOneTransaction,
+} from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import {
@@ -454,10 +457,21 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
   ) {
-    const { allowList, lookupTable, mintPrice } =
+    const { allowList, lookupTable, mintPrice, tokenStandard } =
       await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    validateBalanceForMint(mintPrice, balance);
+    validateBalanceForMint(mintPrice, balance, tokenStandard);
+
+    if (tokenStandard == TokenStandard.Core) {
+      return await constructCoreMintTransaction(
+        this.umi,
+        publicKey(candyMachineAddress),
+        publicKey(feePayer),
+        label,
+        allowList,
+        lookupTable,
+      );
+    }
 
     return await constructMintOneTransaction(
       this.metaplex,
@@ -742,6 +756,7 @@ export class CandyMachineService {
             : undefined,
         lookupTable: data.candyMachine.lookupTable,
         mintPrice: Number(data.mintPrice),
+        tokenStandard: data.candyMachine.standard,
       };
     } catch (e) {
       console.error(e);
