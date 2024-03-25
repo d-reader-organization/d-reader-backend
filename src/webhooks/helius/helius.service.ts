@@ -20,7 +20,7 @@ import { WebSocketGateway } from '../../websockets/websocket.gateway';
 import { CreateHeliusWebhookDto } from './dto/create-helius-webhook.dto';
 import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { metaplex } from '../../utils/metaplex';
+import { metaplex, umi } from '../../utils/metaplex';
 import {
   fetchOffChainMetadata,
   findRarityTrait,
@@ -34,6 +34,7 @@ import {
 import * as jwt from 'jsonwebtoken';
 import {
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
+  CMA_PROGRAM_ID,
   D_PUBLISHER_SYMBOL,
   SOL_ADDRESS,
 } from '../../constants';
@@ -41,10 +42,15 @@ import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
+import { getMintV2InstructionDataSerializer } from 'cma-preview/dist/src/generated/instructions/mintV2';
+import { AssetV1, fetchAssetV1 } from 'core-preview';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
+
 @Injectable()
 export class HeliusService {
   readonly helius: Helius;
   private readonly metaplex: Metaplex;
+  private readonly umi: Umi;
   private readonly webhookID: string;
 
   constructor(
@@ -56,6 +62,7 @@ export class HeliusService {
       process.env.SOLANA_CLUSTER as Cluster,
     );
     this.metaplex = metaplex;
+    this.umi = umi;
     this.webhookID = process.env.WEBHOOK_ID;
   }
 
@@ -123,13 +130,120 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
+            const instruction = transaction.instructions.at(-1);
+            if (instruction.programId == CMA_PROGRAM_ID) {
+              // TODO: parse data and decide if it's mint tx
+              return this.handleCoreMintEvent(transaction);
+            }
             console.log('Unhandled webhook', JSON.stringify(transaction));
-
             // this is here in case Helius still hasn't parsted our transactions for new contract
             return this.handleChangeComicState(transaction);
         }
       }),
     );
+  }
+
+  private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
+    const mintInstruction = enrichedTransaction.instructions.at(-1);
+    const mintV2Serializer = getMintV2InstructionDataSerializer();
+
+    const candyMachineAddress =
+      enrichedTransaction.instructions.at(-1).accounts[2];
+    const ownerAddress =
+      enrichedTransaction.nativeTransfers.at(0).fromUserAccount;
+    const mint = enrichedTransaction.nativeTransfers.at(-1).toUserAccount;
+
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
+      'confirmed',
+    );
+    await this.metaplex
+      .rpc()
+      .confirmTransaction(
+        enrichedTransaction.signature,
+        { ...latestBlockhash },
+        'confirmed',
+      );
+
+    const nft = await fetchAssetV1(this.umi, publicKey(mint), {
+      commitment: 'confirmed',
+    });
+    const offChainMetadata = await fetchOffChainMetadata(nft.uri);
+
+    let comicIssueId: number = undefined,
+      userId: number = undefined;
+    try {
+      const comicIssueNft = await this.indexCoreNft(
+        nft,
+        offChainMetadata,
+        ownerAddress,
+        candyMachineAddress,
+      );
+
+      comicIssueId = comicIssueNft.collectionNft.comicIssueId;
+      userId = comicIssueNft.owner?.userId;
+      this.subscribeTo(comicIssueNft.address);
+    } catch (e) {
+      console.error(e);
+    }
+
+    try {
+      let splTokenAddress = SOL_ADDRESS;
+      if (enrichedTransaction.tokenTransfers.at(1)) {
+        splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
+      }
+
+      const ownerAccountData = enrichedTransaction.accountData.find(
+        (data) => data.account == ownerAddress,
+      );
+      const price = Math.abs(ownerAccountData.nativeBalanceChange);
+
+      const ixData = mintV2Serializer.deserialize(
+        bs58.decode(mintInstruction.data),
+      )[0];
+
+      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+        nft: { connect: { address: mint } },
+        candyMachine: { connect: { address: candyMachineAddress } },
+        buyer: {
+          connectOrCreate: {
+            where: { address: ownerAddress },
+            create: { address: ownerAddress },
+          },
+        },
+        price,
+        timestamp: new Date(enrichedTransaction.timestamp * 1000),
+        description: enrichedTransaction.description,
+        transactionSignature: enrichedTransaction.signature,
+        splTokenAddress,
+        label: ixData.group.__option == 'Some' ? ixData.group.value : undefined,
+      };
+
+      if (userId) {
+        receiptData.user = {
+          connect: { id: userId },
+        };
+      }
+      const receipt = await this.prisma.candyMachineReceipt.create({
+        include: { nft: true, buyer: { include: { user: true } } },
+        data: receiptData,
+      });
+      const candyMachine = await this.prisma.candyMachine.update({
+        where: { address: candyMachineAddress },
+        data: {
+          itemsRemaining: { decrement: 1 },
+          itemsMinted: { increment: 1 },
+        },
+      });
+
+      if (candyMachine.itemsRemaining === 0) {
+        this.removeSubscription(candyMachine.address);
+      }
+
+      this.websocketGateway.handleNftMinted(comicIssueId, receipt);
+      this.websocketGateway.handleWalletNftMinted(receipt);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   private async handleChangeComicState(transaction: EnrichedTransaction) {
@@ -586,6 +700,50 @@ export class HeliusService {
       },
     });
     this.subscribeTo(mintAddress.toString());
+    return nft;
+  }
+
+  async indexCoreNft(
+    asset: AssetV1,
+    offChainMetadata: JsonMetadata,
+    walletAddress: string,
+    candMachineAddress: string,
+  ) {
+    const nft = await this.prisma.nft.create({
+      include: {
+        collectionNft: { select: { comicIssueId: true } },
+        owner: { select: { userId: true } },
+      },
+      data: {
+        address: asset.publicKey.toString(),
+        name: asset.name,
+        ownerChangedAt: new Date(),
+        metadata: {
+          connectOrCreate: {
+            where: { uri: asset.uri },
+            create: {
+              collectionName: offChainMetadata.name,
+              uri: asset.uri,
+              isUsed: findUsedTrait(offChainMetadata),
+              isSigned: findSignedTrait(offChainMetadata),
+              rarity: findRarityTrait(offChainMetadata),
+            },
+          },
+        },
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress },
+          },
+        },
+        candyMachine: { connect: { address: candMachineAddress } },
+        collectionNft: {
+          connect: { address: asset.updateAuthority.address.toString() },
+        },
+      },
+    });
+
+    this.subscribeTo(asset.publicKey.toString());
     return nft;
   }
 
