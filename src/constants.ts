@@ -112,8 +112,9 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
 ];
 
 export const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
+export const MIN_COMPUTE_PRICE = 600_000;
 export const MIN_COMPUTE_PRICE_IX = ComputeBudgetProgram.setComputeUnitPrice({
-  microLamports: 600_000,
+  microLamports: MIN_COMPUTE_PRICE,
 });
 
 export const getRarityShareTable = (numberOfCovers: number) => {
