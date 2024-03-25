@@ -240,15 +240,33 @@ export class ComicIssueService {
     return { ...comicIssue, activeCandyMachineAddress };
   }
 
-  async findOne(id: number, userId: number) {
-    const findComicIssue = this.prisma.comicIssue.findFirst({
-      where: { id },
-      include: {
-        comic: { include: { creator: true, genres: true } },
-        collaborators: true,
-        statelessCovers: true,
-      },
-    });
+  async findOne({
+    idOrSlug,
+    userId,
+  }: {
+    idOrSlug: number | string;
+    userId: number;
+  }) {
+    const isSlug = isNaN(+idOrSlug);
+
+    const comicIssue = await (isSlug
+      ? this.prisma.comicIssue.findFirst({
+          where: {
+            collectionNft: {
+              slug: idOrSlug.toString(),
+            },
+          },
+        })
+      : this.prisma.comicIssue.findFirst({
+          where: { id: +idOrSlug },
+          include: {
+            comic: { include: { creator: true, genres: true } },
+            collaborators: true,
+            statelessCovers: true,
+          },
+        }));
+
+    const id = comicIssue.id;
     const findActiveCandyMachine = this.findActiveCandyMachine(id);
     const getStats = this.userComicIssueService.getComicIssueStats(id);
     const getMyStats = this.userComicIssueService.getUserStats(id, userId);
@@ -257,9 +275,8 @@ export class ComicIssueService {
       userId,
     );
 
-    const [comicIssue, activeCandyMachineAddress, stats, myStats, canRead] =
+    const [activeCandyMachineAddress, stats, myStats, canRead] =
       await Promise.all([
-        findComicIssue,
         findActiveCandyMachine,
         getStats,
         getMyStats,
@@ -593,6 +610,7 @@ export class ComicIssueService {
       supply,
       mintPrice,
       shouldBePublic,
+      collectionSlug,
       ...updatePayload
     } = publishOnChainDto;
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
@@ -635,13 +653,14 @@ export class ComicIssueService {
       supply,
     };
     try {
-      await this.candyMachineService.createComicIssueCM(
-        updatedComicIssue,
-        updatedComicIssue.comic.title,
+      await this.candyMachineService.createComicIssueCM({
+        comicIssue: updatedComicIssue,
+        comicName: updatedComicIssue.comic.title,
         onChainName,
         guardParams,
-        shouldBePublic ?? true,
-      );
+        shouldBePublic: shouldBePublic ?? true,
+        uniqueSlug: collectionSlug,
+      });
     } catch (e) {
       // revert in case of failure, handle it gracefully:
       // revert comic issue back to the initial state,
