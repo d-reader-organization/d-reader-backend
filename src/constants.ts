@@ -208,3 +208,4 @@ export const RARITY_PRECEDENCE = [
   'Legendary',
 ];
 export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';
+export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
