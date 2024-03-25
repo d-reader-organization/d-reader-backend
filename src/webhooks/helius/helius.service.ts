@@ -43,7 +43,7 @@ import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { getMintV2InstructionDataSerializer } from 'cma-preview/dist/src/generated/instructions/mintV2';
-import { AssetV1, fetchAssetV1 } from 'core-preview';
+import { AssetV1, fetchAssetV1, MPL_CORE_PROGRAM_ID } from 'core-preview';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 
 @Injectable()
@@ -134,6 +134,12 @@ export class HeliusService {
             if (instruction.programId == CMA_PROGRAM_ID) {
               // TODO: parse data and decide if it's mint tx
               return this.handleCoreMintEvent(transaction);
+            } else if (
+              instruction.programId == MPL_CORE_PROGRAM_ID.toString()
+            ) {
+              // TODO: Check if it's transfer or update transaction and call according to that
+              console.log(transaction);
+              // return this.handleChangeCoreComicState(transaction)
             }
             console.log('Unhandled webhook', JSON.stringify(transaction));
             // this is here in case Helius still hasn't parsted our transactions for new contract

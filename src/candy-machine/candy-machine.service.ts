@@ -37,6 +37,7 @@ import {
   PUBLIC_GROUP_LABEL,
   FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE_IX,
+  MIN_COMPUTE_PRICE,
 } from '../constants';
 import {
   doesWalletIndexCorrectly,
@@ -71,14 +72,27 @@ import { constructThawTransaction } from './instructions/route';
 import { createCollectionNft } from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
-import { Umi, generateSigner, publicKey } from '@metaplex-foundation/umi';
+import {
+  Umi,
+  generateSigner,
+  publicKey,
+  PublicKey as UmiPublicKey,
+  transactionBuilder,
+} from '@metaplex-foundation/umi';
 import {
   fetchCandyMachine,
   findCandyMachineAuthorityPda,
   CandyMachine as CoreCandyMachine,
+  updateCandyGuard,
+  DefaultGuardSetArgs,
+  GuardGroupArgs,
+  fetchCandyGuard,
+  AllowListArgs,
+  getMerkleRoot as getCoreMekleRoot,
 } from 'cma-preview';
 import { createCollectionV1 } from 'core-preview';
 import { insertCoreItems } from '../utils/core-candy-machine';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 
 @Injectable()
 export class CandyMachineService {
@@ -407,6 +421,39 @@ export class CandyMachineService {
     return candyMachine;
   }
 
+  async updateCoreCandyMachine(
+    candMachineAddress: UmiPublicKey,
+    groups?: GuardGroupArgs<DefaultGuardSetArgs>[],
+    guards?: Partial<DefaultGuardSetArgs>,
+  ) {
+    try {
+      const candyMachine = await fetchCandyMachine(
+        this.umi,
+        candMachineAddress,
+      );
+      const updateBuilder = updateCandyGuard(this.umi, {
+        groups,
+        guards,
+        candyGuard: candyMachine.mintAuthority,
+      });
+      const builder = transactionBuilder()
+        .add(
+          setComputeUnitPrice(this.umi, { microLamports: MIN_COMPUTE_PRICE }),
+        )
+        .add(updateBuilder);
+      await builder.sendAndConfirm(this.umi, {
+        send: { commitment: 'confirmed' },
+      });
+      console.log(
+        `CandyMachine ${candMachineAddress.toString()} updated successfully`,
+      );
+    } catch (e) {
+      console.error(
+        `Error updating CandyMachine ${candMachineAddress.toString()}`,
+      );
+    }
+  }
+
   async updateCandyMachine(
     candyMachineAddress: PublicKey,
     groups?: GuardGroup[],
@@ -683,11 +730,6 @@ export class CandyMachineService {
     allowList: string[],
     label: string,
   ) {
-    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-    const candyMachine = await metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachinePublicKey });
-
     console.log('finding the already allowlist in db');
     const alreadyAllowlistedWallets = await this.prisma.wallet.findMany({
       where: {
@@ -722,25 +764,62 @@ export class CandyMachineService {
       })
       .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
 
-    const allowListGuard: AllowListGuardSettings =
-      wallets.length > 0 ? { merkleRoot: getMerkleRoot(wallets) } : null;
+    const candyMachineData = await this.prisma.candyMachine.findFirst({
+      where: { address: candyMachineAddress },
+    });
 
-    const existingGroup = candyMachine.candyGuard.groups.find(
-      (group) => group.label === label,
-    );
+    if (candyMachineData.standard == TokenStandard.Core) {
+      const candyGuard = await fetchCandyGuard(
+        this.umi,
+        publicKey(candyMachineData.mintAuthorityAddress),
+      );
 
-    const group: GuardGroup = {
-      label,
-      guards: { ...existingGroup.guards, allowList: allowListGuard },
-    };
+      const allowListGuard: AllowListArgs =
+        wallets.length > 0
+          ? {
+              merkleRoot: getCoreMekleRoot(wallets),
+            }
+          : null;
+      const existingGroup = candyGuard.groups.find(
+        (group) => group.label === label,
+      );
+      const group: GuardGroupArgs<DefaultGuardSetArgs> = {
+        label,
+        guards: { ...existingGroup.guards, allowList: allowListGuard },
+      };
+      const resolvedGroups = candyGuard.groups.filter(
+        (group) => group.label != label,
+      );
 
-    const resolvedGroups = candyMachine.candyGuard.groups.filter(
-      (group) => group.label != label,
-    );
+      const groups = [...resolvedGroups, group];
+      console.log('Updating the candymachine with allowlist');
+      await this.updateCoreCandyMachine(publicKey(candyMachineAddress), groups);
+    } else {
+      const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+      const candyMachine = await metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachinePublicKey });
 
-    const groups = [...resolvedGroups, group];
-    console.log('Updating the candymachine with allowlist');
-    await this.updateCandyMachine(candyMachinePublicKey, groups);
+      const allowListGuard: AllowListGuardSettings =
+        wallets.length > 0 ? { merkleRoot: getMerkleRoot(wallets) } : null;
+
+      const existingGroup = candyMachine.candyGuard.groups.find(
+        (group) => group.label === label,
+      );
+
+      const group: GuardGroup = {
+        label,
+        guards: { ...existingGroup.guards, allowList: allowListGuard },
+      };
+
+      const resolvedGroups = candyMachine.candyGuard.groups.filter(
+        (group) => group.label != label,
+      );
+
+      const groups = [...resolvedGroups, group];
+      console.log('Updating the candymachine with allowlist');
+      await this.updateCandyMachine(candyMachinePublicKey, groups);
+    }
   }
 
   async findCandyMachineData(candyMachineAddress: string, label: string) {
