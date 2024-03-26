@@ -36,15 +36,24 @@ import {
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
   D_PUBLISHER_SYMBOL,
+  MINT_CORE_V1_DISCRIMINANT,
   SOL_ADDRESS,
+  TRANSFER_CORE_V1_DISCRIMINANT,
+  UPDATE_CORE_V1_DISCRIMINANT,
 } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { getMintV2InstructionDataSerializer } from 'cma-preview/dist/src/generated/instructions/mintV2';
-import { AssetV1, fetchAssetV1, MPL_CORE_PROGRAM_ID } from 'core-preview';
+import {
+  AssetV1,
+  fetchAssetV1,
+  MPL_CORE_PROGRAM_ID,
+  getUpdateV1InstructionDataSerializer,
+} from 'core-preview';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
+import { u8 } from '@metaplex-foundation/umi/serializers';
 
 @Injectable()
 export class HeliusService {
@@ -131,15 +140,24 @@ export class HeliusService {
             return this.handleMintRejectedEvent(transaction);
           default:
             const instruction = transaction.instructions.at(-1);
-            if (instruction.programId == CMA_PROGRAM_ID) {
-              // TODO: parse data and decide if it's mint tx
+            const data = bs58.decode(instruction.data);
+            const discriminator = u8().deserialize(data.subarray(0, 8));
+
+            if (
+              instruction.programId == CMA_PROGRAM_ID &&
+              discriminator[0] == MINT_CORE_V1_DISCRIMINANT
+            ) {
               return this.handleCoreMintEvent(transaction);
             } else if (
               instruction.programId == MPL_CORE_PROGRAM_ID.toString()
             ) {
-              // TODO: Check if it's transfer or update transaction and call according to that
-              console.log(transaction);
-              // return this.handleChangeCoreComicState(transaction)
+              // Check if it's transfer or update transaction as per discriminant
+
+              if (discriminator[0] == TRANSFER_CORE_V1_DISCRIMINANT) {
+                return this.handleCoreNftTransfer(transaction);
+              } else if (discriminator[0] == UPDATE_CORE_V1_DISCRIMINANT) {
+                return this.handleChangeCoreComicState(transaction);
+              }
             }
             console.log('Unhandled webhook', JSON.stringify(transaction));
             // this is here in case Helius still hasn't parsted our transactions for new contract
@@ -147,6 +165,95 @@ export class HeliusService {
         }
       }),
     );
+  }
+
+  private async handleCoreNftTransfer(
+    enrichedTransaction: EnrichedTransaction,
+  ) {
+    const transferInstruction = enrichedTransaction.instructions.at(-1);
+    const address = transferInstruction.accounts.at(0);
+    try {
+      const ownerAddress = transferInstruction.accounts.at(-3);
+      const previousOwner = transferInstruction.accounts.at(-4);
+
+      const nft = await this.prisma.nft.update({
+        where: { address },
+        include: { listing: { where: { canceledAt: new Date(0) } } },
+        data: {
+          owner: {
+            connectOrCreate: {
+              where: {
+                address: ownerAddress,
+              },
+              create: {
+                address: ownerAddress,
+                createdAt: new Date(enrichedTransaction.timestamp * 1000),
+              },
+            },
+          },
+          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
+        },
+      });
+
+      if (nft.listing && nft.listing.length > 0) {
+        await this.prisma.listing.update({
+          where: {
+            nftAddress_canceledAt: {
+              nftAddress: address,
+              canceledAt: new Date(0),
+            },
+          },
+          data: {
+            canceledAt: new Date(enrichedTransaction.timestamp * 1000),
+          },
+        });
+      }
+
+      this.websocketGateway.handleWalletNftReceived(ownerAddress, nft);
+      this.websocketGateway.handleWalletNftSent(previousOwner, nft);
+    } catch (e) {
+      console.error(`Failed to index Core nft ${address} While transfer event`);
+    }
+  }
+
+  private async handleChangeCoreComicState(
+    enrichedTransaction: EnrichedTransaction,
+  ) {
+    try {
+      const updateInstruction = enrichedTransaction.instructions.at(-1);
+      const updateSerializer = getUpdateV1InstructionDataSerializer();
+      const updateArgs = updateSerializer.deserialize(
+        bs58.decode(updateInstruction.data),
+      )[0];
+
+      const uri =
+        updateArgs.newUri.__option == 'Some' ? updateArgs.newUri.value : null;
+      const mint = updateInstruction.innerInstructions.at(0).accounts.at(-1);
+
+      if (uri) {
+        const offChainMetadata = await fetchOffChainMetadata(uri);
+        const nft = await this.prisma.nft.update({
+          where: { address: mint },
+          data: {
+            metadata: {
+              connectOrCreate: {
+                where: { uri },
+                create: {
+                  collectionName: offChainMetadata.collection.name,
+                  uri,
+                  isUsed: findUsedTrait(offChainMetadata),
+                  isSigned: findSignedTrait(offChainMetadata),
+                  rarity: findRarityTrait(offChainMetadata),
+                },
+              },
+            },
+          },
+        });
+        this.websocketGateway.handleWalletNftUsed(nft);
+      }
+    } catch (e) {
+      console.error(`Error changing core comic state`, e);
+    }
   }
 
   private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
