@@ -15,7 +15,7 @@ import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
-import { getRandomFloatOrInt, sleep } from '../utils/helpers';
+import { appendTimestamp, getRandomFloatOrInt, sleep } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
 import { UpdatePasswordDto } from '../types/update-password.dto';
@@ -63,7 +63,13 @@ export class CreatorService {
     ]);
 
     const creator = await this.prisma.creator.create({
-      data: { name, email, password: hashedPassword, slug },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        slug,
+        s3BucketSlug: appendTimestamp(slug),
+      },
     });
     this.mailService.creatorRegistered(creator);
     this.discordService.notifyCreatorRegistration(creator);
@@ -308,7 +314,7 @@ export class CreatorService {
     const oldFileKeys: string[] = [];
 
     try {
-      const s3Folder = getS3Folder(slug);
+      const s3Folder = getS3Folder(creator.s3BucketSlug);
       if (avatar) {
         avatarKey = await this.s3.uploadFile(avatar, {
           s3Folder,
@@ -365,7 +371,7 @@ export class CreatorService {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
 
-    const s3Folder = getS3Folder(slug);
+    const s3Folder = getS3Folder(creator.s3BucketSlug);
     const oldFileKey = creator[field];
     const newFileKey = await this.s3.uploadFile(file, {
       s3Folder,
@@ -444,7 +450,7 @@ export class CreatorService {
 
       await this.prisma.creator.delete({ where: { id: creator.id } });
 
-      const s3Folder = getS3Folder(creator.slug);
+      const s3Folder = getS3Folder(creator.s3BucketSlug);
       await this.s3.deleteFolder(s3Folder);
     }
   }
