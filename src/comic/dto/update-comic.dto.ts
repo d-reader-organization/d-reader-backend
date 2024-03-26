@@ -3,9 +3,7 @@ import { CreateComicDto } from './create-comic.dto';
 import { Transform } from 'class-transformer';
 import { IsOptional } from 'class-validator';
 
-export class UpdateComicDto extends PartialType(
-  OmitType(CreateComicDto, ['title', 'slug'] as const),
-) {}
+export class UpdateComicDto extends CreateComicDto {}
 
 export class UpdateComicFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
