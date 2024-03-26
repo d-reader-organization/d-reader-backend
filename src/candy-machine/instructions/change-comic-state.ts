@@ -15,8 +15,18 @@ import {
 import {
   AUTH_RULES,
   AUTH_RULES_ID,
+  MIN_COMPUTE_PRICE,
   MIN_COMPUTE_PRICE_IX,
 } from '../../constants';
+import {
+  Umi,
+  PublicKey as UmiPublicKey,
+  createNoopSigner,
+  none,
+  transactionBuilder,
+} from '@metaplex-foundation/umi';
+import { fetchAssetV1, updateV1 } from 'core-preview';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -108,4 +118,52 @@ export async function constructChangeComicStateTransaction(
     verifySignatures: false,
   });
   return rawTransaction.toString('base64');
+}
+
+export async function constructChangeCoreComicStateTransaction(
+  umi: Umi,
+  owner: UmiPublicKey,
+  collectionMint: UmiPublicKey,
+  asset: UmiPublicKey,
+  newUri: string,
+) {
+  const assetData = await fetchAssetV1(umi, asset);
+  if (assetData.owner.toString() !== owner.toString()) {
+    throw new Error(`Unauthorized to change comic state`);
+  }
+
+  const builder = transactionBuilder().add(
+    setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }),
+  );
+
+  const updateAssetBuilder = await constructUpdateCoreNftTransaction(
+    umi,
+    owner,
+    collectionMint,
+    asset,
+    newUri,
+  );
+  builder.add(updateAssetBuilder);
+
+  const transaction = await builder.buildAndSign(umi);
+  return transaction;
+}
+
+export async function constructUpdateCoreNftTransaction(
+  umi: Umi,
+  owner: UmiPublicKey,
+  collectionMint: UmiPublicKey,
+  asset: UmiPublicKey,
+  newUri: string,
+) {
+  const payer = createNoopSigner(owner);
+  const updateAssetBuilder = updateV1(umi, {
+    asset,
+    authority: umi.identity,
+    newUri,
+    collection: collectionMint,
+    newName: none(),
+    payer,
+  });
+  return updateAssetBuilder;
 }
