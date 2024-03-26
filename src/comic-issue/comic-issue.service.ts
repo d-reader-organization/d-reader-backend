@@ -47,7 +47,7 @@ import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { GuardParams } from '../candy-machine/dto/types';
-import { appendTimestamp } from 'src/utils/helpers';
+import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;

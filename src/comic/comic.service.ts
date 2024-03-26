@@ -19,7 +19,7 @@ import { RawComicParams } from './dto/raw-comic-params.dto';
 import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
-import { appendTimestamp } from 'src/utils/helpers';
+import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
