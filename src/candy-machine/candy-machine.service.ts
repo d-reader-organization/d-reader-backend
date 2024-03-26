@@ -131,13 +131,21 @@ export class CandyMachineService {
     });
   }
 
-  async createComicIssueCM(
-    comicIssue: ComicIssueCMInput,
-    comicName: string,
-    onChainName: string,
-    guardParams: GuardParams,
-    shouldBePublic?: boolean,
-  ) {
+  async createComicIssueCM({
+    comicIssue,
+    comicName,
+    onChainName,
+    guardParams,
+    shouldBePublic,
+    uniqueSlug,
+  }: {
+    comicIssue: ComicIssueCMInput;
+    comicName: string;
+    onChainName: string;
+    guardParams: GuardParams;
+    shouldBePublic?: boolean;
+    uniqueSlug: string;
+  }) {
     validateComicIssueCMInput(comicIssue);
     const creatorAddress = comicIssue.creatorAddress;
     const creatorBackupAddress = comicIssue.creatorBackupAddress;
@@ -207,6 +215,7 @@ export class CandyMachineService {
         data: {
           address: newCollectionNft.address.toBase58(),
           name: newCollectionNft.name,
+          slug: uniqueSlug,
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
