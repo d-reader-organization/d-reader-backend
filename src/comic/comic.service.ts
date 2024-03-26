@@ -205,7 +205,10 @@ export class ComicService {
   }
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
-    const { genres, isCompleted, ...rest } = updateComicDto;
+    const { genres, isCompleted, slug: newSlug, ...rest } = updateComicDto;
+    if (slug !== newSlug) {
+      await this.throwIfSlugTaken(newSlug);
+    }
 
     const comic = await this.prisma.comic.findUnique({
       where: { slug },
@@ -214,7 +217,7 @@ export class ComicService {
 
     const sortedCurrentGenres = sortBy(comic.genres.map((g) => g.slug));
     const sortedNewGenres = sortBy(genres);
-    const areGenresEqual = !isEqual(sortedCurrentGenres, sortedNewGenres);
+    const areGenresEqual = isEqual(sortedCurrentGenres, sortedNewGenres);
     const isCompletedDifferent = isCompleted !== !!comic.completedAt;
 
     const areGenresUpdated = !isNil(genres) && !areGenresEqual;
@@ -236,6 +239,7 @@ export class ComicService {
         // where: { slug, publishedAt: null },
         data: {
           ...rest,
+          slug: newSlug,
           completedAt: isCompletedData,
           genres: genresData,
         },
