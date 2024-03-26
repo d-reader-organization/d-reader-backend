@@ -210,3 +210,7 @@ export const RARITY_PRECEDENCE = [
 ];
 export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
+
+export const UPDATE_CORE_V1_DISCRIMINANT = 15;
+export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
+export const MINT_CORE_V1_DISCRIMINANT = 120;
