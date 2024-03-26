@@ -47,6 +47,7 @@ import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { GuardParams } from '../candy-machine/dto/types';
+import { appendTimestamp } from 'src/utils/helpers';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -101,6 +102,7 @@ export class ComicIssueService {
         include: { pages: true, collaborators: true, statelessCovers: true },
         data: {
           ...rest,
+          s3BucketSlug: appendTimestamp(slug),
           slug,
           title,
           number,
@@ -447,6 +449,13 @@ export class ComicIssueService {
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
+      include: {
+        comic: {
+          select: {
+            s3BucketSlug: true,
+          },
+        },
+      },
     });
 
     if (!comicIssue) {
@@ -459,7 +468,10 @@ export class ComicIssueService {
     // upload files if any
     let signatureKey: string, pdfKey: string;
     try {
-      const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+      const s3Folder = getS3Folder(
+        comicIssue.comic.s3BucketSlug,
+        comicIssue.s3BucketSlug,
+      );
       if (signature) {
         signatureKey = await this.s3.uploadFile(signature, {
           s3Folder,
@@ -499,17 +511,30 @@ export class ComicIssueService {
     file: Express.Multer.File,
     field: ComicIssueFileProperty,
   ) {
-    let comicIssue: ComicIssue & { pages: ComicPage[] };
+    let comicIssue: ComicIssue & {
+      pages: ComicPage[];
+      comic: { s3BucketSlug: string };
+    };
     try {
       comicIssue = await this.prisma.comicIssue.findUnique({
         where: { id },
-        include: { pages: true },
+        include: {
+          pages: true,
+          comic: {
+            select: {
+              s3BucketSlug: true,
+            },
+          },
+        },
       });
     } catch {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
-    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const s3Folder = getS3Folder(
+      comicIssue.comic.s3BucketSlug,
+      comicIssue.s3BucketSlug,
+    );
     const oldFileKey = comicIssue[field];
     const fileName = field === 'pdf' ? comicIssue.slug : field;
     const newFileKey = await this.s3.uploadFile(file, { s3Folder, fileName });
@@ -517,7 +542,14 @@ export class ComicIssueService {
     try {
       comicIssue = await this.prisma.comicIssue.update({
         where: { id, publishedAt: null },
-        include: { pages: true },
+        include: {
+          pages: true,
+          comic: {
+            select: {
+              s3BucketSlug: true,
+            },
+          },
+        },
         data: { [field]: newFileKey },
       });
     } catch {
@@ -704,6 +736,13 @@ export class ComicIssueService {
   async delete(id: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
+      include: {
+        comic: {
+          select: {
+            s3BucketSlug: true,
+          },
+        },
+      },
     });
 
     if (!comicIssue) {
@@ -714,16 +753,22 @@ export class ComicIssueService {
 
     await this.prisma.comicIssue.delete({ where: { id } });
 
-    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const s3Folder = getS3Folder(
+      comicIssue.comic.s3BucketSlug,
+      comicIssue.s3BucketSlug,
+    );
     await this.s3.deleteFolder(s3Folder);
   }
 
   /** upload many stateless cover images to S3 and format data for INSERT */
   async createManyStatelessCoversData(
     covers: CreateStatelessCoverDto[],
-    comicIssue: ComicIssue,
+    comicIssue: ComicIssue & { comic: { s3BucketSlug: string } },
   ) {
-    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const s3Folder = getS3Folder(
+      comicIssue.comic.s3BucketSlug,
+      comicIssue.s3BucketSlug,
+    );
     return await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatelessCoverCreateManyInput> => {
@@ -750,9 +795,12 @@ export class ComicIssueService {
   /** upload many stateful cover images to S3 and format data for INSERT */
   async createManyStatefulCoversData(
     covers: CreateStatefulCoverDto[],
-    comicIssue: ComicIssue,
+    comicIssue: ComicIssue & { comic: { s3BucketSlug: string } },
   ) {
-    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const s3Folder = getS3Folder(
+      comicIssue.comic.s3BucketSlug,
+      comicIssue.s3BucketSlug,
+    );
     return await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatefulCoverCreateManyInput> => {
@@ -782,7 +830,12 @@ export class ComicIssueService {
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
-      include: { statelessCovers: true },
+      include: {
+        statelessCovers: true,
+        comic: {
+          select: { s3BucketSlug: true },
+        },
+      },
     });
     const oldStatelessCovers = comicIssue.statelessCovers;
     const areStatelessCoversUpdated = !!oldStatelessCovers;
@@ -829,7 +882,12 @@ export class ComicIssueService {
   ) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
-      include: { statefulCovers: true },
+      include: {
+        statefulCovers: true,
+        comic: {
+          select: { s3BucketSlug: true },
+        },
+      },
     });
     const oldStatefulCovers = comicIssue.statefulCovers;
 

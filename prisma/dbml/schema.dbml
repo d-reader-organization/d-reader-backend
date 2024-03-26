@@ -60,6 +60,7 @@ Table Creator {
   lynkfire String [not null, default: '']
   discordUsername String [not null, default: '']
   tippingAddress String [not null, default: '']
+  s3BucketSlug String [unique, not null]
   createdAt DateTime [default: `now()`, not null]
   deletedAt DateTime
   featuredAt DateTime
@@ -89,6 +90,7 @@ Table Comic {
   instagram String [not null, default: '']
   tikTok String [not null, default: '']
   youTube String [not null, default: '']
+  s3BucketSlug String [unique, not null]
   updatedAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
   featuredAt DateTime
@@ -160,6 +162,7 @@ Table ComicIssue {
   creatorAddress String [not null, default: '']
   creatorBackupAddress String [not null, default: '']
   comicSlug String [not null]
+  s3BucketSlug String [not null]
   comic Comic [not null]
   royaltyWallets RoyaltyWallet [not null]
   statelessCovers StatelessCover [not null]

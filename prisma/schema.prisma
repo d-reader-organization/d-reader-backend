@@ -78,6 +78,7 @@ model Creator {
   lynkfire        String        @default("")
   discordUsername String        @default("")
   tippingAddress  String        @default("")
+  s3BucketSlug    String        @unique
   createdAt       DateTime      @default(now())
   deletedAt       DateTime?
   featuredAt      DateTime?
@@ -114,6 +115,7 @@ model Comic {
   instagram     String              @default("")
   tikTok        String              @default("")
   youTube       String              @default("")
+  s3BucketSlug  String              @unique
   updatedAt     DateTime            @updatedAt
   createdAt     DateTime            @default(now())
   featuredAt    DateTime?
@@ -183,6 +185,7 @@ model ComicIssue {
   creatorAddress        String                   @default("")
   creatorBackupAddress  String                   @default("")
   comicSlug             String
+  s3BucketSlug          String
   comic                 Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   royaltyWallets        RoyaltyWallet[]
   statelessCovers       StatelessCover[]
