@@ -513,18 +513,14 @@ export class ComicIssueService {
   ) {
     let comicIssue: ComicIssue & {
       pages: ComicPage[];
-      comic: { s3BucketSlug: string };
+      comic: Comic;
     };
     try {
       comicIssue = await this.prisma.comicIssue.findUnique({
         where: { id },
         include: {
           pages: true,
-          comic: {
-            select: {
-              s3BucketSlug: true,
-            },
-          },
+          comic: true,
         },
       });
     } catch {
@@ -544,11 +540,7 @@ export class ComicIssueService {
         where: { id, publishedAt: null },
         include: {
           pages: true,
-          comic: {
-            select: {
-              s3BucketSlug: true,
-            },
-          },
+          comic: true,
         },
         data: { [field]: newFileKey },
       });
