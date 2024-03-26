@@ -65,12 +65,15 @@ export class ComicPageService {
   async updateMany(pagesDto: CreateComicPageDto[], comicIssueId: number) {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
-      include: { pages: true },
+      include: { pages: true, comic: true },
     });
     const oldComicPages = comicIssue.pages;
     const areComicPagesUpdated = !!oldComicPages;
 
-    const s3Folder = getS3Folder(comicIssue.comicSlug, comicIssue.slug);
+    const s3Folder = getS3Folder(
+      comicIssue.comic.s3BucketSlug,
+      comicIssue.s3BucketSlug,
+    );
 
     // upload comic pages to S3 and format data for INSERT
     const newComicPagesData = await this.createMany(

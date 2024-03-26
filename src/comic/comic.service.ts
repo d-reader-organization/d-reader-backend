@@ -19,6 +19,7 @@ import { RawComicParams } from './dto/raw-comic-params.dto';
 import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
+import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
@@ -43,6 +44,7 @@ export class ComicService {
       const comic = await this.prisma.comic.create({
         data: {
           ...rest,
+          s3BucketSlug: appendTimestamp(slug),
           title,
           slug,
           creatorId,
@@ -261,7 +263,7 @@ export class ComicService {
 
     let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
     try {
-      const s3Folder = getS3Folder(slug);
+      const s3Folder = getS3Folder(comic.s3BucketSlug);
       if (cover) {
         coverKey = await this.s3.uploadFile(cover, {
           s3Folder,
@@ -322,7 +324,7 @@ export class ComicService {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
 
-    const s3Folder = getS3Folder(slug);
+    const s3Folder = getS3Folder(comic.s3BucketSlug);
     const oldFileKey = comic[field];
     const newFileKey = await this.s3.uploadFile(file, {
       s3Folder,
@@ -395,7 +397,7 @@ export class ComicService {
 
     await this.prisma.comic.delete({ where: { slug } });
 
-    const s3Folder = getS3Folder(comic.slug);
+    const s3Folder = getS3Folder(comic.s3BucketSlug);
     await this.s3.deleteFolder(s3Folder);
   }
 }
