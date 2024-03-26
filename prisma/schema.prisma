@@ -353,6 +353,7 @@ model CollectionNft {
   comicIssueId    Int            @unique
   collectionItems Nft[]
   candyMachines   CandyMachine[]
+  slug            String         @unique
 }
 
 model ComicPage {

@@ -77,6 +77,7 @@ import {
 import { addDays } from 'date-fns';
 import { splTokensToSeed } from './spl-tokens';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../src/constants';
+import { snakeCase } from 'lodash';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -330,14 +331,18 @@ async function main() {
         continue;
       } else {
         console.info(i, ': publishing comic issue ' + comicIssue.id);
-
+        const onChainName = comicIssue.title.slice(
+          0,
+          MAX_ON_CHAIN_TITLE_LENGTH,
+        );
         await comicIssueService.publishOnChain(comicIssue.id, {
-          onChainName: comicIssue.title.slice(0, MAX_ON_CHAIN_TITLE_LENGTH),
+          onChainName,
           supply: getRandomInt(1, 2) * 10, // 10-20 supply
           mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
           sellerFeeBasisPoints: 500, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
+          collectionSlug: snakeCase(onChainName),
           creatorAddress: metaplex.identity().publicKey.toString(),
           royaltyWallets: [
             {

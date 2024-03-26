@@ -55,4 +55,7 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsOptional()
   @IsBoolean()
   shouldBePublic?: boolean;
+
+  @IsString()
+  collectionSlug: string;
 }
