@@ -241,30 +241,29 @@ export class ComicIssueService {
   }
 
   async findOne({
-    idOrSlug,
+    idOrUniqueSlug,
     userId,
   }: {
-    idOrSlug: number | string;
+    idOrUniqueSlug: number | string;
     userId: number;
   }) {
-    const isSlug = isNaN(+idOrSlug);
+    const isSlug = isNaN(+idOrUniqueSlug);
+    const queryWhere = isSlug
+      ? {
+          collectionNft: {
+            slug: idOrUniqueSlug.toString(),
+          },
+        }
+      : { id: +idOrUniqueSlug };
 
-    const comicIssue = await (isSlug
-      ? this.prisma.comicIssue.findFirst({
-          where: {
-            collectionNft: {
-              slug: idOrSlug.toString(),
-            },
-          },
-        })
-      : this.prisma.comicIssue.findFirst({
-          where: { id: +idOrSlug },
-          include: {
-            comic: { include: { creator: true, genres: true } },
-            collaborators: true,
-            statelessCovers: true,
-          },
-        }));
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: queryWhere,
+      include: {
+        comic: { include: { creator: true, genres: true } },
+        collaborators: true,
+        statelessCovers: true,
+      },
+    });
 
     const id = comicIssue.id;
     const findActiveCandyMachine = this.findActiveCandyMachine(id);

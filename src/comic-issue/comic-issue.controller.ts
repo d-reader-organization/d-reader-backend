@@ -132,13 +132,13 @@ export class ComicIssueController {
 
   /* Get specific comic issue by unique id or unique collection slug */
   @UserAuth()
-  @Get('get/:idOrSlug')
+  @Get('get/:idOrUniqueSlug')
   async findOne(
-    @Param('idOrSlug') idOrSlug: string,
+    @Param('idOrUniqueSlug') idOrUniqueSlug: string,
     @UserEntity() user: UserPayload,
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOne({
-      idOrSlug,
+      idOrUniqueSlug,
       userId: user.id,
     });
     return toComicIssueDto(comicIssue);
