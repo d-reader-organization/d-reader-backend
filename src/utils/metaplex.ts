@@ -13,7 +13,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { keypairIdentity as umiKeypairIdentity } from '@metaplex-foundation/umi';
-import { mplCore } from 'core-preview';
+import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from 'cma-preview';
 
 export type MetdataFile = {
@@ -68,7 +68,7 @@ export const metaplex = initMetaplex();
 export function initUmi(customEndpoint?: string) {
   const connection = getConnection(customEndpoint);
   const treasuryKeypair = getTreasuryKeypair();
-  const umi = createUmi(connection.rpcEndpoint)
+  const umi = createUmi(connection.rpcEndpoint, { commitment: 'confirmed' })
     .use(mplTokenMetadata())
     .use(mplCore())
     .use(mplCandyMachine())

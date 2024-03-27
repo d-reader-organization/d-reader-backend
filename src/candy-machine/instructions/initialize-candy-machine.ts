@@ -28,6 +28,7 @@ import {
   AUTH_RULES_ID,
   BOT_TAX,
   D_PUBLISHER_SYMBOL,
+  MIN_COMPUTE_PRICE,
   MIN_COMPUTE_PRICE_IX,
 } from '../../constants';
 import {
@@ -52,7 +53,7 @@ import {
   toLegacyGroups,
 } from '../../utils/candy-machine';
 import { initializeRecordAuthority } from './initialize-record-authority';
-import { sleep, solFromLamports } from '../../utils/helpers';
+import { solFromLamports } from '../../utils/helpers';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { createLookupTable } from '../../utils/lookup-table';
 import {
@@ -114,13 +115,12 @@ export async function createCoreCandyMachine(
 
   const recentSlot = await umi.rpc.getSlot({ commitment: 'confirmed' });
   // TODO: check if it requires more compute and why it fails with (Program fails to compelete) without skipPreflight
-  const builder = setComputeUnitPrice(umi, { microLamports: 600_000 }).add(
-    createCmBuilder,
-  );
+  const builder = setComputeUnitPrice(umi, {
+    microLamports: MIN_COMPUTE_PRICE,
+  }).add(createCmBuilder);
   await builder.sendAndConfirm(umi, {
     send: { commitment: 'confirmed', skipPreflight: true },
   });
-  await sleep(1000);
 
   let lookupTable: UmiPublicKey;
   try {

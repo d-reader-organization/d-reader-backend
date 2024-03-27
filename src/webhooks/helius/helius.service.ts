@@ -51,9 +51,10 @@ import {
   fetchAssetV1,
   MPL_CORE_PROGRAM_ID,
   getUpdateV1InstructionDataSerializer,
-} from 'core-preview';
+} from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { u8 } from '@metaplex-foundation/umi/serializers';
+import { fetchCandyMachine } from 'cma-preview';
 
 @Injectable()
 export class HeliusService {
@@ -340,16 +341,25 @@ export class HeliusService {
         include: { nft: true, buyer: { include: { user: true } } },
         data: receiptData,
       });
-      const candyMachine = await this.prisma.candyMachine.update({
+
+      const candyMachine = await fetchCandyMachine(
+        this.umi,
+        publicKey(candyMachineAddress),
+      );
+
+      const itemsRemaining =
+        Number(candyMachine.data.itemsAvailable) -
+        Number(candyMachine.itemsRedeemed);
+      await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
-          itemsRemaining: { decrement: 1 },
-          itemsMinted: { increment: 1 },
+          itemsRemaining,
+          itemsMinted: Number(candyMachine.itemsRedeemed),
         },
       });
 
-      if (candyMachine.itemsRemaining === 0) {
-        this.removeSubscription(candyMachine.address);
+      if (itemsRemaining === 0) {
+        this.removeSubscription(candyMachine.publicKey.toString());
       }
 
       this.websocketGateway.handleNftMinted(comicIssueId, receipt);
@@ -693,16 +703,24 @@ export class HeliusService {
         include: { nft: true, buyer: { include: { user: true } } },
         data: receiptData,
       });
-      const candyMachine = await this.prisma.candyMachine.update({
+      const candyMachine = await this.metaplex
+        .candyMachines()
+        .findByAddress(
+          { address: new PublicKey(candyMachineAddress) },
+          { commitment: 'confirmed' },
+        );
+
+      const itemsRemaining = candyMachine.itemsRemaining.toNumber();
+      await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
-          itemsRemaining: { decrement: 1 },
-          itemsMinted: { increment: 1 },
+          itemsRemaining,
+          itemsMinted: candyMachine.itemsMinted.toNumber(),
         },
       });
 
-      if (candyMachine.itemsRemaining === 0) {
-        this.removeSubscription(candyMachine.address);
+      if (itemsRemaining === 0) {
+        this.removeSubscription(candyMachine.address.toString());
       }
 
       this.websocketGateway.handleNftMinted(comicIssueId, receipt);

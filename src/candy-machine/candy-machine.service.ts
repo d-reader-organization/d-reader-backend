@@ -62,8 +62,13 @@ import {
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
-import { Prisma, TokenStandard } from '@prisma/client';
+import {
+  Prisma,
+  TokenStandard,
+  ComicRarity as PrismaComicRarity,
+} from '@prisma/client';
 import { CandyMachineGroupSettings, GuardParams } from './dto/types';
+import { ComicRarity } from 'dreader-comic-verse';
 import {
   createCoreCandyMachine,
   createLegacyCandyMachine,
@@ -90,7 +95,7 @@ import {
   AllowListArgs,
   getMerkleRoot as getCoreMekleRoot,
 } from 'cma-preview';
-import { createCollectionV1 } from 'core-preview';
+import { createCollectionV1 } from '@metaplex-foundation/mpl-core';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 
@@ -183,6 +188,7 @@ export class CandyMachineService {
     let darkblockId = '';
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
+      // TODO: Either store darkblockId in collection or fetch the id from offchain metadata
     } else {
       let darkblockMetadataFile: MetdataFile;
       if (comicIssue.pdf) {
@@ -308,7 +314,7 @@ export class CandyMachineService {
       });
 
       try {
-        await insertCoreItems(
+        const itemMetadatas = await insertCoreItems(
           this.umi,
           this.metaplex,
           candyMachine.publicKey,
@@ -322,6 +328,21 @@ export class CandyMachineService {
           onChainName,
           rarityCoverFiles,
         );
+
+        const metadataCreateData = itemMetadatas.map((item) => {
+          return {
+            uri: item.metadata.uri,
+            isUsed: item.isUsed,
+            isSigned: item.isSigned,
+            rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+            collectionName: onChainName,
+          };
+        });
+
+        await this.prisma.metadata.createMany({
+          data: metadataCreateData,
+          skipDuplicates: true,
+        });
         const updatedCandyMachine = await fetchCandyMachine(
           umi,
           candyMachinePubkey,
@@ -329,6 +350,7 @@ export class CandyMachineService {
             commitment: 'confirmed',
           },
         );
+
         await this.prisma.candyMachine.update({
           where: { address: candyMachine.publicKey.toString() },
           data: { itemsLoaded: updatedCandyMachine.itemsLoaded },
@@ -353,10 +375,12 @@ export class CandyMachineService {
       let candyMachine = await this.metaplex
         .candyMachines()
         .findByAddress({ address: candyMachinePubkey });
+
       if (freezePeriod) {
         await sleep(1000);
         await this.initializeGuardAccounts(candyMachine, freezePeriod);
       }
+
       const authorityPda = this.metaplex
         .candyMachines()
         .pdas()
@@ -364,7 +388,7 @@ export class CandyMachineService {
         .toString();
 
       try {
-        await insertItems(
+        const itemMetadatas = await insertItems(
           this.metaplex,
           candyMachine,
           comicIssue,
@@ -377,6 +401,20 @@ export class CandyMachineService {
           onChainName,
           rarityCoverFiles,
         );
+        const metadataCreateData = itemMetadatas.map((item) => {
+          return {
+            uri: item.metadata.uri,
+            isUsed: item.isUsed,
+            isSigned: item.isSigned,
+            rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+            collectionName: onChainName,
+          };
+        });
+
+        await this.prisma.metadata.createMany({
+          data: metadataCreateData,
+          skipDuplicates: true,
+        });
         await sleep(1000); // wait for data to update before refetching candymachine.
       } catch (e) {
         console.error(e);
