@@ -21,7 +21,7 @@ export class CreateComicDto {
 
   @Expose()
   @IsKebabCase()
-  @Transform(({ obj }) => kebabCase(obj.title))
+  @Transform(({ obj }) => obj.title && kebabCase(obj.title))
   @ApiProperty({ readOnly: true, required: false })
   slug: string;
 
