@@ -1,9 +1,9 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateComicDto } from './create-comic.dto';
 import { Transform } from 'class-transformer';
 import { IsOptional } from 'class-validator';
 
-export class UpdateComicDto extends CreateComicDto {}
+export class UpdateComicDto extends PartialType(CreateComicDto) {}
 
 export class UpdateComicFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
