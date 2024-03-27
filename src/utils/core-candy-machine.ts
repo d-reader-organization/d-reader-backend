@@ -90,7 +90,7 @@ export async function insertCoreItems(
   onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
-  const items = await uploadItemMetadata(
+  const { items, itemMetadatas } = await uploadItemMetadata(
     metaplex,
     new PublicKey(candyMachinePubkey),
     comicIssue,
@@ -131,4 +131,5 @@ export async function insertCoreItems(
       return builder.sendAndConfirm(umi, { send: { commitment: 'confirmed' } });
     });
   }
+  return itemMetadatas;
 }

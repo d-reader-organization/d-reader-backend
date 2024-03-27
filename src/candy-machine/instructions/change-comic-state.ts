@@ -25,8 +25,9 @@ import {
   none,
   transactionBuilder,
 } from '@metaplex-foundation/umi';
-import { fetchAssetV1, updateV1 } from 'core-preview';
+import { updateV1 } from '@metaplex-foundation/mpl-core';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import { base64 } from '@metaplex-foundation/umi/serializers';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -122,48 +123,38 @@ export async function constructChangeComicStateTransaction(
 
 export async function constructChangeCoreComicStateTransaction(
   umi: Umi,
-  owner: UmiPublicKey,
+  signer: UmiPublicKey,
   collectionMint: UmiPublicKey,
   asset: UmiPublicKey,
   newUri: string,
 ) {
-  const assetData = await fetchAssetV1(umi, asset);
-  if (assetData.owner.toString() !== owner.toString()) {
-    throw new Error(`Unauthorized to change comic state`);
-  }
-
-  const builder = transactionBuilder().add(
-    setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }),
-  );
-
+  const payer = createNoopSigner(signer);
   const updateAssetBuilder = await constructUpdateCoreNftTransaction(
     umi,
-    owner,
     collectionMint,
     asset,
     newUri,
   );
-  builder.add(updateAssetBuilder);
+  const builder = transactionBuilder()
+    .add(setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }))
+    .add(updateAssetBuilder);
 
-  const transaction = await builder.buildAndSign(umi);
-  return transaction;
+  const transaction = await builder.buildAndSign({ ...umi, payer });
+  return base64.deserialize(umi.transactions.serialize(transaction))[0];
 }
 
 export async function constructUpdateCoreNftTransaction(
   umi: Umi,
-  owner: UmiPublicKey,
   collectionMint: UmiPublicKey,
   asset: UmiPublicKey,
   newUri: string,
 ) {
-  const payer = createNoopSigner(owner);
   const updateAssetBuilder = updateV1(umi, {
     asset,
     authority: umi.identity,
     newUri,
     collection: collectionMint,
     newName: none(),
-    payer,
   });
   return updateAssetBuilder;
 }

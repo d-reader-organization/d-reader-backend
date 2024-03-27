@@ -2311,6 +2311,11 @@
     "@solana/spl-token" "^0.3.6"
     "@solana/web3.js" "^1.66.2"
 
+"@metaplex-foundation/mpl-core@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core/-/mpl-core-0.2.0.tgz#f537ef909b314b1817a4d5e7f0362de3f96573bf"
+  integrity sha512-J7stQipmqf8nBjWnNZhxGqnP3f6crqh7bYSpECEZrXIAfpSKrBRqaJCqaWnfCuUsAhIaOpv3KdbXRDHQ9TfVmw==
+
 "@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27":
   version "3.0.0-alpha.27"
   resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-3.0.0-alpha.27.tgz#7fa5e8432dcb1744be1cb3bd82fb462061ab589d"
@@ -6049,10 +6054,10 @@ cookiejar@^2.1.4:
   resolved "https://registry.yarnpkg.com/cookiejar/-/cookiejar-2.1.4.tgz#ee669c1fea2cf42dc31585469d193fef0d65771b"
   integrity sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==
 
-core-preview@0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/core-preview/-/core-preview-0.1.1.tgz#85ed961f7c78e66c176a4f96ec470c2418ed0e74"
-  integrity sha512-f/l7q6GQioQ561WukRNBmBPFXPfOxLvM9Ri7wXfFqxBMH8EgnB18pMURT3NxImpRYdlVB5Qxo6ic42d4w2vLuA==
+core-preview@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/core-preview/-/core-preview-0.1.3.tgz#255907bf1a8a73e9ca1a3c3e324b3ee6c4f09842"
+  integrity sha512-URj9Pf+bj1vzqJEvWBN9C+MNMG0lmffSio8bTIU7hl7q4IW00AMShSOtfqmvleQ21/KJR+rUtBtNF/uMefCWMw==
 
 core-util-is@^1.0.3, core-util-is@~1.0.0:
   version "1.0.3"
