@@ -206,7 +206,7 @@ export class ComicService {
 
   async update(slug: string, updateComicDto: UpdateComicDto) {
     const { genres, isCompleted, slug: newSlug, ...rest } = updateComicDto;
-    if (slug !== newSlug) {
+    if (newSlug && slug !== newSlug) {
       await this.throwIfSlugTaken(newSlug);
     }
 
@@ -239,7 +239,7 @@ export class ComicService {
         // where: { slug, publishedAt: null },
         data: {
           ...rest,
-          slug: newSlug,
+          ...(newSlug && { slug: newSlug }),
           completedAt: isCompletedData,
           genres: genresData,
         },
