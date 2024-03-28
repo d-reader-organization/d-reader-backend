@@ -94,7 +94,7 @@ import {
   fetchCandyGuard,
   AllowListArgs,
   getMerkleRoot as getCoreMekleRoot,
-} from 'cma-preview';
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import { createCollectionV1 } from '@metaplex-foundation/mpl-core';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
@@ -267,7 +267,7 @@ export class CandyMachineService {
     let candyMachineAddress: string;
     if (tokenStandard == TokenStandard.Core) {
       console.log('Create Core Candy Machine');
-
+      // TODO: Check if royalty enforcement plugin comes by default or no
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
         publicKey(collectionNftAddress),

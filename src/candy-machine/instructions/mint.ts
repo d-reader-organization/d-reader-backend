@@ -67,7 +67,7 @@ import {
   route,
   getMerkleProof,
   fetchCandyMachine,
-} from 'cma-preview';
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   fetchAddressLookupTable,
   setComputeUnitLimit,

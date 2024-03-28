@@ -45,7 +45,7 @@ import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
-import { getMintV2InstructionDataSerializer } from 'cma-preview/dist/src/generated/instructions/mintV2';
+import { getMintV2InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV2';
 import {
   AssetV1,
   fetchAssetV1,
@@ -54,7 +54,7 @@ import {
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { u8 } from '@metaplex-foundation/umi/serializers';
-import { fetchCandyMachine } from 'cma-preview';
+import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 
 @Injectable()
 export class HeliusService {
