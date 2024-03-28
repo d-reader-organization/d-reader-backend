@@ -56,6 +56,7 @@ import {
   PublicKey as UmiPublicKey,
   AddressLookupTableInput,
   publicKey,
+  none,
 } from '@metaplex-foundation/umi';
 import {
   mintV2,
@@ -552,7 +553,6 @@ export async function constructCoreMintTransaction(
     const signer = createNoopSigner(minter);
 
     const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
-
     if (allowList) {
       const allowListTransaction = await transactionBuilder()
         .add(
@@ -572,10 +572,11 @@ export async function constructCoreMintTransaction(
               merkleRoot: getMerkleRoot(allowList),
               merkleProof: getMerkleProof(allowList, minter),
             },
+            payer: signer,
+            group: label ?? none(),
           }),
         )
         .buildAndSign({ ...umi, payer: signer });
-
       const encodedTransaction = base64.deserialize(
         umi.transactions.serialize(allowListTransaction),
       )[0];
@@ -651,7 +652,7 @@ async function getMintArgs(
     .map((guard) => {
       if (resolvedGuards[guard].__option == 'Some') {
         switch (guard) {
-          case 'allowlist':
+          case 'allowList':
             if (resolvedGuards.allowList.__option == 'Some') {
               return [
                 guard,

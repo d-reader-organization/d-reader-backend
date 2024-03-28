@@ -9,7 +9,7 @@ import {
   toDateTime,
 } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
-import { GuardGroup } from '../types/shared';
+import { LegacyGuardGroup } from '../types/shared';
 import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
@@ -57,7 +57,7 @@ export class UpdateDateCommand extends CommandRunner {
         (group) => group.label === label,
       );
 
-      const group: GuardGroup = {
+      const group: LegacyGuardGroup = {
         label,
         guards: {
           ...existingGroup.guards,
