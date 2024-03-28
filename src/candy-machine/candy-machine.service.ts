@@ -53,7 +53,7 @@ import {
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
-import { GuardGroup, RarityCoverFiles } from '../types/shared';
+import { LegacyGuardGroup, RarityCoverFiles } from '../types/shared';
 import {
   generatePropertyName,
   insertItems,
@@ -83,6 +83,12 @@ import {
   publicKey,
   PublicKey as UmiPublicKey,
   transactionBuilder,
+  some,
+  lamports as umiLamports,
+  dateTime as umiDateTime,
+  none,
+  createBigInt,
+  Option,
 } from '@metaplex-foundation/umi';
 import {
   fetchCandyMachine,
@@ -90,14 +96,20 @@ import {
   CandyMachine as CoreCandyMachine,
   updateCandyGuard,
   DefaultGuardSetArgs,
-  GuardGroupArgs,
   fetchCandyGuard,
-  AllowListArgs,
   getMerkleRoot as getCoreMekleRoot,
+  DefaultGuardSet,
+  RedeemedAmount,
+  StartDate,
+  EndDate,
+  GuardGroup as CoreGuardGroup,
+  AllowList,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { createCollectionV1 } from '@metaplex-foundation/mpl-core';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
+import { base58 } from '@metaplex-foundation/umi/serializers';
 
 @Injectable()
 export class CandyMachineService {
@@ -461,8 +473,8 @@ export class CandyMachineService {
 
   async updateCoreCandyMachine(
     candMachineAddress: UmiPublicKey,
-    groups?: GuardGroupArgs<DefaultGuardSetArgs>[],
-    guards?: Partial<DefaultGuardSetArgs>,
+    groups: CoreGuardGroup<DefaultGuardSet>[],
+    guards: Partial<DefaultGuardSetArgs>,
   ) {
     try {
       const candyMachine = await fetchCandyMachine(
@@ -479,22 +491,22 @@ export class CandyMachineService {
           setComputeUnitPrice(this.umi, { microLamports: MIN_COMPUTE_PRICE }),
         )
         .add(updateBuilder);
-      await builder.sendAndConfirm(this.umi, {
+      const response = await builder.sendAndConfirm(this.umi, {
         send: { commitment: 'confirmed' },
       });
-      console.log(
-        `CandyMachine ${candMachineAddress.toString()} updated successfully`,
-      );
+      const signature = base58.deserialize(response.signature);
+      console.log(`CandyMachine updated : ${signature}`);
     } catch (e) {
       console.error(
         `Error updating CandyMachine ${candMachineAddress.toString()}`,
+        e,
       );
     }
   }
 
   async updateCandyMachine(
     candyMachineAddress: PublicKey,
-    groups?: GuardGroup[],
+    groups?: LegacyGuardGroup[],
     guards?: Partial<DefaultCandyGuardSettings>,
   ) {
     const candyMachine = await this.metaplex
@@ -671,20 +683,13 @@ export class CandyMachineService {
     return receipts;
   }
 
-  async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
-    const {
-      displayLabel,
-      label,
-      startDate,
-      endDate,
-      splTokenAddress,
-      mintPrice,
-      mintLimit,
-      supply,
-      frozen,
-    } = params;
+  async addLegacyCandyMachineGroupOnChain(
+    candyMachineAddress: string,
+    params: GuardParams,
+  ) {
+    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
+      params;
     const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePublicKey });
@@ -712,7 +717,7 @@ export class CandyMachineService {
       throw new Error(`A group with label ${label} already exists`);
     }
 
-    const group: GuardGroup = {
+    const group: LegacyGuardGroup = {
       label,
       guards: {
         ...candyMachine.candyGuard.guards,
@@ -732,6 +737,91 @@ export class CandyMachineService {
 
     const groups = [...resolvedGroups, group];
     await this.updateCandyMachine(candyMachinePublicKey, groups);
+  }
+
+  async addCoreCandyMachineGroupOnChain(
+    candyMachineAddress: string,
+    params: GuardParams,
+  ) {
+    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
+      params;
+
+    const candyMachine = await fetchCandyMachine(
+      this.umi,
+      publicKey(candyMachineAddress),
+    );
+    const candyGuard = await fetchCandyGuard(
+      this.umi,
+      candyMachine.mintAuthority,
+    );
+
+    const candyMachineGroups = candyGuard.groups;
+    const redeemedAmountGuard: RedeemedAmount = {
+      maximum: createBigInt(supply),
+    };
+    let startDateGuard: StartDate;
+    if (startDate) startDateGuard = { date: umiDateTime(startDate) };
+
+    let endDateGuard: EndDate;
+    if (endDate) endDateGuard = { date: umiDateTime(endDate) };
+
+    let mintLimitGuard: MintLimit;
+    if (mintLimit)
+      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+
+    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
+    const existingGroup = candyMachineGroups.find(
+      (group) => group.label === label,
+    );
+
+    if (existingGroup) {
+      throw new Error(`A group with label ${label} already exists`);
+    }
+
+    const group: CoreGuardGroup<DefaultGuardSet> = {
+      label,
+      guards: {
+        ...candyGuard.guards,
+        [paymentGuard]: some({
+          lamports: umiLamports(mintPrice),
+          destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+        }),
+        redeemedAmount: some(redeemedAmountGuard),
+        startDate: startDate ? some(startDateGuard) : none(),
+        endDate: endDate ? some(endDateGuard) : none(),
+        mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
+      },
+    };
+    const resolvedGroups = candyMachineGroups.filter(
+      (group) => group.label != label,
+    );
+    resolvedGroups.push(group);
+    await this.updateCoreCandyMachine(
+      publicKey(candyMachineAddress),
+      resolvedGroups,
+      candyGuard.guards,
+    );
+  }
+
+  async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
+    const {
+      displayLabel,
+      label,
+      startDate,
+      endDate,
+      splTokenAddress,
+      mintPrice,
+      mintLimit,
+      supply,
+    } = params;
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address: candyMachineAddress },
+    });
+    if (candyMachine.standard == TokenStandard.Legacy) {
+      await this.addLegacyCandyMachineGroupOnChain(candyMachineAddress, params);
+    } else {
+      await this.addCoreCandyMachineGroupOnChain(candyMachineAddress, params);
+    }
 
     await this.prisma.candyMachineGroup.create({
       data: {
@@ -811,27 +901,32 @@ export class CandyMachineService {
         this.umi,
         publicKey(candyMachineData.mintAuthorityAddress),
       );
-
-      const allowListGuard: AllowListArgs =
+      const allowListGuard: Option<AllowList> =
         wallets.length > 0
-          ? {
+          ? some({
               merkleRoot: getCoreMekleRoot(wallets),
-            }
-          : null;
+            })
+          : none();
       const existingGroup = candyGuard.groups.find(
         (group) => group.label === label,
       );
-      const group: GuardGroupArgs<DefaultGuardSetArgs> = {
+      const group: CoreGuardGroup<DefaultGuardSet> = {
         label,
-        guards: { ...existingGroup.guards, allowList: allowListGuard },
+        guards: {
+          ...existingGroup.guards,
+          allowList: allowListGuard,
+        },
       };
       const resolvedGroups = candyGuard.groups.filter(
         (group) => group.label != label,
       );
-
       const groups = [...resolvedGroups, group];
       console.log('Updating the candymachine with allowlist');
-      await this.updateCoreCandyMachine(publicKey(candyMachineAddress), groups);
+      await this.updateCoreCandyMachine(
+        publicKey(candyMachineAddress),
+        groups,
+        candyGuard.guards,
+      );
     } else {
       const candyMachinePublicKey = new PublicKey(candyMachineAddress);
       const candyMachine = await metaplex
@@ -845,7 +940,7 @@ export class CandyMachineService {
         (group) => group.label === label,
       );
 
-      const group: GuardGroup = {
+      const group: LegacyGuardGroup = {
         label,
         guards: { ...existingGroup.guards, allowList: allowListGuard },
       };

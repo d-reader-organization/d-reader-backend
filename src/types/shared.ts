@@ -27,7 +27,7 @@ export type ItemMetadata = {
 
 export type PickFields<T, K extends keyof T> = K;
 
-export type GuardGroup = {
+export type LegacyGuardGroup = {
   label: string;
   guards: Partial<DefaultCandyGuardSettings>;
 };

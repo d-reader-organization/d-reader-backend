@@ -1,10 +1,16 @@
 import { PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, cuy, log, logErr } from './chalk';
-import { constructMintOneTransaction } from '../candy-machine/instructions';
+import {
+  constructCoreMintTransaction,
+  constructMintOneTransaction,
+} from '../candy-machine/instructions';
 import { Metaplex } from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
+import { metaplex, umi } from '../utils/metaplex';
 import { AUTHORITY_GROUP_LABEL } from '../constants';
+import { PrismaService } from 'nestjs-prisma';
+import { TokenStandard } from '@prisma/client';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -17,9 +23,14 @@ interface Options {
 })
 export class MintRemainingCommand extends CommandRunner {
   private readonly metaplex: Metaplex;
-  constructor(private readonly inquirerService: InquirerService) {
+  private readonly umi: Umi;
+  constructor(
+    private readonly inquirerService: InquirerService,
+    private readonly prisma: PrismaService,
+  ) {
     super();
     this.metaplex = metaplex;
+    this.umi = umi;
   }
 
   async run(_: string[], options: Options): Promise<void> {
@@ -46,13 +57,29 @@ export class MintRemainingCommand extends CommandRunner {
 
   async mint(candyMachineAddress: PublicKey) {
     const authority = this.metaplex.identity();
-    const encodedTransactions = await constructMintOneTransaction(
-      this.metaplex,
-      authority.publicKey,
-      candyMachineAddress,
-      AUTHORITY_GROUP_LABEL,
-      [authority.publicKey.toString()],
-    );
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address: candyMachineAddress.toString() },
+    });
+    let encodedTransactions: string[];
+    if (candyMachine.standard == TokenStandard.Core) {
+      encodedTransactions = await constructCoreMintTransaction(
+        this.umi,
+        publicKey(candyMachineAddress),
+        publicKey(authority.publicKey),
+        AUTHORITY_GROUP_LABEL,
+        [authority.publicKey.toString()],
+        candyMachine.lookupTable,
+      );
+    } else {
+      encodedTransactions = await constructMintOneTransaction(
+        this.metaplex,
+        authority.publicKey,
+        candyMachineAddress,
+        AUTHORITY_GROUP_LABEL,
+        [authority.publicKey.toString()],
+      );
+    }
+
     const transactions = encodedTransactions.map((encodedTransaction) => {
       const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
       const transaction = VersionedTransaction.deserialize(transactionBuffer);
