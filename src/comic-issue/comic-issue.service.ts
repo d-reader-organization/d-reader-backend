@@ -634,6 +634,7 @@ export class ComicIssueService {
       mintPrice,
       shouldBePublic,
       collectionSlug,
+      tokenStandard,
       ...updatePayload
     } = publishOnChainDto;
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
@@ -683,6 +684,7 @@ export class ComicIssueService {
         guardParams,
         shouldBePublic: shouldBePublic ?? true,
         uniqueSlug: collectionSlug,
+        tokenStandard,
       });
     } catch (e) {
       // revert in case of failure, handle it gracefully:

@@ -10,13 +10,25 @@ import {
 import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
-  Transaction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import {
   AUTH_RULES,
   AUTH_RULES_ID,
+  MIN_COMPUTE_PRICE,
   MIN_COMPUTE_PRICE_IX,
 } from '../../constants';
+import {
+  Umi,
+  PublicKey as UmiPublicKey,
+  createNoopSigner,
+  none,
+  transactionBuilder,
+} from '@metaplex-foundation/umi';
+import { updateV1 } from '@metaplex-foundation/mpl-core';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import { base64 } from '@metaplex-foundation/umi/serializers';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -96,16 +108,55 @@ export async function constructChangeComicStateTransaction(
       owner,
       newState,
     );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash(
+    'confirmed',
+  );
+  const transactionMessage = new TransactionMessage({
+    payerKey: feePayer,
+    recentBlockhash: latestBlockhash.blockhash,
+    instructions: [MIN_COMPUTE_PRICE_IX, changeComicStateInstruction],
+  }).compileToV0Message([]);
+  const tx = new VersionedTransaction(transactionMessage);
 
-  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-  const tx = new Transaction({
-    feePayer,
-    ...latestBlockhash,
-  }).add(MIN_COMPUTE_PRICE_IX, changeComicStateInstruction);
-
-  const rawTransaction = tx.serialize({
-    requireAllSignatures: false,
-    verifySignatures: false,
-  });
+  const rawTransaction = Buffer.from(tx.serialize());
   return rawTransaction.toString('base64');
+}
+
+export async function constructChangeCoreComicStateTransaction(
+  umi: Umi,
+  signer: UmiPublicKey,
+  collectionMint: UmiPublicKey,
+  asset: UmiPublicKey,
+  newUri: string,
+) {
+  const payer = createNoopSigner(signer);
+  const updateAssetBuilder = await constructUpdateCoreNftTransaction(
+    umi,
+    collectionMint,
+    asset,
+    newUri,
+  );
+  const builder = transactionBuilder()
+    .add(setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }))
+    .add(updateAssetBuilder);
+
+  const transaction = await builder.buildAndSign({ ...umi, payer });
+
+  return base64.deserialize(umi.transactions.serialize(transaction))[0];
+}
+
+export async function constructUpdateCoreNftTransaction(
+  umi: Umi,
+  collectionMint: UmiPublicKey,
+  asset: UmiPublicKey,
+  newUri: string,
+) {
+  const updateAssetBuilder = updateV1(umi, {
+    asset,
+    authority: umi.identity,
+    newUri,
+    collection: collectionMint,
+    newName: none(),
+  });
+  return updateAssetBuilder;
 }
