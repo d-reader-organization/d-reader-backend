@@ -44,7 +44,7 @@ import {
   create,
   Creator as CoreCmCreator,
   createLutForCandyMachine,
-} from 'cma-preview';
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import { toUmiGroups } from '../../utils/core-candy-machine';
 import { ComicIssueCMInput } from '../../comic-issue/dto/types';
 import { GuardParams } from '../dto/types';

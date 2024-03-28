@@ -10,7 +10,8 @@ import {
 import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SystemProgram,
-  Transaction,
+  TransactionMessage,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import {
   AUTH_RULES,
@@ -107,17 +108,17 @@ export async function constructChangeComicStateTransaction(
       owner,
       newState,
     );
+  const latestBlockhash = await metaplex.connection.getLatestBlockhash(
+    'confirmed',
+  );
+  const transactionMessage = new TransactionMessage({
+    payerKey: feePayer,
+    recentBlockhash: latestBlockhash.blockhash,
+    instructions: [MIN_COMPUTE_PRICE_IX, changeComicStateInstruction],
+  }).compileToV0Message([]);
+  const tx = new VersionedTransaction(transactionMessage);
 
-  const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-  const tx = new Transaction({
-    feePayer,
-    ...latestBlockhash,
-  }).add(MIN_COMPUTE_PRICE_IX, changeComicStateInstruction);
-
-  const rawTransaction = tx.serialize({
-    requireAllSignatures: false,
-    verifySignatures: false,
-  });
+  const rawTransaction = Buffer.from(tx.serialize());
   return rawTransaction.toString('base64');
 }
 
@@ -140,6 +141,7 @@ export async function constructChangeCoreComicStateTransaction(
     .add(updateAssetBuilder);
 
   const transaction = await builder.buildAndSign({ ...umi, payer });
+
   return base64.deserialize(umi.transactions.serialize(transaction))[0];
 }
 

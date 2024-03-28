@@ -13,7 +13,7 @@ import {
   DefaultGuardSetArgs,
   getMerkleRoot,
   addConfigLines,
-} from 'cma-preview';
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import { GuardParams } from '../candy-machine/dto/types';
 import {
   AUTHORITY_GROUP_LABEL,

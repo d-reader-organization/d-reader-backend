@@ -13,6 +13,12 @@ import { Injectable } from '@nestjs/common';
 import { TokenStandard } from '@prisma/client';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
+import {
+  fetchOffChainMetadata,
+  findRarityTrait,
+  findSignedTrait,
+  findUsedTrait,
+} from '../utils/nft-metadata';
 
 @Injectable()
 export class TransactionService {
@@ -60,8 +66,8 @@ export class TransactionService {
       ownerAddress,
       collectionNftAddress,
       candyMachine,
-      metadata,
       collectionNft,
+      metadata,
       name,
     } = await this.prisma.nft.findUnique({
       where: { address: mint.toString() },
@@ -74,12 +80,16 @@ export class TransactionService {
 
     if (candyMachine.standard == TokenStandard.Core) {
       const { comicIssue } = collectionNft;
-      let isUsed = metadata.isUsed;
-      let isSigned = metadata.isSigned;
+
+      // Fetch asset from onchain in case our database is out of sync
+      const assetData = await fetchAssetV1(umi, publicKey(mint));
+      const offChainMetadata = await fetchOffChainMetadata(assetData.uri);
+      let isUsed = findUsedTrait(offChainMetadata);
+      let isSigned = findSignedTrait(offChainMetadata);
 
       let signer = publicKey(ownerAddress);
       if (newState === ComicStateArgs.Sign) {
-        if (metadata.isSigned) {
+        if (isSigned) {
           throw new Error('Comic is already signed');
         }
         if (feePayer.toString() != comicIssue.creatorAddress) {
@@ -88,12 +98,9 @@ export class TransactionService {
         isSigned = true;
         signer = publicKey(feePayer);
       } else {
-        if (metadata.isUsed) {
+        if (isUsed) {
           throw new Error('Comic is already unwrapped');
         }
-
-        // Fetch asset from onchain in case our database is out of sync
-        const assetData = await fetchAssetV1(umi, publicKey(mint));
 
         if (assetData.owner.toString() !== ownerAddress) {
           throw new Error(`Unauthorized to change comic state`);
@@ -105,7 +112,7 @@ export class TransactionService {
         where: {
           isUsed,
           isSigned,
-          rarity: metadata.rarity,
+          rarity: findRarityTrait(offChainMetadata),
           collectionName: name.split('#')[0].trimEnd(),
         },
       });

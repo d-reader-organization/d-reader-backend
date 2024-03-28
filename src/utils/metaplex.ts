@@ -14,7 +14,7 @@ import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import { keypairIdentity as umiKeypairIdentity } from '@metaplex-foundation/umi';
 import { mplCore } from '@metaplex-foundation/mpl-core';
-import { mplCandyMachine } from 'cma-preview';
+import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 
 export type MetdataFile = {
   type?: string;

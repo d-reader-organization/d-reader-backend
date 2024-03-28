@@ -2311,10 +2311,20 @@
     "@solana/spl-token" "^0.3.6"
     "@solana/web3.js" "^1.66.2"
 
-"@metaplex-foundation/mpl-core@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core/-/mpl-core-0.2.0.tgz#f537ef909b314b1817a4d5e7f0362de3f96573bf"
-  integrity sha512-J7stQipmqf8nBjWnNZhxGqnP3f6crqh7bYSpECEZrXIAfpSKrBRqaJCqaWnfCuUsAhIaOpv3KdbXRDHQ9TfVmw==
+"@metaplex-foundation/mpl-core-candy-machine@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core-candy-machine/-/mpl-core-candy-machine-0.1.2.tgz#88031315ff5fda41df12c9a007cc6e6ccc2b9d80"
+  integrity sha512-Wq9iy1P2B32+9myBjosKD+nkdiqMjEbmkZ4geFKw1n/d5lcQxUd9BrYmkm9Jy+vG0zQPb9eNYmYTpBEbdeN02A==
+  dependencies:
+    "@metaplex-foundation/mpl-token-metadata" "3.0.0-alpha.27"
+    "@metaplex-foundation/mpl-toolbox" "^0.9.0"
+    "@noble/hashes" "^1.2.0"
+    merkletreejs "^0.3.9"
+
+"@metaplex-foundation/mpl-core@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core/-/mpl-core-0.3.0.tgz#302d0c6b5ae50d02e803743120fffbdc20e3bf45"
+  integrity sha512-ZGK4sVSlRWLkZQpYzctEF978lCOXKTy73Jr7IKIFXK3C2xGLEg4GRuN/SBtByQA5u/vxqkAp04ZiVXhoVWtJSQ==
 
 "@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27":
   version "3.0.0-alpha.27"
@@ -5847,16 +5857,6 @@ clone@^1.0.2:
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==
 
-cma-preview@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/cma-preview/-/cma-preview-0.0.3.tgz#75202668677bd05dd16b628d1a3db8a3a01c4684"
-  integrity sha512-rijpzXV1XpyNc06sdtI8SbLXsoDih345V1tKOGuuKcm8mbT+kTL3+z1zHsXJK9wmOViEe07LBxcAQ9yoKZjIyA==
-  dependencies:
-    "@metaplex-foundation/mpl-token-metadata" "3.0.0-alpha.27"
-    "@metaplex-foundation/mpl-toolbox" "^0.9.0"
-    "@noble/hashes" "^1.2.0"
-    merkletreejs "^0.3.9"
-
 co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
@@ -6053,11 +6053,6 @@ cookiejar@^2.1.4:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/cookiejar/-/cookiejar-2.1.4.tgz#ee669c1fea2cf42dc31585469d193fef0d65771b"
   integrity sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==
-
-core-preview@^0.1.3:
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/core-preview/-/core-preview-0.1.3.tgz#255907bf1a8a73e9ca1a3c3e324b3ee6c4f09842"
-  integrity sha512-URj9Pf+bj1vzqJEvWBN9C+MNMG0lmffSio8bTIU7hl7q4IW00AMShSOtfqmvleQ21/KJR+rUtBtNF/uMefCWMw==
 
 core-util-is@^1.0.3, core-util-is@~1.0.0:
   version "1.0.3"
