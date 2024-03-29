@@ -106,7 +106,11 @@ import {
   GuardGroup as CoreGuardGroup,
   AllowList,
 } from '@metaplex-foundation/mpl-core-candy-machine';
-import { createCollectionV1 } from '@metaplex-foundation/mpl-core';
+import {
+  createCollectionV1,
+  pluginAuthorityPair,
+  ruleSet,
+} from '@metaplex-foundation/mpl-core';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
@@ -174,6 +178,7 @@ export class CandyMachineService {
     comicIssue: ComicIssueCMInput,
     onChainName: string,
     uniqueSlug: string,
+    royaltyWallets: JsonMetadataCreators,
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
     tokenStandard?: TokenStandard,
@@ -238,10 +243,28 @@ export class CandyMachineService {
 
       if (tokenStandard == TokenStandard.Core) {
         const collection = generateSigner(umi);
+        const creators = royaltyWallets.map((item) => {
+          return {
+            address: publicKey(item.address),
+            percentage: item.share,
+          };
+        });
+
         const collectionBuilder = createCollectionV1(umi, {
           collection,
           uri: collectionNftUri,
           name: onChainName,
+          plugins: [
+            pluginAuthorityPair({
+              type: 'Royalties',
+              data: {
+                basisPoints: sellerFeeBasisPoints,
+                creators,
+                // Change in future if encounters with a marketplace not enforcing royalties
+                ruleSet: ruleSet('None'),
+              },
+            }),
+          ],
         });
 
         await collectionBuilder.sendAndConfirm(umi, {
@@ -300,6 +323,7 @@ export class CandyMachineService {
         comicIssue,
         onChainName,
         uniqueSlug,
+        royaltyWallets,
         statelessCovers,
         statefulCovers,
         tokenStandard,
