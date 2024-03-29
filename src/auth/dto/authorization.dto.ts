@@ -27,6 +27,14 @@ export type CreatorPayload = {
   name: Creator['name'];
 };
 
+export type GoogleUserPayload = {
+  type: 'google';
+  email: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+};
+
 export type JwtPayload = UserPayload | CreatorPayload;
 export type JwtDto = JwtPayload & BaseJwtPayload;
 

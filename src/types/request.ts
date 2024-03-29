@@ -3,6 +3,7 @@ import {
   JwtPayload,
   UserPayload,
   CreatorPayload,
+  GoogleUserPayload,
 } from '../auth/dto/authorization.dto';
 
 export interface Request extends ExpressRequest {
@@ -15,4 +16,8 @@ export interface UserRequest extends ExpressRequest {
 
 export interface CreatorRequest extends ExpressRequest {
   user?: CreatorPayload;
+}
+
+export interface GoogleUserRequest extends ExpressRequest {
+  user: GoogleUserPayload;
 }
