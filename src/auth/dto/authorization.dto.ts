@@ -29,6 +29,7 @@ export type CreatorPayload = {
 
 export type GoogleUserPayload = {
   type: 'google';
+  id?: string;
   email: string;
   name?: string;
   given_name?: string;

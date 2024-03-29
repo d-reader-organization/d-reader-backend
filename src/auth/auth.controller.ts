@@ -50,7 +50,7 @@ export class AuthController {
   @GoogleUserAuth()
   @Get('user/google-login')
   async googleLogin(@GoogleUserEntity() user: GoogleUserPayload) {
-    return user;
+    return await this.userService.handleGoogleSignIn(user);
   }
 
   @SkipThrottle()

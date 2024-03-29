@@ -17,6 +17,7 @@ export class GoogleAuthService {
     const { data: user } = await oauth2.userinfo.get();
     return {
       type: 'google',
+      id: user.id,
       email: user.email,
       family_name: user.family_name,
       given_name: user.given_name,

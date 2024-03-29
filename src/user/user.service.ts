@@ -27,7 +27,11 @@ import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
-import { EmailPayload, UserPayload } from '../auth/dto/authorization.dto';
+import {
+  EmailPayload,
+  GoogleUserPayload,
+  UserPayload,
+} from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
 
 const getS3Folder = (id: number) => `users/${id}/`;
@@ -51,7 +55,7 @@ export class UserService {
     validateEmail(email);
 
     const [hashedPassword] = await Promise.all([
-      this.passwordService.hash(password),
+      password && this.passwordService.hash(password),
       this.throwIfNameTaken(name),
       this.throwIfEmailTaken(email),
     ]);
@@ -93,6 +97,33 @@ export class UserService {
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
+  }
+
+  async handleGoogleSignIn(googleUser: GoogleUserPayload) {
+    const { id, email, family_name, given_name } = googleUser;
+
+    try {
+      const user = await this.findByEmail(email);
+
+      if (user && !user.password.length) {
+        return this.authService.authorizeUser(user);
+      }
+      throw new BadRequestException(
+        'An account is linked to this email address. Please log in using the standard method.',
+      );
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      const user = await this.register({
+        email,
+        name: `${given_name}_${family_name}_${id}`
+          .substring(0, 20)
+          .toLowerCase(),
+        password: '',
+      });
+      return this.authService.authorizeUser(user);
+    }
   }
 
   async syncWallets(id: number) {
