@@ -19,6 +19,7 @@ import {
   StartDateGuardSettings,
   EndDateGuardSettings,
   MintLimitGuardSettings,
+  MetaplexFile,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
@@ -165,36 +166,29 @@ export class CandyMachineService {
     });
   }
 
-  async createComicIssueCM({
-    comicIssue,
-    comicName,
-    onChainName,
-    guardParams,
-    shouldBePublic,
-    uniqueSlug,
-    tokenStandard,
-  }: {
-    comicIssue: ComicIssueCMInput;
-    comicName: string;
-    onChainName: string;
-    guardParams: GuardParams;
-    shouldBePublic?: boolean;
-    tokenStandard?: TokenStandard;
-    uniqueSlug: string;
-  }) {
-    validateComicIssueCMInput(comicIssue);
-    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
-
-    const { statefulCovers, statelessCovers, rarityCoverFiles } =
-      await this.getComicIssueCovers(comicIssue);
+  async getOrCreateComicIssueCollection(
+    comicIssue: ComicIssueCMInput,
+    onChainName: string,
+    uniqueSlug: string,
+    statelessCovers: MetaplexFile[],
+    statefulCovers: MetaplexFile[],
+    tokenStandard?: TokenStandard,
+  ) {
+    const {
+      pdf,
+      id: comicIssueId,
+      description,
+      creatorAddress,
+      title,
+      sellerFeeBasisPoints,
+    } = comicIssue;
 
     const cover = findDefaultCover(comicIssue.statelessCovers);
     const coverImage = await s3toMxFile(cover.image);
-
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
     const collectionNft = await this.prisma.collectionNft.findUnique({
-      where: { comicIssueId: comicIssue.id },
+      where: { comicIssueId },
     });
 
     let darkblockId = '';
@@ -203,11 +197,11 @@ export class CandyMachineService {
       // TODO: Either store darkblockId in collection or fetch the id from offchain metadata
     } else {
       let darkblockMetadataFile: MetdataFile;
-      if (comicIssue.pdf) {
+      if (pdf) {
         darkblockId = await this.darkblockService.mintDarkblock(
-          comicIssue.pdf,
-          comicIssue.description,
-          comicIssue.creatorAddress,
+          pdf,
+          description,
+          creatorAddress,
         );
         darkblockMetadataFile = {
           type: 'Darkblock',
@@ -218,10 +212,10 @@ export class CandyMachineService {
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
-          name: comicIssue.title,
+          name: title,
           symbol: D_PUBLISHER_SYMBOL,
-          description: comicIssue.description,
-          seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
+          description: description,
+          seller_fee_basis_points: sellerFeeBasisPoints,
           image: coverImage,
           external_url: D_READER_FRONTEND_URL,
           properties: {
@@ -257,7 +251,7 @@ export class CandyMachineService {
           this.metaplex,
           onChainName,
           collectionNftUri,
-          comicIssue.sellerFeeBasisPoints,
+          sellerFeeBasisPoints,
         );
         collectionNftAddress = newCollectionNft.address;
       }
@@ -271,6 +265,41 @@ export class CandyMachineService {
         },
       });
     }
+    return { collectionNftAddress, darkblockId };
+  }
+
+  async createComicIssueCM({
+    comicIssue,
+    comicName,
+    onChainName,
+    guardParams,
+    shouldBePublic,
+    uniqueSlug,
+    tokenStandard,
+  }: {
+    comicIssue: ComicIssueCMInput;
+    comicName: string;
+    onChainName: string;
+    guardParams: GuardParams;
+    shouldBePublic?: boolean;
+    tokenStandard?: TokenStandard;
+    uniqueSlug: string;
+  }) {
+    validateComicIssueCMInput(comicIssue);
+    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
+
+    const { statefulCovers, statelessCovers, rarityCoverFiles } =
+      await this.getComicIssueCovers(comicIssue);
+
+    const { collectionNftAddress, darkblockId } =
+      await this.getOrCreateComicIssueCollection(
+        comicIssue,
+        onChainName,
+        uniqueSlug,
+        statelessCovers,
+        statefulCovers,
+        tokenStandard,
+      );
 
     const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
       guardParams;
