@@ -111,6 +111,10 @@ import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
 import { base58 } from '@metaplex-foundation/umi/serializers';
+import {
+  deleteCoreCandyMachine,
+  deleteLegacyCandyMachine,
+} from './instructions/delete-candy-machine';
 
 @Injectable()
 export class CandyMachineService {
@@ -1156,43 +1160,18 @@ export class CandyMachineService {
   }
 
   async deleteCandyMachine(address: PublicKey) {
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address });
-
-    const deleteCandyMachineBuilder = this.metaplex
-      .candyMachines()
-      .builders()
-      .delete({ candyMachine: address });
-
-    const deleteCandyGuardBuilder = this.metaplex
-      .candyMachines()
-      .builders()
-      .deleteCandyGuard({ candyGuard: candyMachine.mintAuthorityAddress });
-
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
-      commitment: 'confirmed',
-    });
-
-    const deleteCandyMachineTransaction =
-      deleteCandyMachineBuilder.toTransaction(latestBlockhash);
-    const deleteCandyGuardTransaction =
-      deleteCandyGuardBuilder.toTransaction(latestBlockhash);
-
-    const transaction = new Transaction({
-      feePayer: this.metaplex.identity().publicKey,
-      ...latestBlockhash,
-    }).add(
-      MIN_COMPUTE_PRICE_IX,
-      deleteCandyMachineTransaction,
-      deleteCandyGuardTransaction,
-    );
-
-    const signature = await sendAndConfirmTransaction(
-      this.metaplex.connection,
-      transaction,
-      [this.metaplex.identity()],
-    );
-    return signature;
+    const { standard, mintAuthorityAddress } =
+      await this.prisma.candyMachine.findUnique({
+        where: { address: address.toString() },
+      });
+    if (standard == TokenStandard.Core) {
+      return deleteCoreCandyMachine(
+        this.umi,
+        publicKey(address),
+        publicKey(mintAuthorityAddress),
+      );
+    } else {
+      return deleteLegacyCandyMachine(this.metaplex, address);
+    }
   }
 }
