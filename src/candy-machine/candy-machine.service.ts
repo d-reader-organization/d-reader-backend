@@ -336,7 +336,6 @@ export class CandyMachineService {
     let candyMachineAddress: string;
     if (tokenStandard == TokenStandard.Core) {
       console.log('Create Core Candy Machine');
-      // TODO: Check if royalty enforcement plugin comes by default or no
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
         publicKey(collectionNftAddress),
