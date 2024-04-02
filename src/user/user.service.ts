@@ -92,6 +92,12 @@ export class UserService {
       user = await this.findByName(nameOrEmail);
     }
 
+    if (!user.password.length) {
+      throw new BadRequestException(
+        'This account is already linked to a Google Account. Please use google sign in.',
+      );
+    }
+
     await this.passwordService.validate(password, user.password);
     return this.prisma.user.update({
       where: { id: user.id },
