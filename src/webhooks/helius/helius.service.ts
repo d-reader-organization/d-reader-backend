@@ -265,7 +265,7 @@ export class HeliusService {
       enrichedTransaction.instructions.at(-1).accounts[2];
     const ownerAddress =
       enrichedTransaction.nativeTransfers.at(0).fromUserAccount;
-    const mint = enrichedTransaction.nativeTransfers.at(-1).toUserAccount;
+    const mint = enrichedTransaction.instructions.at(-1).accounts[7];
 
     const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
       'confirmed',
