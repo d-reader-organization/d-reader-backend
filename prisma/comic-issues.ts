@@ -94,6 +94,7 @@ export const gorecatsEp1Data = (
   pages: pages('comics/gorecats/issues/rise-of-the-gorecats/pages', 6, 6),
   isFreeToRead: false,
   isFullyUploaded: true,
+  s3BucketSlug: 'rise-of-the-gorecats',
 });
 
 export const babiesEp1Data = (
@@ -115,6 +116,7 @@ export const babiesEp1Data = (
   pages: pages('comics/barbabyans/issues/adventure-begins/pages', 5, 5),
   isFreeToRead: false,
   isFullyUploaded: true,
+  s3BucketSlug: 'adventure-begins',
 });
 
 export const nikoEp1Data = (
@@ -135,6 +137,7 @@ export const nikoEp1Data = (
   pages: pages('comics/niko-and-the-sword/issues/many-moons-ago/pages', 3, 3),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'many-moons-ago',
 });
 
 export const narentinesEp1Data = (
@@ -156,6 +159,7 @@ export const narentinesEp1Data = (
   pages: pages('comics/narentines/issues/narentines-the-purge/pages', 1, 1),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'narentines-the-purge',
 });
 
 export const lupersEp1Data = (
@@ -177,6 +181,7 @@ export const lupersEp1Data = (
   pages: pages('comics/lupers/issues/tome-of-knowledge/pages', 12, 12),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'tome-of-knowledge',
 });
 
 export const gooneyEp1Data = (
@@ -197,6 +202,7 @@ export const gooneyEp1Data = (
   pages: pages('comics/gooneytoons/issues/birth-of-the-gooneys/pages', 1, 1),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'birth-of-the-gooneys',
 });
 
 export const gooneyEp2Data = (
@@ -216,6 +222,7 @@ export const gooneyEp2Data = (
   creatorBackupAddress: metaplex.identity().publicKey.toBase58(),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'carnage-of-the-gooneys',
 });
 
 export const gooneyEp3Data = (
@@ -235,6 +242,7 @@ export const gooneyEp3Data = (
   creatorBackupAddress: metaplex.identity().publicKey.toBase58(),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'mutation-of-the-gooneys',
 });
 
 export const gooneyEp4Data = (
@@ -254,6 +262,7 @@ export const gooneyEp4Data = (
   creatorBackupAddress: metaplex.identity().publicKey.toBase58(),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'release-of-the-gooneys',
 });
 
 export const animoEp1Data = (
@@ -273,6 +282,7 @@ export const animoEp1Data = (
   pages: pages('comics/animosities/issues/episode-1/pages', 6, 6),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'episode-1',
 });
 
 export const taintEp1Data = (
@@ -292,6 +302,7 @@ export const taintEp1Data = (
   pages: pages('comics/immaculate-taint/issues/episode-1/pages', 8, 8),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'episode-1',
 });
 
 export const islandEp1Data = (
@@ -311,6 +322,7 @@ export const islandEp1Data = (
   pages: pages('comics/island/issues/episode-1/pages', 11, 11),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'episode-1',
 });
 
 export const wretchesEp1Data = (
@@ -332,6 +344,7 @@ export const wretchesEp1Data = (
   pages: pages('comics/wretches/issues/issue-1/pages', 7, 7),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-1',
 });
 
 export const wretchesEp2Data = (
@@ -352,6 +365,7 @@ export const wretchesEp2Data = (
   pages: pages('comics/wretches/issues/issue-2/pages', 6, 6),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-2',
 });
 
 export const wretchesEp3Data = (
@@ -372,6 +386,7 @@ export const wretchesEp3Data = (
   pages: pages('comics/wretches/issues/issue-3/pages', 6, 6),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-3',
 });
 
 export const wretchesEp4Data = (
@@ -392,6 +407,7 @@ export const wretchesEp4Data = (
   pages: pages('comics/wretches/issues/issue-4/pages', 5, 5),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-4',
 });
 
 export const wretchesEp5Data = (
@@ -412,6 +428,7 @@ export const wretchesEp5Data = (
   pages: pages('comics/wretches/issues/issue-5/pages', 6, 6),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-5',
 });
 
 export const wretchesEp6Data = (
@@ -432,6 +449,7 @@ export const wretchesEp6Data = (
   pages: pages('comics/wretches/issues/issue-6/pages', 5, 5),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-6',
 });
 
 export const janaEp1Data = (
@@ -454,6 +472,7 @@ export const janaEp1Data = (
   pages: pages('comics/jana/issues/issue-1/pages', 10, 10),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-1',
 });
 
 export const janaEp2Data = (
@@ -475,6 +494,7 @@ export const janaEp2Data = (
   pages: pages('comics/jana/issues/issue-2/pages', 5, 5),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-2',
 });
 
 export const countyEp1Data = (
@@ -496,6 +516,7 @@ export const countyEp1Data = (
   pages: pages('comics/knockturn-county/issues/issue-1/pages', 14, 14),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'issue-1',
 });
 
 export const countyEp2Data = (
@@ -517,6 +538,7 @@ export const countyEp2Data = (
   pages: pages('comics/knockturn-county/issues/issue-2/pages', 5, 5),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'issue-2',
 });
 
 export const watersEp1Data = (
@@ -538,6 +560,7 @@ There are issues facing our planet that, if we don\'t see them, if they\'re not 
   pages: pages('comics/dark-waters/issues/treacherous-seas/pages', 10, 10),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'treacherous-seas',
 });
 
 export const versusEp1Data = (
@@ -559,6 +582,7 @@ export const versusEp1Data = (
   pages: pages('comics/multi-versus/issues/episode-1/pages', 5, 5),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'episode-1',
 });
 
 export const tsukiEp1Data = (
@@ -579,6 +603,7 @@ export const tsukiEp1Data = (
   pages: pages('comics/tsukiverse/issues/issue-1/pages', 1, 1),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'issue-1',
 });
 
 export const portalEp1Data = (
@@ -600,6 +625,7 @@ export const portalEp1Data = (
   pages: pages('comics/the-dark-portal/issues/concept-art/pages', 9, 9),
   isFreeToRead: true,
   isFullyUploaded: false,
+  s3BucketSlug: 'concept-art',
 });
 
 export const heistEp1Data = (
@@ -620,6 +646,7 @@ export const heistEp1Data = (
   pages: pages('comics/the-heist/issues/how-it-all-began/pages', 1, 1),
   isFreeToRead: false,
   isFullyUploaded: false,
+  s3BucketSlug: 'how-it-all-began',
 });
 
 export const birthEp1Data = (
@@ -639,6 +666,7 @@ export const birthEp1Data = (
   pages: pages('comics/birthday/issues/episode-1/pages', 4, 2),
   isFreeToRead: true,
   isFullyUploaded: true,
+  s3BucketSlug: 'episode-1',
 });
 
 // Add missing comics, Chtulu, Geckos, Tensorians etc.?

@@ -25,6 +25,7 @@ export const studioNx = async (): Promise<
   instagram: 'https://www.instagram.com/jim_bryson',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'studio-nx',
 });
 
 export const swamplabs = async (): Promise<
@@ -44,6 +45,7 @@ export const swamplabs = async (): Promise<
   twitter: 'https://twitter.com/lupers_world',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'swamplabs',
 });
 
 export const gonneytoons = async (): Promise<
@@ -64,6 +66,7 @@ export const gonneytoons = async (): Promise<
   instagram: 'https://www.instagram.com/gooneytoons.nft',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'gooneytoons-studio',
 });
 
 export const saucerpen = async (): Promise<
@@ -83,6 +86,7 @@ export const saucerpen = async (): Promise<
   instagram: 'https://www.instagram.com/korina.hunjak/',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'saucerpen',
 });
 
 export const madMuse = async (): Promise<Prisma.CreatorCreateArgs['data']> => ({
@@ -101,6 +105,7 @@ export const madMuse = async (): Promise<Prisma.CreatorCreateArgs['data']> => ({
   instagram: 'https://www.instagram.com/jameseroche',
   verifiedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'mad-muse-syndicate',
 });
 
 export const tsukiverse = async (): Promise<
@@ -122,6 +127,7 @@ export const tsukiverse = async (): Promise<
   verifiedAt: new Date(),
   popularizedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'goose-0-x',
 });
 
 export const longwood = async (): Promise<
@@ -141,4 +147,5 @@ export const longwood = async (): Promise<
   verifiedAt: new Date(),
   popularizedAt: new Date(),
   emailVerifiedAt: new Date(),
+  s3BucketSlug: 'longwoodlabs',
 });
