@@ -22,7 +22,7 @@ export class GoogleAuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      const isValid = await this.googleAuthService.validateAccessToken(token);
+      const isValid = await this.googleAuthService.isValidGoogleToken(token);
       if (!isValid) {
         throw new BadRequestException('Malformed or expired token');
       }

@@ -25,15 +25,9 @@ export class GoogleAuthService {
     };
   }
 
-  async validateAccessToken(accessToken: string): Promise<boolean> {
+  async isValidGoogleToken(accessToken: string): Promise<boolean> {
     const oauth2Client = getGoogleOAuthClient();
-    try {
-      const tokenInfo = await oauth2Client.getTokenInfo(accessToken);
-      return (
-        differenceInSeconds(new Date(tokenInfo.expiry_date), new Date()) > 0
-      );
-    } catch (error) {
-      throw error;
-    }
+    const tokenInfo = await oauth2Client.getTokenInfo(accessToken);
+    return differenceInSeconds(new Date(tokenInfo.expiry_date), new Date()) > 0;
   }
 }

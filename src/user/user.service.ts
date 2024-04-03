@@ -33,6 +33,7 @@ import {
   UserPayload,
 } from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
+import { USERNAME_MAX_SIZE } from 'src/constants';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -106,7 +107,7 @@ export class UserService {
   }
 
   async handleGoogleSignIn(googleUser: GoogleUserPayload) {
-    const { id, email, family_name, given_name } = googleUser;
+    const { id, email, given_name } = googleUser;
 
     try {
       const user = await this.findByEmail(email);
@@ -123,8 +124,8 @@ export class UserService {
       }
       const user = await this.register({
         email,
-        name: `${given_name}_${family_name}_${id}`
-          .substring(0, 20)
+        name: `${given_name}_${id}`
+          .substring(0, USERNAME_MAX_SIZE)
           .toLowerCase(),
         password: '',
       });
