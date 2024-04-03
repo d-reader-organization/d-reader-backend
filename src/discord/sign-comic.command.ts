@@ -341,7 +341,7 @@ export class GetSignCommand {
       };
     }
 
-    if (candyMachine.standard == TokenStandard.Core) {
+    if (candyMachine.standard === TokenStandard.Core) {
       return this.validateCoreAsset(address, candyMachine);
     }
     return this.validateLegacyAsset(address, candyMachine);

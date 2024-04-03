@@ -96,7 +96,7 @@ export class UpdateDateCommand extends CommandRunner {
     }
   }
 
-  async updateDateForCoreCandyMachine(
+  async updateCoreCandyMachineDate(
     options: Options,
     candyGuardAddress: string,
   ) {
@@ -148,8 +148,8 @@ export class UpdateDateCommand extends CommandRunner {
         where: { address: candyMachineAddress },
       });
 
-      if (candyMachine.standard == TokenStandard.Core) {
-        await this.updateDateForCoreCandyMachine(
+      if (candyMachine.standard === TokenStandard.Core) {
+        await this.updateCoreCandyMachineDate(
           options,
           candyMachine.mintAuthorityAddress,
         );

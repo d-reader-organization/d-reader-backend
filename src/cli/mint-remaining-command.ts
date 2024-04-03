@@ -61,7 +61,7 @@ export class MintRemainingCommand extends CommandRunner {
       where: { address: candyMachineAddress.toString() },
     });
     let encodedTransactions: string[];
-    if (candyMachine.standard == TokenStandard.Core) {
+    if (candyMachine.standard === TokenStandard.Core) {
       encodedTransactions = await constructCoreMintTransaction(
         this.umi,
         publicKey(candyMachineAddress),

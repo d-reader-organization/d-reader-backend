@@ -78,7 +78,7 @@ export class TransactionService {
       },
     });
 
-    if (candyMachine.standard == TokenStandard.Core) {
+    if (candyMachine.standard === TokenStandard.Core) {
       const { comicIssue } = collectionNft;
 
       // Fetch asset from onchain in case our database is out of sync

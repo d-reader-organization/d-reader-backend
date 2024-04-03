@@ -357,7 +357,7 @@ export function validateBalanceForMint(
 ): void {
   // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
   const protocolFee =
-    tokenStandard == TokenStandard.Core
+    tokenStandard === TokenStandard.Core
       ? MIN_CORE_MINT_PROTOCOL_FEE
       : MIN_MINT_PROTOCOL_FEE;
 

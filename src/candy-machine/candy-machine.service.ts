@@ -241,7 +241,7 @@ export class CandyMachineService {
           },
         });
 
-      if (tokenStandard == TokenStandard.Core) {
+      if (tokenStandard === TokenStandard.Core) {
         const collection = generateSigner(umi);
         const creators = royaltyWallets.map((item) => {
           return {
@@ -334,7 +334,7 @@ export class CandyMachineService {
 
     let candyMachine: LegacyCandyMachine | CoreCandyMachine;
     let candyMachineAddress: string;
-    if (tokenStandard == TokenStandard.Core) {
+    if (tokenStandard === TokenStandard.Core) {
       console.log('Create Core Candy Machine');
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
@@ -615,7 +615,7 @@ export class CandyMachineService {
     const balance = await this.metaplex.connection.getBalance(feePayer);
     validateBalanceForMint(mintPrice, balance, tokenStandard);
 
-    if (tokenStandard == TokenStandard.Core) {
+    if (tokenStandard === TokenStandard.Core) {
       return await constructCoreMintTransaction(
         this.umi,
         publicKey(candyMachineAddress),
@@ -952,7 +952,7 @@ export class CandyMachineService {
       where: { address: candyMachineAddress },
     });
 
-    if (candyMachineData.standard == TokenStandard.Core) {
+    if (candyMachineData.standard === TokenStandard.Core) {
       const candyGuard = await fetchCandyGuard(
         this.umi,
         publicKey(candyMachineData.mintAuthorityAddress),
@@ -1187,7 +1187,7 @@ export class CandyMachineService {
       await this.prisma.candyMachine.findUnique({
         where: { address: address.toString() },
       });
-    if (standard == TokenStandard.Core) {
+    if (standard === TokenStandard.Core) {
       return deleteCoreCandyMachine(
         this.umi,
         publicKey(address),
