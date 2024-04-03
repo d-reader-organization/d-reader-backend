@@ -265,6 +265,7 @@ Table CandyMachine {
   items Nft [not null]
   receipts CandyMachineReceipt [not null]
   groups CandyMachineGroup [not null]
+  standard TokenStandard [not null, default: 'Legacy']
 }
 
 Table CandyMachineGroup {
@@ -508,6 +509,12 @@ Enum ComicRarity {
   Rare
   Epic
   Legendary
+}
+
+Enum TokenStandard {
+  Legacy
+  Compression
+  Core
 }
 
 Enum CarouselLocation {

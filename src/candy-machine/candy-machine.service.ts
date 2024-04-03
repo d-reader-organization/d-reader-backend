@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
-  Keypair,
   PublicKey,
-  SYSVAR_SLOT_HASHES_PUBKEY,
   Transaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
@@ -11,10 +9,9 @@ import {
   Metaplex,
   toBigNumber,
   DefaultCandyGuardSettings,
-  CandyMachine,
+  CandyMachine as LegacyCandyMachine,
   getMerkleRoot,
   toDateTime,
-  CreateCandyMachineInput,
   WRAPPED_SOL_MINT,
   AllowListGuardSettings,
   isNft,
@@ -22,11 +19,12 @@ import {
   StartDateGuardSettings,
   EndDateGuardSettings,
   MintLimitGuardSettings,
+  MetaplexFile,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
 import {
+  constructCoreMintTransaction,
   constructMintOneTransaction,
-  initializeRecordAuthority,
 } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
@@ -34,14 +32,13 @@ import {
   D_PUBLISHER_SYMBOL,
   HUNDRED,
   D_READER_FRONTEND_URL,
-  BOT_TAX,
   FREEZE_NFT_DAYS,
   DAY_SECONDS,
   AUTHORITY_GROUP_LABEL,
   PUBLIC_GROUP_LABEL,
-  PUBLIC_GROUP_MINT_LIMIT_ID,
   FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE_IX,
+  MIN_COMPUTE_PRICE,
 } from '../constants';
 import {
   doesWalletIndexCorrectly,
@@ -50,14 +47,14 @@ import {
   sleep,
   solFromLamports,
 } from '../utils/helpers';
-import { MetdataFile, metaplex, writeFiles } from '../utils/metaplex';
+import { MetdataFile, metaplex, umi, writeFiles } from '../utils/metaplex';
 import {
   findDefaultCover,
   getStatefulCoverName,
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
-import { GuardGroup, RarityCoverFiles } from '../types/shared';
+import { LegacyGuardGroup, RarityCoverFiles } from '../types/shared';
 import {
   generatePropertyName,
   insertItems,
@@ -66,22 +63,67 @@ import {
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
-import { Prisma } from '@prisma/client';
-import { CandyMachineGroupSettings, GuardParams } from './dto/types';
-import { constructCandyMachineTransaction } from './instructions/initialize-candy-machine';
-import { constructThawTransaction } from './instructions/route';
-import { createLookupTable } from '../utils/lookup-table';
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+  Prisma,
+  TokenStandard,
+  ComicRarity as PrismaComicRarity,
+} from '@prisma/client';
+import { CandyMachineGroupSettings, GuardParams } from './dto/types';
+import { ComicRarity } from 'dreader-comic-verse';
+import {
+  createCoreCandyMachine,
+  createLegacyCandyMachine,
+} from './instructions/initialize-candy-machine';
+import { constructThawTransaction } from './instructions/route';
 import { createCollectionNft } from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
+import {
+  Umi,
+  generateSigner,
+  publicKey,
+  PublicKey as UmiPublicKey,
+  transactionBuilder,
+  some,
+  lamports as umiLamports,
+  dateTime as umiDateTime,
+  none,
+  createBigInt,
+  Option,
+} from '@metaplex-foundation/umi';
+import {
+  fetchCandyMachine,
+  findCandyMachineAuthorityPda,
+  CandyMachine as CoreCandyMachine,
+  updateCandyGuard,
+  DefaultGuardSetArgs,
+  fetchCandyGuard,
+  getMerkleRoot as getCoreMekleRoot,
+  DefaultGuardSet,
+  RedeemedAmount,
+  StartDate,
+  EndDate,
+  GuardGroup as CoreGuardGroup,
+  AllowList,
+} from '@metaplex-foundation/mpl-core-candy-machine';
+import {
+  createCollectionV1,
+  pluginAuthorityPair,
+  ruleSet,
+} from '@metaplex-foundation/mpl-core';
+import { insertCoreItems } from '../utils/core-candy-machine';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
+import { base58 } from '@metaplex-foundation/umi/serializers';
+import {
+  deleteCoreCandyMachine,
+  deleteLegacyCandyMachine,
+} from './instructions/delete-candy-machine';
 
 @Injectable()
 export class CandyMachineService {
   private readonly metaplex: Metaplex;
+  private readonly umi: Umi;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -89,6 +131,7 @@ export class CandyMachineService {
     private readonly darkblockService: DarkblockService,
   ) {
     this.metaplex = metaplex;
+    this.umi = umi;
   }
 
   async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
@@ -116,7 +159,7 @@ export class CandyMachineService {
   }
 
   async initializeGuardAccounts(
-    candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+    candyMachine: LegacyCandyMachine<DefaultCandyGuardSettings>,
     freezePeriod?: number,
   ) {
     await this.metaplex.candyMachines().callGuardRoute({
@@ -131,49 +174,42 @@ export class CandyMachineService {
     });
   }
 
-  async createComicIssueCM({
-    comicIssue,
-    comicName,
-    onChainName,
-    guardParams,
-    shouldBePublic,
-    uniqueSlug,
-  }: {
-    comicIssue: ComicIssueCMInput;
-    comicName: string;
-    onChainName: string;
-    guardParams: GuardParams;
-    shouldBePublic?: boolean;
-    uniqueSlug: string;
-  }) {
-    validateComicIssueCMInput(comicIssue);
-    const creatorAddress = comicIssue.creatorAddress;
-    const creatorBackupAddress = comicIssue.creatorBackupAddress;
-    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
-
-    const { statefulCovers, statelessCovers, rarityCoverFiles } =
-      await this.getComicIssueCovers(comicIssue);
+  async getOrCreateComicIssueCollection(
+    comicIssue: ComicIssueCMInput,
+    onChainName: string,
+    uniqueSlug: string,
+    royaltyWallets: JsonMetadataCreators,
+    statelessCovers: MetaplexFile[],
+    statefulCovers: MetaplexFile[],
+    tokenStandard?: TokenStandard,
+  ) {
+    const {
+      pdf,
+      id: comicIssueId,
+      description,
+      creatorAddress,
+      title,
+      sellerFeeBasisPoints,
+    } = comicIssue;
 
     const cover = findDefaultCover(comicIssue.statelessCovers);
     const coverImage = await s3toMxFile(cover.image);
-
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
     const collectionNft = await this.prisma.collectionNft.findUnique({
-      where: { comicIssueId: comicIssue.id },
+      where: { comicIssueId },
     });
-
-    const candyMachineKey = Keypair.generate();
 
     let darkblockId = '';
     if (collectionNft) {
       collectionNftAddress = new PublicKey(collectionNft.address);
+      // TODO: Either store darkblockId in collection or fetch the id from offchain metadata
     } else {
       let darkblockMetadataFile: MetdataFile;
-      if (comicIssue.pdf) {
+      if (pdf) {
         darkblockId = await this.darkblockService.mintDarkblock(
-          comicIssue.pdf,
-          comicIssue.description,
+          pdf,
+          description,
           creatorAddress,
         );
         darkblockMetadataFile = {
@@ -185,10 +221,10 @@ export class CandyMachineService {
       const { uri: collectionNftUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
-          name: comicIssue.title,
+          name: title,
           symbol: D_PUBLISHER_SYMBOL,
-          description: comicIssue.description,
-          seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
+          description: description,
+          seller_fee_basis_points: sellerFeeBasisPoints,
           image: coverImage,
           external_url: D_READER_FRONTEND_URL,
           properties: {
@@ -205,203 +241,328 @@ export class CandyMachineService {
           },
         });
 
-      const newCollectionNft = await createCollectionNft(
-        this.metaplex,
-        onChainName,
-        collectionNftUri,
-        comicIssue.sellerFeeBasisPoints,
-      );
+      if (tokenStandard === TokenStandard.Core) {
+        const collection = generateSigner(umi);
+        const creators = royaltyWallets.map((item) => {
+          return {
+            address: publicKey(item.address),
+            percentage: item.share,
+          };
+        });
+
+        const collectionBuilder = createCollectionV1(umi, {
+          collection,
+          uri: collectionNftUri,
+          name: onChainName,
+          plugins: [
+            pluginAuthorityPair({
+              type: 'Royalties',
+              data: {
+                basisPoints: sellerFeeBasisPoints,
+                creators,
+                // Change in future if encounters with a marketplace not enforcing royalties
+                ruleSet: ruleSet('None'),
+              },
+            }),
+          ],
+        });
+
+        await collectionBuilder.sendAndConfirm(umi, {
+          send: { commitment: 'confirmed' },
+        });
+
+        console.log(`Collection: ${collection.publicKey.toString()}`);
+        collectionNftAddress = new PublicKey(collection.publicKey);
+      } else {
+        const newCollectionNft = await createCollectionNft(
+          this.metaplex,
+          onChainName,
+          collectionNftUri,
+          sellerFeeBasisPoints,
+        );
+        collectionNftAddress = newCollectionNft.address;
+      }
+
       await this.prisma.collectionNft.create({
         data: {
-          address: newCollectionNft.address.toBase58(),
-          name: newCollectionNft.name,
+          address: collectionNftAddress.toBase58(),
+          name: onChainName,
           slug: uniqueSlug,
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
-      collectionNftAddress = newCollectionNft.address;
     }
+    return { collectionNftAddress, darkblockId };
+  }
 
-    const creators: CreateCandyMachineInput['creators'] = royaltyWallets.map(
-      (wallet) => ({
-        address: new PublicKey(wallet.address),
-        share: wallet.share,
-      }),
-    );
+  async createComicIssueCM({
+    comicIssue,
+    comicName,
+    onChainName,
+    guardParams,
+    shouldBePublic,
+    uniqueSlug,
+    tokenStandard,
+  }: {
+    comicIssue: ComicIssueCMInput;
+    comicName: string;
+    onChainName: string;
+    guardParams: GuardParams;
+    shouldBePublic?: boolean;
+    tokenStandard?: TokenStandard;
+    uniqueSlug: string;
+  }) {
+    validateComicIssueCMInput(comicIssue);
+    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
+
+    const { statefulCovers, statelessCovers, rarityCoverFiles } =
+      await this.getComicIssueCovers(comicIssue);
+
+    const { collectionNftAddress, darkblockId } =
+      await this.getOrCreateComicIssueCollection(
+        comicIssue,
+        onChainName,
+        uniqueSlug,
+        royaltyWallets,
+        statelessCovers,
+        statefulCovers,
+        tokenStandard,
+      );
 
     const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
       guardParams;
 
-    await initializeRecordAuthority(
-      this.metaplex,
-      candyMachineKey.publicKey,
-      collectionNftAddress,
-      new PublicKey(creatorAddress),
-      new PublicKey(creatorBackupAddress),
-      supply,
-    );
-
-    const groups: {
-      label: string;
-      guards: Partial<DefaultCandyGuardSettings>;
-    }[] = [
-      {
-        label: AUTHORITY_GROUP_LABEL,
-        guards: {
-          allowList: {
-            merkleRoot: getMerkleRoot([
-              this.metaplex.identity().publicKey.toString(),
-            ]),
-          },
-          solPayment: {
-            amount: solFromLamports(0),
-            destination: FUNDS_DESTINATION_ADDRESS,
-          },
-        },
-      },
-    ];
-
-    if (!!shouldBePublic) {
-      const paymentGuard = freezePeriod ? 'freezeSolPayment' : 'solPayment';
-      groups.push({
-        label: PUBLIC_GROUP_LABEL,
-        guards: {
-          startDate: { date: toDateTime(startDate) },
-          endDate: { date: toDateTime(endDate) },
-          [paymentGuard]: {
-            amount: solFromLamports(mintPrice),
-            destination: FUNDS_DESTINATION_ADDRESS,
-          },
-          mintLimit: mintLimit
+    let candyMachine: LegacyCandyMachine | CoreCandyMachine;
+    let candyMachineAddress: string;
+    if (tokenStandard === TokenStandard.Core) {
+      console.log('Create Core Candy Machine');
+      const [candyMachinePubkey, lut] = await createCoreCandyMachine(
+        this.umi,
+        publicKey(collectionNftAddress),
+        comicIssue,
+        royaltyWallets,
+        guardParams,
+        !!shouldBePublic,
+      );
+      const candyMachine = await fetchCandyMachine(umi, candyMachinePubkey, {
+        commitment: 'confirmed',
+      });
+      await this.prisma.candyMachine.create({
+        data: {
+          address: candyMachine.publicKey.toString(),
+          mintAuthorityAddress: candyMachine.mintAuthority.toString(),
+          collectionNftAddress: candyMachine.collectionMint.toString(),
+          authorityPda: findCandyMachineAuthorityPda(umi, {
+            candyMachine: candyMachine.publicKey,
+          }).toString(),
+          itemsAvailable: Number(candyMachine.data.itemsAvailable),
+          itemsMinted: Number(candyMachine.itemsRedeemed),
+          itemsRemaining: Number(candyMachine.data.itemsAvailable),
+          itemsLoaded: candyMachine.itemsLoaded,
+          isFullyLoaded: true,
+          supply,
+          standard: TokenStandard.Core,
+          lookupTable: lut ? lut.toString() : undefined,
+          groups: !!shouldBePublic
             ? {
-                id: PUBLIC_GROUP_MINT_LIMIT_ID,
-                limit: mintLimit,
+                create: {
+                  displayLabel: PUBLIC_GROUP_LABEL,
+                  wallets: undefined,
+                  label: PUBLIC_GROUP_LABEL,
+                  startDate,
+                  endDate,
+                  mintPrice: mintPrice,
+                  mintLimit,
+                  supply,
+                  splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                },
               }
             : undefined,
-          redeemedAmount: { maximum: toBigNumber(supply) },
         },
       });
-    }
 
-    const candyMachineTransaction = await constructCandyMachineTransaction(
-      this.metaplex,
-      {
-        candyMachine: candyMachineKey,
-        authority: this.metaplex.identity().publicKey,
-        collection: {
-          address: collectionNftAddress,
-          updateAuthority: this.metaplex.identity(),
-        },
-        symbol: D_PUBLISHER_SYMBOL,
-        maxEditionSupply: toBigNumber(0),
-        isMutable: true,
-        sellerFeeBasisPoints: comicIssue.sellerFeeBasisPoints,
-        itemsAvailable: toBigNumber(supply),
-        guards: {
-          botTax: {
-            lamports: solFromLamports(BOT_TAX),
-            lastInstruction: true,
-          },
-        },
-        groups,
-        creators: [
+      try {
+        const itemMetadatas = await insertCoreItems(
+          this.umi,
+          this.metaplex,
+          candyMachine.publicKey,
+          comicIssue,
+          publicKey(collectionNftAddress),
+          comicName,
+          royaltyWallets,
+          statelessCovers,
+          darkblockId,
+          supply,
+          onChainName,
+          rarityCoverFiles,
+        );
+
+        const metadataCreateData = itemMetadatas.map((item) => {
+          return {
+            uri: item.metadata.uri,
+            isUsed: item.isUsed,
+            isSigned: item.isSigned,
+            rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+            collectionName: onChainName,
+          };
+        });
+
+        await this.prisma.metadata.createMany({
+          data: metadataCreateData,
+          skipDuplicates: true,
+        });
+        const updatedCandyMachine = await fetchCandyMachine(
+          umi,
+          candyMachinePubkey,
           {
-            address: this.metaplex.identity().publicKey,
-            share: 0,
+            commitment: 'confirmed',
           },
-          ...creators,
-        ],
-      },
-    );
+        );
 
-    await sendAndConfirmTransaction(
-      metaplex.connection,
-      candyMachineTransaction,
-      [metaplex.identity(), candyMachineKey],
-    );
+        await this.prisma.candyMachine.update({
+          where: { address: candyMachine.publicKey.toString() },
+          data: { itemsLoaded: updatedCandyMachine.itemsLoaded },
+        });
+      } catch (e) {
+        console.error(`Failed to insert items: `, e);
+      }
 
-    let candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineKey.publicKey });
-    if (freezePeriod) {
-      await sleep(1000);
-      await this.initializeGuardAccounts(candyMachine, freezePeriod);
-    }
+      candyMachineAddress = candyMachine.publicKey.toString();
+    } else {
+      console.log('Create Legacy Candy Machine');
 
-    const authorityPda = this.metaplex
-      .candyMachines()
-      .pdas()
-      .authority({ candyMachine: candyMachine.address })
-      .toString();
-
-    const lookupTable = await createLookupTable(metaplex, [
-      candyMachine.address,
-      metaplex.identity().publicKey,
-      candyMachine.candyGuard.address,
-      collectionNftAddress,
-      metaplex.programs().getTokenMetadata().address,
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      SYSVAR_SLOT_HASHES_PUBKEY,
-    ]);
-
-    try {
-      await insertItems(
+      const [candyMachinePubkey, lut] = await createLegacyCandyMachine(
         this.metaplex,
-        candyMachine,
-        comicIssue,
         collectionNftAddress,
-        comicName,
+        comicIssue,
         royaltyWallets,
-        statelessCovers,
-        darkblockId,
-        supply,
-        onChainName,
-        rarityCoverFiles,
+        guardParams,
+        !!shouldBePublic,
       );
-      await sleep(1000); // wait for data to update before refetching candymachine.
-    } catch (e) {
-      console.error(e);
+
+      let candyMachine = await this.metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachinePubkey });
+
+      if (freezePeriod) {
+        await sleep(1000);
+        await this.initializeGuardAccounts(candyMachine, freezePeriod);
+      }
+
+      const authorityPda = this.metaplex
+        .candyMachines()
+        .pdas()
+        .authority({ candyMachine: candyMachine.address })
+        .toString();
+
+      try {
+        const itemMetadatas = await insertItems(
+          this.metaplex,
+          candyMachine,
+          comicIssue,
+          collectionNftAddress,
+          comicName,
+          royaltyWallets,
+          statelessCovers,
+          darkblockId,
+          supply,
+          onChainName,
+          rarityCoverFiles,
+        );
+        const metadataCreateData = itemMetadatas.map((item) => {
+          return {
+            uri: item.metadata.uri,
+            isUsed: item.isUsed,
+            isSigned: item.isSigned,
+            rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
+            collectionName: onChainName,
+          };
+        });
+
+        await this.prisma.metadata.createMany({
+          data: metadataCreateData,
+          skipDuplicates: true,
+        });
+        await sleep(1000); // wait for data to update before refetching candymachine.
+      } catch (e) {
+        console.error(e);
+      }
+
+      candyMachine = await this.metaplex.candyMachines().refresh(candyMachine);
+      await this.prisma.candyMachine.create({
+        data: {
+          address: candyMachine.address.toBase58(),
+          mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
+          collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
+          authorityPda,
+          itemsAvailable: candyMachine.itemsAvailable.toNumber(),
+          itemsMinted: candyMachine.itemsMinted.toNumber(),
+          itemsRemaining: candyMachine.itemsRemaining.toNumber(),
+          itemsLoaded: candyMachine.itemsLoaded,
+          isFullyLoaded: candyMachine.isFullyLoaded,
+          supply,
+          lookupTable: lut.toString(),
+          standard: tokenStandard,
+          groups: !!shouldBePublic
+            ? {
+                create: {
+                  displayLabel: PUBLIC_GROUP_LABEL,
+                  wallets: undefined,
+                  label: PUBLIC_GROUP_LABEL,
+                  startDate,
+                  endDate,
+                  mintPrice: mintPrice,
+                  mintLimit,
+                  supply,
+                  splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                },
+              }
+            : undefined,
+        },
+      });
+      candyMachineAddress = candyMachine.address.toBase58();
     }
 
-    candyMachine = await this.metaplex.candyMachines().refresh(candyMachine);
-    await this.prisma.candyMachine.create({
-      data: {
-        address: candyMachine.address.toBase58(),
-        mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
-        collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
-        authorityPda,
-        itemsAvailable: candyMachine.itemsAvailable.toNumber(),
-        itemsMinted: candyMachine.itemsMinted.toNumber(),
-        itemsRemaining: candyMachine.itemsRemaining.toNumber(),
-        itemsLoaded: candyMachine.itemsLoaded,
-        isFullyLoaded: candyMachine.isFullyLoaded,
-        supply,
-        lookupTable,
-        groups: !!shouldBePublic
-          ? {
-              create: {
-                displayLabel: PUBLIC_GROUP_LABEL,
-                wallets: undefined,
-                label: PUBLIC_GROUP_LABEL,
-                startDate,
-                endDate,
-                mintPrice: mintPrice,
-                mintLimit,
-                supply,
-                splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
-              },
-            }
-          : undefined,
-      },
-    });
-    this.heliusService.subscribeTo(candyMachine.address.toBase58());
+    this.heliusService.subscribeTo(candyMachineAddress);
     return candyMachine;
+  }
+
+  async updateCoreCandyMachine(
+    candMachineAddress: UmiPublicKey,
+    groups: CoreGuardGroup<DefaultGuardSet>[],
+    guards: Partial<DefaultGuardSetArgs>,
+  ) {
+    try {
+      const candyMachine = await fetchCandyMachine(
+        this.umi,
+        candMachineAddress,
+      );
+      const updateBuilder = updateCandyGuard(this.umi, {
+        groups,
+        guards,
+        candyGuard: candyMachine.mintAuthority,
+      });
+      const builder = transactionBuilder()
+        .add(
+          setComputeUnitPrice(this.umi, { microLamports: MIN_COMPUTE_PRICE }),
+        )
+        .add(updateBuilder);
+      const response = await builder.sendAndConfirm(this.umi, {
+        send: { commitment: 'confirmed' },
+      });
+      const signature = base58.deserialize(response.signature);
+      console.log(`CandyMachine updated : ${signature}`);
+    } catch (e) {
+      console.error(
+        `Error updating CandyMachine ${candMachineAddress.toString()}`,
+        e,
+      );
+    }
   }
 
   async updateCandyMachine(
     candyMachineAddress: PublicKey,
-    groups?: GuardGroup[],
+    groups?: LegacyGuardGroup[],
     guards?: Partial<DefaultCandyGuardSettings>,
   ) {
     const candyMachine = await this.metaplex
@@ -449,10 +610,21 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
   ) {
-    const { allowList, lookupTable, mintPrice } =
+    const { allowList, lookupTable, mintPrice, tokenStandard } =
       await this.findCandyMachineData(candyMachineAddress.toString(), label);
     const balance = await this.metaplex.connection.getBalance(feePayer);
-    validateBalanceForMint(mintPrice, balance);
+    validateBalanceForMint(mintPrice, balance, tokenStandard);
+
+    if (tokenStandard === TokenStandard.Core) {
+      return await constructCoreMintTransaction(
+        this.umi,
+        publicKey(candyMachineAddress),
+        publicKey(feePayer),
+        label,
+        allowList,
+        lookupTable,
+      );
+    }
 
     return await constructMintOneTransaction(
       this.metaplex,
@@ -567,20 +739,13 @@ export class CandyMachineService {
     return receipts;
   }
 
-  async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
-    const {
-      displayLabel,
-      label,
-      startDate,
-      endDate,
-      splTokenAddress,
-      mintPrice,
-      mintLimit,
-      supply,
-      frozen,
-    } = params;
+  async addLegacyCandyMachineGroupOnChain(
+    candyMachineAddress: string,
+    params: GuardParams,
+  ) {
+    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
+      params;
     const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-
     const candyMachine = await this.metaplex
       .candyMachines()
       .findByAddress({ address: candyMachinePublicKey });
@@ -608,7 +773,7 @@ export class CandyMachineService {
       throw new Error(`A group with label ${label} already exists`);
     }
 
-    const group: GuardGroup = {
+    const group: LegacyGuardGroup = {
       label,
       guards: {
         ...candyMachine.candyGuard.guards,
@@ -628,6 +793,91 @@ export class CandyMachineService {
 
     const groups = [...resolvedGroups, group];
     await this.updateCandyMachine(candyMachinePublicKey, groups);
+  }
+
+  async addCoreCandyMachineGroupOnChain(
+    candyMachineAddress: string,
+    params: GuardParams,
+  ) {
+    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
+      params;
+
+    const candyMachine = await fetchCandyMachine(
+      this.umi,
+      publicKey(candyMachineAddress),
+    );
+    const candyGuard = await fetchCandyGuard(
+      this.umi,
+      candyMachine.mintAuthority,
+    );
+
+    const candyMachineGroups = candyGuard.groups;
+    const redeemedAmountGuard: RedeemedAmount = {
+      maximum: createBigInt(supply),
+    };
+    let startDateGuard: StartDate;
+    if (startDate) startDateGuard = { date: umiDateTime(startDate) };
+
+    let endDateGuard: EndDate;
+    if (endDate) endDateGuard = { date: umiDateTime(endDate) };
+
+    let mintLimitGuard: MintLimit;
+    if (mintLimit)
+      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+
+    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
+    const existingGroup = candyMachineGroups.find(
+      (group) => group.label === label,
+    );
+
+    if (existingGroup) {
+      throw new Error(`A group with label ${label} already exists`);
+    }
+
+    const group: CoreGuardGroup<DefaultGuardSet> = {
+      label,
+      guards: {
+        ...candyGuard.guards,
+        [paymentGuard]: some({
+          lamports: umiLamports(mintPrice),
+          destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+        }),
+        redeemedAmount: some(redeemedAmountGuard),
+        startDate: startDate ? some(startDateGuard) : none(),
+        endDate: endDate ? some(endDateGuard) : none(),
+        mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
+      },
+    };
+    const resolvedGroups = candyMachineGroups.filter(
+      (group) => group.label != label,
+    );
+    resolvedGroups.push(group);
+    await this.updateCoreCandyMachine(
+      publicKey(candyMachineAddress),
+      resolvedGroups,
+      candyGuard.guards,
+    );
+  }
+
+  async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
+    const {
+      displayLabel,
+      label,
+      startDate,
+      endDate,
+      splTokenAddress,
+      mintPrice,
+      mintLimit,
+      supply,
+    } = params;
+    const candyMachine = await this.prisma.candyMachine.findUnique({
+      where: { address: candyMachineAddress },
+    });
+    if (candyMachine.standard == TokenStandard.Legacy) {
+      await this.addLegacyCandyMachineGroupOnChain(candyMachineAddress, params);
+    } else {
+      await this.addCoreCandyMachineGroupOnChain(candyMachineAddress, params);
+    }
 
     await this.prisma.candyMachineGroup.create({
       data: {
@@ -664,11 +914,6 @@ export class CandyMachineService {
     allowList: string[],
     label: string,
   ) {
-    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-    const candyMachine = await metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachinePublicKey });
-
     console.log('finding the already allowlist in db');
     const alreadyAllowlistedWallets = await this.prisma.wallet.findMany({
       where: {
@@ -703,25 +948,67 @@ export class CandyMachineService {
       })
       .then((values) => values.wallets.map((wallet) => wallet.walletAddress));
 
-    const allowListGuard: AllowListGuardSettings =
-      wallets.length > 0 ? { merkleRoot: getMerkleRoot(wallets) } : null;
+    const candyMachineData = await this.prisma.candyMachine.findFirst({
+      where: { address: candyMachineAddress },
+    });
 
-    const existingGroup = candyMachine.candyGuard.groups.find(
-      (group) => group.label === label,
-    );
+    if (candyMachineData.standard === TokenStandard.Core) {
+      const candyGuard = await fetchCandyGuard(
+        this.umi,
+        publicKey(candyMachineData.mintAuthorityAddress),
+      );
+      const allowListGuard: Option<AllowList> =
+        wallets.length > 0
+          ? some({
+              merkleRoot: getCoreMekleRoot(wallets),
+            })
+          : none();
+      const existingGroup = candyGuard.groups.find(
+        (group) => group.label === label,
+      );
+      const group: CoreGuardGroup<DefaultGuardSet> = {
+        label,
+        guards: {
+          ...existingGroup.guards,
+          allowList: allowListGuard,
+        },
+      };
+      const resolvedGroups = candyGuard.groups.filter(
+        (group) => group.label != label,
+      );
+      const groups = [...resolvedGroups, group];
+      console.log('Updating the candymachine with allowlist');
+      await this.updateCoreCandyMachine(
+        publicKey(candyMachineAddress),
+        groups,
+        candyGuard.guards,
+      );
+    } else {
+      const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+      const candyMachine = await metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachinePublicKey });
 
-    const group: GuardGroup = {
-      label,
-      guards: { ...existingGroup.guards, allowList: allowListGuard },
-    };
+      const allowListGuard: AllowListGuardSettings =
+        wallets.length > 0 ? { merkleRoot: getMerkleRoot(wallets) } : null;
 
-    const resolvedGroups = candyMachine.candyGuard.groups.filter(
-      (group) => group.label != label,
-    );
+      const existingGroup = candyMachine.candyGuard.groups.find(
+        (group) => group.label === label,
+      );
 
-    const groups = [...resolvedGroups, group];
-    console.log('Updating the candymachine with allowlist');
-    await this.updateCandyMachine(candyMachinePublicKey, groups);
+      const group: LegacyGuardGroup = {
+        label,
+        guards: { ...existingGroup.guards, allowList: allowListGuard },
+      };
+
+      const resolvedGroups = candyMachine.candyGuard.groups.filter(
+        (group) => group.label != label,
+      );
+
+      const groups = [...resolvedGroups, group];
+      console.log('Updating the candymachine with allowlist');
+      await this.updateCandyMachine(candyMachinePublicKey, groups);
+    }
   }
 
   async findCandyMachineData(candyMachineAddress: string, label: string) {
@@ -737,6 +1024,7 @@ export class CandyMachineService {
             : undefined,
         lookupTable: data.candyMachine.lookupTable,
         mintPrice: Number(data.mintPrice),
+        tokenStandard: data.candyMachine.standard,
       };
     } catch (e) {
       console.error(e);
@@ -895,43 +1183,18 @@ export class CandyMachineService {
   }
 
   async deleteCandyMachine(address: PublicKey) {
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address });
-
-    const deleteCandyMachineBuilder = this.metaplex
-      .candyMachines()
-      .builders()
-      .delete({ candyMachine: address });
-
-    const deleteCandyGuardBuilder = this.metaplex
-      .candyMachines()
-      .builders()
-      .deleteCandyGuard({ candyGuard: candyMachine.mintAuthorityAddress });
-
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
-      commitment: 'confirmed',
-    });
-
-    const deleteCandyMachineTransaction =
-      deleteCandyMachineBuilder.toTransaction(latestBlockhash);
-    const deleteCandyGuardTransaction =
-      deleteCandyGuardBuilder.toTransaction(latestBlockhash);
-
-    const transaction = new Transaction({
-      feePayer: this.metaplex.identity().publicKey,
-      ...latestBlockhash,
-    }).add(
-      MIN_COMPUTE_PRICE_IX,
-      deleteCandyMachineTransaction,
-      deleteCandyGuardTransaction,
-    );
-
-    const signature = await sendAndConfirmTransaction(
-      this.metaplex.connection,
-      transaction,
-      [this.metaplex.identity()],
-    );
-    return signature;
+    const { standard, mintAuthorityAddress } =
+      await this.prisma.candyMachine.findUnique({
+        where: { address: address.toString() },
+      });
+    if (standard === TokenStandard.Core) {
+      return deleteCoreCandyMachine(
+        this.umi,
+        publicKey(address),
+        publicKey(mintAuthorityAddress),
+      );
+    } else {
+      return deleteLegacyCandyMachine(this.metaplex, address);
+    }
   }
 }

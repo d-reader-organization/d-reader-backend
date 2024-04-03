@@ -1,8 +1,9 @@
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { CreateComicIssueDto } from './create-comic-issue.dto';
 import {
   IsBoolean,
   IsDate,
+  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -13,6 +14,7 @@ import {
 import { IsLamport } from '../../decorators/IsLamport';
 import { TransformDateStringToDate } from '../../utils/transform';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../../constants';
+import { TokenStandard } from '@prisma/client';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'sellerFeeBasisPoints',
@@ -58,4 +60,9 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
 
   @IsString()
   collectionSlug: string;
+
+  @IsOptional()
+  @IsEnum(TokenStandard)
+  @ApiProperty({ enum: TokenStandard })
+  tokenStandard?: TokenStandard;
 }
