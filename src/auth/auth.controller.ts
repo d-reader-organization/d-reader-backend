@@ -48,7 +48,7 @@ export class AuthController {
   }
 
   @GoogleUserAuth()
-  @Get('user/google-login')
+  @Patch('user/google-login')
   async googleLogin(@GoogleUserEntity() user: GoogleUserPayload) {
     return await this.userService.handleGoogleSignIn(user);
   }
