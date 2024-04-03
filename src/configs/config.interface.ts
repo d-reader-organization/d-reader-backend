@@ -7,6 +7,7 @@ export interface Config {
   swagger: SwaggerConfig;
   security: SecurityConfig;
   s3: S3Config;
+  googleAuth: GoogleAuthConfig;
   throttle: ThrottleConfig;
 }
 
@@ -50,4 +51,9 @@ export interface ThrottleConfig {
   ttl: number;
   limit: number;
   ignoreUserAgents: RegExp[];
+}
+
+interface GoogleAuthConfig {
+  clientId: string;
+  clientSecret: string;
 }

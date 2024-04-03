@@ -159,11 +159,6 @@ export class WalletService {
         });
       }
 
-      // TODO: I wonder if this would have the same effect as lines 120-126
-      // await this.prisma.candyMachineReceipt.create({
-      //   data: { ...receiptData, user: { connect: { id: userId } } },
-      // });
-
       this.heliusService.subscribeTo(metadata.mintAddress.toString());
     }
 
