@@ -111,13 +111,7 @@ export class UserService {
 
     try {
       const user = await this.findByEmail(email);
-
-      if (user && !user.password.length) {
-        return this.authService.authorizeUser(user);
-      }
-      throw new BadRequestException(
-        'An account is linked to this email address. Please log in using the standard method.',
-      );
+      return this.authService.authorizeUser(user);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
