@@ -21,6 +21,7 @@ export const D_READER_FRONTEND_URL = 'https://dreader.app';
 export const HUNDRED = 100;
 export const HUNDRED_PERCENT_TAX = 10000;
 export const MIN_MINT_PROTOCOL_FEE = 29000000;
+export const MIN_CORE_MINT_PROTOCOL_FEE = 2900000;
 // export const GLOBAL_BOT_TAX = 0.01;
 
 export const USED_TRAIT = 'used';
@@ -111,8 +112,9 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
 ];
 
 export const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
+export const MIN_COMPUTE_PRICE = 600_000;
 export const MIN_COMPUTE_PRICE_IX = ComputeBudgetProgram.setComputeUnitPrice({
-  microLamports: 600_000,
+  microLamports: MIN_COMPUTE_PRICE,
 });
 
 export const getRarityShareTable = (numberOfCovers: number) => {
@@ -207,3 +209,8 @@ export const RARITY_PRECEDENCE = [
   'Legendary',
 ];
 export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';
+export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
+
+export const UPDATE_CORE_V1_DISCRIMINANT = 15;
+export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
+export const MINT_CORE_V1_DISCRIMINANT = 120;

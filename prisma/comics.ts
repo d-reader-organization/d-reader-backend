@@ -30,6 +30,7 @@ export const gorecatsData = (
   discord: 'https://discord.com/invite/gorecats',
   telegram: 'https://t.me/Gorecats',
   instagram: 'https://www.instagram.com/gorecats_art',
+  s3BucketSlug: 'gorecats',
 });
 
 export const babiesData = (
@@ -58,6 +59,7 @@ export const babiesData = (
   cover: 'comics/barbabyans/cover.jpg',
   pfp: 'comics/barbabyans/pfp.jpg',
   logo: 'comics/barbabyans/logo.png',
+  s3BucketSlug: 'barbabyans',
 });
 
 export const nikoData = (
@@ -89,6 +91,7 @@ export const nikoData = (
   twitter: 'https://twitter.com/StudioNX',
   instagram: 'https://www.instagram.com/jim_bryson/',
   youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
+  s3BucketSlug: 'niko-and-the-sword',
 });
 
 export const portalData = (
@@ -120,6 +123,7 @@ export const portalData = (
   twitter: 'https://twitter.com/StudioNX',
   instagram: 'https://www.instagram.com/jim_bryson/',
   youTube: 'https://www.youtube.com/channel/UCHGZaHM8q9aag4kXfZTq45w',
+  s3BucketSlug: 'the-dark-portal',
 });
 
 export const lupersData = (
@@ -150,6 +154,7 @@ export const lupersData = (
   website: 'https://narentines.com',
   twitter: 'https://twitter.com/Narentines',
   discord: 'https://discord.com/invite/narentines',
+  s3BucketSlug: 'lupers',
 });
 
 export const narentsData = (
@@ -181,6 +186,7 @@ export const narentsData = (
   website: 'https://narentines.com',
   twitter: 'https://twitter.com/Narentines',
   discord: 'https://discord.com/invite/narentines',
+  s3BucketSlug: 'narentines',
 });
 
 export const heistData = (
@@ -210,6 +216,7 @@ export const heistData = (
   website: 'https://theheist.game/',
   twitter: 'https://twitter.com/playtheheist',
   discord: 'https://discord.com/invite/playtheheist',
+  s3BucketSlug: 'the-heist',
 });
 
 export const gooneyData = (
@@ -235,6 +242,7 @@ export const gooneyData = (
   twitter: 'https://twitter.com/GooneyToonsNFT',
   discord: 'https://discord.com/invite/gooneytoons',
   instagram: 'https://www.instagram.com/gooneytoons.nft',
+  s3BucketSlug: 'gooneytoons',
 });
 
 export const animoData = (
@@ -255,6 +263,7 @@ export const animoData = (
   cover: 'comics/animosities/cover.jpg',
   pfp: 'comics/animosities/pfp.jpg',
   logo: 'comics/animosities/logo.png',
+  s3BucketSlug: 'animosities',
 });
 
 export const birthData = (
@@ -272,6 +281,7 @@ export const birthData = (
   completedAt: new Date(),
   cover: 'comics/birthday/cover.jpg',
   logo: 'comics/birthday/logo.png',
+  s3BucketSlug: 'birthday',
 });
 
 export const taintData = (
@@ -291,6 +301,7 @@ export const taintData = (
   cover: 'comics/immaculate-taint/cover.jpg',
   pfp: 'comics/immaculate-taint/pfp.jpg',
   logo: 'comics/immaculate-taint/logo.png',
+  s3BucketSlug: 'immaculate-taint',
 });
 
 export const islandData = (
@@ -315,6 +326,7 @@ export const islandData = (
   cover: 'comics/island/cover.jpg',
   pfp: 'comics/island/pfp.jpg',
   logo: 'comics/island/logo.png',
+  s3BucketSlug: 'island',
 });
 
 export const wretchesData = (
@@ -341,6 +353,7 @@ export const wretchesData = (
   cover: 'comics/wretches/cover.jpg',
   pfp: 'comics/wretches/pfp.jpg',
   logo: 'comics/wretches/logo.png',
+  s3BucketSlug: 'wretches',
 });
 
 export const countyData = (
@@ -367,6 +380,7 @@ export const countyData = (
   cover: 'comics/knockturn-county/cover.jpg',
   pfp: 'comics/knockturn-county/pfp.jpg',
   logo: 'comics/knockturn-county/logo.png',
+  s3BucketSlug: 'knockturn-county',
 });
 
 export const janaData = (
@@ -387,6 +401,7 @@ export const janaData = (
   cover: 'comics/jana/cover.jpg',
   pfp: 'comics/jana/pfp.jpg',
   logo: 'comics/jana/logo.png',
+  s3BucketSlug: 'jana',
 });
 
 export const watersData = (
@@ -407,6 +422,7 @@ export const watersData = (
   cover: 'comics/dark-waters/cover.jpg',
   pfp: 'comics/dark-waters/pfp.jpg',
   logo: 'comics/dark-waters/logo.png',
+  s3BucketSlug: 'dark-waters',
 });
 
 export const versusData = (
@@ -435,6 +451,7 @@ export const versusData = (
   completedAt: new Date(),
   cover: 'comics/multi-versus/cover.jpg',
   logo: 'comics/multi-versus/logo.png',
+  s3BucketSlug: 'multi-versus',
 });
 
 export const tsukiData = (
@@ -455,4 +472,5 @@ export const tsukiData = (
   cover: 'comics/tsukiverse/cover.jpg',
   pfp: 'comics/tsukiverse/pfp.jpg',
   logo: 'comics/tsukiverse/logo.png',
+  s3BucketSlug: 'tsukiverse',
 });
