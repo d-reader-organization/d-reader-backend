@@ -27,8 +27,13 @@ import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
 import { subDays } from 'date-fns';
-import { EmailPayload, UserPayload } from '../auth/dto/authorization.dto';
+import {
+  EmailPayload,
+  GoogleUserPayload,
+  UserPayload,
+} from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
+import { USERNAME_MAX_SIZE } from 'src/constants';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -51,7 +56,7 @@ export class UserService {
     validateEmail(email);
 
     const [hashedPassword] = await Promise.all([
-      this.passwordService.hash(password),
+      password && this.passwordService.hash(password),
       this.throwIfNameTaken(name),
       this.throwIfEmailTaken(email),
     ]);
@@ -88,11 +93,38 @@ export class UserService {
       user = await this.findByName(nameOrEmail);
     }
 
+    if (!user.password.length) {
+      throw new BadRequestException(
+        'This account is already linked to a Google Account. Please use google sign in.',
+      );
+    }
+
     await this.passwordService.validate(password, user.password);
     return this.prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
+  }
+
+  async handleGoogleSignIn(googleUser: GoogleUserPayload) {
+    const { id, email, given_name } = googleUser;
+
+    try {
+      const user = await this.findByEmail(email);
+      return this.authService.authorizeUser(user);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      const user = await this.register({
+        email,
+        name: `${given_name}_${id}`
+          .substring(0, USERNAME_MAX_SIZE)
+          .toLowerCase(),
+        password: '',
+      });
+      return this.authService.authorizeUser(user);
+    }
   }
 
   async syncWallets(id: number) {

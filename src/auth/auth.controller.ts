@@ -19,11 +19,15 @@ import {
 } from '../utils/user';
 import { LoginDto } from '../types/login.dto';
 import { RegisterDto } from '../types/register.dto';
-import { Authorization, UserPayload } from './dto/authorization.dto';
+import {
+  Authorization,
+  GoogleUserPayload,
+  UserPayload,
+} from './dto/authorization.dto';
 import { CreatorService } from '../creator/creator.service';
 import { UserAuth } from '../guards/user-auth.guard';
-import { UserEntity } from '../decorators/user.decorator';
-
+import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
+import { GoogleUserAuth } from 'src/guards/google-auth.guard';
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
 @Controller('auth')
@@ -41,6 +45,12 @@ export class AuthController {
   async validateUserName(@Param('name') name: string) {
     validateName(name);
     return await this.userService.throwIfNameTaken(name);
+  }
+
+  @GoogleUserAuth()
+  @Patch('user/google-login')
+  async googleLogin(@GoogleUserEntity() user: GoogleUserPayload) {
+    return await this.userService.handleGoogleSignIn(user);
   }
 
   @SkipThrottle()

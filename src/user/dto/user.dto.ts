@@ -46,6 +46,9 @@ export class UserDto {
   @ApiProperty({ type: String })
   @Type(() => String)
   deviceTokens?: string[];
+
+  @IsBoolean()
+  hasPassword: boolean;
 }
 
 type WithDeviceIds = { devices?: Device[] };
@@ -63,6 +66,7 @@ export function toUserDto(user: UserInput) {
     avatar: getPublicUrl(user.avatar),
     role: user.role,
     deviceTokens: user.devices?.map((device) => device.token) ?? [],
+    hasPassword: user.password.length > 0,
   };
 
   const userDto = plainToInstance(UserDto, plainUserDto);
