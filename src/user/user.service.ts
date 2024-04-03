@@ -574,7 +574,6 @@ export class UserService {
 
   @Cron(CronExpression.EVERY_DAY_AT_NOON)
   protected async bumpNewUsersWithUnverifiedEmails() {
-    // TODO: can this replace the code block below (AND)?
     // const newUnverifiedUsers = await this.prisma.user.findMany({
     //   where: {
     //     emailVerifiedAt: null,
