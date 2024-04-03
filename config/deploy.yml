@@ -50,6 +50,9 @@ env:
     - FIREBASE_PRIVATE_KEY
     - FIREBASE_CLIENT_EMAIL
     - FIREBASE_PROJECT_ID
+    # Google oauth
+    - GOOGLE_AUTH_CLIENT_ID
+    - GOOGLE_AUTH_CLIENT_SECRET
 
 accessories:
   node-exporter:
