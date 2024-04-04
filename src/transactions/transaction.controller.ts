@@ -21,6 +21,9 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PUBLIC_GROUP_LABEL } from '../constants';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
+import { UserAuth } from '../guards/user-auth.guard';
+import { UserEntity } from '../decorators/user.decorator';
+import { UserPayload } from '../auth/dto/authorization.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -91,8 +94,12 @@ export class TransactionController {
     // Elusiv for private transaction if the user decided to do an anonymous tip
   }
 
+  @UserAuth()
   @Get('/use-comic-issue-nft')
-  async constructUseComicTransaction(@Query() query: UseComicParams) {
+  async constructUseComicTransaction(
+    @Query() query: UseComicParams,
+    @UserEntity() user: UserPayload,
+  ) {
     const publicKey = new PublicKey(query.ownerAddress);
     const nftPubKey = new PublicKey(query.nftAddress);
 
@@ -100,6 +107,7 @@ export class TransactionController {
       nftPubKey,
       publicKey,
       ComicStateArgs.Use,
+      user.id,
     );
   }
 

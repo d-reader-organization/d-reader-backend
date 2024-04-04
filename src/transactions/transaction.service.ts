@@ -1,5 +1,10 @@
 import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { Transaction, PublicKey, SystemProgram } from '@solana/web3.js';
+import {
+  Transaction,
+  PublicKey,
+  SystemProgram,
+  VersionedTransaction,
+} from '@solana/web3.js';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { metaplex, umi } from '../utils/metaplex';
 import { PrismaService } from 'nestjs-prisma';
@@ -11,7 +16,11 @@ import { RARITY_MAP } from '../constants';
 import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
 import { Injectable } from '@nestjs/common';
 import { TokenStandard } from '@prisma/client';
-import { Umi, publicKey } from '@metaplex-foundation/umi';
+import {
+  Umi,
+  publicKey,
+  PublicKey as UmiPublicKey,
+} from '@metaplex-foundation/umi';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
 import {
   fetchOffChainMetadata,
@@ -19,6 +28,7 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../utils/nft-metadata';
+import { base64 } from '@metaplex-foundation/umi/serializers';
 
 @Injectable()
 export class TransactionService {
@@ -61,7 +71,8 @@ export class TransactionService {
     mint: PublicKey,
     feePayer: PublicKey,
     newState: ComicStateArgs,
-  ) {
+    userId?: number,
+  ): Promise<string | null> {
     const {
       ownerAddress,
       collectionNftAddress,
@@ -69,17 +80,24 @@ export class TransactionService {
       collectionNft,
       metadata,
       name,
+      owner: user,
     } = await this.prisma.nft.findUnique({
       where: { address: mint.toString() },
       include: {
         metadata: true,
         candyMachine: true,
         collectionNft: { include: { comicIssue: true } },
+        owner: { select: { userId: true } },
       },
     });
 
     if (candyMachine.standard === TokenStandard.Core) {
       const { comicIssue } = collectionNft;
+      if (user.userId != userId) {
+        throw new Error(
+          `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
+        );
+      }
 
       // Fetch asset from onchain in case our database is out of sync
       const assetData = await fetchAssetV1(umi, publicKey(mint));
@@ -87,7 +105,7 @@ export class TransactionService {
       let isUsed = findUsedTrait(offChainMetadata);
       let isSigned = findSignedTrait(offChainMetadata);
 
-      let signer = publicKey(ownerAddress);
+      let signer: UmiPublicKey;
       if (newState === ComicStateArgs.Sign) {
         if (isSigned) {
           throw new Error('Comic is already signed');
@@ -98,13 +116,11 @@ export class TransactionService {
         isSigned = true;
         signer = publicKey(feePayer);
       } else {
-        if (isUsed) {
-          throw new Error('Comic is already unwrapped');
-        }
-
         if (assetData.owner.toString() !== ownerAddress) {
           throw new Error(`Unauthorized to change comic state`);
         }
+        // Currently by default user is opted in to not sign unwrap tx and we sign it on behalf of user to unwrap the asset
+        signer = umi.identity.publicKey;
         isUsed = true;
       }
 
@@ -117,13 +133,33 @@ export class TransactionService {
         },
       });
 
-      return await constructChangeCoreComicStateTransaction(
+      const transaction = await constructChangeCoreComicStateTransaction(
         this.umi,
         signer,
         publicKey(collectionNftAddress),
         publicKey(mint),
         itemMetadata.uri,
       );
+      if (newState === ComicStateArgs.Use) {
+        const decodedTransaction = VersionedTransaction.deserialize(
+          Buffer.from(transaction, 'base64'),
+        );
+
+        decodedTransaction.sign([this.metaplex.identity()]);
+        await this.metaplex.connection.sendTransaction(decodedTransaction, {
+          preflightCommitment: 'processed',
+        });
+
+        await this.prisma.nft.update({
+          where: { address: mint.toString() },
+          data: {
+            uri: itemMetadata.uri,
+          },
+        });
+        return;
+      }
+
+      return transaction;
     }
 
     const owner = new PublicKey(ownerAddress);
