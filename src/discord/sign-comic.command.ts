@@ -54,7 +54,7 @@ import {
   CandyMachine,
 } from '@prisma/client';
 import { SkipThrottle } from '@nestjs/throttler';
-import { LOCKED_COLLECTIONS } from 'src/constants';
+import { LOCKED_COLLECTIONS } from '../constants';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 

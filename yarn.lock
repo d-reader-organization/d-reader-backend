@@ -2289,7 +2289,7 @@
     "@solana/web3.js" "^1.56.2"
     bn.js "^5.2.0"
 
-"@metaplex-foundation/mpl-candy-machine-core@^0.2.1", "@metaplex-foundation/mpl-candy-machine-core@^0.2.2":
+"@metaplex-foundation/mpl-candy-machine-core@^0.2.2":
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-candy-machine-core/-/mpl-candy-machine-core-0.2.2.tgz#b0435a2b199eed5f95b3daec44f7f0467b45bfab"
   integrity sha512-ARMi6v35jdfndzDYdHinEU4MQrcSUC0Qo2m7kRPy1q8A/JueqEtySAywpcWOJU5ToBinCB4ZZ3v+8GoYFKNXSA==
