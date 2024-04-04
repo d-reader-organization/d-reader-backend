@@ -295,7 +295,7 @@ export class HeliusService {
 
       comicIssueId = comicIssueNft.collectionNft.comicIssueId;
       userId = comicIssueNft.owner?.userId;
-      this.subscribeTo(comicIssueNft.address);
+      await this.subscribeTo(comicIssueNft.address);
     } catch (e) {
       console.error(e);
     }
