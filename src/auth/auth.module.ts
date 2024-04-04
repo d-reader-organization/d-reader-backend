@@ -17,7 +17,7 @@ import { MailModule } from '../mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { DiscordModule } from '@discord-nestjs/core';
-import { GoogleAuthService } from 'src/third-party/google-auth/google-auth.service';
+import { GoogleAuthService } from '../third-party/google-auth/google-auth.service';
 
 @Module({
   imports: [

@@ -33,7 +33,7 @@ import {
   UserPayload,
 } from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
-import { USERNAME_MAX_SIZE } from 'src/constants';
+import { USERNAME_MAX_SIZE } from '../constants';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;

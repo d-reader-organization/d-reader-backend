@@ -17,7 +17,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from 'src/utils/transform';
 import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
-import { MAX_CREATOR_LIMIT } from 'src/constants';
+import { MAX_CREATOR_LIMIT } from '../../constants';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()

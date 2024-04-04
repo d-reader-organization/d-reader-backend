@@ -27,7 +27,7 @@ import {
 import { CreatorService } from '../creator/creator.service';
 import { UserAuth } from '../guards/user-auth.guard';
 import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
-import { GoogleUserAuth } from 'src/guards/google-auth.guard';
+import { GoogleUserAuth } from '../guards/google-auth.guard';
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
 @Controller('auth')
