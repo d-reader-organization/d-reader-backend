@@ -28,7 +28,6 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../utils/nft-metadata';
-import { base64 } from '@metaplex-foundation/umi/serializers';
 
 @Injectable()
 export class TransactionService {
