@@ -3,7 +3,7 @@ import { CreateComicIssueDto } from './create-comic-issue.dto';
 import { Transform } from 'class-transformer';
 
 export class UpdateComicIssueDto extends PartialType(
-  OmitType(CreateComicIssueDto, ['comicSlug', 'title', 'slug'] as const),
+  OmitType(CreateComicIssueDto, ['comicSlug'] as const),
 ) {}
 
 export class UpdateComicIssueFilesDto {
