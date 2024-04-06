@@ -144,9 +144,13 @@ export class ComicIssueController {
     return toComicIssueDto(comicIssue);
   }
 
-  @Get('get-public/:id')
-  async findOnePublic(@Param('id') id: string): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOnePublic(+id);
+  @Get('get-public/:idOrUniqueSlug')
+  async findOnePublic(
+    @Param('idOrUniqueSlug') idOrUniqueSlug: string,
+  ): Promise<ComicIssueDto> {
+    const comicIssue = await this.comicIssueService.findOnePublic(
+      idOrUniqueSlug,
+    );
     return toComicIssueDto(comicIssue);
   }
 

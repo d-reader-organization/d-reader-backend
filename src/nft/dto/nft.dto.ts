@@ -79,12 +79,6 @@ type NftInput = Nft & {
 };
 
 export async function toNftDto(nft: NftInput) {
-  // TODO: instead of fetching this data from arweave, fetch it from our database
-  // This would reflect to the new spec where NFTs might be updated in our db but
-  // not on-chain (yet) due to network congestion.
-  // In other words, our db is the source of truth and chain should match it.
-
-  // Implications: what if our db falls out of sync elsewhere (e.g. NFT transfers - owner)
   const offChainMetadata = await fetchOffChainMetadata(nft.uri);
 
   const plainNftDto: NftDto = {
