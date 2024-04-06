@@ -218,9 +218,14 @@ export class ComicIssueService {
     return normalizedComicIssues;
   }
 
-  async findOnePublic(id: number) {
-    const findComicIssue = this.prisma.comicIssue.findFirst({
-      where: { id },
+  async findOnePublic(idOrUniqueSlug: number | string) {
+    const isSlug = isNaN(+idOrUniqueSlug);
+    const queryWhere = isSlug
+      ? { collectionNft: { slug: idOrUniqueSlug.toString() } }
+      : { id: +idOrUniqueSlug };
+
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: queryWhere,
       include: {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
@@ -228,15 +233,14 @@ export class ComicIssueService {
       },
     });
 
-    const findActiveCandyMachine = this.findActiveCandyMachine(id);
-
-    const [comicIssue, activeCandyMachineAddress] = await Promise.all([
-      findComicIssue,
-      findActiveCandyMachine,
-    ]);
+    const activeCandyMachineAddress = await this.findActiveCandyMachine(
+      comicIssue.id,
+    );
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        `Comic issue with id ${comicIssue.id} does not exist`,
+      );
     }
 
     return { ...comicIssue, activeCandyMachineAddress };
@@ -251,11 +255,7 @@ export class ComicIssueService {
   }) {
     const isSlug = isNaN(+idOrUniqueSlug);
     const queryWhere = isSlug
-      ? {
-          collectionNft: {
-            slug: idOrUniqueSlug.toString(),
-          },
-        }
+      ? { collectionNft: { slug: idOrUniqueSlug.toString() } }
       : { id: +idOrUniqueSlug };
 
     const comicIssue = await this.prisma.comicIssue.findFirst({
