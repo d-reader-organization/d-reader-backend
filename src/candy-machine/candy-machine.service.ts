@@ -197,7 +197,10 @@ export class CandyMachineService {
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
     const collectionNft = await this.prisma.collectionNft.findUnique({
-      where: { comicIssueId },
+      where: {
+        comicIssueId,
+        candyMachines: { some: { standard: tokenStandard } },
+      },
     });
 
     let darkblockId = '';
