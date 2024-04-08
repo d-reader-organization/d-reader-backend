@@ -472,6 +472,12 @@ Table Device {
   }
 }
 
+Table DurableNonce {
+  address String [pk]
+  status DurableNonceStatus [not null, default: 'Available']
+  nonce String [unique, not null]
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -526,6 +532,11 @@ Enum GlobalStatusType {
   Info
   Warning
   Maintenance
+}
+
+Enum DurableNonceStatus {
+  Available
+  InUse
 }
 
 Ref: User.referrerId - User.id

@@ -4,7 +4,7 @@ import {
   bundlrStorage,
   MetaplexFile,
 } from '@metaplex-foundation/js';
-import { Cluster, Connection, Keypair } from '@solana/web3.js';
+import { Cluster, Connection, Keypair, Transaction } from '@solana/web3.js';
 import * as AES from 'crypto-js/aes';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import { BUNDLR_ADDRESS } from '../constants';
@@ -34,7 +34,13 @@ const getTreasuryKeypair = () => {
 };
 
 export const getTreasuryPublicKey = () => {
-  return getTreasuryKeypair().publicKey.toBase58();
+  return getTreasuryKeypair().publicKey;
+};
+
+export const getIdentitySignature = (transaction: Transaction) => {
+  const signer = getTreasuryKeypair();
+  transaction.sign(signer);
+  return transaction;
 };
 
 export function getConnection(customEndpoint?: string) {

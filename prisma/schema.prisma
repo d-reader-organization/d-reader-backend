@@ -511,3 +511,14 @@ model Device {
 
   @@unique([token, userId])
 }
+
+enum DurableNonceStatus {
+  Available
+  InUse
+}
+
+model DurableNonce {
+  address String             @id
+  status  DurableNonceStatus @default(Available)
+  nonce   String             @unique
+}
