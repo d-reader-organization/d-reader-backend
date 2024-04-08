@@ -58,6 +58,9 @@ import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
 import { SyncListingsCommand } from './sync-listings-command';
 import { SyncListingsQuestions } from './sync-listings-questions';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
+import { CreateNonceQuestions } from './create-nonce-options';
+import { CreateNonceCommand } from './create-nonce-command';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   imports: [
@@ -128,6 +131,9 @@ import { AuctionHouseService } from '../auction-house/auction-house.service';
     SyncListingsCommand,
     SyncListingsQuestions,
     AuctionHouseService,
+    CreateNonceQuestions,
+    CreateNonceCommand,
+    NonceService,
   ],
 })
 export class CLIModule {}
