@@ -17,8 +17,9 @@ import {
   getTreasuryPublicKey,
 } from '../utils/metaplex';
 import { MIN_COMPUTE_PRICE_IX } from '../constants';
-import { chunk } from 'lodash';
+import { chunk, update } from 'lodash';
 import { NonceAccountArgs } from './types';
+import { DurableNonceStatus } from '@prisma/client';
 
 @Injectable()
 export class NonceService {
@@ -30,7 +31,7 @@ export class NonceService {
   // Create durable nonce accounts in batch
   async create(supply: number) {
     const nonceAccounts: NonceAccountArgs[] = [];
-    const createNoncePromises = Array(supply).map(() => this.createNonce());
+    const createNoncePromises = Array(supply).map(this.createNonce);
 
     const NONCE_CHUNK_LEN = 5;
     const promiseChunks = chunk(createNoncePromises, NONCE_CHUNK_LEN);
@@ -38,8 +39,8 @@ export class NonceService {
     let failedCount = 0;
     for await (const promise of promiseChunks) {
       try {
-        const nonceAccount = await Promise.all(promise);
-        nonceAccounts.concat(nonceAccount);
+        const accounts = await Promise.all(promise);
+        nonceAccounts.concat(accounts);
       } catch (e) {
         failedCount += 1;
         console.error(`Failed to create nonce, Failed Count : ${failedCount}`);
@@ -48,7 +49,7 @@ export class NonceService {
     await this.prisma.durableNonce.createMany({ data: nonceAccounts });
   }
 
-  async fetchNewNonce(address: PublicKey) {
+  async fetchNonceAccount(address: PublicKey) {
     const nonceInfo = await this.connection.getAccountInfo(address);
     return NonceAccount.fromAccountData(nonceInfo.data);
   }
@@ -65,13 +66,15 @@ export class NonceService {
         feePayer: identity,
       });
 
+      const lamports = await this.connection.getMinimumBalanceForRentExemption(
+        NONCE_ACCOUNT_LENGTH,
+      );
       transaction.add(
         MIN_COMPUTE_PRICE_IX,
         SystemProgram.createAccount({
           fromPubkey: identity,
           newAccountPubkey: nonceKey.publicKey,
-          // TODO: Calculate lamports based on nonce account rent
-          lamports: 0.0015 * LAMPORTS_PER_SOL,
+          lamports,
           space: NONCE_ACCOUNT_LENGTH,
           programId: SystemProgram.programId,
         }),
@@ -85,7 +88,7 @@ export class NonceService {
       await sendAndConfirmTransaction(this.connection, signedTransaction, [
         nonceKey,
       ]);
-      const nonceAccount = await this.fetchNewNonce(nonceKey.publicKey);
+      const nonceAccount = await this.fetchNonceAccount(nonceKey.publicKey);
 
       return {
         nonce: nonceAccount.nonce,
@@ -94,5 +97,57 @@ export class NonceService {
     } catch (e) {
       console.log(e);
     }
+  }
+
+  async advanceNonce(address: PublicKey) {
+    try {
+      const identity = getTreasuryPublicKey();
+      const latestBlockhash = await this.connection.getLatestBlockhash(
+        'confirmed',
+      );
+      const transaction = new Transaction({
+        ...latestBlockhash,
+        feePayer: identity,
+      });
+      transaction.add(
+        MIN_COMPUTE_PRICE_IX,
+        SystemProgram.nonceAdvance({
+          authorizedPubkey: identity,
+          noncePubkey: address,
+        }),
+      );
+      const signedTransaction = getIdentitySignature(transaction);
+      await sendAndConfirmTransaction(this.connection, signedTransaction, []);
+      console.log(`Advanced nonce ${address.toString()}`);
+
+      const nonceData = await this.fetchNonceAccount(address);
+      await this.prisma.durableNonce.update({
+        where: { address: address.toString() },
+        data: { nonce: nonceData.nonce, status: DurableNonceStatus.Available },
+      });
+    } catch (e) {
+      console.error(`Failed to advance nonce ${address}`);
+    }
+  }
+
+  async getNonce(depth = 0) {
+    const nonce = await this.prisma.durableNonce.findFirst({
+      where: { status: DurableNonceStatus.Available },
+    });
+
+    if (!nonce) return;
+
+    const updatedNonce = await this.prisma.durableNonce.update({
+      where: { address: nonce.address, status: nonce.status },
+      data: { status: DurableNonceStatus.InUse },
+    });
+
+    if (depth == 6) {
+      return;
+    } else if (!updatedNonce) {
+      return this.getNonce(depth + 1);
+    }
+
+    return updatedNonce;
   }
 }
