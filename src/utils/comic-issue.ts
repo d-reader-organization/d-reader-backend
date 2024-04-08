@@ -1,4 +1,9 @@
-import { ComicRarity, StatefulCover, StatelessCover } from '@prisma/client';
+import {
+  ComicIssue,
+  ComicRarity,
+  StatefulCover,
+  StatelessCover,
+} from '@prisma/client';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { StatefulCoverDto } from '../comic-issue/dto/covers/stateful-cover.dto';
 import { PublishOnChainDto } from '../comic-issue/dto/publish-on-chain.dto';
@@ -73,5 +78,33 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
 
   if (!isSolanaAddress(comicIssue.creatorBackupAddress)) {
     throw new BadRequestException('Missing valid creator backup address');
+  }
+};
+
+/** ComicIssue objects can be searched by a unique ID or by a combination of comic-slug_comic-issue-slug.
+ * This function processes a string and checks if it can be converted to a number.
+ *
+ * If it can, it will be considered a unique ID number. If can't, it will be considered a unique comic + comic issue slug.
+ *
+ * For example:
+ *
+ * a) /get/100 -> return comic issue with ID 100
+ *
+ * b) /get/cyber-samurai_episode-1 -> return comic issue with slug "episode-1" and comic slug "cyber-samurai"
+ *
+ * IMPORTANT: this function respects the following naming convention: `comic-slug_comic-issue-slug`.
+ *
+ * Starting with a comic slug (kebab case), concated with underscore (snake case), and comic issue slug (kebab case)
+ */
+export const processComicIssueIdString = (
+  uniqueIdentifier: string,
+): Pick<ComicIssue, 'slug' | 'comicSlug'> | Pick<ComicIssue, 'id'> => {
+  const isUniqueIdNumber = !isNaN(+uniqueIdentifier);
+
+  if (isUniqueIdNumber) return { id: +uniqueIdentifier };
+  else {
+    const [comicSlug, slug] = uniqueIdentifier.split('_');
+
+    return { slug, comicSlug };
   }
 };
