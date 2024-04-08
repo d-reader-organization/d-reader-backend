@@ -47,6 +47,7 @@ export class NonceService {
       }
     }
     await this.prisma.durableNonce.createMany({ data: nonceAccounts });
+    return supply - failedCount;
   }
 
   async fetchNonceAccount(address: PublicKey) {
