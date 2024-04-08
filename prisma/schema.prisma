@@ -364,6 +364,7 @@ model CollectionNft {
   collectionItems Nft[]
   candyMachines   CandyMachine[]
   slug            String         @unique
+  darkblockId     String?
 }
 
 model ComicPage {

@@ -324,6 +324,7 @@ Table CollectionNft {
   collectionItems Nft [not null]
   candyMachines CandyMachine [not null]
   slug String [unique, not null]
+  darkblockId String
 }
 
 Table ComicPage {
