@@ -204,9 +204,10 @@ export class CandyMachineService {
     });
 
     let darkblockId = '';
-    if (collectionNft) {
+    // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
+    if (collectionNft && tokenStandard !== TokenStandard.Core) {
       collectionNftAddress = new PublicKey(collectionNft.address);
-      // TODO: Either store darkblockId in collection or fetch the id from offchain metadata
+      darkblockId = collectionNft.darkblockId ?? '';
     } else {
       let darkblockMetadataFile: MetdataFile;
       if (pdf) {
