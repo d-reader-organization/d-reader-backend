@@ -323,7 +323,6 @@ Table CollectionNft {
   comicIssueId Int [unique, not null]
   collectionItems Nft [not null]
   candyMachines CandyMachine [not null]
-  slug String [unique, not null]
   darkblockId String
 }
 

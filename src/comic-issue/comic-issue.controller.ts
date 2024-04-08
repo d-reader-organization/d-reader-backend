@@ -76,6 +76,7 @@ import {
 } from './dto/raw-comic-issue.dto';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
+import { processComicIssueIdString } from '../utils/comic-issue';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -132,25 +133,23 @@ export class ComicIssueController {
 
   /* Get specific comic issue by unique id or unique collection slug */
   @UserAuth()
-  @Get('get/:idOrUniqueSlug')
+  @Get('get/:id')
   async findOne(
-    @Param('idOrUniqueSlug') idOrUniqueSlug: string,
+    @Param('id') id: string,
     @UserEntity() user: UserPayload,
   ): Promise<ComicIssueDto> {
+    const processedId = processComicIssueIdString(id);
     const comicIssue = await this.comicIssueService.findOne({
-      idOrUniqueSlug,
+      where: processedId,
       userId: user.id,
     });
     return toComicIssueDto(comicIssue);
   }
 
-  @Get('get-public/:idOrUniqueSlug')
-  async findOnePublic(
-    @Param('idOrUniqueSlug') idOrUniqueSlug: string,
-  ): Promise<ComicIssueDto> {
-    const comicIssue = await this.comicIssueService.findOnePublic(
-      idOrUniqueSlug,
-    );
+  @Get('get-public/:id')
+  async findOnePublic(@Param('id') id: string): Promise<ComicIssueDto> {
+    const processedId = processComicIssueIdString(id);
+    const comicIssue = await this.comicIssueService.findOnePublic(processedId);
     return toComicIssueDto(comicIssue);
   }
 
@@ -226,8 +225,7 @@ export class ComicIssueController {
     return toComicIssueDto(updatedComicIssue);
   }
 
-  /* Update specific comic issues signature file */
-  @ComicIssueOwnerAuth()
+  /* Update { where }: { where: Prisma.ComicIssueWhereInput; }, processedId: Pick<{ id: number; number: number; sellerFeeBasisPoints: number; title: string; slug: string; description: string; flavorText: string; signature: string; pdf: string; isFreeToRead: boolean; isFullyUploaded: boolean; releaseDate: Date; updatedAt: Date; isSecondarySaleActive: boolean; createdAt: Date; featuredAt: Date; verifiedAt: Date; publishedAt: Date; popularizedAt: Date; creatorAddress: string; creatorBackupAddress: string; comicSlug: string; s3BucketSlug: string; }, "slug" | "comicSlug"> | Pick<{ id: number; number: number; sellerFeeBasisPoints: number; title: string; slug: string; description: string; flavorText: string; signature: string; pdf: string; isFreeToRead: boolean; isFullyUploaded: boolean; releaseDate: Date; updatedAt: Date; isSecondarySaleActive: boolean; createdAt: Date; featuredAt: Date; verifiedAt: Date; publishedAt: Date; popularizedAt: Date; creatorAddress: string; creatorBackupAddress: string; comicSlug: string; s3BucketSlug: string; }, "id">IssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('signature')
   @UseInterceptors(FileInterceptor('signature'))

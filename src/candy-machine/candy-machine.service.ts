@@ -177,7 +177,6 @@ export class CandyMachineService {
   async getOrCreateComicIssueCollection(
     comicIssue: ComicIssueCMInput,
     onChainName: string,
-    uniqueSlug: string,
     royaltyWallets: JsonMetadataCreators,
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
@@ -291,7 +290,6 @@ export class CandyMachineService {
         data: {
           address: collectionNftAddress.toBase58(),
           name: onChainName,
-          slug: uniqueSlug,
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
@@ -305,7 +303,6 @@ export class CandyMachineService {
     onChainName,
     guardParams,
     shouldBePublic,
-    uniqueSlug,
     tokenStandard,
   }: {
     comicIssue: ComicIssueCMInput;
@@ -314,7 +311,6 @@ export class CandyMachineService {
     guardParams: GuardParams;
     shouldBePublic?: boolean;
     tokenStandard?: TokenStandard;
-    uniqueSlug: string;
   }) {
     validateComicIssueCMInput(comicIssue);
     const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
@@ -326,7 +322,6 @@ export class CandyMachineService {
       await this.getOrCreateComicIssueCollection(
         comicIssue,
         onChainName,
-        uniqueSlug,
         royaltyWallets,
         statelessCovers,
         statefulCovers,

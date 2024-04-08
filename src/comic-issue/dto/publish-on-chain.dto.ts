@@ -58,9 +58,6 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsBoolean()
   shouldBePublic?: boolean;
 
-  @IsString()
-  collectionSlug: string;
-
   @IsOptional()
   @IsEnum(TokenStandard)
   @ApiProperty({ enum: TokenStandard })

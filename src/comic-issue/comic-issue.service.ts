@@ -218,14 +218,9 @@ export class ComicIssueService {
     return normalizedComicIssues;
   }
 
-  async findOnePublic(idOrUniqueSlug: number | string) {
-    const isSlug = isNaN(+idOrUniqueSlug);
-    const queryWhere = isSlug
-      ? { collectionNft: { slug: idOrUniqueSlug.toString() } }
-      : { id: +idOrUniqueSlug };
-
+  async findOnePublic(where: Prisma.ComicIssueWhereInput) {
     const comicIssue = await this.prisma.comicIssue.findFirst({
-      where: queryWhere,
+      where,
       include: {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
@@ -244,19 +239,14 @@ export class ComicIssueService {
   }
 
   async findOne({
-    idOrUniqueSlug,
+    where,
     userId,
   }: {
-    idOrUniqueSlug: number | string;
+    where: Prisma.ComicIssueWhereInput;
     userId: number;
   }) {
-    const isSlug = isNaN(+idOrUniqueSlug);
-    const queryWhere = isSlug
-      ? { collectionNft: { slug: idOrUniqueSlug.toString() } }
-      : { id: +idOrUniqueSlug };
-
     const comicIssue = await this.prisma.comicIssue.findFirst({
-      where: queryWhere,
+      where,
       include: {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
@@ -630,7 +620,6 @@ export class ComicIssueService {
       supply,
       mintPrice,
       shouldBePublic,
-      collectionSlug,
       tokenStandard,
       ...updatePayload
     } = publishOnChainDto;
@@ -680,7 +669,6 @@ export class ComicIssueService {
         onChainName,
         guardParams,
         shouldBePublic: shouldBePublic ?? true,
-        uniqueSlug: collectionSlug,
         tokenStandard,
       });
     } catch (e) {

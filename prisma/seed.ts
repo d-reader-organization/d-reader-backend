@@ -77,7 +77,6 @@ import {
 import { addDays } from 'date-fns';
 import { splTokensToSeed } from './spl-tokens';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../src/constants';
-import { snakeCase } from 'lodash';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
@@ -342,7 +341,6 @@ async function main() {
           sellerFeeBasisPoints: 500, // 5%
           startDate: new Date(),
           endDate: addDays(new Date(), 7),
-          collectionSlug: snakeCase(onChainName),
           creatorAddress: metaplex.identity().publicKey.toString(),
           royaltyWallets: [
             {
