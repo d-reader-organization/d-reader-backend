@@ -34,6 +34,7 @@ import { ThrottlerBehindProxyGuard } from './guards/throttler-behind-proxy.guard
 import { APP_GUARD } from '@nestjs/core';
 import { NotificationModule } from './notification/notification.module';
 import { ThirdPartyModule } from './third-party/third-party.module';
+import { NonceModule } from './nonce/nonce.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { ThirdPartyModule } from './third-party/third-party.module';
     DModule,
     NotificationModule,
     ThirdPartyModule,
+    NonceModule,
   ],
   controllers: [AppController],
   providers: [
