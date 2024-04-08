@@ -116,9 +116,10 @@ export class UserService {
       if (error instanceof BadRequestException) {
         throw error;
       }
+      const cleanedName = given_name.replace(/[^a-zA-Z0-9-_]/g, '');
       const user = await this.register({
         email,
-        name: `${given_name}_${id}`
+        name: `${cleanedName}_${id}`
           .substring(0, USERNAME_MAX_SIZE)
           .toLowerCase(),
         password: '',
