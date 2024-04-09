@@ -47,7 +47,13 @@ import {
   sleep,
   solFromLamports,
 } from '../utils/helpers';
-import { MetdataFile, metaplex, umi, writeFiles } from '../utils/metaplex';
+import {
+  MetdataFile,
+  getThirdPartySigner,
+  metaplex,
+  umi,
+  writeFiles,
+} from '../utils/metaplex';
 import {
   findDefaultCover,
   getStatefulCoverName,
@@ -105,6 +111,7 @@ import {
   EndDate,
   GuardGroup as CoreGuardGroup,
   AllowList,
+  ThirdPartySigner,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   createCollectionV1,
@@ -615,6 +622,7 @@ export class CandyMachineService {
     validateBalanceForMint(mintPrice, balance, tokenStandard);
 
     if (tokenStandard === TokenStandard.Core) {
+      // TODO: pass thirdparty sign as per config
       return await constructCoreMintTransaction(
         this.umi,
         publicKey(candyMachineAddress),
@@ -798,8 +806,16 @@ export class CandyMachineService {
     candyMachineAddress: string,
     params: GuardParams,
   ) {
-    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
-      params;
+    const {
+      label,
+      startDate,
+      endDate,
+      mintPrice,
+      mintLimit,
+      supply,
+      frozen,
+      thirdPartySign,
+    } = params;
 
     const candyMachine = await fetchCandyMachine(
       this.umi,
@@ -824,6 +840,12 @@ export class CandyMachineService {
     if (mintLimit)
       mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
 
+    let thirdPartySignerGuard: ThirdPartySigner;
+    if (thirdPartySign) {
+      const thirdPartySigner = getThirdPartySigner();
+      thirdPartySignerGuard = { signerKey: publicKey(thirdPartySigner) };
+    }
+
     const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
     const existingGroup = candyMachineGroups.find(
       (group) => group.label === label,
@@ -845,6 +867,7 @@ export class CandyMachineService {
         startDate: startDate ? some(startDateGuard) : none(),
         endDate: endDate ? some(endDateGuard) : none(),
         mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
+        thirdPartySigner: thirdPartySign ? some(thirdPartySignerGuard) : none(),
       },
     };
     const resolvedGroups = candyMachineGroups.filter(

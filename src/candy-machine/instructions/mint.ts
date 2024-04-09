@@ -75,6 +75,7 @@ import {
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
 import { base64 } from '@metaplex-foundation/umi/serializers';
+import { getThirdPartyUmiSignature } from '../../utils/metaplex';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -546,6 +547,7 @@ export async function constructCoreMintTransaction(
   label: string,
   allowList?: string[],
   lookupTableAddress?: string,
+  thirdPartySign?: boolean,
 ) {
   try {
     const transactions: string[] = [];
@@ -592,7 +594,7 @@ export async function constructCoreMintTransaction(
       );
     }
     const mintArgs = await getMintArgs(umi, candyMachine, label);
-    const mintTransaction = await transactionBuilder()
+    let mintTransaction = await transactionBuilder()
       .add(
         setComputeUnitPrice(umi, {
           microLamports: MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
@@ -611,6 +613,10 @@ export async function constructCoreMintTransaction(
       )
       .setAddressLookupTables(lookupTable ? [lookupTable] : [])
       .buildAndSign({ ...umi, payer: signer });
+
+    if (thirdPartySign) {
+      mintTransaction = await getThirdPartyUmiSignature(mintTransaction);
+    }
 
     const encodedMintTransaction = base64.deserialize(
       umi.transactions.serialize(mintTransaction),
@@ -652,6 +658,16 @@ async function getMintArgs(
     .map((guard) => {
       if (resolvedGuards[guard].__option == 'Some') {
         switch (guard) {
+          case 'thirdPartySigner':
+            if (resolvedGuards.thirdPartySigner.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  thirdPartySigner: resolvedGuards.thirdPartySigner.value,
+                }),
+              ];
+            }
+            break;
           case 'allowList':
             if (resolvedGuards.allowList.__option == 'Some') {
               return [

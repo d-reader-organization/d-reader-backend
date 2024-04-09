@@ -14,33 +14,34 @@ generator dbml {
 }
 
 model User {
-  id                 Int                   @id @default(autoincrement())
-  email              String                @unique
-  password           String
-  name               String                @unique
-  avatar             String                @default("")
-  nonce              String                @unique @default(uuid())
-  role               Role                  @default(User)
-  referrerId         Int?
-  referralsRemaining Int                   @default(0)
-  deletedAt          DateTime?
-  referredAt         DateTime?
-  lastLogin          DateTime?
-  lastActiveAt       DateTime?
-  emailVerifiedAt    DateTime?
-  createdAt          DateTime              @default(now())
-  rewardedAt         DateTime?
-  referCompeletedAt  DateTime?
-  mintReceipts       CandyMachineReceipt[]
-  comics             UserComic[]
-  comicIssues        UserComicIssue[]
-  creators           UserCreator[]
-  wallets            Wallet[]
-  referrer           User?                 @relation("ReferrerToReferral", fields: [referrerId], references: [id])
-  referrals          User[]                @relation("ReferrerToReferral")
-  notifications      UserNotification[]
-  devices            Device[]
-  consents           UserPrivacyConsent[]
+  id                    Int                     @id @default(autoincrement())
+  email                 String                  @unique
+  password              String
+  name                  String                  @unique
+  avatar                String                  @default("")
+  nonce                 String                  @unique @default(uuid())
+  role                  Role                    @default(User)
+  referrerId            Int?
+  referralsRemaining    Int                     @default(0)
+  deletedAt             DateTime?
+  referredAt            DateTime?
+  lastLogin             DateTime?
+  lastActiveAt          DateTime?
+  emailVerifiedAt       DateTime?
+  createdAt             DateTime                @default(now())
+  rewardedAt            DateTime?
+  referCompeletedAt     DateTime?
+  mintReceipts          CandyMachineReceipt[]
+  comics                UserComic[]
+  comicIssues           UserComicIssue[]
+  creators              UserCreator[]
+  wallets               Wallet[]
+  referrer              User?                   @relation("ReferrerToReferral", fields: [referrerId], references: [id])
+  referrals             User[]                  @relation("ReferrerToReferral")
+  notifications         UserNotification[]
+  devices               Device[]
+  consents              UserPrivacyConsent[]
+  UserCandyMachineGroup UserCandyMachineGroup[]
 }
 
 model Wallet {
@@ -320,14 +321,22 @@ model CandyMachineGroup {
   mintLimit           Int?
   startDate           DateTime?
   endDate             DateTime?
-  hasAllowList        Boolean                   @default(false)
   mintPrice           BigInt
   splTokenAddress     String
   wallets             WalletCandyMachineGroup[]
+  users               UserCandyMachineGroup[]
+  whiteListType       WhiteListType
   candyMachineAddress String
   candyMachine        CandyMachine              @relation(fields: [candyMachineAddress], references: [address])
 
   @@unique([label, candyMachineAddress])
+}
+
+enum WhiteListType {
+  User
+  Public
+  WalletWhiteList
+  UserWhiteList
 }
 
 model WalletCandyMachineGroup {
@@ -337,6 +346,15 @@ model WalletCandyMachineGroup {
   candyMachineGroupId Int
 
   @@id([candyMachineGroupId, walletAddress])
+}
+
+model UserCandyMachineGroup {
+  user                User              @relation(fields: [userId], references: [id])
+  userId              Int
+  candyMachineGroup   CandyMachineGroup @relation(fields: [candyMachineGroupId], references: [id], onDelete: Cascade)
+  candyMachineGroupId Int
+
+  @@id([candyMachineGroupId, userId])
 }
 
 model CandyMachineReceipt {
