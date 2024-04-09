@@ -475,7 +475,7 @@ Table Device {
 Table DurableNonce {
   address String [pk]
   status DurableNonceStatus [not null, default: 'Available']
-  nonce String [unique, not null]
+  nonce String [not null]
 }
 
 Enum Role {

@@ -9,6 +9,3 @@ CREATE TABLE "DurableNonce" (
 
     CONSTRAINT "DurableNonce_pkey" PRIMARY KEY ("address")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "DurableNonce_nonce_key" ON "DurableNonce"("nonce");

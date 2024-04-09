@@ -520,5 +520,5 @@ enum DurableNonceStatus {
 model DurableNonce {
   address String             @id
   status  DurableNonceStatus @default(Available)
-  nonce   String             @unique
+  nonce   String
 }

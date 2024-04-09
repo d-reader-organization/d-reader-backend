@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import {
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   NONCE_ACCOUNT_LENGTH,
   NonceAccount,
   PublicKey,
   SystemProgram,
   Transaction,
-  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
@@ -17,7 +15,6 @@ import {
   getTreasuryPublicKey,
 } from '../utils/metaplex';
 import { MIN_COMPUTE_PRICE_IX } from '../constants';
-import { chunk, update } from 'lodash';
 import { NonceAccountArgs } from './types';
 import { DurableNonceStatus } from '@prisma/client';
 
@@ -31,23 +28,20 @@ export class NonceService {
   // Create durable nonce accounts in batch
   async create(supply: number) {
     const nonceAccounts: NonceAccountArgs[] = [];
-    const createNoncePromises = Array(supply).map(this.createNonce);
 
-    const NONCE_CHUNK_LEN = 5;
-    const promiseChunks = chunk(createNoncePromises, NONCE_CHUNK_LEN);
-
-    let failedCount = 0;
-    for await (const promise of promiseChunks) {
+    for (let i = 0; i < supply; i++) {
       try {
-        const accounts = await Promise.all(promise);
-        nonceAccounts.concat(accounts);
+        const accounts = await this.createNonce();
+        nonceAccounts.push(accounts);
+        console.log(`${i + 1} Nonce account created`);
       } catch (e) {
-        failedCount += 1;
-        console.error(`Failed to create nonce, Failed Count : ${failedCount}`);
+        console.error(`Failed to create a nonce`, e);
       }
     }
-    await this.prisma.durableNonce.createMany({ data: nonceAccounts });
-    return supply - failedCount;
+
+    await this.prisma.durableNonce.createMany({
+      data: nonceAccounts,
+    });
   }
 
   async fetchNonceAccount(address: PublicKey) {
@@ -86,11 +80,25 @@ export class NonceService {
       );
 
       const signedTransaction = getIdentitySignature(transaction);
-      await sendAndConfirmTransaction(this.connection, signedTransaction, [
-        nonceKey,
-      ]);
-      const nonceAccount = await this.fetchNonceAccount(nonceKey.publicKey);
+      signedTransaction.partialSign(nonceKey);
 
+      const rawTransaction = signedTransaction.serialize({
+        verifySignatures: false,
+        requireAllSignatures: false,
+      });
+
+      const signature = await this.connection.sendRawTransaction(
+        rawTransaction,
+      );
+      await this.connection.confirmTransaction(
+        {
+          signature,
+          ...latestBlockhash,
+        },
+        'confirmed',
+      );
+
+      const nonceAccount = await this.fetchNonceAccount(nonceKey.publicKey);
       return {
         nonce: nonceAccount.nonce,
         address: nonceKey.publicKey.toString(),
@@ -117,8 +125,20 @@ export class NonceService {
           noncePubkey: address,
         }),
       );
+
       const signedTransaction = getIdentitySignature(transaction);
-      await sendAndConfirmTransaction(this.connection, signedTransaction, []);
+      const rawTransaction = signedTransaction.serialize({
+        verifySignatures: false,
+        requireAllSignatures: false,
+      });
+      const signature = await this.connection.sendRawTransaction(
+        rawTransaction,
+      );
+      await this.connection.confirmTransaction({
+        signature,
+        ...latestBlockhash,
+      });
+
       console.log(`Advanced nonce ${address.toString()}`);
 
       const nonceData = await this.fetchNonceAccount(address);
