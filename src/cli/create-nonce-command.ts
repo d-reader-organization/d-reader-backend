@@ -27,7 +27,7 @@ export class CreateNonceCommand extends CommandRunner {
     log("🏗️  Starting 'create-nonce' command...");
 
     const { count } = options;
-    const nonceCreated = await this.nonceService.create(count);
-    console.log(`${nonceCreated} nonce accounts are created successfully`);
+    await this.nonceService.create(count);
+    console.log(`Nonce accounts are created successfully`);
   }
 }

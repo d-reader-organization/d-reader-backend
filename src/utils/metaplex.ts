@@ -39,7 +39,7 @@ export const getTreasuryPublicKey = () => {
 
 export const getIdentitySignature = (transaction: Transaction) => {
   const signer = getTreasuryKeypair();
-  transaction.sign(signer);
+  transaction.partialSign(signer);
   return transaction;
 };
 
