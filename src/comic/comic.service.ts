@@ -265,7 +265,7 @@ export class ComicService {
     const newFileKeys: string[] = [];
     const oldFileKeys: string[] = [];
 
-    let coverKey: string, bannerKey: string, pfpKey: string, logoKey: string;
+    let coverKey: string, bannerKey: string, logoKey: string;
     try {
       const s3Folder = getS3Folder(comic.s3BucketSlug);
       if (cover) {
