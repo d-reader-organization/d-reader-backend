@@ -104,7 +104,6 @@ model Comic {
   audienceType  AudienceType        @default(Everyone)
   cover         String              @default("")
   banner        String              @default("")
-  pfp           String              @default("")
   logo          String              @default("")
   description   String              @default("")
   flavorText    String              @default("")

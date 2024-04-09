@@ -56,9 +56,6 @@ export class ComicDto {
   banner: string;
 
   @IsUrl()
-  pfp: string;
-
-  @IsUrl()
   logo: string;
 
   @IsString()
@@ -124,7 +121,6 @@ export function toComicDto(comic: ComicInput) {
     isPopular: !!comic.popularizedAt,
     cover: getPublicUrl(comic.cover),
     banner: getPublicUrl(comic.banner),
-    pfp: getPublicUrl(comic.pfp),
     logo: getPublicUrl(comic.logo),
     description: comic.description,
     flavorText: comic.flavorText,

@@ -22,7 +22,7 @@ import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
-type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'pfp' | 'logo'>;
+type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
 
 @Injectable()
 export class ComicService {
@@ -254,7 +254,7 @@ export class ComicService {
   }
 
   async updateFiles(slug: string, comicFilesDto: UpdateComicFilesDto) {
-    const { cover, banner, pfp, logo } = comicFilesDto;
+    const { cover, banner, logo } = comicFilesDto;
 
     let comic = await this.prisma.comic.findUnique({ where: { slug } });
 
@@ -284,11 +284,6 @@ export class ComicService {
         newFileKeys.push(bannerKey);
         oldFileKeys.push(comic.banner);
       }
-      if (pfp) {
-        pfpKey = await this.s3.uploadFile(pfp, { s3Folder, fileName: 'pfp' });
-        newFileKeys.push(pfpKey);
-        oldFileKeys.push(comic.pfp);
-      }
       if (logo) {
         logoKey = await this.s3.uploadFile(logo, {
           s3Folder,
@@ -307,7 +302,6 @@ export class ComicService {
       data: {
         cover: coverKey,
         banner: bannerKey,
-        pfp: pfpKey,
         logo: logoKey,
       },
     });

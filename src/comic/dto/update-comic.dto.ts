@@ -19,10 +19,5 @@ export class UpdateComicFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   @IsOptional()
-  pfp?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  @IsOptional()
   logo?: Express.Multer.File | null;
 }
