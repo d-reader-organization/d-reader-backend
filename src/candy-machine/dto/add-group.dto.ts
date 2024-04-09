@@ -45,4 +45,8 @@ export class AddGroupDto {
   @IsOptional()
   @IsBoolean()
   frozen?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  thirdPartySign?: boolean;
 }

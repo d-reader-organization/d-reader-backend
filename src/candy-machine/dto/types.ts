@@ -42,6 +42,7 @@ export type GuardParams = {
   mintLimit?: number;
   freezePeriod?: number;
   frozen?: boolean;
+  thirdPartySign?: boolean;
 };
 
 export type DarkblockTraits = {

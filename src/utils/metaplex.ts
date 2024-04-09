@@ -12,7 +12,11 @@ import { heliusClusterApiUrl } from 'helius-sdk';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
-import { keypairIdentity as umiKeypairIdentity } from '@metaplex-foundation/umi';
+import {
+  createSignerFromKeypair,
+  keypairIdentity as umiKeypairIdentity,
+  Transaction as UmiTransaction,
+} from '@metaplex-foundation/umi';
 import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 
@@ -20,6 +24,35 @@ export type MetdataFile = {
   type?: string;
   uri?: MetaplexFile | string;
   [key: string]: unknown;
+};
+
+const getThirdPartySignerKeypair = () => {
+  const thirdPartySigner = AES.decrypt(
+    process.env.THIRD_PARTY_SIGNER_PRIVATE_KEY,
+    process.env.THIRD_PARTY_SIGNER_SECRET,
+  );
+  const thirdPartySignerKeypair = Keypair.fromSecretKey(
+    Buffer.from(JSON.parse(thirdPartySigner.toString(Utf8))),
+  );
+  return thirdPartySignerKeypair;
+};
+
+export const getThirdPartySigner = () => {
+  return getThirdPartySignerKeypair().publicKey;
+};
+
+export const getThirdPartyLegacySignature = (transaction: Transaction) => {
+  const signer = getThirdPartySignerKeypair();
+  transaction.partialSign(signer);
+  return transaction;
+};
+
+export const getThirdPartyUmiSignature = async (
+  transaction: UmiTransaction,
+) => {
+  const thirdPartyKeypair = fromWeb3JsKeypair(getThirdPartySignerKeypair());
+  const thirdPartySigner = createSignerFromKeypair(umi, thirdPartyKeypair);
+  return thirdPartySigner.signTransaction(transaction);
 };
 
 const getTreasuryKeypair = () => {
