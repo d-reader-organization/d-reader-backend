@@ -137,7 +137,6 @@ export class ComicController {
     FileFieldsInterceptor([
       { name: 'cover', maxCount: 1 },
       { name: 'banner', maxCount: 1 },
-      { name: 'pfp', maxCount: 1 },
       { name: 'logo', maxCount: 1 },
     ]),
   )
@@ -186,20 +185,6 @@ export class ComicController {
       banner,
       'banner',
     );
-    return toComicDto(updatedComic);
-  }
-
-  /* Update specific comics pfp file */
-  @ComicOwnerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('pfp')
-  @UseInterceptors(FileInterceptor('pfp'))
-  @Patch('update/:slug/pfp')
-  async updatePfp(
-    @Param('slug') slug: string,
-    @UploadedFile() pfp: Express.Multer.File,
-  ): Promise<ComicDto> {
-    const updatedComic = await this.comicService.updateFile(slug, pfp, 'pfp');
     return toComicDto(updatedComic);
   }
 

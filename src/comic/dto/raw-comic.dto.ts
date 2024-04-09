@@ -44,9 +44,6 @@ export class RawComicDto {
   banner: string;
 
   @IsUrl()
-  pfp: string;
-
-  @IsUrl()
   logo: string;
 
   @IsString()
@@ -100,7 +97,6 @@ export function toRawComicDto(comic: RawComicInput) {
     popularizedAt: comic.popularizedAt,
     cover: getPublicUrl(comic.cover),
     banner: getPublicUrl(comic.banner),
-    pfp: getPublicUrl(comic.pfp),
     logo: getPublicUrl(comic.logo),
     description: comic.description,
     flavorText: comic.flavorText,

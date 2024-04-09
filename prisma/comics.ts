@@ -23,7 +23,6 @@ export const gorecatsData = (
   publishedAt: subDays(new Date(), 9),
   popularizedAt: new Date(),
   cover: 'comics/gorecats/cover.jpg',
-  pfp: 'comics/gorecats/pfp.jpg',
   logo: 'comics/gorecats/logo.png',
   website: 'https://gorecats.io',
   twitter: 'https://twitter.com/GORECATS',
@@ -57,7 +56,6 @@ export const babiesData = (
   popularizedAt: new Date(),
   completedAt: new Date(),
   cover: 'comics/barbabyans/cover.jpg',
-  pfp: 'comics/barbabyans/pfp.jpg',
   logo: 'comics/barbabyans/logo.png',
   s3BucketSlug: 'barbabyans',
 });
@@ -84,7 +82,6 @@ export const nikoData = (
   publishedAt: subDays(new Date(), 15),
   completedAt: new Date(),
   cover: 'comics/niko-and-the-sword/cover.jpg',
-  pfp: 'comics/niko-and-the-sword/pfp.jpg',
   banner: 'comics/niko-and-the-sword/banner.jpg',
   logo: 'comics/niko-and-the-sword/logo.png',
   website: 'https://www.artofniko.com/',
@@ -117,7 +114,6 @@ export const portalData = (
   publishedAt: subDays(new Date(), 18),
   completedAt: new Date(),
   cover: 'comics/the-dark-portal/cover.jpg',
-  pfp: 'comics/the-dark-portal/pfp.jpg',
   logo: 'comics/the-dark-portal/logo.png',
   website: 'https://www.studionx.com/',
   twitter: 'https://twitter.com/StudioNX',
@@ -148,7 +144,6 @@ export const lupersData = (
   publishedAt: subDays(new Date(), 17),
   popularizedAt: new Date(),
   cover: 'comics/lupers/cover.jpg',
-  pfp: 'comics/lupers/pfp.jpg',
   banner: 'comics/lupers/banner.jpg',
   logo: 'comics/lupers/logo.png',
   website: 'https://narentines.com',
@@ -180,7 +175,6 @@ export const narentsData = (
   verifiedAt: new Date(),
   publishedAt: subDays(new Date(), 17),
   cover: 'comics/narentines/cover.jpg',
-  pfp: 'comics/narentines/pfp.jpg',
   banner: 'comics/narentines/banner.jpg',
   logo: 'comics/narentines/logo.png',
   website: 'https://narentines.com',
@@ -210,7 +204,6 @@ export const heistData = (
   verifiedAt: new Date(),
   publishedAt: subDays(new Date(), 14),
   cover: 'comics/the-heist/cover.jpg',
-  pfp: 'comics/the-heist/pfp.jpg',
   banner: 'comics/the-heist/banner.jpg',
   logo: 'comics/the-heist/logo.png',
   website: 'https://theheist.game/',
@@ -235,7 +228,6 @@ export const gooneyData = (
   verifiedAt: new Date(),
   publishedAt: subDays(new Date(), 14),
   cover: 'comics/gooneytoons/cover.jpg',
-  pfp: 'comics/gooneytoons/pfp.jpg',
   banner: 'comics/gooneytoons/banner.png',
   logo: 'comics/gooneytoons/logo.png',
   website: 'https://gooneytoons.studio/',
@@ -261,7 +253,6 @@ export const animoData = (
   publishedAt: subDays(new Date(), 13),
   completedAt: new Date(),
   cover: 'comics/animosities/cover.jpg',
-  pfp: 'comics/animosities/pfp.jpg',
   logo: 'comics/animosities/logo.png',
   s3BucketSlug: 'animosities',
 });
@@ -299,7 +290,6 @@ export const taintData = (
   publishedAt: subDays(new Date(), 15),
   completedAt: new Date(),
   cover: 'comics/immaculate-taint/cover.jpg',
-  pfp: 'comics/immaculate-taint/pfp.jpg',
   logo: 'comics/immaculate-taint/logo.png',
   s3BucketSlug: 'immaculate-taint',
 });
@@ -324,7 +314,6 @@ export const islandData = (
   publishedAt: subDays(new Date(), 16),
   completedAt: new Date(),
   cover: 'comics/island/cover.jpg',
-  pfp: 'comics/island/pfp.jpg',
   logo: 'comics/island/logo.png',
   s3BucketSlug: 'island',
 });
@@ -351,7 +340,6 @@ export const wretchesData = (
   publishedAt: subDays(new Date(), 11),
   popularizedAt: new Date(),
   cover: 'comics/wretches/cover.jpg',
-  pfp: 'comics/wretches/pfp.jpg',
   logo: 'comics/wretches/logo.png',
   s3BucketSlug: 'wretches',
 });
@@ -378,7 +366,6 @@ export const countyData = (
   verifiedAt: new Date(),
   publishedAt: subDays(new Date(), 15),
   cover: 'comics/knockturn-county/cover.jpg',
-  pfp: 'comics/knockturn-county/pfp.jpg',
   logo: 'comics/knockturn-county/logo.png',
   s3BucketSlug: 'knockturn-county',
 });
@@ -399,7 +386,6 @@ export const janaData = (
   publishedAt: subDays(new Date(), 16),
   popularizedAt: new Date(),
   cover: 'comics/jana/cover.jpg',
-  pfp: 'comics/jana/pfp.jpg',
   logo: 'comics/jana/logo.png',
   s3BucketSlug: 'jana',
 });
@@ -420,7 +406,6 @@ export const watersData = (
   publishedAt: subDays(new Date(), 21),
   completedAt: new Date(),
   cover: 'comics/dark-waters/cover.jpg',
-  pfp: 'comics/dark-waters/pfp.jpg',
   logo: 'comics/dark-waters/logo.png',
   s3BucketSlug: 'dark-waters',
 });
@@ -470,7 +455,6 @@ export const tsukiData = (
   verifiedAt: new Date(),
   publishedAt: subDays(new Date(), 11),
   cover: 'comics/tsukiverse/cover.jpg',
-  pfp: 'comics/tsukiverse/pfp.jpg',
   logo: 'comics/tsukiverse/logo.png',
   s3BucketSlug: 'tsukiverse',
 });

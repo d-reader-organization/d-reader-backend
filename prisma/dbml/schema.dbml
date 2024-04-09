@@ -79,7 +79,6 @@ Table Comic {
   audienceType AudienceType [not null, default: 'Everyone']
   cover String [not null, default: '']
   banner String [not null, default: '']
-  pfp String [not null, default: '']
   logo String [not null, default: '']
   description String [not null, default: '']
   flavorText String [not null, default: '']
