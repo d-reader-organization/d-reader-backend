@@ -29,6 +29,7 @@ Table User {
   referrals User [not null]
   notifications UserNotification [not null]
   devices Device [not null]
+  consents UserPrivacyConsent [not null]
 }
 
 Table Wallet {
@@ -477,6 +478,15 @@ Table DurableNonce {
   nonce String [not null]
 }
 
+Table UserPrivacyConsent {
+  id Int [pk, increment]
+  userId Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  isConsentGiven Boolean [not null, default: false]
+  consentType ConsentType [not null]
+  user User [not null]
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -536,6 +546,11 @@ Enum GlobalStatusType {
 Enum DurableNonceStatus {
   Available
   InUse
+}
+
+Enum ConsentType {
+  Marketing
+  DataAnalytics
 }
 
 Ref: User.referrerId - User.id
@@ -603,3 +618,5 @@ Ref: UserNotification.userId > User.id [delete: Cascade]
 Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
 
 Ref: Device.userId > User.id
+
+Ref: UserPrivacyConsent.userId > User.id [delete: Cascade]

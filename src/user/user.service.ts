@@ -22,7 +22,7 @@ import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
-import { User, Wallet } from '@prisma/client';
+import { ConsentType, User, UserPrivacyConsent, Wallet } from '@prisma/client';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
@@ -34,6 +34,7 @@ import {
 } from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
 import { USERNAME_MAX_SIZE } from '../constants';
+import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -65,6 +66,8 @@ export class UserService {
       data: { name, email, password: hashedPassword },
     });
 
+    await this.updateAllUserConsents({ approve: true, userId: user.id });
+
     try {
       const avatar = await this.generateAvatar(user.id);
       user = await this.prisma.user.update({
@@ -77,6 +80,26 @@ export class UserService {
 
     this.mailService.userRegistered(user);
     return user;
+  }
+
+  private async updateAllUserConsents({
+    approve,
+    userId,
+  }: {
+    approve: boolean;
+    userId: number;
+  }) {
+    const userConsentPromises = Object.keys(ConsentType).map((consentType) =>
+      this.prisma.userPrivacyConsent.create({
+        data: {
+          consentType: ConsentType[consentType],
+          userId,
+          isConsentGiven: approve,
+        },
+      }),
+    );
+
+    return Promise.all(userConsentPromises);
   }
 
   async login(loginDto: LoginDto) {
@@ -559,6 +582,22 @@ export class UserService {
         userId,
       },
     });
+  }
+
+  async getUserPrivacyConsents(userId: number): Promise<UserPrivacyConsent[]> {
+    return this.prisma.userPrivacyConsent.findMany({
+      where: {
+        userId,
+      },
+      distinct: 'consentType',
+      orderBy: { id: 'desc' },
+    });
+  }
+
+  async createUserPrivacyConsent(
+    input: CreateUserConsentDto & { userId: number },
+  ): Promise<UserPrivacyConsent> {
+    return this.prisma.userPrivacyConsent.create({ data: input });
   }
 
   /** make sure all verified users have at least 1 referral remaining each week */
