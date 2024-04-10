@@ -619,8 +619,8 @@ export class ComicIssueService {
       freezePeriod,
       supply,
       mintPrice,
-      shouldBePublic,
       tokenStandard,
+      whiteListType,
       ...updatePayload
     } = publishOnChainDto;
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
@@ -661,6 +661,7 @@ export class ComicIssueService {
       label: PUBLIC_GROUP_LABEL,
       displayLabel: PUBLIC_GROUP_LABEL,
       supply,
+      whiteListType,
     };
     try {
       await this.candyMachineService.createComicIssueCM({
@@ -668,7 +669,6 @@ export class ComicIssueService {
         comicName: updatedComicIssue.comic.title,
         onChainName,
         guardParams,
-        shouldBePublic: shouldBePublic ?? true,
         tokenStandard,
       });
     } catch (e) {

@@ -41,7 +41,7 @@ model User {
   notifications         UserNotification[]
   devices               Device[]
   consents              UserPrivacyConsent[]
-  UserCandyMachineGroup UserCandyMachineGroup[]
+  userCandyMachineGroup UserCandyMachineGroup[]
 }
 
 model Wallet {

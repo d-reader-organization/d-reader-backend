@@ -170,3 +170,16 @@ export async function findOwnerByMint(
   const data = largestAccountInfo.value.data as ParsedAccountData;
   return data.parsed.info.owner;
 }
+
+// Finds if wallet belongs to whitelist
+export function isWalletWhiteListed(
+  walletAddress: string,
+  wallets: { walletAddress: string }[],
+) {
+  return wallets.some((wallet) => wallet.walletAddress === walletAddress);
+}
+
+// Finds if user belongs to whitelist
+export function isUserWhitelisted(userId: number, users: { userId: number }[]) {
+  return users.some((user) => user.userId == userId);
+}

@@ -30,6 +30,7 @@ Table User {
   notifications UserNotification [not null]
   devices Device [not null]
   consents UserPrivacyConsent [not null]
+  userCandyMachineGroup UserCandyMachineGroup [not null]
 }
 
 Table Wallet {
@@ -276,10 +277,11 @@ Table CandyMachineGroup {
   mintLimit Int
   startDate DateTime
   endDate DateTime
-  hasAllowList Boolean [not null, default: false]
   mintPrice BigInt [not null]
   splTokenAddress String [not null]
   wallets WalletCandyMachineGroup [not null]
+  users UserCandyMachineGroup [not null]
+  whiteListType WhiteListType [not null]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]
 
@@ -296,6 +298,17 @@ Table WalletCandyMachineGroup {
 
   indexes {
     (candyMachineGroupId, walletAddress) [pk]
+  }
+}
+
+Table UserCandyMachineGroup {
+  user User [not null]
+  userId Int [not null]
+  candyMachineGroup CandyMachineGroup [not null]
+  candyMachineGroupId Int [not null]
+
+  indexes {
+    (candyMachineGroupId, userId) [pk]
   }
 }
 
@@ -532,6 +545,13 @@ Enum TokenStandard {
   Core
 }
 
+Enum WhiteListType {
+  User
+  Public
+  WalletWhiteList
+  UserWhiteList
+}
+
 Enum CarouselLocation {
   Home
 }
@@ -590,6 +610,10 @@ Ref: CandyMachineGroup.candyMachineAddress > CandyMachine.address
 Ref: WalletCandyMachineGroup.walletAddress > Wallet.address
 
 Ref: WalletCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id [delete: Cascade]
+
+Ref: UserCandyMachineGroup.userId > User.id
+
+Ref: UserCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id [delete: Cascade]
 
 Ref: CandyMachineReceipt.nftAddress - Nft.address
 

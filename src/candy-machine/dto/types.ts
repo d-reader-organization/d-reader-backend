@@ -3,6 +3,7 @@ import {
   DefaultCandyGuardSettings,
   PublicKey,
 } from '@metaplex-foundation/js';
+import { CandyMachineGroup, WhiteListType } from '@prisma/client';
 
 export type MintSettings = {
   candyMachine: CandyMachine<DefaultCandyGuardSettings>;
@@ -22,11 +23,12 @@ export type CandyMachineGroupSettings = {
   startDate: Date;
   endDate: Date;
   mintPrice: number;
-  walletStats: CandyMachineGroupWalletStats;
+  walletStats?: CandyMachineGroupStats;
+  userStats?: CandyMachineGroupStats;
   mintLimit?: number;
 };
 
-export type CandyMachineGroupWalletStats = {
+export type CandyMachineGroupStats = {
   itemsMinted: number;
   isEligible: boolean;
 };
@@ -42,10 +44,15 @@ export type GuardParams = {
   mintLimit?: number;
   freezePeriod?: number;
   frozen?: boolean;
-  thirdPartySign?: boolean;
+  whiteListType?: WhiteListType;
 };
 
 export type DarkblockTraits = {
   name: string;
   value: string;
+};
+
+export type GroupWithWhiteListDetails = CandyMachineGroup & {
+  users: { userId: number }[];
+  wallets: { walletAddress: string }[];
 };
