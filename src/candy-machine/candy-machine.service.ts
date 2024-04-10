@@ -44,6 +44,8 @@ import {
   doesWalletIndexCorrectly,
   findOurCandyMachine,
   findOwnerByMint,
+  isUserWhitelisted,
+  isWalletWhiteListed,
   sleep,
   solFromLamports,
 } from '../utils/helpers';
@@ -73,8 +75,13 @@ import {
   Prisma,
   TokenStandard,
   ComicRarity as PrismaComicRarity,
+  WhiteListType,
 } from '@prisma/client';
-import { CandyMachineGroupSettings, GuardParams } from './dto/types';
+import {
+  CandyMachineGroupSettings,
+  GroupWithWhiteListDetails,
+  GuardParams,
+} from './dto/types';
 import { ComicRarity } from 'dreader-comic-verse';
 import {
   createCoreCandyMachine,
@@ -309,14 +316,12 @@ export class CandyMachineService {
     comicName,
     onChainName,
     guardParams,
-    shouldBePublic,
     tokenStandard,
   }: {
     comicIssue: ComicIssueCMInput;
     comicName: string;
     onChainName: string;
     guardParams: GuardParams;
-    shouldBePublic?: boolean;
     tokenStandard?: TokenStandard;
   }) {
     validateComicIssueCMInput(comicIssue);
@@ -335,11 +340,20 @@ export class CandyMachineService {
         tokenStandard,
       );
 
-    const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
-      guardParams;
+    const {
+      startDate,
+      endDate,
+      mintLimit,
+      freezePeriod,
+      mintPrice,
+      supply,
+      whiteListType,
+    } = guardParams;
 
     let candyMachine: LegacyCandyMachine | CoreCandyMachine;
     let candyMachineAddress: string;
+    const shouldBePublic = whiteListType === WhiteListType.Public;
+
     if (tokenStandard === TokenStandard.Core) {
       console.log('Create Core Candy Machine');
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
@@ -381,6 +395,7 @@ export class CandyMachineService {
                   mintLimit,
                   supply,
                   splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                  whiteListType,
                 },
               }
             : undefined,
@@ -521,6 +536,7 @@ export class CandyMachineService {
                   mintLimit,
                   supply,
                   splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                  whiteListType: WhiteListType.Public,
                 },
               }
             : undefined,
@@ -616,20 +632,41 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
   ) {
-    const { allowList, lookupTable, mintPrice, tokenStandard } =
-      await this.findCandyMachineData(candyMachineAddress.toString(), label);
+    const {
+      walletWhiteList,
+      lookupTable,
+      mintPrice,
+      tokenStandard,
+      userWhiteList,
+      whiteListType,
+    } = await this.findCandyMachineData(candyMachineAddress.toString(), label);
+
     const balance = await this.metaplex.connection.getBalance(feePayer);
     validateBalanceForMint(mintPrice, balance, tokenStandard);
 
     if (tokenStandard === TokenStandard.Core) {
-      // TODO: pass thirdparty sign as per config
+      const thirdPartySign =
+        whiteListType === WhiteListType.User ||
+        whiteListType === WhiteListType.UserWhiteList;
+
+      if (whiteListType === WhiteListType.User) {
+        const walletUser = await this.prisma.user.findFirst({
+          where: { wallets: { some: { address: feePayer.toString() } } },
+        });
+        const isWhitelisted = isUserWhitelisted(walletUser.id, userWhiteList);
+        if (!isWhitelisted) {
+          throw Error('User is not allowlisted');
+        }
+      }
+
       return await constructCoreMintTransaction(
         this.umi,
         publicKey(candyMachineAddress),
         publicKey(feePayer),
         label,
-        allowList,
+        walletWhiteList,
         lookupTable,
+        thirdPartySign,
       );
     }
 
@@ -638,7 +675,7 @@ export class CandyMachineService {
       feePayer,
       candyMachineAddress,
       label,
-      allowList,
+      walletWhiteList,
       lookupTable,
     );
   }
@@ -711,13 +748,16 @@ export class CandyMachineService {
     const groups: CandyMachineGroupSettings[] = await Promise.all(
       candyMachine.groups.map(
         async (group): Promise<CandyMachineGroupSettings> => {
-          const { displayLabel, isEligible, walletItemsMinted } =
-            await this.getMintCount(
-              query.candyMachineAddress,
-              group.label,
-              query.walletAddress,
-              group.mintLimit,
-            );
+          const {
+            displayLabel,
+            isEligible,
+            walletItemsMinted,
+            userItemsMinted,
+          } = await this.getMintDetails(
+            query.candyMachineAddress,
+            group.label,
+            query.walletAddress,
+          );
           return {
             ...group,
             mintPrice: Number(group.mintPrice),
@@ -726,6 +766,10 @@ export class CandyMachineService {
             walletStats: {
               isEligible,
               itemsMinted: walletItemsMinted,
+            },
+            userStats: {
+              isEligible,
+              itemsMinted: userItemsMinted,
             },
           };
         },
@@ -814,7 +858,7 @@ export class CandyMachineService {
       mintLimit,
       supply,
       frozen,
-      thirdPartySign,
+      whiteListType,
     } = params;
 
     const candyMachine = await fetchCandyMachine(
@@ -841,7 +885,11 @@ export class CandyMachineService {
       mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
 
     let thirdPartySignerGuard: ThirdPartySigner;
-    if (thirdPartySign) {
+    const isThirdPartySignerRequired =
+      whiteListType === WhiteListType.User ||
+      whiteListType === WhiteListType.UserWhiteList;
+
+    if (isThirdPartySignerRequired) {
       const thirdPartySigner = getThirdPartySigner();
       thirdPartySignerGuard = { signerKey: publicKey(thirdPartySigner) };
     }
@@ -867,7 +915,9 @@ export class CandyMachineService {
         startDate: startDate ? some(startDateGuard) : none(),
         endDate: endDate ? some(endDateGuard) : none(),
         mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
-        thirdPartySigner: thirdPartySign ? some(thirdPartySignerGuard) : none(),
+        thirdPartySigner: isThirdPartySignerRequired
+          ? some(thirdPartySignerGuard)
+          : none(),
       },
     };
     const resolvedGroups = candyMachineGroups.filter(
@@ -881,6 +931,36 @@ export class CandyMachineService {
     );
   }
 
+  async addUsersToWhiteList(
+    candyMachineAddress: string,
+    label: string,
+    usernames: string[],
+  ) {
+    const users = await this.prisma.user.findMany({
+      where: {
+        name: { in: usernames },
+        userCandyMachineGroup: {
+          none: { candyMachineGroup: { label, candyMachineAddress } },
+        },
+      },
+    });
+
+    await this.prisma.candyMachineGroup.update({
+      where: { label_candyMachineAddress: { label, candyMachineAddress } },
+      data: {
+        users: {
+          create: users.map((user) => {
+            return {
+              user: {
+                connect: { id: user.id },
+              },
+            };
+          }),
+        },
+      },
+    });
+  }
+
   async addCandyMachineGroup(candyMachineAddress: string, params: GuardParams) {
     const {
       displayLabel,
@@ -891,6 +971,7 @@ export class CandyMachineService {
       mintPrice,
       mintLimit,
       supply,
+      whiteListType,
     } = params;
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress },
@@ -917,6 +998,7 @@ export class CandyMachineService {
         mintPrice,
         mintLimit,
         supply,
+        whiteListType,
       },
     });
   }
@@ -1037,59 +1119,55 @@ export class CandyMachineService {
     try {
       const data = await this.prisma.candyMachineGroup.findFirst({
         where: { candyMachineAddress, label },
-        include: { wallets: true, candyMachine: true },
+        include: { wallets: true, candyMachine: true, users: true },
       });
       return {
-        allowList:
+        walletWhiteList:
           data.wallets && data.wallets.length
             ? data.wallets.map((item) => item.walletAddress)
             : undefined,
+        userWhiteList: data.users && data.users.length ? data.users : [],
         lookupTable: data.candyMachine.lookupTable,
         mintPrice: Number(data.mintPrice),
         tokenStandard: data.candyMachine.standard,
+        whiteListType: data.whiteListType,
       };
     } catch (e) {
       console.error(e);
     }
   }
 
-  async getMintCount(
+  async getMintDetails(
     candyMachineAddress: string,
     label: string,
     walletAddress?: string,
-    mintLimit?: number,
   ): Promise<{
     displayLabel: string;
     isEligible: boolean;
     walletItemsMinted?: number;
+    userItemsMinted?: number;
   }> {
-    let receiptsFromBuyer: Prisma.CandyMachineReceiptCreateManyCandyMachineInput[];
-
-    if (walletAddress) {
-      receiptsFromBuyer = await this.prisma.candyMachineReceipt.findMany({
-        where: { candyMachineAddress, label, buyerAddress: walletAddress },
-      });
-    }
-    let isEligible = !!walletAddress;
     const group = await this.prisma.candyMachineGroup.findFirst({
       where: { candyMachineAddress, label },
-      include: { wallets: true },
+      include: { wallets: true, users: true },
     });
 
-    if (walletAddress) {
-      isEligible =
-        (!group.hasAllowList ||
-          group.wallets.some(
-            (groupWallet) => groupWallet.walletAddress === walletAddress,
-          )) &&
-        (!mintLimit || receiptsFromBuyer.length < mintLimit);
+    if (!walletAddress) {
+      return { isEligible: false, displayLabel: group.displayLabel };
     }
 
-    return {
-      walletItemsMinted: receiptsFromBuyer?.length,
-      displayLabel: group.displayLabel,
-      isEligible,
-    };
+    switch (group.whiteListType) {
+      case WhiteListType.Public:
+        return this.checkWhiteListTypePublic(group, walletAddress);
+      case WhiteListType.User:
+        return this.checkWhiteListTypeUser(group, walletAddress);
+      case WhiteListType.UserWhiteList:
+        return this.checkWhiteListTypeUserWhiteList(group, walletAddress);
+      case WhiteListType.WalletWhiteList:
+        return this.checkWhiteListTypeWalletWhiteList(group, walletAddress);
+      default:
+        return { isEligible: false, displayLabel: group.displayLabel };
+    }
   }
 
   async syncCollection(nfts: string[]) {
@@ -1218,5 +1296,119 @@ export class CandyMachineService {
     } else {
       return deleteLegacyCandyMachine(this.metaplex, address);
     }
+  }
+
+  countUserItemsMintedQuery = (
+    candyMachineAddress: string,
+    label: string,
+    userId: number,
+  ) => {
+    return this.prisma.candyMachineReceipt.count({
+      where: { candyMachineAddress, label, userId },
+    });
+  };
+
+  countWalletItemsMintedQuery = (
+    candyMachineAddress: string,
+    label: string,
+    buyerAddress: string,
+  ) => {
+    return this.prisma.candyMachineReceipt.count({
+      where: { candyMachineAddress, label, buyerAddress },
+    });
+  };
+
+  async checkWhiteListTypeWalletWhiteList(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const walletItemsMinted = await this.countWalletItemsMintedQuery(
+      group.candyMachineAddress,
+      group.label,
+      walletAddress,
+    );
+    const mintLimitReached = group.mintLimit
+      ? group.mintLimit <= walletItemsMinted
+      : false;
+
+    const isEligible =
+      isWalletWhiteListed(walletAddress, group.wallets) && !mintLimitReached;
+    return {
+      isEligible,
+      walletItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  async checkWhiteListTypeUserWhiteList(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const user = await this.prisma.user.findFirst({
+      where: { wallets: { some: { address: walletAddress } } },
+    });
+    if (!user) return { isEligible: false, displayLabel: group.displayLabel };
+
+    const userItemsMinted = await this.countUserItemsMintedQuery(
+      group.candyMachineAddress,
+      group.label,
+      user.id,
+    );
+
+    const mintLimitReached = group.mintLimit
+      ? group.mintLimit <= userItemsMinted
+      : false;
+
+    const isEligible =
+      isUserWhitelisted(user.id, group.users) && !mintLimitReached;
+    return {
+      isEligible,
+      userItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  async checkWhiteListTypePublic(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const walletItemsMinted = await this.countWalletItemsMintedQuery(
+      group.candyMachineAddress,
+      group.label,
+      walletAddress,
+    );
+    const isEligible = group.mintLimit
+      ? group.mintLimit > walletItemsMinted
+      : true;
+    return {
+      isEligible,
+      walletItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  async checkWhiteListTypeUser(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const user = await this.prisma.user.findFirst({
+      where: { wallets: { some: { address: walletAddress } } },
+    });
+    if (!user) return { isEligible: false, displayLabel: group.displayLabel };
+
+    const userItemsMinted = await this.countUserItemsMintedQuery(
+      group.candyMachineAddress,
+      group.label,
+      user.id,
+    );
+    const isEligible = group.mintLimit
+      ? group.mintLimit > userItemsMinted
+      : true;
+
+    return {
+      isEligible,
+      userItemsMinted,
+      displayLabel: group.displayLabel,
+    };
   }
 }
