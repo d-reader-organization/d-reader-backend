@@ -40,6 +40,7 @@ model User {
   referrals          User[]                @relation("ReferrerToReferral")
   notifications      UserNotification[]
   devices            Device[]
+  consents           UserPrivacyConsent[]
 }
 
 model Wallet {
@@ -520,4 +521,18 @@ model DurableNonce {
   address String             @id
   status  DurableNonceStatus @default(Available)
   nonce   String
+}
+
+enum ConsentType {
+  Marketing
+  DataAnalytics
+}
+
+model UserPrivacyConsent {
+  id             Int         @id @default(autoincrement())
+  userId         Int
+  createdAt      DateTime    @default(now())
+  isConsentGiven Boolean     @default(false)
+  consentType    ConsentType
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

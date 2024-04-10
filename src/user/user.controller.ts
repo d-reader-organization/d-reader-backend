@@ -35,6 +35,11 @@ import { WalletDto, toWalletDtoArray } from 'src/wallet/dto/wallet.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UserFilterParams } from './dto/user-params.dto';
 import { RequestEmailChangeDto } from 'src/types/request-email-change.dto';
+import {
+  toUserPrivacyConsentDto,
+  toUserPrivacyConsentDtoArray,
+} from './dto/user-consent.dto';
+import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('User')
@@ -225,5 +230,25 @@ export class UserController {
     @UserEntity() user: UserPayload,
   ) {
     await this.userService.insertDeviceToken({ deviceToken, userId: user.id });
+  }
+
+  @UserAuth()
+  @Get('privacy-consent')
+  async getUserPrivacyConsents(@UserEntity() user: UserPayload) {
+    const consents = await this.userService.getUserPrivacyConsents(user.id);
+    return toUserPrivacyConsentDtoArray(consents);
+  }
+
+  @UserAuth()
+  @Post('privacy-consent/create')
+  async createUserPrivacyConsent(
+    @Body() createUserConsentDto: CreateUserConsentDto,
+    @UserEntity() user: UserPayload,
+  ) {
+    const consent = await this.userService.createUserPrivacyConsent({
+      ...createUserConsentDto,
+      userId: user.id,
+    });
+    return toUserPrivacyConsentDto(consent);
   }
 }
