@@ -22,7 +22,7 @@ import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
-import { User, UserPrivacyConsent, Wallet } from '@prisma/client';
+import { ConsentType, User, UserPrivacyConsent, Wallet } from '@prisma/client';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
@@ -66,6 +66,8 @@ export class UserService {
       data: { name, email, password: hashedPassword },
     });
 
+    await this.insertUserConsentsAfterRegistration(user.id);
+
     try {
       const avatar = await this.generateAvatar(user.id);
       user = await this.prisma.user.update({
@@ -78,6 +80,20 @@ export class UserService {
 
     this.mailService.userRegistered(user);
     return user;
+  }
+
+  private async insertUserConsentsAfterRegistration(userId: number) {
+    const consentTypePromises = Object.keys(ConsentType).map((consentType) =>
+      this.prisma.userPrivacyConsent.create({
+        data: {
+          consentType: ConsentType[consentType],
+          userId: userId,
+          isConsentGiven: true,
+        },
+      }),
+    );
+
+    return Promise.all(consentTypePromises);
   }
 
   async login(loginDto: LoginDto) {
