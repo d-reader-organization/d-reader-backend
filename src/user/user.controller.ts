@@ -242,11 +242,11 @@ export class UserController {
   @UserAuth()
   @Post('privacy-consent/create')
   async createUserPrivacyConsent(
-    @Body() payload: CreateUserConsentDto,
+    @Body() createUserConsentDto: CreateUserConsentDto,
     @UserEntity() user: UserPayload,
   ) {
     const consent = await this.userService.createUserPrivacyConsent({
-      ...payload,
+      ...createUserConsentDto,
       userId: user.id,
     });
     return toUserPrivacyConsentDto(consent);

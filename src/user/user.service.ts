@@ -66,7 +66,7 @@ export class UserService {
       data: { name, email, password: hashedPassword },
     });
 
-    await this.insertUserConsentsAfterRegistration(user.id);
+    await this.updateAllUserConsents({ approve: true, userId: user.id });
 
     try {
       const avatar = await this.generateAvatar(user.id);
@@ -82,18 +82,24 @@ export class UserService {
     return user;
   }
 
-  private async insertUserConsentsAfterRegistration(userId: number) {
-    const consentTypePromises = Object.keys(ConsentType).map((consentType) =>
+  private async updateAllUserConsents({
+    approve,
+    userId,
+  }: {
+    approve: boolean;
+    userId: number;
+  }) {
+    const userConsentPromises = Object.keys(ConsentType).map((consentType) =>
       this.prisma.userPrivacyConsent.create({
         data: {
           consentType: ConsentType[consentType],
-          userId: userId,
-          isConsentGiven: true,
+          userId,
+          isConsentGiven: approve,
         },
       }),
     );
 
-    return Promise.all(consentTypePromises);
+    return Promise.all(userConsentPromises);
   }
 
   async login(loginDto: LoginDto) {
