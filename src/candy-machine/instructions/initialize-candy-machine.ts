@@ -84,7 +84,7 @@ export async function createCoreCandyMachine(
     collection: collectionNftAddress,
     collectionUpdateAuthority: umi.identity,
     sellerFeeBasisPoints: percentAmount(
-      //TODO: Check this if it's giving correct percentage
+      //TODO: Check this if it's giving correct percentage.
       Number((comicIssue.sellerFeeBasisPoints / 100).toFixed(2)),
       2,
     ),
