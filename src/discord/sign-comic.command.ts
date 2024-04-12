@@ -392,7 +392,7 @@ export class GetSignCommand {
     const authority = pda(
       [
         Buffer.from(AUTH_TAG + rarity.toLowerCase()),
-        new PublicKey(candyMachine).toBuffer(),
+        new PublicKey(candyMachine.address).toBuffer(),
         metadata.collection.address.toBuffer(),
       ],
       COMIC_VERSE_ID,
@@ -403,7 +403,7 @@ export class GetSignCommand {
         await Promise.all([
           delegateAuthority(
             this.metaplex,
-            new PublicKey(candyMachine),
+            new PublicKey(candyMachine.address),
             metadata.collection.address,
             rarity.toString(),
             metadata.mintAddress,
