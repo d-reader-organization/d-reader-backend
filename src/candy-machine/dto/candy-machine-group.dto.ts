@@ -23,6 +23,19 @@ export class WalletGroupDto {
   supply?: number;
 }
 
+export class UserGroupDto {
+  @IsOptional()
+  @IsNumber()
+  itemsMinted?: number;
+
+  @IsBoolean()
+  isEligible: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  supply?: number;
+}
+
 export class CandyMachineGroupDto {
   @IsString()
   label: string;
@@ -57,6 +70,10 @@ export class CandyMachineGroupDto {
   @ApiProperty({ type: WalletGroupDto })
   wallet: WalletGroupDto;
 
+  @Type(() => UserGroupDto)
+  @ApiProperty({ type: UserGroupDto })
+  user: UserGroupDto;
+
   @IsOptional()
   @IsNumber()
   mintLimit?: number;
@@ -81,6 +98,11 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     wallet: {
       itemsMinted: group.walletStats.itemsMinted,
       isEligible: group.walletStats.isEligible,
+      supply: group.mintLimit,
+    },
+    user: {
+      itemsMinted: group.userStats.itemsMinted,
+      isEligible: group.userStats.isEligible,
       supply: group.mintLimit,
     },
   };
