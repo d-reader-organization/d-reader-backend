@@ -6,6 +6,7 @@ import { DarkblockService } from '../candy-machine/darkblock.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { TransactionService } from './transaction.service';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   controllers: [TransactionController],
@@ -16,6 +17,7 @@ import { TransactionService } from './transaction.service';
     HeliusService,
     DarkblockService,
     WebSocketGateway,
+    NonceService,
   ],
 })
 export class TransactionModule {}

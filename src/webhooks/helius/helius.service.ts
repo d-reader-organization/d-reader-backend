@@ -53,8 +53,9 @@ import {
   getUpdateV1InstructionDataSerializer,
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
-import { u8 } from '@metaplex-foundation/umi/serializers';
+import { base64, u8 } from '@metaplex-foundation/umi/serializers';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
+import { NonceService } from '../../nonce/nonce.service';
 
 @Injectable()
 export class HeliusService {
@@ -66,6 +67,7 @@ export class HeliusService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketGateway: WebSocketGateway,
+    private readonly nonceService: NonceService,
   ) {
     this.helius = new Helius(
       process.env.HELIUS_API_KEY,
@@ -382,6 +384,19 @@ export class HeliusService {
         const info = await this.metaplex
           .rpc()
           .getAccount(new PublicKey(metadataAddress));
+
+        // Update nonce account if used in ChangeComicState transaction
+        const transactionData = await this.umi.rpc.getTransaction(
+          base64.serialize(transaction.signature),
+        );
+        const blockhash = transactionData.message.blockhash;
+
+        const nonce = await this.prisma.durableNonce.findFirst({
+          where: { nonce: blockhash },
+        });
+        if (nonce) {
+          await this.nonceService.updateNonce(new PublicKey(nonce.address));
+        }
 
         const metadata = toMetadata(toMetadataAccount(info));
         const collection = metadata.collection;

@@ -60,6 +60,8 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
+import { NonceAccountArgs } from '../../nonce/types';
+import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
 
 // Core CandyMachine
 export async function createCoreCandyMachine(
@@ -69,6 +71,7 @@ export async function createCoreCandyMachine(
   royaltyWallets: JsonMetadataCreators,
   guardParams: GuardParams,
   isPublic?: boolean,
+  nonceArgs?: NonceAccountArgs,
 ) {
   const candyMachineKey = generateSigner(umi);
   const creators: CoreCmCreator[] = royaltyWallets.map((item) => {
@@ -115,12 +118,41 @@ export async function createCoreCandyMachine(
 
   const recentSlot = await umi.rpc.getSlot({ commitment: 'confirmed' });
   // TODO: check if it requires more compute and why it fails with (Program fails to compelete) without skipPreflight
-  const builder = setComputeUnitPrice(umi, {
+  let builder = setComputeUnitPrice(umi, {
     microLamports: MIN_COMPUTE_PRICE,
   }).add(createCmBuilder);
-  await builder.sendAndConfirm(umi, {
-    send: { commitment: 'confirmed', skipPreflight: true },
-  });
+
+  if (nonceArgs) {
+    const advanceNonceInstruction = fromWeb3JsInstruction(
+      SystemProgram.nonceAdvance({
+        noncePubkey: new PublicKey(nonceArgs.address),
+        authorizedPubkey: new PublicKey(umi.identity.publicKey.toString()),
+      }),
+    );
+
+    builder = builder.prepend({
+      instruction: advanceNonceInstruction,
+      signers: [umi.identity],
+      bytesCreatedOnChain: 0,
+    });
+    builder = builder.setBlockhash(nonceArgs.nonce);
+
+    await builder.sendAndConfirm(umi, {
+      send: { commitment: 'confirmed' },
+      confirm: {
+        strategy: {
+          type: 'durableNonce',
+          nonceAccountPubkey: publicKey(nonceArgs.address),
+          nonceValue: nonceArgs.nonce,
+          minContextSlot: recentSlot,
+        },
+      },
+    });
+  } else {
+    await builder.sendAndConfirm(umi, {
+      send: { commitment: 'confirmed', skipPreflight: true },
+    });
+  }
 
   let lookupTable: UmiPublicKey;
   try {
