@@ -228,12 +228,12 @@ export class ComicIssueService {
       },
     });
 
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue does not exist`);
+    }
+
     const id = comicIssue.id;
     const activeCandyMachineAddress = await this.findActiveCandyMachine(id);
-
-    if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    }
 
     return { ...comicIssue, activeCandyMachineAddress };
   }
