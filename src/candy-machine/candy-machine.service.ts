@@ -649,10 +649,17 @@ export class CandyMachineService {
         whiteListType === WhiteListType.User ||
         whiteListType === WhiteListType.UserWhiteList;
 
-      if (whiteListType === WhiteListType.User) {
-        const walletUser = await this.prisma.user.findFirst({
-          where: { wallets: { some: { address: feePayer.toString() } } },
-        });
+      const walletUser = await this.prisma.user.findFirst({
+        where: { wallets: { some: { address: feePayer.toString() } } },
+      });
+
+      if (!walletUser) {
+        throw Error(
+          'Only dReader users are allowed for this mint, register and come back again!',
+        );
+      }
+
+      if (whiteListType === WhiteListType.UserWhiteList) {
         const isWhitelisted = isUserWhitelisted(walletUser.id, userWhiteList);
         if (!isWhitelisted) {
           throw Error('User is not allowlisted');
