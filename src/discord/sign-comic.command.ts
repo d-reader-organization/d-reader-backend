@@ -373,12 +373,12 @@ export class GetSignCommand {
         .pdas()
         .metadata({ mint: new PublicKey(address) });
 
-      const info = await this.metaplex
-        .rpc()
-        .getAccount(new PublicKey(metadataAddress));
+      const info = await this.metaplex.rpc().getAccount(metadataAddress);
 
       if (!info) {
-        throw new Error(`Metadata account ${metadataAddress} doesn't exist`);
+        throw new Error(
+          `Metadata account ${metadataAddress.toString()} doesn't exist`,
+        );
       }
 
       metadata = toMetadata(toMetadataAccount(info));
