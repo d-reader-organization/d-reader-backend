@@ -1,3 +1,4 @@
+import { WhiteListType } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
@@ -43,6 +44,26 @@ export class AddGroupQuestions {
   })
   parseDisplayLabel(label: string): string {
     return label;
+  }
+
+  @Question({
+    type: 'list',
+    choices: [
+      { value: 'Public', checked: true },
+      { value: 'User' },
+      { value: 'WalletWhiteList' },
+      { value: 'UserWhiteList' },
+    ],
+    name: 'whiteListType',
+    message: 'What type of whitelist you want for group ?',
+
+    validate: async function (value: string) {
+      if (!value) return 'invalid whitelist type';
+      return true;
+    },
+  })
+  parseWhiteListType(label: string): WhiteListType {
+    return WhiteListType[label];
   }
 
   @Question({

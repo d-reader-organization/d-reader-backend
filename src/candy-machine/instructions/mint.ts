@@ -660,12 +660,10 @@ async function getMintArgs(
         switch (guard) {
           case 'thirdPartySigner':
             if (resolvedGuards.thirdPartySigner.__option == 'Some') {
-              return [
-                guard,
-                some({
-                  thirdPartySigner: resolvedGuards.thirdPartySigner.value,
-                }),
-              ];
+              const signer = createNoopSigner(
+                resolvedGuards.thirdPartySigner.value.signerKey,
+              );
+              return [guard, some({ signer })];
             }
             break;
           case 'allowList':

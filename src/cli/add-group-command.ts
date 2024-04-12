@@ -2,12 +2,14 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { WhiteListType } from '@prisma/client';
 interface Options {
   candyMachineAddress: string;
   label: string;
   displayLabel: string;
   supply: number;
   mintPrice: number;
+  whiteListType?: WhiteListType;
   startDate?: Date;
   endDate?: Date;
   mintLimit?: number;
