@@ -224,6 +224,23 @@ export class HeliusService {
   ) {
     try {
       const updateInstruction = enrichedTransaction.instructions.at(-1);
+      try {
+        // Update nonce account if used in ChangeCoreComicState transaction
+        const transactionData = await this.umi.rpc.getTransaction(
+          base64.serialize(enrichedTransaction.signature),
+        );
+        const blockhash = transactionData.message.blockhash;
+
+        const nonce = await this.prisma.durableNonce.findFirst({
+          where: { nonce: blockhash },
+        });
+        if (nonce) {
+          await this.nonceService.updateNonce(new PublicKey(nonce.address));
+        }
+      } catch (e) {
+        console.error(`Fails to update nonce for ChangeCoreComicStateTx`);
+      }
+
       const updateSerializer = getUpdateV1InstructionDataSerializer();
       const updateArgs = updateSerializer.deserialize(
         bs58.decode(updateInstruction.data),
@@ -384,19 +401,6 @@ export class HeliusService {
         const info = await this.metaplex
           .rpc()
           .getAccount(new PublicKey(metadataAddress));
-
-        // Update nonce account if used in ChangeComicState transaction
-        const transactionData = await this.umi.rpc.getTransaction(
-          base64.serialize(transaction.signature),
-        );
-        const blockhash = transactionData.message.blockhash;
-
-        const nonce = await this.prisma.durableNonce.findFirst({
-          where: { nonce: blockhash },
-        });
-        if (nonce) {
-          await this.nonceService.updateNonce(new PublicKey(nonce.address));
-        }
 
         const metadata = toMetadata(toMetadataAccount(info));
         const collection = metadata.collection;
