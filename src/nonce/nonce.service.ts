@@ -16,7 +16,7 @@ import {
 } from '../utils/metaplex';
 import { MIN_COMPUTE_PRICE_IX } from '../constants';
 import { NonceAccountArgs } from './types';
-import { DurableNonceStatus } from '@prisma/client';
+import { DurableNonce, DurableNonceStatus } from '@prisma/client';
 
 @Injectable()
 export class NonceService {
@@ -141,17 +141,22 @@ export class NonceService {
 
       console.log(`Advanced nonce ${address.toString()}`);
 
-      const nonceData = await this.fetchNonceAccount(address);
-      await this.prisma.durableNonce.update({
-        where: { address: address.toString() },
-        data: { nonce: nonceData.nonce, status: DurableNonceStatus.Available },
-      });
+      await this.updateNonce(address);
     } catch (e) {
       console.error(`Failed to advance nonce ${address}`);
     }
   }
 
-  async getNonce(depth = 0) {
+  async updateNonce(address: PublicKey) {
+    const nonceData = await this.fetchNonceAccount(address);
+    //TODO: Check if nonce didn't change, put it as InUse or create a new status ``Processing``
+    await this.prisma.durableNonce.update({
+      where: { address: address.toString() },
+      data: { nonce: nonceData.nonce, status: DurableNonceStatus.Available },
+    });
+  }
+
+  async getNonce(depth = 0): Promise<DurableNonce> {
     const nonce = await this.prisma.durableNonce.findFirst({
       where: { status: DurableNonceStatus.Available },
     });
