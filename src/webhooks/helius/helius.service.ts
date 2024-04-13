@@ -53,7 +53,7 @@ import {
   getUpdateV1InstructionDataSerializer,
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
-import { base64, u8 } from '@metaplex-foundation/umi/serializers';
+import { base58, u8 } from '@metaplex-foundation/umi/serializers';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
 
@@ -227,7 +227,7 @@ export class HeliusService {
       try {
         // Update nonce account if used in ChangeCoreComicState transaction
         const transactionData = await this.umi.rpc.getTransaction(
-          base64.serialize(enrichedTransaction.signature),
+          base58.serialize(enrichedTransaction.signature),
         );
         const blockhash = transactionData.message.blockhash;
 
