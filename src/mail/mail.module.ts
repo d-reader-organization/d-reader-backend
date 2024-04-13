@@ -15,6 +15,7 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { DarkblockService } from '../candy-machine/darkblock.service';
+import { NonceService } from '../nonce/nonce.service';
 
 type SupportedAuthType =
   | AuthenticationTypeLogin['type']
@@ -67,6 +68,7 @@ type SupportedAuthType =
     CandyMachineService,
     WebSocketGateway,
     DarkblockService,
+    NonceService,
   ],
   exports: [MailService],
 })

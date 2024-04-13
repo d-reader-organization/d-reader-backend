@@ -9,6 +9,7 @@ import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { CandyMachineModule } from '../candy-machine/candy-machine.module';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   imports: [CandyMachineModule],
@@ -22,6 +23,7 @@ import { CandyMachineModule } from '../candy-machine/candy-machine.module';
     WebSocketGateway,
     AuthService,
     JwtService,
+    NonceService,
   ],
 })
 export class UserModule {}

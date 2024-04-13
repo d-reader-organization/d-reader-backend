@@ -29,6 +29,8 @@ import {
 import { updateV1 } from '@metaplex-foundation/mpl-core';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { base64 } from '@metaplex-foundation/umi/serializers';
+import { NonceAccountArgs } from '../../nonce/types';
+import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -128,6 +130,7 @@ export async function constructChangeCoreComicStateTransaction(
   collectionMint: UmiPublicKey,
   asset: UmiPublicKey,
   newUri: string,
+  nonceArgs?: NonceAccountArgs,
 ) {
   const payer = createNoopSigner(signer);
   const updateAssetBuilder = await constructUpdateCoreNftTransaction(
@@ -136,12 +139,27 @@ export async function constructChangeCoreComicStateTransaction(
     asset,
     newUri,
   );
-  const builder = transactionBuilder()
+  let builder = transactionBuilder()
     .add(setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }))
     .add(updateAssetBuilder);
 
-  const transaction = await builder.buildAndSign({ ...umi, payer });
+  if (nonceArgs) {
+    const advanceNonceInstruction = fromWeb3JsInstruction(
+      SystemProgram.nonceAdvance({
+        noncePubkey: new PublicKey(nonceArgs.address),
+        authorizedPubkey: new PublicKey(umi.identity.publicKey.toString()),
+      }),
+    );
 
+    builder = builder.prepend({
+      instruction: advanceNonceInstruction,
+      signers: [umi.identity],
+      bytesCreatedOnChain: 0,
+    });
+    builder = builder.setBlockhash(nonceArgs.nonce);
+  }
+
+  const transaction = await builder.buildAndSign({ ...umi, payer });
   return base64.deserialize(umi.transactions.serialize(transaction))[0];
 }
 

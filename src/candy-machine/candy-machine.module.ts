@@ -4,6 +4,7 @@ import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { CandyMachineController } from './candy-machine.controller';
 import { CandyMachineService } from './candy-machine.service';
 import { DarkblockService } from './darkblock.service';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   controllers: [CandyMachineController],
@@ -12,6 +13,7 @@ import { DarkblockService } from './darkblock.service';
     HeliusService,
     WebSocketGateway,
     DarkblockService,
+    NonceService,
   ],
   exports: [CandyMachineService, DarkblockService],
 })

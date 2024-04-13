@@ -18,6 +18,7 @@ import { WalletModule } from '../wallet/wallet.module';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { DiscordModule } from '@discord-nestjs/core';
 import { GoogleAuthService } from '../third-party/google-auth/google-auth.service';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { GoogleAuthService } from '../third-party/google-auth/google-auth.servic
     UserCreatorService,
     DiscordNotificationService,
     GoogleAuthService,
+    NonceService,
   ],
   exports: [AuthService, PasswordService, JwtStrategy],
 })

@@ -88,7 +88,10 @@ import {
   createLegacyCandyMachine,
 } from './instructions/initialize-candy-machine';
 import { constructThawTransaction } from './instructions/route';
-import { createCollectionNft } from './instructions/create-collection';
+import {
+  constructCoreCollectionTransaction,
+  createCollectionNft,
+} from './instructions/create-collection';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { IndexedNft } from '../wallet/dto/types';
 import {
@@ -120,11 +123,6 @@ import {
   AllowList,
   ThirdPartySigner,
 } from '@metaplex-foundation/mpl-core-candy-machine';
-import {
-  createCollectionV1,
-  pluginAuthorityPair,
-  ruleSet,
-} from '@metaplex-foundation/mpl-core';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
@@ -133,6 +131,8 @@ import {
   deleteCoreCandyMachine,
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
+import { NonceService } from '../nonce/nonce.service';
+import { isNull } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -143,6 +143,7 @@ export class CandyMachineService {
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
     private readonly darkblockService: DarkblockService,
+    private readonly nonceService: NonceService,
   ) {
     this.metaplex = metaplex;
     this.umi = umi;
@@ -267,28 +268,22 @@ export class CandyMachineService {
           };
         });
 
-        const collectionBuilder = createCollectionV1(umi, {
+        const nonceArgs = await this.nonceService.getNonce();
+        await constructCoreCollectionTransaction(
+          this.umi,
           collection,
-          uri: collectionNftUri,
-          name: onChainName,
-          plugins: [
-            pluginAuthorityPair({
-              type: 'Royalties',
-              data: {
-                basisPoints: sellerFeeBasisPoints,
-                creators,
-                // Change in future if encounters with a marketplace not enforcing royalties
-                ruleSet: ruleSet('None'),
-              },
-            }),
-          ],
-        });
-
-        await collectionBuilder.sendAndConfirm(umi, {
-          send: { commitment: 'confirmed' },
-        });
+          collectionNftUri,
+          onChainName,
+          sellerFeeBasisPoints,
+          creators,
+          nonceArgs,
+        );
 
         console.log(`Collection: ${collection.publicKey.toString()}`);
+
+        if (!isNull(nonceArgs)) {
+          await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
+        }
         collectionNftAddress = new PublicKey(collection.publicKey);
       } else {
         const newCollectionNft = await createCollectionNft(
@@ -356,6 +351,7 @@ export class CandyMachineService {
 
     if (tokenStandard === TokenStandard.Core) {
       console.log('Create Core Candy Machine');
+      const nonceArgs = await this.nonceService.getNonce();
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
         publicKey(collectionNftAddress),
@@ -363,7 +359,13 @@ export class CandyMachineService {
         royaltyWallets,
         guardParams,
         !!shouldBePublic,
+        nonceArgs,
       );
+
+      if (nonceArgs) {
+        await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
+      }
+
       const candyMachine = await fetchCandyMachine(umi, candyMachinePubkey, {
         commitment: 'confirmed',
       });
@@ -649,20 +651,22 @@ export class CandyMachineService {
         whiteListType === WhiteListType.User ||
         whiteListType === WhiteListType.UserWhiteList;
 
-      const walletUser = await this.prisma.user.findFirst({
-        where: { wallets: { some: { address: feePayer.toString() } } },
-      });
+      if (thirdPartySign) {
+        const walletUser = await this.prisma.user.findFirst({
+          where: { wallets: { some: { address: feePayer.toString() } } },
+        });
 
-      if (!walletUser) {
-        throw Error(
-          'Only dReader users are allowed for this mint, register and come back again!',
-        );
-      }
+        if (!walletUser) {
+          throw Error(
+            'Only dReader users are allowed for this mint, register and come back again!',
+          );
+        }
 
-      if (whiteListType === WhiteListType.UserWhiteList) {
-        const isWhitelisted = isUserWhitelisted(walletUser.id, userWhiteList);
-        if (!isWhitelisted) {
-          throw Error('User is not allowlisted');
+        if (whiteListType === WhiteListType.UserWhiteList) {
+          const isWhitelisted = isUserWhitelisted(walletUser.id, userWhiteList);
+          if (!isWhitelisted) {
+            throw Error('User is not allowlisted');
+          }
         }
       }
 

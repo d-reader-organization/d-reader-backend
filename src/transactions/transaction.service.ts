@@ -28,13 +28,17 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../utils/nft-metadata';
+import { NonceService } from '../nonce/nonce.service';
 
 @Injectable()
 export class TransactionService {
   private readonly metaplex: Metaplex;
   private readonly umi: Umi;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly nonceService: NonceService,
+  ) {
     this.metaplex = metaplex;
     this.umi = umi;
   }
@@ -132,14 +136,20 @@ export class TransactionService {
         },
       });
 
+      const isUnwrap = newState === ComicStateArgs.Use;
+      const nonceArgs = isUnwrap
+        ? await this.nonceService.getNonce()
+        : undefined;
+
       const transaction = await constructChangeCoreComicStateTransaction(
         this.umi,
         signer,
         publicKey(collectionNftAddress),
         publicKey(mint),
         itemMetadata.uri,
+        nonceArgs,
       );
-      if (newState === ComicStateArgs.Use) {
+      if (isUnwrap) {
         const decodedTransaction = VersionedTransaction.deserialize(
           Buffer.from(transaction, 'base64'),
         );
