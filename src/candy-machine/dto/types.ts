@@ -23,6 +23,7 @@ export type CandyMachineGroupSettings = {
   startDate: Date;
   endDate: Date;
   mintPrice: number;
+  whiteListType: WhiteListType;
   walletStats?: CandyMachineGroupStats;
   userStats?: CandyMachineGroupStats;
   mintLimit?: number;

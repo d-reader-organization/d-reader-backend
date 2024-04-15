@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsDate,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,6 +10,7 @@ import { CandyMachineGroupSettings } from './types';
 import { Type, plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { sortBy } from 'lodash';
+import { WhiteListType } from '@prisma/client';
 
 export class WalletGroupDto {
   @IsOptional()
@@ -74,6 +76,10 @@ export class CandyMachineGroupDto {
   @ApiProperty({ type: UserGroupDto })
   user: UserGroupDto;
 
+  @IsEnum(WhiteListType)
+  @ApiProperty({ enum: WhiteListType })
+  whiteListType: WhiteListType;
+
   @IsOptional()
   @IsNumber()
   mintLimit?: number;
@@ -105,6 +111,7 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
       isEligible: group.userStats.isEligible,
       supply: group.mintLimit,
     },
+    whiteListType: group.whiteListType,
   };
   const candyMachineGroupDto = plainToInstance(
     CandyMachineGroupDto,
