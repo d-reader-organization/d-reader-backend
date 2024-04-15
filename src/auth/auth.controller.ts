@@ -18,7 +18,7 @@ import {
   validateName,
 } from '../utils/user';
 import { LoginDto } from '../types/login.dto';
-import { RegisterDto } from '../types/register.dto';
+import { GoogleRegisterDto, RegisterDto } from '../types/register.dto';
 import {
   Authorization,
   GoogleUserPayload,
@@ -48,9 +48,26 @@ export class AuthController {
   }
 
   @GoogleUserAuth()
-  @Patch('user/google-login')
-  async googleLogin(@GoogleUserEntity() user: GoogleUserPayload) {
+  @Patch(['user/google-login', 'user/login-with-google'])
+  async googleLogin(
+    @GoogleUserEntity() user: GoogleUserPayload,
+  ): Promise<Authorization | boolean> {
     return await this.userService.handleGoogleSignIn(user);
+  }
+
+  /* Register a new google user */
+  @Throttle(10, 60)
+  @Post('user/register-with-google')
+  async registerGoogleUser(
+    @Body() googleRegisterDto: GoogleRegisterDto,
+    @GoogleUserEntity() { email }: GoogleUserPayload,
+  ): Promise<Authorization> {
+    const user = await this.userService.register({
+      ...googleRegisterDto,
+      email,
+      password: '',
+    });
+    return this.authService.authorizeUser(user);
   }
 
   @SkipThrottle()

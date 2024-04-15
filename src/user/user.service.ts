@@ -33,7 +33,6 @@ import {
   UserPayload,
 } from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
-import { USERNAME_MAX_SIZE } from '../constants';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
@@ -63,7 +62,12 @@ export class UserService {
     ]);
 
     let user = await this.prisma.user.create({
-      data: { name, email, password: hashedPassword },
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        ...(!hashedPassword && { emailVerifiedAt: new Date() }), // no password = google register
+      },
     });
 
     await this.updateAllUserConsents({ approve: true, userId: user.id });
@@ -130,7 +134,7 @@ export class UserService {
   }
 
   async handleGoogleSignIn(googleUser: GoogleUserPayload) {
-    const { id, email, given_name } = googleUser;
+    const { email } = googleUser;
 
     try {
       const user = await this.findByEmail(email);
@@ -139,15 +143,7 @@ export class UserService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      const cleanedName = given_name.replace(/[^a-zA-Z0-9-_]/g, '');
-      const user = await this.register({
-        email,
-        name: `${cleanedName}_${id}`
-          .substring(0, USERNAME_MAX_SIZE)
-          .toLowerCase(),
-        password: '',
-      });
-      return this.authService.authorizeUser(user);
+      return false;
     }
   }
 
