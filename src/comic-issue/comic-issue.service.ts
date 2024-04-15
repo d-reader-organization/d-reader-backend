@@ -811,9 +811,7 @@ export class ComicIssueService {
       where: { id: comicIssueId },
       include: {
         statelessCovers: true,
-        comic: {
-          select: { s3BucketSlug: true },
-        },
+        comic: { select: { s3BucketSlug: true } },
       },
     });
     const oldStatelessCovers = comicIssue.statelessCovers;
@@ -863,12 +861,11 @@ export class ComicIssueService {
       where: { id: comicIssueId },
       include: {
         statefulCovers: true,
-        comic: {
-          select: { s3BucketSlug: true },
-        },
+        comic: { select: { s3BucketSlug: true } },
       },
     });
     const oldStatefulCovers = comicIssue.statefulCovers;
+    const areStatefulCoversUpdated = !!oldStatefulCovers;
 
     // upload stateful covers to S3 and format data for INSERT
     const newStatefulCoversData = await this.createManyStatefulCoversData(
@@ -876,19 +873,33 @@ export class ComicIssueService {
       comicIssue,
     );
 
+    const oldFileKeys = oldStatefulCovers.map((cover) => cover.image);
+    const newFileKeys = newStatefulCoversData.map((cover) => cover.image);
+
     try {
-      await this.prisma.statefulCover.createMany({
-        data: newStatefulCoversData,
-      });
+      if (areStatefulCoversUpdated) {
+        const deleteStatefulCovers = this.prisma.statefulCover.deleteMany({
+          where: { comicIssueId },
+        });
+
+        const createStatefulCovers = this.prisma.statefulCover.createMany({
+          data: newStatefulCoversData,
+        });
+
+        await this.prisma.$transaction([
+          deleteStatefulCovers,
+          createStatefulCovers,
+        ]);
+      } else {
+        await this.prisma.statefulCover.createMany({
+          data: newStatefulCoversData,
+        });
+      }
     } catch (e) {
-      const keys = newStatefulCoversData.map((cover) => cover.image);
-      await this.s3.deleteObjects(keys);
+      await this.s3.deleteObjects(newFileKeys);
       throw e;
     }
 
-    if (!!oldStatefulCovers.length) {
-      const keys = oldStatefulCovers.map((cover) => cover.image);
-      await this.s3.deleteObjects(keys);
-    }
+    await this.s3.deleteObjects(oldFileKeys);
   }
 }
