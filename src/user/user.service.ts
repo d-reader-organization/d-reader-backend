@@ -118,7 +118,7 @@ export class UserService {
 
     if (!user.password.length) {
       throw new BadRequestException(
-        'This account is already linked to a Google Account. Please use google sign in.',
+        'This user is linked to a Google Account. Please use google sign in.',
       );
     }
 
