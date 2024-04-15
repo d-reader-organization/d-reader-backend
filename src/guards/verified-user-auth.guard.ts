@@ -32,7 +32,7 @@ export class VerifiedUserGuard implements CanActivate {
     if (!user) {
       throw new NotFoundException(`User with id ${requestUser.id} not found`);
     } else if (!user.emailVerifiedAt) {
-      throw new ForbiddenException(`User with id ${user.id} is not verified`);
+      throw new ForbiddenException(`Email address is not verified`);
     } else if (requestUser.id === user.id) return true;
   }
 }
