@@ -641,6 +641,6 @@ Ref: UserNotification.userId > User.id [delete: Cascade]
 
 Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
 
-Ref: Device.userId > User.id
+Ref: Device.userId > User.id [delete: Cascade]
 
 Ref: UserPrivacyConsent.userId > User.id [delete: Cascade]
