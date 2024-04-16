@@ -47,6 +47,7 @@ export class AuthController {
     return await this.userService.throwIfNameTaken(name);
   }
 
+  @Throttle(10, 60)
   @GoogleUserAuth()
   @Patch(['user/google-login', 'user/login-with-google'])
   async googleLogin(
@@ -57,6 +58,7 @@ export class AuthController {
 
   /* Register a new google user */
   @Throttle(10, 60)
+  @GoogleUserAuth()
   @Post('user/register-with-google')
   async registerGoogleUser(
     @Body() googleRegisterDto: GoogleRegisterDto,

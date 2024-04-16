@@ -138,6 +138,16 @@ export class UserService {
 
     try {
       const user = await this.findByEmail(email);
+      if (!user.emailVerifiedAt) {
+        await this.prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            emailVerifiedAt: new Date(),
+          },
+        });
+      }
       return this.authService.authorizeUser(user);
     } catch (error) {
       if (error instanceof BadRequestException) {
