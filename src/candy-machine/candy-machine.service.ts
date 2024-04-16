@@ -355,8 +355,6 @@ export class CandyMachineService {
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
         publicKey(collectionNftAddress),
-        comicIssue,
-        royaltyWallets,
         guardParams,
         !!shouldBePublic,
         nonceArgs,

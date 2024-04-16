@@ -2311,10 +2311,10 @@
     "@solana/spl-token" "^0.3.6"
     "@solana/web3.js" "^1.66.2"
 
-"@metaplex-foundation/mpl-core-candy-machine@^0.1.3":
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core-candy-machine/-/mpl-core-candy-machine-0.1.3.tgz#e99ff7f3bbdad24a3a0c4e89b6d70036a59dc928"
-  integrity sha512-g5XDSt2V0e65dRPSRBdDbXyyYVmU7icc8mDBnG8oAyWFxOc8oPnKHXdFnp0dJw02j0RcFzhG5d0qAHBsV1IJoA==
+"@metaplex-foundation/mpl-core-candy-machine@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core-candy-machine/-/mpl-core-candy-machine-0.2.0.tgz#6d2dad30d2b0e1e34aa4081a7892cb543580846c"
+  integrity sha512-90AKombU6v3ul5yfexwYskMx9682X4FkgSTui3bqsz0WKlmEt3dxmlrpPGOyi+itEYqp8TjvwxykRXhU6P0uig==
   dependencies:
     "@metaplex-foundation/mpl-token-metadata" "3.0.0-alpha.27"
     "@metaplex-foundation/mpl-toolbox" "^0.9.0"
