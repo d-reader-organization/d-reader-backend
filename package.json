@@ -48,7 +48,8 @@
     "sync-listings": "npx ts-node src/cli/main.ts sync-listings",
     "delete-candy-machine": "npx ts-node src/cli/main.ts delete-candy-machine",
     "preinstall": "npx only-allow yarn",
-    "create-nonce": "npx ts-node src/cli/main.ts create-nonce"
+    "create-nonce": "npx ts-node src/cli/main.ts create-nonce",
+    "sync-core-asset": "npx ts-node src/cli/main.ts sync-core-asset"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
