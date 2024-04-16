@@ -61,6 +61,8 @@ import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { CreateNonceQuestions } from './create-nonce-options';
 import { CreateNonceCommand } from './create-nonce-command';
 import { NonceService } from '../nonce/nonce.service';
+import { SyncCoreAssetCommand } from './sync-core-assets-command';
+import { SyncCoreAssetsQuestions } from './sync-core-assets-questions';
 
 @Module({
   imports: [
@@ -134,6 +136,8 @@ import { NonceService } from '../nonce/nonce.service';
     CreateNonceQuestions,
     CreateNonceCommand,
     NonceService,
+    SyncCoreAssetCommand,
+    SyncCoreAssetsQuestions,
   ],
 })
 export class CLIModule {}
