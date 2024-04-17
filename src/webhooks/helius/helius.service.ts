@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Cluster, PublicKey } from '@solana/web3.js';
 import {
+  DAS,
   EnrichedTransaction,
   Helius,
+  Interface,
+  Scope,
   TransactionType,
   WebhookType,
 } from 'helius-sdk';
@@ -100,10 +103,14 @@ export class HeliusService {
   }
 
   async subscribeTo(address: string) {
-    const { webhookID, accountAddresses } = await this.findOne();
-    await this.updateWebhook(webhookID, {
-      accountAddresses: accountAddresses.concat(address),
-    });
+    try {
+      const { webhookID, accountAddresses } = await this.findOne();
+      await this.updateWebhook(webhookID, {
+        accountAddresses: accountAddresses.concat(address),
+      });
+    } catch (e) {
+      console.error(`Failed to subscribe to address ${address}`);
+    }
   }
 
   async removeSubscription(address: string) {
@@ -790,45 +797,49 @@ export class HeliusService {
     );
   }
 
-  async reindexNft(
-    metadataOrNft: Metadata<JsonMetadata<string>> | Nft,
-    collectionMetadata: JsonMetadata,
-    walletAddress: string,
-    candMachineAddress: string,
-  ) {
-    const mintAddress = isNft(metadataOrNft)
-      ? metadataOrNft.address
-      : metadataOrNft.mintAddress;
-    try {
-      if (
-        metadataOrNft.updateAuthorityAddress.equals(
-          this.metaplex.identity().publicKey,
-        )
-      ) {
-        await delegateAuthority(
-          this.metaplex,
-          new PublicKey(candMachineAddress),
-          metadataOrNft.collection.address,
-          findRarityTrait(collectionMetadata).toString(),
-          mintAddress,
-        );
+  async reIndexAsset(asset: DAS.GetAssetResponse, candMachineAddress: string) {
+    const updateAuthority = asset.authorities.find((authority) =>
+      authority.scopes.find((scope) => scope == Scope.METADATA),
+    );
+    const { group_value: collection } = asset.grouping.find(
+      (group) => group.group_key == 'collection',
+    );
+    const uri = asset.content.json_uri;
+    const mintAddress = asset.id;
+    const walletAddress = asset.ownership.owner;
+    const collectionMetadata = await fetchOffChainMetadata(uri);
+
+    if (asset.interface == Interface.PROGRAMMABLENFT) {
+      try {
+        if (
+          updateAuthority.address ===
+          this.metaplex.identity().publicKey.toString()
+        ) {
+          await delegateAuthority(
+            this.metaplex,
+            new PublicKey(candMachineAddress),
+            new PublicKey(collection),
+            findRarityTrait(collectionMetadata).toString(),
+            new PublicKey(mintAddress),
+          );
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
+
+      try {
+        if (!asset.creators[1].verified) {
+          await verifyMintCreator(this.metaplex, new PublicKey(mintAddress));
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    try {
-      if (!metadataOrNft.creators[1].verified) {
-        await verifyMintCreator(this.metaplex, mintAddress);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    const nft = await this.prisma.nft.update({
+    const nft = await this.prisma.nft.upsert({
       where: { address: mintAddress.toString() },
       include: { owner: { select: { userId: true } } },
-      data: {
+      update: {
         // TODO v2: this should fetch the info on when the owner changed from chain
         ownerChangedAt: new Date(0),
         owner: {
@@ -839,10 +850,10 @@ export class HeliusService {
         },
         metadata: {
           connectOrCreate: {
-            where: { uri: metadataOrNft.uri },
+            where: { uri },
             create: {
               collectionName: collectionMetadata.collection.name,
-              uri: metadataOrNft.uri,
+              uri,
               isUsed: findUsedTrait(collectionMetadata),
               isSigned: findSignedTrait(collectionMetadata),
               rarity: findRarityTrait(collectionMetadata),
@@ -850,8 +861,36 @@ export class HeliusService {
           },
         },
       },
+      create: {
+        address: mintAddress.toString(),
+        name: asset.content.metadata.name,
+        ownerChangedAt: new Date(),
+        metadata: {
+          connectOrCreate: {
+            where: { uri },
+            create: {
+              collectionName: collectionMetadata.collection.name,
+              uri,
+              isUsed: findUsedTrait(collectionMetadata),
+              isSigned: findSignedTrait(collectionMetadata),
+              rarity: findRarityTrait(collectionMetadata),
+            },
+          },
+        },
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress },
+          },
+        },
+        candyMachine: { connect: { address: candMachineAddress } },
+        collectionNft: {
+          connect: { address: collection },
+        },
+      },
     });
-    this.subscribeTo(mintAddress.toString());
+
+    this.subscribeTo(mintAddress);
     return nft;
   }
 
