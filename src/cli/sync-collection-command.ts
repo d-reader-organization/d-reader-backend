@@ -1,10 +1,13 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { chunk } from 'lodash';
+import { WalletService } from '../wallet/wallet.service';
+import { getAssetsByGroup } from '../utils/das';
+import { PrismaService } from 'nestjs-prisma';
+import { Interface } from 'helius-sdk';
+import { isEmpty } from 'lodash';
 
 interface Options {
-  nfts: string[];
+  collection: string;
 }
 
 @Command({
@@ -14,7 +17,8 @@ interface Options {
 export class SyncCollectionCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly candyMachineService: CandyMachineService,
+    private readonly walletService: WalletService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -24,19 +28,42 @@ export class SyncCollectionCommand extends CommandRunner {
     await this.syncCollection(options);
   }
 
-  //TODO: Fetch all collection nfts in the function itself.
   syncCollection = async (options: Options) => {
     log('\n🏗️  Syncing collection...');
+    const { collection } = options;
 
-    const { nfts } = options;
-
-    const items = chunk(nfts, 100);
-    for await (const item of items) {
-      await this.candyMachineService.syncCollection(item);
-    }
     try {
-    } catch (error) {
-      logErr(`Error syncing collction: ${error}`);
+      const candyMachines = await this.prisma.candyMachine.findMany({
+        select: { address: true },
+      });
+      const compeleteNfts = await this.prisma.nft
+        .findMany({
+          where: { collectionNftAddress: collection },
+        })
+        .then((nfts) => nfts.map((nft) => nft.address));
+
+      const limit = 100;
+      let page = 1;
+      let assets = await getAssetsByGroup(collection, page, limit);
+
+      while (!isEmpty(assets)) {
+        console.log(`Syncing ${assets.length} assets ...!`);
+
+        const legacyAssets = assets.filter(
+          (asset) => asset.interface == Interface.PROGRAMMABLENFT,
+        );
+
+        await this.walletService.syncLegacyAssets(
+          candyMachines,
+          compeleteNfts,
+          legacyAssets,
+        );
+
+        page++;
+        assets = await getAssetsByGroup(collection, page, limit);
+      }
+    } catch (e) {
+      logErr(`Error syncing collction: ${e}`);
     }
     log('\n');
   };

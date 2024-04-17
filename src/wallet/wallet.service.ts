@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { Metaplex, isMetadata } from '@metaplex-foundation/js';
+import { Metaplex } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { metaplex } from '../utils/metaplex';
-import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import {
   FREE_MINT_GROUP_LABEL,
@@ -14,14 +13,15 @@ import {
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { Prisma, Wallet } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { sortBy } from 'lodash';
-import { IndexedNft } from './dto/types';
+import { isEmpty, sortBy } from 'lodash';
 import { hasCompletedSetup } from '../utils/user';
+import { DAS, Interface, Scope } from 'helius-sdk';
 import {
   doesWalletIndexCorrectly,
   findOurCandyMachine,
-  findOwnerByMint,
-} from '../utils/helpers';
+  getAsset,
+  getAssetsByOwner,
+} from '../utils/das';
 
 @Injectable()
 export class WalletService {
@@ -50,79 +50,177 @@ export class WalletService {
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
-    const findAllByOwnerResult = await this.metaplex
-      .nfts()
-      .findAllByOwner({ owner: new PublicKey(address) });
-
-    const compeleteNfts = await this.prisma.nft.findMany({
-      where: { ownerAddress: address },
-    });
-
-    const nfts = compeleteNfts.map((nft) => nft.address);
-    const nftsWithNewOwner = compeleteNfts.filter(
-      (nft) =>
-        !findAllByOwnerResult.find(
-          (currentOwnerNft) =>
-            currentOwnerNft.address.toString() === nft.address,
-        ),
-    );
+    const compeleteNfts = await this.prisma.nft
+      .findMany({
+        where: { ownerAddress: address },
+      })
+      .then((nfts) => nfts.map((nft) => nft.address));
 
     const candyMachines = await this.prisma.candyMachine.findMany({
       select: { address: true },
     });
 
-    const onChainMetadatas = findAllByOwnerResult.filter(isMetadata);
-    const unsyncedMetadatas = (
+    const limit = 1000;
+    let page = 1;
+    let assets = await getAssetsByOwner(address, page, limit);
+
+    while (!isEmpty(assets)) {
+      console.log(`Syncing ${assets.length} assets ...!`);
+
+      const legacyAssets = assets.filter(
+        (asset) => asset.interface == Interface.PROGRAMMABLENFT,
+      );
+      const coreAssets = assets.filter(
+        (asset) => asset.interface.toString() === 'MplCoreAsset',
+      );
+
+      await this.syncLegacyAssets(candyMachines, compeleteNfts, legacyAssets);
+      await this.syncCoreAssets(coreAssets);
+
+      page++;
+      assets = await getAssetsByOwner(address, page, limit);
+    }
+
+    // Sync nfts with new owner
+    const nftsWithNewOwner = compeleteNfts.filter((address) =>
+      assets.find((currentOwnerNft) => currentOwnerNft.id === address),
+    );
+    for await (const nftAddress of nftsWithNewOwner) {
+      const asset = await getAsset(nftAddress);
+      const newOwner = asset.ownership.owner;
+      await this.prisma.nft.update({
+        where: { address: nftAddress },
+        data: {
+          owner: {
+            connectOrCreate: {
+              where: { address: newOwner },
+              create: { address: newOwner },
+            },
+          },
+        },
+      });
+    }
+  }
+
+  async syncCoreAssets(coreAssets: DAS.GetAssetResponse[]) {
+    const collections = await this.prisma.collectionNft.findMany({});
+    const assets = coreAssets.filter((asset) => {
+      const group = asset.grouping.find(
+        (group) => group?.group_key == 'collection',
+      );
+      return collections.find(
+        (collection) => group.group_value === collection.address,
+      );
+    });
+
+    for await (const asset of assets) {
+      const group = asset.grouping.find(
+        (group) => group?.group_key == 'collection',
+      );
+
+      // Considering that there is only one core candymachine for one core collection
+      const candyMachine = await this.prisma.candyMachine.findFirst({
+        where: { collectionNftAddress: group.group_value },
+      });
+      const indexedNft = await this.heliusService.reIndexAsset(
+        asset,
+        candyMachine.address,
+      );
+
+      const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
+        {
+          where: { nftAddress: indexedNft.address },
+        },
+      );
+
+      if (!doesReceiptExists) {
+        const UNKNOWN = 'UNKNOWN';
+        const userId: number = indexedNft.owner?.userId;
+
+        const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+          nft: { connect: { address: indexedNft.address } },
+          candyMachine: { connect: { address: candyMachine.address } },
+          buyer: {
+            connectOrCreate: {
+              where: { address: indexedNft.ownerAddress },
+              create: { address: indexedNft.ownerAddress },
+            },
+          },
+          price: 0,
+          timestamp: new Date(),
+          description: `${indexedNft.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
+          splTokenAddress: UNKNOWN,
+          transactionSignature: UNKNOWN,
+          label: UNKNOWN,
+        };
+
+        if (userId) {
+          receiptData.user = { connect: { id: userId } };
+        }
+
+        await this.prisma.candyMachineReceipt.create({
+          data: receiptData,
+        });
+      }
+
+      this.heliusService.subscribeTo(asset.id);
+    }
+  }
+
+  async syncLegacyAssets(
+    candyMachines: { address: string }[],
+    compeleteNfts: string[],
+    legacyAssets: DAS.GetAssetResponse[],
+  ) {
+    const unsyncedLegacyAssets = (
       await Promise.all(
-        onChainMetadatas.map(async (metadata) => {
+        legacyAssets.map(async (asset) => {
           const candyMachineAddress = findOurCandyMachine(
             this.metaplex,
             candyMachines,
-            metadata,
+            asset.creators,
           );
           if (candyMachineAddress) {
+            const updateAuthority =
+              asset.authorities?.find((authority) =>
+                authority.scopes.find((scope) => scope == Scope.METADATA),
+              ) ??
+              asset.authorities.find((authority) =>
+                authority.scopes.find((scope) => scope == Scope.FULL),
+              );
+
+            const collection = asset.grouping.find(
+              (group) => group?.group_key == 'collection',
+            );
             const isIndexed = await doesWalletIndexCorrectly(
-              metadata,
-              nfts,
+              asset.id,
+              asset.content.json_uri,
+              updateAuthority?.address ??
+                this.metaplex.identity().publicKey.toString(),
               candyMachineAddress,
+              collection.group_value,
+              asset.creators,
+              compeleteNfts,
             );
             if (!isIndexed) {
-              return metadata;
+              return asset;
             }
           }
         }),
       )
     ).filter(Boolean);
 
-    for await (const metadata of unsyncedMetadatas) {
-      const collectionMetadata = await fetchOffChainMetadata(metadata.uri);
-
-      const nft = await this.prisma.nft.findFirst({
-        where: { address: metadata.mintAddress.toString() },
-      });
+    for await (const asset of unsyncedLegacyAssets) {
       const candyMachine = findOurCandyMachine(
         this.metaplex,
         candyMachines,
-        metadata,
+        asset.creators,
       );
 
-      let indexedNft: IndexedNft;
-      if (nft) {
-        indexedNft = await this.heliusService.reindexNft(
-          metadata,
-          collectionMetadata,
-          address,
-          candyMachine,
-        );
-      } else {
-        indexedNft = await this.heliusService.indexNft(
-          metadata,
-          collectionMetadata,
-          address,
-          candyMachine,
-        );
-      }
-
+      const indexedNft = await this.heliusService.reIndexAsset(
+        asset,
+        candyMachine,
+      );
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
           where: { nftAddress: indexedNft.address },
@@ -144,7 +242,7 @@ export class WalletService {
           },
           price: 0,
           timestamp: new Date(),
-          description: `${indexedNft.address} minted ${metadata.name} for ${UNKNOWN} SOL.`,
+          description: `${indexedNft.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
           label: UNKNOWN,
@@ -159,26 +257,7 @@ export class WalletService {
         });
       }
 
-      this.heliusService.subscribeTo(metadata.mintAddress.toString());
-    }
-
-    // Sync nfts with new owner
-    for await (const nft of nftsWithNewOwner) {
-      const newOwner = await findOwnerByMint(
-        this.metaplex.connection,
-        new PublicKey(nft.address),
-      );
-      await this.prisma.nft.update({
-        where: { address: nft.address },
-        data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: newOwner },
-              create: { address: newOwner },
-            },
-          },
-        },
-      });
+      this.heliusService.subscribeTo(asset.id);
     }
   }
 

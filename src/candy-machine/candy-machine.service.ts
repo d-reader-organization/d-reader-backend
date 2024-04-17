@@ -14,7 +14,6 @@ import {
   toDateTime,
   WRAPPED_SOL_MINT,
   AllowListGuardSettings,
-  isNft,
   RedeemedAmountGuardSettings,
   StartDateGuardSettings,
   EndDateGuardSettings,
@@ -41,9 +40,6 @@ import {
   MIN_COMPUTE_PRICE,
 } from '../constants';
 import {
-  doesWalletIndexCorrectly,
-  findOurCandyMachine,
-  findOwnerByMint,
   isUserWhitelisted,
   isWalletWhiteListed,
   sleep,
@@ -72,7 +68,6 @@ import {
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import {
-  Prisma,
   TokenStandard,
   ComicRarity as PrismaComicRarity,
   WhiteListType,
@@ -92,8 +87,6 @@ import {
   constructCoreCollectionTransaction,
   createCollectionNft,
 } from './instructions/create-collection';
-import { fetchOffChainMetadata } from '../utils/nft-metadata';
-import { IndexedNft } from '../wallet/dto/types';
 import {
   Umi,
   generateSigner,
@@ -1176,118 +1169,6 @@ export class CandyMachineService {
         return this.checkWhiteListTypeWalletWhiteList(group, walletAddress);
       default:
         return { isEligible: false, displayLabel: group.displayLabel };
-    }
-  }
-
-  async syncCollection(nfts: string[]) {
-    const onChainNfts = (
-      await Promise.all(
-        nfts.map((mint: string) => {
-          return this.metaplex
-            .nfts()
-            .findByMint({ mintAddress: new PublicKey(mint) });
-        }),
-      )
-    ).filter(isNft);
-
-    const candyMachines = await this.prisma.candyMachine.findMany({
-      select: { address: true },
-    });
-
-    const unsyncedNfts = (
-      await Promise.all(
-        onChainNfts.map(async (nft) => {
-          const candyMachineAddress = findOurCandyMachine(
-            this.metaplex,
-            candyMachines,
-            nft,
-          );
-          if (candyMachineAddress) {
-            const isIndexed = await doesWalletIndexCorrectly(
-              nft,
-              nfts,
-              candyMachineAddress,
-            );
-            if (!isIndexed) {
-              return nft;
-            }
-            return nft;
-          }
-        }),
-      )
-    ).filter(Boolean);
-
-    for await (const unSyncedNft of unsyncedNfts) {
-      try {
-        const collectionMetadata = await fetchOffChainMetadata(unSyncedNft.uri);
-
-        const nft = await this.prisma.nft.findFirst({
-          where: { address: unSyncedNft.address.toString() },
-        });
-        const candyMachine = findOurCandyMachine(
-          this.metaplex,
-          candyMachines,
-          unSyncedNft,
-        );
-
-        const owner = await findOwnerByMint(
-          metaplex.connection,
-          unSyncedNft.address,
-        );
-
-        let indexedNft: IndexedNft;
-        if (nft) {
-          indexedNft = await this.heliusService.reindexNft(
-            unSyncedNft,
-            collectionMetadata,
-            owner,
-            candyMachine,
-          );
-        } else {
-          indexedNft = await this.heliusService.indexNft(
-            unSyncedNft,
-            collectionMetadata,
-            owner,
-            candyMachine,
-          );
-        }
-        const doesReceiptExists =
-          await this.prisma.candyMachineReceipt.findFirst({
-            where: { nftAddress: indexedNft.address },
-          });
-
-        if (!doesReceiptExists) {
-          const UNKNOWN = 'UNKNOWN';
-          const userId: number = indexedNft.owner?.userId;
-
-          const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-            nft: { connect: { address: indexedNft.address } },
-            candyMachine: { connect: { address: candyMachine } },
-            buyer: {
-              connectOrCreate: {
-                where: { address: indexedNft.ownerAddress },
-                create: { address: indexedNft.ownerAddress },
-              },
-            },
-            price: 0,
-            timestamp: new Date(),
-            description: `${indexedNft.address} minted ${unSyncedNft.name} for ${UNKNOWN} SOL.`,
-            splTokenAddress: UNKNOWN,
-            transactionSignature: UNKNOWN,
-            label: UNKNOWN,
-          };
-
-          if (userId) {
-            receiptData.user = { connect: { id: userId } };
-          }
-
-          await this.prisma.candyMachineReceipt.create({
-            data: receiptData,
-          });
-        }
-      } catch (e) {
-        console.error(`Error syncing nft ${unSyncedNft.address}`);
-      }
     }
   }
 

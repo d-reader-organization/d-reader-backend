@@ -1,6 +1,5 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log } from './chalk';
-import { clusterHeliusApiUrl } from '../utils/helius';
 import { DAS } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { HeliusService } from '../webhooks/helius/helius.service';
@@ -15,6 +14,7 @@ import { Prisma } from '@prisma/client';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { umi } from '../utils/metaplex';
+import { getAssetsByGroup } from '../utils/das';
 
 interface Options {
   collection: string;
@@ -42,19 +42,22 @@ export class SyncCoreAssetCommand extends CommandRunner {
 
   syncCoreAsset = async (options: Options) => {
     log('\n🏗️  Syncing...');
-    // TODO: If collection exists in our db
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: { collectionNftAddress: options.collection },
     });
+
     if (!candyMachine) {
       throw Error("Collection doesn't exists in database");
     }
+
     const limit = 200;
     let page = 1;
     let data = await getAssetsByGroup(options.collection, page, limit);
+
     const syncedAssets = await this.prisma.nft.findMany({
       where: { collectionNftAddress: options.collection },
     });
+
     let syncedItems = 0;
     while (!isEmpty(data)) {
       const unsyncedNfts = data.filter(
@@ -188,31 +191,3 @@ export class SyncCoreAssetCommand extends CommandRunner {
     this.heliusService.subscribeTo(asset.id);
   }
 }
-
-const getAssetsByGroup = async (
-  collection: string,
-  page: number,
-  limit: number,
-): Promise<DAS.GetAssetResponse[]> => {
-  const url = clusterHeliusApiUrl(process.env.HELIUS_API_KEY);
-  const params: DAS.AssetsByGroupRequest = {
-    groupKey: 'collection',
-    groupValue: collection,
-    page,
-    limit,
-  };
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 'my-id',
-      method: 'getAssetsByGroup',
-      params,
-    }),
-  });
-  const { result } = await response.json();
-  return result.items;
-};
