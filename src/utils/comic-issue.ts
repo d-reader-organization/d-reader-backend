@@ -30,14 +30,16 @@ export const getStatelessCoverName = (
 export const getStatefulCoverName = (
   cover: StatefulCoverDto | CreateStatefulCoverBodyDto,
 ): string => {
-  return (
-    (cover.isUsed ? 'used-' : 'unused-') +
-    (cover.isSigned ? 'signed' : 'unsigned') +
-    (cover.rarity && cover.rarity != ComicRarity.None
-      ? '-' + cover.rarity
-      : '') +
-    '-cover'
-  );
+  const isUsedSubstring = cover.isUsed ? 'used-' : 'unused-';
+  const isSignedSubstring = cover.isSigned ? 'signed' : 'unsigned';
+  const raritySubstring =
+    cover.rarity && cover.rarity != ComicRarity.None ? '-' + cover.rarity : '';
+  const coverSuffix = '-cover';
+  const coverFileName =
+    isUsedSubstring + isSignedSubstring + raritySubstring + coverSuffix;
+  const lowercasedName = coverFileName.toLowerCase();
+
+  return lowercasedName;
 };
 
 export const validateWeb3PublishInfo = (
