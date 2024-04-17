@@ -536,9 +536,10 @@ enum DurableNonceStatus {
 }
 
 model DurableNonce {
-  address String             @id
-  status  DurableNonceStatus @default(Available)
-  nonce   String
+  address       String             @id
+  status        DurableNonceStatus @default(Available)
+  nonce         String
+  lastUpdatedAt DateTime           @default(now())
 }
 
 enum ConsentType {

@@ -149,10 +149,13 @@ export class NonceService {
 
   async updateNonce(address: PublicKey) {
     const nonceData = await this.fetchNonceAccount(address);
-    //TODO: Check if nonce didn't change, put it as InUse or create a new status ``Processing``
     await this.prisma.durableNonce.update({
       where: { address: address.toString() },
-      data: { nonce: nonceData.nonce, status: DurableNonceStatus.Available },
+      data: {
+        nonce: nonceData.nonce,
+        status: DurableNonceStatus.Available,
+        lastUpdatedAt: new Date(),
+      },
     });
   }
 
@@ -165,7 +168,7 @@ export class NonceService {
 
     const updatedNonce = await this.prisma.durableNonce.update({
       where: { address: nonce.address, status: nonce.status },
-      data: { status: DurableNonceStatus.InUse },
+      data: { status: DurableNonceStatus.InUse, lastUpdatedAt: new Date() },
     });
 
     if (depth == 6) {
