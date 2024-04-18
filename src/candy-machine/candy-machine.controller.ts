@@ -21,6 +21,9 @@ import { AddAllowListDto } from './dto/add-allow-list.dto';
 import { AdminGuard } from '../guards/roles.guard';
 import { AddGroupDto } from './dto/add-group.dto';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { UserEntity } from '../decorators/user.decorator';
+import { UserPayload } from '../auth/dto/authorization.dto';
+import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -36,9 +39,13 @@ export class CandyMachineController {
     return await toCMReceiptDtoArray(receipts);
   }
 
+  @OptionalUserAuth()
   @Get('get')
-  async findByAddress(@Query() query: CandyMachineParams) {
-    const candyMachine = await this.candyMachineService.find(query);
+  async findByAddress(
+    @Query() query: CandyMachineParams,
+    @UserEntity() user?: UserPayload,
+  ) {
+    const candyMachine = await this.candyMachineService.find(query, user.id);
     return toCandyMachineDto(candyMachine);
   }
 
