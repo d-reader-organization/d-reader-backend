@@ -1,11 +1,4 @@
-import {
-  Metadata,
-  Metaplex,
-  Nft,
-  PublicKey,
-  isNft,
-  sol,
-} from '@metaplex-foundation/js';
+import { PublicKey, sol } from '@metaplex-foundation/js';
 import {
   Connection,
   LAMPORTS_PER_SOL,
@@ -13,9 +6,6 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
-import { fetchOffChainMetadata, findRarityTrait } from './nft-metadata';
-import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
-import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -107,57 +97,6 @@ export const importDynamic = new Function(
   'modulePath',
   'return import(modulePath)',
 );
-
-export function findOurCandyMachine(
-  metaplex: Metaplex,
-  candyMachines: { address: string }[],
-  metadata: Metadata | Nft,
-) {
-  const candyMachine = candyMachines.find(
-    (cm) =>
-      metadata?.creators?.length > 0 &&
-      metaplex
-        .candyMachines()
-        .pdas()
-        .authority({ candyMachine: new PublicKey(cm.address) })
-        .equals(metadata.creators[0].address),
-  );
-  return candyMachine?.address;
-}
-
-export async function doesWalletIndexCorrectly(
-  metadataOrNft: Metadata | Nft,
-  nfts: string[],
-  candyMachineAddress: string,
-) {
-  const mintAddress = isNft(metadataOrNft)
-    ? metadataOrNft.address
-    : metadataOrNft.mintAddress;
-  for (const nft of nfts) {
-    const doesNftExists = nft === mintAddress.toString();
-    if (doesNftExists) {
-      const updateAuthority = metadataOrNft.updateAuthorityAddress;
-      const offChainMetadata = await fetchOffChainMetadata(metadataOrNft.uri);
-      const rarity = findRarityTrait(offChainMetadata);
-      const authority = pda(
-        [
-          Buffer.from(AUTH_TAG + rarity.toLowerCase()),
-          new PublicKey(candyMachineAddress).toBuffer(),
-          metadataOrNft.collection.address.toBuffer(),
-        ],
-        COMIC_VERSE_ID,
-      );
-
-      if (
-        updateAuthority.equals(authority) &&
-        metadataOrNft.creators[1].verified
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 
 export async function findOwnerByMint(
   connection: Connection,

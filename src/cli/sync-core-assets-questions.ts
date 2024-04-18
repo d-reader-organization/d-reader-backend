@@ -1,7 +1,7 @@
 import { QuestionSet, Question } from 'nest-commander';
 
-@QuestionSet({ name: 'sync-collection' })
-export class SyncCollectionQuestions {
+@QuestionSet({ name: 'sync-core-asset' })
+export class SyncCoreAssetsQuestions {
   @Question({
     type: 'input',
     name: 'collection',

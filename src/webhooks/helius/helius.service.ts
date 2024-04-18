@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Cluster, PublicKey } from '@solana/web3.js';
 import {
+  DAS,
   EnrichedTransaction,
   Helius,
+  Interface,
+  Scope,
   TransactionType,
   WebhookType,
 } from 'helius-sdk';
@@ -36,7 +39,7 @@ import {
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
   D_PUBLISHER_SYMBOL,
-  MINT_CORE_V1_DISCRIMINANT,
+  MINT_CORE_V1_DISCRIMINATOR,
   SOL_ADDRESS,
   TRANSFER_CORE_V1_DISCRIMINANT,
   UPDATE_CORE_V1_DISCRIMINANT,
@@ -45,7 +48,6 @@ import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
-import { getMintV2InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV2';
 import {
   AssetV1,
   fetchAssetV1,
@@ -53,9 +55,11 @@ import {
   getUpdateV1InstructionDataSerializer,
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
-import { base58, u8 } from '@metaplex-foundation/umi/serializers';
+import { array, base58, u8 } from '@metaplex-foundation/umi/serializers';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
+import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
+import { isEqual } from 'lodash';
 
 @Injectable()
 export class HeliusService {
@@ -99,10 +103,14 @@ export class HeliusService {
   }
 
   async subscribeTo(address: string) {
-    const { webhookID, accountAddresses } = await this.findOne();
-    await this.updateWebhook(webhookID, {
-      accountAddresses: accountAddresses.concat(address),
-    });
+    try {
+      const { webhookID, accountAddresses } = await this.findOne();
+      await this.updateWebhook(webhookID, {
+        accountAddresses: accountAddresses.concat(address),
+      });
+    } catch (e) {
+      console.error(`Failed to subscribe to address ${address}`);
+    }
   }
 
   async removeSubscription(address: string) {
@@ -144,21 +152,22 @@ export class HeliusService {
           default:
             const instruction = transaction.instructions.at(-1);
             const data = bs58.decode(instruction.data);
-            const discriminator = u8().deserialize(data.subarray(0, 8));
 
-            if (
-              instruction.programId == CMA_PROGRAM_ID &&
-              discriminator[0] == MINT_CORE_V1_DISCRIMINANT
-            ) {
-              return this.handleCoreMintEvent(transaction);
+            if (instruction.programId == CMA_PROGRAM_ID) {
+              const discriminator = array(u8(), { size: 8 }).deserialize(
+                data.subarray(0, 8),
+              );
+              if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
+                return this.handleCoreMintEvent(transaction);
+              }
             } else if (
               instruction.programId == MPL_CORE_PROGRAM_ID.toString()
             ) {
               // Check if it's transfer or update transaction as per discriminant
-
-              if (discriminator[0] == TRANSFER_CORE_V1_DISCRIMINANT) {
+              const discriminant = u8().deserialize(data.subarray(0, 8));
+              if (discriminant[0] == TRANSFER_CORE_V1_DISCRIMINANT) {
                 return this.handleCoreNftTransfer(transaction);
-              } else if (discriminator[0] == UPDATE_CORE_V1_DISCRIMINANT) {
+              } else if (discriminant[0] == UPDATE_CORE_V1_DISCRIMINANT) {
                 return this.handleChangeCoreComicState(transaction);
               }
             }
@@ -278,7 +287,7 @@ export class HeliusService {
 
   private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
     const mintInstruction = enrichedTransaction.instructions.at(-1);
-    const mintV2Serializer = getMintV2InstructionDataSerializer();
+    const mintV1Serializer = getMintV1InstructionDataSerializer();
 
     const candyMachineAddress =
       enrichedTransaction.instructions.at(-1).accounts[2];
@@ -330,7 +339,7 @@ export class HeliusService {
       );
       const price = Math.abs(ownerAccountData.nativeBalanceChange);
 
-      const ixData = mintV2Serializer.deserialize(
+      const ixData = mintV1Serializer.deserialize(
         bs58.decode(mintInstruction.data),
       )[0];
 
@@ -788,45 +797,49 @@ export class HeliusService {
     );
   }
 
-  async reindexNft(
-    metadataOrNft: Metadata<JsonMetadata<string>> | Nft,
-    collectionMetadata: JsonMetadata,
-    walletAddress: string,
-    candMachineAddress: string,
-  ) {
-    const mintAddress = isNft(metadataOrNft)
-      ? metadataOrNft.address
-      : metadataOrNft.mintAddress;
-    try {
-      if (
-        metadataOrNft.updateAuthorityAddress.equals(
-          this.metaplex.identity().publicKey,
-        )
-      ) {
-        await delegateAuthority(
-          this.metaplex,
-          new PublicKey(candMachineAddress),
-          metadataOrNft.collection.address,
-          findRarityTrait(collectionMetadata).toString(),
-          mintAddress,
-        );
+  async reIndexAsset(asset: DAS.GetAssetResponse, candMachineAddress: string) {
+    const updateAuthority = asset.authorities.find((authority) =>
+      authority.scopes.find((scope) => scope == Scope.METADATA),
+    );
+    const { group_value: collection } = asset.grouping.find(
+      (group) => group.group_key == 'collection',
+    );
+    const uri = asset.content.json_uri;
+    const mintAddress = asset.id;
+    const walletAddress = asset.ownership.owner;
+    const collectionMetadata = await fetchOffChainMetadata(uri);
+
+    if (asset.interface == Interface.PROGRAMMABLENFT) {
+      try {
+        if (
+          updateAuthority.address ===
+          this.metaplex.identity().publicKey.toString()
+        ) {
+          await delegateAuthority(
+            this.metaplex,
+            new PublicKey(candMachineAddress),
+            new PublicKey(collection),
+            findRarityTrait(collectionMetadata).toString(),
+            new PublicKey(mintAddress),
+          );
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e);
+
+      try {
+        if (!asset.creators[1].verified) {
+          await verifyMintCreator(this.metaplex, new PublicKey(mintAddress));
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    try {
-      if (!metadataOrNft.creators[1].verified) {
-        await verifyMintCreator(this.metaplex, mintAddress);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    const nft = await this.prisma.nft.update({
+    const nft = await this.prisma.nft.upsert({
       where: { address: mintAddress.toString() },
       include: { owner: { select: { userId: true } } },
-      data: {
+      update: {
         // TODO v2: this should fetch the info on when the owner changed from chain
         ownerChangedAt: new Date(0),
         owner: {
@@ -837,10 +850,10 @@ export class HeliusService {
         },
         metadata: {
           connectOrCreate: {
-            where: { uri: metadataOrNft.uri },
+            where: { uri },
             create: {
               collectionName: collectionMetadata.collection.name,
-              uri: metadataOrNft.uri,
+              uri,
               isUsed: findUsedTrait(collectionMetadata),
               isSigned: findSignedTrait(collectionMetadata),
               rarity: findRarityTrait(collectionMetadata),
@@ -848,8 +861,36 @@ export class HeliusService {
           },
         },
       },
+      create: {
+        address: mintAddress.toString(),
+        name: asset.content.metadata.name,
+        ownerChangedAt: new Date(),
+        metadata: {
+          connectOrCreate: {
+            where: { uri },
+            create: {
+              collectionName: collectionMetadata.collection.name,
+              uri,
+              isUsed: findUsedTrait(collectionMetadata),
+              isSigned: findSignedTrait(collectionMetadata),
+              rarity: findRarityTrait(collectionMetadata),
+            },
+          },
+        },
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress },
+          },
+        },
+        candyMachine: { connect: { address: candMachineAddress } },
+        collectionNft: {
+          connect: { address: collection },
+        },
+      },
     });
-    this.subscribeTo(mintAddress.toString());
+
+    this.subscribeTo(mintAddress);
     return nft;
   }
 

@@ -59,7 +59,6 @@ import {
   none,
 } from '@metaplex-foundation/umi';
 import {
-  mintV2,
   CandyMachine as CoreCandyMachine,
   fetchCandyGuard,
   DefaultGuardSetMintArgs,
@@ -68,6 +67,7 @@ import {
   route,
   getMerkleProof,
   fetchCandyMachine,
+  mintV1 as CoreMintV1,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   fetchAddressLookupTable,
@@ -601,7 +601,7 @@ export async function constructCoreMintTransaction(
         }),
       )
       .add(
-        mintV2(umi, {
+        CoreMintV1(umi, {
           candyMachine: candyMachine.publicKey,
           minter: signer,
           collection: candyMachine.collectionMint,

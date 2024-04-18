@@ -34,7 +34,6 @@ import {
 import {
   Umi,
   PublicKey as UmiPublicKey,
-  percentAmount,
   some,
   lamports,
   publicKey,
@@ -42,7 +41,6 @@ import {
 } from '@metaplex-foundation/umi';
 import {
   create,
-  Creator as CoreCmCreator,
   createLutForCandyMachine,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { toUmiGroups } from '../../utils/core-candy-machine';
@@ -67,30 +65,15 @@ import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters'
 export async function createCoreCandyMachine(
   umi: Umi,
   collectionNftAddress: UmiPublicKey,
-  comicIssue: ComicIssueCMInput,
-  royaltyWallets: JsonMetadataCreators,
   guardParams: GuardParams,
   isPublic?: boolean,
   nonceArgs?: NonceAccountArgs,
 ) {
   const candyMachineKey = generateSigner(umi);
-  const creators: CoreCmCreator[] = royaltyWallets.map((item) => {
-    return {
-      address: publicKey(item.address),
-      percentageShare: item.share,
-      verified: false,
-    };
-  });
-
   const createCmBuilder = await create(umi, {
     candyMachine: candyMachineKey,
     collection: collectionNftAddress,
     collectionUpdateAuthority: umi.identity,
-    sellerFeeBasisPoints: percentAmount(
-      //TODO: Check this if it's giving correct percentage.
-      Number((comicIssue.sellerFeeBasisPoints / 100).toFixed(2)),
-      2,
-    ),
     itemsAvailable: guardParams.supply,
     guards: {
       botTax: some({
@@ -99,14 +82,6 @@ export async function createCoreCandyMachine(
       }),
     },
     groups: toUmiGroups(umi, guardParams, isPublic),
-    creators: [
-      {
-        address: umi.identity.publicKey,
-        verified: true,
-        percentageShare: 0,
-      },
-      ...creators,
-    ],
     configLineSettings: some({
       prefixName: '',
       nameLength: 32,

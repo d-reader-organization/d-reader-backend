@@ -58,9 +58,13 @@ import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
 import { SyncListingsCommand } from './sync-listings-command';
 import { SyncListingsQuestions } from './sync-listings-questions';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
-import { CreateNonceQuestions } from './create-nonce-options';
+import { CreateNonceQuestions } from './create-nonce-questions';
 import { CreateNonceCommand } from './create-nonce-command';
 import { NonceService } from '../nonce/nonce.service';
+import { SyncCoreAssetCommand } from './sync-core-assets-command';
+import { SyncCoreAssetsQuestions } from './sync-core-assets-questions';
+import { UpdateNonceCommand } from './update-nonce-command';
+import { UpdateNonceQuestions } from './update-nonce.questions';
 
 @Module({
   imports: [
@@ -134,6 +138,10 @@ import { NonceService } from '../nonce/nonce.service';
     CreateNonceQuestions,
     CreateNonceCommand,
     NonceService,
+    SyncCoreAssetCommand,
+    SyncCoreAssetsQuestions,
+    UpdateNonceCommand,
+    UpdateNonceQuestions,
   ],
 })
 export class CLIModule {}
