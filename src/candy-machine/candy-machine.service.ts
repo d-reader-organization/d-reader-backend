@@ -735,7 +735,7 @@ export class CandyMachineService {
     }
   }
 
-  async find(query: CandyMachineParams) {
+  async find(query: CandyMachineParams, userId?: number) {
     const address = query.candyMachineAddress;
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address },
@@ -759,6 +759,7 @@ export class CandyMachineService {
             query.candyMachineAddress,
             group.label,
             query.walletAddress,
+            userId,
           );
           return {
             ...group,
@@ -1143,6 +1144,7 @@ export class CandyMachineService {
     candyMachineAddress: string,
     label: string,
     walletAddress?: string,
+    userId?: number,
   ): Promise<{
     displayLabel: string;
     isEligible: boolean;
@@ -1154,7 +1156,17 @@ export class CandyMachineService {
       include: { wallets: true, users: true },
     });
 
+    // Check if wallet address is provided
     if (!walletAddress) {
+      return { isEligible: false, displayLabel: group.displayLabel };
+    }
+
+    // Check if user ID is missing for user-specific whitelist types
+    if (
+      !userId &&
+      (group.whiteListType === WhiteListType.User ||
+        group.whiteListType === WhiteListType.UserWhiteList)
+    ) {
       return { isEligible: false, displayLabel: group.displayLabel };
     }
 
@@ -1162,9 +1174,9 @@ export class CandyMachineService {
       case WhiteListType.Public:
         return this.checkWhiteListTypePublic(group, walletAddress);
       case WhiteListType.User:
-        return this.checkWhiteListTypeUser(group, walletAddress);
+        return this.checkWhiteListTypeUser(group, userId);
       case WhiteListType.UserWhiteList:
-        return this.checkWhiteListTypeUserWhiteList(group, walletAddress);
+        return this.checkWhiteListTypeUserWhiteList(group, userId);
       case WhiteListType.WalletWhiteList:
         return this.checkWhiteListTypeWalletWhiteList(group, walletAddress);
       default:
@@ -1232,17 +1244,12 @@ export class CandyMachineService {
 
   async checkWhiteListTypeUserWhiteList(
     group: GroupWithWhiteListDetails,
-    walletAddress: string,
+    userId: number,
   ) {
-    const user = await this.prisma.user.findFirst({
-      where: { wallets: { some: { address: walletAddress } } },
-    });
-    if (!user) return { isEligible: false, displayLabel: group.displayLabel };
-
     const userItemsMinted = await this.countUserItemsMintedQuery(
       group.candyMachineAddress,
       group.label,
-      user.id,
+      userId,
     );
 
     const mintLimitReached = group.mintLimit
@@ -1250,7 +1257,7 @@ export class CandyMachineService {
       : false;
 
     const isEligible =
-      isUserWhitelisted(user.id, group.users) && !mintLimitReached;
+      isUserWhitelisted(userId, group.users) && !mintLimitReached;
     return {
       isEligible,
       userItemsMinted,
@@ -1279,17 +1286,12 @@ export class CandyMachineService {
 
   async checkWhiteListTypeUser(
     group: GroupWithWhiteListDetails,
-    walletAddress: string,
+    userId: number,
   ) {
-    const user = await this.prisma.user.findFirst({
-      where: { wallets: { some: { address: walletAddress } } },
-    });
-    if (!user) return { isEligible: false, displayLabel: group.displayLabel };
-
     const userItemsMinted = await this.countUserItemsMintedQuery(
       group.candyMachineAddress,
       group.label,
-      user.id,
+      userId,
     );
     const isEligible = group.mintLimit
       ? group.mintLimit > userItemsMinted
