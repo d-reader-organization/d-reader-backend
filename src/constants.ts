@@ -43,7 +43,7 @@ export const BUNDLR_ADDRESS =
     ? 'https://devnet.bundlr.network'
     : 'https://node1.bundlr.network';
 
-export const USERNAME_MIN_SIZE = 2;
+export const USERNAME_MIN_SIZE = 3;
 export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
