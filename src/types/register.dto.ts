@@ -5,6 +5,7 @@ import {
   MinLength,
 } from 'class-validator';
 // import { IsValidUsername } from '../decorators/IsValidUsername';
+import { OmitType } from '@nestjs/swagger';
 import {
   USERNAME_MIN_SIZE,
   USERNAME_MAX_SIZE,
@@ -23,3 +24,8 @@ export class RegisterDto {
   @IsStrongPassword(PASSWORD_OPTIONS)
   password: string;
 }
+
+export class GoogleRegisterDto extends OmitType(RegisterDto, [
+  'email',
+  'password',
+] as const) {}
