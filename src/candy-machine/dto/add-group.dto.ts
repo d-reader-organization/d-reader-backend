@@ -1,11 +1,14 @@
 import {
   IsBoolean,
   IsDate,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
 import { TransformDateStringToDate } from '../../utils/transform';
+import { WhiteListType } from '@prisma/client';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class AddGroupDto {
   @IsNumber()
@@ -49,4 +52,8 @@ export class AddGroupDto {
   @IsOptional()
   @IsBoolean()
   thirdPartySign?: boolean;
+
+  @IsEnum(WhiteListType)
+  @ApiProperty({ enum: WhiteListType })
+  whiteListType: WhiteListType;
 }
