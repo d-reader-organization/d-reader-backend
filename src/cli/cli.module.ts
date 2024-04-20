@@ -65,6 +65,8 @@ import { SyncCoreAssetCommand } from './sync-core-assets-command';
 import { SyncCoreAssetsQuestions } from './sync-core-assets-questions';
 import { UpdateNonceCommand } from './update-nonce-command';
 import { UpdateNonceQuestions } from './update-nonce.questions';
+import { InsertItemsCommand } from './insert-items-command';
+import { InsertItemsQuestions } from './insert-items-questions';
 
 @Module({
   imports: [
@@ -142,6 +144,8 @@ import { UpdateNonceQuestions } from './update-nonce.questions';
     SyncCoreAssetsQuestions,
     UpdateNonceCommand,
     UpdateNonceQuestions,
+    InsertItemsCommand,
+    InsertItemsQuestions,
   ],
 })
 export class CLIModule {}
