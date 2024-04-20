@@ -28,8 +28,8 @@ export type MetdataFile = {
 
 const getThirdPartySignerKeypair = () => {
   const thirdPartySigner = AES.decrypt(
-    process.env.THIRD_PARTY_SIGNER_PRIVATE_KEY,
-    process.env.THIRD_PARTY_SIGNER_SECRET,
+    process.env.THIRD_PARTY_PRIVATE_KEY,
+    process.env.THIRD_PARTY_SECRET,
   );
   const thirdPartySignerKeypair = Keypair.fromSecretKey(
     Buffer.from(JSON.parse(thirdPartySigner.toString(Utf8))),

@@ -50,7 +50,8 @@
     "preinstall": "npx only-allow yarn",
     "create-nonce": "npx ts-node src/cli/main.ts create-nonce",
     "sync-core-asset": "npx ts-node src/cli/main.ts sync-core-asset",
-    "update-nonce": "npx ts-node src/cli/main.ts update-nonce"
+    "update-nonce": "npx ts-node src/cli/main.ts update-nonce",
+    "insert-items": "npx ts-node src/cli/main.ts insert-items"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
