@@ -594,10 +594,19 @@ export async function constructCoreMintTransaction(
       );
     }
     const mintArgs = await getMintArgs(umi, candyMachine, label);
+
+    const CORE_MINT_COMPUTE_UNITS = 160000;
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
+
     let mintTransaction = await transactionBuilder()
       .add(
+        setComputeUnitLimit(umi, {
+          units: CORE_MINT_COMPUTE_UNITS,
+        }),
+      )
+      .add(
         setComputeUnitPrice(umi, {
-          microLamports: MINT_COMPUTE_PRICE_WHICH_JOSIP_DEEMED_WORTHY,
+          microLamports: CORE_MINT_COMPUTE_BUDGET,
         }),
       )
       .add(
