@@ -45,7 +45,8 @@ export class CandyMachineController {
     @Query() query: CandyMachineParams,
     @UserEntity() user?: UserPayload,
   ) {
-    const candyMachine = await this.candyMachineService.find(query, user.id);
+    const userId = user ? user.id : null;
+    const candyMachine = await this.candyMachineService.find(query, userId);
     return toCandyMachineDto(candyMachine);
   }
 
