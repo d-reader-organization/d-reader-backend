@@ -24,6 +24,7 @@ import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
 import { UserAuth } from '../guards/user-auth.guard';
 import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
+import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -49,8 +50,12 @@ export class TransactionController {
     );
   }
 
+  @OptionalUserAuth()
   @Get('/mint')
-  async constructMintTransaction(@Query() query: MintParams) {
+  async constructMintTransaction(
+    @Query() query: MintParams,
+    @UserEntity() user?: UserPayload,
+  ) {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
     const label = query.label ?? PUBLIC_GROUP_LABEL;
@@ -60,6 +65,7 @@ export class TransactionController {
       candyMachineAddress,
       label,
       mintCount,
+      user ? user.id : null,
     );
   }
 

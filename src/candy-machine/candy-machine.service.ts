@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   PublicKey,
   Transaction,
@@ -118,7 +122,6 @@ import {
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { insertCoreItems } from '../utils/core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
-import { MintLimit } from '@metaplex-foundation/mpl-candy-guard';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import {
   deleteCoreCandyMachine,
@@ -610,20 +613,28 @@ export class CandyMachineService {
     candyMachineAddress: PublicKey,
     label: string,
     mintCount?: number,
+    userId?: number,
   ) {
     const transactions: Promise<string[]>[] = [];
     for (let i = 0; i < mintCount; i++) {
       transactions.push(
-        this.createMintOneTransaction(feePayer, candyMachineAddress, label),
+        this.createMintOneTransaction(
+          feePayer,
+          candyMachineAddress,
+          label,
+          userId,
+        ),
       );
     }
     return await Promise.all(transactions);
   }
 
+  // TODO: Make it support checks for multiple mints
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
     label: string,
+    userId?: number,
   ) {
     const {
       walletWhiteList,
@@ -632,33 +643,48 @@ export class CandyMachineService {
       tokenStandard,
       userWhiteList,
       whiteListType,
+      mintLimit,
     } = await this.findCandyMachineData(candyMachineAddress.toString(), label);
 
     const balance = await this.metaplex.connection.getBalance(feePayer);
     validateBalanceForMint(mintPrice, balance, tokenStandard);
 
     if (tokenStandard === TokenStandard.Core) {
-      const thirdPartySign =
-        whiteListType === WhiteListType.User ||
-        whiteListType === WhiteListType.UserWhiteList;
+      const isPublicMint =
+        whiteListType === WhiteListType.Public ||
+        whiteListType === WhiteListType.WalletWhiteList;
 
-      if (thirdPartySign) {
-        const walletUser = await this.prisma.user.findFirst({
-          where: { wallets: { some: { address: feePayer.toString() } } },
-        });
-
-        if (!walletUser) {
-          throw Error(
-            'Only dReader users are allowed for this mint, register and come back again!',
+      let itemsMinted = 0;
+      if (isPublicMint) {
+        itemsMinted = await this.countWalletItemsMintedQuery(
+          candyMachineAddress.toString(),
+          feePayer.toString(),
+          label,
+        );
+      } else {
+        if (!userId) {
+          throw new UnauthorizedException(
+            'Only dReader users are allowed for this mint, register and come back again !',
           );
         }
 
         if (whiteListType === WhiteListType.UserWhiteList) {
-          const isWhitelisted = isUserWhitelisted(walletUser.id, userWhiteList);
+          const isWhitelisted = isUserWhitelisted(userId, userWhiteList);
           if (!isWhitelisted) {
-            throw Error('User is not allowlisted');
+            throw new UnauthorizedException(
+              'User is not eligible for this mint !',
+            );
           }
         }
+
+        itemsMinted = await this.countUserItemsMintedQuery(
+          candyMachineAddress.toString(),
+          userId,
+        );
+      }
+
+      if (mintLimit && itemsMinted >= mintLimit) {
+        throw new UnauthorizedException('Mint limit reached !');
       }
 
       return await constructCoreMintTransaction(
@@ -668,7 +694,7 @@ export class CandyMachineService {
         label,
         walletWhiteList,
         lookupTable,
-        thirdPartySign,
+        true,
       );
     }
 
@@ -778,7 +804,25 @@ export class CandyMachineService {
         },
       ),
     );
-    return { ...candyMachine, groups };
+
+    let filteredGroups: CandyMachineGroupSettings[];
+    if (userId) {
+      filteredGroups = groups.filter(
+        (group) =>
+          group.whiteListType == WhiteListType.User ||
+          group.whiteListType == WhiteListType.UserWhiteList,
+      );
+      if (filteredGroups.length == 0) {
+        filteredGroups = groups;
+      }
+    } else {
+      filteredGroups = groups.filter(
+        (group) =>
+          group.whiteListType == WhiteListType.Public ||
+          group.whiteListType == WhiteListType.WalletWhiteList,
+      );
+    }
+    return { ...candyMachine, groups: filteredGroups };
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
@@ -858,10 +902,10 @@ export class CandyMachineService {
       startDate,
       endDate,
       mintPrice,
-      mintLimit,
+      // mintLimit,
       supply,
       frozen,
-      whiteListType,
+      // whiteListType,
     } = params;
 
     const candyMachine = await fetchCandyMachine(
@@ -883,19 +927,15 @@ export class CandyMachineService {
     let endDateGuard: EndDate;
     if (endDate) endDateGuard = { date: umiDateTime(endDate) };
 
-    let mintLimitGuard: MintLimit;
-    if (mintLimit)
-      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+    // Mint limit is centralized using third party signer
+    // let mintLimitGuard: MintLimit;
+    // if (mintLimit)
+    //   mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
 
-    let thirdPartySignerGuard: ThirdPartySigner;
-    const isThirdPartySignerRequired =
-      whiteListType === WhiteListType.User ||
-      whiteListType === WhiteListType.UserWhiteList;
-
-    if (isThirdPartySignerRequired) {
-      const thirdPartySigner = getThirdPartySigner();
-      thirdPartySignerGuard = { signerKey: publicKey(thirdPartySigner) };
-    }
+    const thirdPartySigner = getThirdPartySigner();
+    const thirdPartySignerGuard: ThirdPartySigner = {
+      signerKey: publicKey(thirdPartySigner),
+    };
 
     const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
     const existingGroup = candyMachineGroups.find(
@@ -917,10 +957,8 @@ export class CandyMachineService {
         redeemedAmount: some(redeemedAmountGuard),
         startDate: startDate ? some(startDateGuard) : none(),
         endDate: endDate ? some(endDateGuard) : none(),
-        mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
-        thirdPartySigner: isThirdPartySignerRequired
-          ? some(thirdPartySignerGuard)
-          : none(),
+        // mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
+        thirdPartySigner: some(thirdPartySignerGuard),
       },
     };
     const resolvedGroups = candyMachineGroups.filter(
@@ -1124,6 +1162,9 @@ export class CandyMachineService {
         where: { candyMachineAddress, label },
         include: { wallets: true, candyMachine: true, users: true },
       });
+      if (!data) {
+        throw new NotFoundException();
+      }
       return {
         walletWhiteList:
           data.wallets && data.wallets.length
@@ -1134,6 +1175,7 @@ export class CandyMachineService {
         mintPrice: Number(data.mintPrice),
         tokenStandard: data.candyMachine.standard,
         whiteListType: data.whiteListType,
+        mintLimit: data.mintLimit,
       };
     } catch (e) {
       console.error(e);
@@ -1200,23 +1242,25 @@ export class CandyMachineService {
     }
   }
 
-  countUserItemsMintedQuery = (
-    candyMachineAddress: string,
-    label: string,
-    userId: number,
-  ) => {
+  countUserItemsMintedQuery = (candyMachineAddress: string, userId: number) => {
     return this.prisma.candyMachineReceipt.count({
-      where: { candyMachineAddress, label, userId },
+      where: { candyMachineAddress, userId },
     });
   };
 
+  // Wallet whitelist group should start with public
   countWalletItemsMintedQuery = (
     candyMachineAddress: string,
-    label: string,
     buyerAddress: string,
+    label: string,
   ) => {
+    const labelPrefix = label.includes('public') ? 'public' : label;
     return this.prisma.candyMachineReceipt.count({
-      where: { candyMachineAddress, label, buyerAddress },
+      where: {
+        candyMachineAddress,
+        buyerAddress,
+        label: { startsWith: labelPrefix },
+      },
     });
   };
 
@@ -1226,8 +1270,8 @@ export class CandyMachineService {
   ) {
     const walletItemsMinted = await this.countWalletItemsMintedQuery(
       group.candyMachineAddress,
-      group.label,
       walletAddress,
+      group.label,
     );
     const mintLimitReached = group.mintLimit
       ? group.mintLimit <= walletItemsMinted
@@ -1248,7 +1292,6 @@ export class CandyMachineService {
   ) {
     const userItemsMinted = await this.countUserItemsMintedQuery(
       group.candyMachineAddress,
-      group.label,
       userId,
     );
 
@@ -1271,8 +1314,8 @@ export class CandyMachineService {
   ) {
     const walletItemsMinted = await this.countWalletItemsMintedQuery(
       group.candyMachineAddress,
-      group.label,
       walletAddress,
+      group.label,
     );
     const isEligible = group.mintLimit
       ? group.mintLimit > walletItemsMinted
@@ -1290,7 +1333,6 @@ export class CandyMachineService {
   ) {
     const userItemsMinted = await this.countUserItemsMintedQuery(
       group.candyMachineAddress,
-      group.label,
       userId,
     );
     const isEligible = group.mintLimit
