@@ -37,8 +37,12 @@ export class TransactionController {
   ) {}
 
   /** @deprecated */
+  @OptionalUserAuth()
   @Get('/mint-one')
-  async constructMintOneTransaction(@Query() query: MintParams) {
+  async constructMintOneTransaction(
+    @Query() query: MintParams,
+    @UserEntity() user?: UserPayload,
+  ) {
     const publicKey = new PublicKey(query.minterAddress);
     const candyMachineAddress = new PublicKey(query.candyMachineAddress);
     const label = query.label ?? PUBLIC_GROUP_LABEL;
@@ -47,6 +51,7 @@ export class TransactionController {
       publicKey,
       candyMachineAddress,
       label,
+      user ? user.id : null,
     );
   }
 
