@@ -812,15 +812,16 @@ export class CandyMachineService {
           group.whiteListType == WhiteListType.User ||
           group.whiteListType == WhiteListType.UserWhiteList,
       );
-      if (filteredGroups.length == 0) {
-        filteredGroups = groups;
-      }
     } else {
       filteredGroups = groups.filter(
         (group) =>
           group.whiteListType == WhiteListType.Public ||
           group.whiteListType == WhiteListType.WalletWhiteList,
       );
+    }
+
+    if (filteredGroups.length == 0) {
+      filteredGroups = groups;
     }
     return { ...candyMachine, groups: filteredGroups };
   }
