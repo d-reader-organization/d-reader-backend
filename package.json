@@ -92,7 +92,6 @@
     "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.3.8",
     "@solana/web3.js": "^1.78.0",
-    "@tensor-oss/tensorswap-sdk": "^4.0.0-alpha.3",
     "@types/ejs": "^3.0.3",
     "@types/inquirer": "^9.0.3",
     "@types/pug": "2.0.6",

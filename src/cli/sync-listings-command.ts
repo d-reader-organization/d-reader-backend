@@ -2,7 +2,7 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import axios, { AxiosError } from 'axios';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
-import { TENSOR_API_ENDPOINT } from '../constants';
+import { TENSOR_GRAPHQL_API_ENDPOINT } from '../constants';
 
 interface Options {
   nftAddress: string;
@@ -32,7 +32,7 @@ export class SyncListingsCommand extends CommandRunner {
     let collectionSlug: string;
     try {
       const { data: tokenSlugResponse } = await axios.post(
-        TENSOR_API_ENDPOINT,
+        TENSOR_GRAPHQL_API_ENDPOINT,
         {
           query: `query Mints($tokenMints: [String!]!) {
           mints(tokenMints: $tokenMints) {
@@ -81,7 +81,7 @@ export class SyncListingsCommand extends CommandRunner {
 async function fetchTensorListings(slug: string, endCursor: string) {
   try {
     const { data } = await axios.post(
-      TENSOR_API_ENDPOINT,
+      TENSOR_GRAPHQL_API_ENDPOINT,
       {
         query: `query ActiveListingsV2(
           $slug: String!

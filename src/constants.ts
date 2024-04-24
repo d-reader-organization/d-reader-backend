@@ -208,7 +208,10 @@ export const RARITY_PRECEDENCE = [
   'Epic',
   'Legendary',
 ];
-export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';
+
+export const TENSOR_GRAPHQL_API_ENDPOINT = 'https://api.tensor.so/graphql';
+export const TENSOR_MAINNET_API_ENDPOINT = 'https://api.mainnet.tensordev.io';
+
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
 
 export const UPDATE_CORE_V1_DISCRIMINANT = 15;
