@@ -654,14 +654,7 @@ export class CandyMachineService {
         whiteListType === WhiteListType.Public ||
         whiteListType === WhiteListType.WalletWhiteList;
 
-      let itemsMinted = 0;
-      if (isPublicMint) {
-        itemsMinted = await this.countWalletItemsMintedQuery(
-          candyMachineAddress.toString(),
-          feePayer.toString(),
-          label,
-        );
-      } else {
+      if (!isPublicMint) {
         if (!userId) {
           throw new UnauthorizedException(
             'Only dReader users are allowed for this mint, register and come back again !',
@@ -676,15 +669,23 @@ export class CandyMachineService {
             );
           }
         }
-
-        itemsMinted = await this.countUserItemsMintedQuery(
-          candyMachineAddress.toString(),
-          userId,
-        );
       }
 
-      if (mintLimit && itemsMinted >= mintLimit) {
-        throw new UnauthorizedException('Mint limit reached !');
+      if (mintLimit) {
+        const itemsMinted = isPublicMint
+          ? await this.countWalletItemsMintedQuery(
+              candyMachineAddress.toString(),
+              feePayer.toString(),
+              label,
+            )
+          : await this.countUserItemsMintedQuery(
+              candyMachineAddress.toString(),
+              userId,
+            );
+
+        if (itemsMinted >= mintLimit) {
+          throw new UnauthorizedException('Mint limit reached !');
+        }
       }
 
       return await constructCoreMintTransaction(
