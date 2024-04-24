@@ -807,7 +807,12 @@ export class CandyMachineService {
     );
 
     let filteredGroups: CandyMachineGroupSettings[];
-    if (userId) {
+
+    // Note: Outlaw still ongoing and has deprecated configuration, for supporting new ux only active public group is returned
+    const OUTLAW_CANDY_MACHINE = '6bGL4SqFvsTJ2Wg6bfbFtwKgZwTrNPLiPoYzWMM8AFV3';
+    if (candyMachine.address === OUTLAW_CANDY_MACHINE) {
+      filteredGroups = groups.filter((group) => group.label === 'public');
+    } else if (userId) {
       filteredGroups = groups.filter(
         (group) =>
           group.whiteListType == WhiteListType.User ||
