@@ -43,6 +43,8 @@ env:
     - WEBHOOK_ID
     # Darkblock
     - DARKBLOCK_API_KEY
+    # Tensor
+    - TENSOR_API_KEY
     # Discord
     - DISCORD_WEBHOOK_URL
     - DISCORD_BOT_TOKEN
