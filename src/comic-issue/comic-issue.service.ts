@@ -523,23 +523,20 @@ export class ComicIssueService {
     const newFileKey = await this.s3.uploadFile(file, { s3Folder, fileName });
 
     try {
-      comicIssue = await this.prisma.comicIssue.update({
+      const updatedComicIssue = await this.prisma.comicIssue.update({
         where: { id, publishedAt: null },
-        include: {
-          pages: true,
-          comic: true,
-        },
+        include: { pages: true, collaborators: true, statelessCovers: true },
         data: { [field]: newFileKey },
       });
+
+      await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
+      return updatedComicIssue;
     } catch {
       await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw new BadRequestException(
         'Malformed file upload or or comic issue already published',
       );
     }
-
-    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
-    return comicIssue;
   }
 
   async throwIfComicSlugAndNumberTaken(comicSlug: string, number: number) {
