@@ -29,6 +29,7 @@ import {
   ClientEvents,
   InteractionReplyOptions,
   MessageActionRowComponentBuilder,
+  User,
 } from 'discord.js';
 import { NFT_EMBEDDED_RESPONSE } from './templates/nftEmbededResponse';
 import { UseGuards } from '@nestjs/common';
@@ -113,7 +114,7 @@ export class GetSignCommand {
       return;
     }
 
-    if (!creator.discordUsername) {
+    if (!creator.discordId) {
       await interaction.editReply({
         content:
           '```fix\n Creator discord account verification is pending, Signing will begin soon !```',
@@ -135,6 +136,17 @@ export class GetSignCommand {
       return;
     }
 
+    let creatorDiscord: User;
+    try {
+      creatorDiscord = await interaction.client.users.fetch(creator.discordId);
+    } catch (e) {
+      await interaction.editReply({
+        content:
+          '```fix\n Creator discord account verification is pending, Signing will begin soon !```',
+      });
+      return;
+    }
+
     const component =
       new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
         new ButtonBuilder()
@@ -146,7 +158,7 @@ export class GetSignCommand {
     await interaction.editReply('All Checks done ✅');
     await interaction.followUp(
       NFT_EMBEDDED_RESPONSE({
-        content: `**${user.username}** requested **${creator.discordUsername}** to sign their **${name}**`,
+        content: `**${user.username}** requested **${creatorDiscord.username}** to sign their **${name}**`,
         imageUrl: offChainMetadata.image,
         nftName: name,
         rarity,
@@ -173,7 +185,8 @@ export class GetSignCommand {
       });
       return;
     }
-    const creatorDiscord = buttonInteraction.user.username;
+
+    const creatorDiscordId = buttonInteraction.user.id;
     let transactionSignature: string;
     let latestBlockhash: Readonly<{
       blockhash: string;
@@ -187,7 +200,7 @@ export class GetSignCommand {
     try {
       const creator = await this.prisma.creator.findFirst({
         where: {
-          discordUsername: creatorDiscord,
+          discordId: creatorDiscordId,
           comics: {
             some: {
               issues: {
@@ -333,7 +346,6 @@ export class GetSignCommand {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: { collectionNft: { collectionItems: { some: { address } } } },
     });
-
     if (!candyMachine) {
       return {
         error:
