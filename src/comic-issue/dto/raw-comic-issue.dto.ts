@@ -81,9 +81,6 @@ export class RawComicIssueDto {
   @IsUrl()
   pdf: string;
 
-  @IsUrl()
-  signature: string;
-
   @IsDateString()
   releaseDate: string;
 
@@ -181,7 +178,6 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    signature: getPublicUrl(issue.signature),
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     pdf: getPublicUrl(issue.pdf) ?? '',
     releaseDate: issue.releaseDate.toISOString(),

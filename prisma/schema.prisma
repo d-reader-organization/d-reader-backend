@@ -171,7 +171,6 @@ model ComicIssue {
   slug                  String
   description           String                   @default("")
   flavorText            String                   @default("")
-  signature             String                   @default("")
   pdf                   String                   @default("")
   isFreeToRead          Boolean
   isFullyUploaded       Boolean                  @default(false)

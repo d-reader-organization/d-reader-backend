@@ -148,7 +148,6 @@ Table ComicIssue {
   slug String [not null]
   description String [not null, default: '']
   flavorText String [not null, default: '']
-  signature String [not null, default: '']
   pdf String [not null, default: '']
   isFreeToRead Boolean [not null]
   isFullyUploaded Boolean [not null, default: false]
