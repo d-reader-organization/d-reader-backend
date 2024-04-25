@@ -24,19 +24,16 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @MaxLength(MAX_ON_CHAIN_TITLE_LENGTH)
   onChainName: string;
 
-  @IsOptional()
   @IsLamport()
-  mintPrice?: number;
+  mintPrice: number;
 
-  @Min(0)
-  // @IsDivisibleBy(100)
+  @Min(10)
   @IsNumber()
-  supply?: number;
+  supply: number;
 
   @IsDate()
-  @IsOptional()
   @TransformDateStringToDate()
-  startDate?: Date;
+  startDate: Date;
 
   @IsDate()
   @IsOptional()
