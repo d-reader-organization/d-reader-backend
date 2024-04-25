@@ -657,7 +657,7 @@ export class CandyMachineService {
       if (!isPublicMint) {
         if (!userId) {
           throw new UnauthorizedException(
-            'Only dReader users are allowed for this mint, register and come back again !',
+            "Mint is limited to dReader users, make sure you're signed in!",
           );
         }
 
