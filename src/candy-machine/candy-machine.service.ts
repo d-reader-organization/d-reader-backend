@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -119,9 +120,14 @@ import {
   GuardGroup as CoreGuardGroup,
   AllowList,
   ThirdPartySigner,
+  TokenPayment,
+  SolPayment,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { insertCoreItems } from '../utils/core-candy-machine';
-import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import {
+  findAssociatedTokenPda,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import {
   deleteCoreCandyMachine,
@@ -337,6 +343,7 @@ export class CandyMachineService {
       mintPrice,
       supply,
       whiteListType,
+      splTokenAddress,
     } = guardParams;
 
     let candyMachine: LegacyCandyMachine | CoreCandyMachine;
@@ -388,7 +395,7 @@ export class CandyMachineService {
                   mintPrice: mintPrice,
                   mintLimit,
                   supply,
-                  splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+                  splTokenAddress,
                   whiteListType,
                 },
               }
@@ -912,7 +919,7 @@ export class CandyMachineService {
       // mintLimit,
       supply,
       frozen,
-      // whiteListType,
+      splTokenAddress,
     } = params;
 
     const candyMachine = await fetchCandyMachine(
@@ -944,7 +951,29 @@ export class CandyMachineService {
       signerKey: publicKey(thirdPartySigner),
     };
 
-    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
+    let paymentGuardName: string;
+
+    const isSolPayment = splTokenAddress === WRAPPED_SOL_MINT.toString();
+    let paymentGuard: TokenPayment | SolPayment;
+
+    if (isSolPayment) {
+      paymentGuardName = frozen ? 'freezeSolPayment' : 'solPayment';
+      paymentGuard = {
+        lamports: umiLamports(mintPrice),
+        destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+      };
+    } else {
+      paymentGuardName = frozen ? 'freezeTokenPayment' : 'tokenPayment';
+      paymentGuard = {
+        amount: BigInt(mintPrice),
+        destinationAta: findAssociatedTokenPda(this.umi, {
+          mint: publicKey(splTokenAddress),
+          owner: publicKey(FUNDS_DESTINATION_ADDRESS),
+        })[0],
+        mint: publicKey(splTokenAddress),
+      };
+    }
+
     const existingGroup = candyMachineGroups.find(
       (group) => group.label === label,
     );
@@ -957,10 +986,7 @@ export class CandyMachineService {
       label,
       guards: {
         ...candyGuard.guards,
-        [paymentGuard]: some({
-          lamports: umiLamports(mintPrice),
-          destination: publicKey(FUNDS_DESTINATION_ADDRESS),
-        }),
+        [paymentGuardName]: some(paymentGuard),
         redeemedAmount: some(redeemedAmountGuard),
         startDate: startDate ? some(startDateGuard) : none(),
         endDate: endDate ? some(endDateGuard) : none(),
@@ -1021,6 +1047,13 @@ export class CandyMachineService {
       supply,
       whiteListType,
     } = params;
+    const isSupportedToken = await this.prisma.splToken.findFirst({
+      where: { address: splTokenAddress },
+    });
+    if (!isSupportedToken) {
+      throw new BadRequestException('Spl token is not supported');
+    }
+
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress },
     });
