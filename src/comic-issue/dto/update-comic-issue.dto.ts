@@ -9,9 +9,5 @@ export class UpdateComicIssueDto extends PartialType(
 export class UpdateComicIssueFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  signature?: Express.Multer.File | null;
-
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
   pdf?: Express.Multer.File | null;
 }
