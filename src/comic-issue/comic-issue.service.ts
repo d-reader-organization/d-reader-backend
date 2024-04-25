@@ -617,6 +617,7 @@ export class ComicIssueService {
       );
     }
     validateWeb3PublishInfo(publishOnChainDto);
+
     const {
       onChainName,
       royaltyWallets,
@@ -630,6 +631,7 @@ export class ComicIssueService {
       whiteListType,
       ...updatePayload
     } = publishOnChainDto;
+
     const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
       where: { comicIssueId: id },
     });
