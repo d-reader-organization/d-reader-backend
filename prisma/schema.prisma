@@ -78,7 +78,7 @@ model Creator {
   twitter         String        @default("")
   instagram       String        @default("")
   lynkfire        String        @default("")
-  discordUsername String        @default("")
+  discordId       String        @default("")
   tippingAddress  String        @default("")
   s3BucketSlug    String        @unique
   createdAt       DateTime      @default(now())
