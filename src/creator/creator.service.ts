@@ -472,7 +472,7 @@ export class CreatorService {
       throw new NotFoundException(`Creator with slug ${slug} not found.`);
     }
 
-    // Update the creator's Discord username
+    // Update the creator's Discord id
     return this.prisma.creator.update({
       where: { slug },
       data: { discordId },
