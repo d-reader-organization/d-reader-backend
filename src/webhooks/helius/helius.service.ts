@@ -6,6 +6,7 @@ import {
   Helius,
   Interface,
   Scope,
+  Source,
   TransactionType,
   WebhookType,
 } from 'helius-sdk';
@@ -41,6 +42,7 @@ import {
   D_PUBLISHER_SYMBOL,
   MINT_CORE_V1_DISCRIMINATOR,
   SOL_ADDRESS,
+  TCOMP_PROGRAM_ID,
   TRANSFER_CORE_V1_DISCRIMINANT,
   UPDATE_CORE_V1_DISCRIMINANT,
 } from '../../constants';
@@ -60,6 +62,7 @@ import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { isEqual } from 'lodash';
+import { getAssetFromTensor } from '../../utils/das';
 
 @Injectable()
 export class HeliusService {
@@ -170,6 +173,8 @@ export class HeliusService {
               } else if (discriminant[0] == UPDATE_CORE_V1_DISCRIMINANT) {
                 return this.handleChangeCoreComicState(transaction);
               }
+            } else if (instruction.programId == TCOMP_PROGRAM_ID) {
+              return this.handleCoreListing(transaction);
             }
             console.log('Unhandled webhook', JSON.stringify(transaction));
             // this is here in case Helius still hasn't parsted our transactions for new contract
@@ -394,6 +399,60 @@ export class HeliusService {
       this.websocketGateway.handleWalletNftMinted(receipt);
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  private async handleCoreListing(transaction: EnrichedTransaction) {
+    const instruction = transaction.instructions.at(-1);
+    const coreProgramInstruction = instruction.innerInstructions.find(
+      (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
+    );
+    const mint = coreProgramInstruction.accounts.at(0);
+    const assetInfo = await getAssetFromTensor();
+    const { listing } = assetInfo;
+    if (listing) {
+      const nft = await this.prisma.nft.update({
+        where: { address: mint },
+        include: {
+          collectionNft: true,
+          listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
+          owner: { include: { user: true } },
+        },
+        data: {
+          listing: {
+            upsert: {
+              where: {
+                nftAddress_canceledAt: {
+                  nftAddress: mint,
+                  canceledAt: new Date(0),
+                },
+              },
+              update: {
+                price: listing.price,
+                feePayer: listing.seller,
+                signature: listing.txId,
+                createdAt: new Date(),
+                source:
+                  listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+              },
+              create: {
+                price: listing.price,
+                symbol: D_PUBLISHER_SYMBOL,
+                feePayer: listing.seller,
+                signature: listing.txId,
+                createdAt: new Date(),
+                canceledAt: new Date(0),
+                source: transaction.source,
+              },
+            },
+          },
+        },
+      });
+      this.websocketGateway.handleNftListed(nft.collectionNft.comicIssueId, {
+        ...nft.listing[0],
+        nft,
+      });
+      this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
     }
   }
 
