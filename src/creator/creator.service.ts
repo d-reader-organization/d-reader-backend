@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -33,6 +35,7 @@ import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
+import axios from 'axios';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -453,5 +456,126 @@ export class CreatorService {
       const s3Folder = getS3Folder(creator.s3BucketSlug);
       await this.s3.deleteFolder(s3Folder);
     }
+  }
+  public isTokenExpired(accessToken: any): boolean {
+    const expirationTime = accessToken.expires_in * 1000; // Convert to milliseconds
+    const currentTime = new Date().getTime();
+    return expirationTime < currentTime;
+  }
+
+  async updateCreatorDiscord(
+    slug: string,
+    discordId: string,
+  ): Promise<Creator> {
+    const creator = await this.prisma.creator.findUnique({ where: { slug } });
+    if (!creator) {
+      throw new NotFoundException(`Creator with slug ${slug} not found.`);
+    }
+
+    // Update the creator's Discord username
+    return this.prisma.creator.update({
+      where: { slug },
+      data: { discordUsername: discordId },
+    });
+  }
+  async getCreatorDiscordData(accessToken: string): Promise<any> {
+    try {
+      const userResponse = await axios.get(
+        'https://discord.com/api/users/@me',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      return userResponse.data;
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      throw new Error('Failed to get user data from Discord API');
+    }
+  }
+
+  async exchangeCodeForAccessToken(
+    code: string,
+    accessToken?: string,
+  ): Promise<string> {
+    try {
+      if (accessToken && !this.isTokenExpired(accessToken)) {
+        return accessToken;
+      }
+      const tokenResponse = await axios.post(
+        'https://discord.com/api/oauth2/token',
+        new URLSearchParams({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: process.env.DISCORD_REDIRECT_URI,
+          scope: 'identify',
+          client_id: process.env.DISCORD_CLIENT_ID,
+          client_secret: process.env.DISCORD_CLIENT_SECRET,
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Basic ${Buffer.from(
+              `${process.env.DISCORD_CLIENT_ID}:${process.env.DISCORD_CLIENT_SECRET}`,
+            ).toString('base64')}`,
+          },
+        },
+      );
+
+      if (
+        tokenResponse.status === 200 &&
+        tokenResponse.data &&
+        tokenResponse.data.access_token
+      ) {
+        return tokenResponse.data.access_token;
+      } else {
+        // Handle invalid response
+        throw new Error('Failed to obtain access token');
+      }
+    } catch (error) {
+      throw new Error('Failed to exchange code for access token');
+    }
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const response = await axios.post(
+        'https://discord.com/api/oauth2/token',
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Basic ${Buffer.from(
+              `${process.env.DISCORD_CLIENT_ID}:${process.env.DISCORD_CLIENT_SECRET}`,
+            ).toString('base64')}`,
+          },
+        },
+      );
+
+      if (response.status === 200) {
+        return response.data.access_token;
+      } else {
+        throw new Error('Failed to refresh access token');
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Failed to refresh access token',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+  async getDiscordAuthorization(): Promise<string> {
+    const redirectUri = encodeURIComponent(
+      `${process.env.DISCORD_REDIRECT_URI}`,
+    );
+    const scope = encodeURIComponent('identify');
+    const authorizationUrl = `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&response_type=code&redirect_uri=${redirectUri}&scope=${scope}`;
+
+    return authorizationUrl;
   }
 }

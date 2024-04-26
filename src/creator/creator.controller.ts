@@ -40,11 +40,12 @@ import {
   toRawCreatorDtoArray,
 } from './dto/raw-creator.dto';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
-
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
 @Controller('creator')
 export class CreatorController {
+  private activeAccessToken: string;
+
   constructor(
     private readonly creatorService: CreatorService,
     private readonly userCreatorService: UserCreatorService,
@@ -253,5 +254,63 @@ export class CreatorController {
   @Patch('follow/:slug')
   async follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
     await this.userCreatorService.toggleDate(user.id, slug, 'followedAt');
+  }
+
+  @CreatorAuth()
+  @Get('get-discord-authorization')
+  async getDiscordAuthorization(): Promise<string> {
+    return this.creatorService.getDiscordAuthorization();
+  }
+
+  @CreatorAuth()
+  @Patch('update-creator-discord/:slug')
+  async updateCreatorDiscord(
+    @Param('slug') slug: string,
+    @Query('code') code: string,
+  ) {
+    try {
+      if (!code) {
+        throw new Error('Authorization code is incorrect');
+      }
+
+      if (
+        this.activeAccessToken &&
+        !this.creatorService.isTokenExpired(this.activeAccessToken)
+      ) {
+        // Use the active access token to fetch user details
+        const creatorDiscordData =
+          await this.creatorService.getCreatorDiscordData(
+            this.activeAccessToken,
+          );
+
+        if (creatorDiscordData) {
+          const discordId = creatorDiscordData.id;
+          await this.creatorService.updateCreatorDiscord(slug, discordId);
+          const redirectUri = `${process.env.DISCORD_REDIRECT_URI}`;
+          return redirectUri;
+        } else {
+          throw new Error('Please create a Discord account');
+        }
+      }
+      this.activeAccessToken =
+        await this.creatorService.exchangeCodeForAccessToken(
+          code,
+          this.activeAccessToken,
+        );
+
+      const creatorDiscordData =
+        await this.creatorService.getCreatorDiscordData(this.activeAccessToken);
+
+      if (creatorDiscordData) {
+        const discordId = creatorDiscordData.id;
+        await this.creatorService.updateCreatorDiscord(slug, discordId);
+        const redirectUri = `${process.env.DISCORD_REDIRECT_URI}`;
+        return redirectUri;
+      } else {
+        throw new Error('Please create a Discord account');
+      }
+    } catch (error) {
+      throw new Error('Failed to update creator Discord');
+    }
   }
 }
