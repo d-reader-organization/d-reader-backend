@@ -4,6 +4,8 @@ import { fetchOffChainMetadata, findRarityTrait } from './nft-metadata';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { clusterHeliusApiUrl } from './helius';
+import { TENSOR_MAINNET_API_ENDPOINT } from '../constants';
+import axios from 'axios';
 
 export const getAssetsByOwner = async (
   walletAddress: string,
@@ -121,4 +123,18 @@ export async function doesWalletIndexCorrectly(
     }
   }
   return false;
+}
+
+export async function getAssetFromTensor() {
+  const options = {
+    method: 'GET',
+    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/mint?mint=HkoBho4T5muGZicSDyntXKZCprT1RYxkWHeoHzRpET6e`,
+    headers: {
+      accept: 'application/json',
+      'x-tensor-api-key': process.env.TENSOR_API_KEY,
+    },
+  };
+
+  const response = await axios.request(options);
+  return response.data;
 }

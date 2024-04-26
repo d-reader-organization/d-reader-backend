@@ -96,7 +96,7 @@ export class TransactionService {
 
     if (candyMachine.standard === TokenStandard.Core) {
       const { comicIssue } = collectionNft;
-      if (user.userId != userId) {
+      if (newState == ComicStateArgs.Use && user.userId != userId) {
         throw new Error(
           `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
         );

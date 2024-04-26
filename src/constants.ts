@@ -21,7 +21,7 @@ export const D_READER_FRONTEND_URL = 'https://dreader.app';
 export const HUNDRED = 100;
 export const HUNDRED_PERCENT_TAX = 10000;
 export const MIN_MINT_PROTOCOL_FEE = 29000000;
-export const MIN_CORE_MINT_PROTOCOL_FEE = 2900000;
+export const MIN_CORE_MINT_PROTOCOL_FEE = 5500000;
 // export const GLOBAL_BOT_TAX = 0.01;
 
 export const USED_TRAIT = 'used';
@@ -43,7 +43,7 @@ export const BUNDLR_ADDRESS =
     ? 'https://devnet.bundlr.network'
     : 'https://node1.bundlr.network';
 
-export const USERNAME_MIN_SIZE = 2;
+export const USERNAME_MIN_SIZE = 3;
 export const USERNAME_MAX_SIZE = 20;
 export const SAGA_COLLECTION_ADDRESS =
   '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
@@ -208,8 +208,12 @@ export const RARITY_PRECEDENCE = [
   'Epic',
   'Legendary',
 ];
-export const TENSOR_API_ENDPOINT = 'https://api.tensor.so/graphql';
+
+export const TENSOR_GRAPHQL_API_ENDPOINT = 'https://api.tensor.so/graphql';
+export const TENSOR_MAINNET_API_ENDPOINT = 'https://api.mainnet.tensordev.io';
+
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
+export const TCOMP_PROGRAM_ID = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp';
 
 export const UPDATE_CORE_V1_DISCRIMINANT = 15;
 export const TRANSFER_CORE_V1_DISCRIMINANT = 14;

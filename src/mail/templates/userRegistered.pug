@@ -7,7 +7,10 @@ block content
     p(style='font-size: 18px; margin: 8px 0;') Your account has been created.
     p(style='font-size: 18px; margin: 8px 0;') Thank you for helping us find a new home for comics - blockchain
     br
-    p(style='font-size: 18px; margin: 8px 0;') To verify your email, click on the button below
+    if actionUrl  
+        p(style='font-size: 18px; margin: 8px 0;') To verify your email, click on the button below
+
 
 block action
-    a.action-link.yellow-bg(href=actionUrl) Verify email
+    if actionUrl 
+        a.action-link.yellow-bg(href=actionUrl) Verify email

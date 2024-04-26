@@ -81,9 +81,6 @@ export class ComicIssueDto {
   @IsUrl()
   cover: string;
 
-  @IsUrl()
-  signature: string;
-
   @IsDateString()
   releaseDate: string;
 
@@ -197,7 +194,6 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
-    signature: getPublicUrl(issue.signature),
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
     activeCandyMachineAddress: issue.activeCandyMachineAddress,

@@ -51,7 +51,7 @@ import { appendTimestamp } from '../utils/helpers';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
-type ComicIssueFileProperty = PickFields<ComicIssue, 'signature' | 'pdf'>;
+type ComicIssueFileProperty = PickFields<ComicIssue, 'pdf'>;
 
 @Injectable()
 export class ComicIssueService {
@@ -432,7 +432,7 @@ export class ComicIssueService {
   }
 
   async updateFiles(id: number, comicIssueFilesDto: UpdateComicIssueFilesDto) {
-    const { signature, pdf } = comicIssueFilesDto;
+    const { pdf } = comicIssueFilesDto;
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
@@ -453,20 +453,13 @@ export class ComicIssueService {
     const oldFileKeys: string[] = [];
 
     // upload files if any
-    let signatureKey: string, pdfKey: string;
+    let pdfKey: string;
     try {
       const s3Folder = getS3Folder(
         comicIssue.comic.s3BucketSlug,
         comicIssue.s3BucketSlug,
       );
-      if (signature) {
-        signatureKey = await this.s3.uploadFile(signature, {
-          s3Folder,
-          fileName: 'signature',
-        });
-        newFileKeys.push(signatureKey);
-        oldFileKeys.push(comicIssue.signature);
-      }
+
       if (pdf) {
         pdfKey = await this.s3.uploadFile(pdf, {
           s3Folder,
@@ -484,7 +477,6 @@ export class ComicIssueService {
       where: { id: comicIssue.id },
       include: { pages: true, collaborators: true, statelessCovers: true },
       data: {
-        signature: signatureKey,
         pdf: pdfKey,
       },
     });
@@ -523,23 +515,20 @@ export class ComicIssueService {
     const newFileKey = await this.s3.uploadFile(file, { s3Folder, fileName });
 
     try {
-      comicIssue = await this.prisma.comicIssue.update({
+      const updatedComicIssue = await this.prisma.comicIssue.update({
         where: { id, publishedAt: null },
-        include: {
-          pages: true,
-          comic: true,
-        },
+        include: { pages: true, collaborators: true, statelessCovers: true },
         data: { [field]: newFileKey },
       });
+
+      await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
+      return updatedComicIssue;
     } catch {
       await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
       throw new BadRequestException(
         'Malformed file upload or or comic issue already published',
       );
     }
-
-    await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
-    return comicIssue;
   }
 
   async throwIfComicSlugAndNumberTaken(comicSlug: string, number: number) {

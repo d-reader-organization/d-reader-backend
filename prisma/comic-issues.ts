@@ -2,11 +2,10 @@ import { ComicRarity, Prisma } from '@prisma/client';
 import { metaplex } from '../src/utils/metaplex';
 import { subDays } from 'date-fns';
 
-const generateCoversAndSignature = (
+const generateCovers = (
   comicSlug: string,
   comicIssueSlug: string,
 ) => ({
-  signature: `comics/${comicSlug}/issues/${comicIssueSlug}/signature.png`,
   statefulCovers: {
     createMany: {
       data: [
@@ -86,7 +85,7 @@ export const gorecatsEp1Data = (
   description:
     'A sadistic breed of bloodthirsty critters wreak havoc across the city of catsburg. A washed up detective and his gung ho rookie are the only ones standing in the way of a full on invasion.',
   flavorText: 'Geez these cats are so gore',
-  ...generateCoversAndSignature('gorecats', 'rise-of-the-gorecats'),
+  ...generateCovers('gorecats', 'rise-of-the-gorecats'),
   releaseDate: subDays(new Date(), 21),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -107,7 +106,7 @@ export const babiesEp1Data = (
   description:
     '3 chubby siblings embark on their first adventure. They discover a magical land and encounter various obstacles.',
   flavorText: '“Chubby babies are so cute” - grandma',
-  ...generateCoversAndSignature('barbabyans', 'adventure-begins'),
+  ...generateCovers('barbabyans', 'adventure-begins'),
   releaseDate: subDays(new Date(), 23),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -129,7 +128,7 @@ export const nikoEp1Data = (
   description:
     'His people gone. His kingdom a smouldering ruin. Follow the perilous adventures of Niko',
   flavorText: "“I'm just getting started!” - Niko",
-  ...generateCoversAndSignature('niko-and-the-sword', 'many-moons-ago'),
+  ...generateCovers('niko-and-the-sword', 'many-moons-ago'),
   releaseDate: subDays(new Date(), 17),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -151,7 +150,7 @@ export const narentinesEp1Data = (
     "Only but a few left remaining, as a new dawn rose and the Prophet noticed the signs. A new age would start for Narentines, as the great Purge pawes it's path to the Valley",
   flavorText:
     'The great stone is destroyed and sacrifise must be made to please the Mighty Abaia',
-  ...generateCoversAndSignature('narentines', 'narentines-the-purge'),
+  ...generateCovers('narentines', 'narentines-the-purge'),
   releaseDate: subDays(new Date(), 17),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -172,7 +171,7 @@ export const lupersEp1Data = (
   description:
     'The Lupers of Arx Urbis are a proud and noble race of wolves descended from the she-wolf of Lupercal, who raised Romulus and Remus',
   flavorText: 'Placeholder flavor text',
-  ...generateCoversAndSignature('lupers', 'tome-of-knowledge'),
+  ...generateCovers('lupers', 'tome-of-knowledge'),
   releaseDate: subDays(new Date(), 21),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -194,7 +193,7 @@ export const gooneyEp1Data = (
   description:
     'In an underground lab located somewhere in the frigid tundra of Alaska, an unnamed and highly intoxicated scientist is on a quest to genetically engineer The Gooney Toons.',
   flavorText: '“Such nasty little creatures these Goons”',
-  ...generateCoversAndSignature('gooneytoons', 'birth-of-the-gooneys'),
+  ...generateCovers('gooneytoons', 'birth-of-the-gooneys'),
   releaseDate: subDays(new Date(), 19),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -215,7 +214,7 @@ export const gooneyEp2Data = (
   description:
     'For what is the purpose of creating 2 meter tall upright walking beast?',
   flavorText: '“Such nasty little creatures these Goons”',
-  ...generateCoversAndSignature('gooneytoons', 'carnage-of-the-gooneys'),
+  ...generateCovers('gooneytoons', 'carnage-of-the-gooneys'),
   releaseDate: subDays(new Date(), 18),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -235,7 +234,7 @@ export const gooneyEp3Data = (
   description:
     'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
   flavorText: '“Such nasty little creatures these Goons”',
-  ...generateCoversAndSignature('gooneytoons', 'mutation-of-the-gooneys'),
+  ...generateCovers('gooneytoons', 'mutation-of-the-gooneys'),
   releaseDate: subDays(new Date(), 17),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -255,7 +254,7 @@ export const gooneyEp4Data = (
   description:
     'Some say this is a twisted nostalgia trip fuelled by too much LSD...',
   flavorText: '“Such nasty little creatures these Goons”',
-  ...generateCoversAndSignature('gooneytoons', 'release-of-the-gooneys'),
+  ...generateCovers('gooneytoons', 'release-of-the-gooneys'),
   releaseDate: subDays(new Date(), 16),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -274,7 +273,7 @@ export const animoEp1Data = (
   slug: 'episode-1',
   description: 'Short comic about love, anger, and treachery',
   flavorText: 'Prepare to get overwhelmed with hate and sorrow',
-  ...generateCoversAndSignature('animosities', 'episode-1'),
+  ...generateCovers('animosities', 'episode-1'),
   releaseDate: subDays(new Date(), 20),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -294,7 +293,7 @@ export const taintEp1Data = (
   slug: 'episode-1',
   description:
     'lady Kuga (the Plague) goes from village to village and likes being clean',
-  ...generateCoversAndSignature('immaculate-taint', 'episode-1'),
+  ...generateCovers('immaculate-taint', 'episode-1'),
   releaseDate: subDays(new Date(), 19),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -313,7 +312,7 @@ export const islandEp1Data = (
   title: 'Episode 1',
   slug: 'episode-1',
   description: 'Summer vacation spent on the island of Susak',
-  ...generateCoversAndSignature('island', 'episode-1'),
+  ...generateCovers('island', 'episode-1'),
   releaseDate: subDays(new Date(), 14),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -335,7 +334,7 @@ export const wretchesEp1Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-1'),
+  ...generateCovers('wretches', 'issue-1'),
   releaseDate: subDays(new Date(), 22),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -357,7 +356,7 @@ export const wretchesEp2Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-2'),
+  ...generateCovers('wretches', 'issue-2'),
   releaseDate: subDays(new Date(), 19),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -378,7 +377,7 @@ export const wretchesEp3Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-3'),
+  ...generateCovers('wretches', 'issue-3'),
   releaseDate: subDays(new Date(), 18),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -399,7 +398,7 @@ export const wretchesEp4Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-4'),
+  ...generateCovers('wretches', 'issue-4'),
   releaseDate: subDays(new Date(), 16),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -420,7 +419,7 @@ export const wretchesEp5Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-5'),
+  ...generateCovers('wretches', 'issue-5'),
   releaseDate: subDays(new Date(), 15),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -441,7 +440,7 @@ export const wretchesEp6Data = (
   description:
     'Promotional purposes only. The completed graphic novel is available in the web2 space - Published by Scout Comics.',
   flavorText: 'This is a story about family. About loss.',
-  ...generateCoversAndSignature('wretches', 'issue-6'),
+  ...generateCovers('wretches', 'issue-6'),
   releaseDate: subDays(new Date(), 12),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -463,7 +462,7 @@ export const janaEp1Data = (
     "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
   flavorText:
     'Two characters set out in search of a mythical tower in the hopes of reaching its peak',
-  ...generateCoversAndSignature('jana', 'issue-1'),
+  ...generateCovers('jana', 'issue-1'),
   releaseDate: subDays(new Date(), 20),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -486,7 +485,7 @@ export const janaEp2Data = (
     "Jana: And the Tower of Want is an all-ages fantasy story set in a world where its once magical land, and the wars fought over it, have become nothing more than myth for all but a young girl, who is forced to seek out an ancient tower's magic with the hope of bringing back the loved ones she had lost.",
   flavorText:
     'Two characters set out in search of a mythical tower in the hopes of reaching its peak',
-  ...generateCoversAndSignature('jana', 'issue-2'),
+  ...generateCovers('jana', 'issue-2'),
   releaseDate: subDays(new Date(), 19),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -508,7 +507,7 @@ export const countyEp1Data = (
     "It's Dr. Seuss meets Sin City.  Knockturn County is a gritty, adult crime noir set in a classic children's book universe. Various tales converge and collide in this county built on crime, as a rhyming narrative leads readers through a tangled web of death, booze, drugs, and betrayal. Good doesn't always win, bad doesn't always pay, and, in true noir fashion, people always die.",
   flavorText:
     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-  ...generateCoversAndSignature('knockturn-county', 'issue-1'),
+  ...generateCovers('knockturn-county', 'issue-1'),
   releaseDate: subDays(new Date(), 17),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -530,7 +529,7 @@ export const countyEp2Data = (
     "It's Dr. Seuss meets Sin City.  Knockturn County is a gritty, adult crime noir set in a classic children's book universe. Various tales converge and collide in this county built on crime, as a rhyming narrative leads readers through a tangled web of death, booze, drugs, and betrayal. Good doesn't always win, bad doesn't always pay, and, in true noir fashion, people always die.",
   flavorText:
     '…A clever and dark comedic spin on classic rhyming storytelling. - IDW',
-  ...generateCoversAndSignature('knockturn-county', 'issue-2'),
+  ...generateCovers('knockturn-county', 'issue-2'),
   releaseDate: subDays(new Date(), 16),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -552,7 +551,7 @@ export const watersEp1Data = (
 There are issues facing our planet that, if we don\'t see them, if they\'re not affecting us directly, then, well, they\'re just not that important.`,
   flavorText:
     "A cautionary tale about the lengths we'd go to survive after losing everything we'd ever loved.",
-  ...generateCoversAndSignature('dark-waters', 'treacherous-seas'),
+  ...generateCovers('dark-waters', 'treacherous-seas'),
   releaseDate: subDays(new Date(), 21),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -573,7 +572,7 @@ export const versusEp1Data = (
   description:
     'A group of skilled warriors travel across parallel universes, battling powerful enemies and uncovering the mysteries of the multiverse.',
   flavorText: 'Amazing and inspiring story! - IDW',
-  ...generateCoversAndSignature('multi-versus', 'episode-1'),
+  ...generateCovers('multi-versus', 'episode-1'),
   releaseDate: subDays(new Date(), 18),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -595,7 +594,7 @@ export const tsukiEp1Data = (
   description:
     'When a Tsukian reaches adolescence they must undergo a ritual by the tribal seer.',
   flavorText: 'Only the worthy shall be chosen!',
-  ...generateCoversAndSignature('tsukiverse', 'issue-1'),
+  ...generateCovers('tsukiverse', 'issue-1'),
   releaseDate: subDays(new Date(), 22),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -616,7 +615,7 @@ export const portalEp1Data = (
   description:
     ' A spirited Elf girl and a tearaway Frog Pirate embark on a magical quest to save their forest from invasion by a devious alien race known as the Mindbenders.',
   flavorText: 'Lovely pieces put by Jim Bryson',
-  ...generateCoversAndSignature('the-dark-portal', 'concept-art'),
+  ...generateCovers('the-dark-portal', 'concept-art'),
   releaseDate: subDays(new Date(), 15),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -638,7 +637,7 @@ export const heistEp1Data = (
   description:
     'A high-stakes, risk-based adventure of crime, corruption...and bananas.',
   flavorText: 'Bananas 🍌',
-  ...generateCoversAndSignature('the-heist', 'how-it-all-began'),
+  ...generateCovers('the-heist', 'how-it-all-began'),
   releaseDate: subDays(new Date(), 14),
   verifiedAt: new Date(),
   publishedAt: new Date(),
@@ -658,7 +657,7 @@ export const birthEp1Data = (
   slug: 'episode-1',
   description: 'A short comic that got published in KOMIKAZE #54 webzine',
   flavorText: '“So lovely” - my mom',
-  ...generateCoversAndSignature('birthday', 'episode-1'),
+  ...generateCovers('birthday', 'episode-1'),
   releaseDate: subDays(new Date(), 16),
   verifiedAt: new Date(),
   publishedAt: new Date(),

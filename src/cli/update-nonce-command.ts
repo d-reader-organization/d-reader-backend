@@ -31,7 +31,7 @@ export class UpdateNonceCommand extends CommandRunner {
     log('\n🏗️  updating nonces...!');
     try {
       const { status } = options;
-      const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10);
+      const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10); // Update all nonce that hasn't been updated in last 10 minutes
 
       const nonces = await this.prisma.durableNonce.findMany({
         where: { status, lastUpdatedAt: { lt: tenMinutesAgo } },
