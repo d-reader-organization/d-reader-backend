@@ -213,6 +213,7 @@ export const TENSOR_GRAPHQL_API_ENDPOINT = 'https://api.tensor.so/graphql';
 export const TENSOR_MAINNET_API_ENDPOINT = 'https://api.mainnet.tensordev.io';
 
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
+export const TCOMP_PROGRAM_ID = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp';
 
 export const UPDATE_CORE_V1_DISCRIMINANT = 15;
 export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
