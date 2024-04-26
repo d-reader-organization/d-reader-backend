@@ -475,7 +475,7 @@ export class CreatorService {
     // Update the creator's Discord username
     return this.prisma.creator.update({
       where: { slug },
-      data: { discordUsername: discordId },
+      data: { discordId },
     });
   }
   async getCreatorDiscordData(accessToken: string): Promise<any> {
