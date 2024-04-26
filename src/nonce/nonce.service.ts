@@ -45,7 +45,9 @@ export class NonceService {
   }
 
   async fetchNonceAccount(address: PublicKey) {
-    const nonceInfo = await this.connection.getAccountInfo(address);
+    const nonceInfo = await this.connection.getAccountInfo(address, {
+      commitment: 'confirmed',
+    });
     return NonceAccount.fromAccountData(nonceInfo.data);
   }
 

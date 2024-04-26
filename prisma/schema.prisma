@@ -78,7 +78,7 @@ model Creator {
   twitter         String        @default("")
   instagram       String        @default("")
   lynkfire        String        @default("")
-  discordUsername String        @default("")
+  discordId       String        @default("")
   tippingAddress  String        @default("")
   s3BucketSlug    String        @unique
   createdAt       DateTime      @default(now())
@@ -171,7 +171,6 @@ model ComicIssue {
   slug                  String
   description           String                   @default("")
   flavorText            String                   @default("")
-  signature             String                   @default("")
   pdf                   String                   @default("")
   isFreeToRead          Boolean
   isFullyUploaded       Boolean                  @default(false)

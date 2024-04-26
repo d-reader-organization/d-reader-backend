@@ -13,6 +13,7 @@ import {
   DefaultGuardSetArgs,
   getMerkleRoot,
   addConfigLines,
+  ThirdPartySigner,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { GuardParams } from '../candy-machine/dto/types';
 import {
@@ -29,6 +30,7 @@ import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { TokenStandard } from '@prisma/client';
+import { getThirdPartySigner } from './metaplex';
 
 export function toUmiGroups(
   umi: Umi,
@@ -54,6 +56,11 @@ export function toUmiGroups(
   ];
 
   if (isPublic) {
+    const thirdPartySigner = getThirdPartySigner();
+    const thirdPartySignerGuard: ThirdPartySigner = {
+      signerKey: publicKey(thirdPartySigner),
+    };
+
     groups.push({
       label: PUBLIC_GROUP_LABEL,
       guards: {
@@ -70,6 +77,7 @@ export function toUmiGroups(
             }
           : undefined,
         redeemedAmount: some({ maximum: supply }),
+        thirdPartySigner: some(thirdPartySignerGuard),
       },
     });
   }

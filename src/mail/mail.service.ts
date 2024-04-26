@@ -94,7 +94,9 @@ export class MailService {
         context: {
           name: user.name,
           apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+          actionUrl:
+            !user.emailVerifiedAt &&
+            this.verificationUrl(this.dReaderUrl, verificationToken),
         },
       });
     } catch (e) {

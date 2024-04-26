@@ -189,12 +189,7 @@ export class ComicIssueController {
   /* Update specific comic issue's files */
   @ComicIssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'signature', maxCount: 1 },
-      { name: 'pdf', maxCount: 1 },
-    ]),
-  )
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'pdf', maxCount: 1 }]))
   @Patch('update/:id/files')
   async updateFiles(
     @Param('id') id: string,

@@ -1,13 +1,14 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import {
   Listing,
   Metaplex,
-  toBigNumber,
   toMetadata,
   toMetadataAccount,
 } from '@metaplex-foundation/js';
@@ -32,28 +33,25 @@ import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { PartialListing } from './dto/types/partial-listing';
 import { Source } from 'helius-sdk';
-import { TensorSwapSDK } from '@tensor-oss/tensorswap-sdk';
-import { AnchorProvider } from '@project-serum/anchor';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { SortOrder } from '../types/sort-order';
-import { D_PUBLISHER_SYMBOL, RARITY_PRECEDENCE } from '../constants';
+import {
+  D_PUBLISHER_SYMBOL,
+  RARITY_PRECEDENCE,
+  TENSOR_MAINNET_API_ENDPOINT,
+} from '../constants';
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
+import axios from 'axios';
+import { base64 } from '@metaplex-foundation/umi/serializers';
+import { TokenStandard } from '@prisma/client';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private readonly auctionHouseAddress: PublicKey;
-  private readonly tensorSwap: TensorSwapSDK;
 
   constructor(private readonly prisma: PrismaService) {
     this.metaplex = metaplex;
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
-    const provider = new AnchorProvider(
-      this.metaplex.connection,
-      this.metaplex.identity(),
-      { commitment: 'confirmed' },
-    );
-    this.tensorSwap = new TensorSwapSDK({ provider });
   }
 
   async findOurAuctionHouse() {
@@ -120,38 +118,49 @@ export class AuctionHouseService {
   }
 
   async createBuyFromTensor(
-    seller: PublicKey,
+    seller: string,
     price: number,
     buyArguments: BuyArgs,
   ) {
     const { mintAccount, buyer } = buyArguments;
-    const nftBuyerAcc = this.metaplex
-      .tokens()
-      .pdas()
-      .associatedTokenAccount({ mint: mintAccount, owner: buyer });
-
-    const {
-      tx: { ixs },
-    } = await this.tensorSwap.buySingleListing({
-      nftMint: mintAccount,
-      nftBuyerAcc,
-      owner: seller,
-      buyer,
-      maxPrice: toBigNumber(price),
-      tokenProgram: TOKEN_PROGRAM_ID,
-    });
-
     const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-    const buyTx = new Transaction({ feePayer: buyer, ...latestBlockhash }).add(
-      ...ixs,
-    );
 
-    const rawTransaction = buyTx.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
-    });
+    const options = {
+      method: 'GET',
+      url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/tx/buy`,
+      headers: {
+        accept: 'application/json',
+        'X-TENSOR-API-KEY': process.env.TENSOR_API_KEY ?? '',
+      },
+      params: {
+        buyer: buyer.toString(),
+        mint: mintAccount.toString(),
+        owner: seller,
+        maxPrice: price,
+        blockhash: latestBlockhash.blockhash,
+      },
+    };
 
-    return rawTransaction.toString('base64');
+    /*
+    This is how txs struct looks like
+      {
+        txs: [ { tx: [Object], txV0: [Object], lastValidBlockHeight: null } ]
+      }
+    */
+
+    try {
+      const response = await axios.request(options);
+      const { txs } = response.data;
+      const buyTx = base64.deserialize(txs.at(0).tx.data)[0];
+
+      return buyTx;
+    } catch (e) {
+      console.error('Error while buying', e);
+      throw new HttpException(
+        'Error while buying, please try again!',
+        HttpStatus.EXPECTATION_FAILED,
+      );
+    }
   }
 
   async createInstantBuyTransaction(buyArguments: BuyArgs) {
@@ -172,7 +181,7 @@ export class AuctionHouseService {
 
     if (listing.source === Source.TENSOR) {
       return await this.createBuyFromTensor(
-        new PublicKey(listing.feePayer),
+        listing.feePayer,
         Number(listing.price),
         buyArguments,
       );
@@ -187,6 +196,43 @@ export class AuctionHouseService {
     );
   }
 
+  async createListOnTensorTransaction(
+    seller: PublicKey,
+    mintAccount: PublicKey,
+    price: number,
+  ) {
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
+      'confirmed',
+    );
+    const options = {
+      method: 'GET',
+      url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/tx/list`,
+      headers: {
+        accept: 'application/json',
+        'X-TENSOR-API-KEY': process.env.TENSOR_API_KEY ?? '',
+      },
+      params: {
+        mint: mintAccount.toString(),
+        owner: seller.toString(),
+        price,
+        blockhash: latestBlockhash.blockhash,
+      },
+    };
+    try {
+      const response = await axios.request(options);
+      const { txs } = response.data;
+      const listTx = base64.deserialize(txs.at(0).tx.data)[0];
+
+      return listTx;
+    } catch (e) {
+      console.error('Error while listing', e);
+      throw new HttpException(
+        'Error while listing, please try again!',
+        HttpStatus.EXPECTATION_FAILED,
+      );
+    }
+  }
+
   /* currently only list NFTs */
   async createListTransaction(
     seller: PublicKey,
@@ -194,6 +240,25 @@ export class AuctionHouseService {
     price: number,
     printReceipt: boolean,
   ) {
+    const candyMachine = await this.prisma.candyMachine.findFirst({
+      where: {
+        collectionNft: {
+          collectionItems: { some: { address: mintAccount.toString() } },
+        },
+      },
+    });
+
+    if (!candyMachine) {
+      throw new NotFoundException('Invalid Asset');
+    }
+
+    if (candyMachine.standard === TokenStandard.Core) {
+      return await this.createListOnTensorTransaction(
+        seller,
+        mintAccount,
+        price,
+      );
+    }
     const auctionHouse = await this.throttledFindOurAuctionHouse();
     await this.validateMint(mintAccount);
     return await constructListTransaction(
