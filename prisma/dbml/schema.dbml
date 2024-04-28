@@ -134,10 +134,14 @@ Table Genre {
 }
 
 Table RoyaltyWallet {
-  address String [unique, not null]
+  address String [not null]
   share Int [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
+
+  indexes {
+    (address, comicIssueId) [unique]
+  }
 }
 
 Table ComicIssue {

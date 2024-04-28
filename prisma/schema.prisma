@@ -157,10 +157,12 @@ model Genre {
 }
 
 model RoyaltyWallet {
-  address      String     @unique
+  address      String
   share        Int
   comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId Int
+
+  @@unique([address, comicIssueId])
 }
 
 model ComicIssue {
