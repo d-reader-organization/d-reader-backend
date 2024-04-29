@@ -6,13 +6,19 @@ import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { clusterHeliusApiUrl } from './helius';
 import { TENSOR_MAINNET_API_ENDPOINT } from '../constants';
 import axios from 'axios';
+import { Cluster } from '../types/cluster';
 
 export const getAssetsByOwner = async (
   walletAddress: string,
   page: number,
   limit: number,
 ): Promise<DAS.GetAssetResponse[]> => {
-  const url = clusterHeliusApiUrl(process.env.HELIUS_API_KEY);
+  const url = clusterHeliusApiUrl(
+    process.env.HELIUS_API_KEY,
+    process.env.SOLANA_CLUSTER === 'devnet'
+      ? Cluster.Devnet
+      : Cluster.MainnetBeta,
+  );
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -34,7 +40,13 @@ export const getAssetsByGroup = async (
   page: number,
   limit: number,
 ): Promise<DAS.GetAssetResponse[]> => {
-  const url = clusterHeliusApiUrl(process.env.HELIUS_API_KEY);
+  const url = clusterHeliusApiUrl(
+    process.env.HELIUS_API_KEY,
+    process.env.SOLANA_CLUSTER === 'devnet'
+      ? Cluster.Devnet
+      : Cluster.MainnetBeta,
+  );
+  console.log(url);
   const params: DAS.AssetsByGroupRequest = {
     groupKey: 'collection',
     groupValue: collection,
@@ -58,7 +70,12 @@ export const getAssetsByGroup = async (
 };
 
 export const getAsset = async (id: string): Promise<DAS.GetAssetResponse> => {
-  const url = clusterHeliusApiUrl(process.env.HELIUS_API_KEY);
+  const url = clusterHeliusApiUrl(
+    process.env.HELIUS_API_KEY,
+    process.env.SOLANA_CLUSTER === 'devnet'
+      ? Cluster.Devnet
+      : Cluster.MainnetBeta,
+  );
   const response = await fetch(url, {
     method: 'POST',
     headers: {

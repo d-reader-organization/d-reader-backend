@@ -3,12 +3,6 @@ import { log } from './chalk';
 import { DAS } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import {
-  fetchOffChainMetadata,
-  findRarityTrait,
-  findSignedTrait,
-  findUsedTrait,
-} from '../utils/nft-metadata';
 import { isEmpty } from 'lodash';
 import { Prisma } from '@prisma/client';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
@@ -57,19 +51,23 @@ export class SyncCoreAssetCommand extends CommandRunner {
     const syncedAssets = await this.prisma.nft.findMany({
       where: { collectionNftAddress: options.collection },
     });
-
     let syncedItems = 0;
     while (!isEmpty(data)) {
-      const unsyncedNfts = data.filter(
-        (asset) => !syncedAssets.find((item) => item.address === asset.id),
-      );
+      const unsyncedNfts = data.filter((asset) => {
+        const dbAsset = syncedAssets.find((item) => item.address === asset.id);
+        if (!dbAsset) {
+          this.heliusService.subscribeTo(asset.id);
+        }
+        return !(
+          dbAsset &&
+          dbAsset.ownerAddress == asset.ownership.owner &&
+          dbAsset.uri === asset.content.json_uri
+        );
+      });
+
       console.log(`Syncing ${unsyncedNfts.length} assets...!`);
       const promises = unsyncedNfts.map((asset) =>
-        this.indexCoreAsset(
-          asset,
-          candyMachine.address,
-          candyMachine.collectionNftAddress,
-        ),
+        this.indexCoreAsset(asset, candyMachine.address),
       );
       await Promise.all(promises);
 
@@ -83,44 +81,12 @@ export class SyncCoreAssetCommand extends CommandRunner {
   async indexCoreAsset(
     asset: DAS.GetAssetResponse,
     candyMachineAddress: string,
-    collection: string,
   ) {
-    const offChainMetadata = await fetchOffChainMetadata(
-      asset.content.json_uri,
-    );
     const walletAddress = asset.ownership.owner;
-    const { owner } = await this.prisma.nft.create({
-      include: {
-        owner: true,
-      },
-      data: {
-        address: asset.id,
-        name: asset.content.metadata.name,
-        ownerChangedAt: new Date(),
-        metadata: {
-          connectOrCreate: {
-            where: { uri: asset.content.json_uri },
-            create: {
-              collectionName: offChainMetadata.name,
-              uri: asset.content.json_uri,
-              isUsed: findUsedTrait(offChainMetadata),
-              isSigned: findSignedTrait(offChainMetadata),
-              rarity: findRarityTrait(offChainMetadata),
-            },
-          },
-        },
-        owner: {
-          connectOrCreate: {
-            where: { address: walletAddress },
-            create: { address: walletAddress },
-          },
-        },
-        candyMachine: { connect: { address: candyMachineAddress } },
-        collectionNft: {
-          connect: { address: collection },
-        },
-      },
-    });
+    const { owner } = await this.heliusService.reIndexAsset(
+      asset,
+      candyMachineAddress,
+    );
 
     const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst({
       where: { nftAddress: asset.id },
@@ -188,6 +154,5 @@ export class SyncCoreAssetCommand extends CommandRunner {
     } catch (e) {
       console.error(`Failed to sync candymachine ${candyMachineAddress}`, e);
     }
-    this.heliusService.subscribeTo(asset.id);
   }
 }
