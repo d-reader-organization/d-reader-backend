@@ -14,7 +14,7 @@ import {
 } from '../candy-machine/instructions';
 import { RARITY_MAP } from '../constants';
 import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokenStandard } from '@prisma/client';
 import {
   Umi,
@@ -97,7 +97,7 @@ export class TransactionService {
     if (candyMachine.standard === TokenStandard.Core) {
       const { comicIssue } = collectionNft;
       if (newState == ComicStateArgs.Use && user.userId != userId) {
-        throw new Error(
+        throw new UnauthorizedException(
           `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
         );
       }
@@ -120,7 +120,7 @@ export class TransactionService {
         signer = publicKey(feePayer);
       } else {
         if (assetData.owner.toString() !== ownerAddress) {
-          throw new Error(`Unauthorized to change comic state`);
+          throw new UnauthorizedException(`Unauthorized to change comic state`);
         }
         // Currently by default user is opted in to not sign unwrap tx and we sign it on behalf of user to unwrap the asset
         signer = umi.identity.publicKey;
