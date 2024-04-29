@@ -63,6 +63,7 @@ import { NonceService } from '../../nonce/nonce.service';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { isEqual } from 'lodash';
 import { getAssetFromTensor } from '../../utils/das';
+import { TENSOR_ASSET } from './dto/types';
 
 @Injectable()
 export class HeliusService {
@@ -174,7 +175,7 @@ export class HeliusService {
                 return this.handleChangeCoreComicState(transaction);
               }
             } else if (instruction.programId == TCOMP_PROGRAM_ID) {
-              return this.handleCoreListing(transaction);
+              return this.handleCoreSecondary(transaction);
             }
             console.log('Unhandled webhook', JSON.stringify(transaction));
             // this is here in case Helius still hasn't parsted our transactions for new contract
@@ -402,58 +403,128 @@ export class HeliusService {
     }
   }
 
-  private async handleCoreListing(transaction: EnrichedTransaction) {
+  private async handleCoreSecondary(transaction: EnrichedTransaction) {
     const instruction = transaction.instructions.at(-1);
     const coreProgramInstruction = instruction.innerInstructions.find(
       (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
     );
     const mint = coreProgramInstruction.accounts.at(0);
     const assetInfo = await getAssetFromTensor(mint);
-    const { listing } = assetInfo;
-    if (listing) {
+    if (assetInfo.listing && assetInfo.listing.seller) {
+      return this.handleCoreListing(transaction, assetInfo);
+    } else {
+      return this.handleCoreBuying(transaction, assetInfo);
+    }
+  }
+
+  private async handleCoreBuying(
+    transaction: EnrichedTransaction,
+    assetInfo: TENSOR_ASSET,
+  ) {
+    const mint = assetInfo.onchainId;
+    try {
       const nft = await this.prisma.nft.update({
         where: { address: mint },
         include: {
           collectionNft: true,
-          listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
+          listing: {
+            where: {
+              nftAddress: mint,
+              canceledAt: new Date(transaction.timestamp * 1000),
+            },
+          },
           owner: { include: { user: true } },
         },
         data: {
+          owner: {
+            connectOrCreate: {
+              where: { address: assetInfo.owner },
+              create: {
+                address: assetInfo.owner,
+                createdAt: new Date(transaction.timestamp * 1000),
+              },
+            },
+          },
+          ownerChangedAt: new Date(transaction.timestamp * 1000),
           listing: {
-            upsert: {
+            update: {
               where: {
                 nftAddress_canceledAt: {
                   nftAddress: mint,
                   canceledAt: new Date(0),
                 },
               },
-              update: {
-                price: listing.price,
-                feePayer: listing.seller,
-                signature: listing.txId,
-                createdAt: new Date(),
-                source:
-                  listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
-              },
-              create: {
-                price: listing.price,
-                symbol: D_PUBLISHER_SYMBOL,
-                feePayer: listing.seller,
-                signature: listing.txId,
-                createdAt: new Date(),
-                canceledAt: new Date(0),
-                source: transaction.source,
+              data: {
+                canceledAt: new Date(transaction.timestamp * 1000),
+                soldAt: new Date(transaction.timestamp * 1000),
+                saleTransactionSignature: transaction.signature,
               },
             },
           },
         },
       });
-      this.websocketGateway.handleNftListed(nft.collectionNft.comicIssueId, {
+      this.websocketGateway.handleNftSold(nft.collectionNft.comicIssueId, {
         ...nft.listing[0],
         nft,
       });
-      this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
+      this.websocketGateway.handleWalletNftSold(transaction.events.nft.seller, {
+        ...nft.listing[0],
+        nft,
+      });
+      this.websocketGateway.handleWalletNftBought(nft.ownerAddress, nft);
+    } catch (e) {
+      console.error('Error in buy core asset webhook', e);
     }
+  }
+
+  private async handleCoreListing(
+    transaction: EnrichedTransaction,
+    assetInfo: TENSOR_ASSET,
+  ) {
+    const { listing, onchainId: mint } = assetInfo;
+
+    const nft = await this.prisma.nft.update({
+      where: { address: mint },
+      include: {
+        collectionNft: true,
+        listing: { where: { nftAddress: mint, canceledAt: new Date(0) } },
+        owner: { include: { user: true } },
+      },
+      data: {
+        listing: {
+          upsert: {
+            where: {
+              nftAddress_canceledAt: {
+                nftAddress: mint,
+                canceledAt: new Date(0),
+              },
+            },
+            update: {
+              price: listing.price,
+              feePayer: listing.seller,
+              signature: listing.txId,
+              createdAt: new Date(),
+              source:
+                listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+            },
+            create: {
+              price: listing.price,
+              symbol: D_PUBLISHER_SYMBOL,
+              feePayer: listing.seller,
+              signature: listing.txId,
+              createdAt: new Date(),
+              canceledAt: new Date(0),
+              source: transaction.source,
+            },
+          },
+        },
+      },
+    });
+    this.websocketGateway.handleNftListed(nft.collectionNft.comicIssueId, {
+      ...nft.listing[0],
+      nft,
+    });
+    this.websocketGateway.handleWalletNftListed(nft.ownerAddress, nft);
   }
 
   private async handleChangeComicState(transaction: EnrichedTransaction) {

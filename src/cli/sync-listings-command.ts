@@ -121,7 +121,7 @@ async function fetchTensorListings(slug: string, endCursor: string) {
           slug,
           sortBy: 'PriceAsc',
           filters: {
-            sources: ['TENSORSWAP'],
+            sources: ['TENSORSWAP', 'TCOMP'],
           },
           limit: 100,
           cursor: endCursor
