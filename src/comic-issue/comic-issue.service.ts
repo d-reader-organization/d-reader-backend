@@ -635,9 +635,9 @@ export class ComicIssueService {
       },
     });
 
-    const [updatedComicIssue] = await this.prisma.$transaction([
-      updateComicIssue,
+    const [, updatedComicIssue] = await this.prisma.$transaction([
       deleteRoyaltyWallets,
+      updateComicIssue,
     ]);
 
     const guardParams: GuardParams = {
