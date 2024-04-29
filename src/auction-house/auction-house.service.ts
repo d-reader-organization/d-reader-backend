@@ -458,7 +458,7 @@ export class AuctionHouseService {
           createdAt: new Date(),
           signature: listing.tx.txId,
           source:
-            listing.tx.source === 'TENSORSWAP'
+            listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
               ? Source.TENSOR
               : Source.MAGIC_EDEN,
         },
@@ -470,7 +470,7 @@ export class AuctionHouseService {
           createdAt: new Date(),
           signature: listing.tx.txId,
           source:
-            listing.tx.source === 'TENSORSWAP'
+            listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
               ? Source.TENSOR
               : Source.MAGIC_EDEN,
           canceledAt: new Date(0),
