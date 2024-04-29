@@ -408,7 +408,7 @@ export class HeliusService {
       (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
     );
     const mint = coreProgramInstruction.accounts.at(0);
-    const assetInfo = await getAssetFromTensor();
+    const assetInfo = await getAssetFromTensor(mint);
     const { listing } = assetInfo;
     if (listing) {
       const nft = await this.prisma.nft.update({
