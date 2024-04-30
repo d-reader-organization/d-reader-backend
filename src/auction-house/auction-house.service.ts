@@ -43,6 +43,7 @@ import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { TokenStandard } from '@prisma/client';
+import { fetchTensorBuyTx } from '../utils/das';
 
 @Injectable()
 export class AuctionHouseService {
@@ -123,6 +124,25 @@ export class AuctionHouseService {
     buyArguments: BuyArgs,
   ) {
     const { mintAccount, buyer } = buyArguments;
+    const { standard } = await this.prisma.candyMachine.findFirst({
+      where: {
+        collectionNft: {
+          collectionItems: { some: { address: mintAccount.toString() } },
+        },
+      },
+    });
+    if (standard === TokenStandard.Core) {
+      const { data } = await fetchTensorBuyTx(
+        buyer.toString(),
+        price,
+        mintAccount.toString(),
+        seller,
+      );
+      const bufferTx = data.tcompBuyTx.txs.at(0).tx.data;
+      const buyTx = base64.deserialize(bufferTx)[0];
+      return buyTx;
+    }
+
     const latestBlockhash = await metaplex.connection.getLatestBlockhash();
 
     const options = {
