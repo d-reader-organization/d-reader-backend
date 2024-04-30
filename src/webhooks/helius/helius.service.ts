@@ -154,9 +154,9 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
+            console.log(transaction);
             const instruction = transaction.instructions.at(-1);
             const data = bs58.decode(instruction.data);
-
             if (instruction.programId == CMA_PROGRAM_ID) {
               const discriminator = array(u8(), { size: 8 }).deserialize(
                 data.subarray(0, 8),
@@ -464,10 +464,6 @@ export class HeliusService {
         },
       });
       this.websocketGateway.handleNftSold(nft.collectionNft.comicIssueId, {
-        ...nft.listing[0],
-        nft,
-      });
-      this.websocketGateway.handleWalletNftSold(transaction.events.nft.seller, {
         ...nft.listing[0],
         nft,
       });
