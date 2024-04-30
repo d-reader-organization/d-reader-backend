@@ -411,7 +411,7 @@ export class HeliusService {
     const mint = coreProgramInstruction.accounts.at(0);
     const assetInfo = await getAssetFromTensor(mint);
     if (assetInfo.listing && assetInfo.listing.seller) {
-      return this.handleCoreListing(transaction, assetInfo);
+      return this.handleCoreListing(assetInfo);
     } else {
       return this.handleCoreBuying(transaction, assetInfo);
     }
@@ -477,10 +477,7 @@ export class HeliusService {
     }
   }
 
-  private async handleCoreListing(
-    transaction: EnrichedTransaction,
-    assetInfo: TENSOR_ASSET,
-  ) {
+  private async handleCoreListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
     const nft = await this.prisma.nft.update({
@@ -514,7 +511,8 @@ export class HeliusService {
               signature: listing.txId,
               createdAt: new Date(),
               canceledAt: new Date(0),
-              source: transaction.source,
+              source:
+                listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
             },
           },
         },
