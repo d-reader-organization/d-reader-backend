@@ -228,6 +228,10 @@ export class ComicIssueService {
       },
     });
 
+    const totalPagesCount = await this.prisma.comicPage.count({
+      where: { comicIssueId: comicIssue.id },
+    });
+
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue does not exist`);
     }
@@ -235,7 +239,19 @@ export class ComicIssueService {
     const id = comicIssue.id;
     const activeCandyMachineAddress = await this.findActiveCandyMachine(id);
 
-    return { ...comicIssue, activeCandyMachineAddress };
+    return {
+      ...comicIssue,
+      activeCandyMachineAddress,
+      stats: {
+        favouritesCount: 0,
+        ratersCount: 0,
+        averageRating: 0,
+        readersCount: 0,
+        viewersCount: 0,
+        totalIssuesCount: 0,
+        totalPagesCount,
+      },
+    };
   }
 
   async findOne({
