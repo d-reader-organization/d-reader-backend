@@ -155,16 +155,13 @@ export class TransactionService {
         );
 
         decodedTransaction.sign([this.metaplex.identity()]);
-        await this.metaplex.connection.sendTransaction(decodedTransaction, {
-          preflightCommitment: 'processed',
-        });
-
         await this.prisma.nft.update({
           where: { address: mint.toString() },
           data: {
             uri: itemMetadata.uri,
           },
         });
+        await this.metaplex.connection.sendTransaction(decodedTransaction);
         return;
       }
 

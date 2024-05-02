@@ -10,7 +10,7 @@ import {
 } from '@metaplex-foundation/umi';
 import { NonceService } from '../nonce/nonce.service';
 import { umi } from '../utils/metaplex';
-import { getRarityShareTable } from '../constants';
+import { getRarityShareTable, rateLimitQuota } from '../constants';
 import { addConfigLines } from '@metaplex-foundation/mpl-core-candy-machine';
 import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
 import {
@@ -21,8 +21,12 @@ import { NonceAccountArgs } from '../nonce/types';
 import { sleep } from '../utils/helpers';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import { Transaction as UmiTransaction } from '@metaplex-foundation/umi';
+import { pRateLimit } from 'p-ratelimit';
+import { TransactionIterationType } from './insert-items-questions';
+
 interface Options {
   candyMachineAddress: string;
+  iteration: TransactionIterationType;
 }
 
 @Command({
@@ -46,7 +50,7 @@ export class InsertItemsCommand extends CommandRunner {
   }
 
   async insertItems(options: Options) {
-    const { candyMachineAddress } = options;
+    const { candyMachineAddress, iteration } = options;
     const candyMachineData = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress },
       include: { collectionNft: true },
@@ -71,6 +75,7 @@ export class InsertItemsCommand extends CommandRunner {
     for (const data of unusedUnsignedMetadatas) {
       let supply: number;
       const { value } = rarityShares[itr];
+
       if (itr == rarityShares.length - 1) {
         supply = supplyLeft;
       } else {
@@ -105,11 +110,36 @@ export class InsertItemsCommand extends CommandRunner {
       index += itemsChunk.length;
       transactionBuilders.push(transactionBuilder);
     }
-    await this.iterateTx(transactionBuilders);
+
+    if (iteration === TransactionIterationType.Single) {
+      await this.iterateTxSync(transactionBuilders);
+    } else {
+      await this.iterateTxParallel(transactionBuilders);
+    }
+
     console.log(`All items inserted .. !`);
   }
 
-  async iterateTx(transactionBuilders: TransactionBuilder[]) {
+  async iterateTxParallel(transactionBuilders: TransactionBuilder[]) {
+    const builderChunks = chunk(transactionBuilders, 10);
+
+    for await (const builderChunk of builderChunks) {
+      const rateLimit = pRateLimit(rateLimitQuota);
+      for (const addConfigLineBuilder of builderChunk) {
+        const builder = setComputeUnitPrice(umi, {
+          microLamports: 800_000,
+        }).add(addConfigLineBuilder);
+
+        rateLimit(() => {
+          return builder.sendAndConfirm(umi, {
+            send: { commitment: 'confirmed', skipPreflight: true },
+          });
+        });
+      }
+    }
+  }
+
+  async iterateTxSync(transactionBuilders: TransactionBuilder[]) {
     let count = 0;
     for await (const addConfigLineBuilder of transactionBuilders) {
       console.info(`Inserting items ${count}-${count + 8} `);
