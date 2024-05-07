@@ -35,6 +35,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { NotificationModule } from './notification/notification.module';
 import { ThirdPartyModule } from './third-party/third-party.module';
 import { NonceModule } from './nonce/nonce.module';
+import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/draft-comic-issue-sales-data.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { NonceModule } from './nonce/nonce.module';
     NotificationModule,
     ThirdPartyModule,
     NonceModule,
+    DraftComicIssueSalesDataModule,
   ],
   controllers: [AppController],
   providers: [

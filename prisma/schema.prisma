@@ -556,3 +556,17 @@ model UserPrivacyConsent {
   consentType    ConsentType
   user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model DraftComicIssueSalesData {
+  id                Int       @id @default(autoincrement())
+  comicIssueId      Int
+  revenueRange      String
+  supplyRange       String
+  launchDateRange   String    @default("")
+  // comma separated splToken.symbols
+  currency          String
+  royaltyBasisPoint Int       @default(0)
+  royaltyAddress    String
+  note              String    @default("")
+  verifiedAt        DateTime?
+}

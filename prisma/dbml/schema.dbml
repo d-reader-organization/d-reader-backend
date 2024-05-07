@@ -504,6 +504,19 @@ Table UserPrivacyConsent {
   user User [not null]
 }
 
+Table DraftComicIssueSalesData {
+  id Int [pk, increment]
+  comicIssueId Int [not null]
+  revenueRange String [not null]
+  supplyRange String [not null]
+  launchDateRange String [not null, default: '']
+  currency String [not null]
+  royaltyBasisPoint Int [not null, default: 0]
+  royaltyAddress String [not null]
+  note String [not null, default: '']
+  verifiedAt DateTime
+}
+
 Enum Role {
   Superadmin
   Admin
