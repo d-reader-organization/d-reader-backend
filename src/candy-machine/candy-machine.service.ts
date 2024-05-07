@@ -128,7 +128,6 @@ import {
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
-import { isNull } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -274,10 +273,9 @@ export class CandyMachineService {
           creators,
           nonceArgs,
         );
-
         console.log(`Collection: ${collection.publicKey.toString()}`);
 
-        if (!isNull(nonceArgs)) {
+        if (nonceArgs) {
           await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
         }
         collectionNftAddress = new PublicKey(collection.publicKey);
