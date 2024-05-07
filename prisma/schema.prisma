@@ -52,7 +52,7 @@ model Wallet {
   connectedAt        DateTime?
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
-  nfts               Nft[]
+  assets             DigitalAsset[]
   candyMachineGroups WalletCandyMachineGroup[]
 }
 
@@ -192,7 +192,7 @@ model ComicIssue {
   royaltyWallets        RoyaltyWallet[]
   statelessCovers       StatelessCover[]
   statefulCovers        StatefulCover[]
-  collectionNft         CollectionNft?
+  collection            Collection?
   pages                 ComicPage[]
   users                 UserComicIssue[]
   collaborators         ComicIssueCollaborator[]
@@ -273,20 +273,18 @@ enum ComicRarity {
   Legendary
 }
 
-model Nft {
-  address              String               @id
-  metadata             Metadata             @relation(fields: [uri], references: [uri])
-  uri                  String
-  name                 String
-  owner                Wallet               @relation(fields: [ownerAddress], references: [address])
-  ownerAddress         String
-  ownerChangedAt       DateTime
-  candyMachine         CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
-  candyMachineAddress  String
-  collectionNft        CollectionNft        @relation(fields: [collectionNftAddress], references: [address])
-  collectionNftAddress String
-  receipt              CandyMachineReceipt?
-  listing              Listing[]
+model DigitalAsset {
+  address             String               @id
+  metadata            Metadata             @relation(fields: [uri], references: [uri])
+  uri                 String
+  name                String
+  owner               Wallet               @relation(fields: [ownerAddress], references: [address])
+  ownerAddress        String
+  ownerChangedAt      DateTime
+  candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+  candyMachineAddress String
+  receipt             CandyMachineReceipt?
+  listing             Listing[]
 }
 
 model CandyMachine {
@@ -300,9 +298,9 @@ model CandyMachine {
   itemsLoaded          Int
   isFullyLoaded        Boolean
   lookupTable          String?
-  collectionNft        CollectionNft         @relation(fields: [collectionNftAddress], references: [address])
-  collectionNftAddress String
-  items                Nft[]
+  collection           Collection            @relation(fields: [collectionAddress], references: [address])
+  collectionAddress    String
+  items                DigitalAsset[]
   receipts             CandyMachineReceipt[]
   groups               CandyMachineGroup[]
   standard             TokenStandard         @default(Legacy)
@@ -359,8 +357,8 @@ model UserCandyMachineGroup {
 }
 
 model CandyMachineReceipt {
-  nftAddress           String       @id
-  nft                  Nft          @relation(fields: [nftAddress], references: [address])
+  assetAddress         String       @id
+  asset                DigitalAsset @relation(fields: [assetAddress], references: [address])
   buyer                Wallet       @relation(fields: [buyerAddress], references: [address])
   userId               Int?
   user                 User?        @relation(fields: [userId], references: [id])
@@ -375,14 +373,14 @@ model CandyMachineReceipt {
   label                String       @default("")
 }
 
-model CollectionNft {
-  address         String         @id
-  name            String
-  comicIssue      ComicIssue     @relation(fields: [comicIssueId], references: [id])
-  comicIssueId    Int            @unique
-  collectionItems Nft[]
-  candyMachines   CandyMachine[]
-  darkblockId     String?
+model Collection {
+  address       String         @id
+  name          String
+  comicIssue    ComicIssue     @relation(fields: [comicIssueId], references: [id])
+  comicIssueId  Int            @unique
+  candyMachines CandyMachine[]
+  darkblockId   String?
+  metadatas     Metadata[]
 }
 
 model ComicPage {
@@ -454,18 +452,22 @@ model UserCreator {
 }
 
 model Metadata {
-  uri            String      @id
-  nft            Nft[]
-  collectionName String
-  isUsed         Boolean
-  isSigned       Boolean
-  rarity         ComicRarity
+  uri               String         @id
+  asset             DigitalAsset[]
+  collectionName    String
+  collectionAddress String
+  collection        Collection     @relation(fields: [collectionAddress], references: [address])
+  isUsed            Boolean
+  isSigned          Boolean
+  rarity            ComicRarity
+
+  @@unique([isUsed, isSigned, rarity, collectionAddress])
 }
 
 model Listing {
-  id                       Int       @id @default(autoincrement())
-  nftAddress               String
-  nft                      Nft       @relation(fields: [nftAddress], references: [address])
+  id                       Int          @id @default(autoincrement())
+  assetAddress             String
+  asset                    DigitalAsset @relation(fields: [assetAddress], references: [address])
   price                    BigInt
   feePayer                 String
   signature                String
@@ -476,7 +478,7 @@ model Listing {
   saleTransactionSignature String?
   source                   String?
 
-  @@unique([nftAddress, canceledAt])
+  @@unique([assetAddress, canceledAt])
 }
 
 model SplToken {
