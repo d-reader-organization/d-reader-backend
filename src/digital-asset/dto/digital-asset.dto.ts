@@ -15,7 +15,7 @@ import {
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
-import { Nft, Listing, ComicRarity, CollectionNft } from '@prisma/client';
+import { DigitalAsset, Listing, ComicRarity, Collection } from '@prisma/client';
 import { divide, isNil } from 'lodash';
 
 export class NftAttributeDto {
@@ -23,7 +23,7 @@ export class NftAttributeDto {
   value: string;
 }
 
-export class NftDto {
+export class AssetDto {
   @IsSolanaAddress()
   address: string;
 
@@ -73,21 +73,21 @@ export class NftDto {
   isListed: boolean;
 }
 
-type NftInput = Nft & {
-  collectionNft?: CollectionNft;
+type AssetInput = DigitalAsset & {
+  collectionNft?: Collection;
   listing?: Listing[];
 };
 
-export async function toNftDto(nft: NftInput) {
-  const offChainMetadata = await fetchOffChainMetadata(nft.uri);
+export async function toAssetDto(asset: AssetInput) {
+  const offChainMetadata = await fetchOffChainMetadata(asset.uri);
 
-  const plainNftDto: NftDto = {
-    address: nft.address,
-    uri: nft.uri,
+  const plainNftDto: AssetDto = {
+    address: asset.address,
+    uri: asset.uri,
     image: offChainMetadata.image,
-    name: nft.name,
+    name: asset.name,
     description: offChainMetadata.description,
-    ownerAddress: nft.ownerAddress,
+    ownerAddress: asset.ownerAddress,
     royalties: divide(offChainMetadata.seller_fee_basis_points, 100),
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
@@ -96,18 +96,22 @@ export async function toNftDto(nft: NftInput) {
     rarity: findRarityTrait(offChainMetadata),
     comicName: offChainMetadata.collection.family,
     comicIssueName: offChainMetadata.collection.name,
-    comicIssueId: nft.collectionNft?.comicIssueId,
+    comicIssueId: asset.collectionNft?.comicIssueId,
     attributes: offChainMetadata.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,
     })),
-    isListed: isNil(nft.listing) ? null : nft.listing.length > 0 ? true : false,
+    isListed: isNil(asset.listing)
+      ? null
+      : asset.listing.length > 0
+      ? true
+      : false,
   };
 
-  const nftDto = plainToInstance(NftDto, plainNftDto);
-  return nftDto;
+  const assetDto = plainToInstance(AssetDto, plainNftDto);
+  return assetDto;
 }
 
-export const toNftDtoArray = (nfts: Nft[]) => {
-  return Promise.all(nfts.map(toNftDto));
+export const toAssetDtoArray = (assets: DigitalAsset[]) => {
+  return Promise.all(assets.map(toAssetDto));
 };

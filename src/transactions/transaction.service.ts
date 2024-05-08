@@ -78,24 +78,23 @@ export class TransactionService {
   ): Promise<string | null> {
     const {
       ownerAddress,
-      collectionNftAddress,
       candyMachine,
-      collectionNft,
       metadata,
       name,
       owner: user,
-    } = await this.prisma.nft.findUnique({
+    } = await this.prisma.digitalAsset.findUnique({
       where: { address: mint.toString() },
       include: {
-        metadata: true,
+        metadata: {
+          include: { collection: { include: { comicIssue: true } } },
+        },
         candyMachine: true,
-        collectionNft: { include: { comicIssue: true } },
         owner: { select: { userId: true } },
       },
     });
 
     if (candyMachine.standard === TokenStandard.Core) {
-      const { comicIssue } = collectionNft;
+      const { comicIssue } = metadata.collection;
       if (newState == ComicStateArgs.Use && user.userId != userId) {
         throw new UnauthorizedException(
           `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
@@ -144,7 +143,7 @@ export class TransactionService {
       const transaction = await constructChangeCoreComicStateTransaction(
         this.umi,
         signer,
-        publicKey(collectionNftAddress),
+        publicKey(metadata.collectionAddress),
         publicKey(mint),
         itemMetadata.uri,
         nonceArgs,
@@ -155,7 +154,7 @@ export class TransactionService {
         );
 
         decodedTransaction.sign([this.metaplex.identity()]);
-        await this.prisma.nft.update({
+        await this.prisma.digitalAsset.update({
           where: { address: mint.toString() },
           data: {
             uri: itemMetadata.uri,
@@ -169,7 +168,7 @@ export class TransactionService {
     }
 
     const owner = new PublicKey(ownerAddress);
-    const collectionMintPubKey = new PublicKey(collectionNftAddress);
+    const collectionMintPubKey = new PublicKey(metadata.collectionAddress);
     const candyMachinePubKey = new PublicKey(candyMachine.address);
     const numberedRarity = RARITY_MAP[metadata.rarity];
 
@@ -190,7 +189,7 @@ export class TransactionService {
     newCreator: PublicKey,
     creatorAuthority: PublicKey,
   ) {
-    const collection = await this.prisma.collectionNft.findFirst({
+    const collection = await this.prisma.collection.findFirst({
       where: {
         candyMachines: { some: { address: candyMachineAddress.toString() } },
       },

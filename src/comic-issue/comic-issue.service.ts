@@ -125,7 +125,7 @@ export class ComicIssueService {
   ): Promise<string | undefined> {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
-        collectionNft: { comicIssueId },
+        collection: { comicIssueId },
         itemsRemaining: { gt: 0 },
         groups: {
           some: {
@@ -328,11 +328,13 @@ export class ComicIssueService {
     const ownedComicIssues = await this.prisma.comicIssue.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
-      include: { collectionNft: true, statelessCovers: true },
+      include: { collection: true, statelessCovers: true },
       where: {
         comicSlug: query.comicSlug,
-        collectionNft: {
-          collectionItems: { some: { owner: { userId } } },
+        collection: {
+          metadatas: {
+            some: { asset: { some: { owner: { userId } } } },
+          },
         },
       },
       skip: query.skip,
@@ -341,9 +343,9 @@ export class ComicIssueService {
 
     return await Promise.all(
       ownedComicIssues.map(async (comicIssue) => {
-        const collectionNftAddress = comicIssue.collectionNft.address;
-        const ownedCopiesCount = await this.prisma.nft.count({
-          where: { collectionNftAddress, owner: { userId } },
+        const collectionAddress = comicIssue.collection.address;
+        const ownedCopiesCount = await this.prisma.digitalAsset.count({
+          where: { metadata: { collectionAddress }, owner: { userId } },
         });
 
         return { ...comicIssue, ownedCopiesCount };
@@ -430,7 +432,7 @@ export class ComicIssueService {
       const updatedComicIssue = await this.prisma.comicIssue.update({
         include: {
           comic: { include: { creator: true, genres: true } },
-          collectionNft: { select: { address: true } },
+          collection: { select: { address: true } },
           collaborators: true,
           statelessCovers: true,
         },
@@ -587,7 +589,7 @@ export class ComicIssueService {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
       include: {
-        collectionNft: true,
+        collection: true,
         statefulCovers: true,
         statelessCovers: true,
       },

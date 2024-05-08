@@ -23,7 +23,7 @@ import { AuctionHouseModule } from './auction-house/auction-house.module';
 import { TransactionModule } from './transactions/transaction.module';
 import { WebSocketModule } from './websockets/websockets.module';
 import { UserModule } from './user/user.module';
-import { NftModule } from './nft/nft.module';
+import { DigitalAssetModule } from './digital-asset/digital-asset.module';
 import { s3Module } from './aws/s3.module';
 import config from './configs/config';
 import { SettingsModule } from './settings/settings.module';
@@ -90,7 +90,7 @@ import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/d
     AuctionHouseModule,
     WebSocketModule,
     TransactionModule,
-    NftModule,
+    DigitalAssetModule,
     s3Module,
     UserModule,
     SettingsModule,

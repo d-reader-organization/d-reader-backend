@@ -2,7 +2,7 @@ import { IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { JsonMetadata } from '@metaplex-foundation/js';
-import { Nft } from '@prisma/client';
+import { DigitalAsset } from '@prisma/client';
 import axios from 'axios';
 
 export class WalletAssetDto {
@@ -16,20 +16,20 @@ export class WalletAssetDto {
   name: string;
 }
 
-export async function toWalletAssetDto(nft: Nft) {
-  const getNftResponse = await axios.get<JsonMetadata>(nft.uri);
+export async function toWalletAssetDto(asset: DigitalAsset) {
+  const getNftResponse = await axios.get<JsonMetadata>(asset.uri);
   const { data: offChainMetadataJson } = getNftResponse;
 
   const plainWalletAssetDto: WalletAssetDto = {
-    address: nft.address,
+    address: asset.address,
     image: offChainMetadataJson.image,
-    name: nft.name,
+    name: asset.name,
   };
 
   const walletAssetDto = plainToInstance(WalletAssetDto, plainWalletAssetDto);
   return walletAssetDto;
 }
 
-export const toWalletAssetDtoArray = (nfts: Nft[]) => {
-  return Promise.all(nfts.map(toWalletAssetDto));
+export const toWalletAssetDtoArray = (assets: DigitalAsset[]) => {
+  return Promise.all(assets.map(toWalletAssetDto));
 };

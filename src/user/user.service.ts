@@ -218,11 +218,11 @@ export class UserService {
   }
 
   async getAssets(userId: number) {
-    const nfts = await this.prisma.nft.findMany({
+    const assets = await this.prisma.digitalAsset.findMany({
       where: { owner: { userId } },
       orderBy: { name: 'asc' },
     });
-    return nfts;
+    return assets;
   }
 
   async getWallets(userId: number) {

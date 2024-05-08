@@ -188,9 +188,10 @@ export class TransactionController {
       ? new PublicKey(query.receiptAddress)
       : undefined;
     const nftAddress = query.nftAddress ?? undefined;
+    const assetAddress = query.assetAddress ?? undefined;
     return await this.auctionHouseService.createCancelListingTransaction(
       receiptAddress,
-      nftAddress,
+      assetAddress ?? nftAddress,
     );
   }
 }

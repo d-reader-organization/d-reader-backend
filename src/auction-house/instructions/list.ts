@@ -27,7 +27,7 @@ import {
 } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import { solFromLamports } from '../../utils/helpers';
-import { Nft, Listing } from '@prisma/client';
+import { Listing, DigitalAsset } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
 import {
   AUTH_RULES,
@@ -381,10 +381,10 @@ export async function constructCancelListingTransaction(
 export async function toListing(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
-  listing: Listing & { nft: Nft },
+  listing: Listing & { asset: DigitalAsset },
 ): Promise<PartialListing> {
-  const address = new PublicKey(listing.nftAddress);
-  const sellerAddress = new PublicKey(listing.nft.ownerAddress);
+  const address = new PublicKey(listing.assetAddress);
+  const sellerAddress = new PublicKey(listing.asset.ownerAddress);
   const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
     mint: address,
     owner: sellerAddress,

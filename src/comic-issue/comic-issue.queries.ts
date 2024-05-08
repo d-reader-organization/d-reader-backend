@@ -57,7 +57,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   creator.slug as "creatorSlug",
   creator."verifiedAt" as "creatorVerifiedAt",
   creator.avatar as "creatorAvatar",
-  collectionNft."address" as "collectionNftAddress",
+  collection."address" as "collectionAddress",
   json_agg(distinct genre.*) AS genres,
   json_agg(distinct "statelessCover".*) AS statelessCovers,
   AVG(usercomicissue.rating) as "averageRating",
@@ -99,7 +99,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
-  left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
+  left join "Collection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
   inner join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id
@@ -108,7 +108,7 @@ ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}

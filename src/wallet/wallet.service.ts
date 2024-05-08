@@ -50,7 +50,7 @@ export class WalletService {
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
-    const compeleteNfts = await this.prisma.nft
+    const compeleteNfts = await this.prisma.digitalAsset
       .findMany({
         where: { ownerAddress: address },
       })
@@ -88,7 +88,7 @@ export class WalletService {
     for await (const nftAddress of nftsWithNewOwner) {
       const asset = await getAsset(nftAddress);
       const newOwner = asset.ownership.owner;
-      await this.prisma.nft.update({
+      await this.prisma.digitalAsset.update({
         where: { address: nftAddress },
         data: {
           owner: {
@@ -103,7 +103,7 @@ export class WalletService {
   }
 
   async syncCoreAssets(coreAssets: DAS.GetAssetResponse[]) {
-    const collections = await this.prisma.collectionNft.findMany({});
+    const collections = await this.prisma.collection.findMany({});
     const assets = coreAssets.filter((asset) => {
       const group = asset.grouping.find(
         (group) => group?.group_key == 'collection',
@@ -120,7 +120,7 @@ export class WalletService {
 
       // Considering that there is only one core candymachine for one core collection
       const candyMachine = await this.prisma.candyMachine.findFirst({
-        where: { collectionNftAddress: group.group_value },
+        where: { collectionAddress: group.group_value },
       });
       const indexedNft = await this.heliusService.reIndexAsset(
         asset,
@@ -129,7 +129,7 @@ export class WalletService {
 
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { nftAddress: indexedNft.address },
+          where: { assetAddress: indexedNft.address },
         },
       );
 
@@ -138,7 +138,7 @@ export class WalletService {
         const userId: number = indexedNft.owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          nft: { connect: { address: indexedNft.address } },
+          asset: { connect: { address: indexedNft.address } },
           candyMachine: { connect: { address: candyMachine.address } },
           buyer: {
             connectOrCreate: {
@@ -223,7 +223,7 @@ export class WalletService {
       );
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { nftAddress: indexedNft.address },
+          where: { assetAddress: indexedNft.address },
         },
       );
 
@@ -232,7 +232,7 @@ export class WalletService {
         const userId: number = indexedNft.owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          nft: { connect: { address: indexedNft.address } },
+          asset: { connect: { address: indexedNft.address } },
           candyMachine: { connect: { address: candyMachine } },
           buyer: {
             connectOrCreate: {
@@ -366,7 +366,7 @@ export class WalletService {
   }
 
   async getAssets(address: string) {
-    const nfts = await this.prisma.nft.findMany({
+    const nfts = await this.prisma.digitalAsset.findMany({
       where: { ownerAddress: address },
       orderBy: { name: 'asc' },
     });

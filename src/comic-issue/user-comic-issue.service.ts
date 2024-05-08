@@ -92,7 +92,7 @@ export class UserComicIssueService {
     // from the active CandyMachine
     const activeCandyMachine = await this.prisma.candyMachine.findFirst({
       where: {
-        collectionNft: { comicIssueId: issue.id },
+        collection: { comicIssueId: issue.id },
         itemsRemaining: { gt: 0 },
         groups: {
           some: {
@@ -112,7 +112,7 @@ export class UserComicIssueService {
     // if there is no active candy machine, look for cheapest price on the marketplace
     const cheapestItem = await this.prisma.listing.findFirst({
       where: {
-        nft: { collectionNft: { comicIssueId: issue.id } },
+        asset: { metadata: { collection: { comicIssueId: issue.id } } },
         canceledAt: new Date(0),
       },
       orderBy: { price: 'asc' },
@@ -139,23 +139,25 @@ export class UserComicIssueService {
     comicIssueId: number,
     userId: number,
   ): Promise<boolean> {
-    const { collectionNft, ...comicIssue } =
+    const { collection, ...comicIssue } =
       await this.prisma.comicIssue.findUnique({
         where: { id: comicIssueId },
-        include: { collectionNft: true },
+        include: { collection: true },
       });
 
     if (comicIssue.isFreeToRead) return true;
 
-    if (collectionNft) {
-      const isCollectionLocked = LOCKED_COLLECTIONS.has(collectionNft.address);
+    if (collection) {
+      const isCollectionLocked = LOCKED_COLLECTIONS.has(collection.address);
 
       // find all NFTs that token gate the comic issue and are owned by the wallet
-      const ownedUsedComicIssueNfts = await this.prisma.nft.findMany({
+      const ownedUsedComicIssueNfts = await this.prisma.digitalAsset.findMany({
         where: {
-          collectionNftAddress: collectionNft.address,
+          metadata: {
+            collectionAddress: collection.address,
+            isUsed: isCollectionLocked ? undefined : true,
+          }, // only take into account "unwrapped" comics
           owner: { userId },
-          metadata: { isUsed: isCollectionLocked ? undefined : true }, // only take into account "unwrapped" comics
         },
       });
 
