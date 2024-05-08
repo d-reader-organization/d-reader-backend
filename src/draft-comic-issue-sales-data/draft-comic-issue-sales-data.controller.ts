@@ -13,9 +13,8 @@ import { CreateDraftComicIssueSalesDataDto } from './dto/create-draft-comic-issu
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateDraftComicIssueSalesDataDto } from './dto/update-draft-comic-issue-sales-data.dto';
-import { CreatorPayload } from 'src/auth/dto/authorization.dto';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { DraftComicIssueSalesDataAuth } from 'src/guards/draft-comic-issue-auth.guard';
+import { toDraftComicIssueSalesDataDto } from './dto/draft-comic-issue-sales-data.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Draft Comic Issue Sales Data')
@@ -27,37 +26,43 @@ export class DraftComicIssueSalesDataController {
 
   @DraftComicIssueSalesDataAuth()
   @Post('create')
-  create(
+  async create(
     @Body()
     createDraftComicIssueSalesDataDto: CreateDraftComicIssueSalesDataDto,
   ) {
-    return this.draftComicIssueSalesDataService.create(
-      createDraftComicIssueSalesDataDto,
-    );
+    const draftComicIssueSalesData =
+      await this.draftComicIssueSalesDataService.create(
+        createDraftComicIssueSalesDataDto,
+      );
+    return toDraftComicIssueSalesDataDto(draftComicIssueSalesData);
   }
 
   @DraftComicIssueSalesDataAuth()
   @Get('get/:id')
-  findOne(@Param('id') id: string, @CreatorEntity() creator: CreatorPayload) {
-    return this.draftComicIssueSalesDataService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const draftComicIssueSalesData =
+      await this.draftComicIssueSalesDataService.findOne(+id);
+    return toDraftComicIssueSalesDataDto(draftComicIssueSalesData);
   }
 
   @DraftComicIssueSalesDataAuth()
   @Patch('update/:id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body()
     updateDraftComicIssueSalesDataDto: UpdateDraftComicIssueSalesDataDto,
   ) {
-    return this.draftComicIssueSalesDataService.update({
-      id: +id,
-      updateDraftComicIssueSalesDataDto,
-    });
+    const updatedDraftComicIssueSalesData =
+      await this.draftComicIssueSalesDataService.update({
+        id: +id,
+        updateDraftComicIssueSalesDataDto,
+      });
+    return toDraftComicIssueSalesDataDto(updatedDraftComicIssueSalesData);
   }
 
   @DraftComicIssueSalesDataAuth()
   @Delete('delete/:id')
-  delete(@Param('id') id: string, @CreatorEntity() creator: CreatorPayload) {
+  delete(@Param('id') id: string) {
     return this.draftComicIssueSalesDataService.delete(+id);
   }
 }
