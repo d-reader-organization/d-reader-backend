@@ -36,7 +36,7 @@ export class ThawCollectionCommand extends CommandRunner {
     log('\n🏗️  thaw all nfts of collection');
     try {
       const { candyMachineAddress, comicIssueId } = options;
-      const nfts = await this.prisma.nft.findMany({
+      const nfts = await this.prisma.digitalAsset.findMany({
         where: {
           candyMachineAddress,
         },

@@ -35,9 +35,9 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
       const { comicIssueId, fileHash } = options;
       const issue = await this.prisma.comicIssue.findUnique({
         where: { id: comicIssueId },
-        include: { collectionNft: true },
+        include: { collection: true },
       });
-      if (!issue.collectionNft) {
+      if (!issue.collection) {
         throw new Error(
           `Comic Issue ${comicIssueId} doesn't have a collection!`,
         );
@@ -46,7 +46,7 @@ export class AddCollectionDarkblockCommand extends CommandRunner {
         issue.pdf,
         fileHash,
         issue.description,
-        issue.collectionNft.address,
+        issue.collection.address,
         [{ name: 'used', value: 'true' }],
       );
       log(`Darkblock added succesfully ${response}`);

@@ -34,7 +34,7 @@ import { solFromLamports } from '../../utils/helpers';
 import { BidModel } from '../dto/types/bid-model';
 import { BuyArgs } from '../dto/types/buy-args';
 import { toListing } from './list';
-import { Listing, Nft } from '@prisma/client';
+import { Listing, DigitalAsset } from '@prisma/client';
 import { constructExecuteSaleInstruction } from './executeSale';
 import {
   AUCTION_HOUSE_LOOK_UP_TABLE,
@@ -158,7 +158,7 @@ export async function constructInstantBuyTransaction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   buyArguments: BuyArgs,
-  listing: Listing & { nft: Nft },
+  listing: Listing & { asset: DigitalAsset },
 ) {
   const { mintAccount, buyer } = buyArguments;
   const price = Number(listing.price);

@@ -53,11 +53,11 @@ export class InsertItemsCommand extends CommandRunner {
     const { candyMachineAddress, iteration } = options;
     const candyMachineData = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress },
-      include: { collectionNft: true },
+      include: { collection: true },
     });
 
     const items: { uri: string; name: string }[] = [];
-    const collectionName = candyMachineData.collectionNft.name;
+    const collectionName = candyMachineData.collection.name;
     const itemMetadatas = await this.prisma.metadata.findMany({
       where: { collectionName },
     });

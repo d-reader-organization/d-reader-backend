@@ -205,7 +205,7 @@ export class CandyMachineService {
     const coverImage = await s3toMxFile(cover.image);
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionNftAddress: PublicKey;
-    const collectionNft = await this.prisma.collectionNft.findUnique({
+    const collectionNft = await this.prisma.collection.findUnique({
       where: {
         comicIssueId,
         candyMachines: { some: { standard: tokenStandard } },
@@ -289,7 +289,7 @@ export class CandyMachineService {
         collectionNftAddress = newCollectionNft.address;
       }
 
-      await this.prisma.collectionNft.create({
+      await this.prisma.collection.create({
         data: {
           address: collectionNftAddress.toBase58(),
           name: onChainName,
@@ -365,7 +365,7 @@ export class CandyMachineService {
         data: {
           address: candyMachine.publicKey.toString(),
           mintAuthorityAddress: candyMachine.mintAuthority.toString(),
-          collectionNftAddress: candyMachine.collectionMint.toString(),
+          collectionAddress: candyMachine.collectionMint.toString(),
           authorityPda: findCandyMachineAuthorityPda(umi, {
             candyMachine: candyMachine.publicKey,
           }).toString(),
@@ -419,6 +419,7 @@ export class CandyMachineService {
             isSigned: item.isSigned,
             rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
             collectionName: onChainName,
+            collectionAddress: collectionNftAddress.toString(),
           };
         });
 
@@ -491,6 +492,7 @@ export class CandyMachineService {
             isSigned: item.isSigned,
             rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
             collectionName: onChainName,
+            collectionAddress: collectionNftAddress.toString(),
           };
         });
 
@@ -508,7 +510,7 @@ export class CandyMachineService {
         data: {
           address: candyMachine.address.toBase58(),
           mintAuthorityAddress: candyMachine.mintAuthorityAddress.toBase58(),
-          collectionNftAddress: candyMachine.collectionMintAddress.toBase58(),
+          collectionAddress: candyMachine.collectionMintAddress.toBase58(),
           authorityPda,
           itemsAvailable: candyMachine.itemsAvailable.toNumber(),
           itemsMinted: candyMachine.itemsMinted.toNumber(),
@@ -833,7 +835,7 @@ export class CandyMachineService {
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
-      include: { nft: true, buyer: { include: { user: true } } },
+      include: { asset: true, buyer: { include: { user: true } } },
       orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,

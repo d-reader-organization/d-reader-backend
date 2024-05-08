@@ -99,14 +99,14 @@ export const getRawComicIssuesQuery = (
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
-  left join "CollectionNft" collectionNft on collectionnft."comicIssueId" = comicIssue.id 
+  left join "Collection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
   left join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collectionnft.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}

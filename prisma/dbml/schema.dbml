@@ -41,7 +41,7 @@ Table Wallet {
   connectedAt DateTime
   user User
   mintReceipts CandyMachineReceipt [not null]
-  nfts Nft [not null]
+  assets DigitalAsset [not null]
   candyMachineGroups WalletCandyMachineGroup [not null]
 }
 
@@ -171,7 +171,7 @@ Table ComicIssue {
   royaltyWallets RoyaltyWallet [not null]
   statelessCovers StatelessCover [not null]
   statefulCovers StatefulCover [not null]
-  collectionNft CollectionNft
+  collection Collection
   pages ComicPage [not null]
   users UserComicIssue [not null]
   collaborators ComicIssueCollaborator [not null]
@@ -237,7 +237,7 @@ Table StatefulCover {
   }
 }
 
-Table Nft {
+Table DigitalAsset {
   address String [pk]
   metadata Metadata [not null]
   uri String [not null]
@@ -247,8 +247,6 @@ Table Nft {
   ownerChangedAt DateTime [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
-  collectionNft CollectionNft [not null]
-  collectionNftAddress String [not null]
   receipt CandyMachineReceipt
   listing Listing [not null]
 }
@@ -264,9 +262,9 @@ Table CandyMachine {
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
   lookupTable String
-  collectionNft CollectionNft [not null]
-  collectionNftAddress String [not null]
-  items Nft [not null]
+  collection Collection [not null]
+  collectionAddress String [not null]
+  items DigitalAsset [not null]
   receipts CandyMachineReceipt [not null]
   groups CandyMachineGroup [not null]
   standard TokenStandard [not null, default: 'Legacy']
@@ -316,8 +314,8 @@ Table UserCandyMachineGroup {
 }
 
 Table CandyMachineReceipt {
-  nftAddress String [pk]
-  nft Nft [not null]
+  assetAddress String [pk]
+  asset DigitalAsset [not null]
   buyer Wallet [not null]
   userId Int
   user User
@@ -332,14 +330,14 @@ Table CandyMachineReceipt {
   label String [not null, default: '']
 }
 
-Table CollectionNft {
+Table Collection {
   address String [pk]
   name String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
-  collectionItems Nft [not null]
   candyMachines CandyMachine [not null]
   darkblockId String
+  metadatas Metadata [not null]
 }
 
 Table ComicPage {
@@ -413,17 +411,23 @@ Table UserCreator {
 
 Table Metadata {
   uri String [pk]
-  nft Nft [not null]
+  asset DigitalAsset [not null]
   collectionName String [not null]
+  collectionAddress String [not null]
+  collection Collection [not null]
   isUsed Boolean [not null]
   isSigned Boolean [not null]
   rarity ComicRarity [not null]
+
+  indexes {
+    (isUsed, isSigned, rarity, collectionAddress) [unique]
+  }
 }
 
 Table Listing {
   id Int [pk, increment]
-  nftAddress String [not null]
-  nft Nft [not null]
+  assetAddress String [not null]
+  asset DigitalAsset [not null]
   price BigInt [not null]
   feePayer String [not null]
   signature String [not null]
@@ -435,7 +439,7 @@ Table Listing {
   source String
 
   indexes {
-    (nftAddress, canceledAt) [unique]
+    (assetAddress, canceledAt) [unique]
   }
 }
 
@@ -612,15 +616,13 @@ Ref: StatelessCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: StatefulCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: Nft.uri > Metadata.uri
+Ref: DigitalAsset.uri > Metadata.uri
 
-Ref: Nft.ownerAddress > Wallet.address
+Ref: DigitalAsset.ownerAddress > Wallet.address
 
-Ref: Nft.candyMachineAddress > CandyMachine.address
+Ref: DigitalAsset.candyMachineAddress > CandyMachine.address
 
-Ref: Nft.collectionNftAddress > CollectionNft.address
-
-Ref: CandyMachine.collectionNftAddress > CollectionNft.address
+Ref: CandyMachine.collectionAddress > Collection.address
 
 Ref: CandyMachineGroup.candyMachineAddress > CandyMachine.address
 
@@ -632,7 +634,7 @@ Ref: UserCandyMachineGroup.userId > User.id
 
 Ref: UserCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id [delete: Cascade]
 
-Ref: CandyMachineReceipt.nftAddress - Nft.address
+Ref: CandyMachineReceipt.assetAddress - DigitalAsset.address
 
 Ref: CandyMachineReceipt.buyerAddress > Wallet.address
 
@@ -640,7 +642,7 @@ Ref: CandyMachineReceipt.userId > User.id
 
 Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
 
-Ref: CollectionNft.comicIssueId - ComicIssue.id
+Ref: Collection.comicIssueId - ComicIssue.id
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 
@@ -652,7 +654,9 @@ Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
-Ref: Listing.nftAddress > Nft.address
+Ref: Metadata.collectionAddress > Collection.address
+
+Ref: Listing.assetAddress > DigitalAsset.address
 
 Ref: UserNotification.userId > User.id [delete: Cascade]
 

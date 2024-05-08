@@ -10,8 +10,8 @@ import {
 } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
-import { toNftDto } from '../nft/dto/nft.dto';
-import { Nft } from '@prisma/client';
+import { toAssetDto } from '../digital-asset/dto/digital-asset.dto';
+import { DigitalAsset } from '@prisma/client';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -26,7 +26,7 @@ export class WebSocketGateway {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
   }
 
-  async handleNftMinted(
+  async handleAssetMinted(
     comicIssueId: number,
     receipt: CandyMachineReceiptInput,
   ) {
@@ -37,13 +37,13 @@ export class WebSocketGateway {
     );
   }
 
-  handleNftMintRejected(comicIssueId: number) {
+  handleAssetMintRejected(comicIssueId: number) {
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-mint-rejected`,
     );
   }
 
-  async handleNftSold(comicIssueId: number, listing: ListingInput) {
+  async handleAssetSold(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-sold`,
@@ -51,7 +51,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleNftListed(comicIssueId: number, listing: ListingInput) {
+  async handleAssetListed(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-listed`,
@@ -59,7 +59,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleNftDelisted(comicIssueId: number, listing: ListingInput) {
+  async handleAssetDelisted(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-delisted`,
@@ -67,7 +67,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletNftMinted(receipt: CandyMachineReceiptInput) {
+  async handleWalletAssetMinted(receipt: CandyMachineReceiptInput) {
     const receiptDto = await toCMReceiptDto(receipt);
     return this.server.sockets.emit(
       `wallet/${receipt.buyerAddress}/item-minted`,
@@ -75,66 +75,66 @@ export class WebSocketGateway {
     );
   }
 
-  handleWalletNftMintRejected(buyerAddress: string) {
+  handleWalletAssetMintRejected(buyerAddress: string) {
     return this.server.sockets.emit(
       `wallet/${buyerAddress}/item-mint-rejected`,
     );
   }
 
-  async handleWalletNftListed(owner: string, nft: Nft) {
-    const walletAssetDto = await toWalletAssetDto(nft);
-    const nftDto = toNftDto(nft);
+  async handleWalletAssetListed(owner: string, asset: DigitalAsset) {
+    const walletAssetDto = await toWalletAssetDto(asset);
+    const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${owner}/item-listed`,
       walletAssetDto,
-      nftDto,
+      assetDto,
     );
   }
 
-  async handleWalletNftDelisted(owner: string, nft: Nft) {
-    const walletAssetDto = await toWalletAssetDto(nft);
-    const nftDto = toNftDto(nft);
+  async handleWalletAssetDelisted(owner: string, asset: DigitalAsset) {
+    const walletAssetDto = await toWalletAssetDto(asset);
+    const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${owner}/item-delisted`,
       walletAssetDto,
-      nftDto,
+      assetDto,
     );
   }
 
-  async handleWalletNftBought(buyer: string, nft: Nft) {
-    const walletAssetDto = await toWalletAssetDto(nft);
+  async handleWalletAssetBought(buyer: string, asset: DigitalAsset) {
+    const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${buyer}/item-bought`,
       walletAssetDto,
     );
   }
 
-  async handleWalletNftSold(seller: string, listing: ListingInput) {
+  async handleWalletAssetSold(seller: string, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
   }
 
-  async handleWalletNftReceived(receiver: string, nft: Nft) {
-    const walletAssetDto = await toWalletAssetDto(nft);
+  async handleWalletAssetReceived(receiver: string, asset: DigitalAsset) {
+    const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${receiver}/item-received`,
       walletAssetDto,
     );
   }
 
-  async handleWalletNftSent(sender: string, nft: Nft) {
-    const walletAssetDto = await toWalletAssetDto(nft);
+  async handleWalletAssetSent(sender: string, asset: DigitalAsset) {
+    const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${sender}/item-sent`,
       walletAssetDto,
     );
   }
 
-  async handleWalletNftUsed(nft: Nft) {
-    const nftDto = await toNftDto(nft);
+  async handleWalletAssetUsed(asset: DigitalAsset) {
+    const assetDto = await toAssetDto(asset);
     return this.server.sockets.emit(
-      `wallet/${nftDto.ownerAddress}/item-used`,
-      nftDto,
+      `wallet/${assetDto.ownerAddress}/item-used`,
+      assetDto,
     );
   }
 }
