@@ -36,9 +36,9 @@ export class SyncCollectionCommand extends CommandRunner {
       const candyMachines = await this.prisma.candyMachine.findMany({
         select: { address: true },
       });
-      const compeleteNfts = await this.prisma.nft
+      const compeleteNfts = await this.prisma.digitalAsset
         .findMany({
-          where: { collectionNftAddress: collection },
+          where: { metadata: { collectionAddress: collection } },
         })
         .then((nfts) => nfts.map((nft) => nft.address));
 

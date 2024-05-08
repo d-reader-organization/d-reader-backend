@@ -46,8 +46,8 @@ import {
 import { validateSignComicCommandParams } from '../utils/discord';
 import { getPublicUrl } from 'src/aws/s3client';
 import {
-  CollectionNft,
-  Nft,
+  Collection,
+  DigitalAsset,
   StatefulCover,
   ComicRarity as PrismaComicRarity,
   Metadata as PrismaMetadata,
@@ -97,7 +97,9 @@ export class GetSignCommand {
           some: {
             issues: {
               some: {
-                collectionNft: { collectionItems: { some: { address } } },
+                collection: {
+                  metadatas: { some: { asset: { some: { address } } } },
+                },
               },
             },
           },
@@ -193,8 +195,8 @@ export class GetSignCommand {
       lastValidBlockHeight: number;
     }>;
     let cover: StatefulCover;
-    let nft: Nft & { collectionNft: CollectionNft } & {
-      metadata: PrismaMetadata;
+    let asset: DigitalAsset & {
+      metadata: PrismaMetadata & { collection: Collection };
     };
     let rarity: PrismaComicRarity;
     try {
@@ -205,7 +207,11 @@ export class GetSignCommand {
             some: {
               issues: {
                 some: {
-                  collectionNft: { collectionItems: { some: { address } } },
+                  collection: {
+                    metadatas: {
+                      some: { asset: { some: { address } } },
+                    },
+                  },
                 },
               },
             },
@@ -221,37 +227,37 @@ export class GetSignCommand {
         return;
       }
 
-      nft = await this.prisma.nft.findUnique({
+      asset = await this.prisma.digitalAsset.findUnique({
         where: { address: address },
-        include: { collectionNft: true, metadata: true },
+        include: { metadata: { include: { collection: true } } },
       });
-      rarity = nft.metadata.rarity;
+      rarity = asset.metadata.rarity;
+
+      const collection = asset.metadata.collection;
 
       cover = await this.prisma.statefulCover.findFirst({
         where: {
-          comicIssueId: nft.collectionNft.comicIssueId,
-          isSigned: nft.metadata.isSigned,
-          isUsed: nft.metadata.isUsed,
+          comicIssueId: collection.comicIssueId,
+          isSigned: asset.metadata.isSigned,
+          isUsed: asset.metadata.isUsed,
           rarity,
         },
       });
 
-      if (nft.metadata.isSigned) {
+      if (asset.metadata.isSigned) {
         await buttonInteraction.editReply('All Checks done ✅');
         await buttonInteraction.followUp(
           NFT_EMBEDDED_RESPONSE({
             content: `The comic is already signed 😎 `,
             imageUrl: getPublicUrl(cover.image),
-            nftName: nft.name,
+            nftName: asset.name,
             rarity: rarity.toString(),
             ephemeral: false,
           }),
         );
         return;
       }
-      const isCollectionLocked = LOCKED_COLLECTIONS.has(
-        nft.collectionNftAddress,
-      );
+      const isCollectionLocked = LOCKED_COLLECTIONS.has(collection.address);
       if (!isCollectionLocked) {
         const rawTransaction =
           await this.transactionService.createChangeComicStateTransaction(
@@ -274,16 +280,16 @@ export class GetSignCommand {
 
         latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       } else {
-        const collectionOnChainName = nft.name.split('#')[0].trim();
+        const collectionOnChainName = asset.name.split('#')[0].trim();
         const signedMetadata = await this.prisma.metadata.findFirst({
           where: {
             collectionName: collectionOnChainName,
             isSigned: true,
-            isUsed: nft.metadata.isUsed,
+            isUsed: asset.metadata.isUsed,
           },
         });
-        await this.prisma.nft.update({
-          where: { address: nft.address },
+        await this.prisma.digitalAsset.update({
+          where: { address: asset.address },
           data: {
             metadata: { connect: { uri: signedMetadata.uri } },
           },
@@ -292,9 +298,9 @@ export class GetSignCommand {
 
       cover = await this.prisma.statefulCover.findFirst({
         where: {
-          comicIssueId: nft.collectionNft.comicIssueId,
+          comicIssueId: collection.comicIssueId,
           isSigned: true,
-          isUsed: nft.metadata.isUsed,
+          isUsed: asset.metadata.isUsed,
           rarity,
         },
       });
@@ -303,7 +309,7 @@ export class GetSignCommand {
         NFT_EMBEDDED_RESPONSE({
           content: `<@${user}> got their comic signed! Amazing 🎉`,
           imageUrl: getPublicUrl(cover.image),
-          nftName: nft.name,
+          nftName: asset.name,
           rarity: rarity.toString(),
           mentionedUsers: [user],
           ephemeral: false,
@@ -325,7 +331,7 @@ export class GetSignCommand {
             NFT_EMBEDDED_RESPONSE({
               content: `<@${user}> got their comic signed! Amazing 🎉`,
               imageUrl: getPublicUrl(cover.image),
-              nftName: nft.name,
+              nftName: asset.name,
               rarity: rarity.toString(),
               ephemeral: false,
               mentionedUsers: [user],
@@ -344,7 +350,9 @@ export class GetSignCommand {
 
   async validateAsset(address: string): Promise<ValidateAssetResponse> {
     const candyMachine = await this.prisma.candyMachine.findFirst({
-      where: { collectionNft: { collectionItems: { some: { address } } } },
+      where: {
+        collection: { metadatas: { some: { asset: { some: { address } } } } },
+      },
     });
     if (!candyMachine) {
       return {
@@ -365,8 +373,7 @@ export class GetSignCommand {
   ): Promise<ValidateAssetResponse> {
     const asset = await fetchAssetV1(this.umi, publicKey(address));
     if (
-      asset.updateAuthority.address.toString() !=
-      candyMachine.collectionNftAddress
+      asset.updateAuthority.address.toString() != candyMachine.collectionAddress
     ) {
       return { error: '```fix\n Asset belongs to a invalid collection.```' };
     }

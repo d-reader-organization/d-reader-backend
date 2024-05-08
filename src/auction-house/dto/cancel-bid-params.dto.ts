@@ -8,4 +8,9 @@ export class CancelParams {
   @IsString()
   @IsOptional()
   nftAddress: string;
+
+  /* @deperecated */
+  @IsString()
+  @IsOptional()
+  assetAddress: string;
 }

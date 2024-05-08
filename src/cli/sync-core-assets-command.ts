@@ -37,7 +37,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
   syncCoreAsset = async (options: Options) => {
     log('\n🏗️  Syncing...');
     const candyMachine = await this.prisma.candyMachine.findFirst({
-      where: { collectionNftAddress: options.collection },
+      where: { collectionAddress: options.collection },
     });
 
     if (!candyMachine) {
@@ -48,8 +48,8 @@ export class SyncCoreAssetCommand extends CommandRunner {
     let page = 1;
     let data = await getAssetsByGroup(options.collection, page, limit);
 
-    const syncedAssets = await this.prisma.nft.findMany({
-      where: { collectionNftAddress: options.collection },
+    const syncedAssets = await this.prisma.digitalAsset.findMany({
+      where: { metadata: { collectionAddress: options.collection } },
     });
     let syncedItems = 0;
     while (!isEmpty(data)) {
@@ -89,7 +89,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
     );
 
     const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst({
-      where: { nftAddress: asset.id },
+      where: { assetAddress: asset.id },
     });
 
     if (!doesReceiptExists) {
@@ -97,7 +97,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
         const UNKNOWN = 'UNKNOWN';
         const userId: number = owner?.userId;
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          nft: { connect: { address: asset.id } },
+          asset: { connect: { address: asset.id } },
           candyMachine: { connect: { address: candyMachineAddress } },
           buyer: {
             connectOrCreate: {

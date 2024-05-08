@@ -145,8 +145,8 @@ export class ComicService {
       where: {
         issues: {
           some: {
-            collectionNft: {
-              collectionItems: { some: { owner: { userId } } },
+            collection: {
+              metadatas: { some: { asset: { some: { owner: { userId } } } } },
             },
           },
         },

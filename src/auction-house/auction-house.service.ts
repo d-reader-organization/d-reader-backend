@@ -126,8 +126,10 @@ export class AuctionHouseService {
     const { mintAccount, buyer } = buyArguments;
     const { standard } = await this.prisma.candyMachine.findFirst({
       where: {
-        collectionNft: {
-          collectionItems: { some: { address: mintAccount.toString() } },
+        collection: {
+          metadatas: {
+            some: { asset: { some: { address: mintAccount.toString() } } },
+          },
         },
       },
     });
@@ -186,12 +188,12 @@ export class AuctionHouseService {
   async createInstantBuyTransaction(buyArguments: BuyArgs) {
     const listing = await this.prisma.listing.findUnique({
       where: {
-        nftAddress_canceledAt: {
-          nftAddress: buyArguments.mintAccount.toString(),
+        assetAddress_canceledAt: {
+          assetAddress: buyArguments.mintAccount.toString(),
           canceledAt: new Date(0),
         },
       },
-      include: { nft: true },
+      include: { asset: true },
     });
     if (!listing) {
       throw new NotFoundException(
@@ -262,8 +264,10 @@ export class AuctionHouseService {
   ) {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
-        collectionNft: {
-          collectionItems: { some: { address: mintAccount.toString() } },
+        collection: {
+          metadatas: {
+            some: { asset: { some: { address: mintAccount.toString() } } },
+          },
         },
       },
     });
@@ -332,7 +336,7 @@ export class AuctionHouseService {
 
   async createCancelListingTransaction(
     receiptAddress?: PublicKey,
-    nftAddress?: string,
+    assetAddress?: string,
   ) {
     const auctionHouse = await this.throttledFindOurAuctionHouse();
 
@@ -343,8 +347,8 @@ export class AuctionHouseService {
         .findListingByReceipt({ receiptAddress, auctionHouse });
     } else {
       const listing = await this.prisma.listing.findFirst({
-        where: { nftAddress, canceledAt: new Date(0) },
-        include: { nft: true },
+        where: { assetAddress, canceledAt: new Date(0) },
+        include: { asset: true },
       });
       partialListing = await toListing(this.metaplex, auctionHouse, listing);
     }
@@ -359,14 +363,14 @@ export class AuctionHouseService {
   async getTotalVolume(comicIssueId: number) {
     const getSecondaryVolume = this.prisma.listing.aggregate({
       where: {
-        nft: { collectionNft: { comicIssueId } },
+        asset: { metadata: { collection: { comicIssueId } } },
         soldAt: { not: null },
       },
       _sum: { price: true },
     });
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
-      where: { nft: { collectionNft: { comicIssueId } } },
+      where: { asset: { metadata: { collection: { comicIssueId } } } },
       _sum: { price: true },
     });
 
@@ -388,14 +392,14 @@ export class AuctionHouseService {
 
     const countListed = this.prisma.listing.count({
       where: {
-        nft: { collectionNft: { comicIssueId } },
+        asset: { metadata: { collection: { comicIssueId } } },
         canceledAt: new Date(0),
       },
     });
 
     const getCheapestItem = this.prisma.listing.findFirst({
       where: {
-        nft: { collectionNft: { comicIssueId } },
+        asset: { metadata: { collection: { comicIssueId } } },
         canceledAt: new Date(0),
       },
       orderBy: { price: 'asc' },
@@ -403,7 +407,7 @@ export class AuctionHouseService {
     });
 
     const getSupply = this.prisma.candyMachine.findFirst({
-      where: { collectionNft: { comicIssueId } },
+      where: { collection: { comicIssueId } },
       select: { supply: true },
     });
 
@@ -432,9 +436,9 @@ export class AuctionHouseService {
         soldAt: isBoolean(query.isSold)
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
-        nft: {
-          collectionNft: { comicIssueId: query.comicIssueId },
+        asset: {
           metadata: {
+            collection: { comicIssueId: query.comicIssueId },
             rarity: query.rarity,
             isUsed: query.isUsed,
             isSigned: query.isSigned,
@@ -446,7 +450,7 @@ export class AuctionHouseService {
         price: sortTag == ListingSortTag.Price ? sortOrder : SortOrder.ASC,
       },
       include: {
-        nft: {
+        asset: {
           include: { owner: { include: { user: true } }, metadata: true },
         },
       },
@@ -456,7 +460,9 @@ export class AuctionHouseService {
 
     if (sortTag == ListingSortTag.Rarity) {
       listings = sortBy(listings, (item) => {
-        const rarityIndex = RARITY_PRECEDENCE.indexOf(item.nft.metadata.rarity);
+        const rarityIndex = RARITY_PRECEDENCE.indexOf(
+          item.asset.metadata.rarity,
+        );
         return sortOrder == SortOrder.DESC ? -rarityIndex : rarityIndex;
       });
     }
@@ -467,8 +473,8 @@ export class AuctionHouseService {
     for await (const listing of listings) {
       await this.prisma.listing.upsert({
         where: {
-          nftAddress_canceledAt: {
-            nftAddress: listing.mint.onchainId,
+          assetAddress_canceledAt: {
+            assetAddress: listing.mint.onchainId,
             canceledAt: new Date(0),
           },
         },
@@ -483,7 +489,7 @@ export class AuctionHouseService {
               : Source.MAGIC_EDEN,
         },
         create: {
-          nftAddress: listing.mint.onchainId,
+          assetAddress: listing.mint.onchainId,
           symbol: D_PUBLISHER_SYMBOL,
           price: +listing.tx.grossAmount,
           feePayer: listing.tx.sellerId,
@@ -539,15 +545,15 @@ export class AuctionHouseService {
     }
 
     const metadata = toMetadata(toMetadataAccount(info));
-    const nft = await this.prisma.nft.findFirst({
+    const asset = await this.prisma.digitalAsset.findFirst({
       where: { address: metadata.mintAddress.toString() },
-      include: { metadata: true },
+      include: { metadata: { include: { collection: true } } },
     });
-    const candyMachine = new PublicKey(nft.candyMachineAddress);
-    const collectionAddress = new PublicKey(nft.collectionNftAddress);
+    const candyMachine = new PublicKey(asset.candyMachineAddress);
+    const collectionAddress = new PublicKey(asset.metadata.collection);
     const updateAuthorityAddress = pda(
       [
-        Buffer.from(AUTH_TAG + nft.metadata.rarity.toLowerCase()),
+        Buffer.from(AUTH_TAG + asset.metadata.rarity.toLowerCase()),
         candyMachine.toBuffer(),
         collectionAddress.toBuffer(),
       ],

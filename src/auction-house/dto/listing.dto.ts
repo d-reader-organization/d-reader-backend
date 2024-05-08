@@ -22,8 +22,14 @@ import {
   findSignedTrait,
   findUsedTrait,
 } from '../../utils/nft-metadata';
-import { NftAttributeDto } from '../../nft/dto/nft.dto';
-import { Listing, Wallet, Nft, ComicRarity, User } from '@prisma/client';
+import { NftAttributeDto } from '../../digital-asset/dto/digital-asset.dto';
+import {
+  Listing,
+  Wallet,
+  ComicRarity,
+  User,
+  DigitalAsset,
+} from '@prisma/client';
 import { SellerDto, toSellerDto } from './types/seller.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { divide } from 'lodash';
@@ -32,8 +38,12 @@ export class ListingDto {
   @IsPositive()
   id: number;
 
+  /* @deprecated */
   @IsSolanaAddress()
   nftAddress: string;
+
+  @IsSolanaAddress()
+  assetAddress: string;
 
   @IsString()
   name: string;
@@ -113,25 +123,26 @@ export class CreatorsDto {
 }
 
 export type ListingInput = Listing & {
-  nft: Nft & { owner: Wallet & { user?: User } };
+  asset: DigitalAsset & { owner: Wallet & { user?: User } };
 };
 
 export async function toListingDto(listing: ListingInput) {
-  const sellerAddress = new PublicKey(listing.nft.owner.address);
+  const sellerAddress = new PublicKey(listing.asset.owner.address);
   const [collectionMetadata, seller] = await Promise.all([
-    fetchOffChainMetadata(listing.nft.uri),
-    toSellerDto(listing.nft.owner),
+    fetchOffChainMetadata(listing.asset.uri),
+    toSellerDto(listing.asset.owner),
   ]);
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     sellerAddress.toBuffer(),
     tokenProgram.address.toBuffer(),
-    new PublicKey(listing.nftAddress).toBuffer(),
+    new PublicKey(listing.asset).toBuffer(),
   ]).toString();
 
   const plainListingDto: ListingDto = {
     id: listing.id,
-    nftAddress: listing.nftAddress,
-    name: listing.nft.name,
+    nftAddress: listing.assetAddress,
+    assetAddress: listing.assetAddress,
+    name: listing.asset.name,
     cover: collectionMetadata.image,
     seller,
     tokenAddress,

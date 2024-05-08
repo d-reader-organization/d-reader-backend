@@ -38,8 +38,10 @@ export class UserCreatorService {
   async getTotalCreatorVolume(slug: string) {
     const getSecondaryVolume = this.prisma.listing.aggregate({
       where: {
-        nft: {
-          collectionNft: { comicIssue: { comic: { creator: { slug } } } },
+        asset: {
+          metadata: {
+            collection: { comicIssue: { comic: { creator: { slug } } } },
+          },
         },
         soldAt: { not: null },
       },
@@ -48,8 +50,10 @@ export class UserCreatorService {
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
       where: {
-        nft: {
-          collectionNft: { comicIssue: { comic: { creator: { slug } } } },
+        asset: {
+          metadata: {
+            collection: { comicIssue: { comic: { creator: { slug } } } },
+          },
         },
       },
       _sum: { price: true },
