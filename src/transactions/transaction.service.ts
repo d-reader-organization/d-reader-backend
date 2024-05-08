@@ -80,7 +80,6 @@ export class TransactionService {
       ownerAddress,
       candyMachine,
       metadata,
-      name,
       owner: user,
     } = await this.prisma.digitalAsset.findUnique({
       where: { address: mint.toString() },
@@ -126,12 +125,14 @@ export class TransactionService {
         isUsed = true;
       }
 
-      const itemMetadata = await this.prisma.metadata.findFirst({
+      const itemMetadata = await this.prisma.metadata.findUnique({
         where: {
-          isUsed,
-          isSigned,
-          rarity: findRarityTrait(offChainMetadata),
-          collectionName: name.split('#')[0].trimEnd(),
+          isUsed_isSigned_rarity_collectionAddress: {
+            isUsed,
+            isSigned,
+            rarity: findRarityTrait(offChainMetadata),
+            collectionAddress: metadata.collectionAddress,
+          },
         },
       });
 

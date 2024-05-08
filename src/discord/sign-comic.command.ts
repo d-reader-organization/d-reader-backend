@@ -234,7 +234,6 @@ export class GetSignCommand {
       rarity = asset.metadata.rarity;
 
       const collection = asset.metadata.collection;
-
       cover = await this.prisma.statefulCover.findFirst({
         where: {
           comicIssueId: collection.comicIssueId,
@@ -280,12 +279,14 @@ export class GetSignCommand {
 
         latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       } else {
-        const collectionOnChainName = asset.name.split('#')[0].trim();
-        const signedMetadata = await this.prisma.metadata.findFirst({
+        const signedMetadata = await this.prisma.metadata.findUnique({
           where: {
-            collectionName: collectionOnChainName,
-            isSigned: true,
-            isUsed: asset.metadata.isUsed,
+            isUsed_isSigned_rarity_collectionAddress: {
+              isUsed: asset.metadata.isUsed,
+              isSigned: true,
+              rarity: asset.metadata.rarity,
+              collectionAddress: asset.metadata.collectionAddress,
+            },
           },
         });
         await this.prisma.digitalAsset.update({
