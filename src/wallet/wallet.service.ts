@@ -50,7 +50,7 @@ export class WalletService {
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
-    const compeleteNfts = await this.prisma.digitalAsset
+    const compeleteAssets = await this.prisma.digitalAsset
       .findMany({
         where: { ownerAddress: address },
       })
@@ -74,7 +74,7 @@ export class WalletService {
         (asset) => asset.interface.toString() === 'MplCoreAsset',
       );
 
-      await this.syncLegacyAssets(candyMachines, compeleteNfts, legacyAssets);
+      await this.syncLegacyAssets(candyMachines, compeleteAssets, legacyAssets);
       await this.syncCoreAssets(coreAssets);
 
       page++;
@@ -82,7 +82,7 @@ export class WalletService {
     }
 
     // Sync nfts with new owner
-    const nftsWithNewOwner = compeleteNfts.filter((address) =>
+    const nftsWithNewOwner = compeleteAssets.filter((address) =>
       assets.find((currentOwnerNft) => currentOwnerNft.id === address),
     );
     for await (const nftAddress of nftsWithNewOwner) {
@@ -122,33 +122,33 @@ export class WalletService {
       const candyMachine = await this.prisma.candyMachine.findFirst({
         where: { collectionAddress: group.group_value },
       });
-      const indexedNft = await this.heliusService.reIndexAsset(
+      const indexedAsset = await this.heliusService.reIndexAsset(
         asset,
         candyMachine.address,
       );
 
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { assetAddress: indexedNft.address },
+          where: { assetAddress: indexedAsset.address },
         },
       );
 
       if (!doesReceiptExists) {
         const UNKNOWN = 'UNKNOWN';
-        const userId: number = indexedNft.owner?.userId;
+        const userId: number = indexedAsset.owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          asset: { connect: { address: indexedNft.address } },
+          asset: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine.address } },
           buyer: {
             connectOrCreate: {
-              where: { address: indexedNft.ownerAddress },
-              create: { address: indexedNft.ownerAddress },
+              where: { address: indexedAsset.ownerAddress },
+              create: { address: indexedAsset.ownerAddress },
             },
           },
           price: 0,
           timestamp: new Date(),
-          description: `${indexedNft.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
+          description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
           label: UNKNOWN,
@@ -169,7 +169,7 @@ export class WalletService {
 
   async syncLegacyAssets(
     candyMachines: { address: string }[],
-    compeleteNfts: string[],
+    compeleteAssets: string[],
     legacyAssets: DAS.GetAssetResponse[],
   ) {
     const unsyncedLegacyAssets = (
@@ -200,7 +200,7 @@ export class WalletService {
               candyMachineAddress,
               collection.group_value,
               asset.creators,
-              compeleteNfts,
+              compeleteAssets,
             );
             if (!isIndexed) {
               return asset;
@@ -217,32 +217,32 @@ export class WalletService {
         asset.creators,
       );
 
-      const indexedNft = await this.heliusService.reIndexAsset(
+      const indexedAsset = await this.heliusService.reIndexAsset(
         asset,
         candyMachine,
       );
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { assetAddress: indexedNft.address },
+          where: { assetAddress: indexedAsset.address },
         },
       );
 
       if (!doesReceiptExists) {
         const UNKNOWN = 'UNKNOWN';
-        const userId: number = indexedNft.owner?.userId;
+        const userId: number = indexedAsset.owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          asset: { connect: { address: indexedNft.address } },
+          asset: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine } },
           buyer: {
             connectOrCreate: {
-              where: { address: indexedNft.ownerAddress },
-              create: { address: indexedNft.ownerAddress },
+              where: { address: indexedAsset.ownerAddress },
+              create: { address: indexedAsset.ownerAddress },
             },
           },
           price: 0,
           timestamp: new Date(),
-          description: `${indexedNft.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
+          description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
           label: UNKNOWN,
