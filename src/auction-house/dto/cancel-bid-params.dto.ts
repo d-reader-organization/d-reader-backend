@@ -5,11 +5,11 @@ export class CancelParams {
   @IsOptional()
   receiptAddress?: string;
 
+  /* @deperecated */
   @IsString()
   @IsOptional()
   nftAddress: string;
 
-  /* @deperecated */
   @IsString()
   @IsOptional()
   assetAddress: string;

@@ -17,8 +17,8 @@ export class WalletAssetDto {
 }
 
 export async function toWalletAssetDto(asset: DigitalAsset) {
-  const getNftResponse = await axios.get<JsonMetadata>(asset.uri);
-  const { data: offChainMetadataJson } = getNftResponse;
+  const getAssetResponse = await axios.get<JsonMetadata>(asset.uri);
+  const { data: offChainMetadataJson } = getAssetResponse;
 
   const plainWalletAssetDto: WalletAssetDto = {
     address: asset.address,
