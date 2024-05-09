@@ -204,8 +204,8 @@ export class CandyMachineService {
     const cover = findDefaultCover(comicIssue.statelessCovers);
     const coverImage = await s3toMxFile(cover.image);
     // if Collection NFT already exists - use it, otherwise create a fresh one
-    let collectionNftAddress: PublicKey;
-    const collectionNft = await this.prisma.collection.findUnique({
+    let collectionAddress: PublicKey;
+    const collectionAsset = await this.prisma.collection.findUnique({
       where: {
         comicIssueId,
         candyMachines: { some: { standard: tokenStandard } },
@@ -214,9 +214,9 @@ export class CandyMachineService {
 
     let darkblockId = '';
     // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
-    if (collectionNft && tokenStandard !== TokenStandard.Core) {
-      collectionNftAddress = new PublicKey(collectionNft.address);
-      darkblockId = collectionNft.darkblockId ?? '';
+    if (collectionAsset && tokenStandard !== TokenStandard.Core) {
+      collectionAddress = new PublicKey(collectionAsset.address);
+      darkblockId = collectionAsset.darkblockId ?? '';
     } else {
       let darkblockMetadataFile: MetdataFile;
       if (pdf) {
@@ -231,7 +231,7 @@ export class CandyMachineService {
         };
       }
 
-      const { uri: collectionNftUri } = await this.metaplex
+      const { uri: collectionAssetUri } = await this.metaplex
         .nfts()
         .uploadMetadata({
           name: title,
@@ -267,7 +267,7 @@ export class CandyMachineService {
         await constructCoreCollectionTransaction(
           this.umi,
           collection,
-          collectionNftUri,
+          collectionAssetUri,
           onChainName,
           sellerFeeBasisPoints,
           creators,
@@ -278,26 +278,26 @@ export class CandyMachineService {
         if (nonceArgs) {
           await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
         }
-        collectionNftAddress = new PublicKey(collection.publicKey);
+        collectionAddress = new PublicKey(collection.publicKey);
       } else {
         const newCollectionNft = await createCollectionNft(
           this.metaplex,
           onChainName,
-          collectionNftUri,
+          collectionAssetUri,
           sellerFeeBasisPoints,
         );
-        collectionNftAddress = newCollectionNft.address;
+        collectionAddress = newCollectionNft.address;
       }
 
       await this.prisma.collection.create({
         data: {
-          address: collectionNftAddress.toBase58(),
+          address: collectionAddress.toBase58(),
           name: onChainName,
           comicIssue: { connect: { id: comicIssue.id } },
         },
       });
     }
-    return { collectionNftAddress, darkblockId };
+    return { collectionAddress, darkblockId };
   }
 
   async createComicIssueCM({
@@ -319,7 +319,7 @@ export class CandyMachineService {
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
 
-    const { collectionNftAddress, darkblockId } =
+    const { collectionAddress, darkblockId } =
       await this.getOrCreateComicIssueCollection(
         comicIssue,
         onChainName,
@@ -348,7 +348,7 @@ export class CandyMachineService {
       const nonceArgs = await this.nonceService.getNonce();
       const [candyMachinePubkey, lut] = await createCoreCandyMachine(
         this.umi,
-        publicKey(collectionNftAddress),
+        publicKey(collectionAddress),
         guardParams,
         !!shouldBePublic,
         nonceArgs,
@@ -402,7 +402,7 @@ export class CandyMachineService {
           this.metaplex,
           candyMachine.publicKey,
           comicIssue,
-          publicKey(collectionNftAddress),
+          publicKey(collectionAddress),
           comicName,
           royaltyWallets,
           statelessCovers,
@@ -419,7 +419,7 @@ export class CandyMachineService {
             isSigned: item.isSigned,
             rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
             collectionName: onChainName,
-            collectionAddress: collectionNftAddress.toString(),
+            collectionAddress: collectionAddress.toString(),
           };
         });
 
@@ -449,7 +449,7 @@ export class CandyMachineService {
 
       const [candyMachinePubkey, lut] = await createLegacyCandyMachine(
         this.metaplex,
-        collectionNftAddress,
+        collectionAddress,
         comicIssue,
         royaltyWallets,
         guardParams,
@@ -476,7 +476,7 @@ export class CandyMachineService {
           this.metaplex,
           candyMachine,
           comicIssue,
-          collectionNftAddress,
+          collectionAddress,
           comicName,
           royaltyWallets,
           statelessCovers,
@@ -492,7 +492,7 @@ export class CandyMachineService {
             isSigned: item.isSigned,
             rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
             collectionName: onChainName,
-            collectionAddress: collectionNftAddress.toString(),
+            collectionAddress: collectionAddress.toString(),
           };
         });
 

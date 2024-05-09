@@ -74,7 +74,7 @@ export class AssetDto {
 }
 
 type AssetInput = DigitalAsset & {
-  collectionNft?: Collection;
+  metadata?: { collection?: Collection };
   listing?: Listing[];
 };
 
@@ -96,7 +96,7 @@ export async function toAssetDto(asset: AssetInput) {
     rarity: findRarityTrait(offChainMetadata),
     comicName: offChainMetadata.collection.family,
     comicIssueName: offChainMetadata.collection.name,
-    comicIssueId: asset.collectionNft?.comicIssueId,
+    comicIssueId: asset.metadata?.collection?.comicIssueId,
     attributes: offChainMetadata.attributes.map((a) => ({
       trait: a.trait_type,
       value: a.value,
