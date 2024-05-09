@@ -173,9 +173,9 @@ async function main() {
   await prisma.candyMachineReceipt.deleteMany();
   await prisma.walletCandyMachineGroup.deleteMany();
   await prisma.candyMachineGroup.deleteMany();
-  await prisma.nft.deleteMany();
+  await prisma.digitalAsset.deleteMany();
   await prisma.candyMachine.deleteMany();
-  await prisma.collectionNft.deleteMany();
+  await prisma.collection.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.userComic.deleteMany();
