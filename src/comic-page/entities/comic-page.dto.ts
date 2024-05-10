@@ -1,5 +1,11 @@
 import { plainToInstance } from 'class-transformer';
-import { IsBoolean, IsPositive, IsString, IsNotEmpty } from 'class-validator';
+import {
+  IsBoolean,
+  IsPositive,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { ComicPage } from '@prisma/client';
 import { sortBy } from 'lodash';
@@ -17,6 +23,14 @@ export class ComicPageDto {
   @IsString()
   @IsNotEmpty()
   image: string;
+
+  @IsOptional()
+  @IsPositive()
+  height?: number;
+
+  @IsOptional()
+  @IsPositive()
+  width?: number;
 }
 
 export function toComicPageDto(page: ComicPage) {
@@ -26,6 +40,8 @@ export function toComicPageDto(page: ComicPage) {
     isPreviewable: page.isPreviewable,
     // image: await getPresignedUrl(page.image),
     image: getPublicUrl(page.image),
+    height: page.height,
+    width: page.width,
   };
 
   const pageDto = plainToInstance(ComicPageDto, plainPageDto);
