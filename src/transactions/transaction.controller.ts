@@ -4,7 +4,7 @@ import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { SignComicParams } from './dto/sign-comic-params.dto';
 import { UseComicParams } from '../candy-machine/dto/use-comic-params.dto';
-import { CancelParams } from '../auction-house/dto/cancel-bid-params.dto';
+import { CancelParams } from '../auction-house/dto/cancel-params.dto';
 import { ListParams } from '../auction-house/dto/list-params.dto';
 import { PrivateBidParams } from '../auction-house/dto/private-bid-params.dto';
 import { BuyArgs } from '../auction-house/dto/types/buy-args';
@@ -77,10 +77,10 @@ export class TransactionController {
   @Get('/sign-comic')
   async constructSignComicTransaction(@Query() query: SignComicParams) {
     const publicKey = new PublicKey(query.signerAddress);
-    const nftPubKey = new PublicKey(query.nftAddress);
+    const assetPubkey = new PublicKey(query.assetAddress);
 
     return await this.transactionService.createChangeComicStateTransaction(
-      nftPubKey,
+      assetPubkey,
       publicKey,
       ComicStateArgs.Sign,
     );
@@ -113,10 +113,10 @@ export class TransactionController {
     @UserEntity() user: UserPayload,
   ) {
     const publicKey = new PublicKey(query.ownerAddress);
-    const nftPubKey = new PublicKey(query.nftAddress ?? query.assetAddress);
+    const assetPubkey = new PublicKey(query.nftAddress ?? query.assetAddress);
 
     return await this.transactionService.createChangeComicStateTransaction(
-      nftPubKey,
+      assetPubkey,
       publicKey,
       ComicStateArgs.Use,
       user.id,
