@@ -45,6 +45,9 @@ export class UpdateCreatorDto {
   instagram?: string;
 
   @IsOptionalUrl()
+  discordUsername: string;
+
+  @IsOptionalUrl()
   lynkfire?: string;
 }
 

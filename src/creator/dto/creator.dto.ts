@@ -74,6 +74,9 @@ export class CreatorDto {
   @IsOptionalUrl()
   lynkfire: string;
 
+  @IsOptionalUrl()
+  discordId: string;
+
   @IsOptional()
   @Type(() => CreatorStatsDto)
   stats?: CreatorStatsDto;
@@ -107,6 +110,7 @@ export function toCreatorDto(creator: CreatorInput) {
     flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
     website: creator.website,
+    discordId: creator.discordId,
     twitter: creator.twitter,
     instagram: creator.instagram,
     lynkfire: creator.lynkfire,
