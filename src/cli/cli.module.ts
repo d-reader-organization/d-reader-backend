@@ -67,6 +67,8 @@ import { UpdateNonceCommand } from './update-nonce-command';
 import { UpdateNonceQuestions } from './update-nonce.questions';
 import { InsertItemsCommand } from './insert-items-command';
 import { InsertItemsQuestions } from './insert-items-questions';
+import { FetchCollectionSaleDetailsCommand } from './fetch-sale-collection-details-command';
+import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-details-questions';
 
 @Module({
   imports: [
@@ -146,6 +148,8 @@ import { InsertItemsQuestions } from './insert-items-questions';
     UpdateNonceQuestions,
     InsertItemsCommand,
     InsertItemsQuestions,
+    FetchCollectionSaleDetailsCommand,
+    FetchCollectionSaleDetailsQuestions,
   ],
 })
 export class CLIModule {}
