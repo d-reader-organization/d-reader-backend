@@ -4,7 +4,7 @@ const notificationDataKeys = [
   'comicIssueId',
   'comicSlug',
   'creatorSlug',
-  'nftAddress',
+  'digitalAssetAddress',
   'externalUrl',
 ];
 
