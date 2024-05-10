@@ -135,7 +135,7 @@ export async function toListingDto(listing: ListingInput) {
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     sellerAddress.toBuffer(),
     tokenProgram.address.toBuffer(),
-    new PublicKey(listing.asset).toBuffer(),
+    new PublicKey(listing.asset.address).toBuffer(),
   ]).toString();
 
   const plainListingDto: ListingDto = {
