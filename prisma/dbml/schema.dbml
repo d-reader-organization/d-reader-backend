@@ -347,6 +347,8 @@ Table ComicPage {
   image String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
+  height Int
+  width Int
 
   indexes {
     (pageNumber, comicIssueId) [unique]
