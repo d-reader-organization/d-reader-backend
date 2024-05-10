@@ -49,7 +49,6 @@ export const getAssetsByGroup = async (
       ? Cluster.Devnet
       : Cluster.MainnetBeta,
   );
-  console.log(url);
   const params: DAS.AssetsByGroupRequest = {
     groupKey: 'collection',
     groupValue: collection,

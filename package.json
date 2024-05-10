@@ -51,7 +51,8 @@
     "create-nonce": "npx ts-node src/cli/main.ts create-nonce",
     "sync-core-asset": "npx ts-node src/cli/main.ts sync-core-asset",
     "update-nonce": "npx ts-node src/cli/main.ts update-nonce",
-    "insert-items": "npx ts-node src/cli/main.ts insert-items"
+    "insert-items": "npx ts-node src/cli/main.ts insert-items",
+    "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
