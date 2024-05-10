@@ -105,6 +105,7 @@ export class TransactionController {
     // Elusiv for private transaction if the user decided to do an anonymous tip
   }
 
+  /* deprecated */
   @UserAuth()
   @Get('/use-comic-issue-nft')
   async constructUseComicTransaction(
@@ -112,7 +113,24 @@ export class TransactionController {
     @UserEntity() user: UserPayload,
   ) {
     const publicKey = new PublicKey(query.ownerAddress);
-    const nftPubKey = new PublicKey(query.nftAddress);
+    const nftPubKey = new PublicKey(query.nftAddress ?? query.assetAddress);
+
+    return await this.transactionService.createChangeComicStateTransaction(
+      nftPubKey,
+      publicKey,
+      ComicStateArgs.Use,
+      user.id,
+    );
+  }
+
+  @UserAuth()
+  @Get('/use-comic-issue-asset')
+  async constructUseComicAssetTransaction(
+    @Query() query: UseComicParams,
+    @UserEntity() user: UserPayload,
+  ) {
+    const publicKey = new PublicKey(query.ownerAddress);
+    const nftPubKey = new PublicKey(query.assetAddress);
 
     return await this.transactionService.createChangeComicStateTransaction(
       nftPubKey,
