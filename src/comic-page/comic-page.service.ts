@@ -4,6 +4,7 @@ import { CreateComicPageDto } from './dto/create-comic-page.dto';
 import { Prisma } from '@prisma/client';
 import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
+import imageSize from 'image-size';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) => {
   return `comics/${comicSlug}/issues/${comicIssueSlug}/pages/`;
@@ -38,11 +39,13 @@ export class ComicPageService {
         } catch {
           throw new BadRequestException('Malformed file upload');
         }
-
+        const { height, width } = imageSize(image.buffer);
         const comicPageData: Prisma.ComicPageCreateManyInput = {
           ...rest,
           comicIssueId,
           pageNumber,
+          height,
+          width,
           image: imageKey,
         };
 
