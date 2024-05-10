@@ -2,7 +2,7 @@ import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 export class SignComicParams {
   @IsSolanaAddress()
-  nftAddress: string;
+  assetAddress: string;
 
   @IsSolanaAddress()
   signerAddress: string;
