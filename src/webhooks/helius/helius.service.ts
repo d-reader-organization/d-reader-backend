@@ -64,6 +64,7 @@ import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-cor
 import { isEqual } from 'lodash';
 import { getAssetFromTensor } from '../../utils/das';
 import { TENSOR_ASSET } from './dto/types';
+import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 
 @Injectable()
 export class HeliusService {
@@ -340,19 +341,39 @@ export class HeliusService {
     }
 
     try {
-      let splTokenAddress = SOL_ADDRESS;
-      if (enrichedTransaction.tokenTransfers.at(1)) {
-        splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
-      }
-
-      const ownerAccountData = enrichedTransaction.accountData.find(
-        (data) => data.account == ownerAddress,
-      );
-      const price = Math.abs(ownerAccountData.nativeBalanceChange);
-
       const ixData = mintV1Serializer.deserialize(
         bs58.decode(mintInstruction.data),
       )[0];
+      const label =
+        ixData.group.__option == 'Some' ? ixData.group.value : undefined;
+
+      let splTokenAddress = SOL_ADDRESS;
+      let balanceTransferAddress = ownerAddress;
+      if (label) {
+        const group = await this.prisma.candyMachineGroup.findUnique({
+          where: { label_candyMachineAddress: { label, candyMachineAddress } },
+        });
+        splTokenAddress = group.splTokenAddress;
+        balanceTransferAddress =
+          splTokenAddress == SOL_ADDRESS
+            ? ownerAddress
+            : findAssociatedTokenPda(this.umi, {
+                mint: publicKey(group.splTokenAddress),
+                owner: publicKey(ownerAddress),
+              })[0];
+      }
+
+      const ownerAccountData = enrichedTransaction.accountData.find(
+        (data) => data.account == balanceTransferAddress,
+      );
+      const price =
+        splTokenAddress === SOL_ADDRESS
+          ? Math.abs(ownerAccountData.nativeBalanceChange)
+          : Math.abs(
+              +ownerAccountData.tokenBalanceChanges.find(
+                (balance) => balance.mint === splTokenAddress,
+              ).rawTokenAmount.tokenAmount,
+            );
 
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
         asset: { connect: { address: mint } },
@@ -368,7 +389,7 @@ export class HeliusService {
         description: enrichedTransaction.description,
         transactionSignature: enrichedTransaction.signature,
         splTokenAddress,
-        label: ixData.group.__option == 'Some' ? ixData.group.value : undefined,
+        label,
       };
 
       if (userId) {

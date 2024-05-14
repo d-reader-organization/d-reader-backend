@@ -125,9 +125,7 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
     const publicGroup = groups.find(
       (group) => group.label === PUBLIC_GROUP_LABEL,
     );
-    const userGroup = groups.find((group) =>
-      group.label.toLowerCase().includes('user'),
-    );
+    const userGroup = groups.find((group) => group.label === 'user');
 
     const publicMintRevenue = toSol(
       publicMints * Number(publicGroup.mintPrice),
