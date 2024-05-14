@@ -38,10 +38,6 @@ export class ListingDto {
   @IsPositive()
   id: number;
 
-  /* @deprecated */
-  @IsSolanaAddress()
-  nftAddress: string;
-
   @IsSolanaAddress()
   assetAddress: string;
 
@@ -140,7 +136,6 @@ export async function toListingDto(listing: ListingInput) {
 
   const plainListingDto: ListingDto = {
     id: listing.id,
-    nftAddress: listing.assetAddress,
     assetAddress: listing.assetAddress,
     name: listing.asset.name,
     cover: collectionMetadata.image,

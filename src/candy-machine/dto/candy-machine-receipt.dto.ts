@@ -16,10 +16,6 @@ export class CandyMachineReceiptDto {
   @Type(() => PartialAssetDto)
   asset: PartialAssetDto;
 
-  /* @deprecated */
-  @Type(() => PartialAssetDto)
-  nft: PartialAssetDto;
-
   @Type(() => BuyerDto)
   buyer: BuyerDto;
 
@@ -43,10 +39,6 @@ export type CandyMachineReceiptInput = CandyMachineReceipt & {
 
 export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
   const plainReceiptDto: CandyMachineReceiptDto = {
-    nft: {
-      address: receipt.asset.address,
-      name: receipt.asset.name,
-    },
     asset: {
       address: receipt.asset.address,
       name: receipt.asset.name,
