@@ -723,6 +723,31 @@ async function getMintArgs(
               ];
             }
             break;
+          case 'tokenPayment':
+            if (resolvedGuards.tokenPayment.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  mint: resolvedGuards.tokenPayment.value.mint,
+                  destinationAta:
+                    resolvedGuards.tokenPayment.value.destinationAta,
+                }),
+              ];
+            }
+            break;
+          case 'freezeTokenPayment':
+            if (resolvedGuards.freezeTokenPayment.__option == 'Some') {
+              return [
+                guard,
+                some({
+                  mint: publicKey(resolvedGuards.freezeTokenPayment.value.mint),
+                  destinationAta: publicKey(
+                    resolvedGuards.freezeTokenPayment.value.destinationAta,
+                  ),
+                }),
+              ];
+            }
+            break;
         }
       }
     })

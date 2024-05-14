@@ -683,7 +683,6 @@ export class CandyMachineService {
           ? await this.countWalletItemsMintedQuery(
               candyMachineAddress.toString(),
               feePayer.toString(),
-              label,
             )
           : await this.countUserItemsMintedQuery(
               candyMachineAddress.toString(),
@@ -965,6 +964,7 @@ export class CandyMachineService {
     } else {
       paymentGuardName = frozen ? 'freezeTokenPayment' : 'tokenPayment';
       paymentGuard = {
+        // Currently, this would be only USDC
         amount: BigInt(mintPrice),
         destinationAta: findAssociatedTokenPda(this.umi, {
           mint: publicKey(splTokenAddress),
@@ -1288,18 +1288,17 @@ export class CandyMachineService {
     });
   };
 
-  // Wallet whitelist group should start with public
+  // Wallet whitelist group should be public
   countWalletItemsMintedQuery = (
     candyMachineAddress: string,
     buyerAddress: string,
-    label: string,
   ) => {
-    const labelPrefix = label.includes('public') ? 'public' : label;
+    // All public group labels starts with p
     return this.prisma.candyMachineReceipt.count({
       where: {
         candyMachineAddress,
         buyerAddress,
-        label: { startsWith: labelPrefix },
+        label: { startsWith: 'p' },
       },
     });
   };
@@ -1311,7 +1310,6 @@ export class CandyMachineService {
     const walletItemsMinted = await this.countWalletItemsMintedQuery(
       group.candyMachineAddress,
       walletAddress,
-      group.label,
     );
     const mintLimitReached = group.mintLimit
       ? group.mintLimit <= walletItemsMinted
@@ -1355,7 +1353,6 @@ export class CandyMachineService {
     const walletItemsMinted = await this.countWalletItemsMintedQuery(
       group.candyMachineAddress,
       walletAddress,
-      group.label,
     );
     const isEligible = group.mintLimit
       ? group.mintLimit > walletItemsMinted
