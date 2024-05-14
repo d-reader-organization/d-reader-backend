@@ -5,15 +5,13 @@ import { PublicKey } from '@solana/web3.js';
 import { metaplex } from '../utils/metaplex';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import {
-  FREE_MINT_GROUP_LABEL,
-  REFERRAL_REWARD_GROUP_LABEL,
   REFERRAL_REWARD_THRESHOLD,
   SAGA_COLLECTION_ADDRESS,
 } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Prisma, Wallet } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { isEmpty, sortBy } from 'lodash';
+import { isEmpty } from 'lodash';
 import { hasCompletedSetup } from '../utils/user';
 import { DAS, Interface, Scope } from 'helius-sdk';
 import {
@@ -261,52 +259,6 @@ export class WalletService {
     }
   }
 
-  /** This function allowlists a wallet on all the active Candy Machines
-   * which have a group with the specified label */
-  async allowlistUserWallet(wallets: Wallet[], label: string) {
-    const candyMachines =
-      await this.candyMachineService.findActiveRewardCandyMachine(label);
-    const lastConnectedWallet = sortBy(wallets, (wallet) => wallet.connectedAt);
-
-    const addWallet = candyMachines.map((candyMachine) =>
-      this.candyMachineService.addAllowList(
-        candyMachine.candyMachineAddress,
-        [lastConnectedWallet.at(-1).address],
-        label,
-      ),
-    );
-    await Promise.all(addWallet);
-  }
-
-  async makeEligibleForCompletedAccountBonus(userId: number) {
-    if (!userId) return;
-
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { wallets: true },
-      });
-
-      const isUserReady = hasCompletedSetup(user);
-      const isEligible = isUserReady && !user.rewardedAt;
-
-      if (isEligible) {
-        await this.allowlistUserWallet(user.wallets, FREE_MINT_GROUP_LABEL);
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            rewardedAt: new Date(),
-            referralsRemaining: { increment: 1 },
-          },
-        });
-      }
-    } catch (e) {
-      console.error(
-        `Error while making the user eligible for a completed account bonus: ${e}`,
-      );
-    }
-  }
-
   async makeEligibleForReferralBonus(userId: number) {
     if (!userId) return;
 
@@ -334,10 +286,6 @@ export class WalletService {
         isUserReady && hasUserReferredEnoughNewUsers && !user.referCompeletedAt;
 
       if (isEligible) {
-        await this.allowlistUserWallet(
-          user.wallets,
-          REFERRAL_REWARD_GROUP_LABEL,
-        );
         await this.prisma.user.update({
           where: { id: user.id },
           data: { referCompeletedAt: new Date() },

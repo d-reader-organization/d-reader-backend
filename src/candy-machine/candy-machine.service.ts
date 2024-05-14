@@ -1084,16 +1084,6 @@ export class CandyMachineService {
     });
   }
 
-  async findActiveRewardCandyMachine(label: string) {
-    const candyMachines = await this.prisma.candyMachineGroup.findMany({
-      where: {
-        label,
-        candyMachine: { itemsRemaining: { gt: 0 } },
-      },
-    });
-    return candyMachines;
-  }
-
   async addAllowList(
     candyMachineAddress: string,
     allowList: string[],

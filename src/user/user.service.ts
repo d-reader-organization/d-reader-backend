@@ -386,7 +386,6 @@ export class UserService {
 
     await this.walletService.makeEligibleForReferralBonus(user.id);
     await this.walletService.makeEligibleForReferralBonus(user.referrerId);
-    await this.walletService.makeEligibleForCompletedAccountBonus(user.id);
 
     return updatedUser;
   }
