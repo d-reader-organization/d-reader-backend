@@ -93,7 +93,7 @@ export function toRawCreatorDto(creator: Creator) {
     flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
     website: creator.website,
-    twitter: creator.twitter,
+    twitter: creator.twitterHandle,
     instagram: creator.instagram,
     lynkfire: creator.lynkfire,
   };
