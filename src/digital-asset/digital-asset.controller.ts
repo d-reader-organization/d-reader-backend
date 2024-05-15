@@ -31,19 +31,27 @@ export class NftController {
 @ApiTags('Assets')
 @Controller('asset')
 export class DigitalAssetController {
-  constructor(private readonly nftService: DigitalAssetService) {}
+  constructor(private readonly digitalAssetService: DigitalAssetService) {}
 
   /* Get all Assets */
   @Get('get')
   async findAll(@Query() query: DigitalAssetFilterParams): Promise<AssetDto[]> {
-    const assets = await this.nftService.findAll(query);
+    const assets = await this.digitalAssetService.findAll(query);
     return toAssetDtoArray(assets);
   }
 
   /* Get specific Asset by unique on-chain address */
   @Get('get/:address')
   async findOne(@Param('address') address: string): Promise<AssetDto> {
-    const asset = await this.nftService.findOne(address);
+    const asset = await this.digitalAssetService.findOne(address);
     return toAssetDto(asset);
+  }
+
+  @Get('get/twitter-content/:address')
+  async getTwitterContent(@Param('address') address: string): Promise<string> {
+    const twitterContent = await this.digitalAssetService.getTwitterContent(
+      address,
+    );
+    return twitterContent;
   }
 }

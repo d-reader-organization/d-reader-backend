@@ -46,4 +46,30 @@ export class DigitalAssetService {
 
     return asset;
   }
+
+  async getTwitterContent(address: string) {
+    const { collection, ...metadata } = await this.prisma.metadata.findFirst({
+      where: { asset: { some: { address } } },
+      include: {
+        collection: {
+          include: {
+            comicIssue: { include: { statelessCovers: true, comic: true } },
+          },
+        },
+      },
+    });
+    const { comicIssue } = collection;
+    const statelessCover = comicIssue.statelessCovers.find(
+      (cover) => cover.rarity === metadata.rarity,
+    );
+
+    const dReaderIssueMintUrl = `https://dreader.app/mint/${comicIssue.comicSlug}_${comicIssue.slug}?utm_source=web`;
+
+    return `https://twitter.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicIssue
+      .comic?.title}: ${comicIssue.title} comic on @dReaderApp! 📚 ${
+      statelessCover.artistTwitterHandle
+        ? `\nCover by @${statelessCover.artistTwitterHandle}`
+        : ''
+    } \n\nMint yours here while the supply lasts.👇\n\n${dReaderIssueMintUrl} \n`;
+  }
 }
