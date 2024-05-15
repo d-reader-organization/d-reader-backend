@@ -771,6 +771,7 @@ export class ComicIssueService {
             image: imageKey,
             rarity: cover.rarity,
             artist: cover.artist,
+            artistTwitterHandle: cover.artistTwitterHandle,
             isDefault: cover.isDefault,
             share: cover.share ?? getRarityShare(covers.length, cover.rarity),
             comicIssueId: comicIssue.id,

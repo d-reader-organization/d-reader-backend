@@ -213,6 +213,7 @@ Table StatelessCover {
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
   artist String [not null]
+  artistTwitterHandle String
   share Int [not null]
   isDefault Boolean [not null]
 

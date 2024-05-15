@@ -238,14 +238,15 @@ model ComicIssueCollaborator {
 }
 
 model StatelessCover {
-  id           Int         @id @default(autoincrement())
-  image        String
-  rarity       ComicRarity
-  comicIssue   ComicIssue  @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-  comicIssueId Int
-  artist       String
-  share        Int
-  isDefault    Boolean
+  id                  Int         @id @default(autoincrement())
+  image               String
+  rarity              ComicRarity
+  comicIssue          ComicIssue  @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssueId        Int
+  artist              String
+  artistTwitterHandle String?
+  share               Int
+  isDefault           Boolean
 
   @@unique([comicIssueId, rarity])
 }
