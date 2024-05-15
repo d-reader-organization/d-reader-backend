@@ -14,6 +14,10 @@ export class CreateStatelessCoverBodyDto {
   @IsString()
   artist: string;
 
+  @IsString()
+  @IsOptional()
+  artistTwitterHandle?: string;
+
   @IsEnum(ComicRarity)
   @ApiProperty({ enum: ComicRarity })
   rarity: ComicRarity;
