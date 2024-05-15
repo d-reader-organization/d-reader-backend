@@ -56,7 +56,7 @@ Table Creator {
   description String [not null, default: '']
   flavorText String [not null, default: '']
   website String [not null, default: '']
-  twitter String [not null, default: '']
+  twitterHandle String [not null, default: '']
   instagram String [not null, default: '']
   lynkfire String [not null, default: '']
   discordId String [not null, default: '']

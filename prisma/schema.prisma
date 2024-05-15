@@ -74,7 +74,7 @@ model Creator {
   description     String        @default("")
   flavorText      String        @default("")
   website         String        @default("")
-  twitter         String        @default("")
+  twitterHandle   String        @default("")
   instagram       String        @default("")
   lynkfire        String        @default("")
   discordId       String        @default("")
