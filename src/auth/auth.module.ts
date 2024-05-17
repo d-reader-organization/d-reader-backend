@@ -9,7 +9,6 @@ import { SecurityConfig, ThrottleConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { UserService } from '../user/user.service';
 import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
@@ -55,7 +54,6 @@ import { NonceService } from '../nonce/nonce.service';
     PasswordService,
     JwtStrategy,
     HeliusService,
-    WebSocketGateway,
     UserService,
     CreatorService,
     UserCreatorService,

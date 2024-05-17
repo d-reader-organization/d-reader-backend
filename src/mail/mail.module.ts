@@ -13,7 +13,6 @@ import { PasswordService } from '../auth/password.service';
 import { WalletService } from '../wallet/wallet.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
-import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { NonceService } from '../nonce/nonce.service';
 
@@ -66,7 +65,6 @@ type SupportedAuthType =
     WalletService,
     HeliusService,
     CandyMachineService,
-    WebSocketGateway,
     DarkblockService,
     NonceService,
   ],
