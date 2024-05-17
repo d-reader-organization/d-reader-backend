@@ -13,7 +13,6 @@ import { MintOneCommand } from './mint-one-command';
 import { MintOneQuestions } from './mint-one-questions';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { CreateAuctionHouseQuestions } from './create-auction-house-questions';
 import { SyncWebhookCommand } from './sync-webhook-command';
 import { SyncWebhookQuestions } from './sync-webhook-questions';
@@ -113,7 +112,6 @@ import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-det
     ComicPageService,
     UserComicIssueService,
     HeliusService,
-    WebSocketGateway,
     SyncWalletQuestions,
     SyncWalletCommand,
     AddAllowListQuestions,
