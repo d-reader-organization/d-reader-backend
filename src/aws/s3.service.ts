@@ -87,11 +87,18 @@ export class s3Service {
     else `https://${this.bucket}.s3.amazonaws.com/${key}`;
   };
 
-  getPresignedUrl = async (key: string) => {
+  getPresignedUrl = async (
+    key: string,
+    options?: Optional<GetObjectCommandInput, 'Bucket' | 'Key'>,
+  ) => {
     // If key is an empty string, return it
     if (!key) return key;
 
-    const getCommand = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const getCommand = new GetObjectCommand({
+      ...options,
+      Bucket: this.bucket,
+      Key: key,
+    });
 
     const signedUrl = await getSignedUrl(this.client, getCommand, {
       expiresIn: 86400, // 24 hours

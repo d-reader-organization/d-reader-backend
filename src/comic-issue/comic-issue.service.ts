@@ -912,4 +912,45 @@ export class ComicIssueService {
 
     await this.s3.deleteObjects(oldFileKeys);
   }
+
+  async dowloadAssets(id: number) {
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id },
+      include: { statefulCovers: true, statelessCovers: true, pages: true },
+    });
+
+    const getPdf = this.s3.getPresignedUrl(comicIssue.pdf, {
+      ResponseContentDisposition: 'attachment',
+    });
+
+    const getStatelessCovers = Promise.all(
+      comicIssue.statelessCovers.map((cover) =>
+        this.s3.getPresignedUrl(cover.image, {
+          ResponseContentDisposition: 'attachment',
+        }),
+      ),
+    );
+    const getStatefulCovers = Promise.all(
+      comicIssue.statefulCovers.map((cover) =>
+        this.s3.getPresignedUrl(cover.image, {
+          ResponseContentDisposition: 'attachment',
+        }),
+      ),
+    );
+    const getComicPages = Promise.all(
+      comicIssue.pages.map((page) =>
+        this.s3.getPresignedUrl(page.image, {
+          ResponseContentDisposition: 'attachment',
+        }),
+      ),
+    );
+
+    const assets = await Promise.all([
+      getPdf,
+      getStatelessCovers,
+      getStatefulCovers,
+      getComicPages,
+    ]);
+    return assets.flat(1);
+  }
 }
