@@ -347,4 +347,10 @@ export class ComicIssueController {
   async delete(@Param('id') id: string) {
     await this.comicIssueService.delete(+id);
   }
+
+  @AdminGuard()
+  @Get('download-assets/:id')
+  async downloadAssets(@Param('id') id: string) {
+    return await this.comicIssueService.dowloadAssets(+id);
+  }
 }

@@ -20,6 +20,7 @@ import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -30,6 +31,7 @@ export class ComicService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly userComicService: UserComicService,
+    private readonly comicIssueService: ComicIssueService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -397,5 +399,35 @@ export class ComicService {
 
     const s3Folder = getS3Folder(comic.s3BucketSlug);
     await this.s3.deleteFolder(s3Folder);
+  }
+
+  async dowloadAssets(slug: string) {
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug },
+      include: { issues: true },
+    });
+
+    const getBanner = this.s3.getPresignedUrl(comic.banner, {
+      ResponseContentDisposition: 'attachment',
+    });
+    const getLogo = this.s3.getPresignedUrl(comic.logo, {
+      ResponseContentDisposition: 'attachment',
+    });
+    const getCover = this.s3.getPresignedUrl(comic.cover, {
+      ResponseContentDisposition: 'attachment',
+    });
+    const getComicIssues = Promise.all(
+      comic.issues.map((issue) =>
+        this.comicIssueService.dowloadAssets(issue.id),
+      ),
+    );
+
+    const assets = await Promise.all([
+      getBanner,
+      getLogo,
+      getCover,
+      getComicIssues,
+    ]);
+    return assets.flat(2);
   }
 }

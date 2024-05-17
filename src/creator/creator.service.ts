@@ -454,4 +454,21 @@ export class CreatorService {
       await this.s3.deleteFolder(s3Folder);
     }
   }
+
+  async dowloadAssets(slug: string) {
+    const creator = await this.prisma.creator.findUnique({ where: { slug } });
+
+    const getAvatar = this.s3.getPresignedUrl(creator.avatar, {
+      ResponseContentDisposition: 'attachment',
+    });
+    const getBanner = this.s3.getPresignedUrl(creator.banner, {
+      ResponseContentDisposition: 'attachment',
+    });
+    const getLogo = this.s3.getPresignedUrl(creator.logo, {
+      ResponseContentDisposition: 'attachment',
+    });
+
+    const assets = await Promise.all([getAvatar, getBanner, getLogo]);
+    return assets;
+  }
 }
