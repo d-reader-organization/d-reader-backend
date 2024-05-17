@@ -17,7 +17,6 @@ import { NonceService } from '../nonce/nonce.service';
     CandyMachineService,
     UserComicIssueService,
     HeliusService,
-    WebSocketGateway,
     DarkblockService,
     NonceService,
   ],
