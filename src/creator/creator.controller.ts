@@ -40,6 +40,7 @@ import {
   toRawCreatorDtoArray,
 } from './dto/raw-creator.dto';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
+import { AdminGuard } from 'src/guards/roles.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
@@ -253,5 +254,11 @@ export class CreatorController {
   @Patch('follow/:slug')
   async follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
     await this.userCreatorService.toggleDate(user.id, slug, 'followedAt');
+  }
+
+  @AdminGuard()
+  @Get('download-assets/:slug')
+  async downloadAssets(@Param('slug') slug: string) {
+    return await this.creatorService.dowloadAssets(slug);
   }
 }

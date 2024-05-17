@@ -261,4 +261,10 @@ export class ComicController {
   async delete(@Param('slug') slug: string) {
     await this.comicService.delete(slug);
   }
+
+  @AdminGuard()
+  @Get('download-assets/:slug')
+  async downloadAssets(@Param('slug') slug: string) {
+    return await this.comicService.dowloadAssets(slug);
+  }
 }
