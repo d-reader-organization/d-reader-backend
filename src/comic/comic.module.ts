@@ -9,7 +9,6 @@ import { UserComicIssueService } from 'src/comic-issue/user-comic-issue.service'
 import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { DarkblockService } from 'src/candy-machine/darkblock.service';
 import { NonceService } from 'src/nonce/nonce.service';
-import { WebSocketGateway } from 'src/websockets/websocket.gateway';
 
 @Module({
   controllers: [ComicController],
@@ -21,7 +20,6 @@ import { WebSocketGateway } from 'src/websockets/websocket.gateway';
     CandyMachineService,
     UserComicIssueService,
     HeliusService,
-    WebSocketGateway,
     DarkblockService,
     NonceService,
   ],
