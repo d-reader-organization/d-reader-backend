@@ -27,6 +27,7 @@ const CREATOR_REGISTERED = 'creatorRegistered';
 const CREATOR_SCHEDULED_FOR_DELETION = 'creatorScheduledForDeletion';
 const CREATOR_DELETED = 'creatorDeleted';
 const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
+const CREATOR_PASSWORD_RESET_REQUESTED = 'creatorPasswordResetRequested';
 const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
 const CREATOR_EMAIL_VERIFICATION_REQUESTED =
   'creatorEmailVerificationRequested';
@@ -323,7 +324,36 @@ export class MailService {
     }
   }
 
-  async creatorPasswordReset(creator: Creator, newPassword: string) {
+  async requestCreatorPasswordReset({
+    creator,
+    verificationToken,
+  }: {
+    creator: Creator;
+    verificationToken: string;
+  }) {
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: '🔐 Password reset requested!',
+        template: CREATOR_PASSWORD_RESET_REQUESTED,
+        context: {
+          name: creator.name,
+          apiUrl: this.apiUrl,
+          actionUrl: this.resetPasswordUrl(
+            this.dPublisherUrl,
+            verificationToken,
+          ),
+        },
+      });
+    } catch (e) {
+      logError(CREATOR_PASSWORD_RESET_REQUESTED, creator.email, e);
+      throw new InternalServerErrorException(
+        'Unable to send "password reset requested" email',
+      );
+    }
+  }
+
+  async creatorPasswordReset(creator: Creator) {
     try {
       await this.mailerService.sendMail({
         to: creator.email,
@@ -331,7 +361,6 @@ export class MailService {
         template: CREATOR_PASSWORD_RESET,
         context: {
           name: creator.name,
-          newPassword,
           apiUrl: this.apiUrl,
           actionUrl: this.loginUrl(this.dPublisherUrl),
         },
