@@ -142,7 +142,7 @@ export class CreatorController {
     3 * 60 * 1000, // cache for 3 minutes
   );
 
-  @Patch('request-reset-password')
+  @Patch('request-password-reset')
   async requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
   ) {
