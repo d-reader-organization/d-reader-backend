@@ -256,4 +256,17 @@ export class s3Service {
       return fileKey;
     } else throw new BadRequestException('No file provided');
   };
+
+  /** Create download links for array of s3 keys */
+  async getAttachments(keys: string[]) {
+    const attachments = await Promise.all(
+      keys.map((key) =>
+        this.getPresignedUrl(key, {
+          ResponseContentDisposition: 'attachment',
+        }),
+      ),
+    );
+
+    return attachments;
+  }
 }
