@@ -18,14 +18,16 @@ import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
 import { appendTimestamp, getRandomFloatOrInt, sleep } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
-import { UpdatePasswordDto } from '../types/update-password.dto';
+import {
+  ResetPasswordDto,
+  UpdatePasswordDto,
+} from '../types/update-password.dto';
 import { validateCreatorName, validateEmail } from '../utils/user';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { LoginDto } from '../types/login.dto';
 import { insensitive } from '../utils/lodash';
 import { isEmail } from 'class-validator';
-import { v4 as uuidv4 } from 'uuid';
 import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DiscordNotificationService } from '../discord/notification.service';
@@ -228,18 +230,29 @@ export class CreatorService {
     });
   }
 
-  // TODO: update this logic to match the password reset logic from Users
-  async resetPassword(slug: string) {
-    const newPassword = uuidv4();
-    const hashedPassword = await this.passwordService.hash(newPassword);
-
-    const creator = await this.prisma.creator.findUnique({ where: { slug } });
-    await this.mailService.creatorPasswordReset(creator, hashedPassword);
-
-    return await this.prisma.creator.update({
-      where: { slug },
-      data: { password: newPassword },
+  async requestPasswordReset(nameOrEmail: string) {
+    const creator = await this.findByEmail(nameOrEmail);
+    const verificationToken = this.authService.generateEmailToken(
+      creator.id,
+      creator.email,
+      '10min',
+    );
+    await this.mailService.requestCreatorPasswordReset({
+      creator,
+      verificationToken,
     });
+  }
+
+  async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
+    const payload = this.authService.verifyEmailToken(verificationToken);
+    const creator = await this.findMe(payload.id);
+
+    const hashedPassword = await this.passwordService.hash(newPassword);
+    await this.prisma.creator.update({
+      where: { id: creator.id },
+      data: { password: hashedPassword },
+    });
+    await this.mailService.creatorPasswordReset(creator);
   }
 
   async requestEmailVerification(email: string) {

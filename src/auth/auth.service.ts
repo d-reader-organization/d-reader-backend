@@ -136,7 +136,9 @@ export class AuthService {
         secret: this.configService.get('JWT_ACCESS_SECRET'),
       });
     } catch {
-      throw new UnauthorizedException('Session token expired, new email sent');
+      throw new UnauthorizedException(
+        'Session token expired, submit new reset password request',
+      );
     }
 
     if (

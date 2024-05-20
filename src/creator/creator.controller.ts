@@ -27,7 +27,11 @@ import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
-import { UpdatePasswordDto } from 'src/types/update-password.dto';
+import {
+  RequestPasswordResetDto,
+  ResetPasswordDto,
+  UpdatePasswordDto,
+} from 'src/types/update-password.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
@@ -130,11 +134,26 @@ export class CreatorController {
     await this.creatorService.updatePassword(slug, updatePasswordDto);
   }
 
+  private throttledRequestPasswordReset = memoizeThrottle(
+    (email: string) => {
+      return this.creatorService.requestPasswordReset(email);
+    },
+    3 * 60 * 1000, // cache for 3 minutes
+  );
+
+  @Patch('request-reset-password')
+  async requestPasswordReset(
+    @Body() requestPasswordResetDto: RequestPasswordResetDto,
+  ) {
+    return this.throttledRequestPasswordReset(
+      requestPasswordResetDto.nameOrEmail,
+    );
+  }
+
   /* Reset specific creator's password */
-  @CreatorOwnerAuth()
-  @Patch('reset-password/:slug')
-  async resetPassword(@Param('slug') slug: string) {
-    await this.creatorService.resetPassword(slug);
+  @Patch('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.creatorService.resetPassword(resetPasswordDto);
   }
 
   private throttledRequestEmailVerification = memoizeThrottle(
