@@ -919,38 +919,20 @@ export class ComicIssueService {
       include: { statefulCovers: true, statelessCovers: true, pages: true },
     });
 
-    const getPdf = this.s3.getPresignedUrl(comicIssue.pdf, {
-      ResponseContentDisposition: 'attachment',
-    });
+    const statelessCoverKeys = comicIssue.statelessCovers.map(
+      (cover) => cover.image,
+    );
+    const statefulCoverKeys = comicIssue.statefulCovers.map(
+      (cover) => cover.image,
+    );
+    const comicPageKeys = comicIssue.pages.map((page) => page.image);
 
-    const getStatelessCovers = Promise.all(
-      comicIssue.statelessCovers.map((cover) =>
-        this.s3.getPresignedUrl(cover.image, {
-          ResponseContentDisposition: 'attachment',
-        }),
-      ),
-    );
-    const getStatefulCovers = Promise.all(
-      comicIssue.statefulCovers.map((cover) =>
-        this.s3.getPresignedUrl(cover.image, {
-          ResponseContentDisposition: 'attachment',
-        }),
-      ),
-    );
-    const getComicPages = Promise.all(
-      comicIssue.pages.map((page) =>
-        this.s3.getPresignedUrl(page.image, {
-          ResponseContentDisposition: 'attachment',
-        }),
-      ),
-    );
-
-    const assets = await Promise.all([
-      getPdf,
-      getStatelessCovers,
-      getStatefulCovers,
-      getComicPages,
+    const assets = await this.s3.getAttachments([
+      comicIssue.pdf,
+      ...statelessCoverKeys,
+      ...statefulCoverKeys,
+      ...comicPageKeys,
     ]);
-    return assets.flat(1);
+    return assets;
   }
 }

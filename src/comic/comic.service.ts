@@ -407,27 +407,11 @@ export class ComicService {
       include: { issues: true },
     });
 
-    const getBanner = this.s3.getPresignedUrl(comic.banner, {
-      ResponseContentDisposition: 'attachment',
-    });
-    const getLogo = this.s3.getPresignedUrl(comic.logo, {
-      ResponseContentDisposition: 'attachment',
-    });
-    const getCover = this.s3.getPresignedUrl(comic.cover, {
-      ResponseContentDisposition: 'attachment',
-    });
-    const getComicIssues = Promise.all(
-      comic.issues.map((issue) =>
-        this.comicIssueService.dowloadAssets(issue.id),
-      ),
-    );
-
-    const assets = await Promise.all([
-      getBanner,
-      getLogo,
-      getCover,
-      getComicIssues,
+    const assets = await this.s3.getAttachments([
+      comic.banner,
+      comic.logo,
+      comic.cover,
     ]);
-    return assets.flat(2);
+    return assets;
   }
 }
