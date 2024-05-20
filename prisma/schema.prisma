@@ -244,7 +244,7 @@ model StatelessCover {
   comicIssue          ComicIssue  @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId        Int
   artist              String
-  artistTwitterHandle String?
+  artistTwitterHandle String      @default("")
   share               Int
   isDefault           Boolean
 
