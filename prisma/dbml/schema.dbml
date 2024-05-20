@@ -50,6 +50,7 @@ Table Creator {
   name String [unique, not null]
   slug String [unique, not null]
   password String [not null]
+  role Role [not null, default: 'User']
   avatar String [not null, default: '']
   banner String [not null, default: '']
   logo String [not null, default: '']
