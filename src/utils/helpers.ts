@@ -6,6 +6,8 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
+import { Comic, ComicIssue, Metadata } from '@prisma/client';
+import { isEmpty } from 'lodash';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -125,4 +127,51 @@ export function isWalletWhiteListed(
 // Finds if user belongs to whitelist
 export function isUserWhitelisted(userId: number, users: { userId: number }[]) {
   return users.some((user) => user.userId == userId);
+}
+
+// Get tweet content for comic mint
+export function getComicMintTweetContent(
+  comic: Comic,
+  comicIssue: ComicIssue,
+  metadata: Metadata,
+  utmSource: string,
+  creatorTwitter?: string,
+  artistTwitterHandle?: string,
+) {
+  const dReaderIssueMintUrl = `https://dreader.app/mint/${comic.slug}_${comicIssue.slug}?utm_source=${utmSource}`;
+  const comicText =
+    comic.title.length > 25
+      ? comicIssue.title
+      : comic.title + ': ' + comicIssue.title;
+
+  const mentionCoverArtist = !isEmpty(artistTwitterHandle)
+    ? `\n🖌️ Cover art by @${artistTwitterHandle}`
+    : '';
+  const creatorTwitterHandle = removeTwitter(creatorTwitter);
+  const mentionCreator = !isEmpty(creatorTwitterHandle)
+    ? `by @${creatorTwitterHandle}! 🔥`
+    : '';
+
+  const mentionText =
+    (isEmpty(mentionCreator)
+      ? `on @dreaderApp! 📚`
+      : mentionCreator + `\n📚 Published on @dReaderApp`) + mentionCoverArtist;
+
+  const mintedMyComicText = `https://twitter.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
+  const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n\n${dReaderIssueMintUrl} \n`;
+
+  const tweet = mintedMyComicText + ' ' + mentionText + endOfTweet;
+  return tweet;
+}
+
+export function removeTwitter(string?: string) {
+  if (string?.startsWith('https://twitter.com/')) {
+    return string.substring(20);
+  } else if (string?.startsWith('https://www.twitter.com/')) {
+    return string.substring(24);
+  } else if (string?.startsWith('https://x.com/')) {
+    return string.substring(18);
+  } else if (string?.startsWith('https://www.x.com/')) {
+    return string.substring(22);
+  } else return '';
 }

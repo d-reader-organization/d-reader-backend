@@ -46,12 +46,4 @@ export class DigitalAssetController {
     const asset = await this.digitalAssetService.findOne(address);
     return toAssetDto(asset);
   }
-
-  @Get('get/twitter-content/:address')
-  async getTwitterContent(@Param('address') address: string): Promise<string> {
-    const twitterContent = await this.digitalAssetService.getTwitterContent(
-      address,
-    );
-    return twitterContent;
-  }
 }

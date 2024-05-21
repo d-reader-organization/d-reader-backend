@@ -68,6 +68,7 @@ import { InsertItemsCommand } from './insert-items-command';
 import { InsertItemsQuestions } from './insert-items-questions';
 import { FetchCollectionSaleDetailsCommand } from './fetch-sale-collection-details-command';
 import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-details-questions';
+import { WebSocketModule } from '../websockets/websockets.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-det
     DiscordModule.forRootAsync({ useClass: DiscordConfigService }),
     s3Module,
     MailModule,
+    WebSocketModule,
   ],
   providers: [
     BundlrWithdrawCommand,
