@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'src/types/request';
-import { UserAuth } from './user-auth.guard';
 import { Role } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
 
 export const Roles = (...roles: Role[]): CustomDecorator<string> => {
   return SetMetadata('roles', roles);
@@ -28,7 +28,6 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const user = request.user;
     if (!user) return false;
-    if (user.type !== 'user') return false;
 
     if (!!roles.includes(user.role)) return true;
     else {
@@ -39,8 +38,7 @@ export class RolesGuard implements CanActivate {
 
 export function AdminGuard() {
   return applyDecorators(
-    UserAuth(),
-    UseGuards(RolesGuard),
+    UseGuards(AuthGuard('jwt'), RolesGuard),
     Roles(Role.Superadmin, Role.Admin),
   );
 }

@@ -68,6 +68,7 @@ model Creator {
   name            String        @unique
   slug            String        @unique
   password        String
+  role            Role          @default(User)
   avatar          String        @default("")
   banner          String        @default("")
   logo            String        @default("")

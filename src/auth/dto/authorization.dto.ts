@@ -25,6 +25,7 @@ export type CreatorPayload = {
   id: Creator['id'];
   email: Creator['email'];
   name: Creator['name'];
+  role: Creator['role'];
 };
 
 export type GoogleUserPayload = {
