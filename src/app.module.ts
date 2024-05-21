@@ -36,6 +36,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ThirdPartyModule } from './third-party/third-party.module';
 import { NonceModule } from './nonce/nonce.module';
 import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/draft-comic-issue-sales-data.module';
+import { TwitterModule } from './twitter/twitter.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/d
     ThirdPartyModule,
     NonceModule,
     DraftComicIssueSalesDataModule,
+    TwitterModule,
   ],
   controllers: [AppController],
   providers: [

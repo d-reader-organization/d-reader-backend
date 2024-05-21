@@ -12,6 +12,7 @@ import { Reflector } from '@nestjs/core';
 import { Request } from 'src/types/request';
 import { Role } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 export const Roles = (...roles: Role[]): CustomDecorator<string> => {
   return SetMetadata('roles', roles);
@@ -40,5 +41,6 @@ export function AdminGuard() {
   return applyDecorators(
     UseGuards(AuthGuard('jwt'), RolesGuard),
     Roles(Role.Superadmin, Role.Admin),
+    ApiBearerAuth('JWT-user'),
   );
 }
