@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPositive,
@@ -13,7 +14,7 @@ import {
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto, toCreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/types/creator-stats';
-import { Creator, Genre } from '@prisma/client';
+import { Creator, Genre, Role } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { UserCreatorMyStatsDto } from 'src/creator/dto/types';
@@ -22,6 +23,7 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { PartialGenreDto } from 'src/genre/dto/partial-genre.dto';
 import { ifDefined } from 'src/utils/lodash';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatorDto {
   @IsPositive()
@@ -33,6 +35,10 @@ export class CreatorDto {
   @IsNotEmpty()
   @MaxLength(54)
   name: string;
+
+  @IsEnum(Role)
+  @ApiProperty({ enum: Role })
+  role: Role;
 
   @IsNotEmpty()
   @IsKebabCase()
@@ -98,6 +104,7 @@ export function toCreatorDto(creator: CreatorInput) {
     id: creator.id,
     email: creator.email,
     name: creator.name,
+    role: creator.role,
     slug: creator.slug,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
