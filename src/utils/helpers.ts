@@ -149,13 +149,14 @@ export function getComicMintTweetContent(
     : '';
   const creatorTwitterHandle = removeTwitter(creatorTwitter);
   const mentionCreator = !isEmpty(creatorTwitterHandle)
-    ? `by @${creatorTwitterHandle}! 🔥`
+    ? `by @${creatorTwitterHandle} `
     : '';
 
-  const mentionText =
-    (isEmpty(mentionCreator)
-      ? `on @dreaderApp! 📚`
-      : mentionCreator + `\n📚 Published on @dReaderApp`) + mentionCoverArtist;
+  const mentionDreader =
+    isEmpty(mentionCreator) || isEmpty(mentionCoverArtist)
+      ? `on @dreaderApp!🔥`
+      : `!🔥\n📚 Published on @dReaderApp`;
+  const mentionText = mentionCreator + mentionDreader + mentionCoverArtist;
 
   const mintedMyComicText = `https://twitter.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
   const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n\n${dReaderIssueMintUrl} \n`;
