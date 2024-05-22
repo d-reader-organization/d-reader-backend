@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { getComicMintTweetContent } from 'src/utils/helpers';
+import { UtmSource } from './dto/intent-comic-minted-params.dto';
 
 @Injectable()
 export class TwitterService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getTwitterIntentComicMinted(comicAddress: string, utmSource: string) {
+  async getTwitterIntentComicMinted(
+    comicAddress: string,
+    utmSource: UtmSource,
+  ) {
     const { collection, ...metadata } = await this.prisma.metadata.findFirst({
       where: { asset: { some: { address: comicAddress } } },
       include: {
