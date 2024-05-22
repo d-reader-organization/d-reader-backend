@@ -8,6 +8,7 @@ import {
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
 import { Comic, ComicIssue, Metadata } from '@prisma/client';
 import { isEmpty } from 'lodash';
+import { UtmSource } from 'src/twitter/dto/intent-comic-minted-params.dto';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -134,7 +135,7 @@ export function getComicMintTweetContent(
   comic: Comic,
   comicIssue: ComicIssue,
   metadata: Metadata,
-  utmSource: string,
+  utmSource: UtmSource,
   creatorTwitter?: string,
   artistTwitterHandle?: string,
 ) {

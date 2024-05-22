@@ -1,7 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TwitterService } from './twitter.service';
-import { IntentComicMintedParams } from './dto/intent-comic-minted-params.dto';
+import {
+  IntentComicMintedParams,
+  UtmSource,
+} from './dto/intent-comic-minted-params.dto';
 
 @ApiTags('Twitter')
 @Controller('twitter')
@@ -12,7 +15,7 @@ export class TwitterController {
   async getTwitterIntentComicMinted(
     @Query() intentComicMintedParams: IntentComicMintedParams,
   ): Promise<string> {
-    const utmSource = intentComicMintedParams.utmSource ?? 'web';
+    const utmSource = intentComicMintedParams.utmSource ?? UtmSource.Web;
     return await this.twitterService.getTwitterIntentComicMinted(
       intentComicMintedParams.comicAddress,
       utmSource,

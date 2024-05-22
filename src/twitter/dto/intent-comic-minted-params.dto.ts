@@ -1,10 +1,15 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+
+export enum UtmSource {
+  Web = 'web',
+  Mobile = 'mobile',
+}
 
 export class IntentComicMintedParams {
   @IsString()
   comicAddress: string;
 
   @IsOptional()
-  @IsString()
-  utmSource?: string;
+  @IsEnum(UtmSource)
+  utmSource?: UtmSource;
 }
