@@ -281,6 +281,7 @@ Table CandyMachineGroup {
   endDate DateTime
   mintPrice BigInt [not null]
   splTokenAddress String [not null]
+  discountBasisPoints Int [not null, default: 0]
   wallets WalletCandyMachineGroup [not null]
   users UserCandyMachineGroup [not null]
   whiteListType WhiteListType [not null]

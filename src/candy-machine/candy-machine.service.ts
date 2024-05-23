@@ -1045,6 +1045,7 @@ export class CandyMachineService {
       mintPrice,
       mintLimit,
       supply,
+      discountBasisPoints,
       whiteListType,
     } = params;
     const isSupportedToken = await this.prisma.splToken.findFirst({
@@ -1080,6 +1081,7 @@ export class CandyMachineService {
         mintLimit,
         supply,
         whiteListType,
+        discountBasisPoints,
       },
     });
   }

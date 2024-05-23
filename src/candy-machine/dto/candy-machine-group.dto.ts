@@ -9,7 +9,7 @@ import {
 import { CandyMachineGroupSettings } from './types';
 import { Type, plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { sortBy } from 'lodash';
+import { divide, sortBy } from 'lodash';
 import { WhiteListType } from '@prisma/client';
 
 export class WalletGroupDto {
@@ -68,6 +68,9 @@ export class CandyMachineGroupDto {
   @IsNumber()
   itemsMinted: number;
 
+  @IsNumber()
+  discount: number;
+
   @Type(() => WalletGroupDto)
   @ApiProperty({ type: WalletGroupDto })
   wallet: WalletGroupDto;
@@ -100,6 +103,7 @@ export function toCandyMachineGroupDto(group: CandyMachineGroupSettings) {
     splTokenAddress: group.splTokenAddress,
     itemsMinted: group.itemsMinted,
     mintLimit: group.mintLimit,
+    discount: divide(group.discountBasisPoints, 100),
     supply: group.supply,
     wallet: {
       itemsMinted: group.walletStats.itemsMinted,
