@@ -90,6 +90,7 @@ export class MintRemainingCommand extends CommandRunner {
     for (const transaction of transactions) {
       const signature = await metaplex.connection.sendRawTransaction(
         transaction.serialize(),
+        { skipPreflight: true },
       );
       log(`✍️  Signature: ${cuy(signature)}`);
     }

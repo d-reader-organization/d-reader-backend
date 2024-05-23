@@ -64,6 +64,7 @@ export class MintOneCommand extends CommandRunner {
       for (const transaction of transactions) {
         const signature = await connection.sendRawTransaction(
           transaction.serialize(),
+          { skipPreflight: true },
         );
         log(`✍️  Signature: ${cuy(signature)}`);
       }
