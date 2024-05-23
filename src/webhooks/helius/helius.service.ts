@@ -37,6 +37,7 @@ import {
 } from '../../candy-machine/instructions';
 import * as jwt from 'jsonwebtoken';
 import {
+  AUTHORITY_GROUP_LABEL,
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
   D_PUBLISHER_SYMBOL,
@@ -349,7 +350,7 @@ export class HeliusService {
 
       let splTokenAddress = SOL_ADDRESS;
       let balanceTransferAddress = ownerAddress;
-      if (label) {
+      if (label && label !== AUTHORITY_GROUP_LABEL) {
         const group = await this.prisma.candyMachineGroup.findUnique({
           where: { label_candyMachineAddress: { label, candyMachineAddress } },
         });
