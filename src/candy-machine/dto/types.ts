@@ -24,6 +24,7 @@ export type CandyMachineGroupSettings = {
   endDate: Date;
   mintPrice: number;
   whiteListType: WhiteListType;
+  discountBasisPoints: number;
   walletStats?: CandyMachineGroupStats;
   userStats?: CandyMachineGroupStats;
   mintLimit?: number;
@@ -42,6 +43,7 @@ export type GuardParams = {
   displayLabel: string;
   supply: number;
   splTokenAddress: string;
+  discountBasisPoints?: number;
   mintLimit?: number;
   freezePeriod?: number;
   frozen?: boolean;

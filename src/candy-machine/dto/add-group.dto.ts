@@ -43,6 +43,10 @@ export class AddGroupDto {
 
   @IsOptional()
   @IsNumber()
+  discountBasisPoints: number;
+
+  @IsOptional()
+  @IsNumber()
   freezePeriod?: number;
 
   @IsOptional()
