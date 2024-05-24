@@ -6,9 +6,10 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
-import { Comic, ComicIssue, Metadata } from '@prisma/client';
+import { Comic, ComicIssue, Metadata, WhiteListType } from '@prisma/client';
 import { isEmpty } from 'lodash';
 import { UtmSource } from 'src/twitter/dto/intent-comic-minted-params.dto';
+import { CandyMachineGroupSettings } from 'src/candy-machine/dto/types';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -176,4 +177,22 @@ export function removeTwitter(string?: string) {
   } else if (string?.startsWith('https://www.x.com/')) {
     return string.substring(22);
   } else return '';
+}
+
+export function findCandyMachineDiscount(groups: CandyMachineGroupSettings[]) {
+  const publicGroup = groups.find(
+    (group) => group.whiteListType === WhiteListType.Public,
+  );
+  const userGroup = groups.find(
+    (group) =>
+      group.whiteListType === WhiteListType.User &&
+      group.splTokenAddress === publicGroup?.splTokenAddress,
+  );
+
+  if (!userGroup) return 0;
+
+  const difference =
+    Math.abs(publicGroup.mintPrice - userGroup.mintPrice) * 100;
+  const discount = difference / publicGroup.mintPrice;
+  return discount;
 }

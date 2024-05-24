@@ -45,6 +45,7 @@ import {
   MIN_COMPUTE_PRICE,
 } from '../constants';
 import {
+  findCandyMachineDiscount,
   isUserWhitelisted,
   isWalletWhiteListed,
   sleep,
@@ -812,6 +813,7 @@ export class CandyMachineService {
       ),
     );
 
+    const discount = findCandyMachineDiscount(groups);
     let filteredGroups: CandyMachineGroupSettings[];
 
     // Note: Outlaw still ongoing and has deprecated configuration, for supporting new ux only active public group is returned
@@ -835,7 +837,8 @@ export class CandyMachineService {
     if (filteredGroups.length == 0) {
       filteredGroups = groups;
     }
-    return { ...candyMachine, groups: filteredGroups };
+
+    return { ...candyMachine, discount, groups: filteredGroups };
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
