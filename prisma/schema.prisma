@@ -323,7 +323,6 @@ model CandyMachineGroup {
   endDate             DateTime?
   mintPrice           BigInt
   splTokenAddress     String
-  discountBasisPoints Int                       @default(0)
   wallets             WalletCandyMachineGroup[]
   users               UserCandyMachineGroup[]
   whiteListType       WhiteListType
