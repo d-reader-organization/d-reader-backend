@@ -156,12 +156,12 @@ export function getComicMintTweetContent(
 
   const mentionDreader =
     isEmpty(mentionCreator) || isEmpty(mentionCoverArtist)
-      ? `on @dreaderApp!🔥`
-      : `!🔥\n📚 Published on @dReaderApp`;
+      ? `on @dreaderApp! 🔥`
+      : `! 🔥\n\n📚 Published on @dReaderApp`;
   const mentionText = mentionCreator + mentionDreader + mentionCoverArtist;
 
   const mintedMyComicText = `https://twitter.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
-  const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n\n${dReaderIssueMintUrl} \n`;
+  const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n${dReaderIssueMintUrl} \n`;
 
   const tweet = mintedMyComicText + ' ' + mentionText + endOfTweet;
   return tweet;
