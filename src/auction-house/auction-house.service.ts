@@ -6,12 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PublicKey } from '@solana/web3.js';
-import {
-  Listing,
-  Metaplex,
-  toMetadata,
-  toMetadataAccount,
-} from '@metaplex-foundation/js';
+import { Listing, Metaplex } from '@metaplex-foundation/js';
 import {
   constructCancelBidTransaction,
   constructCancelListingTransaction,
@@ -29,13 +24,12 @@ import {
 import { isBoolean, sortBy, throttle } from 'lodash';
 import { BuyArgs } from './dto/types/buy-args';
 import { metaplex } from '../utils/metaplex';
-import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
-import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { PartialListing } from './dto/types/partial-listing';
-import { Source } from 'helius-sdk';
+import { Scope, Source } from 'helius-sdk';
 import { SortOrder } from '../types/sort-order';
 import {
   D_PUBLISHER_SYMBOL,
+  LOCKED_COLLECTIONS,
   RARITY_PRECEDENCE,
   TENSOR_MAINNET_API_ENDPOINT,
 } from '../constants';
@@ -43,14 +37,18 @@ import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { TokenStandard } from '@prisma/client';
-import { fetchTensorBuyTx } from '../utils/das';
+import { fetchTensorBuyTx, findOurCandyMachine, getAsset } from '../utils/das';
+import { HeliusService } from '../webhooks/helius/helius.service';
 
 @Injectable()
 export class AuctionHouseService {
   private readonly metaplex: Metaplex;
   private readonly auctionHouseAddress: PublicKey;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly heliusService: HeliusService,
+  ) {
     this.metaplex = metaplex;
     this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
   }
@@ -284,7 +282,7 @@ export class AuctionHouseService {
       );
     }
     const auctionHouse = await this.throttledFindOurAuctionHouse();
-    await this.validateMint(mintAccount);
+    await this.validateMint(mintAccount.toString());
     return await constructListTransaction(
       this.metaplex,
       auctionHouse,
@@ -532,41 +530,28 @@ export class AuctionHouseService {
     // }
   }
 
-  async validateMint(nftAddress: PublicKey) {
-    const metadataPda = this.metaplex
-      .nfts()
-      .pdas()
-      .metadata({ mint: nftAddress });
-    const info = await this.metaplex.rpc().getAccount(metadataPda);
-    if (!info) {
-      throw new BadRequestException(
-        `NFT ${nftAddress} doesn't have any metadata`,
-      );
-    }
-
-    const metadata = toMetadata(toMetadataAccount(info));
-    const asset = await this.prisma.digitalAsset.findFirst({
-      where: { address: metadata.mintAddress.toString() },
-      include: { metadata: { include: { collection: true } } },
-    });
-    const candyMachine = new PublicKey(asset.candyMachineAddress);
-    const collectionAddress = new PublicKey(asset.metadata.collection.address);
-    const updateAuthorityAddress = pda(
-      [
-        Buffer.from(AUTH_TAG + asset.metadata.rarity.toLowerCase()),
-        candyMachine.toBuffer(),
-        collectionAddress.toBuffer(),
-      ],
-      COMIC_VERSE_ID,
+  async validateMint(nftAddress: string) {
+    const candyMachines = await this.prisma.candyMachine.findMany();
+    const dasAsset = await getAsset(nftAddress);
+    const ourCandyMachine = findOurCandyMachine(
+      this.metaplex,
+      candyMachines,
+      dasAsset.creators,
     );
 
-    if (
-      !metadata.collection.verified ||
-      !updateAuthorityAddress.equals(metadata.updateAuthorityAddress)
-    ) {
+    if (!ourCandyMachine) {
       throw new BadRequestException(
         `NFT ${nftAddress} is not from a verified collection`,
       );
+    }
+    const updateAuthority = dasAsset.authorities.find((authority) =>
+      authority.scopes.find((scope) => scope == Scope.METADATA),
+    );
+    if (
+      !LOCKED_COLLECTIONS.has(nftAddress) &&
+      this.metaplex.identity().publicKey.toString() === updateAuthority?.address
+    ) {
+      await this.heliusService.reIndexAsset(dasAsset, ourCandyMachine);
     }
   }
 }
