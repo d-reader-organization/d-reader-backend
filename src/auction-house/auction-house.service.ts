@@ -550,7 +550,7 @@ export class AuctionHouseService {
       include: { metadata: { include: { collection: true } } },
     });
     const candyMachine = new PublicKey(asset.candyMachineAddress);
-    const collectionAddress = new PublicKey(asset.metadata.collection);
+    const collectionAddress = new PublicKey(asset.metadata.collection.address);
     const updateAuthorityAddress = pda(
       [
         Buffer.from(AUTH_TAG + asset.metadata.rarity.toLowerCase()),
