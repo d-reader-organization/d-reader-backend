@@ -43,19 +43,11 @@ export class AddGroupDto {
 
   @IsOptional()
   @IsNumber()
-  discountBasisPoints: number;
-
-  @IsOptional()
-  @IsNumber()
   freezePeriod?: number;
 
   @IsOptional()
   @IsBoolean()
   frozen?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  thirdPartySign?: boolean;
 
   @IsEnum(WhiteListType)
   @ApiProperty({ enum: WhiteListType })

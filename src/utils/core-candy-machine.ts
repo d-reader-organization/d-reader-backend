@@ -64,8 +64,8 @@ export function toUmiGroups(
     groups.push({
       label: PUBLIC_GROUP_LABEL,
       guards: {
-        startDate: some({ date: dateTime(startDate) }),
-        endDate: some({ date: dateTime(endDate) }),
+        startDate: startDate ? some({ date: dateTime(startDate) }) : undefined,
+        endDate: endDate ? some({ date: dateTime(endDate) }) : undefined,
         [paymentGuard]: some({
           lamports: lamports(mintPrice),
           destination: publicKey(FUNDS_DESTINATION_ADDRESS),
