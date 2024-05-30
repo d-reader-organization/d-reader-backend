@@ -30,6 +30,8 @@ import { MintRemainingQuestions } from './mint-remaining-questions';
 import { LoginUserQuestions } from './login-user-questions';
 import { AddGroupQuestions } from './add-group-questions';
 import { AddGroupCommand } from './add-group-command';
+import { FetchCandyMachineQuestions } from './fetch-candy-machine-questions';
+import { FetchCandyMachineCommand } from './fetch-candy-machine-command';
 import { BundlrFundCommand } from './bundlr-fund-command';
 import { BundlrFundQuestions } from './bundlr-fund-questions';
 import { UserService } from '../user/user.service';
@@ -125,6 +127,8 @@ import { WebSocketModule } from '../websockets/websockets.module';
     UserService,
     AddGroupQuestions,
     AddGroupCommand,
+    FetchCandyMachineQuestions,
+    FetchCandyMachineCommand,
     AddCollectionDarkblockCommand,
     AddCollectionDarkblockQuestion,
     UpdateDateCommand,
