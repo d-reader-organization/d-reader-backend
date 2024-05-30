@@ -41,6 +41,7 @@
     "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw",
     "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
     "add-group": "npx ts-node src/cli/main.ts add-group",
+    "fetch-candy-machine": "npx ts-node src/cli/main.ts fetch-candy-machine",
     "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
     "update-date": "npx ts-node src/cli/main.ts update-date",
     "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
