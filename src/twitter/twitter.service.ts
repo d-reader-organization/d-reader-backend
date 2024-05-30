@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { getComicMintTweetContent } from 'src/utils/helpers';
+import { getComicMintTweetContent, removeTwitter } from '../utils/helpers';
 import { UtmSource } from './dto/intent-comic-minted-params.dto';
 
 @Injectable()
@@ -8,37 +8,53 @@ export class TwitterService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getTwitterIntentComicMinted(
-    comicAddress: string,
+    comicAssetAddress: string,
     utmSource: UtmSource,
   ) {
-    const { collection, ...metadata } = await this.prisma.metadata.findFirst({
-      where: { asset: { some: { address: comicAddress } } },
-      include: {
+    const comicAsset = await this.prisma.digitalAsset.findFirst({
+      where: { address: comicAssetAddress },
+      include: { metadata: true },
+    });
+
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: {
         collection: {
-          include: {
-            comicIssue: {
-              include: {
-                statelessCovers: true,
-                comic: { include: { creator: true } },
-              },
-            },
+          candyMachines: {
+            some: { address: comicAsset.candyMachineAddress },
           },
         },
       },
     });
-    const { comicIssue } = collection;
-    const statelessCover = comicIssue.statelessCovers.find(
-      (cover) => cover.rarity === metadata.rarity,
-    );
 
-    const tweet = getComicMintTweetContent(
-      comicIssue.comic,
-      comicIssue,
-      metadata,
-      utmSource,
-      comicIssue.comic.creator.twitter,
-      statelessCover.artistTwitterHandle,
-    );
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug: comicIssue.comicSlug },
+    });
+    const creator = await this.prisma.creator.findUnique({
+      where: { id: comic.creatorId },
+    });
+
+    const statelessCover = await this.prisma.statelessCover.findUnique({
+      where: {
+        comicIssueId_rarity: {
+          comicIssueId: comicIssue.id,
+          rarity: comicAsset.metadata.rarity,
+        },
+      },
+    });
+
+    const creatorTwitterHandle = removeTwitter(creator.twitter);
+
+    const tweet = getComicMintTweetContent({
+      comicTitle: comic.title,
+      comicSlug: comic.slug,
+      comicIssueTitle: comicIssue.title,
+      comicIssueSlug: comicIssue.slug,
+      comicAssetRarity: comicAsset.metadata.rarity.toLowerCase(),
+      source: utmSource,
+      creatorName: creatorTwitterHandle || creator.name,
+      coverArtistName:
+        statelessCover.artistTwitterHandle || statelessCover.artist,
+    });
     return tweet;
   }
 }

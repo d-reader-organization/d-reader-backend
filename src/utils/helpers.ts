@@ -6,8 +6,7 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
-import { Comic, ComicIssue, Metadata, WhiteListType } from '@prisma/client';
-import { isEmpty } from 'lodash';
+import { WhiteListType } from '@prisma/client';
 import { UtmSource } from 'src/twitter/dto/intent-comic-minted-params.dto';
 import { CandyMachineGroupSettings } from 'src/candy-machine/dto/types';
 
@@ -131,40 +130,34 @@ export function isUserWhitelisted(userId: number, users: { userId: number }[]) {
   return users.some((user) => user.userId == userId);
 }
 
+type ComicMintedTweetArgs = {
+  comicTitle: string;
+  comicSlug: string;
+  comicIssueTitle: string;
+  comicIssueSlug: string;
+  comicAssetRarity: string;
+  source: UtmSource;
+  creatorName: string;
+  coverArtistName: string;
+};
+
 // Get tweet content for comic mint
-export function getComicMintTweetContent(
-  comic: Comic,
-  comicIssue: ComicIssue,
-  metadata: Metadata,
-  utmSource: UtmSource,
-  creatorTwitter?: string,
-  artistTwitterHandle?: string,
-) {
-  const dReaderIssueMintUrl = `https://dreader.app/mint/${comic.slug}_${comicIssue.slug}?src=${utmSource}`;
-  const comicText =
-    comic.title.length > 25
-      ? comicIssue.title
-      : comic.title + ': ' + comicIssue.title;
+export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
+  const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
 
-  const mentionCoverArtist = !isEmpty(artistTwitterHandle)
-    ? `\n🖌️ Cover art by @${artistTwitterHandle}`
-    : '';
-  const creatorTwitterHandle = removeTwitter(creatorTwitter);
-  const mentionCreator = !isEmpty(creatorTwitterHandle)
-    ? `by @${creatorTwitterHandle} `
-    : '';
+  const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥`;
 
-  const mentionDreader =
-    isEmpty(mentionCreator) || isEmpty(mentionCoverArtist)
-      ? `on @dreaderApp! 🔥`
-      : `! 🔥\n\n📚 Published on @dReaderApp`;
-  const mentionText = mentionCreator + mentionDreader + mentionCoverArtist;
+  const creatorLine = `✍️ story by @${args.creatorName} `;
+  const coverArtistLine = `🖌️ cover by @${args.coverArtistName}`;
 
-  const mintedMyComicText = `https://x.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
-  const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n${dReaderIssueMintUrl} \n`;
+  const mintLinkCallToActionLine = 'Mint yours here while the supply lasts.👇';
+  const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?src=${args.source}`;
 
-  const tweet = mintedMyComicText + ' ' + mentionText + endOfTweet;
-  return tweet;
+  const tweetText = encodeURI(
+    `${twitterIntentPrefix}${titleLine}\n\n${creatorLine}\n${coverArtistLine}\n\n${mintLinkCallToActionLine}\n${mintLinkLine}`,
+  );
+
+  return tweetText;
 }
 
 export function removeTwitter(string?: string) {
