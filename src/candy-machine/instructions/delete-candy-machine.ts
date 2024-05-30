@@ -30,7 +30,7 @@ export async function deleteCoreCandyMachine(
     .add(deleteCandyMachineBuilder)
     .add(deleteCandyGuardBuilder);
   const response = await builder.sendAndConfirm(umi, {
-    send: { commitment: 'confirmed' },
+    send: { commitment: 'confirmed', skipPreflight: true },
   });
 
   const signature = base58.deserialize(response.signature)[0];
@@ -77,6 +77,7 @@ export async function deleteLegacyCandyMachine(
     metaplex.connection,
     transaction,
     [metaplex.identity()],
+    { skipPreflight: true },
   );
   return signature;
 }

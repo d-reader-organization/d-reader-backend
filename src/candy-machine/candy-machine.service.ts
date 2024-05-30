@@ -438,9 +438,7 @@ export class CandyMachineService {
         const updatedCandyMachine = await fetchCandyMachine(
           umi,
           candyMachinePubkey,
-          {
-            commitment: 'confirmed',
-          },
+          { commitment: 'confirmed' },
         );
 
         await this.prisma.candyMachine.update({
@@ -574,7 +572,7 @@ export class CandyMachineService {
         )
         .add(updateBuilder);
       const response = await builder.sendAndConfirm(this.umi, {
-        send: { commitment: 'confirmed' },
+        send: { commitment: 'confirmed', skipPreflight: true },
       });
       const signature = base58.deserialize(response.signature);
       console.log(`CandyMachine updated : ${signature}`);
@@ -611,7 +609,7 @@ export class CandyMachineService {
       this.metaplex.connection,
       transaction,
       [this.metaplex.identity()],
-      { commitment: 'confirmed' },
+      { commitment: 'confirmed', skipPreflight: true },
     );
     console.log(`CandyMachine updated : ${signature}`);
   }

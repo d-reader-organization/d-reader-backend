@@ -128,9 +128,7 @@ export class ComicIssueService {
         collection: { comicIssueId },
         itemsRemaining: { gt: 0 },
         groups: {
-          some: {
-            endDate: { gt: new Date() },
-          },
+          some: { OR: [{ endDate: { gt: new Date() } }, { endDate: null }] },
         },
       },
     });
