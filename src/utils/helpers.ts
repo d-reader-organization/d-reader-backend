@@ -140,7 +140,7 @@ export function getComicMintTweetContent(
   creatorTwitter?: string,
   artistTwitterHandle?: string,
 ) {
-  const dReaderIssueMintUrl = `https://dreader.app/mint/${comic.slug}_${comicIssue.slug}?utm_source=${utmSource}`;
+  const dReaderIssueMintUrl = `https://dreader.app/mint/${comic.slug}_${comicIssue.slug}?src=${utmSource}`;
   const comicText =
     comic.title.length > 25
       ? comicIssue.title
@@ -160,7 +160,7 @@ export function getComicMintTweetContent(
       : `! 🔥\n\n📚 Published on @dReaderApp`;
   const mentionText = mentionCreator + mentionDreader + mentionCoverArtist;
 
-  const mintedMyComicText = `https://twitter.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
+  const mintedMyComicText = `https://x.com/intent/tweet?text=I just minted a ${metadata.rarity.toString()} ${comicText} comic`;
   const endOfTweet = `\n\nMint yours here while the supply lasts.👇\n${dReaderIssueMintUrl} \n`;
 
   const tweet = mintedMyComicText + ' ' + mentionText + endOfTweet;
