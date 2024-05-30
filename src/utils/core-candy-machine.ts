@@ -136,7 +136,9 @@ export async function insertCoreItems(
       addConfigLineBuilder,
     );
     rateLimit(() => {
-      return builder.sendAndConfirm(umi, { send: { commitment: 'confirmed' } });
+      return builder.sendAndConfirm(umi, {
+        send: { commitment: 'confirmed', skipPreflight: true },
+      });
     });
   }
   return itemMetadatas;

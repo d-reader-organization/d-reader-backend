@@ -288,7 +288,7 @@ export async function insertItems(
         metaplex.connection,
         transaction,
         [metaplex.identity()],
-        { commitment: 'confirmed' },
+        { commitment: 'confirmed', skipPreflight: true },
       );
     });
   }
