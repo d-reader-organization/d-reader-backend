@@ -10,6 +10,7 @@ import {
 } from '../constants';
 import axios, { AxiosError } from 'axios';
 import { Cluster } from '../types/cluster';
+import { PriorityLevel } from '../types/priorityLevel';
 
 export const getAssetsByOwner = async (
   walletAddress: string,
@@ -200,4 +201,32 @@ export async function fetchTensorBuyTx(
     if (err instanceof AxiosError) console.log(err.response?.data.errors);
     else console.error(err);
   }
+}
+
+export async function getPriorityFeeEstimate(
+  priorityLevel: PriorityLevel,
+  transaction: string,
+): Promise<{ priorityFeeEstimate: number }> {
+  const heliusUrl = clusterHeliusApiUrl(
+    process.env.HELIUS_API_KEY,
+    Cluster.MainnetBeta,
+  );
+  console.log(heliusUrl);
+  const response = await fetch(heliusUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: '1',
+      method: 'getPriorityFeeEstimate',
+      params: [
+        {
+          transaction, // Pass the serialized transaction in Base58
+          options: { priorityLevel: priorityLevel.toString() },
+        },
+      ],
+    }),
+  });
+  const data = await response.json();
+  return data.result;
 }
