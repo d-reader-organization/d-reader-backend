@@ -74,8 +74,10 @@ import {
   setComputeUnitLimit,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
-import { base64 } from '@metaplex-foundation/umi/serializers';
+import { base64, base58 } from '@metaplex-foundation/umi/serializers';
 import { getThirdPartyUmiSignature } from '../../utils/metaplex';
+import { getPriorityFeeEstimate } from '../../utils/das';
+import { PriorityLevel } from '../../types/priorityLevel';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -548,11 +550,14 @@ export async function constructCoreMintTransaction(
   allowList?: string[],
   lookupTableAddress?: string,
   thirdPartySign?: boolean,
+  computePrice?: number,
 ) {
   try {
     const transactions: string[] = [];
     const asset = generateSigner(umi);
     const signer = createNoopSigner(minter);
+
+    const isPriorityFeeCalculated = !!computePrice;
 
     const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
     if (allowList) {
@@ -596,19 +601,20 @@ export async function constructCoreMintTransaction(
     const mintArgs = await getMintArgs(umi, candyMachine, label);
 
     const CORE_MINT_COMPUTE_UNITS = 160000;
-    const CORE_MINT_COMPUTE_BUDGET = 800000;
-
-    let mintTransaction = await transactionBuilder()
-      .add(
-        setComputeUnitLimit(umi, {
-          units: CORE_MINT_COMPUTE_UNITS,
-        }),
-      )
-      .add(
+    let builder = transactionBuilder().add(
+      setComputeUnitLimit(umi, {
+        units: CORE_MINT_COMPUTE_UNITS,
+      }),
+    );
+    if (isPriorityFeeCalculated) {
+      builder = builder.add(
         setComputeUnitPrice(umi, {
-          microLamports: CORE_MINT_COMPUTE_BUDGET,
+          microLamports: computePrice,
         }),
-      )
+      );
+    }
+
+    let transaction = await builder
       .add(
         CoreMintV1(umi, {
           candyMachine: candyMachine.publicKey,
@@ -624,11 +630,37 @@ export async function constructCoreMintTransaction(
       .buildAndSign({ ...umi, payer: signer });
 
     if (thirdPartySign) {
-      mintTransaction = await getThirdPartyUmiSignature(mintTransaction);
+      transaction = await getThirdPartyUmiSignature(transaction);
     }
 
+    // This is to ensure that users don't get rugged in case of a highly congested network
+    const MAX_LIMIT_ON_COMPUTE_PRICE = 3000000;
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
+
+    if (!isPriorityFeeCalculated) {
+      const serializedTransaction = base58.deserialize(
+        umi.transactions.serialize(transaction),
+      )[0];
+      const priorityFee = await getPriorityFeeEstimate(
+        PriorityLevel.VERY_HIGH,
+        serializedTransaction,
+      );
+      const priorityFeeEstimate = priorityFee.priorityFeeEstimate
+        ? Math.min(priorityFee.priorityFeeEstimate, MAX_LIMIT_ON_COMPUTE_PRICE)
+        : CORE_MINT_COMPUTE_BUDGET;
+      return await constructCoreMintTransaction(
+        umi,
+        candyMachineAddress,
+        minter,
+        label,
+        allowList,
+        lookupTableAddress,
+        thirdPartySign,
+        priorityFeeEstimate,
+      );
+    }
     const encodedMintTransaction = base64.deserialize(
-      umi.transactions.serialize(mintTransaction),
+      umi.transactions.serialize(transaction),
     )[0];
     transactions.push(encodedMintTransaction);
 
