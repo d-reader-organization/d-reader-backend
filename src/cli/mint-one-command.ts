@@ -11,9 +11,6 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { cb, cuy, log, logErr } from './chalk';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
-import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
-import { umi } from '../utils/metaplex';
-import { publicKey } from '@metaplex-foundation/umi';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -38,17 +35,6 @@ export class MintOneCommand extends CommandRunner {
   }
 
   async mintOne(options: Options) {
-    console.log(
-      await fetchCandyMachine(
-        umi,
-        publicKey('6Ke66yqG4YqaRWCLTDUjwvJiHWSmRgwtaGFuvYZQWTDD'),
-        {
-          commitment: 'confirmed',
-        },
-      ),
-    );
-
-    return;
     log("🏗️  Starting 'mint one' command...");
     const endpoint = clusterApiUrl(process.env.SOLANA_CLUSTER as Cluster);
     const connection = new Connection(endpoint, 'confirmed');
