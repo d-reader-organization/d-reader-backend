@@ -220,23 +220,6 @@ export class ComicIssueController {
     return toComicIssueDto(updatedComicIssue);
   }
 
-  /* Update { where }: { where: Prisma.ComicIssueWhereInput; }, processedId: Pick<{ id: number; number: number; sellerFeeBasisPoints: number; title: string; slug: string; description: string; flavorText: string; signature: string; pdf: string; isFreeToRead: boolean; isFullyUploaded: boolean; releaseDate: Date; updatedAt: Date; isSecondarySaleActive: boolean; createdAt: Date; featuredAt: Date; verifiedAt: Date; publishedAt: Date; popularizedAt: Date; creatorAddress: string; creatorBackupAddress: string; comicSlug: string; s3BucketSlug: string; }, "slug" | "comicSlug"> | Pick<{ id: number; number: number; sellerFeeBasisPoints: number; title: string; slug: string; description: string; flavorText: string; signature: string; pdf: string; isFreeToRead: boolean; isFullyUploaded: boolean; releaseDate: Date; updatedAt: Date; isSecondarySaleActive: boolean; createdAt: Date; featuredAt: Date; verifiedAt: Date; publishedAt: Date; popularizedAt: Date; creatorAddress: string; creatorBackupAddress: string; comicSlug: string; s3BucketSlug: string; }, "id">IssueOwnerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('signature')
-  @UseInterceptors(FileInterceptor('signature'))
-  @Patch('update/:id/signature')
-  async updateSignature(
-    @Param('id') id: string,
-    @UploadedFile() signature: Express.Multer.File,
-  ): Promise<ComicIssueDto> {
-    const updatedComicIssue = await this.comicIssueService.updateFile(
-      +id,
-      signature,
-      'signature',
-    );
-    return toComicIssueDto(updatedComicIssue);
-  }
-
   /* Update comic issue pages */
   @ComicIssueOwnerAuth()
   @ApiConsumes('multipart/form-data')
