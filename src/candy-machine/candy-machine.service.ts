@@ -135,6 +135,7 @@ import {
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
+import { getTransactionWithPriorityFee } from 'src/utils/das';
 
 @Injectable()
 export class CandyMachineService {
@@ -693,8 +694,11 @@ export class CandyMachineService {
         }
       }
 
-      return await constructCoreMintTransaction(
-        this.umi,
+      const CORE_MINT_COMPUTE_BUDGET = 800000;
+      return await getTransactionWithPriorityFee(
+        constructCoreMintTransaction,
+        CORE_MINT_COMPUTE_BUDGET,
+        umi,
         publicKey(candyMachineAddress),
         publicKey(feePayer),
         label,

@@ -11,6 +11,7 @@ import {
 import axios, { AxiosError } from 'axios';
 import { Cluster } from '../types/cluster';
 import { PriorityLevel } from '../types/priorityLevel';
+import { base58, base64 } from '@metaplex-foundation/umi/serializers';
 
 export const getAssetsByOwner = async (
   walletAddress: string,
@@ -211,7 +212,6 @@ export async function getPriorityFeeEstimate(
     process.env.HELIUS_API_KEY,
     Cluster.MainnetBeta,
   );
-  console.log(heliusUrl);
   const response = await fetch(heliusUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -229,4 +229,26 @@ export async function getPriorityFeeEstimate(
   });
   const data = await response.json();
   return data.result;
+}
+
+export async function getTransactionWithPriorityFee<
+  T extends string | string[],
+>(callback: (...args: any) => Promise<T>, defaultBudget: number, ...args: any) {
+  const transactions = await callback(...args);
+
+  const bufferTx = base64.serialize(transactions.at(-1));
+  const base58Tx = base58.deserialize(bufferTx);
+
+  const priorityFee = await getPriorityFeeEstimate(
+    PriorityLevel.VERY_HIGH,
+    base58Tx[0],
+  );
+
+  // This is to ensure that users don't get rugged in case of a highly congested network
+  const MAX_LIMIT_ON_COMPUTE_PRICE = 4 * defaultBudget;
+  const priorityFeeEstimate = priorityFee.priorityFeeEstimate
+    ? Math.min(priorityFee.priorityFeeEstimate, MAX_LIMIT_ON_COMPUTE_PRICE)
+    : defaultBudget;
+
+  return await callback(...args, priorityFeeEstimate);
 }
