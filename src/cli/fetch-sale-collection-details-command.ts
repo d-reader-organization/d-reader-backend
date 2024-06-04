@@ -5,7 +5,7 @@ import { ComicRarity } from '@prisma/client';
 import { Umi } from '@metaplex-foundation/umi';
 import { umi } from '../utils/metaplex';
 import { getAssetsByGroup } from '../utils/das';
-import { PUBLIC_GROUP_LABEL, getRarityShareTable } from '../constants';
+import { getRarityShareTable } from '../constants';
 import { toSol } from '../utils/helpers';
 import { cb, cerr, cg, chb, log } from './chalk';
 
@@ -115,17 +115,14 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
     const publicMints = await this.prisma.candyMachineReceipt.count({
       where: {
         candyMachineAddress: candyMachine.address,
-        OR: [
-          { label: { startsWith: PUBLIC_GROUP_LABEL } },
-          { label: 'UNKNOWN', AND: { userId: null } },
-        ],
+        userId: null,
       },
     });
 
-    const publicGroup = groups.find(
-      (group) => group.label === PUBLIC_GROUP_LABEL,
-    );
-    const userGroup = groups.find((group) => group.label === 'user');
+    // Public groups should start from 'p' and then _currency. Eg: p_sol
+    const publicGroup = groups.find((group) => group.label.startsWith('p'));
+    // User groups should start from 'u' and then _currency. Eg: u_sol
+    const userGroup = groups.find((group) => group.label.startsWith('u'));
 
     const publicMintRevenue = toSol(
       publicMints * Number(publicGroup.mintPrice),
@@ -269,10 +266,10 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
           totalRevenueGeneratedByHolders,
         )} $SOL`,
       );
-
-      console.log('-----------------------------------');
-      log(`TOTAL REVENUE GENERATED: ${cg(totalRevenue)} $SOL`);
-      log('\n');
     }
+
+    console.log('-----------------------------------');
+    log(`TOTAL REVENUE GENERATED: ${cg(totalRevenue)} $SOL`);
+    log('\n');
   }
 }
