@@ -6,13 +6,11 @@ import {
   Umi,
   PublicKey as UmiPublicKey,
   chunk,
-  TransactionBuilder,
 } from '@metaplex-foundation/umi';
 import {
   GuardGroupArgs,
   DefaultGuardSetArgs,
   getMerkleRoot,
-  addConfigLines,
   ThirdPartySigner,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { GuardParams } from '../candy-machine/dto/types';
@@ -28,9 +26,11 @@ import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
 import { JsonMetadataCreators, uploadItemMetadata } from './candy-machine';
 import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
-import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { TokenStandard } from '@prisma/client';
 import { getThirdPartySigner } from './metaplex';
+import { getTransactionWithPriorityFee } from './das';
+import { constructInsertItemsTransaction } from '../candy-machine/instructions/insert-items';
+import { decodeUmiTransaction } from './transactions';
 
 export function toUmiGroups(
   umi: Umi,
@@ -117,27 +117,34 @@ export async function insertCoreItems(
   const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
 
   let index = 0;
-  const transactionBuilders: TransactionBuilder[] = [];
+  const transactions: string[] = [];
   for (const itemsChunk of itemChunks) {
     console.info(`Inserting items ${index}-${index + itemsChunk.length} `);
-    const transactionBuilder = addConfigLines(umi, {
-      index,
-      configLines: itemsChunk,
-      candyMachine: candyMachinePubkey,
-    });
 
+    const defaultComputeBudget = 800_000;
+    const transaction = await getTransactionWithPriorityFee(
+      constructInsertItemsTransaction,
+      defaultComputeBudget,
+      umi,
+      candyMachinePubkey,
+      index,
+      itemsChunk,
+    );
     index += itemsChunk.length;
-    transactionBuilders.push(transactionBuilder);
+
+    transactions.push(transaction);
   }
 
   const rateLimit = pRateLimit(rateLimitQuota);
-  for (const addConfigLineBuilder of transactionBuilders) {
-    const builder = setComputeUnitPrice(umi, { microLamports: 600_000 }).add(
-      addConfigLineBuilder,
+  for (const addConfigLinesTransaction of transactions) {
+    const deserializedTransaction = decodeUmiTransaction(
+      addConfigLinesTransaction,
+      'base64',
     );
     rateLimit(() => {
-      return builder.sendAndConfirm(umi, {
-        send: { commitment: 'confirmed', skipPreflight: true },
+      return umi.rpc.sendTransaction(deserializedTransaction, {
+        skipPreflight: true,
+        commitment: 'confirmed',
       });
     });
   }
