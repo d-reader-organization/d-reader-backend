@@ -12,6 +12,7 @@ import axios, { AxiosError } from 'axios';
 import { Cluster } from '../types/cluster';
 import { PriorityLevel } from '../types/priorityLevel';
 import { base58, base64 } from '@metaplex-foundation/umi/serializers';
+import { isArray } from 'lodash';
 
 export const getAssetsByOwner = async (
   walletAddress: string,
@@ -235,8 +236,11 @@ export async function getTransactionWithPriorityFee<
   T extends string | string[],
 >(callback: (...args: any) => Promise<T>, defaultBudget: number, ...args: any) {
   const transactions = await callback(...args);
+  const transaction = isArray(transactions)
+    ? transactions.at(-1)
+    : (transactions as string);
 
-  const bufferTx = base64.serialize(transactions.at(-1));
+  const bufferTx = base64.serialize(transaction);
   const base58Tx = base58.deserialize(bufferTx);
 
   const priorityFee = await getPriorityFeeEstimate(

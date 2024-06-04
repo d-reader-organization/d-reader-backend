@@ -135,7 +135,7 @@ import {
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
-import { getTransactionWithPriorityFee } from 'src/utils/das';
+import { getTransactionWithPriorityFee } from '../utils/das';
 
 @Injectable()
 export class CandyMachineService {
