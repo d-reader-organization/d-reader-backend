@@ -28,9 +28,9 @@ import {
 } from '@metaplex-foundation/umi';
 import { updateV1 } from '@metaplex-foundation/mpl-core';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
-import { base64 } from '@metaplex-foundation/umi/serializers';
 import { NonceAccountArgs } from '../../nonce/types';
 import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
+import { encodeUmiTransaction } from 'src/utils/transactions';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
@@ -160,7 +160,7 @@ export async function constructChangeCoreComicStateTransaction(
   }
 
   const transaction = await builder.buildAndSign({ ...umi, payer });
-  return base64.deserialize(umi.transactions.serialize(transaction))[0];
+  return encodeUmiTransaction(transaction, 'base64');
 }
 
 export async function constructUpdateCoreNftTransaction(

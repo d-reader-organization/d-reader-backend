@@ -1,7 +1,7 @@
 import { addConfigLines } from '@metaplex-foundation/mpl-core-candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { PublicKey as UmiPublicKey, Umi } from '@metaplex-foundation/umi';
-import { base64 } from '@metaplex-foundation/umi/serializers';
+import { encodeUmiTransaction } from '../../utils/transactions';
 
 type ItemChunk = {
   uri: string;
@@ -30,8 +30,6 @@ export async function constructInsertItemsTransaction(
   }
 
   const transaction = await builder.buildAndSign(umi);
-  const serializedTransaction = base64.deserialize(
-    umi.transactions.serialize(transaction),
-  )[0];
+  const serializedTransaction = encodeUmiTransaction(transaction, 'base64');
   return serializedTransaction;
 }

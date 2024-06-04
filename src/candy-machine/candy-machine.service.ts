@@ -90,7 +90,7 @@ import {
 } from './instructions/initialize-candy-machine';
 import { constructThawTransaction } from './instructions/route';
 import {
-  constructCoreCollectionTransaction,
+  createCoreCollection,
   createCollectionNft,
 } from './instructions/create-collection';
 import {
@@ -272,7 +272,7 @@ export class CandyMachineService {
         });
 
         const nonceArgs = await this.nonceService.getNonce();
-        await constructCoreCollectionTransaction(
+        await createCoreCollection(
           this.umi,
           collection,
           collectionAssetUri,
