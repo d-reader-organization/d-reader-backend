@@ -74,8 +74,8 @@ import {
   setComputeUnitLimit,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
-import { base64 } from '@metaplex-foundation/umi/serializers';
 import { getThirdPartyUmiSignature } from '../../utils/metaplex';
+import { encodeUmiTransaction } from '../../utils/transactions';
 
 export const METAPLEX_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -582,9 +582,11 @@ export async function constructCoreMintTransaction(
           }),
         )
         .buildAndSign({ ...umi, payer: signer });
-      const encodedTransaction = base64.deserialize(
-        umi.transactions.serialize(allowListTransaction),
-      )[0];
+
+      const encodedTransaction = encodeUmiTransaction(
+        allowListTransaction,
+        'base64',
+      );
       transactions.push(encodedTransaction);
     }
 
@@ -631,9 +633,7 @@ export async function constructCoreMintTransaction(
       transaction = await getThirdPartyUmiSignature(transaction);
     }
 
-    const encodedMintTransaction = base64.deserialize(
-      umi.transactions.serialize(transaction),
-    )[0];
+    const encodedMintTransaction = encodeUmiTransaction(transaction, 'base64');
     transactions.push(encodedMintTransaction);
 
     return transactions;

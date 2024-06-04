@@ -76,7 +76,7 @@ export async function createCollectionNft(
   return { name, address: mintAddress };
 }
 
-export async function constructCoreCollectionTransaction(
+export async function createCoreCollection(
   umi: Umi,
   collection: UmiSigner,
   uri: string,
