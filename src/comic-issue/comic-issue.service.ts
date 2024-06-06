@@ -303,7 +303,7 @@ export class ComicIssueService {
     const findComicIssue = this.prisma.comicIssue.findFirst({
       where: { id },
       include: {
-        comic: { include: { genres: true } },
+        comic: { include: { genres: true, creator: true } },
         collaborators: true,
         statelessCovers: true,
         statefulCovers: true,

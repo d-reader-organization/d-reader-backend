@@ -21,6 +21,7 @@ import {
   Genre,
   RoyaltyWallet,
   Comic,
+  Creator,
 } from '@prisma/client';
 import {
   ComicIssueCollaboratorDto,
@@ -116,6 +117,10 @@ export class RawComicIssueDto {
   @IsSolanaAddress()
   creatorAddress: string;
 
+  @IsOptional()
+  @IsString()
+  creatorSlug?: string;
+
   @IsOptionalString()
   @IsSolanaAddress()
   creatorBackupAddress: string;
@@ -144,7 +149,8 @@ export class RawComicIssueDto {
   royaltyWallets?: RoyaltyWalletDto[];
 }
 
-type WithComic = { comic?: Comic & { genres?: Genre[] } };
+type WithCreator = { creator?: Creator };
+type WithComic = { comic?: Comic & WithCreator & { genres?: Genre[] } };
 type WithGenres = { genres?: Genre[] };
 type WithStats = { stats: Partial<RawComicIssueStats> };
 type WithStatelessCovers = { statelessCovers: StatelessCover[] };
@@ -187,6 +193,7 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     popularizedAt: issue.popularizedAt,
     verifiedAt: issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
+    creatorSlug: issue.comic?.creator?.slug,
     creatorBackupAddress: issue.creatorBackupAddress,
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
     statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
