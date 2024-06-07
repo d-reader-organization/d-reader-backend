@@ -7,7 +7,6 @@ import {
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
 import { WhiteListType } from '@prisma/client';
-import { UtmSource } from 'src/twitter/dto/intent-comic-minted-params.dto';
 import { CandyMachineGroupSettings } from 'src/candy-machine/dto/types';
 
 export const currencyFormat = Object.freeze(
@@ -128,36 +127,6 @@ export function isWalletWhiteListed(
 // Finds if user belongs to whitelist
 export function isUserWhitelisted(userId: number, users: { userId: number }[]) {
   return users.some((user) => user.userId == userId);
-}
-
-type ComicMintedTweetArgs = {
-  comicTitle: string;
-  comicSlug: string;
-  comicIssueTitle: string;
-  comicIssueSlug: string;
-  comicAssetRarity: string;
-  source: UtmSource;
-  creatorName: string;
-  coverArtistName: string;
-};
-
-// Get tweet content for comic mint
-export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
-  const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
-
-  const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥`;
-
-  const creatorLine = `✍️ story by @${args.creatorName} `;
-  const coverArtistLine = `🖌️ cover by @${args.coverArtistName}`;
-
-  const mintLinkCallToActionLine = 'Mint yours here while the supply lasts.👇';
-  const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?src=${args.source}`;
-
-  const tweetText = encodeURI(
-    `${twitterIntentPrefix}${titleLine}\n\n${creatorLine}\n${coverArtistLine}\n\n${mintLinkCallToActionLine}\n${mintLinkLine}`,
-  );
-
-  return tweetText;
 }
 
 export function removeTwitter(string?: string) {
