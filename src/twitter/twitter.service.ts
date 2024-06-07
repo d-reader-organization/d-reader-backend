@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { getComicMintTweetContent, removeTwitter } from '../utils/helpers';
+import {
+  getComicMintTweetContent,
+  getIssueSpotlightTweetContent,
+} from '../utils/twitter';
 import { UtmSource } from './dto/intent-comic-minted-params.dto';
+import { removeTwitter } from '../utils/helpers';
 
 @Injectable()
 export class TwitterService {
@@ -56,5 +60,28 @@ export class TwitterService {
         statelessCover.artistTwitterHandle || statelessCover.artist,
     });
     return tweet;
+  }
+
+  async getTwitterIntentIssueSpotlight(id: number) {
+    const { comic, statelessCovers, ...comicIssue } =
+      await this.prisma.comicIssue.findUnique({
+        where: { id },
+        include: {
+          comic: {
+            include: {
+              creator: true,
+            },
+          },
+          statelessCovers: true,
+        },
+      });
+
+    return getIssueSpotlightTweetContent({
+      comicTitle: comic.title,
+      comicIssueTitle: comicIssue.title,
+      creatorTwitter: comic.creator.twitter,
+      creatorName: comic.creator.name,
+      coverArtistArray: statelessCovers,
+    });
   }
 }

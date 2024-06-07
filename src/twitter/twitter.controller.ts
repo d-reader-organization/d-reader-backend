@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TwitterService } from './twitter.service';
 import {
@@ -20,5 +20,12 @@ export class TwitterController {
       intentComicMintedParams.comicAddress,
       utmSource,
     );
+  }
+
+  @Get('intent/issue-spotlight/:id')
+  async getTwitterIntentComicIssueSpotlight(
+    @Param('id') id: string,
+  ): Promise<string> {
+    return await this.twitterService.getTwitterIntentIssueSpotlight(+id);
   }
 }
