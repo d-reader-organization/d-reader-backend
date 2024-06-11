@@ -378,14 +378,18 @@ export class ComicIssueService {
       ...rest
     } = updateComicIssueDto;
 
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id },
-    });
+    const { collection, ...comicIssue } =
+      await this.prisma.comicIssue.findUnique({
+        where: { id },
+        include: { collection: true },
+      });
 
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    } else if (!!comicIssue.publishedAt) {
-      throw new ForbiddenException(`Published comic issue cannot be updated`);
+    } else if (collection) {
+      throw new ForbiddenException(
+        `Published collectible comic issue cannot be updated`,
+      );
     }
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
