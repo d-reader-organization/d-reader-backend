@@ -11,6 +11,7 @@ import { AUTHORITY_GROUP_LABEL } from '../constants';
 import { PrismaService } from 'nestjs-prisma';
 import { TokenStandard } from '@prisma/client';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
+import { getTransactionWithPriorityFee } from '../utils/das';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -62,13 +63,18 @@ export class MintRemainingCommand extends CommandRunner {
     });
     let encodedTransactions: string[];
     if (candyMachine.standard === TokenStandard.Core) {
-      encodedTransactions = await constructCoreMintTransaction(
+      const CORE_MINT_COMPUTE_BUDGET = 800000;
+
+      encodedTransactions = await getTransactionWithPriorityFee(
+        constructCoreMintTransaction,
+        CORE_MINT_COMPUTE_BUDGET,
         this.umi,
         publicKey(candyMachineAddress),
         publicKey(authority.publicKey),
         AUTHORITY_GROUP_LABEL,
         [authority.publicKey.toString()],
         candyMachine.lookupTable,
+        false,
       );
     } else {
       encodedTransactions = await constructMintOneTransaction(

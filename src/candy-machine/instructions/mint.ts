@@ -582,7 +582,6 @@ export async function constructCoreMintTransaction(
           }),
         )
         .buildAndSign({ ...umi, payer: signer });
-
       const encodedTransaction = encodeUmiTransaction(
         allowListTransaction,
         'base64',
