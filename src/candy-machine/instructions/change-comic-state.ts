@@ -30,7 +30,7 @@ import { updateV1 } from '@metaplex-foundation/mpl-core';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { NonceAccountArgs } from '../../nonce/types';
 import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
-import { encodeUmiTransaction } from 'src/utils/transactions';
+import { encodeUmiTransaction } from '../../utils/transactions';
 
 export async function constructChangeComicStateInstruction(
   metaplex: Metaplex,
