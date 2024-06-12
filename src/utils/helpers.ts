@@ -155,6 +155,6 @@ export function findCandyMachineDiscount(groups: CandyMachineGroupSettings[]) {
 
   const difference =
     Math.abs(publicGroup.mintPrice - userGroup.mintPrice) * 100;
-  const discount = difference / publicGroup.mintPrice;
+  const discount = Math.ceil(difference / userGroup.mintPrice);
   return discount;
 }

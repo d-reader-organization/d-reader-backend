@@ -1,16 +1,13 @@
 import { Metaplex, PublicKey } from '@metaplex-foundation/js';
 import { Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
-import { MIN_COMPUTE_PRICE_IX } from '../../constants';
-import {
-  Umi,
-  PublicKey as UmiPublicKey,
-  transactionBuilder,
-} from '@metaplex-foundation/umi';
+import { MIN_COMPUTE_PRICE, MIN_COMPUTE_PRICE_IX } from '../../constants';
+import { Umi, PublicKey as UmiPublicKey } from '@metaplex-foundation/umi';
 import {
   deleteCandyMachine,
   deleteCandyGuard,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { base58 } from '@metaplex-foundation/umi/serializers';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 
 export async function deleteCoreCandyMachine(
   umi: Umi,
@@ -26,9 +23,12 @@ export async function deleteCoreCandyMachine(
     authority: umi.identity,
   });
 
-  const builder = transactionBuilder()
+  const builder = setComputeUnitPrice(umi, {
+    microLamports: MIN_COMPUTE_PRICE,
+  })
     .add(deleteCandyMachineBuilder)
     .add(deleteCandyGuardBuilder);
+
   const response = await builder.sendAndConfirm(umi, {
     send: { commitment: 'confirmed', skipPreflight: true },
   });
