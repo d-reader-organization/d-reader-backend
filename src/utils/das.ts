@@ -228,8 +228,10 @@ export async function getPriorityFeeEstimate(
       ],
     }),
   });
-  const data = await response.json();
-  return data.result;
+  const data: { result: { priorityFeeEstimate: number } } =
+    await response.json();
+  const priorityFeeEstimate = Math.ceil(data.result.priorityFeeEstimate);
+  return { priorityFeeEstimate };
 }
 
 export async function getTransactionWithPriorityFee<

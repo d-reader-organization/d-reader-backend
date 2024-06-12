@@ -8,8 +8,8 @@ import {
   MinLength,
 } from 'class-validator';
 import { kebabCase } from 'lodash';
-import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { TransformStringToNumber } from 'src/utils/transform';
+import { IsKebabCase } from '../../decorators/IsKebabCase';
+import { TransformStringToNumber } from '../../utils/transform';
 
 export class CreateGenreBodyDto {
   @IsString()

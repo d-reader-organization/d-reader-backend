@@ -4,7 +4,7 @@ import { Transform } from 'class-transformer';
 import {
   TransformStringToBoolean,
   TransformStringToNumber,
-} from 'src/utils/transform';
+} from '../../utils/transform';
 
 export class CreateComicPageBodyDto {
   @IsPositive()

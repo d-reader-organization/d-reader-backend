@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { ComicRarity } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import { TransformStringToBoolean } from 'src/utils/transform';
+import { TransformStringToBoolean } from '../../../utils/transform';
 
 export class CreateStatelessCoverBodyDto {
   @IsString()

@@ -15,7 +15,7 @@ import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
 import { RoyaltyWalletDto } from './royalty-wallet.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { TransformStringToNumber } from 'src/utils/transform';
+import { TransformStringToNumber } from '../../utils/transform';
 import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
 import { MAX_CREATOR_LIMIT } from '../../constants';
 
