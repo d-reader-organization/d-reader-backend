@@ -56,8 +56,9 @@ export class TwitterService {
       comicAssetRarity: comicAsset.metadata.rarity.toLowerCase(),
       source: utmSource,
       creatorName: creatorTwitterHandle || creator.name,
-      coverArtistName:
-        statelessCover.artistTwitterHandle || statelessCover.artist,
+      coverArtistName: statelessCover.artistTwitterHandle
+        ? '@' + statelessCover.artistTwitterHandle
+        : statelessCover.artist,
     });
     return tweet;
   }
