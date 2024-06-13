@@ -12,10 +12,10 @@ export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
   const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥`;
 
   const creatorLine = `✍️ story by @${args.creatorName} `;
-  const coverArtistLine = `🖌️ cover by @${args.coverArtistName}`;
+  const coverArtistLine = `🖌️ cover by ${args.coverArtistName}`;
 
   const mintLinkCallToActionLine = 'Mint yours here while the supply lasts.👇';
-  const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?src=${args.source}`;
+  const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?ref=${args.source}`;
 
   const tweetText = encodeURI(
     `${twitterIntentPrefix}${titleLine}\n\n${creatorLine}\n${coverArtistLine}\n\n${mintLinkCallToActionLine}\n${mintLinkLine}`,
