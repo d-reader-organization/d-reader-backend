@@ -55,7 +55,9 @@ export class TwitterService {
       comicIssueSlug: comicIssue.slug,
       comicAssetRarity: comicAsset.metadata.rarity.toLowerCase(),
       source: utmSource,
-      creatorName: creatorTwitterHandle || creator.name,
+      creatorName: creatorTwitterHandle
+        ? '@' + creatorTwitterHandle
+        : creator.name,
       coverArtistName: statelessCover.artistTwitterHandle
         ? '@' + statelessCover.artistTwitterHandle
         : statelessCover.artist,
