@@ -11,7 +11,7 @@ export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
 
   const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥`;
 
-  const creatorLine = `✍️ story by @${args.creatorName} `;
+  const creatorLine = `✍️ story by ${args.creatorName} `;
   const coverArtistLine = `🖌️ cover by ${args.coverArtistName}`;
 
   const mintLinkCallToActionLine = 'Mint yours here while the supply lasts.👇';
