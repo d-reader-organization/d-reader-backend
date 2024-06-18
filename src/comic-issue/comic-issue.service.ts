@@ -486,6 +486,7 @@ export class ComicIssueService {
         pdfKey = await this.s3.uploadFile(pdf, {
           s3Folder,
           fileName: comicIssue.slug,
+          errorMessage: 'No pdf file provided',
         });
         newFileKeys.push(pdfKey);
         oldFileKeys.push(comicIssue.pdf);
@@ -538,7 +539,8 @@ export class ComicIssueService {
 
     try {
       const updatedComicIssue = await this.prisma.comicIssue.update({
-        where: { id, publishedAt: null },
+        // where: { id, publishedAt: null },
+        where: { id },
         include: { pages: true, collaborators: true, statelessCovers: true },
         data: { [field]: newFileKey },
       });
@@ -547,9 +549,10 @@ export class ComicIssueService {
       return updatedComicIssue;
     } catch {
       await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
-      throw new BadRequestException(
-        'Malformed file upload or or comic issue already published',
-      );
+      throw new BadRequestException('Malformed file upload');
+      // throw new BadRequestException(
+      //   'Malformed file upload or comic issue already published',
+      // );
     }
   }
 

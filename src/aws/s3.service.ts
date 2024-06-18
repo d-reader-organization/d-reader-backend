@@ -25,6 +25,7 @@ export type UploadFileOptions = {
   s3Folder: string;
   fileName?: string;
   timestamp?: boolean;
+  errorMessage?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -254,7 +255,10 @@ export class s3Service {
       });
 
       return fileKey;
-    } else throw new BadRequestException('No file provided');
+    } else {
+      const errorMessage = options.errorMessage || 'No file provided';
+      throw new BadRequestException(errorMessage);
+    }
   };
 
   /** Create download links for array of s3 keys */

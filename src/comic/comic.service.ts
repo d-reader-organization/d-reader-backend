@@ -238,7 +238,6 @@ export class ComicService {
     try {
       const updatedComic = await this.prisma.comic.update({
         where: { slug },
-        // where: { slug, publishedAt: null },
         data: {
           ...rest,
           ...(newSlug && { slug: newSlug }),
@@ -249,9 +248,7 @@ export class ComicService {
 
       return updatedComic;
     } catch {
-      throw new NotFoundException(
-        `Comic ${slug} does not exist or is published`,
-      );
+      throw new NotFoundException(`Comic ${slug} does not exist`);
     }
   }
 
@@ -370,7 +367,7 @@ export class ComicService {
       });
     } catch {
       throw new NotFoundException(
-        `Comic ${slug} does not exist or is published`,
+        `Comic ${slug} does not exist or is already published`,
       );
     }
   }
