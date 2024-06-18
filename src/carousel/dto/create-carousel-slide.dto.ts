@@ -8,8 +8,10 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class CreateCarouselSlideBodyDto {
+  @TransformStringToNumber()
   @IsNumber()
   priority: number;
 
@@ -28,6 +30,7 @@ export class CreateCarouselSlideBodyDto {
   location: CarouselLocation;
 
   @IsOptional()
+  @TransformStringToNumber()
   @IsNumber()
   comicIssueId?: number;
 

@@ -1,5 +1,6 @@
-import { plainToInstance, Transform } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -30,10 +31,10 @@ export class CarouselSlideDto {
   @IsOptional()
   subtitle?: string;
 
-  @Transform(({ obj }) => !!obj.publishedAt)
+  @IsBoolean()
   isPublished: boolean;
 
-  @Transform(({ obj }) => !!obj.expiredAt)
+  @IsBoolean()
   isExpired: boolean;
 
   @IsEnum(CarouselLocation)
