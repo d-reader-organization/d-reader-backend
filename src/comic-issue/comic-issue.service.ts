@@ -370,6 +370,8 @@ export class ComicIssueService {
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
+    await this.throwIfComicIsPublishedOnChain(id);
+
     const {
       number,
       collaborators,
@@ -378,18 +380,11 @@ export class ComicIssueService {
       ...rest
     } = updateComicIssueDto;
 
-    const { collection, ...comicIssue } =
-      await this.prisma.comicIssue.findUnique({
-        where: { id },
-        include: { collection: true },
-      });
-
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id },
+    });
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
-    } else if (collection) {
-      throw new ForbiddenException(
-        `Published collectible comic issue cannot be updated`,
-      );
     }
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
@@ -454,8 +449,9 @@ export class ComicIssueService {
   }
 
   async updateFiles(id: number, comicIssueFilesDto: UpdateComicIssueFilesDto) {
-    const { pdf } = comicIssueFilesDto;
+    await this.throwIfComicIsPublishedOnChain(id);
 
+    const { pdf } = comicIssueFilesDto;
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
       include: {
@@ -513,6 +509,8 @@ export class ComicIssueService {
     file: Express.Multer.File,
     field: ComicIssueFileProperty,
   ) {
+    await this.throwIfComicIsPublishedOnChain(id);
+
     let comicIssue: ComicIssue & {
       pages: ComicPage[];
       comic: Comic;
@@ -566,6 +564,17 @@ export class ComicIssueService {
         `Comic already has episode number ${number}`,
       );
     }
+  }
+
+  async throwIfComicIsPublishedOnChain(comicIssueId: number) {
+    const collection = await this.prisma.collection.findFirst({
+      where: { comicIssueId },
+    });
+
+    if (collection)
+      throw new ForbiddenException(
+        'Comic issue published on-chain and cannot be edited',
+      );
   }
 
   async throwIfSlugAndComicSlugTaken(slug: string, comicSlug: string) {
