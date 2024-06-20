@@ -1,6 +1,7 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsDate,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -8,7 +9,10 @@ import {
   MaxLength,
 } from 'class-validator';
 import { CarouselLocation } from '@prisma/client';
-import { TransformStringToNumber } from 'src/utils/transform';
+import {
+  TransformDateStringToDate,
+  TransformStringToNumber,
+} from '../../utils/transform';
 
 export class CreateCarouselSlideBodyDto {
   @TransformStringToNumber()
@@ -45,6 +49,11 @@ export class CreateCarouselSlideBodyDto {
   @IsOptional()
   @IsString()
   externalLink?: string;
+
+  @IsOptional()
+  @TransformDateStringToDate()
+  @IsDate()
+  expiredAt?: Date;
 }
 
 export class CreateCarouselSlideFilesDto {

@@ -59,6 +59,8 @@ export class CarouselSlideDto {
 }
 
 export function toCarouselSlideDto(slide: CarouselSlide) {
+  const currentDate = new Date();
+
   const plainSlideDto: CarouselSlideDto = {
     id: slide.id,
     image: getPublicUrl(slide.image),
@@ -66,7 +68,7 @@ export function toCarouselSlideDto(slide: CarouselSlide) {
     title: slide.title,
     subtitle: slide.subtitle,
     isPublished: !!slide.publishedAt,
-    isExpired: !!slide.expiredAt,
+    isExpired: slide.expiredAt <= currentDate,
     location: slide.location,
     comicIssueId: slide.comicIssueId,
     comicSlug: slide.comicSlug,

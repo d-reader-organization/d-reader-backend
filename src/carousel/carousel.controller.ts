@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import {
@@ -31,7 +32,8 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { throttle } from 'lodash';
+import { CarouselSlideFilterParams } from './dto/carousel-slide-params.dto';
+import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Carousel')
@@ -59,9 +61,9 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
-  private throttledFindAll = throttle(
-    async () => {
-      const carouselSlides = await this.carouselService.findAll();
+  private throttledFindAll = memoizeThrottle(
+    async (params: CarouselSlideFilterParams) => {
+      const carouselSlides = await this.carouselService.findAll(params);
       return toCarouselSlideDtoArray(carouselSlides);
     },
     15 * 60 * 1000, // 15 minutes
@@ -69,8 +71,8 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll() {
-    return await this.throttledFindAll();
+  async findAll(@Query() params: CarouselSlideFilterParams) {
+    return this.throttledFindAll(params);
   }
 
   /* Get specific carousel slide by unique id */
