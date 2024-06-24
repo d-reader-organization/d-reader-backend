@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, MaxLength, IsString, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  MaxLength,
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+} from 'class-validator';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
@@ -11,9 +17,10 @@ export class UpdateCreatorDto {
   @Transform(({ value }) => value?.toLowerCase())
   email?: string;
 
-  // @IsNotEmpty()
-  // @MaxLength(48)
-  // name: string;
+  @IsOptional()
+  @IsNotEmpty()
+  @MaxLength(48)
+  name?: string;
 
   // @Expose()
   // @IsKebabCase()

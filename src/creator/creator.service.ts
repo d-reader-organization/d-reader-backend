@@ -184,16 +184,35 @@ export class CreatorService {
   }
 
   async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
-    const { email, ...otherData } = updateCreatorDto;
-
+    const { email, name, ...otherData } = updateCreatorDto;
     const creator = await this.prisma.creator.findUnique({ where: { slug } });
-    const isEmailUpdated = email && creator.email !== email;
 
+    const isNameUpdated = name && creator.name !== name;
+    let creatorSlug = slug;
+
+    if (isNameUpdated) {
+      validateCreatorName(name);
+
+      const newSlug = kebabCase(name);
+      await Promise.all([
+        this.throwIfNameTaken(name),
+        // todo: We don't require this check as slug is derived from name.
+        this.throwIfSlugTaken(newSlug),
+      ]);
+
+      await this.prisma.creator.update({
+        where: { slug },
+        data: { name, slug: newSlug },
+      });
+      creatorSlug = newSlug;
+    }
+
+    const isEmailUpdated = email && creator.email !== email;
     if (isEmailUpdated) {
       validateEmail(email);
       await this.throwIfEmailTaken(email);
       await this.prisma.creator.update({
-        where: { slug },
+        where: { slug: creatorSlug },
         data: { email, emailVerifiedAt: null },
       });
 
@@ -201,7 +220,7 @@ export class CreatorService {
     }
 
     const updatedCreator = await this.prisma.creator.update({
-      where: { slug },
+      where: { slug: creatorSlug },
       data: otherData,
     });
 
