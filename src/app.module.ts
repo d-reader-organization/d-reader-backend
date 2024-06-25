@@ -37,6 +37,7 @@ import { ThirdPartyModule } from './third-party/third-party.module';
 import { NonceModule } from './nonce/nonce.module';
 import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/draft-comic-issue-sales-data.module';
 import { TwitterModule } from './twitter/twitter.module';
+import { BlinkModule } from './blink/blink.module';
 
 @Module({
   imports: [
@@ -101,6 +102,7 @@ import { TwitterModule } from './twitter/twitter.module';
     NonceModule,
     DraftComicIssueSalesDataModule,
     TwitterModule,
+    BlinkModule,
   ],
   controllers: [AppController],
   providers: [
