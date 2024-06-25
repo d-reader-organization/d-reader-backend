@@ -1,4 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
@@ -25,6 +33,8 @@ import { UserAuth } from '../guards/user-auth.guard';
 import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
+import { ActionPayloadDto } from 'src/blink/dto/action-payload.dto';
+import { toActionResponseDto } from 'src/blink/dto/action-response.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -53,6 +63,26 @@ export class TransactionController {
       label,
       user ? user.id : null,
     );
+  }
+
+  /* For blink clients to make request for mint transaction */
+  @Post('/blink/mint/:candyMachine')
+  async constructBlinkMintTransaction(
+    @Param('candyMachine') candyMachine: string,
+    @Body() actionPayload: ActionPayloadDto,
+  ) {
+    const publicKey = new PublicKey(actionPayload.account);
+    const candyMachineAddress = new PublicKey(candyMachine);
+    const label = PUBLIC_GROUP_LABEL;
+
+    const transaction = await this.candyMachineService.createMintOneTransaction(
+      publicKey,
+      candyMachineAddress,
+      label,
+    );
+
+    //todo: blink supports only single transaction
+    return toActionResponseDto(transaction.at(-1));
   }
 
   @OptionalUserAuth()
