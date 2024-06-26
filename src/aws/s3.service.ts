@@ -85,7 +85,7 @@ export class s3Service {
     if (!key) return key;
     else if (key.startsWith('https://')) return key;
     else if (this.cdn) return `${config().s3.cdn}/${key}`;
-    else `https://${this.bucket}.s3.amazonaws.com/${key}`;
+    else return `https://${this.bucket}.s3.amazonaws.com/${key}`;
   };
 
   getPresignedUrl = async (
