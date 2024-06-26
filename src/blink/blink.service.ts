@@ -13,10 +13,11 @@ export class BlinkService {
   ) {}
 
   async getMintActionSpec(id: number): Promise<ActionSpecGetResponse> {
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id },
-      include: { statelessCovers: true },
-    });
+    const { statelessCovers, comic, ...comicIssue } =
+      await this.prisma.comicIssue.findUnique({
+        where: { id },
+        include: { statelessCovers: true, comic: true },
+      });
     if (!comicIssue) {
       throw new Error('No such comic issue exists');
     }
@@ -26,14 +27,12 @@ export class BlinkService {
     if (!activeCandyMachine) {
       throw new Error('No active mint for this issue');
     }
-    const defaultCover = comicIssue.statelessCovers.find(
-      (cover) => cover.isDefault,
-    );
+    const defaultCover = statelessCovers.find((cover) => cover.isDefault);
     const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${activeCandyMachine}`;
 
     return {
       icon: this.s3.getPublicUrl(defaultCover.image),
-      title: `Mint ${comicIssue.title}`,
+      title: `${comic.title} - ${comicIssue.title}`,
       description: comicIssue.description,
       label: 'Mint',
       links: {
