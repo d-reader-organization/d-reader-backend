@@ -11,7 +11,7 @@ export class BlinkController {
   constructor(private readonly blinkService: BlinkService) {}
 
   @Get('/action-spec/mint/:id')
-  async getMintActionSpec(@Param('id') id: number) {
+  async getMintActionSpec(@Param('id') id: string) {
     const mintActionSpec = await this.blinkService.getMintActionSpec(id);
     return toActionSpecDto(mintActionSpec);
   }
