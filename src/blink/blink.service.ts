@@ -1,10 +1,17 @@
 import { PrismaService } from 'nestjs-prisma';
 import { Injectable } from '@nestjs/common';
-import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ActionSpecGetResponse } from './dto/types';
-import { s3Service } from 'src/aws/s3.service';
-import { Comic, ComicIssue, StatelessCover } from '@prisma/client';
+import { s3Service } from '../aws/s3.service';
+import {
+  Comic,
+  ComicIssue,
+  StatelessCover,
+  WhiteListType,
+} from '@prisma/client';
 import { isNumberString } from 'class-validator';
+import { SOL_ADDRESS } from '../constants';
+import { toSol } from '../utils/helpers';
 
 @Injectable()
 export class BlinkService {
@@ -43,8 +50,17 @@ export class BlinkService {
     if (!activeCandyMachine) {
       throw new Error('No active mint for this issue');
     }
+
+    const publicSolGroup = await this.prisma.candyMachineGroup.findFirst({
+      where: {
+        candyMachineAddress: activeCandyMachine,
+        whiteListType: WhiteListType.Public,
+        splTokenAddress: SOL_ADDRESS,
+      },
+    });
     const defaultCover = statelessCovers.find((cover) => cover.isDefault);
     const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${activeCandyMachine}`;
+    const mintPrice = toSol(Number(publicSolGroup.mintPrice));
 
     return {
       icon: this.s3.getPublicUrl(defaultCover.image),
@@ -52,7 +68,9 @@ export class BlinkService {
       description: comicIssue.description,
       label: 'Mint',
       links: {
-        actions: [{ label: 'Mint', href: actionEndpoint }],
+        actions: [
+          { label: `Mint for ~ ${mintPrice} SOL`, href: actionEndpoint },
+        ],
       },
     };
   }
