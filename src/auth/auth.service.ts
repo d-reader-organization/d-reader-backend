@@ -103,7 +103,7 @@ export class AuthService {
 
   private generateAccessToken(payload: JwtPayload): string {
     const sanitizedPayload = sanitizePayload(payload);
-    const accessToken = `Bearer ${this.jwtService.sign(sanitizedPayload)}`;
+    const accessToken = this.jwtService.sign(sanitizedPayload);
     return accessToken;
   }
 

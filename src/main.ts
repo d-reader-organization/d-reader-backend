@@ -10,6 +10,7 @@ import {
   SwaggerConfig,
 } from './configs/config.interface';
 import * as express from 'express';
+import * as cookieParser from 'cookie-parser';
 import { initializeFirebase } from './utils/firebase';
 
 // Boot Strap
@@ -83,6 +84,7 @@ async function bootstrap() {
   initializeFirebase();
 
   app.use(express.static('public'));
+  app.use(cookieParser());
   await app.listen(process.env.PORT || nestConfig.port || 3005);
 }
 

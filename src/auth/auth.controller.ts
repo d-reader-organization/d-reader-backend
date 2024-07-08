@@ -6,6 +6,7 @@ import {
   Patch,
   UseGuards,
   Body,
+  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -28,6 +29,9 @@ import { CreatorService } from '../creator/creator.service';
 import { UserAuth } from '../guards/user-auth.guard';
 import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
 import { GoogleUserAuth } from '../guards/google-auth.guard';
+import { Response } from 'express';
+import { accessTokenKey, accessTokenOptions } from '../constants';
+
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
 @Controller('auth')
@@ -82,24 +86,42 @@ export class AuthController {
   /* Register a new user */
   @Throttle(10, 60)
   @Post('user/register')
-  async registerUser(@Body() registerDto: RegisterDto): Promise<Authorization> {
+  async registerUser(
+    @Res() res: Response,
+    @Body() registerDto: RegisterDto,
+  ): Promise<void> {
     const user = await this.userService.register(registerDto);
-    return this.authService.authorizeUser(user);
+    const { accessToken, refreshToken } = this.authService.authorizeUser(user);
+    res
+      .cookie(accessTokenKey, accessToken, accessTokenOptions)
+      .send({ refreshToken });
   }
 
   /* Login as a user */
   @Throttle(10, 60)
   @Patch('user/login')
-  async loginUser(@Body() loginDto: LoginDto): Promise<Authorization> {
+  async loginUser(
+    @Res() res: Response,
+    @Body() loginDto: LoginDto,
+  ): Promise<void> {
     const user = await this.userService.login(loginDto);
-    return this.authService.authorizeUser(user);
+    const { accessToken, refreshToken } = this.authService.authorizeUser(user);
+    res
+      .cookie(accessTokenKey, accessToken, accessTokenOptions)
+      .send({ refreshToken });
   }
 
   /* Refresh access token */
   @SkipThrottle()
   @Patch('user/refresh-token/:refreshToken')
-  async reauthorizeUser(@Param('refreshToken') refreshToken: string) {
-    return await this.authService.refreshAccessToken(refreshToken);
+  async reauthorizeUser(
+    @Res() res: Response,
+    @Param('refreshToken') refreshToken: string,
+  ): Promise<void> {
+    const accessToken = await this.authService.refreshAccessToken(refreshToken);
+    res
+      .cookie(accessTokenKey, accessToken, accessTokenOptions)
+      .send({ status: 'ok' });
   }
 
   // CREATOR ENDPOINTS

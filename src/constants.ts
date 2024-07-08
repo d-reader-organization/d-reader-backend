@@ -3,6 +3,7 @@ import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { IsStrongPasswordOptions } from 'class-validator';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
+import { CookieOptions } from 'express';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -216,3 +217,10 @@ export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
 export const MINT_CORE_V1_DISCRIMINATOR = [
   145, 98, 192, 118, 184, 147, 118, 104,
 ];
+
+export const accessTokenKey = 'access_token';
+export const accessTokenOptions: CookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: true,
+};
