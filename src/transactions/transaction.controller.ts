@@ -35,6 +35,7 @@ import { UserPayload } from '../auth/dto/authorization.dto';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { ActionPayloadDto } from 'src/blink/dto/action-payload.dto';
 import { toActionResponseDto } from 'src/blink/dto/action-response.dto';
+import { BlinkService } from 'src/blink/blink.service';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -42,6 +43,7 @@ import { toActionResponseDto } from 'src/blink/dto/action-response.dto';
 export class TransactionController {
   constructor(
     private readonly candyMachineService: CandyMachineService,
+    private readonly blinkService: BlinkService,
     private readonly auctionHouseService: AuctionHouseService,
     private readonly transactionService: TransactionService,
   ) {}
@@ -83,6 +85,23 @@ export class TransactionController {
 
     //todo: blink supports only single transaction
     return toActionResponseDto(transaction.at(-1));
+  }
+
+  /* For blink clients to make request for comic sign transaction */
+  @Post('/blink/comic-sign/:address')
+  async constructBlinkComicSignTransaction(
+    @Param('address') address: string,
+    @Body() actionPayload: ActionPayloadDto,
+  ) {
+    const assetAddress = new PublicKey(address);
+    const publicKey = new PublicKey(actionPayload.account);
+
+    const transaction = await this.blinkService.signComicAction(
+      assetAddress,
+      publicKey,
+    );
+
+    return toActionResponseDto(transaction);
   }
 
   @OptionalUserAuth()
