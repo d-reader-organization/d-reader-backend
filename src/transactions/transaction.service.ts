@@ -111,7 +111,10 @@ export class TransactionService {
         if (isSigned) {
           throw new Error('Comic is already signed');
         }
-        if (feePayer.toString() != comicIssue.creatorAddress) {
+        if (
+          feePayer.toString() != comicIssue.creatorAddress &&
+          feePayer.toString() != comicIssue.creatorBackupAddress
+        ) {
           throw new Error('Only verified creator can sign a comic');
         }
         isSigned = true;
