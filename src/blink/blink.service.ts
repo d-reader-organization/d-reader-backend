@@ -12,6 +12,10 @@ import {
 import { isNumberString } from 'class-validator';
 import { SOL_ADDRESS } from '../constants';
 import { toSol } from '../utils/helpers';
+import { TransactionService } from '../transactions/transaction.service';
+import { ComicStateArgs } from 'dreader-comic-verse';
+import { PublicKey } from '@solana/web3.js';
+import { fetchOffChainMetadata } from '../utils/nft-metadata';
 
 @Injectable()
 export class BlinkService {
@@ -19,6 +23,7 @@ export class BlinkService {
     private readonly prisma: PrismaService,
     private readonly comicIssueService: ComicIssueService,
     private readonly s3: s3Service,
+    private readonly transactionService: TransactionService,
   ) {}
 
   async getMintActionSpec(id: string): Promise<ActionSpecGetResponse> {
@@ -73,5 +78,73 @@ export class BlinkService {
         ],
       },
     };
+  }
+
+  async getComicSignActionSpec(
+    address: string,
+  ): Promise<ActionSpecGetResponse> {
+    const asset = await this.prisma.digitalAsset.findFirst({
+      where: { address },
+      include: {
+        metadata: true,
+      },
+    });
+
+    if (!asset) {
+      throw new Error("Asset doesn't exists or unverified");
+    }
+
+    const { metadata } = asset;
+
+    if (metadata.isSigned) {
+      throw new Error('Comic is already signed !');
+    }
+
+    const actionEndpoint = `${process.env.API_URL}/transaction/blink/comic-sign/${address}`;
+    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
+
+    return {
+      icon: offChainMetadata.image,
+      title: `${asset.name}`,
+      description: 'Get signature from the comic creator',
+      label: 'Sign ✍️',
+      links: {
+        actions: [{ label: `Sign ${asset.name} ✍️`, href: actionEndpoint }],
+      },
+    };
+  }
+
+  async signComicAction(address: PublicKey, creator: PublicKey) {
+    const asset = await this.prisma.digitalAsset.findFirst({
+      where: { address: address.toString() },
+      include: { metadata: true },
+    });
+
+    if (!asset) {
+      throw new Error("Asset doesn't exists or unverified");
+    }
+
+    const { metadata } = asset;
+    if (metadata.isSigned) {
+      throw new Error('Comic is already signed !');
+    }
+
+    const issue = await this.prisma.comicIssue.findFirst({
+      where: { collection: { address: metadata.collectionAddress } },
+    });
+
+    if (!issue) {
+      throw new Error('Asset is not from a verified collection');
+    }
+
+    if (issue.creatorBackupAddress !== creator.toString()) {
+      throw new Error('Only the creator of the comic can sign !');
+    }
+
+    return this.transactionService.createChangeComicStateTransaction(
+      address,
+      creator,
+      ComicStateArgs.Sign,
+    );
   }
 }

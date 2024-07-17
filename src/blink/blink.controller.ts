@@ -15,4 +15,12 @@ export class BlinkController {
     const mintActionSpec = await this.blinkService.getMintActionSpec(id);
     return toActionSpecDto(mintActionSpec);
   }
+
+  @Get('/action-spec/comic-sign/:address')
+  async getComicSignActionSpec(@Param('address') address: string) {
+    const comicSignActionSpec = await this.blinkService.getComicSignActionSpec(
+      address,
+    );
+    return toActionSpecDto(comicSignActionSpec);
+  }
 }

@@ -6,6 +6,10 @@ import { DarkblockService } from '../candy-machine/darkblock.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { TransactionService } from './transaction.service';
 import { NonceService } from '../nonce/nonce.service';
+import { BlinkService } from '../blink/blink.service';
+import { ComicIssueService } from '../comic-issue/comic-issue.service';
+import { ComicPageService } from '../comic-page/comic-page.service';
+import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 
 @Module({
   controllers: [TransactionController],
@@ -16,6 +20,10 @@ import { NonceService } from '../nonce/nonce.service';
     HeliusService,
     DarkblockService,
     NonceService,
+    BlinkService,
+    ComicIssueService,
+    ComicPageService,
+    UserComicIssueService,
   ],
 })
 export class TransactionModule {}
