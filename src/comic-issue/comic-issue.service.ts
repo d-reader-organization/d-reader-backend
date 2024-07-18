@@ -203,7 +203,7 @@ export class ComicIssueService {
     const normalizedComicIssues = comicIssues.map((issue) => {
       return {
         ...issue,
-        statelessCovers: issue.statelesscovers,
+        statelessCovers: issue.statelesscovers.filter(Boolean),
         stats: {
           favouritesCount: Number(issue.favouritesCount),
           ratersCount: Number(issue.ratersCount),
