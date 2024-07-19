@@ -156,7 +156,6 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
-            console.log(transaction);
             const instruction = transaction.instructions.at(-1);
             const data = bs58.decode(instruction.data);
             if (instruction.programId == CMA_PROGRAM_ID) {
@@ -267,7 +266,7 @@ export class HeliusService {
 
       const uri =
         updateArgs.newUri.__option == 'Some' ? updateArgs.newUri.value : null;
-      const mint = updateInstruction.innerInstructions.at(0).accounts.at(-1);
+      const mint = updateInstruction.accounts.at(0);
 
       if (uri) {
         const offChainMetadata = await fetchOffChainMetadata(uri);
