@@ -78,8 +78,9 @@ export class TwitterService {
       },
     });
 
+    const isPreviewable = comicIssue.isFreeToRead ? undefined : true;
     const previewPageCount = await this.prisma.comicPage.count({
-      where: { comicIssueId: id, isPreviewable: true },
+      where: { comicIssueId: id, isPreviewable },
     });
 
     const flavorText = isEmpty(comicIssue.flavorText)
