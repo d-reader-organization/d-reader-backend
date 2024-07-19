@@ -10,7 +10,7 @@ export class ActionResponseDto {
   message?: string;
 }
 
-export function toActionResponseDto(transaction: string) {
-  const plainActionResponse = { transaction };
+export function toActionResponseDto(transaction: string, message?: string) {
+  const plainActionResponse = { transaction, message };
   return plainToInstance(ActionResponseDto, plainActionResponse);
 }
