@@ -95,13 +95,13 @@ export class BlinkService {
     });
 
     if (!asset) {
-      throw new Error("Asset doesn't exists or unverified");
+      throw new BadRequestException("Asset doesn't exists or unverified");
     }
 
     const { metadata } = asset;
 
     if (metadata.isSigned) {
-      throw new Error('Comic is already signed !');
+      throw new BadRequestException('Comic is already signed !');
     }
 
     const actionEndpoint = `${process.env.API_URL}/transaction/blink/comic-sign/${address}`;
