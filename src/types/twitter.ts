@@ -13,8 +13,8 @@ export type ComicMintedTweetArgs = {
 
 export type IssueSpotlightTweetArgs = {
   creatorTwitter: string;
-  comicIssueTitle: string;
   comicTitle: string;
+  flavorText: string;
   creatorName: string;
-  coverArtistArray: { artistTwitterHandle: string }[];
+  previewPageCount: number;
 };
