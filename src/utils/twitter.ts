@@ -3,7 +3,7 @@ import {
   ComicMintedTweetArgs,
   IssueSpotlightTweetArgs,
 } from '../types/twitter';
-import { isEmpty } from 'lodash';
+import { isEmpty, kebabCase } from 'lodash';
 
 // Get tweet content for comic mint
 export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
@@ -29,35 +29,25 @@ export function getIssueSpotlightTweetContent(args: IssueSpotlightTweetArgs) {
   const {
     creatorTwitter,
     comicTitle,
-    comicIssueTitle,
-    coverArtistArray,
     creatorName,
+    flavorText,
+    previewPageCount,
   } = args;
   const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
   const creatorHandle = removeTwitter(creatorTwitter);
   const creatorTag = isEmpty(creatorHandle) ? creatorName : creatorHandle;
 
-  const titleLine = `Creator Spotlight Day!! ⚡\n\n`;
+  const titleLine = `Creator Spotlight Day!! ⚡`;
+  const shoutOutLine = `Shoutout to @${creatorTag} and their comic series,${comicTitle}.`;
+  const personalizedText = `<INSERT SOMETHING PERSONAL>`;
 
-  const shoutOutLine = `Shoutout to @${creatorTag} and his comic series ${comicTitle}. I cannot wait to dive into the rest of this universe!\n\nYou can read the first 3 pages of episode ${comicIssueTitle} on @dReader now! Show it some love if you can and give both @${creatorTag}, and the ${comicTitle} series a LIKE, some STARS, and a FOLLOW on there!`;
+  const comicLinkCallToActionLine = `Link below 🔗👇`;
+  const comicLinkLine = `https://dreader.app/comic/${kebabCase(comicTitle)}`;
+  const endOfTweet = `You can read the first ${previewPageCount} pages in-app now!\n\nShow it some love if you can and give both @${creatorTag} and ${comicTitle} series a LIKE, some STARS, and a FOLLOW on there!`;
 
-  let coverArtistText = '';
-  coverArtistArray.forEach((cover, index) => {
-    if (cover.artistTwitterHandle) {
-      coverArtistText = coverArtistText + ` @${cover.artistTwitterHandle}`;
-      if (index != coverArtistArray.length - 1) coverArtistText += ',';
-    }
-  });
-
-  const coverLine =
-    (coverArtistText
-      ? `\nI also spy` + coverArtistText + ` covers in there!`
-      : `There are ${coverArtistArray.length} covers in there!`) +
-    ` I’ll need 1 of each please!!`;
-
-  const tweet = encodeURI(
-    twitterIntentPrefix + titleLine + shoutOutLine + coverLine,
+  const tweetText = encodeURI(
+    `${twitterIntentPrefix}${titleLine}\n\n${shoutOutLine}\n${flavorText}\n\n${personalizedText}\n\n${endOfTweet}\n\n${comicLinkCallToActionLine}\n${comicLinkLine}`,
   );
 
-  return tweet;
+  return tweetText;
 }

@@ -6,6 +6,7 @@ import {
 } from '../utils/twitter';
 import { UtmSource } from './dto/intent-comic-minted-params.dto';
 import { removeTwitter } from '../utils/helpers';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class TwitterService {
@@ -66,25 +67,30 @@ export class TwitterService {
   }
 
   async getTwitterIntentIssueSpotlight(id: number) {
-    const { comic, statelessCovers, ...comicIssue } =
-      await this.prisma.comicIssue.findUnique({
-        where: { id },
-        include: {
-          comic: {
-            include: {
-              creator: true,
-            },
+    const { comic, ...comicIssue } = await this.prisma.comicIssue.findUnique({
+      where: { id },
+      include: {
+        comic: {
+          include: {
+            creator: true,
           },
-          statelessCovers: true,
         },
-      });
+      },
+    });
 
+    const previewPageCount = await this.prisma.comicPage.count({
+      where: { comicIssueId: id, isPreviewable: true },
+    });
+
+    const flavorText = isEmpty(comicIssue.flavorText)
+      ? comic.flavorText
+      : comicIssue.flavorText;
     return getIssueSpotlightTweetContent({
       comicTitle: comic.title,
-      comicIssueTitle: comicIssue.title,
       creatorTwitter: comic.creator.twitter,
+      flavorText,
       creatorName: comic.creator.name,
-      coverArtistArray: statelessCovers,
+      previewPageCount,
     });
   }
 }
