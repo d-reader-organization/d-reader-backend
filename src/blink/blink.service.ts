@@ -1,5 +1,9 @@
 import { PrismaService } from 'nestjs-prisma';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ActionSpecGetResponse } from './dto/types';
 import { s3Service } from '../aws/s3.service';
@@ -121,12 +125,12 @@ export class BlinkService {
     });
 
     if (!asset) {
-      throw new Error("Asset doesn't exists or unverified");
+      throw new BadRequestException("Asset doesn't exists or unverified");
     }
 
     const { metadata } = asset;
     if (metadata.isSigned) {
-      throw new Error('Comic is already signed !');
+      throw new BadRequestException('Comic is already signed !');
     }
 
     const issue = await this.prisma.comicIssue.findFirst({
@@ -134,11 +138,13 @@ export class BlinkService {
     });
 
     if (!issue) {
-      throw new Error('Asset is not from a verified collection');
+      throw new BadRequestException('Asset is not from a verified collection');
     }
 
     if (issue.creatorBackupAddress !== creator.toString()) {
-      throw new Error('Only the creator of the comic can sign !');
+      throw new UnauthorizedException(
+        'Only the creator of the comic can sign !',
+      );
     }
 
     return this.transactionService.createChangeComicStateTransaction(
