@@ -52,7 +52,9 @@ model Wallet {
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
   assets             DigitalAsset[]
+  editions           Edition[]
   candyMachineGroups WalletCandyMachineGroup[]
+  uniqueCollectibles UniqueCollectible[]
 }
 
 enum Role {
@@ -148,12 +150,14 @@ model UserComic {
 }
 
 model Genre {
-  name     String  @unique
-  slug     String  @id
-  icon     String  @default("")
-  priority Int // should this be @unique?
-  color    String
-  comics   Comic[]
+  name              String              @unique
+  slug              String              @id
+  icon              String              @default("")
+  priority          Int // should this be @unique?
+  color             String
+  comics            Comic[]
+  masterEditions    MasterEdition[]
+  uniqueCollections UniqueCollectible[]
 }
 
 model RoyaltyWallet {
@@ -375,13 +379,14 @@ model CandyMachineReceipt {
 }
 
 model Collection {
-  address       String         @id
-  name          String
-  comicIssue    ComicIssue     @relation(fields: [comicIssueId], references: [id])
-  comicIssueId  Int            @unique
-  candyMachines CandyMachine[]
-  darkblockId   String?
-  metadatas     Metadata[]
+  address           String              @id
+  name              String
+  comicIssue        ComicIssue          @relation(fields: [comicIssueId], references: [id])
+  comicIssueId      Int                 @unique
+  candyMachines     CandyMachine[]
+  darkblockId       String?
+  metadatas         Metadata[]
+  uniqueCollectible UniqueCollectible[]
 }
 
 model ComicPage {
@@ -468,9 +473,11 @@ model Metadata {
 }
 
 model Listing {
-  id                       Int          @id @default(autoincrement())
-  assetAddress             String
-  asset                    DigitalAsset @relation(fields: [assetAddress], references: [address])
+  id                       Int                @id @default(autoincrement())
+  address                  String
+  asset                    DigitalAsset?      @relation(fields: [address], references: [address], map: "fk_listing_asset")
+  edition                  Edition?           @relation(fields: [address], references: [address], map: "fk_listing_edition")
+  uniqueCollectible        UniqueCollectible? @relation(fields: [address], references: [address], map: "fk_listing_unique_collectible")
   price                    BigInt
   feePayer                 String
   signature                String
@@ -480,8 +487,9 @@ model Listing {
   soldAt                   DateTime?
   saleTransactionSignature String?
   source                   String?
+  type                     AssetType
 
-  @@unique([assetAddress, canceledAt])
+  @@unique([address, canceledAt])
 }
 
 model SplToken {
@@ -574,4 +582,79 @@ model DraftComicIssueSalesData {
   royaltyAddress    String
   note              String    @default("")
   verifiedAt        DateTime?
+}
+
+enum AssetType {
+  MasterEdition
+  Edition
+  UniqueCollectible
+  DigitalAsset
+}
+
+model AuctionHouse {
+  address              String  @id
+  treasuryMint         String
+  sellerFeeBasisPoints Int     @default(0)
+  requiresSignOff      Boolean
+  canChangeSalePrice   Boolean
+}
+
+model MasterEdition {
+  address              String    @id
+  name                 String
+  description          String
+  supply               Int?
+  authority            String
+  image                String
+  sellerFeeBasisPoints Int       @default(0)
+  editions             Edition[]
+  tags                 Tag[]
+  genres               Genre[]
+  traits               Trait[]
+  isNSFW               Boolean
+}
+
+model Tag {
+  id                Int                @id
+  value             String             @unique
+  address           String
+  masterEdition     MasterEdition?     @relation(fields: [address], references: [address], map: "fk_tag_master_edition")
+  uniqueCollectible UniqueCollectible? @relation(fields: [address], references: [address], map: "fk_tag_unique_collectible")
+  type              AssetType
+}
+
+model Edition {
+  address              String        @id
+  masterEditionAddress String
+  masterEdition        MasterEdition @relation(fields: [masterEditionAddress], references: [address])
+  number               Int
+  ownerAddress         String
+  owner                Wallet        @relation(fields: [ownerAddress], references: [address])
+  listing              Listing[]
+}
+
+model UniqueCollectible {
+  address              String     @id
+  name                 String
+  description          String
+  image                String
+  genres               Genre[]
+  collectionAddress    String
+  ownerAddress         String
+  owner                Wallet     @relation(fields: [ownerAddress], references: [address])
+  sellerFeeBasisPoints Int        @default(0)
+  collection           Collection @relation(fields: [collectionAddress], references: [address])
+  tags                 Tag[]
+  traits               Trait[]
+  listing              Listing[]
+}
+
+model Trait {
+  id                       Int                @id @default(autoincrement())
+  name                     String
+  value                    String
+  masterEditionAddress     String?
+  uniqueCollectibleAddress String?
+  masterEditions           MasterEdition?     @relation(fields: [masterEditionAddress], references: [address])
+  uniqueCollections        UniqueCollectible? @relation(fields: [uniqueCollectibleAddress], references: [address])
 }
