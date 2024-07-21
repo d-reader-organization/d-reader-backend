@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
-import { ActionSpecGetResponse } from './dto/types';
+import { ActionSpecGetResponse, LinkedAction } from './dto/types';
 import { s3Service } from '../aws/s3.service';
 import {
   Comic,
@@ -100,21 +100,21 @@ export class BlinkService {
 
     const { metadata } = asset;
 
+    let actions: LinkedAction[];
     if (metadata.isSigned) {
-      throw new BadRequestException('Comic is already signed !');
+      actions = [{ label: `${asset.name} is already Signed 🎉`, href: '' }];
+    } else {
+      const actionEndpoint = `${process.env.API_URL}/transaction/blink/comic-sign/${address}`;
+      actions = [{ label: `Sign ${asset.name} ✍️`, href: actionEndpoint }];
     }
 
-    const actionEndpoint = `${process.env.API_URL}/transaction/blink/comic-sign/${address}`;
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-
     return {
       icon: offChainMetadata.image,
       title: `${asset.name}`,
       description: 'Get signature from the comic creator',
       label: 'Sign ✍️',
-      links: {
-        actions: [{ label: `Sign ${asset.name} ✍️`, href: actionEndpoint }],
-      },
+      links: { actions },
     };
   }
 
