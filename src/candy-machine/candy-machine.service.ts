@@ -52,7 +52,7 @@ import {
   solFromLamports,
 } from '../utils/helpers';
 import {
-  MetdataFile,
+  MetadataFile,
   getThirdPartySigner,
   metaplex,
   umi,
@@ -213,7 +213,7 @@ export class CandyMachineService {
     const coverImage = await s3toMxFile(cover.image);
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionAddress: PublicKey;
-    const collectionAsset = await this.prisma.collection.findUnique({
+    const collectionAsset = await this.prisma.comicCollection.findUnique({
       where: {
         comicIssueId,
         candyMachines: { some: { standard: tokenStandard } },
@@ -226,7 +226,7 @@ export class CandyMachineService {
       collectionAddress = new PublicKey(collectionAsset.address);
       darkblockId = collectionAsset.darkblockId ?? '';
     } else {
-      let darkblockMetadataFile: MetdataFile;
+      let darkblockMetadataFile: MetadataFile;
       if (pdf) {
         darkblockId = await this.darkblockService.mintDarkblock(
           pdf,
@@ -297,7 +297,7 @@ export class CandyMachineService {
         collectionAddress = newCollectionNft.address;
       }
 
-      await this.prisma.collection.create({
+      await this.prisma.comicCollection.create({
         data: {
           address: collectionAddress.toBase58(),
           name: onChainName,

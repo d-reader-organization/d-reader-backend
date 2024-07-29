@@ -20,7 +20,7 @@ import {
 import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 
-export type MetdataFile = {
+export type MetadataFile = {
   type?: string;
   uri?: MetaplexFile | string;
   [key: string]: unknown;
@@ -118,7 +118,7 @@ export function initUmi(customEndpoint?: string) {
 
 export const umi = initUmi();
 
-export function writeFiles(...files: MetaplexFile[]): MetdataFile[] {
+export function writeFiles(...files: MetaplexFile[]): MetadataFile[] {
   return files.map((file) => ({
     uri: file,
     type: file.contentType,

@@ -217,8 +217,8 @@ export class HeliusService {
       if (asset.listing && asset.listing.length > 0) {
         await this.prisma.listing.update({
           where: {
-            assetAddress_canceledAt: {
-              assetAddress: address,
+            address_canceledAt: {
+              address: address,
               canceledAt: new Date(0),
             },
           },
@@ -455,7 +455,7 @@ export class HeliusService {
           metadata: { include: { collection: true } },
           listing: {
             where: {
-              assetAddress: mint,
+              address: mint,
               canceledAt: new Date(transaction.timestamp * 1000),
             },
           },
@@ -475,8 +475,8 @@ export class HeliusService {
           listing: {
             update: {
               where: {
-                assetAddress_canceledAt: {
-                  assetAddress: mint,
+                address_canceledAt: {
+                  address: mint,
                   canceledAt: new Date(0),
                 },
               },
@@ -507,15 +507,15 @@ export class HeliusService {
       where: { address: mint },
       include: {
         metadata: { include: { collection: true } },
-        listing: { where: { assetAddress: mint, canceledAt: new Date(0) } },
+        listing: { where: { address: mint, canceledAt: new Date(0) } },
         owner: { include: { user: true } },
       },
       data: {
         listing: {
           upsert: {
             where: {
-              assetAddress_canceledAt: {
-                assetAddress: mint,
+              address_canceledAt: {
+                address: mint,
                 canceledAt: new Date(0),
               },
             },
@@ -619,7 +619,7 @@ export class HeliusService {
           metadata: { include: { collection: true } },
           listing: {
             where: {
-              assetAddress,
+              address: assetAddress,
               canceledAt: new Date(transaction.timestamp * 1000),
             },
           },
@@ -639,8 +639,8 @@ export class HeliusService {
           listing: {
             update: {
               where: {
-                assetAddress_canceledAt: {
-                  assetAddress,
+                address_canceledAt: {
+                  address: assetAddress,
                   canceledAt: new Date(0),
                 },
               },
@@ -678,8 +678,8 @@ export class HeliusService {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
       const listing = await this.prisma.listing.update({
         where: {
-          assetAddress_canceledAt: {
-            assetAddress: mint,
+          address_canceledAt: {
+            address: mint,
             canceledAt: new Date(0),
           },
         },
@@ -720,15 +720,15 @@ export class HeliusService {
         where: { address: mint },
         include: {
           metadata: { include: { collection: true } },
-          listing: { where: { assetAddress: mint, canceledAt: new Date(0) } },
+          listing: { where: { address: mint, canceledAt: new Date(0) } },
           owner: { include: { user: true } },
         },
         data: {
           listing: {
             upsert: {
               where: {
-                assetAddress_canceledAt: {
-                  assetAddress: mint,
+                address_canceledAt: {
+                  address: mint,
                   canceledAt: new Date(0),
                 },
               },
@@ -805,8 +805,8 @@ export class HeliusService {
       if (nft.listing && nft.listing.length > 0) {
         await this.prisma.listing.update({
           where: {
-            assetAddress_canceledAt: {
-              assetAddress: address,
+            address_canceledAt: {
+              address,
               canceledAt: new Date(0),
             },
           },
