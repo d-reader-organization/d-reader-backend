@@ -21,6 +21,7 @@ import {
   AudienceType,
   StatelessCover,
   Genre,
+  Collection,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -196,6 +197,7 @@ export class ComicIssueService {
         ComicIssue & {
           genres: Genre[];
           statelesscovers: StatelessCover[];
+          collection: Collection;
         } & RawComicIssueStats
       >
     >(getRawComicIssuesQuery(query));
@@ -308,6 +310,7 @@ export class ComicIssueService {
         statelessCovers: true,
         statefulCovers: true,
         royaltyWallets: true,
+        collection: true,
       },
     });
     const getStats = this.userComicIssueService.getComicIssueStats(id);

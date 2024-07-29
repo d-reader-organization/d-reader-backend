@@ -22,6 +22,7 @@ import {
   RoyaltyWallet,
   Comic,
   Creator,
+  Collection,
 } from '@prisma/client';
 import {
   ComicIssueCollaboratorDto,
@@ -87,6 +88,9 @@ export class RawComicIssueDto {
 
   @IsBoolean()
   isFreeToRead: boolean;
+
+  @IsBoolean()
+  isCollectible: boolean;
 
   @IsBoolean()
   isFullyUploaded: boolean;
@@ -157,6 +161,7 @@ type WithStatelessCovers = { statelessCovers: StatelessCover[] };
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
 type WithRoyaltyWallets = { royaltyWallets?: RoyaltyWallet[] };
+type WithCollection = { collection?: Collection };
 
 export type RawComicIssueInput = With<
   [
@@ -168,6 +173,7 @@ export type RawComicIssueInput = With<
     WithCollaborators,
     WithStatefulCovers,
     WithRoyaltyWallets,
+    WithCollection,
   ]
 >;
 
@@ -180,6 +186,7 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     comicSlug: issue.comicSlug,
     number: issue.number,
     sellerFeeBasisPoints: issue.sellerFeeBasisPoints,
+    isCollectible: !!issue.collection,
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
