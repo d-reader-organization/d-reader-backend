@@ -94,7 +94,11 @@ export const getRawComicIssuesQuery = (
       SELECT COUNT(*) as totalPagesCount
       FROM "ComicPage" comicPage
       where comicPage."comicIssueId" = comicIssue."id"
-    ) AS "totalPagesCount"    
+    ) AS "totalPagesCount",
+    (
+      SELECT collection.address FROM "Collection" collection 
+      WHERE collection."comicIssueId" = comicIssue.id
+    ) as collection    
   from "ComicIssue" comicIssue
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
