@@ -48,7 +48,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
     let page = 1;
     let data = await getAssetsByGroup(options.collection, page, limit);
 
-    const syncedAssets = await this.prisma.digitalAsset.findMany({
+    const syncedAssets = await this.prisma.collectibeComic.findMany({
       where: { metadata: { collectionAddress: options.collection } },
     });
     let syncedItems = 0;

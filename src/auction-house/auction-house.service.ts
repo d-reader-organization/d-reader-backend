@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PublicKey } from '@solana/web3.js';
-import { Listing, Metaplex } from '@metaplex-foundation/js';
+import { Listing, Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import {
   constructCancelBidTransaction,
   constructCancelListingTransaction,
@@ -36,7 +36,7 @@ import {
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
 import { base64 } from '@metaplex-foundation/umi/serializers';
-import { TokenStandard } from '@prisma/client';
+import { AssetType, TokenStandard } from '@prisma/client';
 import { fetchTensorBuyTx, findOurCandyMachine, getAsset } from '../utils/das';
 import { HeliusService } from '../webhooks/helius/helius.service';
 
@@ -493,6 +493,10 @@ export class AuctionHouseService {
           feePayer: listing.tx.sellerId,
           createdAt: new Date(),
           signature: listing.tx.txId,
+          // TODO: Change this to be used from transaction details
+          splToken: WRAPPED_SOL_MINT.toString(),
+          // TODO: Change this to be used from transaction details
+          type: AssetType.CollectibleComic,
           source:
             listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
               ? Source.TENSOR

@@ -81,7 +81,7 @@ export class TransactionService {
       candyMachine,
       metadata,
       owner: user,
-    } = await this.prisma.digitalAsset.findUnique({
+    } = await this.prisma.collectibeComic.findUnique({
       where: { address: mint.toString() },
       include: {
         metadata: {
@@ -158,7 +158,7 @@ export class TransactionService {
         );
 
         decodedTransaction.sign([this.metaplex.identity()]);
-        await this.prisma.digitalAsset.update({
+        await this.prisma.collectibeComic.update({
           where: { address: mint.toString() },
           data: {
             uri: itemMetadata.uri,
@@ -193,7 +193,7 @@ export class TransactionService {
     newCreator: PublicKey,
     creatorAuthority: PublicKey,
   ) {
-    const collection = await this.prisma.collection.findFirst({
+    const collection = await this.prisma.collectibleComicCollection.findFirst({
       where: {
         candyMachines: { some: { address: candyMachineAddress.toString() } },
       },

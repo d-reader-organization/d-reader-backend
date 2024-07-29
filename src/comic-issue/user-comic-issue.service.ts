@@ -158,15 +158,16 @@ export class UserComicIssueService {
       const isCollectionLocked = LOCKED_COLLECTIONS.has(collection.address);
 
       // find all NFTs that token gate the comic issue and are owned by the wallet
-      const ownedUsedComicIssueNfts = await this.prisma.digitalAsset.findMany({
-        where: {
-          metadata: {
-            collectionAddress: collection.address,
-            isUsed: isCollectionLocked ? undefined : true,
-          }, // only take into account "unwrapped" comics
-          owner: { userId },
-        },
-      });
+      const ownedUsedComicIssueNfts =
+        await this.prisma.collectibeComic.findMany({
+          where: {
+            metadata: {
+              collectionAddress: collection.address,
+              isUsed: isCollectionLocked ? undefined : true,
+            }, // only take into account "unwrapped" comics
+            owner: { userId },
+          },
+        });
 
       if (ownedUsedComicIssueNfts.length > 0) {
         return true;

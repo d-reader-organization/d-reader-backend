@@ -28,7 +28,7 @@ import {
   Wallet,
   ComicRarity,
   User,
-  DigitalAsset,
+  CollectibeComic,
 } from '@prisma/client';
 import { SellerDto, toSellerDto } from './types/seller.dto';
 import { ApiProperty } from '@nestjs/swagger';
@@ -123,7 +123,7 @@ export class CreatorsDto {
 }
 
 export type ListingInput = Listing & {
-  asset: DigitalAsset & { owner: Wallet & { user?: User } };
+  asset: CollectibeComic & { owner: Wallet & { user?: User } };
 };
 
 export async function toListingDto(listing: ListingInput) {

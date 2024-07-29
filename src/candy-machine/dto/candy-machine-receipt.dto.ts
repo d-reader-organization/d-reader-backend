@@ -2,7 +2,7 @@ import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import {
   CandyMachineReceipt,
-  DigitalAsset,
+  CollectibeComic,
   User,
   Wallet,
 } from '@prisma/client';
@@ -37,7 +37,7 @@ export class CandyMachineReceiptDto {
 }
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
-  asset: DigitalAsset;
+  asset: CollectibeComic;
   buyer: Wallet & { user: User };
 };
 

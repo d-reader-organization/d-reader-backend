@@ -16,6 +16,7 @@ import {
   Metadata,
   Metaplex,
   Nft,
+  WRAPPED_SOL_MINT,
   isNft,
   toMetadata,
   toMetadataAccount,
@@ -49,7 +50,7 @@ import {
 } from '../../constants';
 import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
-import { Prisma } from '@prisma/client';
+import { AssetType, Prisma } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import {
   AssetV1,
@@ -138,6 +139,7 @@ export class HeliusService {
   }
 
   handleWebhookEvent(enrichedTransactions: EnrichedTransaction[]) {
+    console.log(enrichedTransactions);
     return Promise.all(
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
@@ -195,7 +197,7 @@ export class HeliusService {
       const ownerAddress = transferInstruction.accounts.at(-3);
       const previousOwner = transferInstruction.accounts.at(-4);
 
-      const asset = await this.prisma.digitalAsset.update({
+      const asset = await this.prisma.collectibeComic.update({
         where: { address },
         include: { listing: { where: { canceledAt: new Date(0) } } },
         data: {
@@ -271,7 +273,7 @@ export class HeliusService {
       if (uri) {
         const offChainMetadata = await fetchOffChainMetadata(uri);
         const assetData = await fetchAssetV1(this.umi, publicKey(mint));
-        const asset = await this.prisma.digitalAsset.update({
+        const asset = await this.prisma.collectibeComic.update({
           where: { address: mint },
           data: {
             metadata: {
@@ -449,7 +451,7 @@ export class HeliusService {
   ) {
     const mint = assetInfo.onchainId;
     try {
-      const asset = await this.prisma.digitalAsset.update({
+      const asset = await this.prisma.collectibeComic.update({
         where: { address: mint },
         include: {
           metadata: { include: { collection: true } },
@@ -503,7 +505,7 @@ export class HeliusService {
   private async handleCoreListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
-    const asset = await this.prisma.digitalAsset.update({
+    const asset = await this.prisma.collectibeComic.update({
       where: { address: mint },
       include: {
         metadata: { include: { collection: true } },
@@ -534,6 +536,9 @@ export class HeliusService {
               signature: listing.txId,
               createdAt: new Date(),
               canceledAt: new Date(0),
+              type: AssetType.CollectibleComic,
+              // TODO: Change it to be dynamic
+              splToken: WRAPPED_SOL_MINT.toString(),
               source:
                 listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
             },
@@ -573,7 +578,7 @@ export class HeliusService {
         const mint = metadata.mintAddress.toString();
         const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-        const asset = await this.prisma.digitalAsset.update({
+        const asset = await this.prisma.collectibeComic.update({
           where: { address: mint },
           data: {
             metadata: {
@@ -613,7 +618,7 @@ export class HeliusService {
         throw new Error('Sale transaction failed to finalize');
       }
       const assetAddress = transaction.events.nft.nfts[0].mint;
-      const asset = await this.prisma.digitalAsset.update({
+      const asset = await this.prisma.collectibeComic.update({
         where: { address: assetAddress },
         include: {
           metadata: { include: { collection: true } },
@@ -716,7 +721,7 @@ export class HeliusService {
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
-      const asset = await this.prisma.digitalAsset.update({
+      const asset = await this.prisma.collectibeComic.update({
         where: { address: mint },
         include: {
           metadata: { include: { collection: true } },
@@ -745,8 +750,11 @@ export class HeliusService {
                 feePayer,
                 signature,
                 createdAt,
+                // TODO: Take the spl token from transaction
+                splToken: WRAPPED_SOL_MINT.toString(),
                 canceledAt: new Date(0),
                 source: transaction.source,
+                type: AssetType.CollectibleComic,
               },
             },
           },
@@ -783,7 +791,7 @@ export class HeliusService {
           'confirmed',
         );
 
-      const nft = await this.prisma.digitalAsset.update({
+      const nft = await this.prisma.collectibeComic.update({
         where: { address },
         include: { listing: { where: { canceledAt: new Date(0) } } },
         data: {
@@ -933,9 +941,11 @@ export class HeliusService {
       const nftTransactionInfo = enrichedTransaction.events.nft;
       const collectionNftAddress =
         enrichedTransaction.instructions[3].accounts[13];
-      const collection = await this.prisma.collection.findFirst({
-        where: { address: collectionNftAddress },
-      });
+      const collection = await this.prisma.collectibleComicCollection.findFirst(
+        {
+          where: { address: collectionNftAddress },
+        },
+      );
       this.websocketGateway.handleAssetMintRejected(collection.comicIssueId);
       this.websocketGateway.handleWalletAssetMintRejected(
         nftTransactionInfo.buyer,
@@ -959,7 +969,7 @@ export class HeliusService {
   }) {
     return (
       collection.verified &&
-      !!(await this.prisma.collection.findFirst({
+      !!(await this.prisma.collectibleComicCollection.findFirst({
         where: { address: collection.address.toString() },
       }))
     );
@@ -1004,7 +1014,7 @@ export class HeliusService {
       }
     }
 
-    const digitalAsset = await this.prisma.digitalAsset.upsert({
+    const digitalAsset = await this.prisma.collectibeComic.upsert({
       where: { address: mintAddress.toString() },
       include: { owner: { select: { userId: true } } },
       update: {
@@ -1067,7 +1077,7 @@ export class HeliusService {
     walletAddress: string,
     candMachineAddress: string,
   ) {
-    const digitalAsset = await this.prisma.digitalAsset.create({
+    const digitalAsset = await this.prisma.collectibeComic.create({
       include: {
         metadata: {
           include: { collection: { select: { comicIssueId: true } } },
@@ -1140,7 +1150,7 @@ export class HeliusService {
       console.error(e);
     }
 
-    const asset = await this.prisma.digitalAsset.create({
+    const asset = await this.prisma.collectibeComic.create({
       include: {
         metadata: {
           include: { collection: { select: { comicIssueId: true } } },

@@ -4,9 +4,11 @@ import {
   DigitalAssetController,
   NftController,
 } from './digital-asset.controller';
+import { HeliusService } from '../webhooks/helius/helius.service';
+import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   controllers: [NftController, DigitalAssetController],
-  providers: [DigitalAssetService],
+  providers: [DigitalAssetService, HeliusService, NonceService],
 })
 export class DigitalAssetModule {}

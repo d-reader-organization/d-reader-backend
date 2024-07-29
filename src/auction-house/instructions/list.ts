@@ -27,7 +27,7 @@ import {
 } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import { solFromLamports } from '../../utils/helpers';
-import { Listing, DigitalAsset } from '@prisma/client';
+import { Listing, CollectibeComic } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
 import {
   AUTH_RULES,
@@ -381,7 +381,7 @@ export async function constructCancelListingTransaction(
 export async function toListing(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
-  listing: Listing & { asset: DigitalAsset },
+  listing: Listing & { asset: CollectibeComic },
 ): Promise<PartialListing> {
   const address = new PublicKey(listing.assetAddress);
   const sellerAddress = new PublicKey(listing.asset.ownerAddress);
