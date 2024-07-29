@@ -38,9 +38,10 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
 
   async fetchCollectionSaleDetails(options: Options) {
     const { collection, parentCollection } = options;
-    const collectionData = await this.prisma.collection.findFirst({
-      where: { address: collection },
-    });
+    const collectionData =
+      await this.prisma.collectibleComicCollection.findFirst({
+        where: { address: collection },
+      });
 
     const groups = await this.prisma.candyMachineGroup.findMany({
       where: {
@@ -51,7 +52,7 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: { collectionAddress: collection },
     });
-    const items = await this.prisma.digitalAsset.findMany({
+    const items = await this.prisma.collectibeComic.findMany({
       where: { candyMachineAddress: candyMachine.address },
       include: { metadata: true },
     });

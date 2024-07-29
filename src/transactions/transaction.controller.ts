@@ -6,6 +6,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { MintParams } from '../candy-machine/dto/mint-params.dto';
@@ -25,7 +26,7 @@ import {
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PUBLIC_GROUP_LABEL } from '../constants';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
@@ -36,6 +37,14 @@ import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { ActionPayloadDto } from 'src/blink/dto/action-payload.dto';
 import { toActionResponseDto } from 'src/blink/dto/action-response.dto';
 import { BlinkService } from 'src/blink/blink.service';
+import { DigitalAssetService } from 'src/digital-asset/digital-asset.service';
+import {
+  CreatePrintEditionCollectionBodyDto,
+  CreatePrintEditionCollectionDto,
+} from 'src/digital-asset/dto/create-edition.dto';
+import { BaseMetadataFilesDto } from 'src/digital-asset/dto/base-metadata.dto';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ApiFileWithBody } from 'src/decorators/api-file-body.decorator';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -46,6 +55,7 @@ export class TransactionController {
     private readonly blinkService: BlinkService,
     private readonly auctionHouseService: AuctionHouseService,
     private readonly transactionService: TransactionService,
+    private readonly digitalAssetService: DigitalAssetService,
   ) {}
 
   /** @deprecated */
@@ -258,6 +268,22 @@ export class TransactionController {
     return await this.auctionHouseService.createCancelListingTransaction(
       receiptAddress,
       assetAddress,
+    );
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('/edition/mint-collection')
+  async createPrintEditionCollectionTransaction(
+    @ApiFileWithBody({
+      fileField: 'image',
+      fileType: BaseMetadataFilesDto,
+      bodyType: CreatePrintEditionCollectionBodyDto,
+    })
+    createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
+  ) {
+    return await this.digitalAssetService.createPrintEditionCollectionTransaction(
+      createPrintEditionCollectionDto,
     );
   }
 }

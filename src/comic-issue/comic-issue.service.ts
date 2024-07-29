@@ -112,7 +112,7 @@ export class ComicIssueService {
           creatorBackupAddress,
           comic: { connect: { slug: comicSlug } },
           collaborators: { createMany: { data: collaborators } },
-          royaltyWallets: { createMany: { data: royaltyWallets } },
+          // royaltyWallets: { createMany: { data: royaltyWallets } },
         },
       });
 
@@ -312,8 +312,6 @@ export class ComicIssueService {
         collaborators: true,
         statelessCovers: true,
         statefulCovers: true,
-        royaltyWallets: true,
-        collection: true,
       },
     });
     const getStats = this.userComicIssueService.getComicIssueStats(id);
@@ -350,7 +348,7 @@ export class ComicIssueService {
     return await Promise.all(
       ownedComicIssues.map(async (comicIssue) => {
         const collectionAddress = comicIssue.collection.address;
-        const ownedCopiesCount = await this.prisma.digitalAsset.count({
+        const ownedCopiesCount = await this.prisma.collectibeComic.count({
           where: { metadata: { collectionAddress }, owner: { userId } },
         });
 
@@ -417,21 +415,21 @@ export class ComicIssueService {
       ]);
     }
 
-    if (areRoyaltyWalletsUpdated) {
-      const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
-        where: { comicIssueId: id },
-      });
+    // if (areRoyaltyWalletsUpdated) {
+    //   const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
+    //     where: { comicIssueId: id },
+    //   });
 
-      const updateRoyaltyWallets = this.prisma.comicIssue.update({
-        where: { id },
-        data: { royaltyWallets: { createMany: { data: royaltyWallets } } },
-      });
+    //   const updateRoyaltyWallets = this.prisma.comicIssue.update({
+    //     where: { id },
+    //     data: { royaltyWallets: { createMany: { data: royaltyWallets } } },
+    //   });
 
-      await this.prisma.$transaction([
-        deleteRoyaltyWallets,
-        updateRoyaltyWallets,
-      ]);
-    }
+    //   await this.prisma.$transaction([
+    //     deleteRoyaltyWallets,
+    //     updateRoyaltyWallets,
+    //   ]);
+    // }
 
     try {
       const updatedComicIssue = await this.prisma.comicIssue.update({
@@ -579,7 +577,7 @@ export class ComicIssueService {
   }
 
   async throwIfComicIsPublishedOnChain(comicIssueId: number) {
-    const collection = await this.prisma.collection.findFirst({
+    const collection = await this.prisma.collectibleComicCollection.findFirst({
       where: { comicIssueId },
     });
 
@@ -660,17 +658,17 @@ export class ComicIssueService {
       ...updatePayload
     } = publishOnChainDto;
 
-    const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
-      where: { comicIssueId: id },
-    });
+    // const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
+    //   where: { comicIssueId: id },
+    // });
 
     let creatorBackupAddress: string;
 
-    const updateComicIssue = this.prisma.comicIssue.update({
+    const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       data: {
         publishedAt: new Date(),
-        royaltyWallets: { createMany: { data: royaltyWallets } },
+        // royaltyWallets: { createMany: { data: royaltyWallets } },
         creatorBackupAddress,
         ...updatePayload,
       },
@@ -679,14 +677,17 @@ export class ComicIssueService {
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
-        royaltyWallets: true,
+        collection: {
+          include: { royaltyWallets: true },
+        },
+        // royaltyWallets: true,
       },
     });
 
-    const [, updatedComicIssue] = await this.prisma.$transaction([
-      deleteRoyaltyWallets,
-      updateComicIssue,
-    ]);
+    // const [, updatedComicIssue] = await this.prisma.$transaction([
+    //   deleteRoyaltyWallets,
+    //   updateComicIssue,
+    // ]);
 
     const guardParams: GuardParams = {
       startDate,
@@ -702,7 +703,10 @@ export class ComicIssueService {
     };
     try {
       await this.candyMachineService.createComicIssueCM({
-        comicIssue: updatedComicIssue,
+        comicIssue: {
+          ...updatedComicIssue,
+          royaltyWallets: updatedComicIssue.collection.royaltyWallets,
+        },
         comicName: updatedComicIssue.comic.title,
         onChainName,
         guardParams,

@@ -19,8 +19,9 @@ import {
 } from '@metaplex-foundation/umi';
 import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
+import { irysUploader } from '@metaplex-foundation/umi-uploader-irys';
 
-export type MetdataFile = {
+export type MetadataFile = {
   type?: string;
   uri?: MetaplexFile | string;
   [key: string]: unknown;
@@ -111,6 +112,7 @@ export function initUmi(customEndpoint?: string) {
     .use(mplTokenMetadata())
     .use(mplCore())
     .use(mplCandyMachine())
+    .use(irysUploader())
     .use(umiKeypairIdentity(fromWeb3JsKeypair(treasuryKeypair)));
 
   return umi;
@@ -118,7 +120,7 @@ export function initUmi(customEndpoint?: string) {
 
 export const umi = initUmi();
 
-export function writeFiles(...files: MetaplexFile[]): MetdataFile[] {
+export function writeFiles(...files: MetaplexFile[]): MetadataFile[] {
   return files.map((file) => ({
     uri: file,
     type: file.contentType,

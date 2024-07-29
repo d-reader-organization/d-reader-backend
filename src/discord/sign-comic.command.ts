@@ -46,8 +46,8 @@ import {
 import { validateSignComicCommandParams } from '../utils/discord';
 import { getPublicUrl } from 'src/aws/s3client';
 import {
-  Collection,
-  DigitalAsset,
+  CollectibleComicCollection,
+  CollectibeComic,
   StatefulCover,
   ComicRarity as PrismaComicRarity,
   Metadata as PrismaMetadata,
@@ -195,8 +195,8 @@ export class GetSignCommand {
       lastValidBlockHeight: number;
     }>;
     let cover: StatefulCover;
-    let asset: DigitalAsset & {
-      metadata: PrismaMetadata & { collection: Collection };
+    let asset: CollectibeComic & {
+      metadata: PrismaMetadata & { collection: CollectibleComicCollection };
     };
     let rarity: PrismaComicRarity;
     try {
@@ -227,7 +227,7 @@ export class GetSignCommand {
         return;
       }
 
-      asset = await this.prisma.digitalAsset.findUnique({
+      asset = await this.prisma.collectibeComic.findUnique({
         where: { address: address },
         include: { metadata: { include: { collection: true } } },
       });
@@ -289,7 +289,7 @@ export class GetSignCommand {
             },
           },
         });
-        await this.prisma.digitalAsset.update({
+        await this.prisma.collectibeComic.update({
           where: { address: asset.address },
           data: {
             metadata: { connect: { uri: signedMetadata.uri } },

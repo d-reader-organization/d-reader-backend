@@ -48,7 +48,7 @@ export class WalletService {
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
-    const compeleteAssets = await this.prisma.digitalAsset
+    const compeleteAssets = await this.prisma.collectibeComic
       .findMany({
         where: { ownerAddress: address },
       })
@@ -86,7 +86,7 @@ export class WalletService {
     for await (const nftAddress of nftsWithNewOwner) {
       const asset = await getAsset(nftAddress);
       const newOwner = asset.ownership.owner;
-      await this.prisma.digitalAsset.update({
+      await this.prisma.collectibeComic.update({
         where: { address: nftAddress },
         data: {
           owner: {
@@ -101,7 +101,9 @@ export class WalletService {
   }
 
   async syncCoreAssets(coreAssets: DAS.GetAssetResponse[]) {
-    const collections = await this.prisma.collection.findMany({});
+    const collections = await this.prisma.collectibleComicCollection.findMany(
+      {},
+    );
     const assets = coreAssets.filter((asset) => {
       const group = asset.grouping.find(
         (group) => group?.group_key == 'collection',
@@ -314,7 +316,7 @@ export class WalletService {
   }
 
   async getAssets(address: string) {
-    const nfts = await this.prisma.digitalAsset.findMany({
+    const nfts = await this.prisma.collectibeComic.findMany({
       where: { ownerAddress: address },
       orderBy: { name: 'asc' },
     });

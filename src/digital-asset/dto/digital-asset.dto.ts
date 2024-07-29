@@ -15,7 +15,12 @@ import {
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
-import { DigitalAsset, Listing, ComicRarity, Collection } from '@prisma/client';
+import {
+  CollectibeComic,
+  Listing,
+  ComicRarity,
+  CollectibleComicCollection,
+} from '@prisma/client';
 import { divide, isNil } from 'lodash';
 
 export class NftAttributeDto {
@@ -73,8 +78,8 @@ export class AssetDto {
   isListed: boolean;
 }
 
-type AssetInput = DigitalAsset & {
-  metadata?: { collection?: Collection };
+type AssetInput = CollectibeComic & {
+  metadata?: { collection?: CollectibleComicCollection };
   listing?: Listing[];
 };
 
@@ -112,6 +117,6 @@ export async function toAssetDto(asset: AssetInput) {
   return assetDto;
 }
 
-export const toAssetDtoArray = (assets: DigitalAsset[]) => {
+export const toAssetDtoArray = (assets: CollectibeComic[]) => {
   return Promise.all(assets.map(toAssetDto));
 };

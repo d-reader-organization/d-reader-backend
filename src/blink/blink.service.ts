@@ -87,7 +87,7 @@ export class BlinkService {
   async getComicSignActionSpec(
     address: string,
   ): Promise<ActionSpecGetResponse> {
-    const asset = await this.prisma.digitalAsset.findFirst({
+    const asset = await this.prisma.collectibeComic.findFirst({
       where: { address },
       include: {
         metadata: true,
@@ -119,7 +119,7 @@ export class BlinkService {
   }
 
   async signComicAction(address: PublicKey, creator: PublicKey) {
-    const asset = await this.prisma.digitalAsset.findFirst({
+    const asset = await this.prisma.collectibeComic.findFirst({
       where: { address: address.toString() },
       include: { metadata: true },
     });
