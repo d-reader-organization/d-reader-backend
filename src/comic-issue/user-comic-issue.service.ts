@@ -47,6 +47,10 @@ export class UserComicIssueService {
       where: { comicIssueId },
     });
 
+    const countPreviewPages = this.prisma.comicPage.count({
+      where: { comicIssueId, isPreviewable: true },
+    });
+
     const getPrice = this.getComicIssuePrice(issue);
 
     try {
@@ -58,6 +62,7 @@ export class UserComicIssueService {
         totalIssuesCount,
         price,
         totalPagesCount,
+        previewPagesCount,
       ] = await Promise.all([
         aggregate,
         countFavourites,
@@ -66,6 +71,7 @@ export class UserComicIssueService {
         countIssues,
         getPrice,
         countTotalPages,
+        countPreviewPages,
       ]);
 
       return {
@@ -73,6 +79,7 @@ export class UserComicIssueService {
         readersCount,
         viewersCount,
         totalIssuesCount,
+        previewPagesCount,
         averageRating: aggregations._avg.rating,
         ratersCount: aggregations._count,
         price,

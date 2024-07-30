@@ -26,21 +26,20 @@ export const ApiFileArray = createParamDecorator(
   async (data: RequestDataDto, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const files = request.files;
-
     if (!isArray(files)) throw new Error('Files should be an array');
     if (!request.body[data.bodyField]) {
       throw new Error(`field ${data.bodyField} does not exist`);
     }
 
-    const body = request.body[data.bodyField];
-    const filesArray = await Promise.all(
-      files.map(async (file, i) => {
-        const bodyData = plainToInstance(data.bodyType, body[i]);
-        const fileData = plainToInstance(data.fileType, file);
+    const body: [] = request.body[data.bodyField];
+    const dataArray = await Promise.all(
+      body.map(async (content, i) => {
+        const bodyData = plainToInstance(data.bodyType, content);
+        const fileData = plainToInstance(data.fileType, files[i]);
         // await validateData(bodyData, fileData);
         return { [data.fileField]: fileData, ...bodyData };
       }),
     );
-    return filesArray;
+    return dataArray;
   },
 );
