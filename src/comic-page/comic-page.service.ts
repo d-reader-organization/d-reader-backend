@@ -70,6 +70,20 @@ export class ComicPageService {
       where: { id: comicIssueId },
       include: { pages: true, comic: true },
     });
+    const arePagesAdded = !!pagesDto.at(0).image;
+    if (!arePagesAdded) {
+      const previewComicPages = this.prisma.comicPage.updateMany({
+        where: { comicIssueId, pageNumber: { lte: pagesDto.length } },
+        data: { isPreviewable: true },
+      });
+
+      const hideComicPages = this.prisma.comicPage.updateMany({
+        where: { comicIssueId, pageNumber: { gt: pagesDto.length } },
+        data: { isPreviewable: false },
+      });
+      await this.prisma.$transaction([previewComicPages, hideComicPages]);
+      return;
+    }
     const oldComicPages = comicIssue.pages;
     const areComicPagesUpdated = !!oldComicPages;
 

@@ -213,6 +213,9 @@ export class ComicIssueService {
           readersCount: Number(issue.readersCount),
           viewersCount: Number(issue.viewersCount),
           totalPagesCount: Number(issue.totalPagesCount),
+          previewPagesCount: issue.previewPagesCount
+            ? Number(issue.previewPagesCount)
+            : 0,
         },
       };
     });

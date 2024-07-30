@@ -84,6 +84,11 @@ export const getRawComicIssuesQuery = (
      where uci."comicIssueId" = comicIssue.id and uci."viewedAt"  is not null
         ) uciResult
   ) as "viewersCount",    
+    (
+      SELECT COUNT(*) as previewPagesCount
+      FROM "ComicPage" comicPage 
+      WHERE comicPage."comicIssueId" = comicIssue.id and "isPreviewable"=true
+    ) AS "previewPagesCount",
    (select COUNT(*)
      from (SELECT uci."readAt"
        FROM "UserComicIssue" uci

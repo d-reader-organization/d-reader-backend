@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
-import { IsBoolean, IsPositive } from 'class-validator';
+import { IsBoolean, IsOptional, IsPositive } from 'class-validator';
 import { Transform } from 'class-transformer';
 import {
   TransformStringToBoolean,
@@ -17,9 +17,10 @@ export class CreateComicPageBodyDto {
 }
 
 export class CreateComicPageFilesDto {
+  @IsOptional()
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  image: Express.Multer.File | null;
+  image?: Express.Multer.File | null;
 }
 
 export class CreateComicPageDto extends IntersectionType(

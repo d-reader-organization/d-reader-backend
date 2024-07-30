@@ -26,6 +26,9 @@ export class ComicIssueStatsDto {
   totalIssuesCount: number;
 
   @Min(0)
+  previewPagesCount: number;
+
+  @Min(0)
   readersCount: number;
 
   @Min(0)
@@ -37,6 +40,7 @@ export class ComicIssueStatsDto {
 
 export function toComicIssueStatsDto(stats: Partial<ComicIssueStats>) {
   const plainStatsDto: ComicIssueStatsDto = {
+    previewPagesCount: stats.previewPagesCount,
     favouritesCount: stats.favouritesCount,
     ratersCount: stats.ratersCount,
     averageRating: round(stats.averageRating, 1),
