@@ -11,7 +11,7 @@ import {
   UpdateComicIssueDto,
   UpdateComicIssueFilesDto,
 } from './dto/update-comic-issue.dto';
-import { isNil } from 'lodash';
+import { isEmpty, isNil } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import {
   Prisma,
@@ -779,7 +779,7 @@ export class ComicIssueService {
       comicIssue.comic.s3BucketSlug,
       comicIssue.s3BucketSlug,
     );
-    return await Promise.all(
+    const createManyStatelessCoversData = await Promise.all(
       covers.map(
         async (cover): Promise<Prisma.StatelessCoverCreateManyInput> => {
           // human readable file name
@@ -790,7 +790,7 @@ export class ComicIssueService {
           });
 
           return {
-            image: imageKey,
+            image: cover.image.size ? imageKey : undefined,
             rarity: cover.rarity,
             artist: cover.artist,
             artistTwitterHandle: cover.artistTwitterHandle,
@@ -801,6 +801,8 @@ export class ComicIssueService {
         },
       ),
     );
+
+    return createManyStatelessCoversData;
   }
 
   /** upload many stateful cover images to S3 and format data for INSERT */
@@ -838,7 +840,6 @@ export class ComicIssueService {
     comicIssueId: number,
   ) {
     // Forbid this endpoint if the comic is published on chain?
-
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
       include: {
@@ -847,7 +848,7 @@ export class ComicIssueService {
       },
     });
     const oldStatelessCovers = comicIssue.statelessCovers;
-    const areStatelessCoversUpdated = !!oldStatelessCovers;
+    const areStatelessCoversUpdated = !isEmpty(oldStatelessCovers);
 
     // upload stateless covers to S3 and format data for INSERT
     const newStatelessCoversData = await this.createManyStatelessCoversData(
@@ -855,26 +856,44 @@ export class ComicIssueService {
       comicIssue,
     );
 
-    const oldFileKeys = oldStatelessCovers.map((cover) => cover.image);
-    const newFileKeys = newStatelessCoversData.map((cover) => cover.image);
+    const newCoversWithImage = newStatelessCoversData.filter(
+      (cover) => !!cover.image,
+    );
+    const changedOldCovers = oldStatelessCovers.filter((cover) =>
+      newCoversWithImage.find((newCover) => cover.rarity == newCover.rarity),
+    );
 
+    const oldFileKeys = changedOldCovers.map((cover) => cover.image);
+    const newFileKeys = newCoversWithImage.map((cover) => cover.image);
+
+    // replace image keys for covers whose image is not changed
+    const createNewStatelessCoversData = newStatelessCoversData.map((cover) => {
+      if (cover.image) return cover;
+      const oldStatelessCover = oldStatelessCovers.find(
+        (oldCover) => oldCover.rarity === cover.rarity,
+      );
+      return {
+        ...cover,
+        image: oldStatelessCover.image,
+      };
+    });
     try {
       if (areStatelessCoversUpdated) {
-        const deleteStatelessCovers = this.prisma.statelessCover.deleteMany({
+        const deleteStatefulCovers = this.prisma.statelessCover.deleteMany({
           where: { comicIssueId },
         });
 
         const createStatelessCovers = this.prisma.statelessCover.createMany({
-          data: newStatelessCoversData,
+          data: createNewStatelessCoversData,
         });
 
         await this.prisma.$transaction([
-          deleteStatelessCovers,
+          deleteStatefulCovers,
           createStatelessCovers,
         ]);
       } else {
         await this.prisma.statelessCover.createMany({
-          data: newStatelessCoversData,
+          data: createNewStatelessCoversData,
         });
       }
     } catch (e) {

@@ -22,6 +22,7 @@ async function validateData(bodyData: object, fileData: object) {
   }
 }
 
+/** files and body array will be recieved independently, so make sure body matches the files on each indexed, for body without a file pass a 0 size file buffer and handle that in the service */
 export const ApiFileArray = createParamDecorator(
   async (data: RequestDataDto, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();

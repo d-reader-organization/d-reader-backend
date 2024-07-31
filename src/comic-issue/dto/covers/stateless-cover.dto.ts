@@ -17,6 +17,10 @@ export class StatelessCoverDto {
   artist: string;
 
   @IsOptional()
+  @IsString()
+  artistTwitterHandle?: string;
+
+  @IsOptional()
   @IsEnum(ComicRarity)
   @ApiProperty({ enum: ComicRarity })
   rarity?: ComicRarity;
@@ -36,6 +40,7 @@ export class StatelessCoverDto {
 export function toStatelessCoverDto(cover: StatelessCover) {
   const plainStatelessCoverDto: StatelessCoverDto = {
     artist: cover.artist,
+    artistTwitterHandle: cover.artistTwitterHandle,
     rarity: cover.rarity,
     share: cover.share,
     isDefault: cover.isDefault,
