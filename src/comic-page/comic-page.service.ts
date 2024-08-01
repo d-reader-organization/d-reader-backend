@@ -84,6 +84,15 @@ export class ComicPageService {
       await this.prisma.$transaction([previewComicPages, hideComicPages]);
       return;
     }
+
+    let totalPagesSize = 0;
+    pagesDto.forEach((page) => (totalPagesSize += page.image.size));
+    totalPagesSize = Math.ceil(totalPagesSize / (1024 * 1024));
+
+    if (totalPagesSize > 100) {
+      throw new BadRequestException('Total size of pages exceeded 100 MB');
+    }
+
     const oldComicPages = comicIssue.pages;
     const areComicPagesUpdated = !!oldComicPages;
 

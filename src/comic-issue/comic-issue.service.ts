@@ -485,6 +485,12 @@ export class ComicIssueService {
       );
 
       if (pdf) {
+        const pdfSize = Math.ceil(pdf.size / (1024 * 1024));
+
+        if (pdfSize > 100) {
+          throw new BadRequestException('Pdf size is more than 100 mb');
+        }
+
         pdfKey = await this.s3.uploadFile(pdf, {
           s3Folder,
           fileName: comicIssue.slug,
