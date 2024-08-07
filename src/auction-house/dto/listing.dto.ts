@@ -140,8 +140,8 @@ export async function toListingDto(listing: ListingInput) {
 
   const plainListingDto: ListingDto = {
     id: listing.id,
-    nftAddress: listing.assetAddress,
-    assetAddress: listing.assetAddress,
+    nftAddress: listing.address,
+    assetAddress: listing.address,
     name: listing.asset.name,
     cover: collectionMetadata.image,
     seller,
