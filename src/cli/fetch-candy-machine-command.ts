@@ -1,7 +1,10 @@
 import { PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
-import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
+import {
+  fetchCandyGuard,
+  fetchCandyMachine,
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import { umi } from '../utils/metaplex';
 import { publicKey } from '@metaplex-foundation/umi';
 
@@ -32,8 +35,16 @@ export class FetchCandyMachineCommand extends CommandRunner {
         publicKey(options.candyMachineAddress),
         { commitment: 'confirmed' },
       );
+      const guard = await fetchCandyGuard(umi, candyMachine.mintAuthority);
 
       log('✅ Fetched successfully');
+
+      log(guard);
+      guard.groups.forEach((group) => {
+        log(group.label);
+        log(group.guards);
+        log('-------------------------------');
+      });
       log(candyMachine);
     } catch (e) {
       logErr(
