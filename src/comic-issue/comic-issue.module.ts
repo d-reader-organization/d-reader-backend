@@ -7,6 +7,7 @@ import { UserComicIssueService } from './user-comic-issue.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { NonceService } from '../nonce/nonce.service';
+import { DiscordNotificationService } from 'src/discord/notification.service';
 
 @Module({
   controllers: [ComicIssueController],
@@ -18,6 +19,7 @@ import { NonceService } from '../nonce/nonce.service';
     HeliusService,
     DarkblockService,
     NonceService,
+    DiscordNotificationService,
   ],
 })
 export class ComicIssueModule {}

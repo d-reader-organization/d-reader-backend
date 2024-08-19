@@ -10,6 +10,7 @@ import { BlinkService } from '../blink/blink.service';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
+import { DiscordNotificationService } from 'src/discord/notification.service';
 
 @Module({
   controllers: [TransactionController],
@@ -24,6 +25,7 @@ import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
     ComicIssueService,
     ComicPageService,
     UserComicIssueService,
+    DiscordNotificationService,
   ],
 })
 export class TransactionModule {}

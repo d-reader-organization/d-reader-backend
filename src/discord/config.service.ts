@@ -11,8 +11,13 @@ export class DiscordConfigService implements DiscordOptionsFactory {
     return {
       token: process.env.DISCORD_BOT_TOKEN,
       discordClientOptions: {
-        intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+        intents: [
+          GatewayIntentBits.Guilds,
+          GatewayIntentBits.GuildMessages,
+          GatewayIntentBits.MessageContent,
+        ],
       },
+      webhook: { url: process.env.DISCORD_WEBHOOK_URL },
       registerCommandOptions: [
         {
           forGuild: process.env.DISCORD_GUILD_ID,
