@@ -51,10 +51,8 @@ model Wallet {
   connectedAt        DateTime?
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
-  assets             CollectibeComic[]
-  editions           PrintEdition[]
   candyMachineGroups WalletCandyMachineGroup[]
-  oneOfOne           OneOfOne[]
+  digitalAssets      DigitalAsset[]
 }
 
 enum Role {
@@ -150,58 +148,53 @@ model UserComic {
 }
 
 model Genre {
-  name                    String                   @unique
-  slug                    String                   @id
-  icon                    String                   @default("")
-  priority                Int // should this be @unique?
-  color                   String
-  comics                  Comic[]
-  printEditionCollections PrintEditionCollection[]
-  oneOfOnecollections     OneOfOneCollection[]
-  oneOfOnes               OneOfOne[]
+  name     String  @unique
+  slug     String  @id
+  icon     String  @default("")
+  priority Int // should this be @unique?
+  color    String
+  comics   Comic[]
 }
 
 model RoyaltyWallet {
-  id                         Int                         @id @default(autoincrement())
-  address                    String
-  share                      Int
-  collectibleComicCollection CollectibleComicCollection? @relation(fields: [assetAddress], references: [address], onDelete: Cascade, map: "fk_trait_collectible_comic_collection")
-  printEditionCollection     PrintEditionCollection?     @relation(fields: [assetAddress], references: [address], onDelete: Cascade, map: "fk_trait_print_edition")
-  assetAddress               String
+  address        String
+  share          Int
+  digitalAssetId Int
+  digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 
-  @@unique([address, assetAddress])
+  @@unique([digitalAssetId, address])
 }
 
 model ComicIssue {
-  id                    Int                         @id @default(autoincrement())
-  number                Int
-  sellerFeeBasisPoints  Int                         @default(0)
-  title                 String
-  slug                  String
-  description           String                      @default("")
-  flavorText            String                      @default("")
-  pdf                   String                      @default("")
-  isFreeToRead          Boolean
-  isFullyUploaded       Boolean                     @default(false)
-  releaseDate           DateTime
-  updatedAt             DateTime                    @updatedAt
-  isSecondarySaleActive Boolean                     @default(false)
-  createdAt             DateTime                    @default(now())
-  featuredAt            DateTime?
-  verifiedAt            DateTime?
-  publishedAt           DateTime?
-  popularizedAt         DateTime?
-  creatorAddress        String                      @default("")
-  creatorBackupAddress  String                      @default("")
-  comicSlug             String
-  s3BucketSlug          String
-  comic                 Comic                       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
-  statelessCovers       StatelessCover[]
-  statefulCovers        StatefulCover[]
-  collection            CollectibleComicCollection?
-  pages                 ComicPage[]
-  users                 UserComicIssue[]
-  collaborators         ComicIssueCollaborator[]
+  id                         Int                         @id @default(autoincrement())
+  number                     Int
+  sellerFeeBasisPoints       Int                         @default(0)
+  title                      String
+  slug                       String
+  description                String                      @default("")
+  flavorText                 String                      @default("")
+  pdf                        String                      @default("")
+  isFreeToRead               Boolean
+  isFullyUploaded            Boolean                     @default(false)
+  releaseDate                DateTime
+  updatedAt                  DateTime                    @updatedAt
+  isSecondarySaleActive      Boolean                     @default(false)
+  createdAt                  DateTime                    @default(now())
+  featuredAt                 DateTime?
+  verifiedAt                 DateTime?
+  publishedAt                DateTime?
+  popularizedAt              DateTime?
+  creatorAddress             String                      @default("")
+  creatorBackupAddress       String                      @default("")
+  comicSlug                  String
+  s3BucketSlug               String
+  comic                      Comic                       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  statelessCovers            StatelessCover[]
+  statefulCovers             StatefulCover[]
+  collectibleComicCollection CollectibleComicCollection?
+  pages                      ComicPage[]
+  users                      UserComicIssue[]
+  collaborators              ComicIssueCollaborator[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
@@ -280,18 +273,16 @@ enum ComicRarity {
   Legendary
 }
 
-model CollectibeComic {
-  address             String               @id
-  metadata            Metadata             @relation(fields: [uri], references: [uri])
+model CollectibleComic {
+  address             String                   @id
+  metadata            CollectibleComicMetadata @relation(fields: [uri], references: [uri])
   uri                 String
   name                String
-  owner               Wallet               @relation(fields: [ownerAddress], references: [address])
-  ownerAddress        String
-  ownerChangedAt      DateTime
-  candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+  candyMachine        CandyMachine             @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress String
   receipt             CandyMachineReceipt?
-  listing             Listing[]
+  digitalAssetId      Int                      @unique
+  digitalAsset        DigitalAsset             @relation(fields: [digitalAssetId], references: [id])
 }
 
 model CandyMachine {
@@ -307,10 +298,10 @@ model CandyMachine {
   lookupTable          String?
   collection           CollectibleComicCollection @relation(fields: [collectionAddress], references: [address])
   collectionAddress    String
-  items                CollectibeComic[]
+  items                CollectibleComic[]
   receipts             CandyMachineReceipt[]
   groups               CandyMachineGroup[]
-  standard             TokenStandard              @default(Legacy)
+  standard             TokenStandard              @default(Core)
 }
 
 enum TokenStandard {
@@ -364,31 +355,32 @@ model UserCandyMachineGroup {
 }
 
 model CandyMachineReceipt {
-  assetAddress         String          @id
-  asset                CollectibeComic @relation(fields: [assetAddress], references: [address])
-  buyer                Wallet          @relation(fields: [buyerAddress], references: [address])
-  userId               Int?
-  user                 User?           @relation(fields: [userId], references: [id])
-  buyerAddress         String
-  price                BigInt
-  timestamp            DateTime
-  description          String
-  candyMachine         CandyMachine    @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
-  candyMachineAddress  String
-  transactionSignature String
-  splTokenAddress      String
-  label                String          @default("")
+  collectibleComicAddress String           @id
+  collectibleComic        CollectibleComic @relation(fields: [collectibleComicAddress], references: [address])
+  buyer                   Wallet           @relation(fields: [buyerAddress], references: [address])
+  userId                  Int?
+  user                    User?            @relation(fields: [userId], references: [id])
+  buyerAddress            String
+  price                   BigInt
+  timestamp               DateTime
+  description             String
+  candyMachine            CandyMachine     @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
+  candyMachineAddress     String
+  transactionSignature    String
+  splTokenAddress         String
+  label                   String           @default("")
 }
 
 model CollectibleComicCollection {
-  address        String          @id
+  address        String                     @id
   name           String
-  comicIssue     ComicIssue      @relation(fields: [comicIssueId], references: [id])
-  comicIssueId   Int             @unique
+  comicIssue     ComicIssue                 @relation(fields: [comicIssueId], references: [id])
+  comicIssueId   Int                        @unique
   candyMachines  CandyMachine[]
   darkblockId    String?
-  metadatas      Metadata[]
-  royaltyWallets RoyaltyWallet[]
+  metadatas      CollectibleComicMetadata[]
+  digitalAssetId Int                        @unique
+  digitalAsset   DigitalAsset               @relation(fields: [digitalAssetId], references: [id])
 }
 
 model ComicPage {
@@ -461,9 +453,9 @@ model UserCreator {
   @@id([creatorSlug, userId])
 }
 
-model Metadata {
+model CollectibleComicMetadata {
   uri               String                     @id
-  asset             CollectibeComic[]
+  collectibleComics CollectibleComic[]
   collectionName    String
   collectionAddress String
   collection        CollectibleComicCollection @relation(fields: [collectionAddress], references: [address])
@@ -475,11 +467,8 @@ model Metadata {
 }
 
 model Listing {
-  id                       Int              @id @default(autoincrement())
+  id                       Int          @id @default(autoincrement())
   assetAddress             String
-  asset                    CollectibeComic? @relation(fields: [assetAddress], references: [address], map: "fk_listing_asset")
-  edition                  PrintEdition?    @relation(fields: [assetAddress], references: [address], map: "fk_listing_edition")
-  oneOfOne                 OneOfOne?        @relation(fields: [assetAddress], references: [address], map: "fk_listing_one_of_one")
   splToken                 String
   price                    BigInt
   feePayer                 String
@@ -491,6 +480,8 @@ model Listing {
   saleTransactionSignature String?
   source                   String?
   type                     AssetType
+  digitalAssetId           Int
+  digitalAsset             DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 
   @@unique([assetAddress, canceledAt])
 }
@@ -587,15 +578,42 @@ model DraftComicIssueSalesData {
   verifiedAt        DateTime?
 }
 
+model DigitalAssetGenre {
+  name           String       @unique
+  slug           String       @id
+  digitalAssetId Int
+  digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
+}
+
+model DigitalAsset {
+  id                         Int                         @id() @default(autoincrement())
+  ownerAddress               String
+  ownerChangedAt             DateTime
+  owner                      Wallet                      @relation(fields: [ownerAddress], references: [address])
+  oneOfOne                   OneOfOne?
+  printEdition               PrintEdition?
+  collectibleComic           CollectibleComic?
+  oneOfOneCollection         OneOfOneCollection?
+  printEditionCollection     PrintEditionCollection?
+  collectibleComicCollection CollectibleComicCollection?
+  traits                     DigitalAssetTrait[]
+  genres                     DigitalAssetGenre[]
+  tags                       DigitalAssetTag[]
+  royaltyWallets             RoyaltyWallet[]
+  listings                   Listing[]
+}
+
 model OneOfOneCollection {
-  address              String     @id()
+  address              String       @id()
   name                 String
   description          String
   image                String
   banner               String
-  genres               Genre[]
-  traits               Trait[]
-  sellerFeeBasisPoints Int        @default(0)
+  digitalAssetId       Int          @unique
+  digitalAsset         DigitalAsset @relation(fields: [digitalAssetId], references: [id])
+  sellerFeeBasisPoints Int          @default(0)
+  verifiedAt           DateTime?
+  publishedAt          DateTime?
   oneOfOnes            OneOfOne[]
 }
 
@@ -620,15 +638,14 @@ model PrintEditionCollection {
   address                String                  @id
   name                   String
   description            String
-  owner                  String
   image                  String
   sellerFeeBasisPoints   Int                     @default(0)
   editions               PrintEdition[]
-  tags                   Tag[]
-  genres                 Genre[]
-  traits                 Trait[]
-  royaltyWallets         RoyaltyWallet[]
+  digitalAssetId         Int                     @unique
+  digitalAsset           DigitalAsset            @relation(fields: [digitalAssetId], references: [id])
   isNSFW                 Boolean                 @default(false)
+  verifiedAt             DateTime?
+  publishedAt            DateTime?
   printEditionSaleConfig PrintEditionSaleConfig?
 }
 
@@ -645,12 +662,11 @@ model PrintEditionSaleConfig {
   collection        PrintEditionCollection @relation(fields: [collectionAddress], references: [address])
 }
 
-model Tag {
-  id                     Int                     @id @default(autoincrement())
-  value                  String                  @unique
-  assetAddress           String
-  printEditionCollection PrintEditionCollection? @relation(fields: [assetAddress], references: [address], map: "fk_tag_print_edition_collection")
-  oneOfOne               OneOfOne?               @relation(fields: [assetAddress], references: [address], map: "fk_tag_one_of_one")
+model DigitalAssetTag {
+  id             Int          @id @default(autoincrement())
+  value          String       @unique
+  digitalAssetId Int
+  digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 }
 
 model PrintEdition {
@@ -658,9 +674,8 @@ model PrintEdition {
   collectionAddress      String
   printEditionCollection PrintEditionCollection @relation(fields: [collectionAddress], references: [address])
   number                 Int
-  ownerAddress           String
-  owner                  Wallet                 @relation(fields: [ownerAddress], references: [address])
-  listing                Listing[]
+  digitalAssetId         Int                    @unique
+  digitalAsset           DigitalAsset           @relation(fields: [digitalAssetId], references: [id])
 }
 
 model OneOfOne {
@@ -668,23 +683,19 @@ model OneOfOne {
   name                 String
   description          String
   image                String
-  genres               Genre[]
+  digitalAssetId       Int                @unique
+  digitalAsset         DigitalAsset       @relation(fields: [digitalAssetId], references: [id])
   collectionAddress    String
-  ownerAddress         String
-  owner                Wallet             @relation(fields: [ownerAddress], references: [address])
   sellerFeeBasisPoints Int                @default(0)
+  verifiedAt           DateTime?
+  publishedAt          DateTime?
   collection           OneOfOneCollection @relation(fields: [collectionAddress], references: [address])
-  tags                 Tag[]
-  traits               Trait[]
-  listing              Listing[]
 }
 
-model Trait {
-  id                     Int                     @id @default(autoincrement())
-  name                   String
-  value                  String
-  address                String
-  printEditionCollection PrintEditionCollection? @relation(fields: [address], references: [address], map: "fk_trait_print_edition_collection")
-  oneOfOne               OneOfOne?               @relation(fields: [address], references: [address], map: "fk_trait_one_of_one")
-  oneOfOneCollection     OneOfOneCollection?     @relation(fields: [address], references: [address], map: "fk_trait_one_of_one_collection")
+model DigitalAssetTrait {
+  id             Int          @id @default(autoincrement())
+  name           String
+  value          String
+  digitalAssetId Int
+  digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 }
