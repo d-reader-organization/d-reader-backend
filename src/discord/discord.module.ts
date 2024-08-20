@@ -20,6 +20,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { MailService } from 'src/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { WalletService } from 'src/wallet/wallet.service';
+import { PushNotificationCommand } from './push-notification.command';
+import { FirebaseService } from 'src/third-party/firebase/firebase.service';
 
 @Module({
   imports: [ParentDiscordModule.forFeature()],
@@ -44,6 +46,8 @@ import { WalletService } from 'src/wallet/wallet.service';
     MailService,
     JwtService,
     WalletService,
+    PushNotificationCommand,
+    FirebaseService,
   ],
 })
 export class DiscordModule {}
