@@ -14,7 +14,7 @@ import {
 import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
 import { ComicService } from 'src/comic/comic.service';
 import { CreatorService } from 'src/creator/creator.service';
-import { FounderRoleGuard } from 'src/guards/founder-role.guard';
+import { FounderRoleGuard } from 'src/guards/discord.guard';
 
 enum Action {
   publish = 'publish',

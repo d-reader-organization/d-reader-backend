@@ -8,6 +8,8 @@ import {
   ChatInputCommandInteraction,
   InteractionReplyOptions,
 } from 'discord.js';
+import { UseGuards } from '@nestjs/common/decorators/core';
+import { PushNotificationGuard } from 'src/guards/discord.guard';
 
 @SkipThrottle()
 @Command({
@@ -20,6 +22,7 @@ export class PushNotificationCommand {
   }
 
   @Handler()
+  @UseGuards(PushNotificationGuard)
   async onPushNotification(
     @IA(UserSlashCommandPipe) options: PushNotificationDiscordDto,
   ): Promise<InteractionReplyOptions> {

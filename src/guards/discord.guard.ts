@@ -4,6 +4,11 @@ import { InteractionType } from 'discord.js';
 
 /* TODO move to .env as DISCORD_FOUNDER_ROLE_ID */
 const founderRoleId = '1227650386094067772';
+const allowedUserIds = [
+  '221378024157741056',
+  '1032919949880078376',
+  '398482199667671041',
+];
 
 export class FounderRoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -12,6 +17,22 @@ export class FounderRoleGuard implements CanActivate {
       const roleManager = interaction.member.roles as GuildMemberRoleManager;
       const modRole = await interaction.guild.roles.fetch(founderRoleId);
       return roleManager.member.roles.highest.position >= modRole.position;
+    }
+  }
+}
+
+export class PushNotificationGuard implements CanActivate {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const interaction = context.getArgByIndex(0) as Interaction;
+    if (interaction.type === InteractionType.ApplicationCommand) {
+      const isAllowed = allowedUserIds.includes(interaction.member.user.id);
+      if (!isAllowed) {
+        await interaction.deferReply({ ephemeral: true });
+        await interaction.followUp({
+          content: 'You are not allowed to use this command',
+        });
+      }
+      return isAllowed;
     }
   }
 }
