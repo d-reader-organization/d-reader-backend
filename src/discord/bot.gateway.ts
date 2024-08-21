@@ -87,7 +87,7 @@ export class BotGateway {
     @EventParams() eventArgs: ClientEvents['interactionCreate'],
   ): Promise<InteractionReplyOptions> {
     const buttonInteraction = eventArgs[0] as ButtonInteraction;
-    await buttonInteraction.deferReply({ ephemeral: true });
+    await buttonInteraction.deferReply({ ephemeral: false });
     const [action, key, value] = buttonInteraction.customId.split(';');
 
     const propertyName =

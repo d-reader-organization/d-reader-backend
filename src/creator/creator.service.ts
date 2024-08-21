@@ -484,7 +484,7 @@ export class CreatorService {
       return generateMessageAfterAdminAction({
         isPropertySet: !!updatedCreator[propertyName],
         propertyName,
-        startOfTheMessage: 'Creator has been',
+        startOfTheMessage: `Creator ${updatedCreator.name} has been`,
       });
     }
   }
