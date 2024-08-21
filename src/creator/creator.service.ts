@@ -479,7 +479,7 @@ export class CreatorService {
     });
     if (withMessage) {
       return generateMessageAfterAdminAction({
-        prevState: !creator[propertyName],
+        prevState: !!creator[propertyName],
         propertyName,
         startOfTheMessage: 'Creator has been',
       });

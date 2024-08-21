@@ -10,7 +10,7 @@ export const CREATOR_REGISTERED = (
   payload.body = {
     embeds: [
       {
-        title: '🚀 New Creator Registration',
+        title: `creator:${creator.slug}`,
         description: 'A new creator has registered. Here are the details:',
         color: 0x4caf50,
         fields: [

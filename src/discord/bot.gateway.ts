@@ -38,7 +38,7 @@ export class BotGateway {
 
   @On('messageCreate')
   async onMessage(message: Message): Promise<void> {
-    const embedsTitle = message.embeds?.at(0).title;
+    const embedsTitle = message.embeds?.at(0)?.title;
     if (!embedsTitle) {
       return;
     }
