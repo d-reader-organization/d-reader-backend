@@ -31,6 +31,7 @@ const CREATOR_PASSWORD_RESET_REQUESTED = 'creatorPasswordResetRequested';
 const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
 const CREATOR_EMAIL_VERIFICATION_REQUESTED =
   'creatorEmailVerificationRequested';
+const CREATOR_VERIFIED = 'creatorVerified';
 const USER_EMAIL_CHANGE_REQUESTED = 'userEmailChangeRequested';
 const USER_EMAIL_CHANGED = 'userEmailChanged';
 
@@ -423,6 +424,22 @@ export class MailService {
       throw new InternalServerErrorException(
         'Unable to send "e-mail verification" mail, check your email address',
       );
+    }
+  }
+
+  async creatorVerified(creator: Creator) {
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: 'Account verified!',
+        template: CREATOR_VERIFIED,
+        context: {
+          name: creator.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(CREATOR_VERIFIED, creator.email, e);
     }
   }
 

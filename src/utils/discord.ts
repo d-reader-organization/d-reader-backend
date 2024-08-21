@@ -26,15 +26,14 @@ export const validateSignComicCommandParams = (
 
 export const generateMessageAfterAdminAction = ({
   startOfTheMessage,
-  prevState,
+  isPropertySet,
   propertyName,
 }: {
   startOfTheMessage: string;
-  prevState: boolean;
+  isPropertySet: boolean;
   propertyName: keyof Pick<Comic | ComicIssue, 'publishedAt' | 'verifiedAt'>;
 }) => {
-  return `${startOfTheMessage} ${!prevState ? '' : 'un'}${propertyName.replace(
-    'At',
-    '',
-  )}`;
+  return `${startOfTheMessage} ${
+    isPropertySet ? '' : 'un'
+  }${propertyName.replace('At', '')}`;
 };
