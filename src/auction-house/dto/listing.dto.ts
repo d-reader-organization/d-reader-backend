@@ -28,7 +28,8 @@ import {
   Wallet,
   ComicRarity,
   User,
-  CollectibeComic,
+  CollectibleComic,
+  DigitalAsset,
 } from '@prisma/client';
 import { SellerDto, toSellerDto } from './types/seller.dto';
 import { ApiProperty } from '@nestjs/swagger';
@@ -123,26 +124,31 @@ export class CreatorsDto {
 }
 
 export type ListingInput = Listing & {
-  asset: CollectibeComic & { owner: Wallet & { user?: User } };
+  digitalAsset: DigitalAsset & { owner?: Wallet & { user?: User } } & {
+    collectibleComic: CollectibleComic;
+  };
 };
 
 export async function toListingDto(listing: ListingInput) {
-  const sellerAddress = new PublicKey(listing.asset.owner.address);
+  const owner = listing.digitalAsset.owner;
+  const collectibleComic = listing.digitalAsset.collectibleComic;
+
+  const sellerAddress = new PublicKey(owner.address);
   const [collectionMetadata, seller] = await Promise.all([
-    fetchOffChainMetadata(listing.asset.uri),
-    toSellerDto(listing.asset.owner),
+    fetchOffChainMetadata(collectibleComic.uri),
+    toSellerDto(owner),
   ]);
   const tokenAddress = Pda.find(associatedTokenProgram.address, [
     sellerAddress.toBuffer(),
     tokenProgram.address.toBuffer(),
-    new PublicKey(listing.asset.address).toBuffer(),
+    new PublicKey(collectibleComic.address).toBuffer(),
   ]).toString();
 
   const plainListingDto: ListingDto = {
     id: listing.id,
     nftAddress: listing.assetAddress,
     assetAddress: listing.assetAddress,
-    name: listing.asset.name,
+    name: collectibleComic.name,
     cover: collectionMetadata.image,
     seller,
     tokenAddress,

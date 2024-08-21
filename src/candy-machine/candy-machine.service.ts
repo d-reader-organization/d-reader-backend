@@ -68,7 +68,6 @@ import { LegacyGuardGroup, RarityCoverFiles } from '../types/shared';
 import {
   generatePropertyName,
   insertItems,
-  JsonMetadataCreators,
   validateBalanceForMint,
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
@@ -136,6 +135,7 @@ import {
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
 import { getTransactionWithPriorityFee } from '../utils/das';
+import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 
 @Injectable()
 export class CandyMachineService {
@@ -195,7 +195,7 @@ export class CandyMachineService {
   async getOrCreateComicIssueCollection(
     comicIssue: ComicIssueCMInput,
     onChainName: string,
-    royaltyWallets: JsonMetadataCreators,
+    royaltyWallets: RoyaltyWalletDto[],
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
     tokenStandard?: TokenStandard,
@@ -303,6 +303,15 @@ export class CandyMachineService {
           address: collectionAddress.toBase58(),
           name: onChainName,
           comicIssue: { connect: { id: comicIssue.id } },
+          digitalAsset: {
+            create: {
+              royaltyWallets: {
+                create: royaltyWallets,
+              },
+              ownerAddress: this.umi.identity.publicKey.toString(),
+              ownerChangedAt: new Date(),
+            },
+          },
         },
       });
     }
@@ -323,7 +332,7 @@ export class CandyMachineService {
     tokenStandard?: TokenStandard;
   }) {
     validateComicIssueCMInput(comicIssue);
-    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
+    const royaltyWallets = comicIssue.royaltyWallets;
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
@@ -433,7 +442,7 @@ export class CandyMachineService {
           };
         });
 
-        await this.prisma.metadata.createMany({
+        await this.prisma.collectibleComicMetadata.createMany({
           data: metadataCreateData,
           skipDuplicates: true,
         });
@@ -504,7 +513,7 @@ export class CandyMachineService {
           };
         });
 
-        await this.prisma.metadata.createMany({
+        await this.prisma.collectibleComicMetadata.createMany({
           data: metadataCreateData,
           skipDuplicates: true,
         });
@@ -847,7 +856,7 @@ export class CandyMachineService {
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
-      include: { asset: true, buyer: { include: { user: true } } },
+      include: { collectibleComic: true, buyer: { include: { user: true } } },
       orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,

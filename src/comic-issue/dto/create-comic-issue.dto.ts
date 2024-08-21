@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -12,12 +11,10 @@ import {
 } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { ComicIssueCollaboratorDto } from './comic-issue-collaborator.dto';
-import { RoyaltyWalletDto } from './royalty-wallet.dto';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { TransformStringToNumber } from '../../utils/transform';
 import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
-import { MAX_CREATOR_LIMIT } from '../../constants';
 
 export class CreateComicIssueDto {
   @IsNotEmpty()
@@ -73,11 +70,4 @@ export class CreateComicIssueDto {
   @Type(() => ComicIssueCollaboratorDto)
   @ApiProperty({ type: [ComicIssueCollaboratorDto] })
   collaborators?: ComicIssueCollaboratorDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(MAX_CREATOR_LIMIT)
-  @Type(() => RoyaltyWalletDto)
-  @ApiProperty({ type: [RoyaltyWalletDto] })
-  royaltyWallets?: RoyaltyWalletDto[];
 }

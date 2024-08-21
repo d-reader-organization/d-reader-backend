@@ -6,6 +6,7 @@ import { UserCreator } from '@prisma/client';
 import { PickByType } from 'src/types/shared';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { CreatorInput } from './dto/creator.dto';
+import { isNull } from 'lodash';
 
 @Injectable()
 export class UserCreatorService {
@@ -38,9 +39,11 @@ export class UserCreatorService {
   async getTotalCreatorVolume(slug: string) {
     const getSecondaryVolume = this.prisma.listing.aggregate({
       where: {
-        asset: {
-          metadata: {
-            collection: { comicIssue: { comic: { creator: { slug } } } },
+        digitalAsset: {
+          collectibleComic: {
+            metadata: {
+              collection: { comicIssue: { comic: { creator: { slug } } } },
+            },
           },
         },
         soldAt: { not: null },
@@ -50,7 +53,7 @@ export class UserCreatorService {
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
       where: {
-        asset: {
+        collectibleComic: {
           metadata: {
             collection: { comicIssue: { comic: { creator: { slug } } } },
           },
@@ -79,7 +82,9 @@ export class UserCreatorService {
     const userCreator = await this.prisma.userCreator.findUnique({
       where: { creatorSlug_userId: { userId, creatorSlug } },
     });
-    return { isFollowing: !!userCreator?.followedAt ?? false };
+
+    const isFollowing = !isNull(userCreator) ? !!userCreator.followedAt : false;
+    return { isFollowing };
   }
 
   async toggleDate(

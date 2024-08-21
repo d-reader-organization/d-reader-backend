@@ -47,10 +47,10 @@ import { validateSignComicCommandParams } from '../utils/discord';
 import { getPublicUrl } from 'src/aws/s3client';
 import {
   CollectibleComicCollection,
-  CollectibeComic,
+  CollectibleComic,
   StatefulCover,
   ComicRarity as PrismaComicRarity,
-  Metadata as PrismaMetadata,
+  CollectibleComicMetadata as PrismaMetadata,
   TokenStandard,
   CandyMachine,
 } from '@prisma/client';
@@ -97,8 +97,10 @@ export class GetSignCommand {
           some: {
             issues: {
               some: {
-                collection: {
-                  metadatas: { some: { asset: { some: { address } } } },
+                collectibleComicCollection: {
+                  metadatas: {
+                    some: { collectibleComics: { some: { address } } },
+                  },
                 },
               },
             },
@@ -195,7 +197,7 @@ export class GetSignCommand {
       lastValidBlockHeight: number;
     }>;
     let cover: StatefulCover;
-    let asset: CollectibeComic & {
+    let asset: CollectibleComic & {
       metadata: PrismaMetadata & { collection: CollectibleComicCollection };
     };
     let rarity: PrismaComicRarity;
@@ -207,9 +209,9 @@ export class GetSignCommand {
             some: {
               issues: {
                 some: {
-                  collection: {
+                  collectibleComicCollection: {
                     metadatas: {
-                      some: { asset: { some: { address } } },
+                      some: { collectibleComics: { some: { address } } },
                     },
                   },
                 },
@@ -227,7 +229,7 @@ export class GetSignCommand {
         return;
       }
 
-      asset = await this.prisma.collectibeComic.findUnique({
+      asset = await this.prisma.collectibleComic.findUnique({
         where: { address: address },
         include: { metadata: { include: { collection: true } } },
       });
@@ -279,17 +281,18 @@ export class GetSignCommand {
 
         latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
       } else {
-        const signedMetadata = await this.prisma.metadata.findUnique({
-          where: {
-            isUsed_isSigned_rarity_collectionAddress: {
-              isUsed: asset.metadata.isUsed,
-              isSigned: true,
-              rarity: asset.metadata.rarity,
-              collectionAddress: asset.metadata.collectionAddress,
+        const signedMetadata =
+          await this.prisma.collectibleComicMetadata.findUnique({
+            where: {
+              isUsed_isSigned_rarity_collectionAddress: {
+                isUsed: asset.metadata.isUsed,
+                isSigned: true,
+                rarity: asset.metadata.rarity,
+                collectionAddress: asset.metadata.collectionAddress,
+              },
             },
-          },
-        });
-        await this.prisma.collectibeComic.update({
+          });
+        await this.prisma.collectibleComic.update({
           where: { address: asset.address },
           data: {
             metadata: { connect: { uri: signedMetadata.uri } },
@@ -352,7 +355,9 @@ export class GetSignCommand {
   async validateAsset(address: string): Promise<ValidateAssetResponse> {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
-        collection: { metadatas: { some: { asset: { some: { address } } } } },
+        collection: {
+          metadatas: { some: { collectibleComics: { some: { address } } } },
+        },
       },
     });
     if (!candyMachine) {

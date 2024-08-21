@@ -119,7 +119,11 @@ export class UserComicIssueService {
     // if there is no active candy machine, look for cheapest price on the marketplace
     const cheapestItem = await this.prisma.listing.findFirst({
       where: {
-        asset: { metadata: { collection: { comicIssueId: issue.id } } },
+        digitalAsset: {
+          collectibleComic: {
+            metadata: { collection: { comicIssueId: issue.id } },
+          },
+        },
         canceledAt: new Date(0),
       },
       orderBy: { price: 'asc' },
@@ -146,26 +150,28 @@ export class UserComicIssueService {
     comicIssueId: number,
     userId: number,
   ): Promise<boolean> {
-    const { collection, ...comicIssue } =
+    const { collectibleComicCollection, ...comicIssue } =
       await this.prisma.comicIssue.findUnique({
         where: { id: comicIssueId },
-        include: { collection: true },
+        include: { collectibleComicCollection: true },
       });
 
     if (comicIssue.isFreeToRead) return true;
 
-    if (collection) {
-      const isCollectionLocked = LOCKED_COLLECTIONS.has(collection.address);
+    if (collectibleComicCollection) {
+      const isCollectionLocked = LOCKED_COLLECTIONS.has(
+        collectibleComicCollection.address,
+      );
 
       // find all NFTs that token gate the comic issue and are owned by the wallet
       const ownedUsedComicIssueNfts =
-        await this.prisma.collectibeComic.findMany({
+        await this.prisma.collectibleComic.findMany({
           where: {
             metadata: {
-              collectionAddress: collection.address,
+              collectionAddress: collectibleComicCollection.address,
               isUsed: isCollectionLocked ? undefined : true,
             }, // only take into account "unwrapped" comics
-            owner: { userId },
+            digitalAsset: { owner: { userId } },
           },
         });
 

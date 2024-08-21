@@ -34,12 +34,12 @@ import { solFromLamports } from '../../utils/helpers';
 import { BidModel } from '../dto/types/bid-model';
 import { BuyArgs } from '../dto/types/buy-args';
 import { toListing } from './list';
-import { Listing, CollectibeComic } from '@prisma/client';
 import { constructExecuteSaleInstruction } from './executeSale';
 import {
   AUCTION_HOUSE_LOOK_UP_TABLE,
   MIN_COMPUTE_PRICE_IX,
 } from '../../constants';
+import { ListingInput } from '../dto/listing.dto';
 
 export const constructPrivateBidInstruction = async (
   metaplex: Metaplex,
@@ -158,7 +158,7 @@ export async function constructInstantBuyTransaction(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
   buyArguments: BuyArgs,
-  listing: Listing & { asset: CollectibeComic },
+  listing: ListingInput,
 ) {
   const { mintAccount, buyer } = buyArguments;
   const price = Number(listing.price);

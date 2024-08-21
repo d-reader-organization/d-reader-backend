@@ -27,7 +27,7 @@ import {
 } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import { solFromLamports } from '../../utils/helpers';
-import { Listing, CollectibeComic } from '@prisma/client';
+import { Listing, CollectibleComic, DigitalAsset } from '@prisma/client';
 import { PartialListing } from '../dto/types/partial-listing';
 import {
   AUTH_RULES,
@@ -381,10 +381,15 @@ export async function constructCancelListingTransaction(
 export async function toListing(
   metaplex: Metaplex,
   auctionHouse: AuctionHouse,
-  listing: Listing & { asset: CollectibeComic },
+  listing: Listing & {
+    digitalAsset: DigitalAsset & { ownerAddress: string } & {
+      collectibleComic: CollectibleComic;
+    };
+  },
 ): Promise<PartialListing> {
+  const digitalAsset = listing.digitalAsset;
   const address = new PublicKey(listing.assetAddress);
-  const sellerAddress = new PublicKey(listing.asset.ownerAddress);
+  const sellerAddress = new PublicKey(digitalAsset.ownerAddress);
   const tokenAccount = metaplex.tokens().pdas().associatedTokenAccount({
     mint: address,
     owner: sellerAddress,

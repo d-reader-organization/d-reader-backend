@@ -76,22 +76,19 @@ export class TransactionService {
     newState: ComicStateArgs,
     userId?: number,
   ): Promise<string | null> {
-    const {
-      ownerAddress,
-      candyMachine,
-      metadata,
-      owner: user,
-    } = await this.prisma.collectibeComic.findUnique({
-      where: { address: mint.toString() },
-      include: {
-        metadata: {
-          include: { collection: { include: { comicIssue: true } } },
+    const { candyMachine, metadata, digitalAsset } =
+      await this.prisma.collectibleComic.findUnique({
+        where: { address: mint.toString() },
+        include: {
+          metadata: {
+            include: { collection: { include: { comicIssue: true } } },
+          },
+          candyMachine: true,
+          digitalAsset: { include: { owner: { select: { userId: true } } } },
         },
-        candyMachine: true,
-        owner: { select: { userId: true } },
-      },
-    });
+      });
 
+    const { ownerAddress, owner: user } = digitalAsset;
     if (candyMachine.standard === TokenStandard.Core) {
       const { comicIssue } = metadata.collection;
       if (newState == ComicStateArgs.Use && user.userId != userId) {
@@ -128,16 +125,17 @@ export class TransactionService {
         isUsed = true;
       }
 
-      const itemMetadata = await this.prisma.metadata.findUnique({
-        where: {
-          isUsed_isSigned_rarity_collectionAddress: {
-            isUsed,
-            isSigned,
-            rarity: findRarityTrait(offChainMetadata),
-            collectionAddress: metadata.collectionAddress,
+      const itemMetadata =
+        await this.prisma.collectibleComicMetadata.findUnique({
+          where: {
+            isUsed_isSigned_rarity_collectionAddress: {
+              isUsed,
+              isSigned,
+              rarity: findRarityTrait(offChainMetadata),
+              collectionAddress: metadata.collectionAddress,
+            },
           },
-        },
-      });
+        });
 
       const isUnwrap = newState === ComicStateArgs.Use;
       const nonceArgs = isUnwrap
@@ -158,7 +156,7 @@ export class TransactionService {
         );
 
         decodedTransaction.sign([this.metaplex.identity()]);
-        await this.prisma.collectibeComic.update({
+        await this.prisma.collectibleComic.update({
           where: { address: mint.toString() },
           data: {
             uri: itemMetadata.uri,

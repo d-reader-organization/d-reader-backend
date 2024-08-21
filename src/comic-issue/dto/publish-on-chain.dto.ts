@@ -1,6 +1,8 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { CreateComicIssueDto } from './create-comic-issue.dto';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsDate,
   IsEnum,
   IsInt,
@@ -14,10 +16,12 @@ import { IsLamport } from '../../decorators/IsLamport';
 import { TransformDateStringToDate } from '../../utils/transform';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../../constants';
 import { TokenStandard, WhiteListType } from '@prisma/client';
+import { MAX_CREATOR_LIMIT } from '@metaplex-foundation/mpl-core-candy-machine';
+import { RoyaltyWalletDto } from './royalty-wallet.dto';
+import { Type } from 'class-transformer';
 
 export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   'sellerFeeBasisPoints',
-  'royaltyWallets',
   'creatorAddress',
 ]) {
   @IsString()
@@ -59,4 +63,11 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsEnum(WhiteListType)
   @ApiProperty({ enum: WhiteListType })
   whiteListType?: WhiteListType;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_CREATOR_LIMIT)
+  @Type(() => RoyaltyWalletDto)
+  @ApiProperty({ type: [RoyaltyWalletDto] })
+  royaltyWallets?: RoyaltyWalletDto[];
 }

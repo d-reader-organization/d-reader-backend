@@ -36,7 +36,7 @@ export class ThawCollectionCommand extends CommandRunner {
     log('\n🏗️  thaw all nfts of collection');
     try {
       const { candyMachineAddress, comicIssueId } = options;
-      const nfts = await this.prisma.collectibeComic.findMany({
+      const collectibleComics = await this.prisma.collectibleComic.findMany({
         where: {
           candyMachineAddress,
         },
@@ -47,20 +47,22 @@ export class ThawCollectionCommand extends CommandRunner {
               splTokenAddress: true,
             },
           },
+          digitalAsset: true,
         },
       });
 
       try {
-        for (const nft of nfts) {
+        for (const collectibleComic of collectibleComics) {
           await rateLimit(() => {
             return this.candyMachineService.thawFrozenNft(
               new PublicKey(candyMachineAddress),
-              new PublicKey(nft.address),
-              new PublicKey(nft.ownerAddress),
-              nft.receipt.splTokenAddress === WRAPPED_SOL_MINT.toBase58()
+              new PublicKey(collectibleComic.address),
+              new PublicKey(collectibleComic.digitalAsset.ownerAddress),
+              collectibleComic.receipt.splTokenAddress ===
+                WRAPPED_SOL_MINT.toBase58()
                 ? 'freezeSolPayment'
                 : 'freezeTokenPayment',
-              nft.receipt.label,
+              collectibleComic.receipt.label,
             );
           });
         }

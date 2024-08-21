@@ -67,6 +67,8 @@ import { isEqual } from 'lodash';
 import { getAssetFromTensor } from '../../utils/das';
 import { TENSOR_ASSET } from './dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
+import { ListingInput } from '../../auction-house/dto/listing.dto';
 
 @Injectable()
 export class HeliusService {
@@ -197,26 +199,35 @@ export class HeliusService {
       const ownerAddress = transferInstruction.accounts.at(-3);
       const previousOwner = transferInstruction.accounts.at(-4);
 
-      const asset = await this.prisma.collectibeComic.update({
+      const asset = await this.prisma.collectibleComic.update({
         where: { address },
-        include: { listing: { where: { canceledAt: new Date(0) } } },
+        include: {
+          digitalAsset: {
+            include: { listings: { where: { canceledAt: new Date(0) } } },
+          },
+        },
         data: {
-          owner: {
-            connectOrCreate: {
-              where: {
-                address: ownerAddress,
+          digitalAsset: {
+            update: {
+              owner: {
+                connectOrCreate: {
+                  where: {
+                    address: ownerAddress,
+                  },
+                  create: {
+                    address: ownerAddress,
+                    createdAt: new Date(enrichedTransaction.timestamp * 1000),
+                  },
+                },
               },
-              create: {
-                address: ownerAddress,
-                createdAt: new Date(enrichedTransaction.timestamp * 1000),
-              },
+              ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
             },
           },
-          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
         },
       });
+      const listings = asset.digitalAsset.listings;
 
-      if (asset.listing && asset.listing.length > 0) {
+      if (listings && listings.length > 0) {
         await this.prisma.listing.update({
           where: {
             assetAddress_canceledAt: {
@@ -273,8 +284,9 @@ export class HeliusService {
       if (uri) {
         const offChainMetadata = await fetchOffChainMetadata(uri);
         const assetData = await fetchAssetV1(this.umi, publicKey(mint));
-        const asset = await this.prisma.collectibeComic.update({
+        const collectibleComic = await this.prisma.collectibleComic.update({
           where: { address: mint },
+          include: { digitalAsset: true },
           data: {
             metadata: {
               connectOrCreate: {
@@ -292,7 +304,7 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletAssetUsed(asset);
+        this.websocketGateway.handleWalletAssetUsed(collectibleComic);
       }
     } catch (e) {
       console.error(`Error changing core comic state`, e);
@@ -336,7 +348,7 @@ export class HeliusService {
       );
 
       comicIssueId = comicIssueAsset.metadata.collection.comicIssueId;
-      userId = comicIssueAsset.owner?.userId;
+      userId = comicIssueAsset.digitalAsset.owner?.userId;
       await this.subscribeTo(comicIssueAsset.address);
     } catch (e) {
       console.error(e);
@@ -378,7 +390,7 @@ export class HeliusService {
             );
 
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-        asset: { connect: { address: mint } },
+        collectibleComic: { connect: { address: mint } },
         candyMachine: { connect: { address: candyMachineAddress } },
         buyer: {
           connectOrCreate: {
@@ -400,7 +412,7 @@ export class HeliusService {
         };
       }
       const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { asset: true, buyer: { include: { user: true } } },
+        include: { collectibleComic: true, buyer: { include: { user: true } } },
         data: receiptData,
       });
 
@@ -451,52 +463,72 @@ export class HeliusService {
   ) {
     const mint = assetInfo.onchainId;
     try {
-      const asset = await this.prisma.collectibeComic.update({
+      const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address: mint },
         include: {
           metadata: { include: { collection: true } },
-          listing: {
-            where: {
-              assetAddress: mint,
-              canceledAt: new Date(transaction.timestamp * 1000),
-            },
-          },
-          owner: { include: { user: true } },
-        },
-        data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: assetInfo.owner },
-              create: {
-                address: assetInfo.owner,
-                createdAt: new Date(transaction.timestamp * 1000),
-              },
-            },
-          },
-          ownerChangedAt: new Date(transaction.timestamp * 1000),
-          listing: {
-            update: {
-              where: {
-                assetAddress_canceledAt: {
+          digitalAsset: {
+            include: {
+              listings: {
+                where: {
                   assetAddress: mint,
-                  canceledAt: new Date(0),
+                  canceledAt: new Date(transaction.timestamp * 1000),
                 },
               },
-              data: {
-                canceledAt: new Date(transaction.timestamp * 1000),
-                soldAt: new Date(transaction.timestamp * 1000),
-                saleTransactionSignature: transaction.signature,
+              owner: { include: { user: true } },
+            },
+          },
+        },
+        data: {
+          digitalAsset: {
+            update: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: assetInfo.owner },
+                  create: {
+                    address: assetInfo.owner,
+                    createdAt: new Date(transaction.timestamp * 1000),
+                  },
+                },
+              },
+              ownerChangedAt: new Date(transaction.timestamp * 1000),
+              listings: {
+                update: {
+                  where: {
+                    assetAddress_canceledAt: {
+                      assetAddress: mint,
+                      canceledAt: new Date(0),
+                    },
+                  },
+                  data: {
+                    canceledAt: new Date(transaction.timestamp * 1000),
+                    soldAt: new Date(transaction.timestamp * 1000),
+                    saleTransactionSignature: transaction.signature,
+                  },
+                },
               },
             },
           },
         },
       });
-      const collection = asset.metadata.collection;
-      this.websocketGateway.handleAssetSold(collection.comicIssueId, {
-        ...asset.listing[0],
-        asset,
-      });
-      this.websocketGateway.handleWalletAssetBought(asset.ownerAddress, asset);
+
+      const { digitalAsset, metadata } = collectibleComic;
+      const listing = digitalAsset.listings[0];
+      const collection = metadata.collection;
+
+      const listingInput: ListingInput = {
+        ...listing,
+        digitalAsset: { ...digitalAsset, collectibleComic },
+      };
+
+      this.websocketGateway.handleAssetSold(
+        collection.comicIssueId,
+        listingInput,
+      );
+      this.websocketGateway.handleWalletAssetBought(
+        digitalAsset.ownerAddress,
+        collectibleComic,
+      );
     } catch (e) {
       console.error('Error in buy core asset webhook', e);
     }
@@ -505,53 +537,75 @@ export class HeliusService {
   private async handleCoreListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
-    const asset = await this.prisma.collectibeComic.update({
+    const collectibleComic = await this.prisma.collectibleComic.update({
       where: { address: mint },
       include: {
         metadata: { include: { collection: true } },
-        listing: { where: { assetAddress: mint, canceledAt: new Date(0) } },
-        owner: { include: { user: true } },
+        digitalAsset: {
+          include: {
+            owner: { include: { user: true } },
+            listings: {
+              where: { assetAddress: mint, canceledAt: new Date(0) },
+            },
+          },
+        },
       },
       data: {
-        listing: {
-          upsert: {
-            where: {
-              assetAddress_canceledAt: {
-                assetAddress: mint,
-                canceledAt: new Date(0),
+        digitalAsset: {
+          update: {
+            listings: {
+              upsert: {
+                where: {
+                  assetAddress_canceledAt: {
+                    assetAddress: mint,
+                    canceledAt: new Date(0),
+                  },
+                },
+                update: {
+                  price: listing.price,
+                  feePayer: listing.seller,
+                  signature: listing.txId,
+                  createdAt: new Date(),
+                  source:
+                    listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+                },
+                create: {
+                  assetAddress: mint,
+                  price: listing.price,
+                  symbol: D_PUBLISHER_SYMBOL,
+                  feePayer: listing.seller,
+                  signature: listing.txId,
+                  createdAt: new Date(),
+                  canceledAt: new Date(0),
+                  type: AssetType.CollectibleComic,
+                  // TODO: Change it to be dynamic
+                  splToken: WRAPPED_SOL_MINT.toString(),
+                  source:
+                    listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+                },
               },
-            },
-            update: {
-              price: listing.price,
-              feePayer: listing.seller,
-              signature: listing.txId,
-              createdAt: new Date(),
-              source:
-                listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
-            },
-            create: {
-              price: listing.price,
-              symbol: D_PUBLISHER_SYMBOL,
-              feePayer: listing.seller,
-              signature: listing.txId,
-              createdAt: new Date(),
-              canceledAt: new Date(0),
-              type: AssetType.CollectibleComic,
-              // TODO: Change it to be dynamic
-              splToken: WRAPPED_SOL_MINT.toString(),
-              source:
-                listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
             },
           },
         },
       },
     });
-    const collection = asset.metadata.collection;
-    this.websocketGateway.handleAssetListed(collection.comicIssueId, {
-      ...asset.listing[0],
-      asset,
-    });
-    this.websocketGateway.handleWalletAssetListed(asset.ownerAddress, asset);
+
+    const digitalAsset = collectibleComic.digitalAsset;
+    const assetListing = digitalAsset.listings[0];
+    const collection = collectibleComic.metadata.collection;
+
+    const listingInput: ListingInput = {
+      ...assetListing,
+      digitalAsset: { ...digitalAsset, collectibleComic },
+    };
+    this.websocketGateway.handleAssetListed(
+      collection.comicIssueId,
+      listingInput,
+    );
+    this.websocketGateway.handleWalletAssetListed(
+      digitalAsset.ownerAddress,
+      collectibleComic,
+    );
   }
 
   private async handleChangeComicState(transaction: EnrichedTransaction) {
@@ -578,8 +632,9 @@ export class HeliusService {
         const mint = metadata.mintAddress.toString();
         const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-        const asset = await this.prisma.collectibeComic.update({
+        const collectibleComic = await this.prisma.collectibleComic.update({
           where: { address: mint },
+          include: { digitalAsset: true },
           data: {
             metadata: {
               connectOrCreate: {
@@ -596,7 +651,7 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletAssetUsed(asset);
+        this.websocketGateway.handleWalletAssetUsed(collectibleComic);
       }
     } catch (e) {
       console.error('Failed to handle comic state update', e);
@@ -618,61 +673,75 @@ export class HeliusService {
         throw new Error('Sale transaction failed to finalize');
       }
       const assetAddress = transaction.events.nft.nfts[0].mint;
-      const asset = await this.prisma.collectibeComic.update({
+      const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address: assetAddress },
         include: {
           metadata: { include: { collection: true } },
-          listing: {
-            where: {
-              assetAddress,
-              canceledAt: new Date(transaction.timestamp * 1000),
-            },
-          },
-          owner: { include: { user: true } },
-        },
-        data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: buyerAddress },
-              create: {
-                address: buyerAddress,
-                createdAt: new Date(transaction.timestamp * 1000),
-              },
-            },
-          },
-          ownerChangedAt: new Date(transaction.timestamp * 1000),
-          listing: {
-            update: {
-              where: {
-                assetAddress_canceledAt: {
+          digitalAsset: {
+            include: {
+              listings: {
+                where: {
                   assetAddress,
-                  canceledAt: new Date(0),
+                  canceledAt: new Date(transaction.timestamp * 1000),
                 },
               },
-              data: {
-                canceledAt: new Date(transaction.timestamp * 1000),
-                soldAt: new Date(transaction.timestamp * 1000),
-                saleTransactionSignature: transaction.signature,
+              owner: { include: { user: true } },
+            },
+          },
+        },
+        data: {
+          digitalAsset: {
+            update: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: buyerAddress },
+                  create: {
+                    address: buyerAddress,
+                    createdAt: new Date(transaction.timestamp * 1000),
+                  },
+                },
+              },
+              ownerChangedAt: new Date(transaction.timestamp * 1000),
+              listings: {
+                update: {
+                  where: {
+                    assetAddress_canceledAt: {
+                      assetAddress,
+                      canceledAt: new Date(0),
+                    },
+                  },
+                  data: {
+                    canceledAt: new Date(transaction.timestamp * 1000),
+                    soldAt: new Date(transaction.timestamp * 1000),
+                    saleTransactionSignature: transaction.signature,
+                  },
+                },
               },
             },
           },
         },
       });
+
+      const digitalAsset = collectibleComic.digitalAsset;
+      const listing = digitalAsset.listings[0];
+
+      const listingInput: ListingInput = {
+        ...listing,
+        digitalAsset: { ...digitalAsset, collectibleComic },
+      };
+
       this.websocketGateway.handleAssetSold(
-        asset.metadata.collection.comicIssueId,
-        {
-          ...asset.listing[0],
-          asset,
-        },
+        collectibleComic.metadata.collection.comicIssueId,
+        listingInput,
       );
       this.websocketGateway.handleWalletAssetSold(
         transaction.events.nft.seller,
-        {
-          ...asset.listing[0],
-          asset,
-        },
+        listingInput,
       );
-      this.websocketGateway.handleWalletAssetBought(asset.ownerAddress, asset);
+      this.websocketGateway.handleWalletAssetBought(
+        collectibleComic.digitalAsset.ownerAddress,
+        collectibleComic,
+      );
     } catch (e) {
       console.error('Failed to handle instant buy', e);
     }
@@ -689,10 +758,14 @@ export class HeliusService {
           },
         },
         include: {
-          asset: {
+          digitalAsset: {
             include: {
-              metadata: { include: { collection: true } },
               owner: { include: { user: true } },
+              collectibleComic: {
+                include: {
+                  metadata: { include: { collection: true } },
+                },
+              },
             },
           },
         },
@@ -700,15 +773,20 @@ export class HeliusService {
           canceledAt: new Date(transaction.timestamp * 1000),
         },
       });
-      this.websocketGateway.handleAssetDelisted(
-        listing.asset.metadata.collection.comicIssueId,
-        listing,
+
+      const comicIssueId =
+        listing.digitalAsset.collectibleComic.metadata.collection.comicIssueId;
+      this.websocketGateway.handleAssetDelisted(comicIssueId, listing);
+
+      const collectibleComic: AssetInput = {
+        ...listing.digitalAsset.collectibleComic,
+        digitalAsset: listing.digitalAsset,
+      };
+
+      this.websocketGateway.handleWalletAssetDelisted(
+        listing.digitalAsset.ownerAddress,
+        collectibleComic,
       );
-      this,
-        this.websocketGateway.handleWalletAssetDelisted(
-          listing.asset.ownerAddress,
-          listing.asset,
-        );
     } catch (e) {
       console.error('Failed to handle cancel listing', e);
     }
@@ -721,54 +799,71 @@ export class HeliusService {
       const feePayer = transaction.feePayer;
       const signature = transaction.signature;
       const createdAt = new Date(transaction.timestamp * 1000);
-      const asset = await this.prisma.collectibeComic.update({
+      const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address: mint },
         include: {
           metadata: { include: { collection: true } },
-          listing: { where: { assetAddress: mint, canceledAt: new Date(0) } },
-          owner: { include: { user: true } },
+          digitalAsset: {
+            include: {
+              owner: { include: { user: true } },
+              listings: {
+                where: { assetAddress: mint, canceledAt: new Date(0) },
+              },
+            },
+          },
         },
         data: {
-          listing: {
-            upsert: {
-              where: {
-                assetAddress_canceledAt: {
-                  assetAddress: mint,
-                  canceledAt: new Date(0),
+          digitalAsset: {
+            update: {
+              listings: {
+                upsert: {
+                  where: {
+                    assetAddress_canceledAt: {
+                      assetAddress: mint,
+                      canceledAt: new Date(0),
+                    },
+                  },
+                  update: {
+                    price,
+                    feePayer,
+                    signature,
+                    createdAt: new Date(),
+                    source: transaction.source,
+                  },
+                  create: {
+                    assetAddress: mint,
+                    price,
+                    symbol: D_PUBLISHER_SYMBOL,
+                    feePayer,
+                    signature,
+                    createdAt,
+                    // TODO: Take the spl token from transaction
+                    splToken: WRAPPED_SOL_MINT.toString(),
+                    canceledAt: new Date(0),
+                    source: transaction.source,
+                    type: AssetType.CollectibleComic,
+                  },
                 },
-              },
-              update: {
-                price,
-                feePayer,
-                signature,
-                createdAt: new Date(),
-                source: transaction.source,
-              },
-              create: {
-                price,
-                symbol: D_PUBLISHER_SYMBOL,
-                feePayer,
-                signature,
-                createdAt,
-                // TODO: Take the spl token from transaction
-                splToken: WRAPPED_SOL_MINT.toString(),
-                canceledAt: new Date(0),
-                source: transaction.source,
-                type: AssetType.CollectibleComic,
               },
             },
           },
         },
       });
 
-      this.websocketGateway.handleAssetListed(
-        asset.metadata.collection.comicIssueId,
-        {
-          ...asset.listing[0],
-          asset,
-        },
+      const { digitalAsset, metadata } = collectibleComic;
+      const listing = digitalAsset.listings[0];
+      const comicIssueId = metadata.collection.comicIssueId;
+
+      const listingInput: ListingInput = {
+        ...listing,
+        digitalAsset: { ...digitalAsset, collectibleComic },
+      };
+
+      this.websocketGateway.handleAssetListed(comicIssueId, listingInput);
+      this.websocketGateway.handleWalletAssetListed(
+        digitalAsset.ownerAddress,
+        collectibleComic,
       );
-      this.websocketGateway.handleWalletAssetListed(asset.ownerAddress, asset);
     } catch (e) {
       console.error('Failed to handle Asset listing', e);
     }
@@ -791,26 +886,37 @@ export class HeliusService {
           'confirmed',
         );
 
-      const nft = await this.prisma.collectibeComic.update({
+      const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address },
-        include: { listing: { where: { canceledAt: new Date(0) } } },
+        include: {
+          digitalAsset: {
+            include: { listings: { where: { canceledAt: new Date(0) } } },
+          },
+        },
         data: {
-          owner: {
-            connectOrCreate: {
-              where: {
-                address: ownerAddress,
+          digitalAsset: {
+            update: {
+              owner: {
+                connectOrCreate: {
+                  where: {
+                    address: ownerAddress,
+                  },
+                  create: {
+                    address: ownerAddress,
+                    createdAt: new Date(enrichedTransaction.timestamp * 1000),
+                  },
+                },
               },
-              create: {
-                address: ownerAddress,
-                createdAt: new Date(enrichedTransaction.timestamp * 1000),
-              },
+              ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
             },
           },
-          ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
         },
       });
 
-      if (nft.listing && nft.listing.length > 0) {
+      const digitalAsset = collectibleComic.digitalAsset;
+      const listings = digitalAsset.listings;
+
+      if (listings && listings.length > 0) {
         await this.prisma.listing.update({
           where: {
             assetAddress_canceledAt: {
@@ -824,8 +930,14 @@ export class HeliusService {
         });
       }
 
-      this.websocketGateway.handleWalletAssetReceived(ownerAddress, nft);
-      this.websocketGateway.handleWalletAssetSent(previousOwner, nft);
+      this.websocketGateway.handleWalletAssetReceived(
+        ownerAddress,
+        collectibleComic,
+      );
+      this.websocketGateway.handleWalletAssetSent(
+        previousOwner,
+        collectibleComic,
+      );
     } catch (e) {
       console.error('Failed to handle Asset transfer', e);
     }
@@ -866,7 +978,7 @@ export class HeliusService {
       );
 
       comicIssueId = comicIssueAsset.metadata.collection.comicIssueId;
-      userId = comicIssueAsset.owner?.userId;
+      userId = comicIssueAsset.digitalAsset.owner?.userId;
       this.subscribeTo(comicIssueAsset.address);
     } catch (e) {
       console.error(e);
@@ -882,7 +994,7 @@ export class HeliusService {
         bs58.decode(enrichedTransaction.instructions.at(-1).data),
       );
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-        asset: { connect: { address: mint.toBase58() } },
+        collectibleComic: { connect: { address: mint.toBase58() } },
         candyMachine: { connect: { address: candyMachineAddress } },
         buyer: {
           connectOrCreate: {
@@ -904,7 +1016,7 @@ export class HeliusService {
         };
       }
       const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { asset: true, buyer: { include: { user: true } } },
+        include: { collectibleComic: true, buyer: { include: { user: true } } },
         data: receiptData,
       });
       const candyMachine = await this.metaplex
@@ -1014,16 +1126,22 @@ export class HeliusService {
       }
     }
 
-    const digitalAsset = await this.prisma.collectibeComic.upsert({
+    const digitalAsset = await this.prisma.collectibleComic.upsert({
       where: { address: mintAddress.toString() },
-      include: { owner: { select: { userId: true } } },
+      include: {
+        digitalAsset: { include: { owner: { select: { userId: true } } } },
+      },
       update: {
-        // TODO v2: this should fetch the info on when the owner changed from chain
-        ownerChangedAt: new Date(0),
-        owner: {
-          connectOrCreate: {
-            where: { address: walletAddress },
-            create: { address: walletAddress },
+        digitalAsset: {
+          update: {
+            // TODO v2: this should fetch the info on when the owner changed from chain
+            ownerChangedAt: new Date(0),
+            owner: {
+              connectOrCreate: {
+                where: { address: walletAddress },
+                create: { address: walletAddress },
+              },
+            },
           },
         },
         metadata: {
@@ -1043,7 +1161,7 @@ export class HeliusService {
       create: {
         address: mintAddress.toString(),
         name: asset.content.metadata.name,
-        ownerChangedAt: new Date(),
+        candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
           connectOrCreate: {
             where: { uri },
@@ -1057,13 +1175,17 @@ export class HeliusService {
             },
           },
         },
-        owner: {
-          connectOrCreate: {
-            where: { address: walletAddress },
-            create: { address: walletAddress },
+        digitalAsset: {
+          create: {
+            ownerChangedAt: new Date(),
+            owner: {
+              connectOrCreate: {
+                where: { address: walletAddress },
+                create: { address: walletAddress },
+              },
+            },
           },
         },
-        candyMachine: { connect: { address: candMachineAddress } },
       },
     });
 
@@ -1077,17 +1199,17 @@ export class HeliusService {
     walletAddress: string,
     candMachineAddress: string,
   ) {
-    const digitalAsset = await this.prisma.collectibeComic.create({
+    const digitalAsset = await this.prisma.collectibleComic.create({
       include: {
         metadata: {
           include: { collection: { select: { comicIssueId: true } } },
         },
-        owner: { select: { userId: true } },
+        digitalAsset: { include: { owner: { select: { userId: true } } } },
       },
       data: {
         address: asset.publicKey.toString(),
         name: asset.name,
-        ownerChangedAt: new Date(),
+        candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
           connectOrCreate: {
             where: { uri: asset.uri },
@@ -1101,13 +1223,17 @@ export class HeliusService {
             },
           },
         },
-        owner: {
-          connectOrCreate: {
-            where: { address: walletAddress },
-            create: { address: walletAddress },
+        digitalAsset: {
+          create: {
+            owner: {
+              connectOrCreate: {
+                where: { address: walletAddress },
+                create: { address: walletAddress },
+              },
+            },
+            ownerChangedAt: new Date(),
           },
         },
-        candyMachine: { connect: { address: candMachineAddress } },
       },
     });
 
@@ -1150,17 +1276,17 @@ export class HeliusService {
       console.error(e);
     }
 
-    const asset = await this.prisma.collectibeComic.create({
+    const asset = await this.prisma.collectibleComic.create({
       include: {
         metadata: {
           include: { collection: { select: { comicIssueId: true } } },
         },
-        owner: { select: { userId: true } },
+        digitalAsset: { include: { owner: { select: { userId: true } } } },
       },
       data: {
         address: mintAddress.toString(),
         name: metadataOrNft.name,
-        ownerChangedAt: new Date(),
+        candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
           connectOrCreate: {
             where: { uri: metadataOrNft.uri },
@@ -1174,13 +1300,17 @@ export class HeliusService {
             },
           },
         },
-        owner: {
-          connectOrCreate: {
-            where: { address: walletAddress },
-            create: { address: walletAddress },
+        digitalAsset: {
+          create: {
+            ownerChangedAt: new Date(),
+            owner: {
+              connectOrCreate: {
+                where: { address: walletAddress },
+                create: { address: walletAddress },
+              },
+            },
           },
         },
-        candyMachine: { connect: { address: candMachineAddress } },
       },
     });
     this.subscribeTo(mintAddress.toString());

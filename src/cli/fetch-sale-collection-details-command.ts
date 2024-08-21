@@ -52,13 +52,13 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: { collectionAddress: collection },
     });
-    const items = await this.prisma.collectibeComic.findMany({
+    const items = await this.prisma.collectibleComic.findMany({
       where: { candyMachineAddress: candyMachine.address },
       include: { metadata: true },
     });
 
     const rarityCount =
-      (await this.prisma.metadata.count({
+      (await this.prisma.collectibleComicMetadata.count({
         where: { collectionAddress: collection },
       })) / 4;
 
