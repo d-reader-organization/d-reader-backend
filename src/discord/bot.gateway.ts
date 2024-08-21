@@ -14,7 +14,7 @@ import {
 import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
 import { ComicService } from 'src/comic/comic.service';
 import { CreatorService } from 'src/creator/creator.service';
-import { FounderRoleGuard } from 'src/guards/discord.guard';
+import { DReaderRoleGuard } from 'src/guards/discord.guard';
 
 enum Action {
   publish = 'publish',
@@ -49,7 +49,7 @@ export class BotGateway {
     }
 
     const verify = new ButtonBuilder()
-      .setLabel('Verify')
+      .setLabel('(Un)Verify')
       .setStyle(ButtonStyle.Primary);
 
     if (key === ButtonKey.creator) {
@@ -65,7 +65,7 @@ export class BotGateway {
     }
 
     const publish = new ButtonBuilder()
-      .setLabel('Publish')
+      .setLabel('(Un)Publish')
       .setStyle(ButtonStyle.Primary);
 
     if (key === ButtonKey.comic) {
@@ -82,7 +82,7 @@ export class BotGateway {
   }
 
   @On('interactionCreate')
-  @UseGuards(FounderRoleGuard)
+  @UseGuards(DReaderRoleGuard)
   async onButtonClicked(
     @EventParams() eventArgs: ClientEvents['interactionCreate'],
   ): Promise<InteractionReplyOptions> {

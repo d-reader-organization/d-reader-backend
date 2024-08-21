@@ -2,20 +2,20 @@ import { GuildMemberRoleManager, Interaction } from 'discord.js';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { InteractionType } from 'discord.js';
 
-/* TODO move to .env as DISCORD_FOUNDER_ROLE_ID */
-const founderRoleId = '1227650386094067772';
+/* TODO move to .env as DISCORD_DREADER_ROLE_ID */
+const dReaderRoleId = '1034919555853725828';
 const allowedUserIds = [
   '221378024157741056',
   '1032919949880078376',
   '398482199667671041',
 ];
 
-export class FounderRoleGuard implements CanActivate {
+export class DReaderRoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const interaction = context.getArgByIndex(0) as Interaction;
     if (interaction.type === InteractionType.MessageComponent) {
       const roleManager = interaction.member.roles as GuildMemberRoleManager;
-      const modRole = await interaction.guild.roles.fetch(founderRoleId);
+      const modRole = await interaction.guild.roles.fetch(dReaderRoleId);
       return roleManager.member.roles.highest.position >= modRole.position;
     }
   }
