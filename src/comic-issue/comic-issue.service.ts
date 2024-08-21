@@ -766,7 +766,7 @@ export class ComicIssueService {
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
-    await this.prisma.comicIssue.update({
+    const updatedComicIssue = await this.prisma.comicIssue.update({
       data: {
         [propertyName]: !!comicIssue[propertyName] ? null : new Date(),
       },
@@ -774,7 +774,7 @@ export class ComicIssueService {
     });
     if (withMessage) {
       return generateMessageAfterAdminAction({
-        prevState: !!comicIssue[propertyName],
+        isPropertySet: !!updatedComicIssue[propertyName],
         propertyName,
         startOfTheMessage: 'Comic issue has been',
       });

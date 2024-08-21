@@ -471,15 +471,18 @@ export class CreatorService {
     if (!creator) {
       throw new NotFoundException(`Creator ${slug} does not exist`);
     }
-    await this.prisma.creator.update({
+    const updatedCreator = await this.prisma.creator.update({
       data: {
         [propertyName]: !!creator[propertyName] ? null : new Date(),
       },
       where: { slug },
     });
+    if (updatedCreator.verifiedAt) {
+      this.mailService.creatorVerified(updatedCreator);
+    }
     if (withMessage) {
       return generateMessageAfterAdminAction({
-        prevState: !!creator[propertyName],
+        isPropertySet: !!updatedCreator[propertyName],
         propertyName,
         startOfTheMessage: 'Creator has been',
       });
