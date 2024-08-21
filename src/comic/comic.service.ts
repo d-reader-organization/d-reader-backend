@@ -407,7 +407,7 @@ export class ComicService {
     });
     if (withMessage) {
       return generateMessageAfterAdminAction({
-        prevState: !comic[propertyName],
+        prevState: !!comic[propertyName],
         propertyName,
         startOfTheMessage: 'Comic has been',
       });
