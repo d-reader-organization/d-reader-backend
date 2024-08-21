@@ -48,9 +48,9 @@ export class WalletService {
 
   // TODO v2: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
-    const compeleteAssets = await this.prisma.collectibeComic
+    const compeleteAssets = await this.prisma.collectibleComic
       .findMany({
-        where: { ownerAddress: address },
+        where: { digitalAsset: { ownerAddress: address } },
       })
       .then((nfts) => nfts.map((nft) => nft.address));
 
@@ -86,13 +86,17 @@ export class WalletService {
     for await (const nftAddress of nftsWithNewOwner) {
       const asset = await getAsset(nftAddress);
       const newOwner = asset.ownership.owner;
-      await this.prisma.collectibeComic.update({
+      await this.prisma.collectibleComic.update({
         where: { address: nftAddress },
         data: {
-          owner: {
-            connectOrCreate: {
-              where: { address: newOwner },
-              create: { address: newOwner },
+          digitalAsset: {
+            update: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: newOwner },
+                  create: { address: newOwner },
+                },
+              },
             },
           },
         },
@@ -129,21 +133,22 @@ export class WalletService {
 
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { assetAddress: indexedAsset.address },
+          where: { collectibleComicAddress: indexedAsset.address },
         },
       );
 
       if (!doesReceiptExists) {
         const UNKNOWN = 'UNKNOWN';
-        const userId: number = indexedAsset.owner?.userId;
+        const { owner, ownerAddress } = indexedAsset.digitalAsset;
+        const userId: number = owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          asset: { connect: { address: indexedAsset.address } },
+          collectibleComic: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine.address } },
           buyer: {
             connectOrCreate: {
-              where: { address: indexedAsset.ownerAddress },
-              create: { address: indexedAsset.ownerAddress },
+              where: { address: ownerAddress },
+              create: { address: ownerAddress },
             },
           },
           price: 0,
@@ -223,21 +228,22 @@ export class WalletService {
       );
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { assetAddress: indexedAsset.address },
+          where: { collectibleComicAddress: indexedAsset.address },
         },
       );
 
       if (!doesReceiptExists) {
         const UNKNOWN = 'UNKNOWN';
-        const userId: number = indexedAsset.owner?.userId;
+        const { owner, ownerAddress } = indexedAsset.digitalAsset;
+        const userId: number = owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          asset: { connect: { address: indexedAsset.address } },
+          collectibleComic: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine } },
           buyer: {
             connectOrCreate: {
-              where: { address: indexedAsset.ownerAddress },
-              create: { address: indexedAsset.ownerAddress },
+              where: { address: ownerAddress },
+              create: { address: ownerAddress },
             },
           },
           price: 0,
@@ -316,8 +322,8 @@ export class WalletService {
   }
 
   async getAssets(address: string) {
-    const nfts = await this.prisma.collectibeComic.findMany({
-      where: { ownerAddress: address },
+    const nfts = await this.prisma.collectibleComic.findMany({
+      where: { digitalAsset: { ownerAddress: address } },
       orderBy: { name: 'asc' },
     });
 

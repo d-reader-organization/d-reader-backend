@@ -58,7 +58,7 @@ export class InsertItemsCommand extends CommandRunner {
 
     const items: { uri: string; name: string }[] = [];
     const collectionName = candyMachineData.collection.name;
-    const itemMetadatas = await this.prisma.metadata.findMany({
+    const itemMetadatas = await this.prisma.collectibleComicMetadata.findMany({
       where: { collectionAddress: candyMachineData.collectionAddress },
     });
 

@@ -311,7 +311,7 @@ BEGIN
     LOOP
         -- Insert a new row into DigitalAsset
         INSERT INTO "DigitalAsset" ("ownerAddress","ownerChangedAt")
-        VALUES ('7hMg1RAjwUwUtPobWy9s82rG3Kj54BUGWc9hi32ACiWC',CURRENT_DATE) -- Change this value as per the environment treasury wallet
+        VALUES ('FXj8W4m33SgLB5ZAg35g8wsqFTvywc6fmJTXzoQQhrVf',CURRENT_DATE) -- Change this value as per the environment treasury wallet
         RETURNING id INTO new_asset_id;
         
         -- Update the corresponding CollectibleComicCollection row with the new DigitalAsset id

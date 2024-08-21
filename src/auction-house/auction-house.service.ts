@@ -126,7 +126,9 @@ export class AuctionHouseService {
       where: {
         collection: {
           metadatas: {
-            some: { asset: { some: { address: mintAccount.toString() } } },
+            some: {
+              collectibleComics: { some: { address: mintAccount.toString() } },
+            },
           },
         },
       },
@@ -191,7 +193,7 @@ export class AuctionHouseService {
           canceledAt: new Date(0),
         },
       },
-      include: { asset: true },
+      include: { digitalAsset: { include: { collectibleComic: true } } },
     });
     if (!listing) {
       throw new NotFoundException(
@@ -264,7 +266,9 @@ export class AuctionHouseService {
       where: {
         collection: {
           metadatas: {
-            some: { asset: { some: { address: mintAccount.toString() } } },
+            some: {
+              collectibleComics: { some: { address: mintAccount.toString() } },
+            },
           },
         },
       },
@@ -346,7 +350,7 @@ export class AuctionHouseService {
     } else {
       const listing = await this.prisma.listing.findFirst({
         where: { assetAddress, canceledAt: new Date(0) },
-        include: { asset: true },
+        include: { digitalAsset: { include: { collectibleComic: true } } },
       });
       partialListing = await toListing(this.metaplex, auctionHouse, listing);
     }
@@ -361,14 +365,18 @@ export class AuctionHouseService {
   async getTotalVolume(comicIssueId: number) {
     const getSecondaryVolume = this.prisma.listing.aggregate({
       where: {
-        asset: { metadata: { collection: { comicIssueId } } },
+        digitalAsset: {
+          collectibleComic: { metadata: { collection: { comicIssueId } } },
+        },
         soldAt: { not: null },
       },
       _sum: { price: true },
     });
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
-      where: { asset: { metadata: { collection: { comicIssueId } } } },
+      where: {
+        collectibleComic: { metadata: { collection: { comicIssueId } } },
+      },
       _sum: { price: true },
     });
 
@@ -390,14 +398,18 @@ export class AuctionHouseService {
 
     const countListed = this.prisma.listing.count({
       where: {
-        asset: { metadata: { collection: { comicIssueId } } },
+        digitalAsset: {
+          collectibleComic: { metadata: { collection: { comicIssueId } } },
+        },
         canceledAt: new Date(0),
       },
     });
 
     const getCheapestItem = this.prisma.listing.findFirst({
       where: {
-        asset: { metadata: { collection: { comicIssueId } } },
+        digitalAsset: {
+          collectibleComic: { metadata: { collection: { comicIssueId } } },
+        },
         canceledAt: new Date(0),
       },
       orderBy: { price: 'asc' },
@@ -434,12 +446,14 @@ export class AuctionHouseService {
         soldAt: isBoolean(query.isSold)
           ? { [query.isSold ? 'not' : 'equals']: null }
           : undefined,
-        asset: {
-          metadata: {
-            collection: { comicIssueId: query.comicIssueId },
-            rarity: query.rarity,
-            isUsed: query.isUsed,
-            isSigned: query.isSigned,
+        digitalAsset: {
+          collectibleComic: {
+            metadata: {
+              collection: { comicIssueId: query.comicIssueId },
+              rarity: query.rarity,
+              isUsed: query.isUsed,
+              isSigned: query.isSigned,
+            },
           },
         },
         source: { in: [Source.METAPLEX, Source.TENSOR] },
@@ -448,8 +462,11 @@ export class AuctionHouseService {
         price: sortTag == ListingSortTag.Price ? sortOrder : SortOrder.ASC,
       },
       include: {
-        asset: {
-          include: { owner: { include: { user: true } }, metadata: true },
+        digitalAsset: {
+          include: {
+            owner: { include: { user: true } },
+            collectibleComic: { include: { metadata: true } },
+          },
         },
       },
       take: query.take,
@@ -459,7 +476,7 @@ export class AuctionHouseService {
     if (sortTag == ListingSortTag.Rarity) {
       listings = sortBy(listings, (item) => {
         const rarityIndex = RARITY_PRECEDENCE.indexOf(
-          item.asset.metadata.rarity,
+          item.digitalAsset.collectibleComic.metadata.rarity,
         );
         return sortOrder == SortOrder.DESC ? -rarityIndex : rarityIndex;
       });
@@ -469,6 +486,9 @@ export class AuctionHouseService {
 
   async syncListings(listings: TENSOR_LISTING_RESPONSE[]) {
     for await (const listing of listings) {
+      const collectibleComic = await this.prisma.collectibleComic.findUnique({
+        where: { address: listing.mint.onchainId },
+      });
       await this.prisma.listing.upsert({
         where: {
           assetAddress_canceledAt: {
@@ -502,6 +522,9 @@ export class AuctionHouseService {
               ? Source.TENSOR
               : Source.MAGIC_EDEN,
           canceledAt: new Date(0),
+          digitalAsset: {
+            connect: { id: collectibleComic.digitalAssetId },
+          },
         },
       });
     }

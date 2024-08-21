@@ -218,8 +218,8 @@ export class UserService {
   }
 
   async getAssets(userId: number) {
-    const assets = await this.prisma.collectibeComic.findMany({
-      where: { owner: { userId } },
+    const assets = await this.prisma.collectibleComic.findMany({
+      where: { digitalAsset: { owner: { userId } } },
       orderBy: { name: 'asc' },
     });
     return assets;

@@ -147,8 +147,14 @@ export class ComicService {
       where: {
         issues: {
           some: {
-            collection: {
-              metadatas: { some: { asset: { some: { owner: { userId } } } } },
+            collectibleComicCollection: {
+              metadatas: {
+                some: {
+                  collectibleComics: {
+                    some: { digitalAsset: { owner: { userId } } },
+                  },
+                },
+              },
             },
           },
         },

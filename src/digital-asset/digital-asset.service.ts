@@ -26,13 +26,9 @@ import {
 } from '@metaplex-foundation/mpl-toolbox';
 import { D_READER_FRONTEND_URL, MIN_COMPUTE_PRICE } from '../constants';
 import { base64 } from '@metaplex-foundation/umi/serializers';
-import {
-  CreatePrintEditionCollectionBodyDto,
-  CreatePrintEditionCollectionDto,
-} from './dto/create-edition.dto';
+import { CreatePrintEditionCollectionDto } from './dto/create-edition.dto';
 import { s3Service } from '../aws/s3.service';
 import { AssetType } from '@prisma/client';
-import { appendTimestamp } from '../utils/helpers';
 import { s3toMxFile } from '../utils/files';
 import { CreateOneOfOneDto } from './dto/create-one-of-one-dto';
 import { CreateOneOfOneCollectionDto } from './dto/create-collection-dto';
@@ -63,11 +59,13 @@ export class DigitalAssetService {
   }
 
   async findAll(query: DigitalAssetFilterParams) {
-    const assets = await this.prisma.collectibeComic.findMany({
+    const assets = await this.prisma.collectibleComic.findMany({
       where: {
-        owner: {
-          address: query?.ownerAddress,
-          userId: query.userId ? +query.userId : undefined,
+        digitalAsset: {
+          owner: {
+            address: query?.ownerAddress,
+            userId: query.userId ? +query.userId : undefined,
+          },
         },
         metadata: {
           collection: {
@@ -79,18 +77,23 @@ export class DigitalAssetService {
       },
       skip: query?.skip,
       take: query?.take,
-      include: { metadata: { include: { collection: true } } },
+      include: {
+        metadata: { include: { collection: true } },
+        digitalAsset: true,
+      },
       orderBy: { name: 'asc' },
     });
     return assets;
   }
 
   async findOne(address: string) {
-    const asset = await this.prisma.collectibeComic.findUnique({
+    const asset = await this.prisma.collectibleComic.findUnique({
       where: { address },
       include: {
         metadata: { include: { collection: true } },
-        listing: { where: { canceledAt: new Date(0) } },
+        digitalAsset: {
+          include: { listings: { where: { canceledAt: new Date(0) } } },
+        },
       },
     });
 
@@ -338,7 +341,7 @@ export class DigitalAssetService {
     address: string,
     createMasterEditionDto: CreatePrintEditionCollectionDto,
   ) {
-    /* Saves print edition collection in database using helius webhook*/
+    /* Saves print edition collection in database */
     const {
       name,
       description,
@@ -367,18 +370,29 @@ export class DigitalAssetService {
         image: imageKey,
         isNSFW,
         sellerFeeBasisPoints,
-        owner: authority,
-        royaltyWallets: { createMany: { data: royaltyWallets } },
-        tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
-        traits: {
-          createMany: {
-            data: attributes.map((attribute) => ({
-              name: attribute.trait_type,
-              value: attribute.value,
-            })),
+        publishedAt: new Date(),
+        digitalAsset: {
+          create: {
+            owner: {
+              connectOrCreate: {
+                where: { address: authority },
+                create: { address: authority },
+              },
+            },
+            ownerChangedAt: new Date(),
+            royaltyWallets: { createMany: { data: royaltyWallets } },
+            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
+            traits: {
+              createMany: {
+                data: attributes.map((attribute) => ({
+                  name: attribute.trait_type,
+                  value: attribute.value,
+                })),
+              },
+            },
+            genres: { connect: genres.map((slug) => ({ slug })) },
           },
         },
-        genres: { connect: genres.map((slug) => ({ slug })) },
       },
     });
   }
@@ -386,10 +400,10 @@ export class DigitalAssetService {
   async createBuyPrintEditionTransaction(printEditionDto: PrintEditionParams) {
     /* Mints a pint edition */
     const { buyer, masterEditionAddress } = printEditionDto;
-    const { printEditionSaleConfig, ...masterEdition } =
+    const { printEditionSaleConfig, digitalAsset } =
       await this.prisma.printEditionCollection.findFirst({
         where: { address: masterEditionAddress },
-        include: { printEditionSaleConfig: true },
+        include: { printEditionSaleConfig: true, digitalAsset: true },
       });
 
     // Add checks for print edition
@@ -427,7 +441,7 @@ export class DigitalAssetService {
     });
 
     const edition = generateSigner(this.umi);
-    const seller = publicKey(masterEdition.owner);
+    const seller = publicKey(digitalAsset.ownerAddress);
     const sellerPaymentReciept =
       printEditionSaleConfig.currencyMint === WRAPPED_SOL_MINT.toString()
         ? seller

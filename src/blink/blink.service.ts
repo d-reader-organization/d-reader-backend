@@ -87,7 +87,7 @@ export class BlinkService {
   async getComicSignActionSpec(
     address: string,
   ): Promise<ActionSpecGetResponse> {
-    const asset = await this.prisma.collectibeComic.findFirst({
+    const asset = await this.prisma.collectibleComic.findFirst({
       where: { address },
       include: {
         metadata: true,
@@ -119,22 +119,24 @@ export class BlinkService {
   }
 
   async signComicAction(address: PublicKey, creator: PublicKey) {
-    const asset = await this.prisma.collectibeComic.findFirst({
+    const collectibleComic = await this.prisma.collectibleComic.findFirst({
       where: { address: address.toString() },
       include: { metadata: true },
     });
 
-    if (!asset) {
+    if (!collectibleComic) {
       throw new BadRequestException("Asset doesn't exists or unverified");
     }
 
-    const { metadata } = asset;
+    const { metadata } = collectibleComic;
     if (metadata.isSigned) {
       throw new BadRequestException('Comic is already signed !');
     }
 
     const issue = await this.prisma.comicIssue.findFirst({
-      where: { collection: { address: metadata.collectionAddress } },
+      where: {
+        collectibleComicCollection: { address: metadata.collectionAddress },
+      },
     });
 
     if (!issue) {

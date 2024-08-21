@@ -577,7 +577,6 @@ Table PrintEditionCollection {
   address String [pk]
   name String [not null]
   description String [not null]
-  owner String [not null]
   image String [not null]
   sellerFeeBasisPoints Int [not null, default: 0]
   editions PrintEdition [not null]

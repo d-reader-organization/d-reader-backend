@@ -2,7 +2,7 @@ import { IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import {
   CandyMachineReceipt,
-  CollectibeComic,
+  CollectibleComic,
   User,
   Wallet,
 } from '@prisma/client';
@@ -37,19 +37,19 @@ export class CandyMachineReceiptDto {
 }
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
-  asset: CollectibeComic;
+  collectibleComic: CollectibleComic;
   buyer: Wallet & { user: User };
 };
 
 export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
   const plainReceiptDto: CandyMachineReceiptDto = {
     nft: {
-      address: receipt.asset.address,
-      name: receipt.asset.name,
+      address: receipt.collectibleComic.address,
+      name: receipt.collectibleComic.name,
     },
     asset: {
-      address: receipt.asset.address,
-      name: receipt.asset.name,
+      address: receipt.collectibleComic.address,
+      name: receipt.collectibleComic.name,
     },
     buyer: await toBuyerDto(receipt.buyer),
     candyMachineAddress: receipt.candyMachineAddress,
