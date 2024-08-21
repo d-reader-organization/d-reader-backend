@@ -776,7 +776,7 @@ export class ComicIssueService {
       return generateMessageAfterAdminAction({
         isPropertySet: !!updatedComicIssue[propertyName],
         propertyName,
-        startOfTheMessage: 'Comic issue has been',
+        startOfTheMessage: `Comic issue ${updatedComicIssue.title} has been`,
       });
     }
   }
