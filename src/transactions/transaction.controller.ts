@@ -41,10 +41,19 @@ import { DigitalAssetService } from 'src/digital-asset/digital-asset.service';
 import {
   CreatePrintEditionCollectionBodyDto,
   CreatePrintEditionCollectionDto,
-} from 'src/digital-asset/dto/create-edition.dto';
+} from 'src/digital-asset/dto/create-print-edition.dto';
 import { BaseMetadataFilesDto } from 'src/digital-asset/dto/base-metadata.dto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { ApiFileWithBody } from 'src/decorators/api-file-body.decorator';
+import { ApiFilesWithBody } from '../decorators/api-file-body.decorator';
+import {
+  CreateOneOfOneBodyDto,
+  CreateOneOfOneDto,
+} from 'src/digital-asset/dto/create-one-of-one-dto';
+import {
+  CreateOneOfOneCollectionBodyDto,
+  CreateOneOfOneCollectionDto,
+  CreateOneOfOneCollectionFilesDto,
+} from 'src/digital-asset/dto/create-one-of-one-collection-dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -273,10 +282,10 @@ export class TransactionController {
 
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
-  @Post('/edition/mint-collection')
+  @Post('mint/print-edition-collection')
   async createPrintEditionCollectionTransaction(
-    @ApiFileWithBody({
-      fileField: 'image',
+    @ApiFilesWithBody({
+      fileFields: ['image'],
       fileType: BaseMetadataFilesDto,
       bodyType: CreatePrintEditionCollectionBodyDto,
     })
@@ -284,6 +293,38 @@ export class TransactionController {
   ) {
     return await this.digitalAssetService.createPrintEditionCollectionTransaction(
       createPrintEditionCollectionDto,
+    );
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('mint/one-of-one')
+  async createOneOfOneTransaction(
+    @ApiFilesWithBody({
+      fileFields: ['image'],
+      fileType: BaseMetadataFilesDto,
+      bodyType: CreateOneOfOneBodyDto,
+    })
+    createOneOfOneDto: CreateOneOfOneDto,
+  ) {
+    return await this.digitalAssetService.createOneOfOneTransaction(
+      createOneOfOneDto,
+    );
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('mint/one-of-one-collection')
+  async createOneOfOneCollectionTransaction(
+    @ApiFilesWithBody({
+      fileFields: ['image', 'cover'],
+      fileType: CreateOneOfOneCollectionFilesDto,
+      bodyType: CreateOneOfOneCollectionBodyDto,
+    })
+    createOneOfOneCollectionDto: CreateOneOfOneCollectionDto,
+  ) {
+    return await this.digitalAssetService.createOneOfOneCollectionTransaction(
+      createOneOfOneCollectionDto,
     );
   }
 }
