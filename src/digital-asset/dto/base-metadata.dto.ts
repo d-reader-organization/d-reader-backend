@@ -38,20 +38,23 @@ export class BaseMetadataDto {
   tags: string[];
 
   @Transform(({ value }: { value: string[] }) => {
-    const attributesDto = value.map((item) => JSON.parse(item));
-    return attributesDto;
+    const attributesDtoArray = value.map((item) => JSON.parse(item));
+    return attributesDtoArray;
   })
   @IsArray()
   @ApiProperty({ type: AttributesDto })
   @Type(() => AttributesDto)
   attributes: AttributesDto[];
 
-  @IsOptional()
+  @Transform(({ value }: { value: string[] }) => {
+    const royaltyWalletDtoArray = value.map((item) => JSON.parse(item));
+    return royaltyWalletDtoArray;
+  })
   @IsArray()
   @ArrayMaxSize(MAX_CREATOR_LIMIT)
   @Type(() => RoyaltyWalletDto)
   @ApiProperty({ type: [RoyaltyWalletDto] })
-  royaltyWallets?: RoyaltyWalletDto[];
+  royaltyWallets: RoyaltyWalletDto[];
 }
 
 export class BaseMetadataFilesDto {

@@ -19,19 +19,18 @@ import {
   CreateArgsPlugin,
   CreateCollectionArgsPlugin,
 } from '@metaplex-foundation/mpl-core';
-import { MetadataFile, umi, writeFiles } from '../utils/metaplex';
+import { umi } from '../utils/metaplex';
 import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
 import { D_READER_FRONTEND_URL, MIN_COMPUTE_PRICE } from '../constants';
 import { base64 } from '@metaplex-foundation/umi/serializers';
-import { CreatePrintEditionCollectionDto } from './dto/create-edition.dto';
+import { CreatePrintEditionCollectionDto } from './dto/create-print-edition.dto';
 import { s3Service } from '../aws/s3.service';
 import { AssetType } from '@prisma/client';
-import { s3toMxFile } from '../utils/files';
 import { CreateOneOfOneDto } from './dto/create-one-of-one-dto';
-import { CreateOneOfOneCollectionDto } from './dto/create-collection-dto';
+import { CreateOneOfOneCollectionDto } from './dto/create-one-of-one-collection-dto';
 import { AttributesDto } from '../auction-house/dto/listing.dto';
 import { PrintEditionParams } from './dto/print-edition-params.dto';
 import {
@@ -135,17 +134,18 @@ export class DigitalAssetService {
     const collection = generateSigner(umi);
     const collectionAddress = collection.publicKey.toString();
 
-    const coverS3Folder = getS3Folder(
-      collectionAddress,
-      AssetType.OneOfOneCollection,
-      'cover',
-    );
+    const files: string[] = [];
+    if (cover) {
+      const coverS3Folder = getS3Folder(
+        collectionAddress,
+        AssetType.OneOfOneCollection,
+        'cover',
+      );
+      const coverFile = toMetaplexFile(image.buffer, coverS3Folder);
+      const [coverUri] = await this.umi.uploader.upload([coverFile]);
+      files.push(coverUri);
+    }
 
-    const coverUri = await this.s3.uploadFile(cover, {
-      s3Folder: coverS3Folder,
-    });
-
-    const coverFile = await s3toMxFile(coverUri);
     const plugins: CreateCollectionArgsPlugin[] = [
       {
         type: 'Royalties',
@@ -166,7 +166,7 @@ export class DigitalAssetService {
       tags,
       genres,
       creators,
-      writeFiles(coverFile),
+      files,
     );
 
     const createCollectionBuilder = createCollection(umi, {
@@ -183,7 +183,7 @@ export class DigitalAssetService {
     const transaction = await builder.buildAndSign({ ...this.umi, payer });
     const serializedTransaction = base64.deserialize(
       this.umi.transactions.serialize(transaction),
-    );
+    )[0];
 
     return serializedTransaction;
   }
@@ -235,13 +235,19 @@ export class DigitalAssetService {
       creators,
       [],
     );
+
     const asset = generateSigner(umi);
+    const collection = collectionAddress
+      ? { publicKey: publicKey(collectionAddress) }
+      : undefined;
     const createAssetBuilder = createAsset(umi, {
       asset,
       name,
       uri,
+      collection,
       plugins: collectionAddress ? undefined : plugins,
     });
+
     const builder = setComputeUnitPrice(this.umi, {
       microLamports: MIN_COMPUTE_PRICE,
     }).add(createAssetBuilder);
@@ -249,12 +255,12 @@ export class DigitalAssetService {
     const transaction = await builder.buildAndSign({ ...this.umi, payer });
     const serializedTransaction = base64.deserialize(
       this.umi.transactions.serialize(transaction),
-    );
+    )[0];
     return serializedTransaction;
   }
 
   async createPrintEditionCollectionTransaction(
-    createMasterEditionDto: CreatePrintEditionCollectionDto,
+    createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
   ) {
     /* Create a Master edition transaction*/
     const {
@@ -268,15 +274,10 @@ export class DigitalAssetService {
       image,
       supply,
       royaltyWallets,
-    } = createMasterEditionDto;
+    } = createPrintEditionCollectionDto;
     const payer = createNoopSigner(publicKey(authority));
 
-    const creators: CoreCreator[] = [
-      {
-        address: this.umi.identity.publicKey,
-        percentage: 100,
-      },
-    ];
+    const creators: CoreCreator[] = [];
 
     if (royaltyWallets) {
       royaltyWallets.forEach((wallet) => {
@@ -301,7 +302,6 @@ export class DigitalAssetService {
       [],
     );
 
-    console.log(uri);
     const plugins: CreateCollectionArgsPlugin[] = [
       {
         type: 'Royalties',
@@ -339,7 +339,7 @@ export class DigitalAssetService {
 
   async createPrintEditionCollection(
     address: string,
-    createMasterEditionDto: CreatePrintEditionCollectionDto,
+    createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
   ) {
     /* Saves print edition collection in database */
     const {
@@ -353,7 +353,7 @@ export class DigitalAssetService {
       isNSFW,
       image,
       royaltyWallets,
-    } = createMasterEditionDto;
+    } = createPrintEditionCollectionDto;
 
     const s3Folder = getS3Folder(
       address,
@@ -478,7 +478,7 @@ export class DigitalAssetService {
     tags: string[],
     genres: string[],
     creators: CoreCreator[],
-    files: MetadataFile[],
+    files: string[],
   ) {
     const imageS3Folder = getS3Folder(assetAddress, assetType, 'image');
     const imageFile = toMetaplexFile(image.buffer, imageS3Folder);
