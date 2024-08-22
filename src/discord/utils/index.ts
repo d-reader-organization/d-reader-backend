@@ -23,7 +23,7 @@ const fieldData = <T>({
     return [
       ...prev,
       {
-        name: `${curr.toUpperCase()} (OLD -> NEW):`,
+        name: `${curr.toUpperCase()}`,
         value: `${strikethrough(oldValue.toString())} -> ${bold(
           newValue.toString(),
         )}`,

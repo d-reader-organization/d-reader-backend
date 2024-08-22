@@ -21,7 +21,7 @@ export class PushNotificationDiscordDto {
 
   @Param({
     description:
-      'comicSlug:pall-o, comicIssueId:2, externalUrl:url, creatorSlug:slug, digitalAssetAddress:address',
+      'comicSlug:pall-o, comicIssueId:2, externalUrl:url, creatorSlug:slug',
     required: true,
   })
   data: string;
