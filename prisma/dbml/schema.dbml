@@ -555,7 +555,7 @@ Table OneOfOneCollection {
   name String [not null]
   description String [not null]
   image String [not null]
-  banner String [not null]
+  banner String [not null, default: '']
   digitalAssetId Int [unique, not null]
   digitalAsset DigitalAsset [not null]
   sellerFeeBasisPoints Int [not null, default: 0]

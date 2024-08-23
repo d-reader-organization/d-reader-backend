@@ -83,7 +83,7 @@ CREATE TABLE "OneOfOneCollection" (
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "image" TEXT NOT NULL,
-    "banner" TEXT NOT NULL,
+    "banner" TEXT NOT NULL DEFAULT '',
     "digitalAssetId" INTEGER NOT NULL,
     "sellerFeeBasisPoints" INTEGER NOT NULL DEFAULT 0,
     "verifiedAt" TIMESTAMP(3),
@@ -201,9 +201,6 @@ CREATE UNIQUE INDEX "PrintEditionCollection_digitalAssetId_key" ON "PrintEdition
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PrintEditionSaleConfig_collectionAddress_key" ON "PrintEditionSaleConfig"("collectionAddress");
-
--- CreateIndex
-CREATE UNIQUE INDEX "DigitalAssetTag_value_key" ON "DigitalAssetTag"("value");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PrintEdition_digitalAssetId_key" ON "PrintEdition"("digitalAssetId");
