@@ -607,7 +607,7 @@ model OneOfOneCollection {
   name                 String
   description          String
   image                String
-  banner               String
+  banner               String       @default("")
   digitalAssetId       Int          @unique
   digitalAsset         DigitalAsset @relation(fields: [digitalAssetId], references: [id])
   sellerFeeBasisPoints Int          @default(0)
@@ -663,7 +663,7 @@ model PrintEditionSaleConfig {
 
 model DigitalAssetTag {
   id             Int          @id @default(autoincrement())
-  value          String       @unique
+  value          String       
   digitalAssetId Int
   digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 }

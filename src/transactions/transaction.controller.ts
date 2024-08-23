@@ -54,6 +54,7 @@ import {
   CreateOneOfOneCollectionDto,
   CreateOneOfOneCollectionFilesDto,
 } from 'src/digital-asset/dto/create-one-of-one-collection-dto';
+import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -290,7 +291,7 @@ export class TransactionController {
       bodyType: CreatePrintEditionCollectionBodyDto,
     })
     createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
-  ) {
+  ): Promise<DigitalAssetCreateTransactionDto> {
     return await this.digitalAssetService.createPrintEditionCollectionTransaction(
       createPrintEditionCollectionDto,
     );
@@ -306,7 +307,7 @@ export class TransactionController {
       bodyType: CreateOneOfOneBodyDto,
     })
     createOneOfOneDto: CreateOneOfOneDto,
-  ) {
+  ): Promise<DigitalAssetCreateTransactionDto> {
     return await this.digitalAssetService.createOneOfOneTransaction(
       createOneOfOneDto,
     );
@@ -322,7 +323,7 @@ export class TransactionController {
       bodyType: CreateOneOfOneCollectionBodyDto,
     })
     createOneOfOneCollectionDto: CreateOneOfOneCollectionDto,
-  ) {
+  ): Promise<DigitalAssetCreateTransactionDto> {
     return await this.digitalAssetService.createOneOfOneCollectionTransaction(
       createOneOfOneCollectionDto,
     );

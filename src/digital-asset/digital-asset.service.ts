@@ -26,7 +26,11 @@ import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
-import { D_READER_FRONTEND_URL, MIN_COMPUTE_PRICE } from '../constants';
+import {
+  D_READER_FRONTEND_URL,
+  D_READER_SYMBOL,
+  MIN_COMPUTE_PRICE,
+} from '../constants';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { CreatePrintEditionCollectionDto } from './dto/create-print-edition.dto';
 import { s3Service } from '../aws/s3.service';
@@ -45,6 +49,9 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { fetchDigitalAssetOffChainMetadata } from 'src/utils/nft-metadata';
 import { imageUrlToS3File } from 'src/utils/files';
 import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
+import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
+import { isEqual } from 'lodash';
+import { DigitalAssetJsonMetadata } from './dto/types';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${assetType}/${address}/`;
@@ -110,7 +117,7 @@ export class DigitalAssetService {
 
   async createOneOfOneCollectionTransaction(
     createCollectionDto: CreateOneOfOneCollectionDto,
-  ) {
+  ): Promise<DigitalAssetCreateTransactionDto> {
     /* Creates a one of one collection transaction */
     const {
       name,
@@ -137,11 +144,11 @@ export class DigitalAssetService {
     const collection = generateSigner(umi);
     const collectionAddress = collection.publicKey.toString();
 
-    const files: string[] = [];
+    const files: DigitalAssetJsonMetadata['properties']['files'] = [];
     if (cover) {
       const coverFile = toMetaplexFile(image.buffer, 'cover');
       const [coverUri] = await this.umi.uploader.upload([coverFile]);
-      files.push(coverUri);
+      files.push({ name: 'cover', type: 'img/png', uri: coverUri });
     }
 
     const plugins: CreateCollectionArgsPlugin[] = [
@@ -181,7 +188,10 @@ export class DigitalAssetService {
       this.umi.transactions.serialize(transaction),
     )[0];
 
-    return { transaction: serializedTransaction, address: collectionAddress };
+    return {
+      transaction: serializedTransaction,
+      digitalAssetAddress: collectionAddress,
+    };
   }
 
   async createOneOfOneCollection(address: string) {
@@ -222,11 +232,12 @@ export class DigitalAssetService {
       fileName: 'image',
       timestamp: false,
     });
-    const coverUri = properties.files?.at(0).uri ?? undefined;
+    console.log(properties);
+    const cover = properties.files?.find((file) => file.name === 'cover');
 
     let banner: string;
-    if (coverUri) {
-      const coverFile = await imageUrlToS3File(coverUri);
+    if (cover) {
+      const coverFile = await imageUrlToS3File(cover.uri);
       banner = await this.s3.uploadFile(coverFile, {
         s3Folder,
         fileName: 'cover',
@@ -268,7 +279,9 @@ export class DigitalAssetService {
     });
   }
 
-  async createOneOfOneTransaction(createOneOfOneDto: CreateOneOfOneDto) {
+  async createOneOfOneTransaction(
+    createOneOfOneDto: CreateOneOfOneDto,
+  ): Promise<DigitalAssetCreateTransactionDto> {
     /* Creates a one of one  */
     const {
       name,
@@ -336,7 +349,10 @@ export class DigitalAssetService {
       this.umi.transactions.serialize(transaction),
     )[0];
 
-    return serializedTransaction;
+    return {
+      transaction: serializedTransaction,
+      digitalAssetAddress: asset.publicKey.toString(),
+    };
   }
 
   async createOneOfOne(address: string) {
@@ -353,10 +369,15 @@ export class DigitalAssetService {
     const asset = await fetchAsset(this.umi, address);
     const authority = asset.owner.toString();
     const offChainMetadata = await fetchDigitalAssetOffChainMetadata(asset.uri);
+    const updateAuthority = asset.updateAuthority.address.toString();
+    const doesCollectionExists = isEqual(updateAuthority, authority);
+    const collectionAddress = doesCollectionExists
+      ? undefined
+      : asset.updateAuthority.address.toString();
 
     const { name, description, properties, attributes, tags, genres, isNSFW } =
       offChainMetadata;
-    const royaltyWallets: RoyaltyWalletDto[] = properties.creators.map(
+    const royaltyWallets: RoyaltyWalletDto[] = doesCollectionExists ? undefined : properties.creators.map(
       (creator) => {
         return {
           address: creator.address,
@@ -374,43 +395,53 @@ export class DigitalAssetService {
       timestamp: false,
     });
 
-    return await this.prisma.oneOfOne.create({
-      data: {
-        address,
-        name,
-        description,
-        sellerFeeBasisPoints,
-        isNSFW,
-        image,
-        digitalAsset: {
-          create: {
-            owner: {
-              connectOrCreate: {
-                where: { address: authority },
-                create: { address: authority },
+    try{
+      return await this.prisma.oneOfOne.create({
+        data: {
+          address,
+          name,
+          description,
+          sellerFeeBasisPoints,
+          isNSFW,
+          image,
+          collection: doesCollectionExists
+            ? {
+                connect: { address: collectionAddress },
+              }
+            : undefined,
+          digitalAsset: {
+            create: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: authority },
+                  create: { address: authority },
+                },
               },
-            },
-            ownerChangedAt: new Date(),
-            royaltyWallets: { createMany: { data: royaltyWallets } },
-            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
-            traits: {
-              createMany: {
-                data: attributes.map((attribute) => ({
-                  name: attribute.trait_type,
-                  value: attribute.value,
-                })),
+              ownerChangedAt: new Date(),
+              royaltyWallets: doesCollectionExists ? undefined : { createMany: { data: royaltyWallets } },
+              tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
+              traits: {
+                createMany: {
+                  data: attributes.map((attribute) => ({
+                    name: attribute.trait_type,
+                    value: attribute.value,
+                  })),
+                },
               },
+              genres: { connect: genres.map((slug) => ({ slug })) },
             },
-            genres: { connect: genres.map((slug) => ({ slug })) },
           },
         },
-      },
-    });
+      });
+    }catch(e){
+      console.error(e)
+    }
+   
   }
 
   async createPrintEditionCollectionTransaction(
     createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
-  ) {
+  ): Promise<DigitalAssetCreateTransactionDto> {
     /* Create a Master edition transaction*/
     const {
       name,
@@ -483,7 +514,7 @@ export class DigitalAssetService {
 
     return {
       transaction: serializedTransaction,
-      address: collection.publicKey.toString(),
+      digitalAssetAddress: collection.publicKey.toString(),
     };
   }
 
@@ -642,17 +673,21 @@ export class DigitalAssetService {
     tags: string[],
     genres: string[],
     creators: CoreCreator[],
-    files: string[],
+    files: DigitalAssetJsonMetadata['properties']['files'],
     isNSFW = false,
   ) {
     const imageFile = toMetaplexFile(image.buffer, 'image.png');
     const [imageUri] = await this.umi.uploader.upload([imageFile]);
 
-    const uri = await this.umi.uploader.uploadJson({
+    const jsonMetadata: DigitalAssetJsonMetadata = {
       name,
+      symbol: D_READER_SYMBOL,
       description,
       image: imageUri,
-      attributes,
+      attributes: attributes.map((attribute) => ({
+        trait_type: attribute.trait_type,
+        value: attribute.value,
+      })),
       tags,
       genres,
       isNSFW,
@@ -661,7 +696,9 @@ export class DigitalAssetService {
         creators,
         files,
       },
-    });
+    };
+
+    const uri = await this.umi.uploader.uploadJson(jsonMetadata);
 
     return uri;
   }
