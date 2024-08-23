@@ -175,7 +175,7 @@ async function main() {
   await prisma.candyMachineGroup.deleteMany();
   await prisma.digitalAsset.deleteMany();
   await prisma.candyMachine.deleteMany();
-  await prisma.collection.deleteMany();
+  await prisma.collectibleComicCollection.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.userComic.deleteMany();

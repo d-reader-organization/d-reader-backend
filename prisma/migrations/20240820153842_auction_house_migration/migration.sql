@@ -155,10 +155,11 @@ CREATE TABLE "OneOfOne" (
     "description" TEXT NOT NULL,
     "image" TEXT NOT NULL,
     "digitalAssetId" INTEGER NOT NULL,
-    "collectionAddress" TEXT NOT NULL,
+    "collectionAddress" TEXT,
     "sellerFeeBasisPoints" INTEGER NOT NULL DEFAULT 0,
     "verifiedAt" TIMESTAMP(3),
     "publishedAt" TIMESTAMP(3),
+    "isNSFW" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "OneOfOne_pkey" PRIMARY KEY ("address")
 );
@@ -264,7 +265,7 @@ ALTER TABLE "PrintEdition" ADD CONSTRAINT "PrintEdition_digitalAssetId_fkey" FOR
 ALTER TABLE "OneOfOne" ADD CONSTRAINT "OneOfOne_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OneOfOne" ADD CONSTRAINT "OneOfOne_collectionAddress_fkey" FOREIGN KEY ("collectionAddress") REFERENCES "OneOfOneCollection"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OneOfOne" ADD CONSTRAINT "OneOfOne_collectionAddress_fkey" FOREIGN KEY ("collectionAddress") REFERENCES "OneOfOneCollection"("address") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "DigitalAssetTrait" ADD CONSTRAINT "DigitalAssetTrait_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

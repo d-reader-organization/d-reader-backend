@@ -685,11 +685,12 @@ model OneOfOne {
   image                String
   digitalAssetId       Int                @unique
   digitalAsset         DigitalAsset       @relation(fields: [digitalAssetId], references: [id])
-  collectionAddress    String
+  collectionAddress    String?
   sellerFeeBasisPoints Int                @default(0)
   verifiedAt           DateTime?
   publishedAt          DateTime?
-  collection           OneOfOneCollection @relation(fields: [collectionAddress], references: [address])
+  isNSFW                 Boolean                 @default(false)
+  collection           OneOfOneCollection? @relation(fields: [collectionAddress], references: [address])
 }
 
 model DigitalAssetTrait {
