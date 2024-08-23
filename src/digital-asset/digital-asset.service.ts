@@ -50,7 +50,6 @@ import { fetchDigitalAssetOffChainMetadata } from 'src/utils/nft-metadata';
 import { imageUrlToS3File } from 'src/utils/files';
 import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
-import { isEqual } from 'lodash';
 import { DigitalAssetJsonMetadata } from './dto/types';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
@@ -232,9 +231,8 @@ export class DigitalAssetService {
       fileName: 'image',
       timestamp: false,
     });
-    console.log(properties);
-    const cover = properties.files?.find((file) => file.name === 'cover');
 
+    const cover = properties.files?.find((file) => file.name === 'cover');
     let banner: string;
     if (cover) {
       const coverFile = await imageUrlToS3File(cover.uri);
@@ -245,38 +243,44 @@ export class DigitalAssetService {
       });
     }
 
-    return await this.prisma.oneOfOneCollection.create({
-      data: {
-        address,
-        name,
-        description,
-        sellerFeeBasisPoints,
-        image,
-        banner,
-        digitalAsset: {
-          create: {
-            owner: {
-              connectOrCreate: {
-                where: { address: authority },
-                create: { address: authority },
+    try {
+      return await this.prisma.oneOfOneCollection.create({
+        data: {
+          address,
+          name,
+          description,
+          sellerFeeBasisPoints,
+          image,
+          banner,
+          digitalAsset: {
+            create: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: authority },
+                  create: { address: authority },
+                },
               },
-            },
-            ownerChangedAt: new Date(),
-            royaltyWallets: { createMany: { data: royaltyWallets } },
-            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
-            traits: {
-              createMany: {
-                data: attributes.map((attribute) => ({
-                  name: attribute.trait_type,
-                  value: attribute.value,
-                })),
+              ownerChangedAt: new Date(),
+              royaltyWallets: { createMany: { data: royaltyWallets } },
+              tags: {
+                createMany: { data: tags.map((tag) => ({ value: tag })) },
               },
+              traits: {
+                createMany: {
+                  data: attributes.map((attribute) => ({
+                    name: attribute.trait_type,
+                    value: attribute.value,
+                  })),
+                },
+              },
+              genres: { connect: genres.map((slug) => ({ slug })) },
             },
-            genres: { connect: genres.map((slug) => ({ slug })) },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async createOneOfOneTransaction(
@@ -369,24 +373,25 @@ export class DigitalAssetService {
     const asset = await fetchAsset(this.umi, address);
     const authority = asset.owner.toString();
     const offChainMetadata = await fetchDigitalAssetOffChainMetadata(asset.uri);
-    const updateAuthority = asset.updateAuthority.address.toString();
-    const doesCollectionExists = isEqual(updateAuthority, authority);
+    const updateAuthority = asset.updateAuthority;
+    const doesCollectionExists = updateAuthority.type === 'Collection';
     const collectionAddress = doesCollectionExists
-      ? undefined
-      : asset.updateAuthority.address.toString();
+      ? updateAuthority.address.toString()
+      : undefined;
 
     const { name, description, properties, attributes, tags, genres, isNSFW } =
       offChainMetadata;
-    const royaltyWallets: RoyaltyWalletDto[] = doesCollectionExists ? undefined : properties.creators.map(
-      (creator) => {
-        return {
-          address: creator.address,
-          share: creator.percentage,
-        };
-      },
-    );
-    const s3Folder = getS3Folder(address, AssetType.OneOfOne);
 
+    const royaltyWallets: RoyaltyWalletDto[] = doesCollectionExists
+      ? undefined
+      : properties.creators.map((creator) => {
+          return {
+            address: creator.address,
+            share: creator.percentage,
+          };
+        });
+
+    const s3Folder = getS3Folder(address, AssetType.OneOfOne);
     const sellerFeeBasisPoints = asset.royalties?.basisPoints ?? 0;
     const file = await imageUrlToS3File(offChainMetadata.image);
     const image = await this.s3.uploadFile(file, {
@@ -395,7 +400,7 @@ export class DigitalAssetService {
       timestamp: false,
     });
 
-    try{
+    try {
       return await this.prisma.oneOfOne.create({
         data: {
           address,
@@ -418,8 +423,12 @@ export class DigitalAssetService {
                 },
               },
               ownerChangedAt: new Date(),
-              royaltyWallets: doesCollectionExists ? undefined : { createMany: { data: royaltyWallets } },
-              tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
+              royaltyWallets: doesCollectionExists
+                ? undefined
+                : { createMany: { data: royaltyWallets } },
+              tags: {
+                createMany: { data: tags.map((tag) => ({ value: tag })) },
+              },
               traits: {
                 createMany: {
                   data: attributes.map((attribute) => ({
@@ -433,10 +442,9 @@ export class DigitalAssetService {
           },
         },
       });
-    }catch(e){
-      console.error(e)
+    } catch (e) {
+      console.error(e);
     }
-   
   }
 
   async createPrintEditionCollectionTransaction(
@@ -559,39 +567,44 @@ export class DigitalAssetService {
       timestamp: false,
     });
 
-    return await this.prisma.printEditionCollection.create({
-      data: {
-        address,
-        name,
-        description,
-        image,
-        isNSFW,
-        sellerFeeBasisPoints,
-        publishedAt: new Date(),
-        digitalAsset: {
-          create: {
-            owner: {
-              connectOrCreate: {
-                where: { address: authority },
-                create: { address: authority },
+    try {
+      return await this.prisma.printEditionCollection.create({
+        data: {
+          address,
+          name,
+          description,
+          image,
+          isNSFW,
+          sellerFeeBasisPoints,
+          digitalAsset: {
+            create: {
+              owner: {
+                connectOrCreate: {
+                  where: { address: authority },
+                  create: { address: authority },
+                },
               },
-            },
-            ownerChangedAt: new Date(),
-            royaltyWallets: { createMany: { data: royaltyWallets } },
-            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
-            traits: {
-              createMany: {
-                data: attributes.map((attribute) => ({
-                  name: attribute.trait_type,
-                  value: attribute.value,
-                })),
+              ownerChangedAt: new Date(),
+              royaltyWallets: { createMany: { data: royaltyWallets } },
+              tags: {
+                createMany: { data: tags.map((tag) => ({ value: tag })) },
               },
+              traits: {
+                createMany: {
+                  data: attributes.map((attribute) => ({
+                    name: attribute.trait_type,
+                    value: attribute.value,
+                  })),
+                },
+              },
+              genres: { connect: genres.map((slug) => ({ slug })) },
             },
-            genres: { connect: genres.map((slug) => ({ slug })) },
           },
         },
-      },
-    });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async createBuyPrintEditionTransaction(printEditionDto: PrintEditionParams) {

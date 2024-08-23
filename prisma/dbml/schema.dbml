@@ -602,7 +602,7 @@ Table PrintEditionSaleConfig {
 
 Table DigitalAssetTag {
   id Int [pk, increment]
-  value String [unique, not null]
+  value String [not null]
   digitalAssetId Int [not null]
   digitalAsset DigitalAsset [not null]
 }
