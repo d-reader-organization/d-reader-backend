@@ -581,8 +581,7 @@ model DraftComicIssueSalesData {
 model DigitalAssetGenre {
   name           String       @unique
   slug           String       @id
-  digitalAssetId Int
-  digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
+  digitalAsset   DigitalAsset[]
 }
 
 model DigitalAsset {

@@ -529,7 +529,6 @@ Table DraftComicIssueSalesData {
 Table DigitalAssetGenre {
   name String [unique, not null]
   slug String [pk]
-  digitalAssetId Int [not null]
   digitalAsset DigitalAsset [not null]
 }
 
@@ -795,8 +794,6 @@ Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
 Ref: Device.userId > User.id [delete: Cascade]
 
 Ref: UserPrivacyConsent.userId > User.id [delete: Cascade]
-
-Ref: DigitalAssetGenre.digitalAssetId > DigitalAsset.id
 
 Ref: DigitalAsset.ownerAddress > Wallet.address
 

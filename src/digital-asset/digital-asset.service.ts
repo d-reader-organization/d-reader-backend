@@ -191,7 +191,7 @@ export class DigitalAssetService {
     });
     const isOneOfOneCollectionAlreadyExists = !!oneOfOneCollection;
 
-    if (!isOneOfOneCollectionAlreadyExists) {
+    if (isOneOfOneCollectionAlreadyExists) {
       throw new BadRequestException(
         '1/1 Collection with this address already exists !',
       );
@@ -346,7 +346,7 @@ export class DigitalAssetService {
     });
     const isOneOfOneAlreadyExists = !!oneOfOne;
 
-    if (!isOneOfOneAlreadyExists) {
+    if (isOneOfOneAlreadyExists) {
       throw new BadRequestException('1/1 with this address already exists !');
     }
 
@@ -495,7 +495,7 @@ export class DigitalAssetService {
       });
     const isCollectionAlreadyExists = !!printEditionCollection;
 
-    if (!isCollectionAlreadyExists) {
+    if (isCollectionAlreadyExists) {
       throw new BadRequestException(
         'Print Edition Collection with this address already exists !',
       );
