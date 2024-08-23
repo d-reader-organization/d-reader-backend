@@ -18,6 +18,8 @@ import {
   create as createAsset,
   CreateArgsPlugin,
   CreateCollectionArgsPlugin,
+  fetchCollection,
+  fetchAsset,
 } from '@metaplex-foundation/mpl-core';
 import { umi } from '../utils/metaplex';
 import {
@@ -40,12 +42,13 @@ import {
 } from 'core-auctions';
 import { toMetaplexFile, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { HeliusService } from '../webhooks/helius/helius.service';
+import { fetchDigitalAssetOffChainMetadata } from 'src/utils/nft-metadata';
+import { imageUrlToS3File } from 'src/utils/files';
+import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 
-const getS3Folder = (
-  address: string,
-  assetType: AssetType,
-  fileType: 'image' | 'cover',
-) => `${assetType}/${address}/${fileType}`;
+const getS3Folder = (address: string, assetType: AssetType) =>
+  `${assetType}/${address}/`;
+
 @Injectable()
 export class DigitalAssetService {
   private readonly umi: Umi;
@@ -136,12 +139,7 @@ export class DigitalAssetService {
 
     const files: string[] = [];
     if (cover) {
-      const coverS3Folder = getS3Folder(
-        collectionAddress,
-        AssetType.OneOfOneCollection,
-        'cover',
-      );
-      const coverFile = toMetaplexFile(image.buffer, coverS3Folder);
+      const coverFile = toMetaplexFile(image.buffer, 'cover');
       const [coverUri] = await this.umi.uploader.upload([coverFile]);
       files.push(coverUri);
     }
@@ -157,8 +155,6 @@ export class DigitalAssetService {
     ];
 
     const uri = await this.uploadMetadata(
-      AssetType.OneOfOneCollection,
-      collectionAddress,
       name,
       description,
       image,
@@ -185,7 +181,91 @@ export class DigitalAssetService {
       this.umi.transactions.serialize(transaction),
     )[0];
 
-    return serializedTransaction;
+    return { transaction: serializedTransaction, address: collectionAddress };
+  }
+
+  async createOneOfOneCollection(address: string) {
+    /* Save One of One Collection in database */
+    const oneOfOneCollection = await this.prisma.oneOfOneCollection.findUnique({
+      where: { address },
+    });
+    const isOneOfOneCollectionAlreadyExists = !!oneOfOneCollection;
+
+    if (!isOneOfOneCollectionAlreadyExists) {
+      throw new BadRequestException(
+        '1/1 Collection with this address already exists !',
+      );
+    }
+
+    const collection = await fetchCollection(this.umi, address);
+    const authority = collection.updateAuthority.toString();
+    const offChainMetadata = await fetchDigitalAssetOffChainMetadata(
+      collection.uri,
+    );
+
+    const { name, description, properties, attributes, tags, genres } =
+      offChainMetadata;
+    const royaltyWallets: RoyaltyWalletDto[] = properties.creators.map(
+      (creator) => {
+        return {
+          address: creator.address,
+          share: creator.percentage,
+        };
+      },
+    );
+    const s3Folder = getS3Folder(address, AssetType.OneOfOneCollection);
+
+    const sellerFeeBasisPoints = collection.royalties?.basisPoints ?? 0;
+    const imageFile = await imageUrlToS3File(offChainMetadata.image);
+    const image = await this.s3.uploadFile(imageFile, {
+      s3Folder,
+      fileName: 'image',
+      timestamp: false,
+    });
+    const coverUri = properties.files?.at(0).uri ?? undefined;
+
+    let banner: string;
+    if (coverUri) {
+      const coverFile = await imageUrlToS3File(coverUri);
+      banner = await this.s3.uploadFile(coverFile, {
+        s3Folder,
+        fileName: 'cover',
+        timestamp: false,
+      });
+    }
+
+    return await this.prisma.oneOfOneCollection.create({
+      data: {
+        address,
+        name,
+        description,
+        sellerFeeBasisPoints,
+        image,
+        banner,
+        digitalAsset: {
+          create: {
+            owner: {
+              connectOrCreate: {
+                where: { address: authority },
+                create: { address: authority },
+              },
+            },
+            ownerChangedAt: new Date(),
+            royaltyWallets: { createMany: { data: royaltyWallets } },
+            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
+            traits: {
+              createMany: {
+                data: attributes.map((attribute) => ({
+                  name: attribute.trait_type,
+                  value: attribute.value,
+                })),
+              },
+            },
+            genres: { connect: genres.map((slug) => ({ slug })) },
+          },
+        },
+      },
+    });
   }
 
   async createOneOfOneTransaction(createOneOfOneDto: CreateOneOfOneDto) {
@@ -224,8 +304,6 @@ export class DigitalAssetService {
     ];
 
     const uri = await this.uploadMetadata(
-      AssetType.OneOfOne,
-      collectionAddress,
       name,
       description,
       image,
@@ -240,6 +318,7 @@ export class DigitalAssetService {
     const collection = collectionAddress
       ? { publicKey: publicKey(collectionAddress) }
       : undefined;
+
     const createAssetBuilder = createAsset(umi, {
       asset,
       name,
@@ -256,7 +335,77 @@ export class DigitalAssetService {
     const serializedTransaction = base64.deserialize(
       this.umi.transactions.serialize(transaction),
     )[0];
+
     return serializedTransaction;
+  }
+
+  async createOneOfOne(address: string) {
+    /* Save One of One in database */
+    const oneOfOne = await this.prisma.oneOfOne.findUnique({
+      where: { address },
+    });
+    const isOneOfOneAlreadyExists = !!oneOfOne;
+
+    if (!isOneOfOneAlreadyExists) {
+      throw new BadRequestException('1/1 with this address already exists !');
+    }
+
+    const asset = await fetchAsset(this.umi, address);
+    const authority = asset.owner.toString();
+    const offChainMetadata = await fetchDigitalAssetOffChainMetadata(asset.uri);
+
+    const { name, description, properties, attributes, tags, genres, isNSFW } =
+      offChainMetadata;
+    const royaltyWallets: RoyaltyWalletDto[] = properties.creators.map(
+      (creator) => {
+        return {
+          address: creator.address,
+          share: creator.percentage,
+        };
+      },
+    );
+    const s3Folder = getS3Folder(address, AssetType.OneOfOne);
+
+    const sellerFeeBasisPoints = asset.royalties?.basisPoints ?? 0;
+    const file = await imageUrlToS3File(offChainMetadata.image);
+    const image = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: 'image',
+      timestamp: false,
+    });
+
+    return await this.prisma.oneOfOne.create({
+      data: {
+        address,
+        name,
+        description,
+        sellerFeeBasisPoints,
+        isNSFW,
+        image,
+        digitalAsset: {
+          create: {
+            owner: {
+              connectOrCreate: {
+                where: { address: authority },
+                create: { address: authority },
+              },
+            },
+            ownerChangedAt: new Date(),
+            royaltyWallets: { createMany: { data: royaltyWallets } },
+            tags: { createMany: { data: tags.map((tag) => ({ value: tag })) } },
+            traits: {
+              createMany: {
+                data: attributes.map((attribute) => ({
+                  name: attribute.trait_type,
+                  value: attribute.value,
+                })),
+              },
+            },
+            genres: { connect: genres.map((slug) => ({ slug })) },
+          },
+        },
+      },
+    });
   }
 
   async createPrintEditionCollectionTransaction(
@@ -290,8 +439,6 @@ export class DigitalAssetService {
 
     const collection = generateSigner(umi);
     const uri = await this.uploadMetadata(
-      AssetType.PrintEditionCollection,
-      collection.publicKey.toString(),
       name,
       description,
       image,
@@ -305,7 +452,7 @@ export class DigitalAssetService {
     const plugins: CreateCollectionArgsPlugin[] = [
       {
         type: 'Royalties',
-        basisPoints: sellerFeeBasisPoints,
+        basisPoints: sellerFeeBasisPoints ?? 0,
         creators,
         // Change in future if encounters with a marketplace not enforcing royalties
         ruleSet: ruleSet('None'),
@@ -334,40 +481,59 @@ export class DigitalAssetService {
       this.umi.transactions.serialize(transaction),
     )[0];
 
-    return serializedTransaction;
+    return {
+      transaction: serializedTransaction,
+      address: collection.publicKey.toString(),
+    };
   }
 
-  async createPrintEditionCollection(
-    address: string,
-    createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
-  ) {
+  async createPrintEditionCollection(address: string) {
     /* Saves print edition collection in database */
-    const {
-      name,
-      description,
-      sellerFeeBasisPoints,
-      authority,
-      attributes,
-      tags,
-      genres,
-      isNSFW,
-      image,
-      royaltyWallets,
-    } = createPrintEditionCollectionDto;
+    const printEditionCollection =
+      await this.prisma.printEditionCollection.findUnique({
+        where: { address },
+      });
+    const isCollectionAlreadyExists = !!printEditionCollection;
 
-    const s3Folder = getS3Folder(
-      address,
-      AssetType.OneOfOneCollection,
-      'image',
+    if (!isCollectionAlreadyExists) {
+      throw new BadRequestException(
+        'Print Edition Collection with this address already exists !',
+      );
+    }
+
+    const collection = await fetchCollection(this.umi, publicKey(address));
+    const authority = collection.updateAuthority;
+    const offChainMetadata = await fetchDigitalAssetOffChainMetadata(
+      collection.uri,
     );
-    const imageKey = await this.s3.uploadFile(image, { s3Folder });
 
-    await this.prisma.printEditionCollection.create({
+    const { name, description, properties, attributes, tags, genres, isNSFW } =
+      offChainMetadata;
+    const royaltyWallets: RoyaltyWalletDto[] = properties.creators.map(
+      (creator) => {
+        return {
+          address: creator.address,
+          share: creator.percentage,
+        };
+      },
+    );
+
+    const s3Folder = getS3Folder(address, AssetType.PrintEditionCollection);
+
+    const sellerFeeBasisPoints = collection.royalties?.basisPoints ?? 0;
+    const file = await imageUrlToS3File(offChainMetadata.image);
+    const image = await this.s3.uploadFile(file, {
+      s3Folder,
+      fileName: 'image',
+      timestamp: false,
+    });
+
+    return await this.prisma.printEditionCollection.create({
       data: {
         address,
         name,
         description,
-        image: imageKey,
+        image,
         isNSFW,
         sellerFeeBasisPoints,
         publishedAt: new Date(),
@@ -469,8 +635,6 @@ export class DigitalAssetService {
   }
 
   async uploadMetadata(
-    assetType: AssetType,
-    assetAddress: string,
     name: string,
     description: string,
     image: Express.Multer.File,
@@ -479,9 +643,9 @@ export class DigitalAssetService {
     genres: string[],
     creators: CoreCreator[],
     files: string[],
+    isNSFW = false,
   ) {
-    const imageS3Folder = getS3Folder(assetAddress, assetType, 'image');
-    const imageFile = toMetaplexFile(image.buffer, imageS3Folder);
+    const imageFile = toMetaplexFile(image.buffer, 'image.png');
     const [imageUri] = await this.umi.uploader.upload([imageFile]);
 
     const uri = await this.umi.uploader.uploadJson({
@@ -491,6 +655,7 @@ export class DigitalAssetService {
       attributes,
       tags,
       genres,
+      isNSFW,
       external_url: D_READER_FRONTEND_URL,
       properties: {
         creators,

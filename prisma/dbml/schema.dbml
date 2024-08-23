@@ -624,11 +624,12 @@ Table OneOfOne {
   image String [not null]
   digitalAssetId Int [unique, not null]
   digitalAsset DigitalAsset [not null]
-  collectionAddress String [not null]
+  collectionAddress String
   sellerFeeBasisPoints Int [not null, default: 0]
   verifiedAt DateTime
   publishedAt DateTime
-  collection OneOfOneCollection [not null]
+  isNSFW Boolean [not null, default: false]
+  collection OneOfOneCollection
 }
 
 Table DigitalAssetTrait {
