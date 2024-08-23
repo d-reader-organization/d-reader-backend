@@ -100,3 +100,14 @@ export const genresToSeed: Prisma.GenreCreateManyArgs['data'] = [
   //   color: '#ffffff',
   // },
 ];
+
+export const digitalAssetGenresToSeed: Prisma.DigitalAssetGenreCreateManyArgs['data'] = [
+  {
+    name: 'Animation',
+    slug: 'animation'
+  },
+  {
+    name: 'CoverArt',
+    slug: 'coverart'
+  },
+];
