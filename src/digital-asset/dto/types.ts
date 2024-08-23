@@ -22,6 +22,7 @@ export interface DigitalAssetJsonMetadata {
     files?: Array<{
       type?: string;
       uri?: string;
+      name?: string;
       [key: string]: unknown;
     }>;
     [key: string]: unknown;
