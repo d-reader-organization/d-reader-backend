@@ -68,9 +68,13 @@ CREATE TABLE "DigitalAsset" (
 CREATE TABLE "DigitalAssetGenre" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
-    "digitalAssetId" INTEGER NOT NULL,
 
     CONSTRAINT "DigitalAssetGenre_pkey" PRIMARY KEY ("slug")
+);
+
+CREATE TABLE "_DigitalAssetToDigitalAssetGenre" (
+    "A" INTEGER NOT NULL,
+    "B" TEXT NOT NULL
 );
 
 -- CreateTable
@@ -210,6 +214,12 @@ CREATE UNIQUE INDEX "OneOfOne_digitalAssetId_key" ON "OneOfOne"("digitalAssetId"
 -- CreateIndex
 CREATE UNIQUE INDEX "RoyaltyWallet_digitalAssetId_address_key" ON "RoyaltyWallet"("digitalAssetId", "address");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "_DigitalAssetToDigitalAssetGenre_AB_unique" ON "_DigitalAssetToDigitalAssetGenre"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_DigitalAssetToDigitalAssetGenre_B_index" ON "_DigitalAssetToDigitalAssetGenre"("B");
+
 -- AddForeignKey
 ALTER TABLE "RoyaltyWallet" ADD CONSTRAINT "RoyaltyWallet_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -241,9 +251,6 @@ ALTER TABLE "CollectibleComicCollection" ADD CONSTRAINT "CollectibleComicCollect
 ALTER TABLE "Listing" ADD CONSTRAINT "Listing_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DigitalAssetGenre" ADD CONSTRAINT "DigitalAssetGenre_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "OneOfOneCollection" ADD CONSTRAINT "OneOfOneCollection_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -269,6 +276,12 @@ ALTER TABLE "OneOfOne" ADD CONSTRAINT "OneOfOne_collectionAddress_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "DigitalAssetTrait" ADD CONSTRAINT "DigitalAssetTrait_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_DigitalAssetToDigitalAssetGenre" ADD CONSTRAINT "_DigitalAssetToDigitalAssetGenre_A_fkey" FOREIGN KEY ("A") REFERENCES "DigitalAsset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_DigitalAssetToDigitalAssetGenre" ADD CONSTRAINT "_DigitalAssetToDigitalAssetGenre_B_fkey" FOREIGN KEY ("B") REFERENCES "DigitalAssetGenre"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
 
 DO $$ 
 DECLARE 
