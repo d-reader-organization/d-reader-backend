@@ -429,29 +429,39 @@ Table CollectibleComicMetadata {
 Table Listing {
   id Int [pk, increment]
   assetAddress String [not null]
-  splToken String [not null]
   price BigInt [not null]
-  feePayer String [not null]
+  sellerAddress String [not null]
   signature String [not null]
-  symbol String [not null]
   createdAt DateTime [not null]
-  canceledAt DateTime [not null]
-  soldAt DateTime
-  saleTransactionSignature String
-  source String
-  type AssetType [not null]
+  closedAt DateTime [not null]
   digitalAssetId Int [not null]
+  source String [not null]
   digitalAsset DigitalAsset [not null]
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+  sale AuctionSale
+  listingConfig ListingConfig
 
   indexes {
-    (assetAddress, canceledAt) [unique]
+    (assetAddress, closedAt) [unique]
   }
+}
+
+Table ListingConfig {
+  listingId Int [unique, not null]
+  listing Listing [not null]
+  startDate DateTime [not null]
+  endDate DateTime [not null]
+  reservePrice Int [not null, default: 0]
+  minBidIncrement Int [not null, default: 0]
+  allowHighBidCancel Boolean [not null, default: false]
+  highestBidId Int
 }
 
 Table SplToken {
   id Int [pk, increment]
   name String [not null]
-  address String [not null]
+  address String [unique, not null]
   decimals Int [not null]
   symbol String [not null]
   priority Int [not null]
@@ -548,6 +558,7 @@ Table DigitalAsset {
   tags DigitalAssetTag [not null]
   royaltyWallets RoyaltyWallet [not null]
   listings Listing [not null]
+  bids Bid [not null]
 }
 
 Table OneOfOneCollection {
@@ -566,10 +577,45 @@ Table OneOfOneCollection {
 
 Table AuctionHouse {
   address String [pk]
-  treasuryMint String [not null]
+  treasuryMint String [unique, not null]
   sellerFeeBasisPoints Int [not null, default: 0]
   requiresSignOff Boolean [not null]
   canChangeSalePrice Boolean [not null]
+  listings Listing [not null]
+  bids Bid [not null]
+  sales AuctionSale [not null]
+}
+
+Table AuctionSale {
+  id Int [pk, increment]
+  signature String [not null]
+  price BigInt [not null]
+  soldAt DateTime [not null]
+  listingId Int [unique, not null]
+  listing Listing [not null]
+  bidId Int [unique]
+  bid Bid
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+}
+
+Table Bid {
+  id Int [pk, increment]
+  assetAddress String [not null]
+  amount BigInt [not null]
+  bidderAddress String [not null]
+  signature String [not null]
+  createdAt DateTime [not null]
+  closedAt DateTime [not null]
+  digitalAssetId Int [not null]
+  digitalAsset DigitalAsset [not null]
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+  sale AuctionSale
+
+  indexes {
+    (assetAddress, bidderAddress, closedAt) [unique]
+  }
 }
 
 Table PrintEditionCollection {
@@ -787,6 +833,10 @@ Ref: CollectibleComicMetadata.collectionAddress > CollectibleComicCollection.add
 
 Ref: Listing.digitalAssetId > DigitalAsset.id
 
+Ref: Listing.auctionHouseAddress > AuctionHouse.address
+
+Ref: ListingConfig.listingId - Listing.id [delete: Cascade]
+
 Ref: UserNotification.userId > User.id [delete: Cascade]
 
 Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
@@ -798,6 +848,16 @@ Ref: UserPrivacyConsent.userId > User.id [delete: Cascade]
 Ref: DigitalAsset.ownerAddress > Wallet.address
 
 Ref: OneOfOneCollection.digitalAssetId - DigitalAsset.id
+
+Ref: AuctionSale.listingId - Listing.id
+
+Ref: AuctionSale.bidId - Bid.id
+
+Ref: AuctionSale.auctionHouseAddress > AuctionHouse.address
+
+Ref: Bid.digitalAssetId > DigitalAsset.id
+
+Ref: Bid.auctionHouseAddress > AuctionHouse.address
 
 Ref: PrintEditionCollection.digitalAssetId - DigitalAsset.id
 
