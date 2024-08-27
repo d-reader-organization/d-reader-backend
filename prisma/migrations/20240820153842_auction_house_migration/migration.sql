@@ -19,6 +19,9 @@ ALTER TABLE "DigitalAsset" DROP CONSTRAINT "DigitalAsset_uri_fkey";
 -- DropForeignKey
 ALTER TABLE "Listing" DROP CONSTRAINT "Listing_assetAddress_fkey";
 
+-- DropIndex
+DROP INDEX "Listing_assetAddress_canceledAt_key";
+
 -- DropForeignKey
 ALTER TABLE "Metadata" DROP CONSTRAINT "Metadata_collectionAddress_fkey";
 
@@ -38,9 +41,59 @@ ALTER TABLE "CollectibleComic" RENAME CONSTRAINT "DigitalAsset_pkey" TO "Collect
 ALTER TABLE "CollectibleComic" ADD COLUMN "digitalAssetId" INTEGER;
 
 -- AlterTable
-ALTER TABLE "Listing" ADD COLUMN  "digitalAssetId" INTEGER,
-ADD COLUMN     "splToken" TEXT,
-ADD COLUMN     "type" "AssetType" ;
+ALTER TABLE "Listing" DROP COLUMN "canceledAt",
+DROP COLUMN "feePayer",
+DROP COLUMN "saleTransactionSignature",
+DROP COLUMN "soldAt",
+DROP COLUMN "splToken",
+DROP COLUMN "symbol",
+DROP COLUMN "type",
+ADD COLUMN  "digitalAssetId" INTEGER SET NOT NULL,
+ADD COLUMN  "splToken" TEXT SET NOT NULL,
+ADD COLUMN  "type" "AssetType" SET NOT NULL,
+ADD COLUMN  "auctionHouseAddress" TEXT NOT NULL,
+ADD COLUMN  "closedAt" TIMESTAMP(3) NOT NULL,
+ADD COLUMN  "sellerAddress" TEXT NOT NULL,
+ALTER COLUMN "source" SET NOT NULL;
+
+-- CreateTable
+CREATE TABLE "ListingConfig" (
+    "listingId" INTEGER NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "reservePrice" INTEGER NOT NULL DEFAULT 0,
+    "minBidIncrement" INTEGER NOT NULL DEFAULT 0,
+    "allowHighBidCancel" BOOLEAN NOT NULL DEFAULT false,
+    "highestBidId" INTEGER
+);
+
+-- CreateTable
+CREATE TABLE "AuctionSale" (
+    "id" SERIAL NOT NULL,
+    "signature" TEXT NOT NULL,
+    "price" BIGINT NOT NULL,
+    "soldAt" TIMESTAMP(3) NOT NULL,
+    "listingId" INTEGER NOT NULL,
+    "bidId" INTEGER NOT NULL,
+    "auctionHouseAddress" TEXT NOT NULL,
+
+    CONSTRAINT "AuctionSale_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Bid" (
+    "id" SERIAL NOT NULL,
+    "assetAddress" TEXT NOT NULL,
+    "amount" BIGINT NOT NULL,
+    "bidderAddress" TEXT NOT NULL,
+    "signature" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL,
+    "closedAt" TIMESTAMP(3) NOT NULL,
+    "digitalAssetId" INTEGER NOT NULL,
+    "auctionHouseAddress" TEXT NOT NULL,
+
+    CONSTRAINT "Bid_pkey" PRIMARY KEY ("id")
+);
 
 -- AlterTable
 ALTER TABLE "RoyaltyWallet" ADD COLUMN "digitalAssetId" INTEGER;
@@ -217,6 +270,24 @@ CREATE UNIQUE INDEX "_DigitalAssetToDigitalAssetGenre_AB_unique" ON "_DigitalAss
 -- CreateIndex
 CREATE INDEX "_DigitalAssetToDigitalAssetGenre_B_index" ON "_DigitalAssetToDigitalAssetGenre"("B");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "ListingConfig_listingId_key" ON "ListingConfig"("listingId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AuctionSale_listingId_key" ON "AuctionSale"("listingId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AuctionSale_bidId_key" ON "AuctionSale"("bidId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Bid_assetAddress_bidderAddress_closedAt_key" ON "Bid"("assetAddress", "bidderAddress", "closedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AuctionHouse_treasuryMint_key" ON "AuctionHouse"("treasuryMint");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Listing_assetAddress_closedAt_key" ON "Listing"("assetAddress", "closedAt");
+
 -- AddForeignKey
 ALTER TABLE "RoyaltyWallet" ADD CONSTRAINT "RoyaltyWallet_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -280,6 +351,27 @@ ALTER TABLE "_DigitalAssetToDigitalAssetGenre" ADD CONSTRAINT "_DigitalAssetToDi
 -- AddForeignKey
 ALTER TABLE "_DigitalAssetToDigitalAssetGenre" ADD CONSTRAINT "_DigitalAssetToDigitalAssetGenre_B_fkey" FOREIGN KEY ("B") REFERENCES "DigitalAssetGenre"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "Listing" ADD CONSTRAINT "Listing_auctionHouseAddress_fkey" FOREIGN KEY ("auctionHouseAddress") REFERENCES "AuctionHouse"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ListingConfig" ADD CONSTRAINT "ListingConfig_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_bidId_fkey" FOREIGN KEY ("bidId") REFERENCES "Bid"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_auctionHouseAddress_fkey" FOREIGN KEY ("auctionHouseAddress") REFERENCES "AuctionHouse"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Bid" ADD CONSTRAINT "Bid_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Bid" ADD CONSTRAINT "Bid_auctionHouseAddress_fkey" FOREIGN KEY ("auctionHouseAddress") REFERENCES "AuctionHouse"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+
 DO $$ 
 DECLARE 
     comic RECORD;
@@ -301,13 +393,6 @@ BEGIN
         WHERE "address" = comic."address";
     END LOOP;
 END $$;
-
--- Step 2: Update Listing table to link to the newly created DigitalAsset entries
-UPDATE "Listing" AS l
-SET "digitalAssetId" = cc."digitalAssetId" , "splToken"='So11111111111111111111111111111111111111112', "type"='CollectibleComic'
-FROM "CollectibleComic" AS cc
-WHERE l."assetAddress" = cc."address"
-AND l."digitalAssetId" IS NULL;
 
 -- Insert new rows in DigitalAsset and link to CollectibleComicCollection
 DO $$ 
@@ -337,9 +422,6 @@ SET "digitalAssetId" = cc."digitalAssetId"
 FROM "ComicIssue" AS ci JOIN "CollectibleComicCollection" cc ON ci.id=cc."comicIssueId"
 WHERE r."comicIssueId" = ci.id;
 
-ALTER TABLE "Listing" ALTER COLUMN "splToken" SET NOT NULL;
-ALTER TABLE "Listing" ALTER COLUMN "type" SET NOT NULL;
-ALTER TABLE "Listing" ALTER COLUMN "digitalAssetId" SET NOT NULL;
 ALTER TABLE "CollectibleComic" ALTER COLUMN "digitalAssetId" SET NOT NULL;
 ALTER TABLE "CollectibleComicCollection" ALTER COLUMN "digitalAssetId" SET NOT NULL;
 

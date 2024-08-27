@@ -1,13 +1,12 @@
-import { IsBooleanString, IsOptional, IsString } from 'class-validator';
+import { IsNumber } from 'class-validator';
+import { TransformStringToNumber } from 'src/utils/transform';
 
 export class ExecuteSaleParams {
-  @IsString()
-  listReceipt: string;
+  @TransformStringToNumber()
+  @IsNumber()
+  listingId: number;
 
-  @IsString()
-  bidReceipt: string;
-
-  @IsBooleanString()
-  @IsOptional()
-  printReceipt?: string;
+  @TransformStringToNumber()
+  @IsNumber()
+  bidId: number;
 }

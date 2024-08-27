@@ -46,7 +46,7 @@
     "update-date": "npx ts-node src/cli/main.ts update-date",
     "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
     "sync-collection": "npx ts-node src/cli/main.ts sync-collection",
-    "sync-listings": "npx ts-node src/cli/main.ts sync-listings",
+    "sync-tensor-listings": "npx ts-node src/cli/main.ts sync-tensor-listings",
     "delete-candy-machine": "npx ts-node src/cli/main.ts delete-candy-machine",
     "preinstall": "npx only-allow yarn",
     "create-nonce": "npx ts-node src/cli/main.ts create-nonce",

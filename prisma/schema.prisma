@@ -467,29 +467,39 @@ model CollectibleComicMetadata {
 }
 
 model Listing {
-  id                       Int          @id @default(autoincrement())
-  assetAddress             String
-  splToken                 String
-  price                    BigInt
-  feePayer                 String
-  signature                String
-  symbol                   String
-  createdAt                DateTime
-  canceledAt               DateTime
-  soldAt                   DateTime?
-  saleTransactionSignature String?
-  source                   String?
-  type                     AssetType
-  digitalAssetId           Int
-  digitalAsset             DigitalAsset @relation(fields: [digitalAssetId], references: [id])
+  id                  Int            @id @default(autoincrement())
+  assetAddress        String
+  price               BigInt
+  sellerAddress       String
+  signature           String
+  createdAt           DateTime
+  closedAt            DateTime
+  digitalAssetId      Int
+  source              String
+  digitalAsset        DigitalAsset   @relation(fields: [digitalAssetId], references: [id])
+  auctionHouse        AuctionHouse   @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+  sale                AuctionSale?
+  listingConfig       ListingConfig?
 
-  @@unique([assetAddress, canceledAt])
+  @@unique([assetAddress, closedAt])
+}
+
+model ListingConfig {
+  listingId          Int      @unique
+  listing            Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startDate          DateTime
+  endDate            DateTime
+  reservePrice       Int      @default(0)
+  minBidIncrement    Int      @default(0)
+  allowHighBidCancel Boolean  @default(false)
+  highestBidId       Int?
 }
 
 model SplToken {
   id       Int    @id @default(autoincrement())
   name     String
-  address  String
+  address  String @unique
   decimals Int
   symbol   String
   priority Int // should this be @unique?
@@ -579,9 +589,9 @@ model DraftComicIssueSalesData {
 }
 
 model DigitalAssetGenre {
-  name           String       @unique
-  slug           String       @id
-  digitalAsset   DigitalAsset[]
+  name         String         @unique
+  slug         String         @id
+  digitalAsset DigitalAsset[]
 }
 
 model DigitalAsset {
@@ -600,6 +610,7 @@ model DigitalAsset {
   tags                       DigitalAssetTag[]
   royaltyWallets             RoyaltyWallet[]
   listings                   Listing[]
+  bids                       Bid[]
 }
 
 model OneOfOneCollection {
@@ -626,11 +637,44 @@ enum AssetType {
 }
 
 model AuctionHouse {
-  address              String  @id
-  treasuryMint         String
-  sellerFeeBasisPoints Int     @default(0)
+  address              String        @id
+  treasuryMint         String        @unique
+  sellerFeeBasisPoints Int           @default(0)
   requiresSignOff      Boolean
   canChangeSalePrice   Boolean
+  listings             Listing[]
+  bids                 Bid[]
+  sales                AuctionSale[]
+}
+
+model AuctionSale {
+  id                  Int          @id @default(autoincrement())
+  signature           String
+  price               BigInt
+  soldAt              DateTime
+  listingId           Int          @unique
+  listing             Listing      @relation(fields: [listingId], references: [id])
+  bidId               Int?          @unique
+  bid                 Bid?          @relation(fields: [bidId], references: [id])
+  auctionHouse        AuctionHouse @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+}
+
+model Bid {
+  id                  Int          @id @default(autoincrement())
+  assetAddress        String
+  amount              BigInt
+  bidderAddress       String
+  signature           String
+  createdAt           DateTime
+  closedAt            DateTime
+  digitalAssetId      Int
+  digitalAsset        DigitalAsset @relation(fields: [digitalAssetId], references: [id])
+  auctionHouse        AuctionHouse @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+  sale                AuctionSale?
+
+  @@unique([assetAddress, bidderAddress, closedAt])
 }
 
 model PrintEditionCollection {
@@ -663,7 +707,7 @@ model PrintEditionSaleConfig {
 
 model DigitalAssetTag {
   id             Int          @id @default(autoincrement())
-  value          String       
+  value          String
   digitalAssetId Int
   digitalAsset   DigitalAsset @relation(fields: [digitalAssetId], references: [id])
 }
@@ -678,17 +722,17 @@ model PrintEdition {
 }
 
 model OneOfOne {
-  address              String             @id
+  address              String              @id
   name                 String
   description          String
   image                String
-  digitalAssetId       Int                @unique
-  digitalAsset         DigitalAsset       @relation(fields: [digitalAssetId], references: [id])
+  digitalAssetId       Int                 @unique
+  digitalAsset         DigitalAsset        @relation(fields: [digitalAssetId], references: [id])
   collectionAddress    String?
-  sellerFeeBasisPoints Int                @default(0)
+  sellerFeeBasisPoints Int                 @default(0)
   verifiedAt           DateTime?
   publishedAt          DateTime?
-  isNSFW                 Boolean                 @default(false)
+  isNSFW               Boolean             @default(false)
   collection           OneOfOneCollection? @relation(fields: [collectionAddress], references: [address])
 }
 

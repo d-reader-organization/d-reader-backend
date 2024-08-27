@@ -56,6 +56,12 @@ export const getThirdPartyUmiSignature = async (
   return thirdPartySigner.signTransaction(transaction);
 };
 
+export const getIdentityUmiSignature = (transaction: UmiTransaction) => {
+  const treasuryKeypair = fromWeb3JsKeypair(getTreasuryKeypair());
+  const treasurySigner = createSignerFromKeypair(umi, treasuryKeypair);
+  return treasurySigner.signTransaction(transaction);
+};
+
 const getTreasuryKeypair = () => {
   const treasuryWallet = AES.decrypt(
     process.env.TREASURY_PRIVATE_KEY,

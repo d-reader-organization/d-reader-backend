@@ -25,7 +25,7 @@ export class BaseMetadataDto {
   @IsOptional()
   @TransformStringToNumber()
   @IsNumber()
-  sellerFeeBasisPoints?: number;
+  sellerFeeBasisPoints: number;
 
   @IsArray()
   @Type(() => String)
