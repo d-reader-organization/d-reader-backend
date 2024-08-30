@@ -45,16 +45,12 @@ ALTER TABLE "Listing" DROP COLUMN "canceledAt",
 DROP COLUMN "feePayer",
 DROP COLUMN "saleTransactionSignature",
 DROP COLUMN "soldAt",
-DROP COLUMN "splToken",
 DROP COLUMN "symbol",
-DROP COLUMN "type",
-ADD COLUMN  "digitalAssetId" INTEGER SET NOT NULL,
-ADD COLUMN  "splToken" TEXT SET NOT NULL,
-ADD COLUMN  "type" "AssetType" SET NOT NULL,
+ADD COLUMN  "digitalAssetId" INTEGER NOT NULL,
 ADD COLUMN  "auctionHouseAddress" TEXT NOT NULL,
 ADD COLUMN  "closedAt" TIMESTAMP(3) NOT NULL,
-ADD COLUMN  "sellerAddress" TEXT NOT NULL,
-ALTER COLUMN "source" SET NOT NULL;
+ADD COLUMN  "sellerAddress" TEXT NOT NULL;
+ALTER TABLE "Listing" ALTER COLUMN "source" SET NOT NULL;
 
 -- CreateTable
 CREATE TABLE "ListingConfig" (
@@ -74,7 +70,7 @@ CREATE TABLE "AuctionSale" (
     "price" BIGINT NOT NULL,
     "soldAt" TIMESTAMP(3) NOT NULL,
     "listingId" INTEGER NOT NULL,
-    "bidId" INTEGER NOT NULL,
+    "bidId" INTEGER,
     "auctionHouseAddress" TEXT NOT NULL,
 
     CONSTRAINT "AuctionSale_pkey" PRIMARY KEY ("id")
@@ -288,6 +284,9 @@ CREATE UNIQUE INDEX "AuctionHouse_treasuryMint_key" ON "AuctionHouse"("treasuryM
 -- CreateIndex
 CREATE UNIQUE INDEX "Listing_assetAddress_closedAt_key" ON "Listing"("assetAddress", "closedAt");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "SplToken_address_key" ON "SplToken"("address");
+
 -- AddForeignKey
 ALTER TABLE "RoyaltyWallet" ADD CONSTRAINT "RoyaltyWallet_digitalAssetId_fkey" FOREIGN KEY ("digitalAssetId") REFERENCES "DigitalAsset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -361,7 +360,7 @@ ALTER TABLE "ListingConfig" ADD CONSTRAINT "ListingConfig_listingId_fkey" FOREIG
 ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_listingId_fkey" FOREIGN KEY ("listingId") REFERENCES "Listing"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_bidId_fkey" FOREIGN KEY ("bidId") REFERENCES "Bid"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_bidId_fkey" FOREIGN KEY ("bidId") REFERENCES "Bid"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuctionSale" ADD CONSTRAINT "AuctionSale_auctionHouseAddress_fkey" FOREIGN KEY ("auctionHouseAddress") REFERENCES "AuctionHouse"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
