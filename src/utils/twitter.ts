@@ -7,19 +7,25 @@ import { isEmpty, kebabCase } from 'lodash';
 
 // Get tweet content for comic mint
 export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
-  const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
+  const twitterIntentPrefix = encodeURI('https://x.com/intent/tweet?text=');
 
-  const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥`;
+  const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥\n\n`;
+  const creatorLine = `✍️ story by ${args.creatorName}\n`;
+  const coverArtistLine = `🖌️ cover by ${args.coverArtistName}\n\n`;
+  const mintLinkCallToActionLine = 'Mint yours here! 👇\n';
 
-  const creatorLine = `✍️ story by ${args.creatorName} `;
-  const coverArtistLine = `🖌️ cover by ${args.coverArtistName}`;
-
-  const mintLinkCallToActionLine = 'Mint yours here! 👇';
-  const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?ref=${args.source}`;
-
-  const tweetText = encodeURI(
-    `${twitterIntentPrefix}${titleLine}\n\n${creatorLine}\n${coverArtistLine}\n\n${mintLinkCallToActionLine}\n${mintLinkLine}`,
+  const tweetBody = encodeURIComponent(
+    titleLine + creatorLine + coverArtistLine + mintLinkCallToActionLine,
   );
+
+  const mintLinkPrefix = encodeURI('https://dreader.app/mint/');
+  const mintLinkComicSlug = encodeURIComponent(
+    `${args.comicSlug}_${args.comicIssueSlug}`,
+  );
+  const mintLinkSource = encodeURI('?ref=') + encodeURIComponent(args.source);
+
+  const tweetMintLink = mintLinkPrefix + mintLinkComicSlug + mintLinkSource;
+  const tweetText = twitterIntentPrefix + tweetBody + tweetMintLink;
 
   return tweetText;
 }

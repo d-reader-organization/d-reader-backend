@@ -21,12 +21,12 @@ export class CreateCarouselSlideBodyDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(32)
+  @MaxLength(64)
   title?: string;
 
   @IsString()
   @IsOptional()
-  @MaxLength(128)
+  @MaxLength(256)
   subtitle?: string;
 
   @IsEnum(CarouselLocation)
