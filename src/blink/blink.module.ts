@@ -10,6 +10,7 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { NonceService } from '../nonce/nonce.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { TransactionService } from '../transactions/transaction.service';
+import { DiscordNotificationService } from 'src/discord/notification.service';
 
 @Module({
   controllers: [BlinkController],
@@ -24,6 +25,7 @@ import { TransactionService } from '../transactions/transaction.service';
     BlinkService,
     s3Service,
     TransactionService,
+    DiscordNotificationService,
   ],
 })
 export class BlinkModule {}

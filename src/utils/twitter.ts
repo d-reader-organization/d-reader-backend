@@ -14,7 +14,7 @@ export function getComicMintTweetContent(args: ComicMintedTweetArgs) {
   const creatorLine = `✍️ story by ${args.creatorName} `;
   const coverArtistLine = `🖌️ cover by ${args.coverArtistName}`;
 
-  const mintLinkCallToActionLine = 'Mint yours here while the supply lasts.👇';
+  const mintLinkCallToActionLine = 'Mint yours here! 👇';
   const mintLinkLine = `https://dreader.app/mint/${args.comicSlug}_${args.comicIssueSlug}?ref=${args.source}`;
 
   const tweetText = encodeURI(

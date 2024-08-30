@@ -49,6 +49,8 @@ import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { GuardParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
+import { DiscordNotificationService } from 'src/discord/notification.service';
+import { generateMessageAfterAdminAction } from 'src/utils/discord';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -64,6 +66,7 @@ export class ComicIssueService {
     private readonly comicPageService: ComicPageService,
     private readonly candyMachineService: CandyMachineService,
     private readonly userComicIssueService: UserComicIssueService,
+    private readonly discordService: DiscordNotificationService,
   ) {
     this.metaplex = metaplex;
   }
@@ -430,7 +433,10 @@ export class ComicIssueService {
         // where: { id, publishedAt: null },
         data: { number, ...rest, creatorBackupAddress },
       });
-
+      this.discordService.notifyComicIssueUpdated({
+        oldIssue: comicIssue,
+        updatedIssue: updatedComicIssue,
+      });
       return updatedComicIssue;
     } catch {
       throw new NotFoundException(
@@ -719,6 +725,36 @@ export class ComicIssueService {
       });
     } catch {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+  }
+
+  async toggleDatePropUpdate({
+    id,
+    propertyName,
+    withMessage,
+  }: {
+    id: number;
+    propertyName: keyof Pick<ComicIssue, 'publishedAt' | 'verifiedAt'>;
+    withMessage?: boolean;
+  }): Promise<string | void> {
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: { id },
+    });
+    if (!comicIssue) {
+      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+    }
+    const updatedComicIssue = await this.prisma.comicIssue.update({
+      data: {
+        [propertyName]: !!comicIssue[propertyName] ? null : new Date(),
+      },
+      where: { id },
+    });
+    if (withMessage) {
+      return generateMessageAfterAdminAction({
+        isPropertySet: !!updatedComicIssue[propertyName],
+        propertyName,
+        startOfTheMessage: `Comic issue ${updatedComicIssue.title} has been`,
+      });
     }
   }
 

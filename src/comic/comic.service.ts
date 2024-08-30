@@ -20,7 +20,8 @@ import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
-import { ComicIssueService } from '../comic-issue/comic-issue.service';
+import { DiscordNotificationService } from 'src/discord/notification.service';
+import { generateMessageAfterAdminAction } from 'src/utils/discord';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -31,7 +32,7 @@ export class ComicService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly userComicService: UserComicService,
-    private readonly comicIssueService: ComicIssueService,
+    private readonly discordService: DiscordNotificationService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -251,7 +252,7 @@ export class ComicService {
           genres: genresData,
         },
       });
-
+      this.discordService.notifyComicUpdated({ updatedComic, oldComic: comic });
       return updatedComic;
     } catch {
       throw new NotFoundException(`Comic ${slug} does not exist`);
@@ -386,6 +387,36 @@ export class ComicService {
       });
     } catch {
       throw new NotFoundException(`Comic ${slug} does not exist`);
+    }
+  }
+
+  async toggleDatePropUpdate({
+    slug,
+    propertyName,
+    withMessage,
+  }: {
+    slug: string;
+    propertyName: keyof Pick<Comic, 'publishedAt' | 'verifiedAt'>;
+    withMessage?: boolean;
+  }): Promise<string | void> {
+    const comic = await this.prisma.comic.findFirst({
+      where: { slug },
+    });
+    if (!comic) {
+      throw new NotFoundException(`Comic ${slug} does not exist`);
+    }
+    const updatedComic = await this.prisma.comic.update({
+      data: {
+        [propertyName]: !!comic[propertyName] ? null : new Date(),
+      },
+      where: { slug },
+    });
+    if (withMessage) {
+      return generateMessageAfterAdminAction({
+        isPropertySet: !!updatedComic[propertyName],
+        propertyName,
+        startOfTheMessage: `Comic ${updatedComic.title} has been`,
+      });
     }
   }
 

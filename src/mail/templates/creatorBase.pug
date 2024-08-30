@@ -1,3 +1,7 @@
+-function currentYear(){
+    -return new Date().getFullYear();
+-} 
+
 link(rel="stylesheet", href=`${apiUrl}/styles/base.css`)
 
 table.mail
@@ -25,7 +29,7 @@ table.mail
                 img(src=`${apiUrl}/assets/email.png`, alt="email" title="dPublisher email contact")
     tr
         td
-            p.copyright Copyright &copy; 2023 dReader d.o.o. All rights reserved
+            p.copyright Copyright &copy; #{currentYear()} dReader d.o.o. All rights reserved
             p.privacy-policy View our 
                 a.privacy-policy-link(href='https://dreader.app/privacy-policy') Privacy Policy
             p.nota-bene This email contains important information about your dPublisher account and cannot be unsubscribed from.

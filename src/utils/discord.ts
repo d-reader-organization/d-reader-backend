@@ -3,6 +3,7 @@ import { CreatorFile } from '../discord/dto/types';
 import { BadRequestException } from '@nestjs/common';
 import { GetSignedComicCommandParams } from '../discord/dto/types';
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
+import { Comic, ComicIssue } from '@prisma/client';
 
 export const findCreatorFile = (
   files: CreatorFile[],
@@ -21,4 +22,18 @@ export const validateSignComicCommandParams = (
   } else if (!isSolanaAddress(address)) {
     throw new BadRequestException('Please provide a valid NFT address.');
   }
+};
+
+export const generateMessageAfterAdminAction = ({
+  startOfTheMessage,
+  isPropertySet,
+  propertyName,
+}: {
+  startOfTheMessage: string;
+  isPropertySet: boolean;
+  propertyName: keyof Pick<Comic | ComicIssue, 'publishedAt' | 'verifiedAt'>;
+}) => {
+  return `${startOfTheMessage} ${
+    isPropertySet ? '' : 'un'
+  }${propertyName.replace('At', '')}`;
 };

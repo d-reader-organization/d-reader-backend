@@ -11,6 +11,7 @@ import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
+import { DiscordNotificationService } from 'src/discord/notification.service';
 
 @Module({
   controllers: [TransactionController],
@@ -26,6 +27,7 @@ import { DigitalAssetService } from '../digital-asset/digital-asset.service';
     ComicPageService,
     UserComicIssueService,
     DigitalAssetService,
+    DiscordNotificationService,
   ],
 })
 export class TransactionModule {}

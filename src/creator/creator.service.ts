@@ -35,6 +35,7 @@ import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
+import { generateMessageAfterAdminAction } from 'src/utils/discord';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -223,7 +224,10 @@ export class CreatorService {
       where: { slug: creatorSlug },
       data: otherData,
     });
-
+    this.discordService.notifyCreatorProfileUpdate({
+      oldCreator: creator,
+      updatedCreator,
+    });
     return updatedCreator;
   }
 
@@ -449,6 +453,39 @@ export class CreatorService {
       });
     } catch {
       throw new NotFoundException(`Creator ${slug} does not exist`);
+    }
+  }
+
+  async toggleDatePropUpdate({
+    slug,
+    propertyName,
+    withMessage,
+  }: {
+    slug: string;
+    propertyName: keyof Pick<Creator, 'verifiedAt'>;
+    withMessage?: boolean;
+  }): Promise<string | void> {
+    const creator = await this.prisma.creator.findFirst({
+      where: { slug },
+    });
+    if (!creator) {
+      throw new NotFoundException(`Creator ${slug} does not exist`);
+    }
+    const updatedCreator = await this.prisma.creator.update({
+      data: {
+        [propertyName]: !!creator[propertyName] ? null : new Date(),
+      },
+      where: { slug },
+    });
+    if (updatedCreator.verifiedAt) {
+      this.mailService.creatorVerified(updatedCreator);
+    }
+    if (withMessage) {
+      return generateMessageAfterAdminAction({
+        isPropertySet: !!updatedCreator[propertyName],
+        propertyName,
+        startOfTheMessage: `Creator ${updatedCreator.name} has been`,
+      });
     }
   }
 
