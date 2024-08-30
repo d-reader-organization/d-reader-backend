@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "AssetType" AS ENUM ('PrintEditionCollection', 'PrintEdition', 'OneOfOne', 'OneOfOneCollection', 'CollectibleComic', 'CollectibleComicCollection');
-
 -- DropForeignKey
 ALTER TABLE "CandyMachine" DROP CONSTRAINT "CandyMachine_collectionAddress_fkey";
 

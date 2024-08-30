@@ -16,7 +16,7 @@ import {
   createAuctionHouse,
   createExecuteSaleTransaction,
   createInitEditionSaleTransaction,
-  createInstantBuyTransaction
+  createInstantBuyTransaction,
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';

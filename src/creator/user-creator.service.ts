@@ -46,7 +46,7 @@ export class UserCreatorService {
             },
           },
         },
-        soldAt: { not: null },
+        sale: { NOT: null },
       },
       _sum: { price: true },
     });

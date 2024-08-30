@@ -758,15 +758,6 @@ Enum ConsentType {
   DataAnalytics
 }
 
-Enum AssetType {
-  PrintEditionCollection
-  PrintEdition
-  OneOfOne
-  OneOfOneCollection
-  CollectibleComic
-  CollectibleComicCollection
-}
-
 Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id

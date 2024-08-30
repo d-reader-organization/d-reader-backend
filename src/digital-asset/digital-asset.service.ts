@@ -34,7 +34,6 @@ import {
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { CreatePrintEditionCollectionDto } from './dto/create-print-edition.dto';
 import { s3Service } from '../aws/s3.service';
-import { AssetType } from '@prisma/client';
 import { CreateOneOfOneDto } from './dto/create-one-of-one-dto';
 import { CreateOneOfOneCollectionDto } from './dto/create-one-of-one-collection-dto';
 import { AttributesDto } from '../auction-house/dto/listing.dto';
@@ -51,6 +50,7 @@ import { imageUrlToS3File } from 'src/utils/files';
 import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
 import { DigitalAssetJsonMetadata } from './dto/types';
+import { AssetType } from '../types/assetType';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${assetType}/${address}/`;
@@ -100,7 +100,7 @@ export class DigitalAssetService {
       include: {
         metadata: { include: { collection: true } },
         digitalAsset: {
-          include: { listings: { where: { canceledAt: new Date(0) } } },
+          include: { listings: { where: { closedAt: new Date(0) } } },
         },
       },
     });
