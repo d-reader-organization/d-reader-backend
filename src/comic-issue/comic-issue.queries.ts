@@ -99,7 +99,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
   inner join "Creator" creator on creator.id = comic."creatorId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
-  left join "Collection" collection on collection."comicIssueId" = comicIssue.id 
+  left join "CollectibleComicCollection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
   inner join "Genre" genre on "comicToGenre"."B" = genre.slug
   inner join "StatelessCover" "statelessCover" on "statelessCover"."comicIssueId" = comicIssue.id

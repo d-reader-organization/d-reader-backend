@@ -626,16 +626,6 @@ model OneOfOneCollection {
   publishedAt          DateTime?
   oneOfOnes            OneOfOne[]
 }
-
-enum AssetType {
-  PrintEditionCollection
-  PrintEdition
-  OneOfOne
-  OneOfOneCollection
-  CollectibleComic
-  CollectibleComicCollection
-}
-
 model AuctionHouse {
   address              String        @id
   treasuryMint         String        @unique

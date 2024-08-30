@@ -124,7 +124,7 @@ export class UserComicIssueService {
             metadata: { collection: { comicIssueId: issue.id } },
           },
         },
-        canceledAt: new Date(0),
+        closedAt: new Date(0),
       },
       orderBy: { price: 'asc' },
       select: { price: true },
