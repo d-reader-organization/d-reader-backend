@@ -1,13 +1,13 @@
 import { IsDate, IsNumber, IsString, Min } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import {
   TransformDateStringToDate,
   TransformStringToNumber,
 } from 'src/utils/transform';
 
 export class InitializePrintEditionSaleParams {
-  @TransformStringToNumber()
-  @IsNumber()
-  digitalAssetId: number;
+  @IsSolanaAddress()
+  assetAddress: string;
 
   @TransformDateStringToDate()
   @IsDate()

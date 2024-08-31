@@ -246,7 +246,6 @@ export class DigitalAssetService {
     try {
       return await this.prisma.oneOfOneCollection.create({
         data: {
-          address,
           name,
           description,
           sellerFeeBasisPoints,
@@ -254,6 +253,7 @@ export class DigitalAssetService {
           banner,
           digitalAsset: {
             create: {
+              address,
               owner: {
                 connectOrCreate: {
                   where: { address: authority },
@@ -403,7 +403,6 @@ export class DigitalAssetService {
     try {
       return await this.prisma.oneOfOne.create({
         data: {
-          address,
           name,
           description,
           sellerFeeBasisPoints,
@@ -416,6 +415,7 @@ export class DigitalAssetService {
             : undefined,
           digitalAsset: {
             create: {
+              address,
               owner: {
                 connectOrCreate: {
                   where: { address: authority },
@@ -570,7 +570,6 @@ export class DigitalAssetService {
     try {
       return await this.prisma.printEditionCollection.create({
         data: {
-          address,
           name,
           description,
           image,
@@ -578,6 +577,7 @@ export class DigitalAssetService {
           sellerFeeBasisPoints,
           digitalAsset: {
             create: {
+              address,
               owner: {
                 connectOrCreate: {
                   where: { address: authority },

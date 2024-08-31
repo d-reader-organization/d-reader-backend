@@ -7,6 +7,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import {
   TransformDateStringToDate,
   TransformStringToBoolean,
@@ -14,9 +15,8 @@ import {
 } from 'src/utils/transform';
 
 export class ListParams {
-  @TransformStringToNumber()
-  @IsNumber()
-  digitalAssetId: number;
+  @IsSolanaAddress()
+  assetAddress: string;
 
   @TransformStringToNumber()
   @IsNumber()
