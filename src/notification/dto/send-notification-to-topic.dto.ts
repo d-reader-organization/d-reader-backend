@@ -10,7 +10,7 @@ import { NotificationDto } from 'src/notification/dto/notification.dto';
 import { TopicName } from '../types';
 import { IsNotificationData } from 'src/decorators/IsNotificationData';
 import { DataMessagePayload } from 'firebase-admin/lib/messaging/messaging-api';
-import { Param, ParamType } from '@discord-nestjs/core';
+import { Param } from '@discord-nestjs/core';
 
 export class PushNotificationDiscordDto {
   @Param({ description: 'Body of the push notification', required: true })

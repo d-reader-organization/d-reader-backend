@@ -576,7 +576,6 @@ export class HeliusService {
                     listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
                 },
                 create: {
-                  assetAddress: mint,
                   price: listing.price,
                   sellerAddress: listing.seller,
                   signature: listing.txId,
@@ -752,7 +751,6 @@ export class HeliusService {
                     auctionHouse: {
                       connect: { address: TCOMP_PROGRAM_ID },
                     },
-                    assetAddress: mint,
                     price,
                     sellerAddress,
                     signature,
@@ -1076,7 +1074,6 @@ export class HeliusService {
         },
       },
       create: {
-        address: mintAddress.toString(),
         name: asset.content.metadata.name,
         candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
@@ -1094,6 +1091,7 @@ export class HeliusService {
         },
         digitalAsset: {
           create: {
+            address: mintAddress.toString(),
             ownerChangedAt: new Date(),
             owner: {
               connectOrCreate: {
@@ -1124,7 +1122,6 @@ export class HeliusService {
         digitalAsset: { include: { owner: { select: { userId: true } } } },
       },
       data: {
-        address: asset.publicKey.toString(),
         name: asset.name,
         candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
@@ -1142,6 +1139,7 @@ export class HeliusService {
         },
         digitalAsset: {
           create: {
+            address: asset.publicKey.toString(),
             owner: {
               connectOrCreate: {
                 where: { address: walletAddress },
@@ -1201,7 +1199,6 @@ export class HeliusService {
         digitalAsset: { include: { owner: { select: { userId: true } } } },
       },
       data: {
-        address: mintAddress.toString(),
         name: metadataOrNft.name,
         candyMachine: { connect: { address: candMachineAddress } },
         metadata: {
@@ -1219,6 +1216,7 @@ export class HeliusService {
         },
         digitalAsset: {
           create: {
+            address: mintAddress.toString(),
             ownerChangedAt: new Date(),
             owner: {
               connectOrCreate: {

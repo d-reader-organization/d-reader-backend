@@ -300,15 +300,23 @@ export class CandyMachineService {
 
       await this.prisma.collectibleComicCollection.create({
         data: {
-          address: collectionAddress.toBase58(),
           name: onChainName,
           comicIssue: { connect: { id: comicIssue.id } },
           digitalAsset: {
             create: {
+              address: collectionAddress.toBase58(),
               royaltyWallets: {
                 create: royaltyWallets,
               },
-              ownerAddress: this.umi.identity.publicKey.toString(),
+              owner: {
+                connectOrCreate: {
+                  where: { address: this.umi.identity.publicKey.toString() },
+                  create: {
+                    address: this.umi.identity.publicKey.toString(),
+                    createdAt: new Date(),
+                  },
+                },
+              },
               ownerChangedAt: new Date(),
             },
           },

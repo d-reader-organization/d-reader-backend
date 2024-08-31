@@ -38,18 +38,13 @@ import {
   LOCKED_COLLECTIONS,
   MIN_COMPUTE_PRICE,
   RARITY_PRECEDENCE,
+  TCOMP_PROGRAM_ID,
   TENSOR_MAINNET_API_ENDPOINT,
 } from '../constants';
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
 import { base64 } from '@metaplex-foundation/umi/serializers';
-import {
-  CollectibleComic,
-  DigitalAsset,
-  OneOfOne,
-  PrintEdition,
-  TokenStandard,
-} from '@prisma/client';
+import { TokenStandard } from '@prisma/client';
 import {
   fetchTensorBuyTx,
   findOurCandyMachine,
@@ -64,9 +59,14 @@ import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { ListParams, TimedAuctionListParams } from './dto/list-params.dto';
 import { BidParams } from './dto/bid-params.dto';
 import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
-import { assetListingConfig } from '../utils/auction-house';
+import {
+  assertPrintEditionSaleConfig,
+  assertListingConfig,
+} from '../utils/auction-house';
 import { memoizeThrottle } from '../utils/lodash';
 import { InitializePrintEditionSaleParams } from './dto/initialize-edition-sale-params.dto';
+import { createBuyPrintEditionTransaction } from './instructions/buy-edition';
+import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 
 @Injectable()
 export class AuctionHouseService {
@@ -105,11 +105,22 @@ export class AuctionHouseService {
     24 * 60 * 60 * 1000, // 24 hours
   );
 
-  private async getAssetAndCollectionAddress(
-    digitalAsset: DigitalAsset & { collectibleComic: CollectibleComic } & {
-      printEdition: PrintEdition;
-    } & { oneOfOne: OneOfOne },
-  ) {
+  private async getAssetData(address: string) {
+    const digitalAsset = await this.prisma.digitalAsset.findUnique({
+      where: { address },
+      include: {
+        collectibleComic: true,
+        printEdition: true,
+        oneOfOne: true,
+      },
+    });
+
+    if (!digitalAsset) {
+      throw new NotFoundException(
+        "Asset doesn't exist, try syncing your assets",
+      );
+    }
+
     const { collectibleComic, printEdition, oneOfOne } = digitalAsset;
 
     if (collectibleComic) {
@@ -134,6 +145,7 @@ export class AuctionHouseService {
       }
 
       return {
+        sellerAddress: digitalAsset.ownerAddress,
         assetAddress: collectibleComic.address,
         collectionAddress: candyMachine.collectionAddress,
       };
@@ -141,6 +153,7 @@ export class AuctionHouseService {
 
     if (printEdition) {
       return {
+        sellerAddress: digitalAsset.ownerAddress,
         assetAddress: printEdition.address,
         collectionAddress: printEdition.collectionAddress,
       };
@@ -148,6 +161,7 @@ export class AuctionHouseService {
 
     if (oneOfOne) {
       return {
+        sellerAddress: digitalAsset.ownerAddress,
         assetAddress: oneOfOne.address,
         collectionAddress: oneOfOne.collectionAddress,
       };
@@ -156,25 +170,6 @@ export class AuctionHouseService {
     throw new NotFoundException(
       'Digital asset is either invalid or not supported for listing',
     );
-  }
-
-  private async getDigitalAsset(digitalAssetId: number) {
-    const digitalAsset = await this.prisma.digitalAsset.findUnique({
-      where: { id: digitalAssetId },
-      include: {
-        collectibleComic: {},
-        printEdition: true,
-        oneOfOne: true,
-      },
-    });
-
-    if (!digitalAsset) {
-      throw new NotFoundException(
-        "Asset doesn't exist, try syncing your assets",
-      );
-    }
-
-    return digitalAsset;
   }
 
   async createAuctionHouse(createAuctionHouseDto: CreateAuctionHouseDto) {
@@ -223,7 +218,7 @@ export class AuctionHouseService {
 
   /* List your asset for timed auction */
   async timedAuctionList(params: TimedAuctionListParams) {
-    const { startDate, endDate, digitalAssetId, splTokenAddress } = params;
+    const { startDate, endDate, assetAddress, splTokenAddress } = params;
 
     if (endDate < startDate) {
       throw new BadRequestException(
@@ -231,12 +226,11 @@ export class AuctionHouseService {
       );
     }
 
-    const digitalAsset = await this.getDigitalAsset(digitalAssetId);
+    const { sellerAddress, collectionAddress } = await this.getAssetData(
+      assetAddress,
+    );
     const auctionHouse = await this.getAuctionHouse(splTokenAddress);
-    const { assetAddress, collectionAddress } =
-      await this.getAssetAndCollectionAddress(digitalAsset);
 
-    const sellerAddress = digitalAsset.ownerAddress;
     return getTransactionWithPriorityFee(
       createTimedAuctionSellTransaction,
       MIN_COMPUTE_PRICE,
@@ -251,14 +245,13 @@ export class AuctionHouseService {
 
   /* List your asset on a constant price */
   async list(params: ListParams) {
-    const { digitalAssetId, price, splTokenAddress } = params;
+    const { assetAddress, price, splTokenAddress } = params;
 
-    const digitalAsset = await this.getDigitalAsset(digitalAssetId);
     const auctionHouse = await this.getAuctionHouse(splTokenAddress);
-    const { assetAddress, collectionAddress } =
-      await this.getAssetAndCollectionAddress(digitalAsset);
+    const { sellerAddress, collectionAddress } = await this.getAssetData(
+      assetAddress,
+    );
 
-    const sellerAddress = digitalAsset.ownerAddress;
     return getTransactionWithPriorityFee(
       createSellTransaction,
       MIN_COMPUTE_PRICE,
@@ -300,7 +293,7 @@ export class AuctionHouseService {
             where: { id: listingConfig.highestBidId },
           })
         : undefined;
-      assetListingConfig(listingConfig, price, highestBid);
+      assertListingConfig(listingConfig, price, highestBid);
     }
 
     const transaction = await getTransactionWithPriorityFee(
@@ -538,8 +531,7 @@ export class AuctionHouseService {
 
   /* Initialize Print Editions Sale */
   async initializePrintEditionSale(params: InitializePrintEditionSaleParams) {
-    const { startDate, endDate, price, digitalAssetId, splTokenAddress } =
-      params;
+    const { startDate, endDate, price, assetAddress, splTokenAddress } = params;
 
     if (endDate < startDate) {
       throw new BadRequestException(
@@ -557,12 +549,16 @@ export class AuctionHouseService {
 
     const { digitalAsset, ...printEditionCollection } =
       await this.prisma.printEditionCollection.findUnique({
-        where: { digitalAssetId },
+        where: { address: assetAddress },
         include: { digitalAsset: true },
       });
 
     if (!printEditionCollection) {
       throw new Error('Print Edition Collection not found !');
+    }
+
+    if (!printEditionCollection.verifiedAt) {
+      throw new Error('Only verified print editions can put on sale');
     }
 
     const transaction = await getTransactionWithPriorityFee(
@@ -575,6 +571,33 @@ export class AuctionHouseService {
       price,
       startDate,
       endDate,
+    );
+    return transaction;
+  }
+
+  /* Buy print editions from primary sale */
+  async buyPrintEdition(params: BuyPrintEditionParams) {
+    const address = params.assetAddress;
+    const { printEditionSaleConfig, digitalAsset, ...printEditionCollection } =
+      await this.prisma.printEditionCollection.findUnique({
+        where: { address },
+        include: { printEditionSaleConfig: true, digitalAsset: true },
+      });
+
+    if (!printEditionSaleConfig) {
+      throw new BadRequestException('Edition is not on sale');
+    }
+
+    assertPrintEditionSaleConfig(printEditionSaleConfig);
+
+    const transaction = await getTransactionWithPriorityFee(
+      createBuyPrintEditionTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      printEditionCollection.address,
+      digitalAsset.ownerAddress,
+      params.buyerAddress,
+      printEditionSaleConfig.currencyMint,
     );
     return transaction;
   }
@@ -729,10 +752,9 @@ export class AuctionHouseService {
         },
         create: {
           auctionHouse: {
-            // TODO: This should be Tensor marketplace address
-            connect: { address: '' },
+            // TODO: This should be conditional to add either TSWAP or TCOMP address as per the source
+            connect: { address: TCOMP_PROGRAM_ID },
           },
-          assetAddress: listing.mint.onchainId,
           price: +listing.tx.grossAmount,
           sellerAddress: listing.tx.sellerId,
           createdAt: new Date(),
@@ -743,7 +765,7 @@ export class AuctionHouseService {
               : Source.MAGIC_EDEN,
           closedAt: new Date(0),
           digitalAsset: {
-            connect: { id: collectibleComic.digitalAssetId },
+            connect: { address: collectibleComic.address },
           },
         },
       });
