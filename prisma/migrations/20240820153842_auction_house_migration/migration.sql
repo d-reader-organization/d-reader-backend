@@ -13,6 +13,9 @@ ALTER TABLE "DigitalAsset" DROP CONSTRAINT "DigitalAsset_ownerAddress_fkey";
 -- DropForeignKey
 ALTER TABLE "DigitalAsset" DROP CONSTRAINT "DigitalAsset_uri_fkey";
 
+-- Delete Listing rows
+Delete FROM "Listing";
+
 -- DropForeignKey
 ALTER TABLE "Listing" DROP CONSTRAINT "Listing_assetAddress_fkey";
 
