@@ -23,7 +23,7 @@ import {
 } from '../constants';
 import { Metaplex, MetaplexFile, PublicKey } from '@metaplex-foundation/js';
 import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
-import { JsonMetadataCreators, uploadItemMetadata } from './candy-machine';
+import { uploadItemMetadata } from './candy-machine';
 import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
 import { TokenStandard } from '@prisma/client';
@@ -31,6 +31,7 @@ import { getThirdPartySigner } from './metaplex';
 import { getTransactionWithPriorityFee } from './das';
 import { constructInsertItemsTransaction } from '../candy-machine/instructions/insert-items';
 import { decodeUmiTransaction } from './transactions';
+import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 
 export function toUmiGroups(
   umi: Umi,
@@ -91,7 +92,7 @@ export async function insertCoreItems(
   comicIssue: ComicIssueCMInput,
   collectionNftAddress: UmiPublicKey,
   comicName: string,
-  royaltyWallets: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   statelessCovers: MetaplexFile[],
   darkblockId: string,
   supply: number,

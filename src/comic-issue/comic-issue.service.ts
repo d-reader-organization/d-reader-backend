@@ -21,7 +21,7 @@ import {
   AudienceType,
   StatelessCover,
   Genre,
-  Collection,
+  CollectibleComicCollection,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -80,7 +80,6 @@ export class ComicIssueService {
       isFullyUploaded = true,
       creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
       collaborators = [],
-      royaltyWallets = [],
       ...rest
     } = createComicIssueDto;
 
@@ -115,7 +114,6 @@ export class ComicIssueService {
           creatorBackupAddress,
           comic: { connect: { slug: comicSlug } },
           collaborators: { createMany: { data: collaborators } },
-          royaltyWallets: { createMany: { data: royaltyWallets } },
         },
       });
 
@@ -200,7 +198,7 @@ export class ComicIssueService {
         ComicIssue & {
           genres: Genre[];
           statelesscovers: StatelessCover[];
-          collection: Collection;
+          collection: CollectibleComicCollection;
         } & RawComicIssueStats
       >
     >(getRawComicIssuesQuery(query));
@@ -315,8 +313,6 @@ export class ComicIssueService {
         collaborators: true,
         statelessCovers: true,
         statefulCovers: true,
-        royaltyWallets: true,
-        collection: true,
       },
     });
     const getStats = this.userComicIssueService.getComicIssueStats(id);
@@ -337,12 +333,16 @@ export class ComicIssueService {
     const ownedComicIssues = await this.prisma.comicIssue.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
-      include: { collection: true, statelessCovers: true },
+      include: { collectibleComicCollection: true, statelessCovers: true },
       where: {
         comicSlug: query.comicSlug,
-        collection: {
+        collectibleComicCollection: {
           metadatas: {
-            some: { asset: { some: { owner: { userId } } } },
+            some: {
+              collectibleComics: {
+                some: { digitalAsset: { owner: { userId } } },
+              },
+            },
           },
         },
       },
@@ -352,9 +352,12 @@ export class ComicIssueService {
 
     return await Promise.all(
       ownedComicIssues.map(async (comicIssue) => {
-        const collectionAddress = comicIssue.collection.address;
-        const ownedCopiesCount = await this.prisma.digitalAsset.count({
-          where: { metadata: { collectionAddress }, owner: { userId } },
+        const collectionAddress = comicIssue.collectibleComicCollection.address;
+        const ownedCopiesCount = await this.prisma.collectibleComic.count({
+          where: {
+            metadata: { collectionAddress },
+            digitalAsset: { owner: { userId } },
+          },
         });
 
         return { ...comicIssue, ownedCopiesCount };
@@ -384,7 +387,6 @@ export class ComicIssueService {
     const {
       number,
       collaborators,
-      royaltyWallets,
       creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
       ...rest
     } = updateComicIssueDto;
@@ -398,7 +400,6 @@ export class ComicIssueService {
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
     const areCollaboratorsUpdated = !isNil(collaborators); // && collaborators are different from current collaborators
-    const areRoyaltyWalletsUpdated = !isNil(royaltyWallets); // && wallets are different from current wallets
 
     if (isNumberUpdated) {
       await this.throwIfComicSlugAndNumberTaken(comicIssue.comicSlug, number);
@@ -420,27 +421,11 @@ export class ComicIssueService {
       ]);
     }
 
-    if (areRoyaltyWalletsUpdated) {
-      const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
-        where: { comicIssueId: id },
-      });
-
-      const updateRoyaltyWallets = this.prisma.comicIssue.update({
-        where: { id },
-        data: { royaltyWallets: { createMany: { data: royaltyWallets } } },
-      });
-
-      await this.prisma.$transaction([
-        deleteRoyaltyWallets,
-        updateRoyaltyWallets,
-      ]);
-    }
-
     try {
       const updatedComicIssue = await this.prisma.comicIssue.update({
         include: {
           comic: { include: { creator: true, genres: true } },
-          collection: { select: { address: true } },
+          collectibleComicCollection: { select: { address: true } },
           collaborators: true,
           statelessCovers: true,
         },
@@ -585,7 +570,7 @@ export class ComicIssueService {
   }
 
   async throwIfComicIsPublishedOnChain(comicIssueId: number) {
-    const collection = await this.prisma.collection.findFirst({
+    const collection = await this.prisma.collectibleComicCollection.findFirst({
       where: { comicIssueId },
     });
 
@@ -623,7 +608,7 @@ export class ComicIssueService {
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
       include: {
-        collection: true,
+        collectibleComicCollection: true,
         statefulCovers: true,
         statelessCovers: true,
       },
@@ -666,17 +651,12 @@ export class ComicIssueService {
       ...updatePayload
     } = publishOnChainDto;
 
-    const deleteRoyaltyWallets = this.prisma.royaltyWallet.deleteMany({
-      where: { comicIssueId: id },
-    });
-
     let creatorBackupAddress: string;
 
-    const updateComicIssue = this.prisma.comicIssue.update({
+    const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       data: {
         publishedAt: new Date(),
-        royaltyWallets: { createMany: { data: royaltyWallets } },
         creatorBackupAddress,
         ...updatePayload,
       },
@@ -685,14 +665,8 @@ export class ComicIssueService {
         statefulCovers: true,
         statelessCovers: true,
         collaborators: true,
-        royaltyWallets: true,
       },
     });
-
-    const [, updatedComicIssue] = await this.prisma.$transaction([
-      deleteRoyaltyWallets,
-      updateComicIssue,
-    ]);
 
     const guardParams: GuardParams = {
       startDate,
@@ -708,7 +682,10 @@ export class ComicIssueService {
     };
     try {
       await this.candyMachineService.createComicIssueCM({
-        comicIssue: updatedComicIssue,
+        comicIssue: {
+          ...updatedComicIssue,
+          royaltyWallets,
+        },
         comicName: updatedComicIssue.comic.title,
         onChainName,
         guardParams,

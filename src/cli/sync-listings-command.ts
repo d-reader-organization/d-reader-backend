@@ -9,7 +9,7 @@ interface Options {
 }
 
 @Command({
-  name: 'sync-listings',
+  name: 'sync-tensor-listings',
   description: 'sync the all the listings of a collection from Tensor',
 })
 export class SyncListingsCommand extends CommandRunner {
@@ -22,10 +22,10 @@ export class SyncListingsCommand extends CommandRunner {
 
   async run(_: string[], options: Options): Promise<void> {
     options = await this.inquirerService.ask('sync-listings', options);
-    await this.syncListings(options);
+    await this.syncTensorListings(options);
   }
 
-  syncListings = async (options: Options) => {
+  syncTensorListings = async (options: Options) => {
     log('\n🏗️  Syncing listings...');
 
     const { nftAddress } = options;
@@ -67,7 +67,7 @@ export class SyncListingsCommand extends CommandRunner {
       endCursor = activeListings.page.endCursor.str;
       hasMore = activeListings.page.hasMore;
       curr += activeListings.txs.length;
-      await this.auctionHouseService.syncListings(activeListings.txs);
+      await this.auctionHouseService.syncTensorListings(activeListings.txs);
     }
 
     try {

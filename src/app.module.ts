@@ -66,7 +66,7 @@ import { BlinkModule } from './blink/blink.module';
       },
     }),
     ScheduleModule.forRoot(),
-    // TODO v2: prettier rate limit error messages (https://github.com/nestjs/throttler/pull/357)
+    // TODO: prettier rate limit error messages (https://github.com/nestjs/throttler/pull/357)
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

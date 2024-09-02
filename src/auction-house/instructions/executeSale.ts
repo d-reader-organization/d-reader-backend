@@ -1,170 +1,91 @@
-import { Metaplex, lamports } from '@metaplex-foundation/js';
-import { AuctionHouse } from '@metaplex-foundation/js';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import { publicKey, Umi } from '@metaplex-foundation/umi';
+import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
+import { base64 } from '@metaplex-foundation/umi/serializers';
 import {
+  executeSale,
   ExecuteSaleInstructionAccounts,
-  createExecuteSaleInstruction,
-} from '@metaplex-foundation/mpl-auction-house';
-import {
-  AccountMeta,
-  PublicKey,
-  SYSVAR_INSTRUCTIONS_PUBKEY,
-  TransactionInstruction,
-} from '@solana/web3.js';
-import { PartialListing } from '../dto/types/partial-listing';
-import { BidModel } from '../dto/types/bid-model';
-import { AUTH_RULES, AUTH_RULES_ID } from '../../constants';
+  findAuctionHouseAssetVaultPda,
+  findAuctionHouseFeePda,
+  findAuctionHouseTreasuryPda,
+  findBidPda,
+  findEscrowPaymentPda,
+  findListingConfigPda,
+  findListingPda,
+} from 'core-auctions';
+import { getTreasuryPublicKey } from '../../utils/metaplex';
 
-export function constructExecuteSaleInstruction(
-  metaplex: Metaplex,
-  auctionHouse: AuctionHouse,
-  listing: PartialListing,
-  bid: BidModel,
-): TransactionInstruction {
-  const { sellerAddress, asset } = listing;
-  const { buyerAddress } = bid;
-  const {
+export async function createExecuteSaleTransaction(
+  umi: Umi,
+  auctionHouseAddress: string,
+  assetAddress: string,
+  sellerAddress: string,
+  bidderAddress: string,
+  splTokenAddress: string,
+  isTimedAuction: boolean,
+) {
+  const seller = publicKey(sellerAddress);
+  const buyer = publicKey(bidderAddress);
+  const asset = publicKey(assetAddress);
+
+  const auctionHouse = publicKey(auctionHouseAddress);
+  const auctionHouseAssetVault = findAuctionHouseAssetVaultPda(umi, {
+    auctionHouse,
+  });
+  const auctionHouseFeeAccount = findAuctionHouseFeePda(umi, { auctionHouse });
+  const auctionHouseTreasury = findAuctionHouseTreasuryPda(umi, {
+    auctionHouse,
+  });
+
+  const listing = findListingPda(umi, { asset, auctionHouse });
+  const bid = findBidPda(umi, { asset, auctionHouse, wallet: buyer });
+  const identityPublicKey = fromWeb3JsPublicKey(getTreasuryPublicKey());
+  const authority = publicKey(identityPublicKey);
+  const treasuryMint = publicKey(splTokenAddress);
+  const escrowPaymentAccount = findEscrowPaymentPda(umi, {
+    auctionHouse,
+    wallet: buyer,
+  });
+
+  let sellerPaymentReceiptAccount = seller;
+  const isNative = splTokenAddress === WRAPPED_SOL_MINT.toString();
+  if (!isNative) {
+    sellerPaymentReceiptAccount = findAssociatedTokenPda(umi, {
+      mint: treasuryMint,
+      owner: seller,
+    })[0];
+  }
+
+  // TODO: Provide collection address
+  const listingConfig = isTimedAuction
+    ? findListingConfigPda(umi, { listing: listing[0] })
+    : undefined;
+  const executeSaleInstructionData: ExecuteSaleInstructionAccounts = {
+    buyer,
+    bid,
     treasuryMint,
-    address: auctionHouseAddress,
-    authorityAddress,
-    feeAccountAddress,
-    treasuryAccountAddress,
-  } = auctionHouse;
-
-  const { tokens, price } = bid;
-  const buyerReceiptTokenAccount = metaplex
-    .tokens()
-    .pdas()
-    .associatedTokenAccount({
-      mint: asset.address,
-      owner: buyerAddress,
-    });
-
-  const escrowPayment = metaplex.auctionHouse().pdas().buyerEscrow({
-    auctionHouse: auctionHouseAddress,
-    buyer: buyerAddress,
-  });
-  const freeTradeState = metaplex
-    .auctionHouse()
-    .pdas()
-    .tradeState({
-      auctionHouse: auctionHouseAddress,
-      wallet: sellerAddress,
-      treasuryMint: treasuryMint.address,
-      tokenMint: asset.address,
-      price: lamports(0).basisPoints,
-      tokenSize: tokens.basisPoints,
-      tokenAccount: asset.token.address,
-    });
-
-  const programAsSigner = metaplex.auctionHouse().pdas().programAsSigner();
-  const accounts: ExecuteSaleInstructionAccounts = {
-    buyer: buyerAddress,
-    seller: sellerAddress,
-    tokenAccount: asset.token.address,
-    tokenMint: asset.address,
-    metadata: asset.metadataAddress,
-    treasuryMint: treasuryMint.address,
-    escrowPaymentAccount: escrowPayment,
-    sellerPaymentReceiptAccount: sellerAddress,
-    buyerReceiptTokenAccount,
-    authority: authorityAddress,
-    auctionHouse: auctionHouseAddress,
-    auctionHouseFeeAccount: feeAccountAddress,
-    auctionHouseTreasury: treasuryAccountAddress,
-    buyerTradeState: bid.tradeStateAddress,
-    sellerTradeState: listing.tradeStateAddress,
-    freeTradeState,
-    programAsSigner,
+    seller,
+    authority,
+    escrowPaymentAccount,
+    auctionHouse,
+    auctionHouseAssetVault,
+    auctionHouseFeeAccount,
+    auctionHouseTreasury,
+    asset,
+    listing,
+    listingConfig,
+    sellerPaymentReceiptAccount,
   };
 
-  const args = {
-    freeTradeStateBump: freeTradeState.bump,
-    escrowPaymentBump: escrowPayment.bump,
-    programAsSignerBump: programAsSigner.bump,
-    buyerPrice: price.basisPoints,
-    tokenSize: tokens.basisPoints,
-  };
-  const executeSaleInstruction = createExecuteSaleInstruction(accounts, args);
-  asset.creators.forEach(({ address }) => {
-    executeSaleInstruction.keys.push({
-      pubkey: new PublicKey(address),
-      isWritable: true,
-      isSigner: false,
-    });
-  });
-  executeSaleInstruction.keys.push(
-    ...getExecuteSaleRemainingAccounts(
-      metaplex,
-      asset.address,
-      sellerAddress,
-      buyerAddress,
-    ),
-  );
+  const transaction = await executeSale(
+    umi,
+    executeSaleInstructionData,
+  ).buildAndSign(umi);
 
-  // //Make auction house authoirity as signer
-  const authorityIndex = executeSaleInstruction.keys.findIndex((key) =>
-    key.pubkey.equals(authorityAddress),
-  );
-  executeSaleInstruction.keys[authorityIndex].isSigner = true;
+  const serializedTransaction = base64.deserialize(
+    umi.transactions.serialize(transaction),
+  )[0];
 
-  //Make metadata as mutable
-  const metadataIndex = executeSaleInstruction.keys.findIndex((key) =>
-    key.pubkey.equals(asset.metadataAddress),
-  );
-  executeSaleInstruction.keys[metadataIndex].isWritable = true;
-
-  return executeSaleInstruction;
-}
-
-function getExecuteSaleRemainingAccounts(
-  metaplex: Metaplex,
-  mint: PublicKey,
-  seller: PublicKey,
-  buyer: PublicKey,
-): AccountMeta[] {
-  const sellerAta = metaplex
-    .tokens()
-    .pdas()
-    .associatedTokenAccount({ mint, owner: seller });
-  const buyerAta = metaplex
-    .tokens()
-    .pdas()
-    .associatedTokenAccount({ mint, owner: buyer });
-  return [
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: metaplex.programs().getTokenMetadata().address,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: metaplex.nfts().pdas().masterEdition({ mint }),
-    },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token: sellerAta }),
-    },
-    {
-      isSigner: false,
-      isWritable: true,
-      pubkey: metaplex.nfts().pdas().tokenRecord({ mint, token: buyerAta }),
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: AUTH_RULES_ID,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: AUTH_RULES,
-    },
-    {
-      isSigner: false,
-      isWritable: false,
-      pubkey: SYSVAR_INSTRUCTIONS_PUBKEY,
-    },
-  ];
+  return serializedTransaction;
 }

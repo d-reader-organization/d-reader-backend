@@ -5,15 +5,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey } from '@solana/web3.js';
-import { Listing, Metaplex } from '@metaplex-foundation/js';
+import { Metaplex } from '@metaplex-foundation/js';
 import {
-  constructCancelBidTransaction,
-  constructCancelListingTransaction,
-  constructInstantBuyTransaction,
-  constructListTransaction,
-  constructPrivateBidTransaction,
-  toListing,
+  createBidTransaction,
+  createCancelBidTransaction,
+  createCancelListingTransaction,
+  createSellTransaction,
+  createTimedAuctionSellTransaction,
+  createAuctionHouse,
+  createExecuteSaleTransaction,
+  createInitEditionSaleTransaction,
+  createInstantBuyTransaction,
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
@@ -21,130 +23,416 @@ import {
   ListingFilterParams,
   ListingSortTag,
 } from './dto/listing-fliter-params.dto';
-import { isBoolean, sortBy, throttle } from 'lodash';
-import { BuyArgs } from './dto/types/buy-args';
-import { metaplex } from '../utils/metaplex';
-import { PartialListing } from './dto/types/partial-listing';
+import { isBoolean, sortBy } from 'lodash';
+import { InstantBuyArgs } from './dto/types/instant-buy-args';
+import {
+  getIdentityUmiSignature,
+  getTreasuryPublicKey,
+  metaplex,
+  umi,
+} from '../utils/metaplex';
 import { Scope, Source } from 'helius-sdk';
 import { SortOrder } from '../types/sort-order';
 import {
-  D_PUBLISHER_SYMBOL,
   LOCKED_COLLECTIONS,
+  MIN_COMPUTE_PRICE,
   RARITY_PRECEDENCE,
+  TCOMP_PROGRAM_ID,
   TENSOR_MAINNET_API_ENDPOINT,
 } from '../constants';
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { TokenStandard } from '@prisma/client';
-import { fetchTensorBuyTx, findOurCandyMachine, getAsset } from '../utils/das';
+import {
+  fetchTensorBuyTx,
+  findOurCandyMachine,
+  getAsset,
+  getTransactionWithPriorityFee,
+} from '../utils/das';
 import { HeliusService } from '../webhooks/helius/helius.service';
+import { findAuctionHousePda } from 'core-auctions';
+import { publicKey, Umi } from '@metaplex-foundation/umi';
+import { CreateAuctionHouseDto } from './dto/create-auction-house.dto';
+import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
+import { ListParams, TimedAuctionListParams } from './dto/list-params.dto';
+import { BidParams } from './dto/bid-params.dto';
+import { ExecuteSaleParams } from './dto/execute-sale-params.dto';
+import {
+  assertPrintEditionSaleConfig,
+  assertListingConfig,
+} from '../utils/auction-house';
+import { memoizeThrottle } from '../utils/lodash';
+import { InitializePrintEditionSaleParams } from './dto/initialize-edition-sale-params.dto';
+import { createBuyPrintEditionTransaction } from './instructions/buy-edition';
+import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 
 @Injectable()
 export class AuctionHouseService {
+  private readonly umi: Umi;
   private readonly metaplex: Metaplex;
-  private readonly auctionHouseAddress: PublicKey;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
   ) {
+    this.umi = umi;
     this.metaplex = metaplex;
-    this.auctionHouseAddress = new PublicKey(process.env.AUCTION_HOUSE_ADDRESS);
   }
 
-  async findOurAuctionHouse() {
-    return this.metaplex
-      .auctionHouse()
-      .findByAddress({ address: this.auctionHouseAddress });
+  private async getAuctionHouse(splTokenAddress: string) {
+    const auctionHouse = await this.prisma.auctionHouse.findFirst({
+      where: { treasuryMint: splTokenAddress },
+    });
+
+    if (!auctionHouse) {
+      throw new BadRequestException(
+        `Selected currency not supported: ${splTokenAddress}`,
+      );
+    }
+
+    return auctionHouse;
   }
 
-  private throttledFindOurAuctionHouse = throttle(
-    this.findOurAuctionHouse,
+  // TODO: Use throttle for finding auction house
+  private throttledFindAuctionHouse = memoizeThrottle(
+    async (splTokenAddress: string) => {
+      const auctionHouse = await this.getAuctionHouse(splTokenAddress);
+      return auctionHouse;
+    },
     24 * 60 * 60 * 1000, // 24 hours
   );
 
-  // Execute Sale for a nft listed and agreed on the bid by seller
-  async constructExecutelistedSale(
-    payer: PublicKey,
-    listReceipt: PublicKey,
-    bidReceipt: PublicKey,
-    printReceipt: boolean,
-  ) {
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-    const listing = await this.metaplex
-      .auctionHouse()
-      .findListingByReceipt({ receiptAddress: listReceipt, auctionHouse });
-
-    const bid = await this.metaplex
-      .auctionHouse()
-      .findBidByReceipt({ receiptAddress: bidReceipt, auctionHouse });
-
-    const executeSaleTransactionBuilder = this.metaplex
-      .auctionHouse()
-      .builders()
-      .executeSale(
-        {
-          auctionHouse,
-          listing,
-          bid,
-          printReceipt,
-        },
-        { payer: this.metaplex.identity() },
-      );
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash();
-
-    const executeSaleTransaction =
-      executeSaleTransactionBuilder.toTransaction(latestBlockhash);
-
-    executeSaleTransaction.feePayer = payer;
-
-    if (printReceipt) executeSaleTransaction.sign(this.metaplex.identity());
-
-    const rawTransaction = executeSaleTransaction.serialize({
-      requireAllSignatures: false,
-      verifySignatures: false,
+  private async getBasicAssetData(address: string) {
+    const digitalAsset = await this.prisma.digitalAsset.findUnique({
+      where: { address },
+      include: {
+        collectibleComic: true,
+        printEdition: true,
+        oneOfOne: true,
+      },
     });
 
-    return rawTransaction.toString('base64');
+    if (!digitalAsset) {
+      throw new NotFoundException(
+        "Asset doesn't exist, try syncing your assets",
+      );
+    }
+
+    const { collectibleComic, printEdition, oneOfOne } = digitalAsset;
+
+    if (collectibleComic) {
+      const candyMachine = await this.prisma.candyMachine.findFirst({
+        where: {
+          collection: {
+            metadatas: {
+              some: {
+                collectibleComics: {
+                  some: { address: collectibleComic.address },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (candyMachine?.standard !== TokenStandard.Core) {
+        throw new BadRequestException(
+          `${candyMachine?.standard} Token standard is not supported for auctions`,
+        );
+      }
+
+      return {
+        sellerAddress: digitalAsset.ownerAddress,
+        assetAddress: collectibleComic.address,
+        collectionAddress: candyMachine.collectionAddress,
+      };
+    }
+
+    if (printEdition) {
+      return {
+        sellerAddress: digitalAsset.ownerAddress,
+        assetAddress: printEdition.address,
+        collectionAddress: printEdition.collectionAddress,
+      };
+    }
+
+    if (oneOfOne) {
+      return {
+        sellerAddress: digitalAsset.ownerAddress,
+        assetAddress: oneOfOne.address,
+        collectionAddress: oneOfOne.collectionAddress,
+      };
+    }
+
+    throw new NotFoundException(
+      'Digital asset is either invalid or not supported for listing',
+    );
   }
 
-  async createMultipleBuys(buyArguments: BuyArgs[]) {
-    const transactions = buyArguments.map((buyArg) => {
-      return this.createInstantBuyTransaction(buyArg);
+  async createAuctionHouse(createAuctionHouseDto: CreateAuctionHouseDto) {
+    const transaction = await createAuctionHouse(
+      this.umi,
+      createAuctionHouseDto,
+    );
+    const signedTransaction = await getIdentityUmiSignature(transaction);
+
+    const latestBlockhash = await this.umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
     });
+    const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
+      commitment: 'confirmed',
+    });
+
+    await this.umi.rpc.confirmTransaction(signature, {
+      commitment: 'confirmed',
+      strategy: { type: 'blockhash', ...latestBlockhash },
+    });
+
+    const authority = getTreasuryPublicKey();
+    const {
+      canChangeSalePrice,
+      requiresSignOff,
+      treasuryAddress,
+      sellerFeeBasisPoints,
+    } = createAuctionHouseDto;
+
+    const treasuryMint = publicKey(treasuryAddress);
+    const auctionHouseAddress = findAuctionHousePda(this.umi, {
+      authority: fromWeb3JsPublicKey(authority),
+      treasuryMint,
+    });
+
+    return await this.prisma.auctionHouse.create({
+      data: {
+        address: auctionHouseAddress[0],
+        canChangeSalePrice: canChangeSalePrice ?? false,
+        sellerFeeBasisPoints,
+        requiresSignOff: requiresSignOff ?? false,
+        treasuryMint: treasuryAddress,
+      },
+    });
+  }
+
+  /* List your asset for timed auction */
+  async timedAuctionList(params: TimedAuctionListParams) {
+    const { startDate, endDate, assetAddress, splTokenAddress } = params;
+
+    if (endDate < startDate) {
+      throw new BadRequestException(
+        'End Date cannot be earlier than Start Date',
+      );
+    }
+
+    const { sellerAddress, collectionAddress } = await this.getBasicAssetData(
+      assetAddress,
+    );
+    const auctionHouse = await this.getAuctionHouse(splTokenAddress);
+
+    return getTransactionWithPriorityFee(
+      createTimedAuctionSellTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      assetAddress,
+      sellerAddress,
+      auctionHouse.address,
+      params,
+      collectionAddress,
+    );
+  }
+
+  /* List your asset at a constant price */
+  async list(params: ListParams) {
+    const { assetAddress, price, splTokenAddress } = params;
+
+    const auctionHouse = await this.getAuctionHouse(splTokenAddress);
+    const { sellerAddress, collectionAddress } = await this.getBasicAssetData(
+      assetAddress,
+    );
+
+    return getTransactionWithPriorityFee(
+      createSellTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      assetAddress,
+      sellerAddress,
+      auctionHouse.address,
+      price,
+      collectionAddress,
+    );
+  }
+
+  /* Bid on a listed digital asset */
+  async bid(bidParams: BidParams) {
+    const { bidderAddress, assetAddress, price } = bidParams;
+
+    const { auctionHouse, listingConfig, ...listing } =
+      await this.prisma.listing.findUnique({
+        where: {
+          assetAddress_closedAt: {
+            assetAddress,
+            closedAt: new Date(0),
+          },
+        },
+        include: {
+          auctionHouse: true,
+          listingConfig: true,
+        },
+      });
+
+    if (!listing) {
+      throw new NotFoundException('Asset is not listed for auction');
+    }
+
+    const isTimedAuction = !!listingConfig;
+    if (isTimedAuction) {
+      const highestBid = listingConfig.highestBidId
+        ? await this.prisma.bid.findUnique({
+            where: { id: listingConfig.highestBidId },
+          })
+        : undefined;
+      assertListingConfig(listingConfig, price, highestBid);
+    }
+
+    const transaction = await getTransactionWithPriorityFee(
+      createBidTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      auctionHouse.address,
+      assetAddress,
+      bidderAddress,
+      auctionHouse.treasuryMint,
+      price,
+      isTimedAuction,
+    );
+    return transaction;
+  }
+
+  /* Execute sale with listing and bid orders */
+  async executeSale(executeSaleParams: ExecuteSaleParams) {
+    const { listingId, bidId } = executeSaleParams;
+
+    const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { auctionHouse: true },
+    });
+    const bid = await this.prisma.bid.findUnique({ where: { id: bidId } });
+
+    if (!listing) {
+      throw new NotFoundException(
+        'Failed to execute the sale, listing for the asset not found',
+      );
+    }
+
+    if (!bid) {
+      throw new NotFoundException('Failed to execute the sale, bid not found');
+    }
+
+    const { address, treasuryMint } = auctionHouse;
+    const { assetAddress, sellerAddress } = listing;
+    const { bidderAddress } = bid;
+
+    const transaction = await getTransactionWithPriorityFee(
+      createExecuteSaleTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      address,
+      assetAddress,
+      sellerAddress,
+      bidderAddress,
+      treasuryMint,
+    );
+    return transaction;
+  }
+
+  /* Instantly buy on the listing price */
+  async instantBuy(instantBuyArgs: InstantBuyArgs) {
+    const { assetAddress, buyerAddress } = instantBuyArgs;
+
+    const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
+      where: {
+        assetAddress_closedAt: {
+          assetAddress,
+          closedAt: new Date(0),
+        },
+      },
+      include: {
+        auctionHouse: true,
+      },
+    });
+
+    if (!listing) {
+      throw new NotFoundException(`Asset is not listed for auction`);
+    }
+
+    if (listing.source === Source.TENSOR) {
+      return this.buyFromTensor(
+        listing.sellerAddress,
+        Number(listing.price),
+        instantBuyArgs,
+      );
+    }
+
+    const { address: auctionHouseAddress, treasuryMint } = auctionHouse;
+    const { price, sellerAddress } = listing;
+
+    const transaction = await getTransactionWithPriorityFee(
+      createInstantBuyTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      auctionHouseAddress,
+      assetAddress,
+      buyerAddress,
+      sellerAddress,
+      treasuryMint,
+      Number(price),
+    );
+    return transaction;
+  }
+
+  /* Buy multiples on listing price */
+  async multipleBuys(instantBuyArgsArray: InstantBuyArgs[]) {
+    const transactions = instantBuyArgsArray.map((instantBuyArgs) => {
+      return this.instantBuy(instantBuyArgs);
+    });
+
     return await Promise.all(transactions);
   }
 
-  async createBuyFromTensor(
+  /* Buy collectible comics listed on tensor */
+  async buyFromTensor(
     seller: string,
     price: number,
-    buyArguments: BuyArgs,
+    instantBuyArgs: InstantBuyArgs,
   ) {
-    const { mintAccount, buyer } = buyArguments;
+    const { assetAddress, buyerAddress } = instantBuyArgs;
+
     const { standard } = await this.prisma.candyMachine.findFirst({
       where: {
         collection: {
           metadatas: {
-            some: { asset: { some: { address: mintAccount.toString() } } },
+            some: {
+              collectibleComics: { some: { address: assetAddress } },
+            },
           },
         },
       },
     });
+
     if (standard === TokenStandard.Core) {
       const { data } = await fetchTensorBuyTx(
-        buyer.toString(),
+        buyerAddress,
         price,
-        mintAccount.toString(),
+        assetAddress,
         seller,
       );
+
       const bufferTx = data.tcompBuyTx.txs.at(0).tx.data;
       const buyTx = base64.deserialize(bufferTx)[0];
       return buyTx;
     }
 
     const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-
     const options = {
       method: 'GET',
       url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/tx/buy`,
@@ -153,8 +441,8 @@ export class AuctionHouseService {
         'X-TENSOR-API-KEY': process.env.TENSOR_API_KEY ?? '',
       },
       params: {
-        buyer: buyer.toString(),
-        mint: mintAccount.toString(),
+        buyer: buyerAddress,
+        mint: assetAddress,
         owner: seller,
         maxPrice: price,
         blockhash: latestBlockhash.blockhash,
@@ -183,192 +471,151 @@ export class AuctionHouseService {
     }
   }
 
-  async createInstantBuyTransaction(buyArguments: BuyArgs) {
-    const listing = await this.prisma.listing.findUnique({
-      where: {
-        assetAddress_canceledAt: {
-          assetAddress: buyArguments.mintAccount.toString(),
-          canceledAt: new Date(0),
-        },
-      },
-      include: { asset: true },
+  /* Cancel Buy Order */
+  async cancelBid(bidId: number) {
+    const { auctionHouse, ...bid } = await this.prisma.bid.findUnique({
+      where: { id: bidId },
+      include: { auctionHouse: true },
     });
+
+    if (!bid) {
+      throw new NotFoundException(`Bid not found`);
+    }
+
+    if (bid.closedAt != new Date(0)) {
+      throw new BadRequestException('Bid is already closed');
+    }
+
+    const { assetAddress, bidderAddress } = bid;
+
+    const transaction = await getTransactionWithPriorityFee(
+      createCancelBidTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      auctionHouse.address,
+      assetAddress,
+      bidderAddress,
+    );
+    return transaction;
+  }
+
+  /* Cancel Sell Order */
+  async cancelListing(listingId: number) {
+    const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { auctionHouse: true },
+    });
+
     if (!listing) {
-      throw new NotFoundException(
-        `Cannot find listing with address ${buyArguments.mintAccount.toString()}`,
-      );
+      throw new NotFoundException(`Listing not found`);
     }
 
-    if (listing.source === Source.TENSOR) {
-      return await this.createBuyFromTensor(
-        listing.feePayer,
-        Number(listing.price),
-        buyArguments,
-      );
+    if (listing.closedAt != new Date(0)) {
+      throw new BadRequestException('Listing is already closed');
     }
 
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-    return await constructInstantBuyTransaction(
-      this.metaplex,
-      auctionHouse,
-      buyArguments,
-      listing,
+    const { assetAddress, sellerAddress } = listing;
+
+    const transaction = await getTransactionWithPriorityFee(
+      createCancelListingTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      auctionHouse.address,
+      assetAddress,
+      sellerAddress,
     );
+    return transaction;
   }
 
-  async createListOnTensorTransaction(
-    seller: PublicKey,
-    mintAccount: PublicKey,
-    price: number,
-  ) {
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
-      'confirmed',
-    );
-    const options = {
-      method: 'GET',
-      url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/tx/list`,
-      headers: {
-        accept: 'application/json',
-        'X-TENSOR-API-KEY': process.env.TENSOR_API_KEY ?? '',
-      },
-      params: {
-        mint: mintAccount.toString(),
-        owner: seller.toString(),
-        price,
-        blockhash: latestBlockhash.blockhash,
-      },
-    };
-    try {
-      const response = await axios.request(options);
-      const { txs } = response.data;
-      const listTx = base64.deserialize(txs.at(0).tx.data)[0];
+  /* Initialize Print Editions Sale */
+  async initializePrintEditionSale(params: InitializePrintEditionSaleParams) {
+    const { startDate, endDate, price, assetAddress, splTokenAddress } = params;
 
-      return listTx;
-    } catch (e) {
-      console.error('Error while listing', e);
-      throw new HttpException(
-        'Error while listing, please try again!',
-        HttpStatus.EXPECTATION_FAILED,
+    if (endDate < startDate) {
+      throw new BadRequestException(
+        'End Date cannot be earlier than Start Date',
       );
     }
+
+    const isSplTokenSupported = await this.prisma.splToken.findUnique({
+      where: { address: splTokenAddress },
+    });
+
+    if (!isSplTokenSupported) {
+      throw new BadRequestException('Currency not supported');
+    }
+
+    const { digitalAsset, ...printEditionCollection } =
+      await this.prisma.printEditionCollection.findUnique({
+        where: { address: assetAddress },
+        include: { digitalAsset: true },
+      });
+
+    if (!printEditionCollection) {
+      throw new Error('Print Edition Collection not found !');
+    }
+
+    if (!printEditionCollection.verifiedAt) {
+      throw new Error('Only verified print editions can put on sale');
+    }
+
+    const transaction = await getTransactionWithPriorityFee(
+      createInitEditionSaleTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      digitalAsset.ownerAddress,
+      printEditionCollection.address,
+      splTokenAddress,
+      price,
+      startDate,
+      endDate,
+    );
+    return transaction;
   }
 
-  /* currently only list NFTs */
-  async createListTransaction(
-    seller: PublicKey,
-    mintAccount: PublicKey,
-    price: number,
-    printReceipt: boolean,
-  ) {
-    const candyMachine = await this.prisma.candyMachine.findFirst({
+  /* Buy print editions from primary sale */
+  async buyPrintEdition(params: BuyPrintEditionParams) {
+    const address = params.assetAddress;
+    const { printEditionSaleConfig, digitalAsset, ...printEditionCollection } =
+      await this.prisma.printEditionCollection.findUnique({
+        where: { address },
+        include: { printEditionSaleConfig: true, digitalAsset: true },
+      });
+
+    if (!printEditionSaleConfig) {
+      throw new BadRequestException('Edition is not on sale');
+    }
+
+    assertPrintEditionSaleConfig(printEditionSaleConfig);
+
+    const transaction = await getTransactionWithPriorityFee(
+      createBuyPrintEditionTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      printEditionCollection.address,
+      digitalAsset.ownerAddress,
+      params.buyerAddress,
+      printEditionSaleConfig.currencyMint,
+    );
+    return transaction;
+  }
+
+  async getComicIssueTotalVolume(comicIssueId: number) {
+    const getSecondaryVolume = this.prisma.auctionSale.aggregate({
       where: {
-        collection: {
-          metadatas: {
-            some: { asset: { some: { address: mintAccount.toString() } } },
+        listing: {
+          digitalAsset: {
+            collectibleComic: { metadata: { collection: { comicIssueId } } },
           },
         },
-      },
-    });
-
-    if (!candyMachine) {
-      throw new NotFoundException('Invalid Asset');
-    }
-
-    if (candyMachine.standard === TokenStandard.Core) {
-      return await this.createListOnTensorTransaction(
-        seller,
-        mintAccount,
-        price,
-      );
-    }
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-    await this.validateMint(mintAccount.toString());
-    return await constructListTransaction(
-      this.metaplex,
-      auctionHouse,
-      seller,
-      mintAccount,
-      price,
-      printReceipt,
-    );
-  }
-
-  async createPrivateBidTransaction(
-    buyer: PublicKey,
-    mintAccount: PublicKey,
-    price: number,
-    printReceipt: boolean,
-    seller?: PublicKey,
-    tokenAccount?: PublicKey,
-  ) {
-    if (!seller && !tokenAccount) {
-      throw new BadRequestException(
-        'Seller or associated token account must be provided!',
-      );
-    }
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-
-    return await constructPrivateBidTransaction(
-      this.metaplex,
-      auctionHouse,
-      buyer,
-      mintAccount,
-      price,
-      printReceipt,
-      seller,
-    );
-  }
-
-  async createCancelBidTransaction(receiptAddress: PublicKey) {
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-    const bid = await this.metaplex
-      .auctionHouse()
-      .findBidByReceipt({ receiptAddress, auctionHouse });
-
-    return await constructCancelBidTransaction(
-      this.metaplex,
-      auctionHouse,
-      bid,
-    );
-  }
-
-  async createCancelListingTransaction(
-    receiptAddress?: PublicKey,
-    assetAddress?: string,
-  ) {
-    const auctionHouse = await this.throttledFindOurAuctionHouse();
-
-    let partialListing: Listing | PartialListing;
-    if (receiptAddress) {
-      partialListing = await this.metaplex
-        .auctionHouse()
-        .findListingByReceipt({ receiptAddress, auctionHouse });
-    } else {
-      const listing = await this.prisma.listing.findFirst({
-        where: { assetAddress, canceledAt: new Date(0) },
-        include: { asset: true },
-      });
-      partialListing = await toListing(this.metaplex, auctionHouse, listing);
-    }
-
-    return await constructCancelListingTransaction(
-      this.metaplex,
-      auctionHouse,
-      partialListing,
-    );
-  }
-
-  async getTotalVolume(comicIssueId: number) {
-    const getSecondaryVolume = this.prisma.listing.aggregate({
-      where: {
-        asset: { metadata: { collection: { comicIssueId } } },
-        soldAt: { not: null },
       },
       _sum: { price: true },
     });
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
-      where: { asset: { metadata: { collection: { comicIssueId } } } },
+      where: {
+        collectibleComic: { metadata: { collection: { comicIssueId } } },
+      },
       _sum: { price: true },
     });
 
@@ -386,19 +633,23 @@ export class AuctionHouseService {
   async findCollectionStats(
     comicIssueId: number,
   ): Promise<CollectonMarketplaceStats> {
-    const getTotalVolume = this.getTotalVolume(comicIssueId);
+    const getTotalVolume = this.getComicIssueTotalVolume(comicIssueId);
 
     const countListed = this.prisma.listing.count({
       where: {
-        asset: { metadata: { collection: { comicIssueId } } },
-        canceledAt: new Date(0),
+        digitalAsset: {
+          collectibleComic: { metadata: { collection: { comicIssueId } } },
+        },
+        closedAt: new Date(0),
       },
     });
 
     const getCheapestItem = this.prisma.listing.findFirst({
       where: {
-        asset: { metadata: { collection: { comicIssueId } } },
-        canceledAt: new Date(0),
+        digitalAsset: {
+          collectibleComic: { metadata: { collection: { comicIssueId } } },
+        },
+        closedAt: new Date(0),
       },
       orderBy: { price: 'asc' },
       select: { price: true },
@@ -424,22 +675,27 @@ export class AuctionHouseService {
     };
   }
 
-  async findListedItems(query: ListingFilterParams) {
-    const sortTag = query.sortTag ?? ListingSortTag.Price;
-    const sortOrder = query.sortOrder ?? SortOrder.ASC;
+  async findListedItems(listingFilterParams: ListingFilterParams) {
+    const sortTag = listingFilterParams.sortTag ?? ListingSortTag.Price;
+    const sortOrder = listingFilterParams.sortOrder ?? SortOrder.ASC;
+
+    const { comicIssueId, rarity, isSigned, isUsed, take, skip } =
+      listingFilterParams;
 
     let listings = await this.prisma.listing.findMany({
       where: {
-        canceledAt: new Date(0),
-        soldAt: isBoolean(query.isSold)
-          ? { [query.isSold ? 'not' : 'equals']: null }
+        closedAt: new Date(0),
+        sale: isBoolean(listingFilterParams.isSold)
+          ? { [listingFilterParams.isSold ? 'not' : 'equals']: null }
           : undefined,
-        asset: {
-          metadata: {
-            collection: { comicIssueId: query.comicIssueId },
-            rarity: query.rarity,
-            isUsed: query.isUsed,
-            isSigned: query.isSigned,
+        digitalAsset: {
+          collectibleComic: {
+            metadata: {
+              collection: { comicIssueId },
+              rarity,
+              isUsed,
+              isSigned,
+            },
           },
         },
         source: { in: [Source.METAPLEX, Source.TENSOR] },
@@ -448,18 +704,21 @@ export class AuctionHouseService {
         price: sortTag == ListingSortTag.Price ? sortOrder : SortOrder.ASC,
       },
       include: {
-        asset: {
-          include: { owner: { include: { user: true } }, metadata: true },
+        digitalAsset: {
+          include: {
+            owner: { include: { user: true } },
+            collectibleComic: { include: { metadata: true } },
+          },
         },
       },
-      take: query.take,
-      skip: query.skip,
+      take,
+      skip,
     });
 
     if (sortTag == ListingSortTag.Rarity) {
       listings = sortBy(listings, (item) => {
         const rarityIndex = RARITY_PRECEDENCE.indexOf(
-          item.asset.metadata.rarity,
+          item.digitalAsset.collectibleComic.metadata.rarity,
         );
         return sortOrder == SortOrder.DESC ? -rarityIndex : rarityIndex;
       });
@@ -467,18 +726,21 @@ export class AuctionHouseService {
     return listings;
   }
 
-  async syncListings(listings: TENSOR_LISTING_RESPONSE[]) {
+  async syncTensorListings(listings: TENSOR_LISTING_RESPONSE[]) {
     for await (const listing of listings) {
+      const collectibleComic = await this.prisma.collectibleComic.findUnique({
+        where: { address: listing.mint.onchainId },
+      });
       await this.prisma.listing.upsert({
         where: {
-          assetAddress_canceledAt: {
+          assetAddress_closedAt: {
             assetAddress: listing.mint.onchainId,
-            canceledAt: new Date(0),
+            closedAt: new Date(0),
           },
         },
         update: {
           price: +listing.tx.grossAmount,
-          feePayer: listing.tx.sellerId,
+          sellerAddress: listing.tx.sellerId,
           createdAt: new Date(),
           signature: listing.tx.txId,
           source:
@@ -487,29 +749,34 @@ export class AuctionHouseService {
               : Source.MAGIC_EDEN,
         },
         create: {
-          assetAddress: listing.mint.onchainId,
-          symbol: D_PUBLISHER_SYMBOL,
+          auctionHouse: {
+            // TODO: This should be conditional to add either TSWAP or TCOMP address as per the source
+            connect: { address: TCOMP_PROGRAM_ID },
+          },
           price: +listing.tx.grossAmount,
-          feePayer: listing.tx.sellerId,
+          sellerAddress: listing.tx.sellerId,
           createdAt: new Date(),
           signature: listing.tx.txId,
           source:
             listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
               ? Source.TENSOR
               : Source.MAGIC_EDEN,
-          canceledAt: new Date(0),
+          closedAt: new Date(0),
+          digitalAsset: {
+            connect: { address: collectibleComic.address },
+          },
         },
       });
     }
 
     // NOTE: Uncomment and use as per required.
-    // const allListings = await this.prisma.nft.findMany({
+    // const allListings = await this.prisma.collectibleComic.findMany({
     //   where: {
-    //     listing: { some: { canceledAt: new Date(0), source: Source.TENSOR || Source.MAGIC_EDEN } },
-    //     collectionNftAddress: '<COLLECTION_ADDRESS>',
+    //     digitalAsset: {listings: { some: { closedAt: new Date(0), source: Source.TENSOR || Source.MAGIC_EDEN } }},
+    //     metadata: { collectionAddress: '<COLLECTION_ADDRESS>'},
     //   },
     // });
-    // let count = 0;
+
     // for await (const listing of allListings) {
     //   const doesExist = listings.find(
     //     (item) => item.mint.onchainId === listing.address,
@@ -517,13 +784,13 @@ export class AuctionHouseService {
     //   if (!doesExist) {
     //     await this.prisma.listing.update({
     //       where: {
-    //         nftAddress_canceledAt: {
-    //           nftAddress: listing.address,
-    //           canceledAt: new Date(0),
+    //         assetAddress_closedAt: {
+    //           assetAddress: listing.address,
+    //           closedAt: new Date(0),
     //         },
     //       },
     //       data: {
-    //         canceledAt: new Date(),
+    //         closedAt: new Date(),
     //       },
     //     });
     //   }

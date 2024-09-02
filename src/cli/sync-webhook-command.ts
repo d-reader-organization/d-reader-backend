@@ -79,7 +79,7 @@ export class SyncWebhookCommand extends CommandRunner {
 
   /** Collect all candy machine, NFT, and AuctionHouse addresses to listen to */
   async collectAddresses() {
-    const foundNfts = await this.prisma.digitalAsset.findMany({
+    const foundNfts = await this.prisma.collectibleComic.findMany({
       select: { address: true },
     });
 

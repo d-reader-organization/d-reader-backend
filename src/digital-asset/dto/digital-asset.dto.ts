@@ -15,7 +15,12 @@ import {
   findUsedTrait,
 } from '../../utils/nft-metadata';
 import { ApiProperty } from '@nestjs/swagger';
-import { DigitalAsset, Listing, ComicRarity, Collection } from '@prisma/client';
+import {
+  CollectibleComic,
+  Listing,
+  ComicRarity,
+  CollectibleComicCollection,
+} from '@prisma/client';
 import { divide, isNil } from 'lodash';
 
 export class NftAttributeDto {
@@ -73,13 +78,14 @@ export class AssetDto {
   isListed: boolean;
 }
 
-type AssetInput = DigitalAsset & {
-  metadata?: { collection?: Collection };
-  listing?: Listing[];
+export type AssetInput = CollectibleComic & {
+  digitalAsset: { listing?: Listing[]; ownerAddress: string };
+  metadata?: { collection?: CollectibleComicCollection };
 };
 
 export async function toAssetDto(asset: AssetInput) {
   const offChainMetadata = await fetchOffChainMetadata(asset.uri);
+  const listings = asset.digitalAsset.listing;
 
   const plainNftDto: AssetDto = {
     address: asset.address,
@@ -87,7 +93,7 @@ export async function toAssetDto(asset: AssetInput) {
     image: offChainMetadata.image,
     name: asset.name,
     description: offChainMetadata.description,
-    ownerAddress: asset.ownerAddress,
+    ownerAddress: asset.digitalAsset.ownerAddress,
     royalties: divide(offChainMetadata.seller_fee_basis_points, 100),
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
@@ -101,17 +107,13 @@ export async function toAssetDto(asset: AssetInput) {
       trait: a.trait_type,
       value: a.value,
     })),
-    isListed: isNil(asset.listing)
-      ? null
-      : asset.listing.length > 0
-      ? true
-      : false,
+    isListed: isNil(listings) ? null : listings.length > 0 ? true : false,
   };
 
   const assetDto = plainToInstance(AssetDto, plainNftDto);
   return assetDto;
 }
 
-export const toAssetDtoArray = (assets: DigitalAsset[]) => {
+export const toAssetDtoArray = (assets: AssetInput[]) => {
   return Promise.all(assets.map(toAssetDto));
 };

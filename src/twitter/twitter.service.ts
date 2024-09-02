@@ -16,14 +16,14 @@ export class TwitterService {
     comicAssetAddress: string,
     utmSource: UtmSource,
   ) {
-    const comicAsset = await this.prisma.digitalAsset.findFirst({
+    const comicAsset = await this.prisma.collectibleComic.findFirst({
       where: { address: comicAssetAddress },
       include: { metadata: true },
     });
 
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: {
-        collection: {
+        collectibleComicCollection: {
           candyMachines: {
             some: { address: comicAsset.candyMachineAddress },
           },

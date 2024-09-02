@@ -52,7 +52,7 @@ import {
   solFromLamports,
 } from '../utils/helpers';
 import {
-  MetdataFile,
+  MetadataFile,
   getThirdPartySigner,
   metaplex,
   umi,
@@ -68,7 +68,6 @@ import { LegacyGuardGroup, RarityCoverFiles } from '../types/shared';
 import {
   generatePropertyName,
   insertItems,
-  JsonMetadataCreators,
   validateBalanceForMint,
 } from '../utils/candy-machine';
 import { DarkblockService } from './darkblock.service';
@@ -136,6 +135,7 @@ import {
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
 import { getTransactionWithPriorityFee } from '../utils/das';
+import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 
 @Injectable()
 export class CandyMachineService {
@@ -195,7 +195,7 @@ export class CandyMachineService {
   async getOrCreateComicIssueCollection(
     comicIssue: ComicIssueCMInput,
     onChainName: string,
-    royaltyWallets: JsonMetadataCreators,
+    royaltyWallets: RoyaltyWalletDto[],
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
     tokenStandard?: TokenStandard,
@@ -213,12 +213,13 @@ export class CandyMachineService {
     const coverImage = await s3toMxFile(cover.image);
     // if Collection NFT already exists - use it, otherwise create a fresh one
     let collectionAddress: PublicKey;
-    const collectionAsset = await this.prisma.collection.findUnique({
-      where: {
-        comicIssueId,
-        candyMachines: { some: { standard: tokenStandard } },
-      },
-    });
+    const collectionAsset =
+      await this.prisma.collectibleComicCollection.findUnique({
+        where: {
+          comicIssueId,
+          candyMachines: { some: { standard: tokenStandard } },
+        },
+      });
 
     let darkblockId = '';
     // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
@@ -226,7 +227,7 @@ export class CandyMachineService {
       collectionAddress = new PublicKey(collectionAsset.address);
       darkblockId = collectionAsset.darkblockId ?? '';
     } else {
-      let darkblockMetadataFile: MetdataFile;
+      let darkblockMetadataFile: MetadataFile;
       if (pdf) {
         darkblockId = await this.darkblockService.mintDarkblock(
           pdf,
@@ -297,11 +298,28 @@ export class CandyMachineService {
         collectionAddress = newCollectionNft.address;
       }
 
-      await this.prisma.collection.create({
+      await this.prisma.collectibleComicCollection.create({
         data: {
-          address: collectionAddress.toBase58(),
           name: onChainName,
           comicIssue: { connect: { id: comicIssue.id } },
+          digitalAsset: {
+            create: {
+              address: collectionAddress.toBase58(),
+              royaltyWallets: {
+                create: royaltyWallets,
+              },
+              owner: {
+                connectOrCreate: {
+                  where: { address: this.umi.identity.publicKey.toString() },
+                  create: {
+                    address: this.umi.identity.publicKey.toString(),
+                    createdAt: new Date(),
+                  },
+                },
+              },
+              ownerChangedAt: new Date(),
+            },
+          },
         },
       });
     }
@@ -322,7 +340,7 @@ export class CandyMachineService {
     tokenStandard?: TokenStandard;
   }) {
     validateComicIssueCMInput(comicIssue);
-    const royaltyWallets: JsonMetadataCreators = comicIssue.royaltyWallets;
+    const royaltyWallets = comicIssue.royaltyWallets;
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
@@ -432,7 +450,7 @@ export class CandyMachineService {
           };
         });
 
-        await this.prisma.metadata.createMany({
+        await this.prisma.collectibleComicMetadata.createMany({
           data: metadataCreateData,
           skipDuplicates: true,
         });
@@ -503,7 +521,7 @@ export class CandyMachineService {
           };
         });
 
-        await this.prisma.metadata.createMany({
+        await this.prisma.collectibleComicMetadata.createMany({
           data: metadataCreateData,
           skipDuplicates: true,
         });
@@ -636,7 +654,6 @@ export class CandyMachineService {
     return await Promise.all(transactions);
   }
 
-  // TODO: Make it support checks for multiple mints
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
@@ -846,7 +863,7 @@ export class CandyMachineService {
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
-      include: { asset: true, buyer: { include: { user: true } } },
+      include: { collectibleComic: true, buyer: { include: { user: true } } },
       orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,

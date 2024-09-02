@@ -40,8 +40,8 @@ Table Wallet {
   connectedAt DateTime
   user User
   mintReceipts CandyMachineReceipt [not null]
-  assets DigitalAsset [not null]
   candyMachineGroups WalletCandyMachineGroup [not null]
+  digitalAssets DigitalAsset [not null]
 }
 
 Table Creator {
@@ -136,11 +136,11 @@ Table Genre {
 Table RoyaltyWallet {
   address String [not null]
   share Int [not null]
-  comicIssue ComicIssue [not null]
-  comicIssueId Int [not null]
+  assetAddress String [not null]
+  digitalAsset DigitalAsset [not null]
 
   indexes {
-    (address, comicIssueId) [unique]
+    (assetAddress, address) [unique]
   }
 }
 
@@ -168,10 +168,9 @@ Table ComicIssue {
   comicSlug String [not null]
   s3BucketSlug String [not null]
   comic Comic [not null]
-  royaltyWallets RoyaltyWallet [not null]
   statelessCovers StatelessCover [not null]
   statefulCovers StatefulCover [not null]
-  collection Collection
+  collectibleComicCollection CollectibleComicCollection
   pages ComicPage [not null]
   users UserComicIssue [not null]
   collaborators ComicIssueCollaborator [not null]
@@ -238,18 +237,15 @@ Table StatefulCover {
   }
 }
 
-Table DigitalAsset {
+Table CollectibleComic {
   address String [pk]
-  metadata Metadata [not null]
+  metadata CollectibleComicMetadata [not null]
   uri String [not null]
   name String [not null]
-  owner Wallet [not null]
-  ownerAddress String [not null]
-  ownerChangedAt DateTime [not null]
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
   receipt CandyMachineReceipt
-  listing Listing [not null]
+  digitalAsset DigitalAsset [not null]
 }
 
 Table CandyMachine {
@@ -263,12 +259,12 @@ Table CandyMachine {
   itemsLoaded Int [not null]
   isFullyLoaded Boolean [not null]
   lookupTable String
-  collection Collection [not null]
+  collection CollectibleComicCollection [not null]
   collectionAddress String [not null]
-  items DigitalAsset [not null]
+  items CollectibleComic [not null]
   receipts CandyMachineReceipt [not null]
   groups CandyMachineGroup [not null]
-  standard TokenStandard [not null, default: 'Legacy']
+  standard TokenStandard [not null, default: 'Core']
 }
 
 Table CandyMachineGroup {
@@ -315,8 +311,8 @@ Table UserCandyMachineGroup {
 }
 
 Table CandyMachineReceipt {
-  assetAddress String [pk]
-  asset DigitalAsset [not null]
+  collectibleComicAddress String [pk]
+  collectibleComic CollectibleComic [not null]
   buyer Wallet [not null]
   userId Int
   user User
@@ -331,14 +327,15 @@ Table CandyMachineReceipt {
   label String [not null, default: '']
 }
 
-Table Collection {
+Table CollectibleComicCollection {
   address String [pk]
   name String [not null]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
   candyMachines CandyMachine [not null]
   darkblockId String
-  metadatas Metadata [not null]
+  metadatas CollectibleComicMetadata [not null]
+  digitalAsset DigitalAsset [not null]
 }
 
 Table ComicPage {
@@ -412,12 +409,12 @@ Table UserCreator {
   }
 }
 
-Table Metadata {
+Table CollectibleComicMetadata {
   uri String [pk]
-  asset DigitalAsset [not null]
+  collectibleComics CollectibleComic [not null]
   collectionName String [not null]
   collectionAddress String [not null]
-  collection Collection [not null]
+  collection CollectibleComicCollection [not null]
   isUsed Boolean [not null]
   isSigned Boolean [not null]
   rarity ComicRarity [not null]
@@ -430,26 +427,38 @@ Table Metadata {
 Table Listing {
   id Int [pk, increment]
   assetAddress String [not null]
-  asset DigitalAsset [not null]
   price BigInt [not null]
-  feePayer String [not null]
+  sellerAddress String [not null]
   signature String [not null]
-  symbol String [not null]
   createdAt DateTime [not null]
-  canceledAt DateTime [not null]
-  soldAt DateTime
-  saleTransactionSignature String
-  source String
+  closedAt DateTime [not null]
+  source String [not null]
+  digitalAsset DigitalAsset [not null]
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+  sale AuctionSale
+  listingConfig ListingConfig
 
   indexes {
-    (assetAddress, canceledAt) [unique]
+    (assetAddress, closedAt) [unique]
   }
+}
+
+Table ListingConfig {
+  listingId Int [unique, not null]
+  listing Listing [not null]
+  startDate DateTime [not null]
+  endDate DateTime [not null]
+  reservePrice Int [not null, default: 0]
+  minBidIncrement Int [not null, default: 0]
+  allowHighBidCancel Boolean [not null, default: false]
+  highestBidId Int
 }
 
 Table SplToken {
   id Int [pk, increment]
   name String [not null]
-  address String [not null]
+  address String [unique, not null]
   decimals Int [not null]
   symbol String [not null]
   priority Int [not null]
@@ -522,6 +531,150 @@ Table DraftComicIssueSalesData {
   royaltyAddress String [not null]
   note String [not null, default: '']
   verifiedAt DateTime
+}
+
+Table DigitalAssetGenre {
+  name String [unique, not null]
+  slug String [pk]
+  digitalAsset DigitalAsset [not null]
+}
+
+Table DigitalAsset {
+  address String [pk]
+  ownerAddress String [not null]
+  ownerChangedAt DateTime [not null]
+  owner Wallet [not null]
+  oneOfOne OneOfOne
+  printEdition PrintEdition
+  collectibleComic CollectibleComic
+  oneOfOneCollection OneOfOneCollection
+  printEditionCollection PrintEditionCollection
+  collectibleComicCollection CollectibleComicCollection
+  traits DigitalAssetTrait [not null]
+  genres DigitalAssetGenre [not null]
+  tags DigitalAssetTag [not null]
+  royaltyWallets RoyaltyWallet [not null]
+  listings Listing [not null]
+  bids Bid [not null]
+}
+
+Table OneOfOneCollection {
+  address String [pk]
+  name String [not null]
+  description String [not null]
+  image String [not null]
+  banner String [not null, default: '']
+  digitalAsset DigitalAsset [not null]
+  sellerFeeBasisPoints Int [not null, default: 0]
+  verifiedAt DateTime
+  publishedAt DateTime
+  oneOfOnes OneOfOne [not null]
+}
+
+Table AuctionHouse {
+  address String [pk]
+  treasuryMint String [unique, not null]
+  sellerFeeBasisPoints Int [not null, default: 0]
+  requiresSignOff Boolean [not null]
+  canChangeSalePrice Boolean [not null]
+  listings Listing [not null]
+  bids Bid [not null]
+  sales AuctionSale [not null]
+}
+
+Table AuctionSale {
+  id Int [pk, increment]
+  signature String [not null]
+  price BigInt [not null]
+  soldAt DateTime [not null]
+  listingId Int [unique, not null]
+  listing Listing [not null]
+  bidId Int [unique]
+  bid Bid
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+}
+
+Table Bid {
+  id Int [pk, increment]
+  assetAddress String [not null]
+  amount BigInt [not null]
+  bidderAddress String [not null]
+  signature String [not null]
+  createdAt DateTime [not null]
+  closedAt DateTime [not null]
+  digitalAsset DigitalAsset [not null]
+  auctionHouse AuctionHouse [not null]
+  auctionHouseAddress String [not null]
+  sale AuctionSale
+
+  indexes {
+    (assetAddress, bidderAddress, closedAt) [unique]
+  }
+}
+
+Table PrintEditionCollection {
+  address String [pk]
+  name String [not null]
+  description String [not null]
+  image String [not null]
+  sellerFeeBasisPoints Int [not null, default: 0]
+  editions PrintEdition [not null]
+  digitalAsset DigitalAsset [not null]
+  isNSFW Boolean [not null, default: false]
+  verifiedAt DateTime
+  publishedAt DateTime
+  printEditionSaleConfig PrintEditionSaleConfig
+}
+
+Table PrintEditionSaleConfig {
+  id Int [pk, increment]
+  startDate DateTime
+  endDate DateTime
+  mintPrice BigInt [not null]
+  currencyMint String [not null]
+  itemsMinted Int [not null, default: 0]
+  supply Int [not null]
+  isActive Boolean [not null, default: true]
+  collectionAddress String [unique, not null]
+  collection PrintEditionCollection [not null]
+}
+
+Table DigitalAssetTag {
+  id Int [pk, increment]
+  value String [not null]
+  assetAddress String [not null]
+  digitalAsset DigitalAsset [not null]
+}
+
+Table PrintEdition {
+  address String [pk]
+  collectionAddress String [not null]
+  printEditionCollection PrintEditionCollection [not null]
+  number Int [not null]
+  digitalAsset DigitalAsset [not null]
+}
+
+Table OneOfOne {
+  address String [pk]
+  name String [not null]
+  description String [not null]
+  image String [not null]
+  digitalAsset DigitalAsset [not null]
+  collectionAddress String
+  sellerFeeBasisPoints Int [not null, default: 0]
+  verifiedAt DateTime
+  publishedAt DateTime
+  isNSFW Boolean [not null, default: false]
+  collection OneOfOneCollection
+}
+
+Table DigitalAssetTrait {
+  id Int [pk, increment]
+  name String [not null]
+  value String [not null]
+  assetAddress String [not null]
+  digitalAsset DigitalAsset [not null]
 }
 
 Enum Role {
@@ -607,7 +760,7 @@ Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: UserComic.userId > User.id [delete: Cascade]
 
-Ref: RoyaltyWallet.comicIssueId > ComicIssue.id [delete: Cascade]
+Ref: RoyaltyWallet.assetAddress > DigitalAsset.address
 
 Ref: ComicIssue.comicSlug > Comic.slug [delete: Cascade]
 
@@ -619,13 +772,13 @@ Ref: StatelessCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: StatefulCover.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: DigitalAsset.uri > Metadata.uri
+Ref: CollectibleComic.uri > CollectibleComicMetadata.uri
 
-Ref: DigitalAsset.ownerAddress > Wallet.address
+Ref: CollectibleComic.candyMachineAddress > CandyMachine.address
 
-Ref: DigitalAsset.candyMachineAddress > CandyMachine.address
+Ref: CollectibleComic.address - DigitalAsset.address
 
-Ref: CandyMachine.collectionAddress > Collection.address
+Ref: CandyMachine.collectionAddress > CollectibleComicCollection.address
 
 Ref: CandyMachineGroup.candyMachineAddress > CandyMachine.address
 
@@ -637,7 +790,7 @@ Ref: UserCandyMachineGroup.userId > User.id
 
 Ref: UserCandyMachineGroup.candyMachineGroupId > CandyMachineGroup.id [delete: Cascade]
 
-Ref: CandyMachineReceipt.assetAddress - DigitalAsset.address
+Ref: CandyMachineReceipt.collectibleComicAddress - CollectibleComic.address
 
 Ref: CandyMachineReceipt.buyerAddress > Wallet.address
 
@@ -645,7 +798,9 @@ Ref: CandyMachineReceipt.userId > User.id
 
 Ref: CandyMachineReceipt.candyMachineAddress > CandyMachine.address [delete: Cascade]
 
-Ref: Collection.comicIssueId - ComicIssue.id
+Ref: CollectibleComicCollection.comicIssueId - ComicIssue.id
+
+Ref: CollectibleComicCollection.address - DigitalAsset.address
 
 Ref: ComicPage.comicIssueId > ComicIssue.id [delete: Cascade]
 
@@ -657,9 +812,13 @@ Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
 
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
-Ref: Metadata.collectionAddress > Collection.address
+Ref: CollectibleComicMetadata.collectionAddress > CollectibleComicCollection.address
 
 Ref: Listing.assetAddress > DigitalAsset.address
+
+Ref: Listing.auctionHouseAddress > AuctionHouse.address
+
+Ref: ListingConfig.listingId - Listing.id [delete: Cascade]
 
 Ref: UserNotification.userId > User.id [delete: Cascade]
 
@@ -668,3 +827,33 @@ Ref: UserNotification.notificationId > Notification.id [delete: Cascade]
 Ref: Device.userId > User.id [delete: Cascade]
 
 Ref: UserPrivacyConsent.userId > User.id [delete: Cascade]
+
+Ref: DigitalAsset.ownerAddress > Wallet.address
+
+Ref: OneOfOneCollection.address - DigitalAsset.address
+
+Ref: AuctionSale.listingId - Listing.id
+
+Ref: AuctionSale.bidId - Bid.id
+
+Ref: AuctionSale.auctionHouseAddress > AuctionHouse.address
+
+Ref: Bid.assetAddress > DigitalAsset.address
+
+Ref: Bid.auctionHouseAddress > AuctionHouse.address
+
+Ref: PrintEditionCollection.address - DigitalAsset.address
+
+Ref: PrintEditionSaleConfig.collectionAddress - PrintEditionCollection.address
+
+Ref: DigitalAssetTag.assetAddress > DigitalAsset.address
+
+Ref: PrintEdition.collectionAddress > PrintEditionCollection.address
+
+Ref: PrintEdition.address - DigitalAsset.address
+
+Ref: OneOfOne.address - DigitalAsset.address
+
+Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
+
+Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address

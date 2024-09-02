@@ -2,7 +2,7 @@ import { IsString, IsUrl } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { plainToInstance } from 'class-transformer';
 import { JsonMetadata } from '@metaplex-foundation/js';
-import { DigitalAsset } from '@prisma/client';
+import { CollectibleComic } from '@prisma/client';
 import axios from 'axios';
 
 export class WalletAssetDto {
@@ -16,20 +16,20 @@ export class WalletAssetDto {
   name: string;
 }
 
-export async function toWalletAssetDto(asset: DigitalAsset) {
-  const getAssetResponse = await axios.get<JsonMetadata>(asset.uri);
+export async function toWalletAssetDto(collectibleComic: CollectibleComic) {
+  const getAssetResponse = await axios.get<JsonMetadata>(collectibleComic.uri);
   const { data: offChainMetadataJson } = getAssetResponse;
 
   const plainWalletAssetDto: WalletAssetDto = {
-    address: asset.address,
+    address: collectibleComic.address,
     image: offChainMetadataJson.image,
-    name: asset.name,
+    name: collectibleComic.name,
   };
 
   const walletAssetDto = plainToInstance(WalletAssetDto, plainWalletAssetDto);
   return walletAssetDto;
 }
 
-export const toWalletAssetDtoArray = (assets: DigitalAsset[]) => {
+export const toWalletAssetDtoArray = (assets: CollectibleComic[]) => {
   return Promise.all(assets.map(toWalletAssetDto));
 };

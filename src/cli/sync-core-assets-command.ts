@@ -48,8 +48,9 @@ export class SyncCoreAssetCommand extends CommandRunner {
     let page = 1;
     let data = await getAssetsByGroup(options.collection, page, limit);
 
-    const syncedAssets = await this.prisma.digitalAsset.findMany({
+    const syncedAssets = await this.prisma.collectibleComic.findMany({
       where: { metadata: { collectionAddress: options.collection } },
+      include: { digitalAsset: true },
     });
     let syncedItems = 0;
     while (!isEmpty(data)) {
@@ -60,7 +61,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
         }
         return !(
           dbAsset &&
-          dbAsset.ownerAddress == asset.ownership.owner &&
+          dbAsset.digitalAsset.ownerAddress == asset.ownership.owner &&
           dbAsset.uri === asset.content.json_uri
         );
       });
@@ -83,13 +84,14 @@ export class SyncCoreAssetCommand extends CommandRunner {
     candyMachineAddress: string,
   ) {
     const walletAddress = asset.ownership.owner;
-    const { owner } = await this.heliusService.reIndexAsset(
+    const { digitalAsset } = await this.heliusService.reIndexAsset(
       asset,
       candyMachineAddress,
     );
 
+    const owner = digitalAsset.owner;
     const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst({
-      where: { assetAddress: asset.id },
+      where: { collectibleComicAddress: asset.id },
     });
 
     if (!doesReceiptExists) {
@@ -97,7 +99,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
         const UNKNOWN = 'UNKNOWN';
         const userId: number = owner?.userId;
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          asset: { connect: { address: asset.id } },
+          collectibleComic: { connect: { address: asset.id } },
           candyMachine: { connect: { address: candyMachineAddress } },
           buyer: {
             connectOrCreate: {

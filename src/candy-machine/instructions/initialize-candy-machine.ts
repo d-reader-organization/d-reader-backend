@@ -46,10 +46,7 @@ import {
 import { toUmiGroups } from '../../utils/core-candy-machine';
 import { ComicIssueCMInput } from '../../comic-issue/dto/types';
 import { GuardParams } from '../dto/types';
-import {
-  JsonMetadataCreators,
-  toLegacyGroups,
-} from '../../utils/candy-machine';
+import { toLegacyGroups } from '../../utils/candy-machine';
 import { initializeRecordAuthority } from './initialize-record-authority';
 import { solFromLamports } from '../../utils/helpers';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
@@ -60,6 +57,7 @@ import {
 } from '@solana/spl-token';
 import { NonceAccountArgs } from '../../nonce/types';
 import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
+import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 
 // Core CandyMachine
 export async function createCoreCandyMachine(
@@ -157,7 +155,7 @@ export async function createLegacyCandyMachine(
   metaplex: Metaplex,
   collectionNftAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
-  royaltyWallets: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   guardParams: GuardParams,
   isPublic?: boolean,
 ) {
