@@ -51,6 +51,7 @@ import { GuardParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordNotificationService } from 'src/discord/notification.service';
 import { generateMessageAfterAdminAction } from 'src/utils/discord';
+import { MailService } from 'src/mail/mail.service';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -67,6 +68,7 @@ export class ComicIssueService {
     private readonly candyMachineService: CandyMachineService,
     private readonly userComicIssueService: UserComicIssueService,
     private readonly discordService: DiscordNotificationService,
+    private readonly mailService: MailService,
   ) {
     this.metaplex = metaplex;
   }
@@ -748,7 +750,19 @@ export class ComicIssueService {
         [propertyName]: !!comicIssue[propertyName] ? null : new Date(),
       },
       where: { id },
+      include: {
+        comic: {
+          include: {
+            creator: true,
+          },
+        },
+      },
     });
+
+    if (propertyName === 'verifiedAt' && updatedComicIssue.verifiedAt) {
+      this.mailService.comicIssueVerified(updatedComicIssue);
+    }
+
     if (withMessage) {
       return generateMessageAfterAdminAction({
         isPropertySet: !!updatedComicIssue[propertyName],

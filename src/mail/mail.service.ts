@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Creator, User } from '@prisma/client';
+import { Comic, ComicIssue, Creator, User } from '@prisma/client';
 import config from '../configs/config';
 import { AuthService } from '../auth/auth.service';
 
@@ -34,6 +34,8 @@ const CREATOR_EMAIL_VERIFICATION_REQUESTED =
 const CREATOR_VERIFIED = 'creatorVerified';
 const USER_EMAIL_CHANGE_REQUESTED = 'userEmailChangeRequested';
 const USER_EMAIL_CHANGED = 'userEmailChanged';
+const COMIC_SERIES_VERIFIED = 'comicSeriesVerified';
+const COMIC_ISSUE_VERIFIED = 'comicIssueVerified';
 
 @Injectable()
 export class MailService {
@@ -440,6 +442,49 @@ export class MailService {
       });
     } catch (e) {
       logError(CREATOR_VERIFIED, creator.email, e);
+    }
+  }
+
+  async comicSeriesVerifed(comic: Comic & { creator: Creator }) {
+    try {
+      await this.mailerService.sendMail({
+        to: comic.creator.email,
+        subject: 'Comic series verified',
+        template: COMIC_SERIES_VERIFIED,
+        context: {
+          comicTitle: comic.title,
+          name: comic.creator.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(COMIC_SERIES_VERIFIED, comic.creator.email, e);
+    }
+  }
+
+  async comicIssueVerified(
+    comicIssue: ComicIssue & {
+      comic: {
+        creator: Creator;
+      };
+    },
+  ) {
+    const {
+      comic: { creator },
+    } = comicIssue;
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: 'Comic issue verified',
+        template: COMIC_ISSUE_VERIFIED,
+        context: {
+          comicIssueTitle: comicIssue.title,
+          name: creator.name,
+          apiUrl: this.apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(COMIC_ISSUE_VERIFIED, creator.email, e);
     }
   }
 
