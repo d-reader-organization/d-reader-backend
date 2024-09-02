@@ -10,6 +10,7 @@ import { HeliusService } from 'src/webhooks/helius/helius.service';
 import { DarkblockService } from 'src/candy-machine/darkblock.service';
 import { NonceService } from 'src/nonce/nonce.service';
 import { DiscordNotificationService } from 'src/discord/notification.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Module({
   controllers: [ComicController],
@@ -24,6 +25,7 @@ import { DiscordNotificationService } from 'src/discord/notification.service';
     DarkblockService,
     NonceService,
     DiscordNotificationService,
+    MailService,
   ],
 })
 export class ComicModule {}

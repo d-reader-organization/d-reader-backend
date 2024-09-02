@@ -22,6 +22,7 @@ import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordNotificationService } from 'src/discord/notification.service';
 import { generateMessageAfterAdminAction } from 'src/utils/discord';
+import { MailService } from 'src/mail/mail.service';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -33,6 +34,7 @@ export class ComicService {
     private readonly prisma: PrismaService,
     private readonly userComicService: UserComicService,
     private readonly discordService: DiscordNotificationService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -410,7 +412,15 @@ export class ComicService {
         [propertyName]: !!comic[propertyName] ? null : new Date(),
       },
       where: { slug },
+      include: {
+        creator: true,
+      },
     });
+
+    if (propertyName === 'verifiedAt' && updatedComic.verifiedAt) {
+      this.mailService.comicSeriesVerifed(updatedComic);
+    }
+
     if (withMessage) {
       return generateMessageAfterAdminAction({
         isPropertySet: !!updatedComic[propertyName],
