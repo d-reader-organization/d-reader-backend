@@ -44,6 +44,7 @@ import { BadRequestException } from '@nestjs/common';
 import { GuardParams } from 'src/candy-machine/dto/types';
 import { solFromLamports } from './helpers';
 import { TokenStandard } from '@prisma/client';
+import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -58,13 +59,20 @@ export async function uploadMetadata(
   metaplex: Metaplex,
   comicIssue: ComicIssueCMInput,
   comicName: string,
-  creators: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   image: MetaplexFile,
   isUsed: string,
   isSigned: string,
   rarity: ComicRarity,
   darkblockId?: string,
 ) {
+  const creators: JsonMetadataCreators = royaltyWallets.map((item) => {
+    return {
+      address: item.address,
+      percentage: item.share,
+    };
+  });
+
   return await metaplex.nfts().uploadMetadata({
     name: comicIssue.title,
     symbol: D_PUBLISHER_SYMBOL,
@@ -105,7 +113,7 @@ export async function uploadAllMetadata(
   candyMachineAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
   comicName: string,
-  royaltyWallets: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   rarityCoverFiles: CoverFiles,
   darkblockId: string,
   rarity: ComicRarity,
@@ -145,7 +153,7 @@ export async function uploadItemMetadata(
   comicIssue: ComicIssueCMInput,
   collectionNftAddress: PublicKey,
   comicName: string,
-  royaltyWallets: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
   darkblockId: string,
   comicIssueSupply: number,
@@ -154,7 +162,7 @@ export async function uploadItemMetadata(
   tokenStandard?: TokenStandard,
 ) {
   const items: { uri: string; name: string }[] = [];
-  // TODO v2: rarityShares is not reliable, we should pull this info from the database
+  // TODO: rarityShares is not reliable, we should pull this info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: ItemMetadata[] = [];
 
@@ -189,7 +197,7 @@ export async function uploadItemMetadata(
         usedUnsigned: allData.find((data) => data.isUsed && !data.isSigned)
           .metadata.uri,
       };
-      // TODO: Initialize authority in parallel
+
       await initializeAuthority(
         metaplex,
         candyMachineAddress,
@@ -238,7 +246,7 @@ export async function insertItems(
   comicIssue: ComicIssueCMInput,
   collectionNftAddress: PublicKey,
   comicName: string,
-  royaltyWallets: JsonMetadataCreators,
+  royaltyWallets: RoyaltyWalletDto[],
   statelessCovers: MetaplexFile[],
   darkblockId: string,
   supply: number,

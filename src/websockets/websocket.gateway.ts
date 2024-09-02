@@ -10,15 +10,14 @@ import {
 } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
-import { toAssetDto } from '../digital-asset/dto/digital-asset.dto';
-import { DigitalAsset } from '@prisma/client';
+import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
 export class WebSocketGateway {
   @WebSocketServer() server: Server;
 
-  // TODO v2: add new client and/or comic-issue whenever someone starts listening?
+  // TODO: add new client and/or comic-issue whenever someone starts listening?
   // @SubscribeMessage('comic-issue/${id}')
   // https://wanago.io/2021/01/25/api-nestjs-chat-websockets/
 
@@ -81,7 +80,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetListed(owner: string, asset: DigitalAsset) {
+  async handleWalletAssetListed(owner: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
@@ -91,7 +90,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetDelisted(owner: string, asset: DigitalAsset) {
+  async handleWalletAssetDelisted(owner: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
@@ -101,7 +100,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetBought(buyer: string, asset: DigitalAsset) {
+  async handleWalletAssetBought(buyer: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${buyer}/item-bought`,
@@ -114,7 +113,7 @@ export class WebSocketGateway {
     return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
   }
 
-  async handleWalletAssetReceived(receiver: string, asset: DigitalAsset) {
+  async handleWalletAssetReceived(receiver: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${receiver}/item-received`,
@@ -122,7 +121,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetSent(sender: string, asset: DigitalAsset) {
+  async handleWalletAssetSent(sender: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${sender}/item-sent`,
@@ -130,7 +129,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetUsed(asset: DigitalAsset) {
+  async handleWalletAssetUsed(asset: AssetInput) {
     const assetDto = await toAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${assetDto.ownerAddress}/item-used`,

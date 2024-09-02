@@ -22,7 +22,7 @@ import {
   RoyaltyWallet,
   Comic,
   Creator,
-  Collection,
+  CollectibleComicCollection,
 } from '@prisma/client';
 import {
   ComicIssueCollaboratorDto,
@@ -161,7 +161,7 @@ type WithStatelessCovers = { statelessCovers: StatelessCover[] };
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
 type WithRoyaltyWallets = { royaltyWallets?: RoyaltyWallet[] };
-type WithCollection = { collection?: Collection };
+type WithCollection = { collection?: CollectibleComicCollection };
 
 export type RawComicIssueInput = With<
   [

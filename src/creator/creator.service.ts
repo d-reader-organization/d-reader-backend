@@ -197,7 +197,6 @@ export class CreatorService {
       const newSlug = kebabCase(name);
       await Promise.all([
         this.throwIfNameTaken(name),
-        // todo: We don't require this check as slug is derived from name.
         this.throwIfSlugTaken(newSlug),
       ]);
 
@@ -288,7 +287,6 @@ export class CreatorService {
     await this.mailService.requestCreatorEmailVerification(creator);
   }
 
-  // TODO: change this to work the same way as on the user.service
   async verifyEmail(verificationToken: string) {
     let payload: EmailPayload;
 

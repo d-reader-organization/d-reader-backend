@@ -6,26 +6,25 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { SignComicParams } from './dto/sign-comic-params.dto';
 import { UseComicParams } from '../candy-machine/dto/use-comic-params.dto';
-import { CancelParams } from '../auction-house/dto/cancel-params.dto';
-import { ListParams } from '../auction-house/dto/list-params.dto';
-import { PrivateBidParams } from '../auction-house/dto/private-bid-params.dto';
-import { BuyArgs } from '../auction-house/dto/types/buy-args';
+import {
+  ListParams,
+  TimedAuctionListParams,
+} from '../auction-house/dto/list-params.dto';
+import { BidParams } from '../auction-house/dto/bid-params.dto';
 import { SilentQuery } from '../decorators/silent-query.decorator';
 import { validateAndFormatParams } from '../utils/validate-params';
-import {
-  InstantBuyParams,
-  BuyParamsArray,
-} from '../auction-house/dto/instant-buy-params.dto';
+import { MultipleBuyParams } from '../auction-house/dto/instant-buy-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PUBLIC_GROUP_LABEL } from '../constants';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
@@ -36,6 +35,24 @@ import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { ActionPayloadDto } from 'src/blink/dto/action-payload.dto';
 import { toActionResponseDto } from 'src/blink/dto/action-response.dto';
 import { BlinkService } from 'src/blink/blink.service';
+import { DigitalAssetService } from 'src/digital-asset/digital-asset.service';
+import {
+  CreatePrintEditionCollectionBodyDto,
+  CreatePrintEditionCollectionDto,
+} from 'src/digital-asset/dto/create-print-edition.dto';
+import { BaseMetadataFilesDto } from 'src/digital-asset/dto/base-metadata.dto';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ApiFilesWithBody } from '../decorators/api-file-body.decorator';
+import {
+  CreateOneOfOneBodyDto,
+  CreateOneOfOneDto,
+} from 'src/digital-asset/dto/create-one-of-one-dto';
+import {
+  CreateOneOfOneCollectionBodyDto,
+  CreateOneOfOneCollectionDto,
+  CreateOneOfOneCollectionFilesDto,
+} from 'src/digital-asset/dto/create-one-of-one-collection-dto';
+import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -46,6 +63,7 @@ export class TransactionController {
     private readonly blinkService: BlinkService,
     private readonly auctionHouseService: AuctionHouseService,
     private readonly transactionService: TransactionService,
+    private readonly digitalAssetService: DigitalAssetService,
   ) {}
 
   /** @deprecated */
@@ -190,74 +208,93 @@ export class TransactionController {
   }
 
   @Get('/list')
-  async createListTransaction(@Query() query: ListParams) {
-    const publicKey = new PublicKey(query.sellerAddress);
-    const mintAccount = new PublicKey(query.mintAccount);
-    const printReceipt = query.printReceipt == 'true' ? true : false;
-    return await this.auctionHouseService.createListTransaction(
-      publicKey,
-      mintAccount,
-      query.price,
-      printReceipt,
+  async constructListTransaction(@Query() listParams: ListParams) {
+    return await this.auctionHouseService.list(listParams);
+  }
+
+  @Get('/timed-auction-list')
+  async constructTimedAuctionListTransaction(
+    @Query() timedAuctionListParams: TimedAuctionListParams,
+  ) {
+    return await this.auctionHouseService.timedAuctionList(
+      timedAuctionListParams,
     );
   }
 
-  @Get('/private-bid')
-  async createPrivateBidTransaction(@Query() query: PrivateBidParams) {
-    const publicKey = new PublicKey(query.buyerAddress);
-    const seller = query.sellerAddress
-      ? new PublicKey(query.sellerAddress)
-      : null;
-    const mintAccount = new PublicKey(query.mintAccount);
-    const printReceipt = query.printReceipt == 'false' ? false : true;
-
-    return await this.auctionHouseService.createPrivateBidTransaction(
-      publicKey,
-      mintAccount,
-      query.price,
-      printReceipt,
-      seller,
-    );
+  @Get('/bid')
+  async constructBidTransaction(@Query() bidParams: BidParams) {
+    return await this.auctionHouseService.bid(bidParams);
   }
 
-  @Get('/instant-buy')
-  async createInstantBuyTransaction(@Query() query: InstantBuyParams) {
-    const buyArguments: BuyArgs = {
-      buyer: new PublicKey(query.buyerAddress),
-      mintAccount: new PublicKey(query.mintAccount),
-    };
-    return await this.auctionHouseService.createInstantBuyTransaction(
-      buyArguments,
-    );
-  }
-
-  @Get('/multiple-buy')
+  @Get('/direct-buy')
   @ApiQuery({
     name: 'query',
-    type: BuyParamsArray,
+    type: MultipleBuyParams,
   })
-  async createMultipleBuys(@SilentQuery() query: BuyParamsArray) {
-    const buyParams = validateAndFormatParams(query.instantBuyParams);
-    return await this.auctionHouseService.createMultipleBuys(buyParams);
+  async constructDirectBuyTransaction(
+    @SilentQuery() multipleBuyParams: MultipleBuyParams,
+  ) {
+    const params = validateAndFormatParams(
+      multipleBuyParams.instantBuyParamsArray,
+    );
+    return await this.auctionHouseService.multipleBuys(params);
   }
 
-  @Get('/cancel-bid')
-  async createCancelBidTransaction(@Query() query: CancelParams) {
-    const receiptAddress = new PublicKey(query.receiptAddress);
-    return await this.auctionHouseService.createCancelBidTransaction(
-      receiptAddress,
+  @Get('/cancel-bid/:bidId')
+  async constructCancelBidTransaction(@Query('bidId') bidId: number) {
+    return await this.auctionHouseService.cancelBid(+bidId);
+  }
+
+  @Get('/cancel-listing/:listingId')
+  async createCancelListingTransaction(@Query('listingId') listingId: number) {
+    return await this.auctionHouseService.cancelListing(+listingId);
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('mint/print-edition-collection')
+  async createPrintEditionCollectionTransaction(
+    @ApiFilesWithBody({
+      fileFields: ['image'],
+      fileType: BaseMetadataFilesDto,
+      bodyType: CreatePrintEditionCollectionBodyDto,
+    })
+    createPrintEditionCollectionDto: CreatePrintEditionCollectionDto,
+  ): Promise<DigitalAssetCreateTransactionDto> {
+    return await this.digitalAssetService.createPrintEditionCollectionTransaction(
+      createPrintEditionCollectionDto,
     );
   }
 
-  @Get('/cancel-listing')
-  async createCancelListingTransaction(@Query() query: CancelParams) {
-    const receiptAddress = query.receiptAddress
-      ? new PublicKey(query.receiptAddress)
-      : undefined;
-    const assetAddress = query.nftAddress ?? query.assetAddress;
-    return await this.auctionHouseService.createCancelListingTransaction(
-      receiptAddress,
-      assetAddress,
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('mint/one-of-one')
+  async createOneOfOneTransaction(
+    @ApiFilesWithBody({
+      fileFields: ['image'],
+      fileType: BaseMetadataFilesDto,
+      bodyType: CreateOneOfOneBodyDto,
+    })
+    createOneOfOneDto: CreateOneOfOneDto,
+  ): Promise<DigitalAssetCreateTransactionDto> {
+    return await this.digitalAssetService.createOneOfOneTransaction(
+      createOneOfOneDto,
+    );
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('mint/one-of-one-collection')
+  async createOneOfOneCollectionTransaction(
+    @ApiFilesWithBody({
+      fileFields: ['image', 'cover'],
+      fileType: CreateOneOfOneCollectionFilesDto,
+      bodyType: CreateOneOfOneCollectionBodyDto,
+    })
+    createOneOfOneCollectionDto: CreateOneOfOneCollectionDto,
+  ): Promise<DigitalAssetCreateTransactionDto> {
+    return await this.digitalAssetService.createOneOfOneCollectionTransaction(
+      createOneOfOneCollectionDto,
     );
   }
 }

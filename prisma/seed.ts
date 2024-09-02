@@ -12,7 +12,7 @@ import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
 import { DarkblockService } from '../src/candy-machine/darkblock.service';
-import { genresToSeed } from './genres';
+import { digitalAssetGenresToSeed, genresToSeed } from './genres';
 import { carouselSlidesToSeed } from './carousel-slides';
 import { usersToSeed, generateDummyUsersData } from './users';
 import {
@@ -175,7 +175,7 @@ async function main() {
   await prisma.candyMachineGroup.deleteMany();
   await prisma.digitalAsset.deleteMany();
   await prisma.candyMachine.deleteMany();
-  await prisma.collection.deleteMany();
+  await prisma.collectibleComicCollection.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.userComic.deleteMany();
@@ -201,6 +201,10 @@ async function main() {
   // SEED GENRES
   await prisma.genre.createMany({ data: genresToSeed });
   console.info('Added genres');
+
+  // SEED DIGITAL ASSET GENRES
+  await prisma.digitalAssetGenre.createMany({ data: digitalAssetGenresToSeed });
+  console.info('Added digital asset genres');
 
   // SEED USERS
   await prisma.user.createMany({ data: await usersToSeed() });

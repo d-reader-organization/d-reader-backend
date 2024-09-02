@@ -1,19 +1,54 @@
-import { IsOptional, IsBooleanString, IsNumber } from 'class-validator';
+import { OmitType } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { TransformStringToNumber } from 'src/utils/transform';
+import {
+  TransformDateStringToDate,
+  TransformStringToBoolean,
+  TransformStringToNumber,
+} from 'src/utils/transform';
 
 export class ListParams {
   @IsSolanaAddress()
-  sellerAddress: string;
-
-  @IsSolanaAddress()
-  mintAccount: string;
+  assetAddress: string;
 
   @TransformStringToNumber()
   @IsNumber()
   price: number;
 
-  @IsBooleanString()
+  @IsString()
+  splTokenAddress: string;
+}
+
+export class TimedAuctionListParams extends OmitType(ListParams, [
+  'price',
+] as const) {
+  @TransformDateStringToDate()
+  @IsDate()
+  startDate: Date;
+
+  @TransformDateStringToDate()
+  @IsDate()
+  endDate: Date;
+
   @IsOptional()
-  printReceipt?: string;
+  @IsNumber()
+  @Min(0)
+  reservePrice?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minBidIncrement?: number;
+
+  @IsOptional()
+  @TransformStringToBoolean()
+  @IsBoolean()
+  allowHighBidCancel?: boolean;
 }

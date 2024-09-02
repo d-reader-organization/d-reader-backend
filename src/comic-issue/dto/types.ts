@@ -1,17 +1,17 @@
 import {
   ComicIssue,
   ComicIssueCollaborator,
-  RoyaltyWallet,
   StatefulCover,
   StatelessCover,
   ComicRarity,
 } from '@prisma/client';
+import { RoyaltyWalletDto } from './royalty-wallet.dto';
 
 export type ComicIssueCMInput = ComicIssue & {
   statelessCovers: StatelessCover[];
   statefulCovers: StatefulCover[];
   collaborators: ComicIssueCollaborator[];
-  royaltyWallets: RoyaltyWallet[];
+  royaltyWallets: RoyaltyWalletDto[];
 };
 
 export class RarityShare {

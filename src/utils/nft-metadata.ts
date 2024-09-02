@@ -4,6 +4,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { isNil } from 'lodash';
 import axios from 'axios';
+import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
 
 const findTrait = (jsonMetadata: JsonMetadata, traitType: string) => {
   const trait = jsonMetadata.attributes.find((a) => a.trait_type === traitType);
@@ -30,4 +31,8 @@ export const findRarityTrait = (
 
 export const fetchOffChainMetadata = async (uri: string) => {
   return (await axios.get<JsonMetadata>(uri)).data;
+};
+
+export const fetchDigitalAssetOffChainMetadata = async (uri: string) => {
+  return (await axios.get<DigitalAssetJsonMetadata>(uri)).data;
 };

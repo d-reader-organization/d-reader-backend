@@ -51,8 +51,8 @@ model Wallet {
   connectedAt        DateTime?
   user               User?                     @relation(fields: [userId], references: [id])
   mintReceipts       CandyMachineReceipt[]
-  assets             DigitalAsset[]
   candyMachineGroups WalletCandyMachineGroup[]
+  digitalAssets      DigitalAsset[]
 }
 
 enum Role {
@@ -151,7 +151,7 @@ model Genre {
   name     String  @unique
   slug     String  @id
   icon     String  @default("")
-  priority Int // should this be @unique?
+  priority Int
   color    String
   comics   Comic[]
 }
@@ -159,43 +159,42 @@ model Genre {
 model RoyaltyWallet {
   address      String
   share        Int
-  comicIssue   ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-  comicIssueId Int
+  assetAddress String
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 
-  @@unique([address, comicIssueId])
+  @@unique([assetAddress, address])
 }
 
 model ComicIssue {
-  id                    Int                      @id @default(autoincrement())
-  number                Int
-  sellerFeeBasisPoints  Int                      @default(0)
-  title                 String
-  slug                  String
-  description           String                   @default("")
-  flavorText            String                   @default("")
-  pdf                   String                   @default("")
-  isFreeToRead          Boolean
-  isFullyUploaded       Boolean                  @default(false)
-  releaseDate           DateTime
-  updatedAt             DateTime                 @updatedAt
-  isSecondarySaleActive Boolean                  @default(false)
-  createdAt             DateTime                 @default(now())
-  featuredAt            DateTime?
-  verifiedAt            DateTime?
-  publishedAt           DateTime?
-  popularizedAt         DateTime?
-  creatorAddress        String                   @default("")
-  creatorBackupAddress  String                   @default("")
-  comicSlug             String
-  s3BucketSlug          String
-  comic                 Comic                    @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
-  royaltyWallets        RoyaltyWallet[]
-  statelessCovers       StatelessCover[]
-  statefulCovers        StatefulCover[]
-  collection            Collection?
-  pages                 ComicPage[]
-  users                 UserComicIssue[]
-  collaborators         ComicIssueCollaborator[]
+  id                         Int                         @id @default(autoincrement())
+  number                     Int
+  sellerFeeBasisPoints       Int                         @default(0)
+  title                      String
+  slug                       String
+  description                String                      @default("")
+  flavorText                 String                      @default("")
+  pdf                        String                      @default("")
+  isFreeToRead               Boolean
+  isFullyUploaded            Boolean                     @default(false)
+  releaseDate                DateTime
+  updatedAt                  DateTime                    @updatedAt
+  isSecondarySaleActive      Boolean                     @default(false)
+  createdAt                  DateTime                    @default(now())
+  featuredAt                 DateTime?
+  verifiedAt                 DateTime?
+  publishedAt                DateTime?
+  popularizedAt              DateTime?
+  creatorAddress             String                      @default("")
+  creatorBackupAddress       String                      @default("")
+  comicSlug                  String
+  s3BucketSlug               String
+  comic                      Comic                       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  statelessCovers            StatelessCover[]
+  statefulCovers             StatefulCover[]
+  collectibleComicCollection CollectibleComicCollection?
+  pages                      ComicPage[]
+  users                      UserComicIssue[]
+  collaborators              ComicIssueCollaborator[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
@@ -274,37 +273,34 @@ enum ComicRarity {
   Legendary
 }
 
-model DigitalAsset {
-  address             String               @id
-  metadata            Metadata             @relation(fields: [uri], references: [uri])
+model CollectibleComic {
+  address             String                   @id
+  metadata            CollectibleComicMetadata @relation(fields: [uri], references: [uri])
   uri                 String
   name                String
-  owner               Wallet               @relation(fields: [ownerAddress], references: [address])
-  ownerAddress        String
-  ownerChangedAt      DateTime
-  candyMachine        CandyMachine         @relation(fields: [candyMachineAddress], references: [address])
+  candyMachine        CandyMachine             @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress String
   receipt             CandyMachineReceipt?
-  listing             Listing[]
+  digitalAsset        DigitalAsset             @relation(fields: [address], references: [address])
 }
 
 model CandyMachine {
-  address              String                @id
+  address              String                     @id
   mintAuthorityAddress String
-  authorityPda         String                @unique
-  supply               Int                   @default(0)
+  authorityPda         String                     @unique
+  supply               Int                        @default(0)
   itemsAvailable       Int
   itemsMinted          Int
   itemsRemaining       Int
   itemsLoaded          Int
   isFullyLoaded        Boolean
   lookupTable          String?
-  collection           Collection            @relation(fields: [collectionAddress], references: [address])
+  collection           CollectibleComicCollection @relation(fields: [collectionAddress], references: [address])
   collectionAddress    String
-  items                DigitalAsset[]
+  items                CollectibleComic[]
   receipts             CandyMachineReceipt[]
   groups               CandyMachineGroup[]
-  standard             TokenStandard         @default(Legacy)
+  standard             TokenStandard              @default(Core)
 }
 
 enum TokenStandard {
@@ -358,30 +354,31 @@ model UserCandyMachineGroup {
 }
 
 model CandyMachineReceipt {
-  assetAddress         String       @id
-  asset                DigitalAsset @relation(fields: [assetAddress], references: [address])
-  buyer                Wallet       @relation(fields: [buyerAddress], references: [address])
-  userId               Int?
-  user                 User?        @relation(fields: [userId], references: [id])
-  buyerAddress         String
-  price                BigInt
-  timestamp            DateTime
-  description          String
-  candyMachine         CandyMachine @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
-  candyMachineAddress  String
-  transactionSignature String
-  splTokenAddress      String
-  label                String       @default("")
+  collectibleComicAddress String           @id
+  collectibleComic        CollectibleComic @relation(fields: [collectibleComicAddress], references: [address])
+  buyer                   Wallet           @relation(fields: [buyerAddress], references: [address])
+  userId                  Int?
+  user                    User?            @relation(fields: [userId], references: [id])
+  buyerAddress            String
+  price                   BigInt
+  timestamp               DateTime
+  description             String
+  candyMachine            CandyMachine     @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
+  candyMachineAddress     String
+  transactionSignature    String
+  splTokenAddress         String
+  label                   String           @default("")
 }
 
-model Collection {
-  address       String         @id
+model CollectibleComicCollection {
+  address       String                     @id
   name          String
-  comicIssue    ComicIssue     @relation(fields: [comicIssueId], references: [id])
-  comicIssueId  Int            @unique
+  comicIssue    ComicIssue                 @relation(fields: [comicIssueId], references: [id])
+  comicIssueId  Int                        @unique
   candyMachines CandyMachine[]
   darkblockId   String?
-  metadatas     Metadata[]
+  metadatas     CollectibleComicMetadata[]
+  digitalAsset  DigitalAsset               @relation(fields: [address], references: [address])
 }
 
 model ComicPage {
@@ -403,7 +400,7 @@ model CarouselSlide {
   // secondaryImage String      @default("")
   title        String           @default("")
   subtitle     String           @default("")
-  priority     Int // should this be @unique?
+  priority     Int
   comicIssueId Int?
   comicSlug    String?
   creatorSlug  String?
@@ -454,12 +451,12 @@ model UserCreator {
   @@id([creatorSlug, userId])
 }
 
-model Metadata {
-  uri               String         @id
-  asset             DigitalAsset[]
+model CollectibleComicMetadata {
+  uri               String                     @id
+  collectibleComics CollectibleComic[]
   collectionName    String
   collectionAddress String
-  collection        Collection     @relation(fields: [collectionAddress], references: [address])
+  collection        CollectibleComicCollection @relation(fields: [collectionAddress], references: [address])
   isUsed            Boolean
   isSigned          Boolean
   rarity            ComicRarity
@@ -468,29 +465,41 @@ model Metadata {
 }
 
 model Listing {
-  id                       Int          @id @default(autoincrement())
-  assetAddress             String
-  asset                    DigitalAsset @relation(fields: [assetAddress], references: [address])
-  price                    BigInt
-  feePayer                 String
-  signature                String
-  symbol                   String
-  createdAt                DateTime
-  canceledAt               DateTime
-  soldAt                   DateTime?
-  saleTransactionSignature String?
-  source                   String?
+  id                  Int            @id @default(autoincrement())
+  assetAddress        String
+  price               BigInt
+  sellerAddress       String
+  signature           String
+  createdAt           DateTime
+  closedAt            DateTime
+  source              String
+  digitalAsset        DigitalAsset   @relation(fields: [assetAddress], references: [address])
+  auctionHouse        AuctionHouse   @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+  sale                AuctionSale?
+  listingConfig       ListingConfig?
 
-  @@unique([assetAddress, canceledAt])
+  @@unique([assetAddress, closedAt])
+}
+
+model ListingConfig {
+  listingId          Int      @unique
+  listing            Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startDate          DateTime
+  endDate            DateTime
+  reservePrice       Int      @default(0)
+  minBidIncrement    Int      @default(0)
+  allowHighBidCancel Boolean  @default(false)
+  highestBidId       Int?
 }
 
 model SplToken {
   id       Int    @id @default(autoincrement())
   name     String
-  address  String
+  address  String @unique
   decimals Int
   symbol   String
-  priority Int // should this be @unique?
+  priority Int
   icon     String
 }
 
@@ -575,3 +584,177 @@ model DraftComicIssueSalesData {
   note              String    @default("")
   verifiedAt        DateTime?
 }
+
+model DigitalAssetGenre {
+  name         String         @unique
+  slug         String         @id
+  digitalAsset DigitalAsset[]
+}
+
+model DigitalAsset {
+  address                    String                      @id
+  ownerAddress               String
+  ownerChangedAt             DateTime
+  owner                      Wallet                      @relation(fields: [ownerAddress], references: [address])
+  oneOfOne                   OneOfOne?
+  printEdition               PrintEdition?
+  collectibleComic           CollectibleComic?
+  oneOfOneCollection         OneOfOneCollection?
+  printEditionCollection     PrintEditionCollection?
+  collectibleComicCollection CollectibleComicCollection?
+  traits                     DigitalAssetTrait[]
+  genres                     DigitalAssetGenre[]
+  tags                       DigitalAssetTag[]
+  royaltyWallets             RoyaltyWallet[]
+  listings                   Listing[]
+  bids                       Bid[]
+}
+
+model OneOfOneCollection {
+  address              String       @id()
+  name                 String
+  description          String
+  image                String
+  banner               String       @default("")
+  digitalAsset         DigitalAsset @relation(fields: [address], references: [address])
+  sellerFeeBasisPoints Int          @default(0)
+  verifiedAt           DateTime?
+  publishedAt          DateTime?
+  oneOfOnes            OneOfOne[]
+}
+
+model AuctionHouse {
+  address              String        @id
+  treasuryMint         String        @unique
+  sellerFeeBasisPoints Int           @default(0)
+  requiresSignOff      Boolean
+  canChangeSalePrice   Boolean
+  listings             Listing[]
+  bids                 Bid[]
+  sales                AuctionSale[]
+}
+
+model AuctionSale {
+  id                  Int          @id @default(autoincrement())
+  signature           String
+  price               BigInt
+  soldAt              DateTime
+  listingId           Int          @unique
+  listing             Listing      @relation(fields: [listingId], references: [id])
+  bidId               Int?         @unique
+  bid                 Bid?         @relation(fields: [bidId], references: [id])
+  auctionHouse        AuctionHouse @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+}
+
+model Bid {
+  id                  Int          @id @default(autoincrement())
+  assetAddress        String
+  amount              BigInt
+  bidderAddress       String
+  signature           String
+  createdAt           DateTime
+  closedAt            DateTime
+  digitalAsset        DigitalAsset @relation(fields: [assetAddress], references: [address])
+  auctionHouse        AuctionHouse @relation(fields: [auctionHouseAddress], references: [address])
+  auctionHouseAddress String
+  sale                AuctionSale?
+
+  @@unique([assetAddress, bidderAddress, closedAt])
+}
+
+model PrintEditionCollection {
+  address                String                  @id
+  name                   String
+  description            String
+  image                  String
+  sellerFeeBasisPoints   Int                     @default(0)
+  editions               PrintEdition[]
+  digitalAsset           DigitalAsset            @relation(fields: [address], references: [address])
+  isNSFW                 Boolean                 @default(false)
+  verifiedAt             DateTime?
+  publishedAt            DateTime?
+  printEditionSaleConfig PrintEditionSaleConfig?
+}
+
+model PrintEditionSaleConfig {
+  id                Int                    @id @default(autoincrement())
+  startDate         DateTime?
+  endDate           DateTime?
+  mintPrice         BigInt
+  currencyMint      String
+  itemsMinted       Int                    @default(0)
+  supply            Int
+  isActive          Boolean                @default(true)
+  collectionAddress String                 @unique
+  collection        PrintEditionCollection @relation(fields: [collectionAddress], references: [address])
+}
+
+model DigitalAssetTag {
+  id           Int          @id @default(autoincrement())
+  value        String
+  assetAddress String
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
+}
+
+model PrintEdition {
+  address                String                 @id
+  collectionAddress      String
+  printEditionCollection PrintEditionCollection @relation(fields: [collectionAddress], references: [address])
+  number                 Int
+  digitalAsset           DigitalAsset           @relation(fields: [address], references: [address])
+}
+
+model OneOfOne {
+  address              String              @id
+  name                 String
+  description          String
+  image                String
+  digitalAsset         DigitalAsset        @relation(fields: [address], references: [address])
+  collectionAddress    String?
+  sellerFeeBasisPoints Int                 @default(0)
+  verifiedAt           DateTime?
+  publishedAt          DateTime?
+  isNSFW               Boolean             @default(false)
+  collection           OneOfOneCollection? @relation(fields: [collectionAddress], references: [address])
+}
+
+model DigitalAssetTrait {
+  id           Int          @id @default(autoincrement())
+  name         String
+  value        String
+  assetAddress String
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
+}
+
+// TODO: remove or change the way referrals work
+// TODO: remove creator.lynkfire, potentially add creator.linktree
+// TODO: comic.completedAt is missing a client-side toggle button (is comic series completed or not)
+// TODO: move statefulcovers from comicissues to statelesscovers (normalize statefulcovers)
+
+// TODO: remove userComic.whitelistedAt
+// TODO: remove userComicIssue.whitelistedAt
+// todo: add userComicIssue.pageNumberLastRead
+
+// TODO: move comicIssue.sellerFeeBasisPoints to collection.sellerFeeBasisPoints
+// TODO: move comicIssue.isSecondarySaleActive to collection.isSecondarySaleActive
+// TODO: move comicIssue.creatorAddress to collection.creatorAddress
+// TODO: move comicIssue.creatorBackupAddress to collection.creatorBackupAddress
+
+// TODO: change creator.popularizedAt so it's an algorithm instead of an admin flagging a creator
+// TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
+// TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
+
+// TODO: resolve all other TODOs in the app
+
+// TODO: GlobalStatus should be implemented on the client side
+
+// TODO: entirely remove Newsletter
+
+// TODO: add errors.ts file for defining all error codes (or translations.ts or something of the sort)
+
+// AFTER WE ADD MPC WALLETS
+// TODO: change creator.tippingAddress to creator.address
+// TODO: change creator registration and login flow to match the users flow (email verification, password reset, MPC wallet, etc)
+// TODO: deprecate Legacy collections and the TokenMetadata standard
+// TODO: rename Comic into ComicSeries and ComicIssue into Comic
