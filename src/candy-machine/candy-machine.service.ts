@@ -654,7 +654,6 @@ export class CandyMachineService {
     return await Promise.all(transactions);
   }
 
-  // TODO: Make it support checks for multiple mints
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,

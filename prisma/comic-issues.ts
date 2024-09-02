@@ -2,10 +2,7 @@ import { ComicRarity, Prisma } from '@prisma/client';
 import { metaplex } from '../src/utils/metaplex';
 import { subDays } from 'date-fns';
 
-const generateCovers = (
-  comicSlug: string,
-  comicIssueSlug: string,
-) => ({
+const generateCovers = (comicSlug: string, comicIssueSlug: string) => ({
   statefulCovers: {
     createMany: {
       data: [

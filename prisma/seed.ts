@@ -203,7 +203,7 @@ async function main() {
   console.info('Added genres');
 
   // SEED DIGITAL ASSET GENRES
-  await prisma.digitalAssetGenre.createMany({data:digitalAssetGenresToSeed});
+  await prisma.digitalAssetGenre.createMany({ data: digitalAssetGenresToSeed });
   console.info('Added digital asset genres');
 
   // SEED USERS

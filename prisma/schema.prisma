@@ -151,7 +151,7 @@ model Genre {
   name     String  @unique
   slug     String  @id
   icon     String  @default("")
-  priority Int // should this be @unique?
+  priority Int
   color    String
   comics   Comic[]
 }
@@ -400,7 +400,7 @@ model CarouselSlide {
   // secondaryImage String      @default("")
   title        String           @default("")
   subtitle     String           @default("")
-  priority     Int // should this be @unique?
+  priority     Int
   comicIssueId Int?
   comicSlug    String?
   creatorSlug  String?
@@ -499,7 +499,7 @@ model SplToken {
   address  String @unique
   decimals Int
   symbol   String
-  priority Int // should this be @unique?
+  priority Int
   icon     String
 }
 
@@ -726,3 +726,35 @@ model DigitalAssetTrait {
   assetAddress String
   digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
+
+// TODO: remove or change the way referrals work
+// TODO: remove creator.lynkfire, potentially add creator.linktree
+// TODO: comic.completedAt is missing a client-side toggle button (is comic series completed or not)
+// TODO: move statefulcovers from comicissues to statelesscovers (normalize statefulcovers)
+
+// TODO: remove userComic.whitelistedAt
+// TODO: remove userComicIssue.whitelistedAt
+// todo: add userComicIssue.pageNumberLastRead
+
+// TODO: move comicIssue.sellerFeeBasisPoints to collection.sellerFeeBasisPoints
+// TODO: move comicIssue.isSecondarySaleActive to collection.isSecondarySaleActive
+// TODO: move comicIssue.creatorAddress to collection.creatorAddress
+// TODO: move comicIssue.creatorBackupAddress to collection.creatorBackupAddress
+
+// TODO: change creator.popularizedAt so it's an algorithm instead of an admin flagging a creator
+// TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
+// TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
+
+// TODO: resolve all other TODOs in the app
+
+// TODO: GlobalStatus should be implemented on the client side
+
+// TODO: entirely remove Newsletter
+
+// TODO: add errors.ts file for defining all error codes (or translations.ts or something of the sort)
+
+// AFTER WE ADD MPC WALLETS
+// TODO: change creator.tippingAddress to creator.address
+// TODO: change creator registration and login flow to match the users flow (email verification, password reset, MPC wallet, etc)
+// TODO: deprecate Legacy collections and the TokenMetadata standard
+// TODO: rename Comic into ComicSeries and ComicIssue into Comic

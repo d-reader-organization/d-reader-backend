@@ -1049,7 +1049,7 @@ export class HeliusService {
       update: {
         digitalAsset: {
           update: {
-            // TODO v2: this should fetch the info on when the owner changed from chain
+            // TODO: this should fetch the info on when the owner changed from chain
             ownerChangedAt: new Date(0),
             owner: {
               connectOrCreate: {
