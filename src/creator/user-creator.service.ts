@@ -37,16 +37,17 @@ export class UserCreatorService {
   }
 
   async getTotalCreatorVolume(slug: string) {
-    const getSecondaryVolume = this.prisma.listing.aggregate({
+    const getSecondaryVolume = this.prisma.auctionSale.aggregate({
       where: {
-        digitalAsset: {
-          collectibleComic: {
-            metadata: {
-              collection: { comicIssue: { comic: { creator: { slug } } } },
+        listing:{
+          digitalAsset:{
+            collectibleComic: {
+              metadata: {
+                collection: { comicIssue: { comic: { creator: { slug } } } },
+              },
             },
           },
         },
-        sale: { NOT: null },
       },
       _sum: { price: true },
     });
