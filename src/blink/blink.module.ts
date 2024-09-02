@@ -11,6 +11,11 @@ import { NonceService } from '../nonce/nonce.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { TransactionService } from '../transactions/transaction.service';
 import { DiscordNotificationService } from 'src/discord/notification.service';
+import { MailService } from 'src/mail/mail.service';
+import { AuthService } from 'src/auth/auth.service';
+import { JwtService } from '@nestjs/jwt';
+import { PasswordService } from 'src/auth/password.service';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Module({
   controllers: [BlinkController],
@@ -26,6 +31,11 @@ import { DiscordNotificationService } from 'src/discord/notification.service';
     s3Service,
     TransactionService,
     DiscordNotificationService,
+    MailService,
+    AuthService,
+    JwtService,
+    PasswordService,
+    WalletService,
   ],
 })
 export class BlinkModule {}
