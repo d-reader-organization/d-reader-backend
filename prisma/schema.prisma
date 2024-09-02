@@ -157,10 +157,10 @@ model Genre {
 }
 
 model RoyaltyWallet {
-  address        String
-  share          Int
+  address      String
+  share        Int
   assetAddress String
-  digitalAsset   DigitalAsset @relation(fields: [assetAddress], references: [address])
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 
   @@unique([assetAddress, address])
 }
@@ -371,14 +371,14 @@ model CandyMachineReceipt {
 }
 
 model CollectibleComicCollection {
-  address        String                     @id
-  name           String
-  comicIssue     ComicIssue                 @relation(fields: [comicIssueId], references: [id])
-  comicIssueId   Int                        @unique
-  candyMachines  CandyMachine[]
-  darkblockId    String?
-  metadatas      CollectibleComicMetadata[]
-  digitalAsset   DigitalAsset               @relation(fields: [address], references: [address])
+  address       String                     @id
+  name          String
+  comicIssue    ComicIssue                 @relation(fields: [comicIssueId], references: [id])
+  comicIssueId  Int                        @unique
+  candyMachines CandyMachine[]
+  darkblockId   String?
+  metadatas     CollectibleComicMetadata[]
+  digitalAsset  DigitalAsset               @relation(fields: [address], references: [address])
 }
 
 model ComicPage {
@@ -592,7 +592,7 @@ model DigitalAssetGenre {
 }
 
 model DigitalAsset {
-  address                    String                         @id
+  address                    String                      @id
   ownerAddress               String
   ownerChangedAt             DateTime
   owner                      Wallet                      @relation(fields: [ownerAddress], references: [address])
@@ -622,6 +622,7 @@ model OneOfOneCollection {
   publishedAt          DateTime?
   oneOfOnes            OneOfOne[]
 }
+
 model AuctionHouse {
   address              String        @id
   treasuryMint         String        @unique
@@ -640,8 +641,8 @@ model AuctionSale {
   soldAt              DateTime
   listingId           Int          @unique
   listing             Listing      @relation(fields: [listingId], references: [id])
-  bidId               Int?          @unique
-  bid                 Bid?          @relation(fields: [bidId], references: [id])
+  bidId               Int?         @unique
+  bid                 Bid?         @relation(fields: [bidId], references: [id])
   auctionHouse        AuctionHouse @relation(fields: [auctionHouseAddress], references: [address])
   auctionHouseAddress String
 }
@@ -690,10 +691,10 @@ model PrintEditionSaleConfig {
 }
 
 model DigitalAssetTag {
-  id             Int          @id @default(autoincrement())
-  value          String
-  assetAddress   String
-  digitalAsset   DigitalAsset @relation(fields: [assetAddress], references: [address])
+  id           Int          @id @default(autoincrement())
+  value        String
+  assetAddress String
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
 
 model PrintEdition {
@@ -719,9 +720,9 @@ model OneOfOne {
 }
 
 model DigitalAssetTrait {
-  id             Int          @id @default(autoincrement())
-  name           String
-  value          String
+  id           Int          @id @default(autoincrement())
+  name         String
+  value        String
   assetAddress String
-  digitalAsset   DigitalAsset @relation(fields: [assetAddress], references: [address])
+  digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
