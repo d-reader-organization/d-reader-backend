@@ -5,7 +5,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PublicKey } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 import {
   createBidTransaction,
@@ -72,7 +71,6 @@ import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 export class AuctionHouseService {
   private readonly umi: Umi;
   private readonly metaplex: Metaplex;
-  private readonly auctionHouseAddress: PublicKey;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -89,7 +87,7 @@ export class AuctionHouseService {
 
     if (!auctionHouse) {
       throw new BadRequestException(
-        `SPL token with address ${splTokenAddress} is not supported as auction currency`,
+        `Selected currency not supported: ${splTokenAddress}`,
       );
     }
 
@@ -105,7 +103,7 @@ export class AuctionHouseService {
     24 * 60 * 60 * 1000, // 24 hours
   );
 
-  private async getAssetData(address: string) {
+  private async getBasicAssetData(address: string) {
     const digitalAsset = await this.prisma.digitalAsset.findUnique({
       where: { address },
       include: {
@@ -140,7 +138,7 @@ export class AuctionHouseService {
 
       if (candyMachine?.standard !== TokenStandard.Core) {
         throw new BadRequestException(
-          `Token Standard ${candyMachine?.standard} is not supported for auctions`,
+          `${candyMachine?.standard} Token standard is not supported for auctions`,
         );
       }
 
@@ -226,7 +224,7 @@ export class AuctionHouseService {
       );
     }
 
-    const { sellerAddress, collectionAddress } = await this.getAssetData(
+    const { sellerAddress, collectionAddress } = await this.getBasicAssetData(
       assetAddress,
     );
     const auctionHouse = await this.getAuctionHouse(splTokenAddress);
@@ -243,12 +241,12 @@ export class AuctionHouseService {
     );
   }
 
-  /* List your asset on a constant price */
+  /* List your asset at a constant price */
   async list(params: ListParams) {
     const { assetAddress, price, splTokenAddress } = params;
 
     const auctionHouse = await this.getAuctionHouse(splTokenAddress);
-    const { sellerAddress, collectionAddress } = await this.getAssetData(
+    const { sellerAddress, collectionAddress } = await this.getBasicAssetData(
       assetAddress,
     );
 
@@ -322,12 +320,12 @@ export class AuctionHouseService {
 
     if (!listing) {
       throw new NotFoundException(
-        'Failed to execute sale, listing for the asset not found',
+        'Failed to execute the sale, listing for the asset not found',
       );
     }
 
     if (!bid) {
-      throw new NotFoundException('Failed to execute sale, bid not found');
+      throw new NotFoundException('Failed to execute the sale, bid not found');
     }
 
     const { address, treasuryMint } = auctionHouse;

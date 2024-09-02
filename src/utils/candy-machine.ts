@@ -162,7 +162,7 @@ export async function uploadItemMetadata(
   tokenStandard?: TokenStandard,
 ) {
   const items: { uri: string; name: string }[] = [];
-  // TODO v2: rarityShares is not reliable, we should pull this info from the database
+  // TODO: rarityShares is not reliable, we should pull this info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: ItemMetadata[] = [];
 
@@ -197,7 +197,7 @@ export async function uploadItemMetadata(
         usedUnsigned: allData.find((data) => data.isUsed && !data.isSigned)
           .metadata.uri,
       };
-      // TODO: Initialize authority in parallel
+
       await initializeAuthority(
         metaplex,
         candyMachineAddress,
