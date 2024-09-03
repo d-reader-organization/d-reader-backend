@@ -10,10 +10,15 @@ const allowedUserIds = [
   '398482199667671041',
 ];
 
+const dPublisherChannelId = '1177212861525790750';
+
 export class DReaderRoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const interaction = context.getArgByIndex(0) as Interaction;
-    if (interaction.type === InteractionType.MessageComponent) {
+    if (
+      interaction.channelId === dPublisherChannelId &&
+      interaction.type === InteractionType.MessageComponent
+    ) {
       const roleManager = interaction.member.roles as GuildMemberRoleManager;
       const modRole = await interaction.guild.roles.fetch(dReaderRoleId);
       return roleManager.member.roles.highest.position >= modRole.position;
@@ -24,7 +29,10 @@ export class DReaderRoleGuard implements CanActivate {
 export class PushNotificationGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const interaction = context.getArgByIndex(0) as Interaction;
-    if (interaction.type === InteractionType.ApplicationCommand) {
+    if (
+      interaction.channelId === dPublisherChannelId &&
+      interaction.type === InteractionType.ApplicationCommand
+    ) {
       const isAllowed = allowedUserIds.includes(interaction.member.user.id);
       if (!isAllowed) {
         await interaction.deferReply({ ephemeral: true });
