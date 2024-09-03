@@ -35,7 +35,7 @@ import { CreatorFile } from '../discord/dto/types';
 import { CreatorFileProperty } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
-import { generateMessageAfterAdminAction } from 'src/utils/discord';
+import { generateMessageAfterAdminAction } from '../utils/discord';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
