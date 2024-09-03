@@ -894,7 +894,7 @@ export class HeliusService {
 
       comicIssueId = comicIssueAsset.metadata.collection.comicIssueId;
       userId = comicIssueAsset.digitalAsset.owner?.userId;
-      this.subscribeTo(comicIssueAsset.address);
+      await this.subscribeTo(comicIssueAsset.address);
     } catch (e) {
       console.error(e);
     }
@@ -1104,7 +1104,7 @@ export class HeliusService {
       },
     });
 
-    this.subscribeTo(mintAddress);
+    await this.subscribeTo(mintAddress);
     return digitalAsset;
   }
 
@@ -1152,7 +1152,7 @@ export class HeliusService {
       },
     });
 
-    this.subscribeTo(asset.publicKey.toString());
+    await this.subscribeTo(asset.publicKey.toString());
     return digitalAsset;
   }
 
@@ -1228,7 +1228,7 @@ export class HeliusService {
         },
       },
     });
-    this.subscribeTo(mintAddress.toString());
+    await this.subscribeTo(mintAddress.toString());
     return asset;
   }
 
