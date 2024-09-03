@@ -56,7 +56,7 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
 
   @IsOptional()
   @IsEnum(TokenStandard)
-  @ApiProperty({ enum: TokenStandard })
+  @ApiProperty({ enum: TokenStandard, example: TokenStandard.Core })
   tokenStandard?: TokenStandard;
 
   @IsOptional()

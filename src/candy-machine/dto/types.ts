@@ -15,6 +15,7 @@ export type MintSettings = {
 };
 
 export type CandyMachineGroupSettings = {
+  id: number;
   label: string;
   displayLabel: string;
   supply: number;
