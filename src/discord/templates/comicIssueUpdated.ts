@@ -5,23 +5,21 @@ import { embedsForUpdateNotification } from '../utils';
 export const COMIC_ISSUE_UPDATED = ({
   oldData,
   updatedData,
-  websiteUrl,
+  hyperlink,
   payload,
 }: {
   oldData: ComicIssue;
   updatedData: ComicIssue;
-  websiteUrl: string;
+  hyperlink: string;
   payload: MessagePayload;
 }) => {
   payload.body = {
-    content: `${bold(
+    content: `📙 ${bold(
       oldData.title,
-    )} comic issue updated, [see all details here](${websiteUrl}/comic-issue/${
-      updatedData.id
-    })`,
+    )} comic episode updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<ComicIssue>({
-        title: `comicIssue:${updatedData.id}`,
+        title: `ComicIssue: ${updatedData.id}`,
         oldData,
         updatedData,
       }),

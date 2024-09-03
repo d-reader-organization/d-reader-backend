@@ -42,14 +42,14 @@ export class BotGateway {
     if (!embedsTitle) {
       return;
     }
-    const [key, value] = embedsTitle.split(':');
+    const [key, value] = embedsTitle.split(': ');
 
-    if (!Object.values<string>(ButtonKey).includes(key)) {
+    if (!Object.values<string>(ButtonKey).includes(key.toLowerCase())) {
       return;
     }
 
     const verify = new ButtonBuilder()
-      .setLabel('(Un)Verify')
+      .setLabel('(Un)verify')
       .setStyle(ButtonStyle.Primary);
 
     if (key === ButtonKey.creator) {
@@ -65,7 +65,7 @@ export class BotGateway {
     }
 
     const publish = new ButtonBuilder()
-      .setLabel('(Un)Publish')
+      .setLabel('(Un)publish')
       .setStyle(ButtonStyle.Primary);
 
     if (key === ButtonKey.comic) {
