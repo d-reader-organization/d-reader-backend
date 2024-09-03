@@ -7,12 +7,12 @@ import { UserComicIssueService } from './user-comic-issue.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { NonceService } from '../nonce/nonce.service';
-import { DiscordNotificationService } from 'src/discord/notification.service';
-import { MailService } from 'src/mail/mail.service';
-import { AuthService } from 'src/auth/auth.service';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { MailService } from '../mail/mail.service';
+import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { PasswordService } from 'src/auth/password.service';
-import { WalletService } from 'src/wallet/wallet.service';
+import { PasswordService } from '../auth/password.service';
+import { WalletService } from '../wallet/wallet.service';
 
 @Module({
   controllers: [ComicIssueController],
