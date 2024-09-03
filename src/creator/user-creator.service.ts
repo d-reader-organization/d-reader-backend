@@ -39,8 +39,8 @@ export class UserCreatorService {
   async getTotalCreatorVolume(slug: string) {
     const getSecondaryVolume = this.prisma.auctionSale.aggregate({
       where: {
-        listing:{
-          digitalAsset:{
+        listing: {
+          digitalAsset: {
             collectibleComic: {
               metadata: {
                 collection: { comicIssue: { comic: { creator: { slug } } } },

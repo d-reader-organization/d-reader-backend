@@ -15,7 +15,7 @@ import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { CreatorStats } from '../comic/types/creator-stats';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
-import { appendTimestamp, getRandomFloatOrInt, sleep } from '../utils/helpers';
+import { appendTimestamp, sleep } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
 import { PasswordService } from '../auth/password.service';
 import {
@@ -115,7 +115,9 @@ export class CreatorService {
         filteredCreators.push({
           ...creator,
           stats: {
-            totalVolume: getRandomFloatOrInt(1, 1000),
+            totalVolume: await this.userCreatorService.getTotalCreatorVolume(
+              creator.slug,
+            ),
             followersCount: Number(creator.followersCount),
             comicIssuesCount: 0,
           },
