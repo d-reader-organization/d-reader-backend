@@ -136,6 +136,7 @@ import {
 import { NonceService } from '../nonce/nonce.service';
 import { getTransactionWithPriorityFee } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -902,19 +903,24 @@ export class CandyMachineService {
     const userWhiteListGroups = groups.filter(
       (group) => group.whiteListType === WhiteListType.UserWhiteList,
     );
-    const isUserWhitelisted =
-      await this.prisma.userCandyMachineGroup.findUnique({
-        where: {
-          candyMachineGroupId_userId: {
-            candyMachineGroupId: userWhiteListGroups[0]?.id,
-            userId,
-          },
-        },
-      });
+    const userGroups = groups.filter(
+      (group) => group.whiteListType === WhiteListType.User,
+    );
 
-    return isUserWhitelisted
-      ? userWhiteListGroups
-      : groups.filter((group) => group.whiteListType === WhiteListType.User);
+    if (!isEmpty(userWhiteListGroups)) {
+      const isUserWhitelisted =
+        await this.prisma.userCandyMachineGroup.findUnique({
+          where: {
+            candyMachineGroupId_userId: {
+              candyMachineGroupId: userWhiteListGroups[0]?.id,
+              userId,
+            },
+          },
+        });
+
+      return isUserWhitelisted ? userWhiteListGroups : userGroups;
+    }
+    return userGroups;
   }
 
   private async filterGroupsForWallet(
@@ -924,19 +930,25 @@ export class CandyMachineService {
     const walletWhiteListGroups = groups.filter(
       (group) => group.whiteListType === WhiteListType.WalletWhiteList,
     );
-    const isWalletWhitelisted =
-      await this.prisma.walletCandyMachineGroup.findUnique({
-        where: {
-          candyMachineGroupId_walletAddress: {
-            candyMachineGroupId: walletWhiteListGroups[0]?.id,
-            walletAddress,
-          },
-        },
-      });
+    const publicGroups = groups.filter(
+      (group) => group.whiteListType === WhiteListType.Public,
+    );
 
-    return isWalletWhitelisted
-      ? walletWhiteListGroups
-      : groups.filter((group) => group.whiteListType === WhiteListType.Public);
+    if (!isEmpty(walletWhiteListGroups)) {
+      const isWalletWhitelisted =
+        await this.prisma.walletCandyMachineGroup.findUnique({
+          where: {
+            candyMachineGroupId_walletAddress: {
+              candyMachineGroupId: walletWhiteListGroups[0]?.id,
+              walletAddress,
+            },
+          },
+        });
+
+      return isWalletWhitelisted ? walletWhiteListGroups : publicGroups;
+    }
+
+    return publicGroups;
   }
 
   private countUserItemsMintedQuery = (
