@@ -155,11 +155,11 @@ export class GetSignCommand {
       new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
         new ButtonBuilder()
           .setCustomId(`${user.id};${address}`)
-          .setLabel(`Sign Comic ✍🏼`)
+          .setLabel(`Sign comic ✍🏼`)
           .setStyle(ButtonStyle.Success),
       );
 
-    await interaction.editReply('All Checks done ✅');
+    await interaction.editReply('All checks done ✅');
     await interaction.followUp(
       NFT_EMBEDDED_RESPONSE({
         content: `**${user.username}** requested **${creatorDiscord.username}** to sign their **${name}**`,
@@ -185,7 +185,7 @@ export class GetSignCommand {
     if (!user) {
       await buttonInteraction.editReply({
         content:
-          '```fix\n Invalid User, Please try again or ask user to run get-signature command again !```',
+          '```fix\n Invalid user, please try again or ask user to run get-signature command again !```',
       });
       return;
     }
@@ -224,7 +224,7 @@ export class GetSignCommand {
       if (!creator) {
         await buttonInteraction.editReply({
           content:
-            '```fix\n Unauthorized creator, Make sure your discord is verified```',
+            '```fix\n Unauthorized creator, your Discord account is not verified```',
         });
         return;
       }

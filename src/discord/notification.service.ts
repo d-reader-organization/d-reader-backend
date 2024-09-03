@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
-import config from '../configs/config';
 import { CREATOR_REGISTERED } from './templates/creatorRegistered';
 import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
 import { MessagePayload, WebhookClient } from 'discord.js';
@@ -8,19 +7,14 @@ import { CreatorFile } from './dto/types';
 import { CREATOR_PROFILE_UPDATED } from './templates/creatorProfileUpdated';
 import { COMIC_UPDATED } from './templates/comicUpdated';
 import { COMIC_ISSUE_UPDATED } from './templates/comicIssueUpdated';
+import { D_READER_LINKS } from 'src/utils/client-links';
 
 @Injectable()
 export class DiscordNotificationService {
-  private readonly apiUrl: string;
-  private readonly websiteUrl: string;
   private readonly payload: MessagePayload;
   private readonly discord?: WebhookClient;
 
   constructor() {
-    const clientConfig = config().client;
-    this.apiUrl = clientConfig.dPublisherUrl;
-    this.websiteUrl = clientConfig.dReaderUrl;
-
     if (!process.env.DISCORD_WEBHOOK_URL) {
       console.warn('DISCORD_WEBHOOK_URL is undefined');
       return;
@@ -35,9 +29,7 @@ export class DiscordNotificationService {
 
   async notifyCreatorRegistration(creator: Creator) {
     try {
-      await this.discord?.send(
-        CREATOR_REGISTERED(creator, this.apiUrl, this.payload),
-      );
+      await this.discord?.send(CREATOR_REGISTERED(creator, this.payload));
     } catch (e) {
       console.error('Error sending notification for creator registration', e);
     }
@@ -78,7 +70,7 @@ export class DiscordNotificationService {
         CREATOR_PROFILE_UPDATED({
           oldData: oldCreator,
           updatedData: updatedCreator,
-          websiteUrl: this.websiteUrl,
+          hyperlink: D_READER_LINKS.creator(updatedCreator.slug),
           payload: this.payload,
         }),
       );
@@ -102,7 +94,7 @@ export class DiscordNotificationService {
         COMIC_UPDATED({
           oldData: oldComic,
           updatedData: updatedComic,
-          websiteUrl: this.websiteUrl,
+          hyperlink: D_READER_LINKS.comic(updatedComic.slug),
           payload: this.payload,
         }),
       );
@@ -123,7 +115,7 @@ export class DiscordNotificationService {
         COMIC_ISSUE_UPDATED({
           oldData: oldIssue,
           updatedData: updatedIssue,
-          websiteUrl: this.websiteUrl,
+          hyperlink: D_READER_LINKS.comicIssue(updatedIssue.id),
           payload: this.payload,
         }),
       );

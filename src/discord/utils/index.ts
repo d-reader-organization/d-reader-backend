@@ -23,7 +23,7 @@ const fieldData = <T>({
     return [
       ...prev,
       {
-        name: `${curr.toUpperCase()}`,
+        name: curr.toUpperCase(),
         value: `${strikethrough(oldValue.toString())} -> ${bold(
           newValue.toString(),
         )}`,
@@ -42,7 +42,7 @@ export const embedsForUpdateNotification = <T>({
   oldData: T;
   updatedData: T;
 }) => ({
-  title: title,
+  title,
   color: 0x4caf50,
   fields: fieldData<T>({
     oldData,

@@ -42,3 +42,4 @@ lerna-debug.log*
 
 devServiceAccount.json
 mainServiceAccount.json
+.cursorignore

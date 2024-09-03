@@ -1,10 +1,10 @@
 import { Creator } from '@prisma/client';
 import { MessagePayload } from 'discord.js';
 import { format } from 'date-fns';
+import { D_PUBLISHER_LINKS } from '../../utils/client-links';
 
 export const CREATOR_REGISTERED = (
   creator: Creator,
-  apiUrl: string,
   payload: MessagePayload,
 ): MessagePayload => {
   payload.body = {
@@ -32,7 +32,7 @@ export const CREATOR_REGISTERED = (
         ],
         footer: {
           text: 'dPublisher',
-          icon_url: `${apiUrl}/logo192.png`,
+          icon_url: D_PUBLISHER_LINKS.logo,
         },
       },
     ],

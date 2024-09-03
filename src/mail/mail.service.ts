@@ -1,8 +1,12 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Comic, ComicIssue, Creator, User } from '@prisma/client';
-import config from '../configs/config';
 import { AuthService } from '../auth/auth.service';
+import {
+  D_READER_LINKS,
+  D_PUBLISHER_LINKS,
+  apiUrl,
+} from '../utils/client-links';
 
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
@@ -39,18 +43,10 @@ const COMIC_ISSUE_VERIFIED = 'comicIssueVerified';
 
 @Injectable()
 export class MailService {
-  private readonly apiUrl: string;
-  private readonly dReaderUrl: string;
-  private readonly dPublisherUrl: string;
-
   constructor(
     private readonly mailerService: MailerService,
     private readonly authService: AuthService,
-  ) {
-    this.apiUrl = config().nest.apiUrl;
-    this.dReaderUrl = config().client.dReaderUrl;
-    this.dPublisherUrl = config().client.dPublisherUrl;
-  }
+  ) {}
 
   async subscribedToNewsletter(email: string) {
     try {
@@ -59,8 +55,8 @@ export class MailService {
         subject: '✅ Newsletter subscription',
         template: SUBSCRIBE_TO_NEWSLETTER,
         context: {
-          apiUrl: this.apiUrl,
-          actionUrl: this.newsletterUrl(email),
+          apiUrl,
+          actionUrl: D_READER_LINKS.newsletter(email),
         },
       });
     } catch (e) {
@@ -75,8 +71,8 @@ export class MailService {
         subject: '💀 Newsletter is no more!',
         template: UNSUBSCRIBED_FROM_NEWSLETTER,
         context: {
-          apiUrl: this.apiUrl,
-          actionUrl: this.newsletterUrl(email),
+          apiUrl,
+          actionUrl: D_READER_LINKS.newsletter(email),
         },
       });
     } catch (e) {
@@ -97,10 +93,10 @@ export class MailService {
         template: USER_REGISTERED,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
           actionUrl:
             !user.emailVerifiedAt &&
-            this.verificationUrl(this.dReaderUrl, verificationToken),
+            D_READER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -116,7 +112,7 @@ export class MailService {
         template: USER_SCHEDULED_FOR_DELETION,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -132,7 +128,7 @@ export class MailService {
         template: USER_DELETED,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -148,8 +144,8 @@ export class MailService {
         template: USER_PASSWORD_RESET_REQUESTED,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.resetPasswordUrl(this.dReaderUrl, verificationToken),
+          apiUrl,
+          actionUrl: D_READER_LINKS.resetPassword(verificationToken),
         },
       });
     } catch (e) {
@@ -168,7 +164,7 @@ export class MailService {
         template: USER_PASSWORD_RESET,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -192,8 +188,8 @@ export class MailService {
         template: BUMP_USER_WITH_EMAIL_VERIFICATION,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+          apiUrl,
+          actionUrl: D_READER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -217,8 +213,8 @@ export class MailService {
         template: USER_EMAIL_VERIFICATION_REQUESTED,
         context: {
           name: user.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+          apiUrl,
+          actionUrl: D_READER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -242,8 +238,8 @@ export class MailService {
         subject: '🚨 email change requested!',
         template: USER_EMAIL_CHANGE_REQUESTED,
         context: {
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+          apiUrl,
+          actionUrl: D_READER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -260,7 +256,7 @@ export class MailService {
         to: user.email,
         subject: '📧 Successfully changed email',
         template: USER_EMAIL_CHANGED,
-        context: { name: user.name, apiUrl: this.apiUrl },
+        context: { name: user.name, apiUrl },
       });
     } catch (e) {
       logError(USER_EMAIL_CHANGED, user.email, e);
@@ -283,11 +279,8 @@ export class MailService {
         template: CREATOR_REGISTERED,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(
-            this.dPublisherUrl,
-            verificationToken,
-          ),
+          apiUrl,
+          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -303,7 +296,7 @@ export class MailService {
         template: CREATOR_SCHEDULED_FOR_DELETION,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -319,7 +312,7 @@ export class MailService {
         template: CREATOR_DELETED,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -341,11 +334,8 @@ export class MailService {
         template: CREATOR_PASSWORD_RESET_REQUESTED,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.resetPasswordUrl(
-            this.dPublisherUrl,
-            verificationToken,
-          ),
+          apiUrl,
+          actionUrl: D_PUBLISHER_LINKS.resetPassword(verificationToken),
         },
       });
     } catch (e) {
@@ -364,8 +354,8 @@ export class MailService {
         template: CREATOR_PASSWORD_RESET,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.loginUrl(this.dPublisherUrl),
+          apiUrl,
+          actionUrl: D_PUBLISHER_LINKS.login,
         },
       });
     } catch (e) {
@@ -389,8 +379,8 @@ export class MailService {
         template: BUMP_CREATOR_WITH_EMAIL_VERIFICATION,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(this.dReaderUrl, verificationToken),
+          apiUrl,
+          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -414,11 +404,8 @@ export class MailService {
         template: CREATOR_EMAIL_VERIFICATION_REQUESTED,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
-          actionUrl: this.verificationUrl(
-            this.dPublisherUrl,
-            verificationToken,
-          ),
+          apiUrl,
+          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
         },
       });
     } catch (e) {
@@ -437,7 +424,7 @@ export class MailService {
         template: CREATOR_VERIFIED,
         context: {
           name: creator.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -454,7 +441,7 @@ export class MailService {
         context: {
           comicTitle: comic.title,
           name: comic.creator.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
@@ -480,27 +467,11 @@ export class MailService {
         context: {
           comicIssueTitle: comicIssue.title,
           name: creator.name,
-          apiUrl: this.apiUrl,
+          apiUrl,
         },
       });
     } catch (e) {
       logError(COMIC_ISSUE_VERIFIED, creator.email, e);
     }
-  }
-
-  newsletterUrl(email: string) {
-    return `${this.dReaderUrl}/newsletter/${email}`;
-  }
-
-  verificationUrl(clientUrl: string, verificationToken: string) {
-    return `${clientUrl}/verify-email/${verificationToken}`;
-  }
-
-  resetPasswordUrl(clientUrl: string, verificationToken: string): string {
-    return `${clientUrl}/reset-password/${verificationToken}`;
-  }
-
-  loginUrl(clientUrl: string) {
-    return `${clientUrl}/login`;
   }
 }
