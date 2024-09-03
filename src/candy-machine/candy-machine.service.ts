@@ -46,8 +46,8 @@ import {
 } from '../constants';
 import {
   findCandyMachineDiscount,
-  isUserWhitelisted,
-  isWalletWhiteListed,
+  findUserInUserWhiteList,
+  findWalletInWalletWhiteList,
   sleep,
   solFromLamports,
 } from '../utils/helpers';
@@ -152,180 +152,7 @@ export class CandyMachineService {
     this.umi = umi;
   }
 
-  async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
-    const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
-      s3toMxFile(cover.image),
-    );
-    const statelessCovers = await Promise.all(statelessCoverPromises);
-
-    const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
-    const statefulCoverPromises = comicIssue.statefulCovers.map(
-      async (cover) => {
-        const file = await s3toMxFile(cover.image, getStatefulCoverName(cover));
-        const property = generatePropertyName(cover.isUsed, cover.isSigned);
-        const value = {
-          ...rarityCoverFiles[cover.rarity],
-          [property]: file,
-        };
-        rarityCoverFiles[cover.rarity] = value;
-        return file;
-      },
-    );
-    const statefulCovers = await Promise.all(statefulCoverPromises);
-
-    return { statefulCovers, statelessCovers, rarityCoverFiles };
-  }
-
-  async initializeGuardAccounts(
-    candyMachine: LegacyCandyMachine<DefaultCandyGuardSettings>,
-    freezePeriod?: number,
-  ) {
-    await this.metaplex.candyMachines().callGuardRoute({
-      candyMachine,
-      guard: 'freezeSolPayment',
-      settings: {
-        path: 'initialize',
-        period: (freezePeriod ?? FREEZE_NFT_DAYS) * DAY_SECONDS,
-        candyGuardAuthority: this.metaplex.identity(),
-      },
-      group: PUBLIC_GROUP_LABEL,
-    });
-  }
-
-  async getOrCreateComicIssueCollection(
-    comicIssue: ComicIssueCMInput,
-    onChainName: string,
-    royaltyWallets: RoyaltyWalletDto[],
-    statelessCovers: MetaplexFile[],
-    statefulCovers: MetaplexFile[],
-    tokenStandard?: TokenStandard,
-  ) {
-    const {
-      pdf,
-      id: comicIssueId,
-      description,
-      creatorAddress,
-      title,
-      sellerFeeBasisPoints,
-    } = comicIssue;
-
-    const cover = findDefaultCover(comicIssue.statelessCovers);
-    const coverImage = await s3toMxFile(cover.image);
-    // if Collection NFT already exists - use it, otherwise create a fresh one
-    let collectionAddress: PublicKey;
-    const collectionAsset =
-      await this.prisma.collectibleComicCollection.findUnique({
-        where: {
-          comicIssueId,
-          candyMachines: { some: { standard: tokenStandard } },
-        },
-      });
-
-    let darkblockId = '';
-    // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
-    if (collectionAsset && tokenStandard !== TokenStandard.Core) {
-      collectionAddress = new PublicKey(collectionAsset.address);
-      darkblockId = collectionAsset.darkblockId ?? '';
-    } else {
-      let darkblockMetadataFile: MetadataFile;
-      if (pdf) {
-        darkblockId = await this.darkblockService.mintDarkblock(
-          pdf,
-          description,
-          creatorAddress,
-        );
-        darkblockMetadataFile = {
-          type: 'Darkblock',
-          uri: darkblockId,
-        };
-      }
-
-      const { uri: collectionAssetUri } = await this.metaplex
-        .nfts()
-        .uploadMetadata({
-          name: title,
-          symbol: D_PUBLISHER_SYMBOL,
-          description: description,
-          seller_fee_basis_points: sellerFeeBasisPoints,
-          image: coverImage,
-          external_url: D_READER_FRONTEND_URL,
-          properties: {
-            creators: [
-              {
-                address: this.metaplex.identity().publicKey.toBase58(),
-                share: HUNDRED,
-              },
-            ],
-            files: [
-              ...writeFiles(coverImage, ...statefulCovers, ...statelessCovers),
-              ...(darkblockMetadataFile ? [darkblockMetadataFile] : []),
-            ],
-          },
-        });
-
-      if (tokenStandard === TokenStandard.Core) {
-        const collection = generateSigner(umi);
-        const creators = royaltyWallets.map((item) => {
-          return {
-            address: publicKey(item.address),
-            percentage: item.share,
-          };
-        });
-
-        const nonceArgs = await this.nonceService.getNonce();
-        await createCoreCollection(
-          this.umi,
-          collection,
-          collectionAssetUri,
-          onChainName,
-          sellerFeeBasisPoints,
-          creators,
-          nonceArgs,
-        );
-        console.log(`Collection: ${collection.publicKey.toString()}`);
-
-        if (nonceArgs) {
-          await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
-        }
-        collectionAddress = new PublicKey(collection.publicKey);
-      } else {
-        const newCollectionNft = await createCollectionNft(
-          this.metaplex,
-          onChainName,
-          collectionAssetUri,
-          sellerFeeBasisPoints,
-        );
-        collectionAddress = newCollectionNft.address;
-      }
-
-      await this.prisma.collectibleComicCollection.create({
-        data: {
-          name: onChainName,
-          comicIssue: { connect: { id: comicIssue.id } },
-          digitalAsset: {
-            create: {
-              address: collectionAddress.toBase58(),
-              royaltyWallets: {
-                create: royaltyWallets,
-              },
-              owner: {
-                connectOrCreate: {
-                  where: { address: this.umi.identity.publicKey.toString() },
-                  create: {
-                    address: this.umi.identity.publicKey.toString(),
-                    createdAt: new Date(),
-                  },
-                },
-              },
-              ownerChangedAt: new Date(),
-            },
-          },
-        },
-      });
-    }
-    return { collectionAddress, darkblockId };
-  }
-
+  /* Create Candy Machine for Comic Issue */
   async createComicIssueCM({
     comicIssue,
     comicName,
@@ -570,69 +397,7 @@ export class CandyMachineService {
     return candyMachine;
   }
 
-  async updateCoreCandyMachine(
-    candMachineAddress: UmiPublicKey,
-    groups: CoreGuardGroup<DefaultGuardSet>[],
-    guards: Partial<DefaultGuardSetArgs>,
-  ) {
-    try {
-      const candyMachine = await fetchCandyMachine(
-        this.umi,
-        candMachineAddress,
-      );
-      const updateBuilder = updateCandyGuard(this.umi, {
-        groups,
-        guards,
-        candyGuard: candyMachine.mintAuthority,
-      });
-      const builder = transactionBuilder()
-        .add(
-          setComputeUnitPrice(this.umi, { microLamports: MIN_COMPUTE_PRICE }),
-        )
-        .add(updateBuilder);
-      const response = await builder.sendAndConfirm(this.umi, {
-        send: { commitment: 'confirmed', skipPreflight: true },
-      });
-      const signature = base58.deserialize(response.signature);
-      console.log(`CandyMachine updated : ${signature}`);
-    } catch (e) {
-      console.error(
-        `Error updating CandyMachine ${candMachineAddress.toString()}`,
-        e,
-      );
-    }
-  }
-
-  async updateCandyMachine(
-    candyMachineAddress: PublicKey,
-    groups?: LegacyGuardGroup[],
-    guards?: Partial<DefaultCandyGuardSettings>,
-  ) {
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachineAddress });
-    const builder = this.metaplex.candyMachines().builders().update({
-      candyMachine,
-      groups,
-      guards,
-    });
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
-      commitment: 'confirmed',
-    });
-    const transaction = new Transaction({
-      feePayer: this.metaplex.identity().publicKey,
-      ...latestBlockhash,
-    }).add(MIN_COMPUTE_PRICE_IX, builder.toTransaction(latestBlockhash));
-
-    const signature = await sendAndConfirmTransaction(
-      this.metaplex.connection,
-      transaction,
-      [this.metaplex.identity()],
-      { commitment: 'confirmed', skipPreflight: true },
-    );
-    console.log(`CandyMachine updated : ${signature}`);
-  }
-
+  /* Create Multiple Mint transactions */
   async createMintTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
@@ -654,6 +419,7 @@ export class CandyMachineService {
     return await Promise.all(transactions);
   }
 
+  /* Create Single Mint transaction */
   async createMintOneTransaction(
     feePayer: PublicKey,
     candyMachineAddress: PublicKey,
@@ -686,7 +452,7 @@ export class CandyMachineService {
         }
 
         if (whiteListType === WhiteListType.UserWhiteList) {
-          const isWhitelisted = isUserWhitelisted(userId, userWhiteList);
+          const isWhitelisted = findUserInUserWhiteList(userId, userWhiteList);
           if (!isWhitelisted) {
             throw new UnauthorizedException(
               'User is not eligible for this mint !',
@@ -735,61 +501,8 @@ export class CandyMachineService {
     );
   }
 
-  async thawFrozenNft(
-    candyMachineAddress: PublicKey,
-    nftMint: PublicKey,
-    nftOwner: PublicKey,
-    guard: string,
-    label: string,
-  ) {
-    if (label === AUTHORITY_GROUP_LABEL) return;
-    try {
-      const transaction = await constructThawTransaction(
-        this.metaplex,
-        candyMachineAddress,
-        nftMint,
-        nftOwner,
-        guard,
-        label,
-      );
-      console.log(`Thaw in process : ${nftMint.toString()}`);
-      return await sendAndConfirmTransaction(
-        this.metaplex.connection,
-        transaction,
-        [this.metaplex.identity()],
-      );
-    } catch (e) {
-      console.log(`${nftMint} failed to thawed`);
-      console.error(e);
-    }
-  }
-
-  async unlockFunds(
-    candyMachineAddress: PublicKey,
-    guard: string,
-    group: string,
-  ) {
-    try {
-      const candyMachine = await this.metaplex
-        .candyMachines()
-        .findByAddress({ address: candyMachineAddress });
-      await this.metaplex.candyMachines().callGuardRoute({
-        candyMachine,
-        guard,
-        group,
-        settings: {
-          path: 'unlockFunds',
-          candyGuardAuthority: this.metaplex.identity(),
-        },
-      });
-      console.log(`Funds unlocked: ${group}`);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
   async find(query: CandyMachineParams, userId?: number) {
-    const address = query.candyMachineAddress;
+    const { candyMachineAddress: address, walletAddress } = query;
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address },
       include: { groups: true },
@@ -811,7 +524,7 @@ export class CandyMachineService {
           } = await this.getMintDetails(
             query.candyMachineAddress,
             group.label,
-            query.walletAddress,
+            walletAddress,
             userId,
           );
           return {
@@ -837,23 +550,20 @@ export class CandyMachineService {
 
     // Note: Outlaw still ongoing and has deprecated configuration, for supporting new ux only active public group is returned
     const OUTLAW_CANDY_MACHINE = '6bGL4SqFvsTJ2Wg6bfbFtwKgZwTrNPLiPoYzWMM8AFV3';
+
     if (candyMachine.address === OUTLAW_CANDY_MACHINE) {
       filteredGroups = groups.filter((group) => group.label === 'public');
     } else if (userId) {
-      filteredGroups = groups.filter(
-        (group) =>
-          group.whiteListType == WhiteListType.User ||
-          group.whiteListType == WhiteListType.UserWhiteList,
-      );
+      filteredGroups = await this.filterGroupsForUser(groups, userId);
+    } else if (walletAddress) {
+      filteredGroups = await this.filterGroupsForWallet(groups, walletAddress);
     } else {
       filteredGroups = groups.filter(
-        (group) =>
-          group.whiteListType == WhiteListType.Public ||
-          group.whiteListType == WhiteListType.WalletWhiteList,
+        (group) => group.whiteListType === WhiteListType.Public,
       );
     }
 
-    if (filteredGroups.length == 0) {
+    if (filteredGroups.length === 0) {
       filteredGroups = groups;
     }
 
@@ -870,161 +580,6 @@ export class CandyMachineService {
     });
 
     return receipts;
-  }
-
-  async addLegacyCandyMachineGroupOnChain(
-    candyMachineAddress: string,
-    params: GuardParams,
-  ) {
-    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
-      params;
-    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
-    const candyMachine = await this.metaplex
-      .candyMachines()
-      .findByAddress({ address: candyMachinePublicKey });
-    const candyMachineGroups = candyMachine.candyGuard.groups;
-
-    const redeemedAmountGuard: RedeemedAmountGuardSettings = {
-      maximum: toBigNumber(supply),
-    };
-    let startDateGuard: StartDateGuardSettings;
-    if (startDate) startDateGuard = { date: toDateTime(startDate) };
-
-    let endDateGuard: EndDateGuardSettings;
-    if (endDate) endDateGuard = { date: toDateTime(endDate) };
-
-    let mintLimitGuard: MintLimitGuardSettings;
-    if (mintLimit)
-      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
-
-    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
-    const existingGroup = candyMachineGroups.find(
-      (group) => group.label === label,
-    );
-
-    if (existingGroup) {
-      throw new Error(`A group with label ${label} already exists`);
-    }
-
-    const group: LegacyGuardGroup = {
-      label,
-      guards: {
-        ...candyMachine.candyGuard.guards,
-        [paymentGuard]: {
-          amount: solFromLamports(mintPrice),
-          destination: FUNDS_DESTINATION_ADDRESS,
-        },
-        redeemedAmount: redeemedAmountGuard,
-        startDate: startDateGuard,
-        endDate: endDateGuard,
-        mintLimit: mintLimitGuard,
-      },
-    };
-    const resolvedGroups = candyMachineGroups.filter(
-      (group) => group.label != label,
-    );
-
-    const groups = [...resolvedGroups, group];
-    await this.updateCandyMachine(candyMachinePublicKey, groups);
-  }
-
-  async addCoreCandyMachineGroupOnChain(
-    candyMachineAddress: string,
-    params: GuardParams,
-  ) {
-    const {
-      label,
-      startDate,
-      endDate,
-      mintPrice,
-      // mintLimit,
-      supply,
-      frozen,
-      splTokenAddress,
-    } = params;
-
-    const candyMachine = await fetchCandyMachine(
-      this.umi,
-      publicKey(candyMachineAddress),
-    );
-    const candyGuard = await fetchCandyGuard(
-      this.umi,
-      candyMachine.mintAuthority,
-    );
-
-    const candyMachineGroups = candyGuard.groups;
-    const redeemedAmountGuard: RedeemedAmount = {
-      maximum: createBigInt(supply),
-    };
-    let startDateGuard: StartDate;
-    if (startDate) startDateGuard = { date: umiDateTime(startDate) };
-
-    let endDateGuard: EndDate;
-    if (endDate) endDateGuard = { date: umiDateTime(endDate) };
-
-    // Mint limit is centralized using third party signer
-    // let mintLimitGuard: MintLimit;
-    // if (mintLimit)
-    //   mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
-
-    const thirdPartySigner = getThirdPartySigner();
-    const thirdPartySignerGuard: ThirdPartySigner = {
-      signerKey: publicKey(thirdPartySigner),
-    };
-
-    let paymentGuardName: string;
-
-    const isSolPayment = splTokenAddress === WRAPPED_SOL_MINT.toString();
-    let paymentGuard: TokenPayment | SolPayment;
-
-    if (isSolPayment) {
-      paymentGuardName = frozen ? 'freezeSolPayment' : 'solPayment';
-      paymentGuard = {
-        lamports: umiLamports(mintPrice),
-        destination: publicKey(FUNDS_DESTINATION_ADDRESS),
-      };
-    } else {
-      paymentGuardName = frozen ? 'freezeTokenPayment' : 'tokenPayment';
-      paymentGuard = {
-        // Currently, this would be only USDC
-        amount: BigInt(mintPrice),
-        destinationAta: findAssociatedTokenPda(this.umi, {
-          mint: publicKey(splTokenAddress),
-          owner: publicKey(FUNDS_DESTINATION_ADDRESS),
-        })[0],
-        mint: publicKey(splTokenAddress),
-      };
-    }
-
-    const existingGroup = candyMachineGroups.find(
-      (group) => group.label === label,
-    );
-
-    if (existingGroup) {
-      throw new Error(`A group with label ${label} already exists`);
-    }
-
-    const group: CoreGuardGroup<DefaultGuardSet> = {
-      label,
-      guards: {
-        ...candyGuard.guards,
-        [paymentGuardName]: some(paymentGuard),
-        redeemedAmount: some(redeemedAmountGuard),
-        startDate: startDate ? some(startDateGuard) : none(),
-        endDate: endDate ? some(endDateGuard) : none(),
-        // mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
-        thirdPartySigner: some(thirdPartySignerGuard),
-      },
-    };
-    const resolvedGroups = candyMachineGroups.filter(
-      (group) => group.label != label,
-    );
-    resolvedGroups.push(group);
-    await this.updateCoreCandyMachine(
-      publicKey(candyMachineAddress),
-      resolvedGroups,
-      candyGuard.guards,
-    );
   }
 
   async addUsersToWhiteList(
@@ -1208,33 +763,288 @@ export class CandyMachineService {
     }
   }
 
-  async findCandyMachineData(candyMachineAddress: string, label: string) {
-    try {
-      const data = await this.prisma.candyMachineGroup.findFirst({
-        where: { candyMachineAddress, label },
-        include: { wallets: true, candyMachine: true, users: true },
+  async deleteCandyMachine(address: PublicKey) {
+    const { standard, mintAuthorityAddress } =
+      await this.prisma.candyMachine.findUnique({
+        where: { address: address.toString() },
       });
-      if (!data) {
-        throw new NotFoundException();
-      }
-      return {
-        walletWhiteList:
-          data.wallets && data.wallets.length
-            ? data.wallets.map((item) => item.walletAddress)
-            : undefined,
-        userWhiteList: data.users && data.users.length ? data.users : [],
-        lookupTable: data.candyMachine.lookupTable,
-        mintPrice: Number(data.mintPrice),
-        tokenStandard: data.candyMachine.standard,
-        whiteListType: data.whiteListType,
-        mintLimit: data.mintLimit,
-      };
+    if (standard === TokenStandard.Core) {
+      return deleteCoreCandyMachine(
+        this.umi,
+        publicKey(address),
+        publicKey(mintAuthorityAddress),
+      );
+    } else {
+      return deleteLegacyCandyMachine(this.metaplex, address);
+    }
+  }
+
+  async updateCoreCandyMachine(
+    candMachineAddress: UmiPublicKey,
+    groups: CoreGuardGroup<DefaultGuardSet>[],
+    guards: Partial<DefaultGuardSetArgs>,
+  ) {
+    try {
+      const candyMachine = await fetchCandyMachine(
+        this.umi,
+        candMachineAddress,
+      );
+      const updateBuilder = updateCandyGuard(this.umi, {
+        groups,
+        guards,
+        candyGuard: candyMachine.mintAuthority,
+      });
+      const builder = transactionBuilder()
+        .add(
+          setComputeUnitPrice(this.umi, { microLamports: MIN_COMPUTE_PRICE }),
+        )
+        .add(updateBuilder);
+      const response = await builder.sendAndConfirm(this.umi, {
+        send: { commitment: 'confirmed', skipPreflight: true },
+      });
+      const signature = base58.deserialize(response.signature);
+      console.log(`CandyMachine updated : ${signature}`);
+    } catch (e) {
+      console.error(
+        `Error updating CandyMachine ${candMachineAddress.toString()}`,
+        e,
+      );
+    }
+  }
+
+  async updateCandyMachine(
+    candyMachineAddress: PublicKey,
+    groups?: LegacyGuardGroup[],
+    guards?: Partial<DefaultCandyGuardSettings>,
+  ) {
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachineAddress });
+    const builder = this.metaplex.candyMachines().builders().update({
+      candyMachine,
+      groups,
+      guards,
+    });
+    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const transaction = new Transaction({
+      feePayer: this.metaplex.identity().publicKey,
+      ...latestBlockhash,
+    }).add(MIN_COMPUTE_PRICE_IX, builder.toTransaction(latestBlockhash));
+
+    const signature = await sendAndConfirmTransaction(
+      this.metaplex.connection,
+      transaction,
+      [this.metaplex.identity()],
+      { commitment: 'confirmed', skipPreflight: true },
+    );
+    console.log(`CandyMachine updated : ${signature}`);
+  }
+
+  async thawFrozenNft(
+    candyMachineAddress: PublicKey,
+    nftMint: PublicKey,
+    nftOwner: PublicKey,
+    guard: string,
+    label: string,
+  ) {
+    if (label === AUTHORITY_GROUP_LABEL) return;
+    try {
+      const transaction = await constructThawTransaction(
+        this.metaplex,
+        candyMachineAddress,
+        nftMint,
+        nftOwner,
+        guard,
+        label,
+      );
+      console.log(`Thaw in process : ${nftMint.toString()}`);
+      return await sendAndConfirmTransaction(
+        this.metaplex.connection,
+        transaction,
+        [this.metaplex.identity()],
+      );
+    } catch (e) {
+      console.log(`${nftMint} failed to thawed`);
+      console.error(e);
+    }
+  }
+
+  async unlockFunds(
+    candyMachineAddress: PublicKey,
+    guard: string,
+    group: string,
+  ) {
+    try {
+      const candyMachine = await this.metaplex
+        .candyMachines()
+        .findByAddress({ address: candyMachineAddress });
+      await this.metaplex.candyMachines().callGuardRoute({
+        candyMachine,
+        guard,
+        group,
+        settings: {
+          path: 'unlockFunds',
+          candyGuardAuthority: this.metaplex.identity(),
+        },
+      });
+      console.log(`Funds unlocked: ${group}`);
     } catch (e) {
       console.error(e);
     }
   }
 
-  async getMintDetails(
+  private async filterGroupsForUser(
+    groups: CandyMachineGroupSettings[],
+    userId: number,
+  ) {
+    const userWhiteListGroups = groups.filter(
+      (group) => group.whiteListType === WhiteListType.UserWhiteList,
+    );
+    const isUserWhitelisted =
+      await this.prisma.userCandyMachineGroup.findUnique({
+        where: {
+          candyMachineGroupId_userId: {
+            candyMachineGroupId: userWhiteListGroups[0]?.id,
+            userId,
+          },
+        },
+      });
+
+    return isUserWhitelisted
+      ? userWhiteListGroups
+      : groups.filter((group) => group.whiteListType === WhiteListType.User);
+  }
+
+  private async filterGroupsForWallet(
+    groups: CandyMachineGroupSettings[],
+    walletAddress: string,
+  ) {
+    const walletWhiteListGroups = groups.filter(
+      (group) => group.whiteListType === WhiteListType.WalletWhiteList,
+    );
+    const isWalletWhitelisted =
+      await this.prisma.walletCandyMachineGroup.findUnique({
+        where: {
+          candyMachineGroupId_walletAddress: {
+            candyMachineGroupId: walletWhiteListGroups[0]?.id,
+            walletAddress,
+          },
+        },
+      });
+
+    return isWalletWhitelisted
+      ? walletWhiteListGroups
+      : groups.filter((group) => group.whiteListType === WhiteListType.Public);
+  }
+
+  private countUserItemsMintedQuery = (
+    candyMachineAddress: string,
+    userId: number,
+  ) => {
+    return this.prisma.candyMachineReceipt.count({
+      where: { candyMachineAddress, userId },
+    });
+  };
+
+  // Wallet whitelist group should be public
+  private countWalletItemsMintedQuery = (
+    candyMachineAddress: string,
+    buyerAddress: string,
+  ) => {
+    // All public group labels starts with p
+    return this.prisma.candyMachineReceipt.count({
+      where: {
+        candyMachineAddress,
+        buyerAddress,
+        label: { startsWith: 'p' },
+      },
+    });
+  };
+
+  private async checkWhiteListTypeWalletWhiteList(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const walletItemsMinted = await this.countWalletItemsMintedQuery(
+      group.candyMachineAddress,
+      walletAddress,
+    );
+    const mintLimitReached = group.mintLimit
+      ? group.mintLimit <= walletItemsMinted
+      : false;
+
+    const isEligible =
+      findWalletInWalletWhiteList(walletAddress, group.wallets) &&
+      !mintLimitReached;
+    return {
+      isEligible,
+      walletItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  private async checkWhiteListTypeUserWhiteList(
+    group: GroupWithWhiteListDetails,
+    userId: number,
+  ) {
+    const userItemsMinted = await this.countUserItemsMintedQuery(
+      group.candyMachineAddress,
+      userId,
+    );
+
+    const mintLimitReached = group.mintLimit
+      ? group.mintLimit <= userItemsMinted
+      : false;
+
+    const isEligible =
+      findUserInUserWhiteList(userId, group.users) && !mintLimitReached;
+    return {
+      isEligible,
+      userItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  private async checkWhiteListTypePublic(
+    group: GroupWithWhiteListDetails,
+    walletAddress: string,
+  ) {
+    const walletItemsMinted = await this.countWalletItemsMintedQuery(
+      group.candyMachineAddress,
+      walletAddress,
+    );
+    const isEligible = group.mintLimit
+      ? group.mintLimit > walletItemsMinted
+      : true;
+    return {
+      isEligible,
+      walletItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  private async checkWhiteListTypeUser(
+    group: GroupWithWhiteListDetails,
+    userId: number,
+  ) {
+    const userItemsMinted = await this.countUserItemsMintedQuery(
+      group.candyMachineAddress,
+      userId,
+    );
+    const isEligible = group.mintLimit
+      ? group.mintLimit > userItemsMinted
+      : true;
+
+    return {
+      isEligible,
+      userItemsMinted,
+      displayLabel: group.displayLabel,
+    };
+  }
+
+  private async getMintDetails(
     candyMachineAddress: string,
     label: string,
     walletAddress?: string,
@@ -1278,120 +1088,361 @@ export class CandyMachineService {
     }
   }
 
-  async deleteCandyMachine(address: PublicKey) {
-    const { standard, mintAuthorityAddress } =
-      await this.prisma.candyMachine.findUnique({
-        where: { address: address.toString() },
+  private async findCandyMachineData(
+    candyMachineAddress: string,
+    label: string,
+  ) {
+    try {
+      const data = await this.prisma.candyMachineGroup.findUnique({
+        where: { label_candyMachineAddress: { candyMachineAddress, label } },
+        include: { wallets: true, candyMachine: true, users: true },
       });
-    if (standard === TokenStandard.Core) {
-      return deleteCoreCandyMachine(
-        this.umi,
-        publicKey(address),
-        publicKey(mintAuthorityAddress),
-      );
-    } else {
-      return deleteLegacyCandyMachine(this.metaplex, address);
+      if (!data) {
+        throw new NotFoundException();
+      }
+      return {
+        walletWhiteList:
+          data.wallets && data.wallets.length
+            ? data.wallets.map((item) => item.walletAddress)
+            : undefined,
+        userWhiteList: data.users && data.users.length ? data.users : [],
+        lookupTable: data.candyMachine.lookupTable,
+        mintPrice: Number(data.mintPrice),
+        tokenStandard: data.candyMachine.standard,
+        whiteListType: data.whiteListType,
+        mintLimit: data.mintLimit,
+      };
+    } catch (e) {
+      console.error(e);
     }
   }
 
-  countUserItemsMintedQuery = (candyMachineAddress: string, userId: number) => {
-    return this.prisma.candyMachineReceipt.count({
-      where: { candyMachineAddress, userId },
-    });
-  };
-
-  // Wallet whitelist group should be public
-  countWalletItemsMintedQuery = (
+  private async addLegacyCandyMachineGroupOnChain(
     candyMachineAddress: string,
-    buyerAddress: string,
-  ) => {
-    // All public group labels starts with p
-    return this.prisma.candyMachineReceipt.count({
-      where: {
-        candyMachineAddress,
-        buyerAddress,
-        label: { startsWith: 'p' },
+    params: GuardParams,
+  ) {
+    const { label, startDate, endDate, mintPrice, mintLimit, supply, frozen } =
+      params;
+    const candyMachinePublicKey = new PublicKey(candyMachineAddress);
+    const candyMachine = await this.metaplex
+      .candyMachines()
+      .findByAddress({ address: candyMachinePublicKey });
+    const candyMachineGroups = candyMachine.candyGuard.groups;
+
+    const redeemedAmountGuard: RedeemedAmountGuardSettings = {
+      maximum: toBigNumber(supply),
+    };
+    let startDateGuard: StartDateGuardSettings;
+    if (startDate) startDateGuard = { date: toDateTime(startDate) };
+
+    let endDateGuard: EndDateGuardSettings;
+    if (endDate) endDateGuard = { date: toDateTime(endDate) };
+
+    let mintLimitGuard: MintLimitGuardSettings;
+    if (mintLimit)
+      mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+
+    const paymentGuard = frozen ? 'freezeSolPayment' : 'solPayment';
+    const existingGroup = candyMachineGroups.find(
+      (group) => group.label === label,
+    );
+
+    if (existingGroup) {
+      throw new Error(`A group with label ${label} already exists`);
+    }
+
+    const group: LegacyGuardGroup = {
+      label,
+      guards: {
+        ...candyMachine.candyGuard.guards,
+        [paymentGuard]: {
+          amount: solFromLamports(mintPrice),
+          destination: FUNDS_DESTINATION_ADDRESS,
+        },
+        redeemedAmount: redeemedAmountGuard,
+        startDate: startDateGuard,
+        endDate: endDateGuard,
+        mintLimit: mintLimitGuard,
       },
+    };
+    const resolvedGroups = candyMachineGroups.filter(
+      (group) => group.label != label,
+    );
+
+    const groups = [...resolvedGroups, group];
+    await this.updateCandyMachine(candyMachinePublicKey, groups);
+  }
+
+  private async addCoreCandyMachineGroupOnChain(
+    candyMachineAddress: string,
+    params: GuardParams,
+  ) {
+    const {
+      label,
+      startDate,
+      endDate,
+      mintPrice,
+      // mintLimit,
+      supply,
+      frozen,
+      splTokenAddress,
+    } = params;
+
+    const candyMachine = await fetchCandyMachine(
+      this.umi,
+      publicKey(candyMachineAddress),
+    );
+    const candyGuard = await fetchCandyGuard(
+      this.umi,
+      candyMachine.mintAuthority,
+    );
+
+    const candyMachineGroups = candyGuard.groups;
+    const redeemedAmountGuard: RedeemedAmount = {
+      maximum: createBigInt(supply),
+    };
+    let startDateGuard: StartDate;
+    if (startDate) startDateGuard = { date: umiDateTime(startDate) };
+
+    let endDateGuard: EndDate;
+    if (endDate) endDateGuard = { date: umiDateTime(endDate) };
+
+    // Mint limit is centralized using third party signer
+    // let mintLimitGuard: MintLimit;
+    // if (mintLimit)
+    //   mintLimitGuard = { id: candyMachineGroups.length, limit: mintLimit };
+
+    const thirdPartySigner = getThirdPartySigner();
+    const thirdPartySignerGuard: ThirdPartySigner = {
+      signerKey: publicKey(thirdPartySigner),
+    };
+
+    let paymentGuardName: string;
+
+    const isSolPayment = splTokenAddress === WRAPPED_SOL_MINT.toString();
+    let paymentGuard: TokenPayment | SolPayment;
+
+    if (isSolPayment) {
+      paymentGuardName = frozen ? 'freezeSolPayment' : 'solPayment';
+      paymentGuard = {
+        lamports: umiLamports(mintPrice),
+        destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+      };
+    } else {
+      paymentGuardName = frozen ? 'freezeTokenPayment' : 'tokenPayment';
+      paymentGuard = {
+        // Currently, this would be only USDC
+        amount: BigInt(mintPrice),
+        destinationAta: findAssociatedTokenPda(this.umi, {
+          mint: publicKey(splTokenAddress),
+          owner: publicKey(FUNDS_DESTINATION_ADDRESS),
+        })[0],
+        mint: publicKey(splTokenAddress),
+      };
+    }
+
+    const existingGroup = candyMachineGroups.find(
+      (group) => group.label === label,
+    );
+
+    if (existingGroup) {
+      throw new Error(`A group with label ${label} already exists`);
+    }
+
+    const group: CoreGuardGroup<DefaultGuardSet> = {
+      label,
+      guards: {
+        ...candyGuard.guards,
+        [paymentGuardName]: some(paymentGuard),
+        redeemedAmount: some(redeemedAmountGuard),
+        startDate: startDate ? some(startDateGuard) : none(),
+        endDate: endDate ? some(endDateGuard) : none(),
+        // mintLimit: mintLimitGuard ? some(mintLimitGuard) : none(),
+        thirdPartySigner: some(thirdPartySignerGuard),
+      },
+    };
+    const resolvedGroups = candyMachineGroups.filter(
+      (group) => group.label != label,
+    );
+    resolvedGroups.push(group);
+    await this.updateCoreCandyMachine(
+      publicKey(candyMachineAddress),
+      resolvedGroups,
+      candyGuard.guards,
+    );
+  }
+
+  private async getComicIssueCovers(comicIssue: ComicIssueCMInput) {
+    const statelessCoverPromises = comicIssue.statelessCovers.map((cover) =>
+      s3toMxFile(cover.image),
+    );
+    const statelessCovers = await Promise.all(statelessCoverPromises);
+
+    const rarityCoverFiles: RarityCoverFiles = {} as RarityCoverFiles;
+    const statefulCoverPromises = comicIssue.statefulCovers.map(
+      async (cover) => {
+        const file = await s3toMxFile(cover.image, getStatefulCoverName(cover));
+        const property = generatePropertyName(cover.isUsed, cover.isSigned);
+        const value = {
+          ...rarityCoverFiles[cover.rarity],
+          [property]: file,
+        };
+        rarityCoverFiles[cover.rarity] = value;
+        return file;
+      },
+    );
+    const statefulCovers = await Promise.all(statefulCoverPromises);
+
+    return { statefulCovers, statelessCovers, rarityCoverFiles };
+  }
+
+  private async initializeGuardAccounts(
+    candyMachine: LegacyCandyMachine<DefaultCandyGuardSettings>,
+    freezePeriod?: number,
+  ) {
+    await this.metaplex.candyMachines().callGuardRoute({
+      candyMachine,
+      guard: 'freezeSolPayment',
+      settings: {
+        path: 'initialize',
+        period: (freezePeriod ?? FREEZE_NFT_DAYS) * DAY_SECONDS,
+        candyGuardAuthority: this.metaplex.identity(),
+      },
+      group: PUBLIC_GROUP_LABEL,
     });
-  };
-
-  async checkWhiteListTypeWalletWhiteList(
-    group: GroupWithWhiteListDetails,
-    walletAddress: string,
-  ) {
-    const walletItemsMinted = await this.countWalletItemsMintedQuery(
-      group.candyMachineAddress,
-      walletAddress,
-    );
-    const mintLimitReached = group.mintLimit
-      ? group.mintLimit <= walletItemsMinted
-      : false;
-
-    const isEligible =
-      isWalletWhiteListed(walletAddress, group.wallets) && !mintLimitReached;
-    return {
-      isEligible,
-      walletItemsMinted,
-      displayLabel: group.displayLabel,
-    };
   }
 
-  async checkWhiteListTypeUserWhiteList(
-    group: GroupWithWhiteListDetails,
-    userId: number,
+  private async getOrCreateComicIssueCollection(
+    comicIssue: ComicIssueCMInput,
+    onChainName: string,
+    royaltyWallets: RoyaltyWalletDto[],
+    statelessCovers: MetaplexFile[],
+    statefulCovers: MetaplexFile[],
+    tokenStandard?: TokenStandard,
   ) {
-    const userItemsMinted = await this.countUserItemsMintedQuery(
-      group.candyMachineAddress,
-      userId,
-    );
+    const {
+      pdf,
+      id: comicIssueId,
+      description,
+      creatorAddress,
+      title,
+      sellerFeeBasisPoints,
+    } = comicIssue;
 
-    const mintLimitReached = group.mintLimit
-      ? group.mintLimit <= userItemsMinted
-      : false;
+    const cover = findDefaultCover(comicIssue.statelessCovers);
+    const coverImage = await s3toMxFile(cover.image);
+    // if Collection NFT already exists - use it, otherwise create a fresh one
+    let collectionAddress: PublicKey;
+    const collectionAsset =
+      await this.prisma.collectibleComicCollection.findUnique({
+        where: {
+          comicIssueId,
+          candyMachines: { some: { standard: tokenStandard } },
+        },
+      });
 
-    const isEligible =
-      isUserWhitelisted(userId, group.users) && !mintLimitReached;
-    return {
-      isEligible,
-      userItemsMinted,
-      displayLabel: group.displayLabel,
-    };
-  }
+    let darkblockId = '';
+    // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
+    if (collectionAsset && tokenStandard !== TokenStandard.Core) {
+      collectionAddress = new PublicKey(collectionAsset.address);
+      darkblockId = collectionAsset.darkblockId ?? '';
+    } else {
+      let darkblockMetadataFile: MetadataFile;
+      if (pdf) {
+        darkblockId = await this.darkblockService.mintDarkblock(
+          pdf,
+          description,
+          creatorAddress,
+        );
+        darkblockMetadataFile = {
+          type: 'Darkblock',
+          uri: darkblockId,
+        };
+      }
 
-  async checkWhiteListTypePublic(
-    group: GroupWithWhiteListDetails,
-    walletAddress: string,
-  ) {
-    const walletItemsMinted = await this.countWalletItemsMintedQuery(
-      group.candyMachineAddress,
-      walletAddress,
-    );
-    const isEligible = group.mintLimit
-      ? group.mintLimit > walletItemsMinted
-      : true;
-    return {
-      isEligible,
-      walletItemsMinted,
-      displayLabel: group.displayLabel,
-    };
-  }
+      const { uri: collectionAssetUri } = await this.metaplex
+        .nfts()
+        .uploadMetadata({
+          name: title,
+          symbol: D_PUBLISHER_SYMBOL,
+          description: description,
+          seller_fee_basis_points: sellerFeeBasisPoints,
+          image: coverImage,
+          external_url: D_READER_FRONTEND_URL,
+          properties: {
+            creators: [
+              {
+                address: this.metaplex.identity().publicKey.toBase58(),
+                share: HUNDRED,
+              },
+            ],
+            files: [
+              ...writeFiles(coverImage, ...statefulCovers, ...statelessCovers),
+              ...(darkblockMetadataFile ? [darkblockMetadataFile] : []),
+            ],
+          },
+        });
 
-  async checkWhiteListTypeUser(
-    group: GroupWithWhiteListDetails,
-    userId: number,
-  ) {
-    const userItemsMinted = await this.countUserItemsMintedQuery(
-      group.candyMachineAddress,
-      userId,
-    );
-    const isEligible = group.mintLimit
-      ? group.mintLimit > userItemsMinted
-      : true;
+      if (tokenStandard === TokenStandard.Core) {
+        const collection = generateSigner(umi);
+        const creators = royaltyWallets.map((item) => {
+          return {
+            address: publicKey(item.address),
+            percentage: item.share,
+          };
+        });
 
-    return {
-      isEligible,
-      userItemsMinted,
-      displayLabel: group.displayLabel,
-    };
+        const nonceArgs = await this.nonceService.getNonce();
+        await createCoreCollection(
+          this.umi,
+          collection,
+          collectionAssetUri,
+          onChainName,
+          sellerFeeBasisPoints,
+          creators,
+          nonceArgs,
+        );
+        console.log(`Collection: ${collection.publicKey.toString()}`);
+
+        if (nonceArgs) {
+          await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
+        }
+        collectionAddress = new PublicKey(collection.publicKey);
+      } else {
+        const newCollectionNft = await createCollectionNft(
+          this.metaplex,
+          onChainName,
+          collectionAssetUri,
+          sellerFeeBasisPoints,
+        );
+        collectionAddress = newCollectionNft.address;
+      }
+
+      await this.prisma.collectibleComicCollection.create({
+        data: {
+          name: onChainName,
+          comicIssue: { connect: { id: comicIssue.id } },
+          digitalAsset: {
+            create: {
+              address: collectionAddress.toBase58(),
+              royaltyWallets: {
+                create: royaltyWallets,
+              },
+              owner: {
+                connectOrCreate: {
+                  where: { address: this.umi.identity.publicKey.toString() },
+                  create: {
+                    address: this.umi.identity.publicKey.toString(),
+                    createdAt: new Date(),
+                  },
+                },
+              },
+              ownerChangedAt: new Date(),
+            },
+          },
+        },
+      });
+    }
+    return { collectionAddress, darkblockId };
   }
 }

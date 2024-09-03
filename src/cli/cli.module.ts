@@ -155,7 +155,7 @@ import { DiscordNotificationService } from '../discord/notification.service';
     InsertItemsQuestions,
     FetchCollectionSaleDetailsCommand,
     FetchCollectionSaleDetailsQuestions,
-    DiscordNotificationService
+    DiscordNotificationService,
   ],
 })
 export class CLIModule {}

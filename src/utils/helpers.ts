@@ -117,7 +117,7 @@ export async function findOwnerByMint(
 }
 
 // Finds if wallet belongs to whitelist
-export function isWalletWhiteListed(
+export function findWalletInWalletWhiteList(
   walletAddress: string,
   wallets: { walletAddress: string }[],
 ) {
@@ -125,7 +125,10 @@ export function isWalletWhiteListed(
 }
 
 // Finds if user belongs to whitelist
-export function isUserWhitelisted(userId: number, users: { userId: number }[]) {
+export function findUserInUserWhiteList(
+  userId: number,
+  users: { userId: number }[],
+) {
   return users.some((user) => user.userId == userId);
 }
 
