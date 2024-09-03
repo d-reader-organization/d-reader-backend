@@ -11,12 +11,12 @@ import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
-import { DiscordNotificationService } from 'src/discord/notification.service';
-import { MailService } from 'src/mail/mail.service';
-import { AuthService } from 'src/auth/auth.service';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { MailService } from '../mail/mail.service';
+import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { PasswordService } from 'src/auth/password.service';
-import { WalletService } from 'src/wallet/wallet.service';
+import { PasswordService } from '../auth/password.service';
+import { WalletService } from '../wallet/wallet.service';
 
 @Module({
   controllers: [TransactionController],
