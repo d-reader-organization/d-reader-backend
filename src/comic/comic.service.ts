@@ -20,9 +20,9 @@ import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
-import { DiscordNotificationService } from 'src/discord/notification.service';
-import { generateMessageAfterAdminAction } from 'src/utils/discord';
-import { MailService } from 'src/mail/mail.service';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { generateMessageAfterAdminAction } from '../utils/discord';
+import { MailService } from '../mail/mail.service';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
