@@ -49,9 +49,9 @@ import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { GuardParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
-import { DiscordNotificationService } from 'src/discord/notification.service';
-import { generateMessageAfterAdminAction } from 'src/utils/discord';
-import { MailService } from 'src/mail/mail.service';
+import { DiscordNotificationService } from '../discord/notification.service';
+import { generateMessageAfterAdminAction } from '../utils/discord';
+import { MailService } from '../mail/mail.service';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -118,7 +118,7 @@ export class ComicIssueService {
           collaborators: { createMany: { data: collaborators } },
         },
       });
-
+      this.discordService.notifyComicIssueCreated(comicIssue);
       return comicIssue;
     } catch (e) {
       console.error(e);

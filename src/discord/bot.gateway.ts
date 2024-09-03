@@ -22,9 +22,9 @@ enum Action {
 }
 
 enum ButtonKey {
-  comic = 'comic',
-  comicIssue = 'comicIssue',
-  creator = 'creator',
+  comic = 'Comic',
+  comicIssue = 'ComicIssue',
+  creator = 'Creator',
 }
 
 @SkipThrottle()
@@ -44,7 +44,7 @@ export class BotGateway {
     }
     const [key, value] = embedsTitle.split(': ');
 
-    if (!Object.values<string>(ButtonKey).includes(key.toLowerCase())) {
+    if (!Object.values<string>(ButtonKey).includes(key)) {
       return;
     }
 

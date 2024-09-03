@@ -5,9 +5,13 @@ import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
 import { MessagePayload, WebhookClient } from 'discord.js';
 import { CreatorFile } from './dto/types';
 import { CREATOR_PROFILE_UPDATED } from './templates/creatorProfileUpdated';
-import { COMIC_UPDATED } from './templates/comicUpdated';
-import { COMIC_ISSUE_UPDATED } from './templates/comicIssueUpdated';
-import { D_READER_LINKS } from 'src/utils/client-links';
+import { COMIC_CREATED, COMIC_UPDATED } from './templates/comic';
+import {
+  COMIC_ISSUE_CREATED,
+  COMIC_ISSUE_UPDATED,
+} from './templates/comicIssue';
+import { D_READER_LINKS } from '../utils/client-links';
+import { COMIC_PAGES_UPSERT } from './templates/comicPages';
 
 @Injectable()
 export class DiscordNotificationService {
@@ -82,6 +86,16 @@ export class DiscordNotificationService {
     }
   }
 
+  async notifyComicCreated(comic: Comic) {
+    await this.discord.send(
+      COMIC_CREATED({
+        comic,
+        hyperlink: D_READER_LINKS.comic(comic.slug),
+        payload: this.payload,
+      }),
+    );
+  }
+
   async notifyComicUpdated({
     oldComic,
     updatedComic,
@@ -103,6 +117,16 @@ export class DiscordNotificationService {
     }
   }
 
+  async notifyComicIssueCreated(comicIssue: ComicIssue) {
+    await this.discord.send(
+      COMIC_ISSUE_CREATED({
+        comicIssue,
+        hyperlink: D_READER_LINKS.comicIssue(comicIssue.id),
+        payload: this.payload,
+      }),
+    );
+  }
+
   async notifyComicIssueUpdated({
     oldIssue,
     updatedIssue,
@@ -122,5 +146,15 @@ export class DiscordNotificationService {
     } catch (e) {
       console.error('Error sending notification for comic updated', e);
     }
+  }
+
+  async notifyComicPagesUpsert(comicIssue: ComicIssue) {
+    await this.discord.send(
+      COMIC_PAGES_UPSERT({
+        comicIssue,
+        hyperlink: D_READER_LINKS.comicIssue(comicIssue.id),
+        payload: this.payload,
+      }),
+    );
   }
 }

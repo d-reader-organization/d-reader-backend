@@ -78,18 +78,24 @@ import { addDays } from 'date-fns';
 import { splTokensToSeed } from './spl-tokens';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../src/constants';
 import { NonceService } from '../src/nonce/nonce.service';
+import { DiscordNotificationService } from '../src/discord/notification.service';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
 const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
+const discordService = new DiscordNotificationService();
 const nonceService = new NonceService(prismaService);
 const heliusService = new HeliusService(
   prismaService,
   webSocketGateway,
   nonceService,
 );
-const comicPageService = new ComicPageService(s3, prismaService);
+const comicPageService = new ComicPageService(
+  s3,
+  prismaService,
+  discordService,
+);
 const darkblockService = new DarkblockService(s3);
 const candyMachineService = new CandyMachineService(
   prismaService,
@@ -104,6 +110,8 @@ const comicIssueService = new ComicIssueService(
   comicPageService,
   candyMachineService,
   userComicIssueService,
+  discordService,
+  null,
 );
 const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
 const metaplex = initMetaplex(heliusService.helius.endpoint);

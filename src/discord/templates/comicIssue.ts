@@ -2,6 +2,23 @@ import { bold, MessagePayload } from 'discord.js';
 import { ComicIssue } from '@prisma/client';
 import { embedsForUpdateNotification } from '../utils';
 
+export const COMIC_ISSUE_CREATED = ({
+  comicIssue,
+  hyperlink,
+  payload,
+}: {
+  comicIssue: ComicIssue;
+  hyperlink: string;
+  payload: MessagePayload;
+}) => {
+  payload.body = {
+    content: `📙 ${bold(
+      comicIssue.title,
+    )} comic episode created! [Details](${hyperlink})`,
+  };
+  return payload;
+};
+
 export const COMIC_ISSUE_UPDATED = ({
   oldData,
   updatedData,

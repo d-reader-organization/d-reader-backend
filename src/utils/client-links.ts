@@ -1,4 +1,4 @@
-import config from 'src/configs/config';
+import config from '../configs/config';
 
 export const dReaderUrl = config().client.dReaderUrl;
 export const dPublisherUrl = config().client.dPublisherUrl;
