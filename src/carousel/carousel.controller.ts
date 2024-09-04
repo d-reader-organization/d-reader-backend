@@ -71,8 +71,18 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll(@Query() params: CarouselSlideFilterParams) {
-    return this.throttledFindAll(params.isExpired);
+  async findAll() {
+    return this.throttledFindAll();
+  }
+
+  /* Get all raw carousel slides */
+  @AdminGuard()
+  @Get('slides/get-raw')
+  async findAllRaw(@Query() params: CarouselSlideFilterParams) {
+    const rawCarouselSlides = await this.carouselService.findAll(
+      params.isExpired,
+    );
+    return toCarouselSlideDtoArray(rawCarouselSlides);
   }
 
   /* Get specific carousel slide by unique id */
