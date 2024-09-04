@@ -13,7 +13,6 @@ import { CarouselSlide } from '@prisma/client';
 import { addDays } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { CarouselSlideFilterParams } from './dto/carousel-slide-params.dto';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -60,10 +59,10 @@ export class CarouselService {
     return carouselSlide;
   }
 
-  async findAll(params: CarouselSlideFilterParams) {
+  async findAll(isExpired?: boolean) {
     const carouselSlides = await this.prisma.carouselSlide.findMany({
       where: {
-        expiredAt: { gt: params.getExpired ? undefined : new Date() },
+        expiredAt: { gt: isExpired ? undefined : new Date() },
         publishedAt: { lt: new Date() },
       },
       orderBy: { priority: 'asc' },
