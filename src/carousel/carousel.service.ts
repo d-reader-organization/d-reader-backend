@@ -62,7 +62,7 @@ export class CarouselService {
   async findAll(isExpired?: boolean) {
     const carouselSlides = await this.prisma.carouselSlide.findMany({
       where: {
-        expiredAt: { gt: isExpired ? undefined : new Date() },
+        expiredAt: !isExpired ? { gt: new Date() } : undefined,
         publishedAt: { lt: new Date() },
       },
       orderBy: { priority: 'asc' },
