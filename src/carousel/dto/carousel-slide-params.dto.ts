@@ -5,5 +5,5 @@ export class CarouselSlideFilterParams {
   @IsOptional()
   @TransformStringToBoolean()
   @IsBoolean()
-  getExpired?: boolean;
+  isExpired?: boolean;
 }

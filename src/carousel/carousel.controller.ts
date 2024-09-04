@@ -62,8 +62,8 @@ export class CarouselController {
   }
 
   private throttledFindAll = memoizeThrottle(
-    async (params: CarouselSlideFilterParams) => {
-      const carouselSlides = await this.carouselService.findAll(params);
+    async (isExpired?: boolean) => {
+      const carouselSlides = await this.carouselService.findAll(isExpired);
       return toCarouselSlideDtoArray(carouselSlides);
     },
     15 * 60 * 1000, // 15 minutes
@@ -72,7 +72,7 @@ export class CarouselController {
   /* Get all carousel slides */
   @Get('slides/get')
   async findAll(@Query() params: CarouselSlideFilterParams) {
-    return this.throttledFindAll(params);
+    return this.throttledFindAll(params.isExpired);
   }
 
   /* Get specific carousel slide by unique id */

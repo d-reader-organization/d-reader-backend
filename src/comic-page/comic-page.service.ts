@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateComicPageDto } from './dto/create-comic-page.dto';
-import { ComicIssue, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import imageSize from 'image-size';
