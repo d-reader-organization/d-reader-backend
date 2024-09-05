@@ -50,12 +50,6 @@ export class GenerateEnvironmentCommand extends CommandRunner {
       }
     }
 
-    let auctionHouseAddress = 'REPLACE_THIS';
-    // on mainnet we cannot airdrop sol and thus create the Auction House
-    if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
-      auctionHouseAddress = await this.createAuctionHouse(metaplex);
-    }
-
     const treasurySecretKey = `[${treasury.keypair.secretKey.toString()}]`;
     const signMessagePrompt =
       'Sign this message for authenticating with your wallet: ';
@@ -72,7 +66,6 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     logEnv('SOLANA_CLUSTER', metaplex.cluster);
     logEnv('TREASURY_PRIVATE_KEY', treasury.encryptedPrivateKey);
     logEnv('TREASURY_SECRET', treasury.secret);
-    logEnv('AUCTION_HOUSE_ADDRESS', auctionHouseAddress);
     logEnv('SIGN_MESSAGE', signMessagePrompt);
     logEnv('HELIUS_API_KEY', options.heliusApiKey);
     logEnv('WEBHOOK_ID', 'REPLACE_THIS');

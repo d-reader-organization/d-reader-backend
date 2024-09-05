@@ -66,3 +66,19 @@ export function ifDefined<T, K>(
   if (object !== undefined) return callback(object);
   else return undefined;
 }
+
+const pr = new Intl.PluralRules('en-US', { type: 'ordinal' });
+
+const suffixes = new Map([
+  ['one', 'st'],
+  ['two', 'nd'],
+  ['few', 'rd'],
+  ['other', 'th'],
+]);
+
+/* Formats numbers into ordinals. 1 -> 1st, 2 -> 2nd, 3 -> 3rd */
+export const toOrdinal = (number: number) => {
+  const rule = pr.select(number);
+  const suffix = suffixes.get(rule);
+  return `${number}${suffix}`;
+};

@@ -75,7 +75,7 @@ export class CreateAuctionHouseCommand extends CommandRunner {
 
       log('\n⚠️  Replace .env placeholder values with these below');
       log('----------------------------------------------------');
-      logEnv('AUCTION_HOUSE_ADDRESS', auctionHouse.address.toBase58());
+      logEnv('', auctionHouse.address.toBase58());
     } catch (error) {
       logErr('Failed to create the auction house!');
 
