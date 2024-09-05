@@ -758,3 +758,6 @@ model DigitalAssetTrait {
 // TODO: change creator registration and login flow to match the users flow (email verification, password reset, MPC wallet, etc)
 // TODO: deprecate Legacy collections and the TokenMetadata standard
 // TODO: rename Comic into ComicSeries and ComicIssue into Comic
+
+// TODO: remove and update npm dependencies
+// TODO: switch to Bun

@@ -70,7 +70,6 @@ yarn authorize-wallet
 - **`TREASURY_SECRET`** is the secret key used for AES encription/decription of the Treasury wallet's private key, preferably 64 byte long
 - **`MAIL_SERVICE`** and other mail related variables are unnecessary unless working on email-related features. Make sure to [download NodemailerApp](https://nodemailer.com/app) for local development. For production setup follow the [nodemailer-gmail-smtp guide](https://blog.iamstarcode.com/how-to-send-emails-using-nestjs-nodemailer-smtp-gmail-and-oauth2)
 - **`HELIUS_API_KEY`** can be obtained via [Helius Dashboard](https://dev.helius.xyz/dashboard/app)
-- **`AUCTION_HOUSE_ADDRESS`** address of the auction house program over which our treasury wallet has the update authority
 - **`DARKBLOCK_API_KEY`** can be obtained via [Darkblock Docs](https://darkblock.redoc.ly/apikey)
 - **`DISCORD_WEBHOOK_URL`** can be obtained on discord by creating a channel and going to "settings -> integrations"
 

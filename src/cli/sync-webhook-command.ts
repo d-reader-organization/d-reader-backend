@@ -91,10 +91,8 @@ export class SyncWebhookCommand extends CommandRunner {
 
     const nftAddresses = foundNfts.map((nft) => nft.address);
     const candyMachineAddresses = foundCandyMachines.map((cm) => cm.address);
+    const auctionHouseAddresses = []; // TODO: fetch all auction house addresses from the db
 
-    return nftAddresses.concat(
-      candyMachineAddresses,
-      process.env.AUCTION_HOUSE_ADDRESS,
-    );
+    return nftAddresses.concat(candyMachineAddresses, auctionHouseAddresses);
   }
 }

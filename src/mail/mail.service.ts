@@ -7,6 +7,7 @@ import {
   D_PUBLISHER_LINKS,
   apiUrl,
 } from '../utils/client-links';
+import { TWITTER_INTENT } from '../utils/twitter';
 
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
@@ -420,11 +421,12 @@ export class MailService {
     try {
       await this.mailerService.sendMail({
         to: creator.email,
-        subject: 'Account verified!',
+        subject: '✅ Account verified!',
         template: CREATOR_VERIFIED,
         context: {
           name: creator.name,
           apiUrl,
+          shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
         },
       });
     } catch (e) {
@@ -436,11 +438,13 @@ export class MailService {
     try {
       await this.mailerService.sendMail({
         to: comic.creator.email,
-        subject: 'Comic series verified',
+        subject: '📗 Comic series verified',
         template: COMIC_SERIES_VERIFIED,
         context: {
           comicTitle: comic.title,
           name: comic.creator.name,
+          // TODO: move this twitter intent to `comicSeriesPublished`
+          shareOnTwitterLink: TWITTER_INTENT.comicPublished(comic),
           apiUrl,
         },
       });
@@ -450,11 +454,7 @@ export class MailService {
   }
 
   async comicIssueVerified(
-    comicIssue: ComicIssue & {
-      comic: {
-        creator: Creator;
-      };
-    },
+    comicIssue: ComicIssue & { comic: Comic & { creator: Creator } },
   ) {
     const {
       comic: { creator },
@@ -462,12 +462,14 @@ export class MailService {
     try {
       await this.mailerService.sendMail({
         to: creator.email,
-        subject: 'Comic issue verified',
+        subject: '📙 Comic episode verified',
         template: COMIC_ISSUE_VERIFIED,
         context: {
           comicIssueTitle: comicIssue.title,
           name: creator.name,
           apiUrl,
+          // TODO: move this twitter intent to `comicSeriesPublished`
+          shareOnTwitterLink: TWITTER_INTENT.comicIssuePublished(comicIssue),
         },
       });
     } catch (e) {

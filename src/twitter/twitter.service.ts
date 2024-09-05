@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import {
-  getComicMintTweetContent,
-  getIssueSpotlightTweetContent,
-} from '../utils/twitter';
+import { TWITTER_INTENT } from '../utils/twitter';
 import { UtmSource } from './dto/intent-comic-minted-params.dto';
 import { removeTwitter } from '../utils/helpers';
 import { isEmpty } from 'lodash';
@@ -49,7 +46,7 @@ export class TwitterService {
 
     const creatorTwitterHandle = removeTwitter(creator.twitter);
 
-    const tweet = getComicMintTweetContent({
+    const tweet = TWITTER_INTENT.comicMinted({
       comicTitle: comic.title,
       comicSlug: comic.slug,
       comicIssueTitle: comicIssue.title,
@@ -86,7 +83,7 @@ export class TwitterService {
     const flavorText = isEmpty(comicIssue.flavorText)
       ? comic.flavorText
       : comicIssue.flavorText;
-    return getIssueSpotlightTweetContent({
+    return TWITTER_INTENT.spotlightComicIssue({
       comicTitle: comic.title,
       creatorTwitter: comic.creator.twitter,
       flavorText,
