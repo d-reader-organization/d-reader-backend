@@ -86,7 +86,13 @@ export class DigitalAssetService {
       skip: query?.skip,
       take: query?.take,
       include: {
-        metadata: { include: { collection: true } },
+        metadata: {
+          include: {
+            collection: {
+              include: { comicIssue: { include: { statefulCovers: true } } },
+            },
+          },
+        },
         digitalAsset: true,
       },
       orderBy: { name: 'asc' },
@@ -98,7 +104,13 @@ export class DigitalAssetService {
     const asset = await this.prisma.collectibleComic.findUnique({
       where: { address },
       include: {
-        metadata: { include: { collection: true } },
+        metadata: {
+          include: {
+            collection: {
+              include: { comicIssue: { include: { statefulCovers: true } } },
+            },
+          },
+        },
         digitalAsset: {
           include: { listings: { where: { closedAt: new Date(0) } } },
         },
@@ -110,7 +122,6 @@ export class DigitalAssetService {
         `Asset with address ${address} does not exist`,
       );
     }
-
     return asset;
   }
 

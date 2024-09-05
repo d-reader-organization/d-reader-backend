@@ -325,6 +325,15 @@ export class WalletService {
     const nfts = await this.prisma.collectibleComic.findMany({
       where: { digitalAsset: { ownerAddress: address } },
       orderBy: { name: 'asc' },
+      include: {
+        metadata: {
+          include: {
+            collection: {
+              include: { comicIssue: { include: { statefulCovers: true } } },
+            },
+          },
+        },
+      },
     });
 
     return nfts;
