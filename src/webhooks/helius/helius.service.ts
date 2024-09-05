@@ -201,6 +201,13 @@ export class HeliusService {
           digitalAsset: {
             include: { listings: { where: { closedAt: new Date(0) } } },
           },
+          metadata: {
+            include: {
+              collection: {
+                include: { comicIssue: { include: { statefulCovers: true } } },
+              },
+            },
+          },
         },
         data: {
           digitalAsset: {
@@ -282,7 +289,18 @@ export class HeliusService {
         const assetData = await fetchAssetV1(this.umi, publicKey(mint));
         const collectibleComic = await this.prisma.collectibleComic.update({
           where: { address: mint },
-          include: { digitalAsset: true },
+          include: {
+            digitalAsset: true,
+            metadata: {
+              include: {
+                collection: {
+                  include: {
+                    comicIssue: { include: { statefulCovers: true } },
+                  },
+                },
+              },
+            },
+          },
           data: {
             metadata: {
               connectOrCreate: {
@@ -462,7 +480,13 @@ export class HeliusService {
       const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address: mint },
         include: {
-          metadata: { include: { collection: true } },
+          metadata: {
+            include: {
+              collection: {
+                include: { comicIssue: { include: { statefulCovers: true } } },
+              },
+            },
+          },
           digitalAsset: {
             include: {
               listings: {
@@ -546,7 +570,13 @@ export class HeliusService {
     const collectibleComic = await this.prisma.collectibleComic.update({
       where: { address: mint },
       include: {
-        metadata: { include: { collection: true } },
+        metadata: {
+          include: {
+            collection: {
+              include: { comicIssue: { include: { statefulCovers: true } } },
+            },
+          },
+        },
         digitalAsset: {
           include: {
             owner: { include: { user: true } },
@@ -640,7 +670,18 @@ export class HeliusService {
 
         const collectibleComic = await this.prisma.collectibleComic.update({
           where: { address: mint },
-          include: { digitalAsset: true },
+          include: {
+            digitalAsset: true,
+            metadata: {
+              include: {
+                collection: {
+                  include: {
+                    comicIssue: { include: { statefulCovers: true } },
+                  },
+                },
+              },
+            },
+          },
           data: {
             metadata: {
               connectOrCreate: {
@@ -680,7 +721,15 @@ export class HeliusService {
               owner: { include: { user: true } },
               collectibleComic: {
                 include: {
-                  metadata: { include: { collection: true } },
+                  metadata: {
+                    include: {
+                      collection: {
+                        include: {
+                          comicIssue: { include: { statefulCovers: true } },
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -719,7 +768,13 @@ export class HeliusService {
       const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address: mint },
         include: {
-          metadata: { include: { collection: true } },
+          metadata: {
+            include: {
+              collection: {
+                include: { comicIssue: { include: { statefulCovers: true } } },
+              },
+            },
+          },
           digitalAsset: {
             include: {
               owner: { include: { user: true } },
@@ -806,6 +861,13 @@ export class HeliusService {
         include: {
           digitalAsset: {
             include: { listings: { where: { closedAt: new Date(0) } } },
+          },
+          metadata: {
+            include: {
+              collection: {
+                include: { comicIssue: { include: { statefulCovers: true } } },
+              },
+            },
           },
         },
         data: {

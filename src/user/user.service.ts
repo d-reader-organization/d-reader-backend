@@ -221,6 +221,15 @@ export class UserService {
     const assets = await this.prisma.collectibleComic.findMany({
       where: { digitalAsset: { owner: { userId } } },
       orderBy: { name: 'asc' },
+      include: {
+        metadata: {
+          include: {
+            collection: {
+              include: { comicIssue: { include: { statefulCovers: true } } },
+            },
+          },
+        },
+      },
     });
     return assets;
   }

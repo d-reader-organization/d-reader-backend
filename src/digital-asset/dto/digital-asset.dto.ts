@@ -20,8 +20,10 @@ import {
   Listing,
   ComicRarity,
   CollectibleComicCollection,
+  StatefulCover,
 } from '@prisma/client';
 import { divide, isNil } from 'lodash';
+import { getPublicUrl } from '../../aws/s3client';
 
 export class NftAttributeDto {
   trait: string;
@@ -80,26 +82,38 @@ export class AssetDto {
 
 export type AssetInput = CollectibleComic & {
   digitalAsset: { listing?: Listing[]; ownerAddress: string };
-  metadata?: { collection?: CollectibleComicCollection };
+  metadata: {
+    collection: CollectibleComicCollection & {
+      comicIssue: { statefulCovers: StatefulCover[] };
+    };
+  };
 };
 
 export async function toAssetDto(asset: AssetInput) {
   const offChainMetadata = await fetchOffChainMetadata(asset.uri);
   const listings = asset.digitalAsset.listing;
+  const isUsed = findUsedTrait(offChainMetadata);
+  const isSigned = findSignedTrait(offChainMetadata);
+  const rarity = findRarityTrait(offChainMetadata);
+
+  const cover = asset.metadata?.collection?.comicIssue?.statefulCovers.find(
+    (c) =>
+      c.isUsed === isUsed && c.isSigned === isSigned && c.rarity === rarity,
+  );
 
   const plainNftDto: AssetDto = {
     address: asset.address,
     uri: asset.uri,
-    image: offChainMetadata.image,
+    image: getPublicUrl(cover.image),
     name: asset.name,
     description: offChainMetadata.description,
     ownerAddress: asset.digitalAsset.ownerAddress,
     royalties: divide(offChainMetadata.seller_fee_basis_points, 100),
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
-    isUsed: findUsedTrait(offChainMetadata),
-    isSigned: findSignedTrait(offChainMetadata),
-    rarity: findRarityTrait(offChainMetadata),
+    isUsed,
+    isSigned,
+    rarity,
     comicName: offChainMetadata.collection.family,
     comicIssueName: offChainMetadata.collection.name,
     comicIssueId: asset.metadata?.collection?.comicIssueId,
