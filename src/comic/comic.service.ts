@@ -23,6 +23,7 @@ import { appendTimestamp } from '../utils/helpers';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { generateMessageAfterAdminAction } from '../utils/discord';
 import { MailService } from '../mail/mail.service';
+import { BasicComicParams } from './dto/basic-comic-params.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -104,6 +105,21 @@ export class ComicService {
     });
 
     return normalizedComics;
+  }
+
+  async findAllBasic(params: BasicComicParams) {
+    const { creatorSlug, titleSubstring, sortOrder } = params;
+
+    const comics = this.prisma.comic.findMany({
+      include: { genres: true, creator: true },
+      where: {
+        creator: { slug: creatorSlug },
+        title: { contains: titleSubstring },
+      },
+      orderBy: { title: sortOrder },
+    });
+
+    return comics;
   }
 
   async findOne(slug: string, userId?: number) {

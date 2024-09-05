@@ -77,6 +77,11 @@ import {
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { processComicIssueIdString } from '../utils/comic-issue';
+import { BasicComicIssueParams } from './dto/basic-comic-issue-params.dto';
+import {
+  BasicComicIssueDto,
+  toBasicComicIssueDtoArray,
+} from './dto/basic-comic-issue.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -117,6 +122,15 @@ export class ComicIssueController {
   ): Promise<RawComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAllRaw(query);
     return toRawComicIssueDtoArray(comicIssues);
+  }
+
+  /* Get all basic comic issues */
+  @Get('get-basic')
+  async findAllBasic(
+    @Query() query: BasicComicIssueParams,
+  ): Promise<BasicComicIssueDto[]> {
+    const comicIssues = await this.comicIssueService.findAllBasic(query);
+    return toBasicComicIssueDtoArray(comicIssues);
   }
 
   @Get('get/by-owner/:userId')

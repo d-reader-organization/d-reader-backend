@@ -42,6 +42,8 @@ import {
   toRawComicDtoArray,
 } from './dto/raw-comic.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
+import { BasicComicParams } from './dto/basic-comic-params.dto';
+import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
@@ -77,6 +79,15 @@ export class ComicController {
   async findAllRaw(@Query() query: RawComicParams): Promise<RawComicDto[]> {
     const comics = await this.comicService.findAllRaw(query);
     return toRawComicDtoArray(comics);
+  }
+
+  /* Get all basic comics */
+  @Get('get-basic')
+  async findAllBasic(
+    @Query() query: BasicComicParams,
+  ): Promise<BasicComicDto[]> {
+    const comics = await this.comicService.findAllBasic(query);
+    return toBasicComicDtoArray(comics);
   }
 
   /* Get specific comic by unique slug */

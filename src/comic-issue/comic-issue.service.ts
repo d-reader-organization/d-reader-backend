@@ -52,6 +52,7 @@ import { appendTimestamp } from '../utils/helpers';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { generateMessageAfterAdminAction } from '../utils/discord';
 import { MailService } from '../mail/mail.service';
+import { BasicComicIssueParams } from './dto/basic-comic-issue-params.dto';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -260,6 +261,28 @@ export class ComicIssueService {
         totalPagesCount,
       },
     };
+  }
+
+  async findAllBasic(query: BasicComicIssueParams) {
+    const { creatorSlug, comicSlug, titleSubstring, sortOrder } = query;
+    const comicIssues = await this.prisma.comicIssue.findMany({
+      where: {
+        comic: {
+          slug: comicSlug,
+          creator: {
+            slug: creatorSlug,
+          },
+        },
+        title: {
+          contains: titleSubstring,
+        },
+      },
+      orderBy: {
+        title: sortOrder,
+      },
+    });
+
+    return comicIssues;
   }
 
   async findOne({
