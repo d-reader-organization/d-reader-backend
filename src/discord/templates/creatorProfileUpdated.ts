@@ -3,25 +3,25 @@ import { bold, MessagePayload } from 'discord.js';
 import { embedsForUpdateNotification } from '../utils';
 
 export const CREATOR_PROFILE_UPDATED = ({
-  oldData,
-  updatedData,
+  oldCreator,
+  updatedCreator,
   hyperlink,
   payload,
 }: {
-  oldData: Creator;
-  updatedData: Creator;
+  oldCreator: Creator;
+  updatedCreator: Creator;
   hyperlink: string;
   payload: MessagePayload;
 }): MessagePayload => {
   payload.body = {
-    content: `✍️ ${bold(
-      oldData.name,
-    )} creator profile updated! [Details](${hyperlink})`,
+    content: `✍️ ${bold(oldCreator.name)} (${
+      updatedCreator.verifiedAt ? 'verified' : 'unverified'
+    }) creator profile updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<Creator>({
-        title: `Creator: ${updatedData.slug}`,
-        oldData,
-        updatedData,
+        title: `Creator: ${updatedCreator.slug}`,
+        oldData: oldCreator,
+        updatedData: updatedCreator,
       }),
     ],
   };

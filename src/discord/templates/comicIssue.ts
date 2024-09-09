@@ -20,25 +20,27 @@ export const COMIC_ISSUE_CREATED = ({
 };
 
 export const COMIC_ISSUE_UPDATED = ({
-  oldData,
-  updatedData,
+  oldIssue,
+  updatedIssue,
   hyperlink,
   payload,
 }: {
-  oldData: ComicIssue;
-  updatedData: ComicIssue;
+  oldIssue: ComicIssue;
+  updatedIssue: ComicIssue;
   hyperlink: string;
   payload: MessagePayload;
 }) => {
   payload.body = {
-    content: `📙 ${bold(
-      oldData.title,
-    )} comic episode updated! [Details](${hyperlink})`,
+    content: `📙 ${bold(oldIssue.title)} (${
+      updatedIssue.verifiedAt ? 'verified' : 'unverified'
+    },${
+      updatedIssue.publishedAt ? 'published' : 'unpublished'
+    } ) comic episode updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<ComicIssue>({
-        title: `ComicIssue: ${updatedData.id}`,
-        oldData,
-        updatedData,
+        title: `ComicIssue: ${updatedIssue.id}`,
+        oldData: oldIssue,
+        updatedData: updatedIssue,
       }),
     ],
   };

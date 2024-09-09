@@ -1,0 +1,13 @@
+block title
+    h1(style='font-size: 28px; font-weight: bold; margin: 16px 0;') Hello #{name}
+
+block content
+    p(style='font-size: 18px; margin: 8px 0;') Your series "#{comicTitle}" has been published!
+    p(style='font-size: 18px; margin: 8px 0;') This means that you're now 200% cooler than a moment ago and your series are now discoverable within our platform.
+    br
+    if actionUrl  
+        p(style='font-size: 18px; margin: 8px 0;') Lets blow up the news on Twitter? 💥
+
+block action
+    a.action-link.green-bg(href=shareOnTwitterLink) Share on 𝕏
+
