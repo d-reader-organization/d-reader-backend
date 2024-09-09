@@ -784,6 +784,11 @@ export class ComicIssueService {
 
     if (propertyName === 'verifiedAt' && updatedComicIssue.verifiedAt) {
       this.mailService.comicIssueVerified(updatedComicIssue);
+    } else if (
+      propertyName === 'publishedAt' &&
+      updatedComicIssue.publishedAt
+    ) {
+      this.mailService.comicIssuePublished(updatedComicIssue);
     }
 
     if (withMessage) {

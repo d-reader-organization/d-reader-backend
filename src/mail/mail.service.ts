@@ -40,7 +40,9 @@ const CREATOR_VERIFIED = 'creatorVerified';
 const USER_EMAIL_CHANGE_REQUESTED = 'userEmailChangeRequested';
 const USER_EMAIL_CHANGED = 'userEmailChanged';
 const COMIC_SERIES_VERIFIED = 'comicSeriesVerified';
+const COMIC_SERIES_PUBLISHED = 'comicSeriesPublished';
 const COMIC_ISSUE_VERIFIED = 'comicIssueVerified';
+const COMIC_ISSUE_PUBLISHED = 'comicIssuePublished';
 
 @Injectable()
 export class MailService {
@@ -426,7 +428,7 @@ export class MailService {
         context: {
           name: creator.name,
           apiUrl,
-          shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
+          // shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
         },
       });
     } catch (e) {
@@ -443,13 +445,29 @@ export class MailService {
         context: {
           comicTitle: comic.title,
           name: comic.creator.name,
-          // TODO: move this twitter intent to `comicSeriesPublished`
-          shareOnTwitterLink: TWITTER_INTENT.comicPublished(comic),
           apiUrl,
         },
       });
     } catch (e) {
       logError(COMIC_SERIES_VERIFIED, comic.creator.email, e);
+    }
+  }
+
+  async comicSeriesPublished(comic: Comic & { creator: Creator }) {
+    try {
+      await this.mailerService.sendMail({
+        to: comic.creator.email,
+        subject: '📗 Comic series published',
+        template: COMIC_SERIES_PUBLISHED,
+        context: {
+          comicTitle: comic.title,
+          name: comic.creator.name,
+          shareOnTwitterLink: TWITTER_INTENT.comicPublished(comic),
+          apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(COMIC_SERIES_PUBLISHED, comic.creator.email, e);
     }
   }
 
@@ -468,12 +486,33 @@ export class MailService {
           comicIssueTitle: comicIssue.title,
           name: creator.name,
           apiUrl,
-          // TODO: move this twitter intent to `comicSeriesPublished`
-          shareOnTwitterLink: TWITTER_INTENT.comicIssuePublished(comicIssue),
         },
       });
     } catch (e) {
       logError(COMIC_ISSUE_VERIFIED, creator.email, e);
+    }
+  }
+
+  async comicIssuePublished(
+    comicIssue: ComicIssue & { comic: Comic & { creator: Creator } },
+  ) {
+    const {
+      comic: { creator },
+    } = comicIssue;
+    try {
+      await this.mailerService.sendMail({
+        to: creator.email,
+        subject: '📙 Comic episode published',
+        template: COMIC_ISSUE_PUBLISHED,
+        context: {
+          comicIssueTitle: comicIssue.title,
+          name: creator.name,
+          apiUrl,
+          shareOnTwitterLink: TWITTER_INTENT.comicIssuePublished(comicIssue),
+        },
+      });
+    } catch (e) {
+      logError(COMIC_ISSUE_PUBLISHED, creator.email, e);
     }
   }
 }

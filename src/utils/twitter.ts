@@ -36,16 +36,14 @@ export const TWITTER_INTENT = {
     return tweetText;
   },
   // Get Tweet content for sharing a newly verified creator
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   creatorVerified: (creator: Creator) => {
     const titleLine = `My creator account is now verified on @dReaderApp! 🔥\n\n`;
     const subtitleLine = 'Thrilled to join the dReader family! 🫂\n\n';
 
-    // TODO: replace comments after updating dReader web app to have creator pages
-    const linkCTA = ''; // "I'll be publishing my stuff here! 👇\n";
+    const linkCTA = "I'll be publishing my stuff here! 👇\n";
 
     const tweetBody = encodeURIComponent(titleLine + subtitleLine + linkCTA);
-    const creatorLink = ''; // encodeURI(D_READER_LINKS.creator(creator.slug));
+    const creatorLink = encodeURI(D_READER_LINKS.creator(creator.slug));
 
     const tweetText = TWITTER_INTENT_PREFIX + tweetBody + creatorLink;
 

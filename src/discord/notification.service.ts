@@ -72,8 +72,8 @@ export class DiscordNotificationService {
     try {
       await this.discord?.send(
         CREATOR_PROFILE_UPDATED({
-          oldData: oldCreator,
-          updatedData: updatedCreator,
+          oldCreator,
+          updatedCreator,
           hyperlink: D_READER_LINKS.creator(updatedCreator.slug),
           payload: this.payload,
         }),
@@ -106,8 +106,8 @@ export class DiscordNotificationService {
     try {
       await this.discord?.send(
         COMIC_UPDATED({
-          oldData: oldComic,
-          updatedData: updatedComic,
+          oldComic,
+          updatedComic,
           hyperlink: D_READER_LINKS.comic(updatedComic.slug),
           payload: this.payload,
         }),
@@ -137,8 +137,8 @@ export class DiscordNotificationService {
     try {
       await this.discord?.send(
         COMIC_ISSUE_UPDATED({
-          oldData: oldIssue,
-          updatedData: updatedIssue,
+          oldIssue,
+          updatedIssue,
           hyperlink: D_READER_LINKS.comicIssue(updatedIssue.id),
           payload: this.payload,
         }),

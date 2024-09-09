@@ -433,6 +433,8 @@ export class ComicService {
 
     if (propertyName === 'verifiedAt' && updatedComic.verifiedAt) {
       this.mailService.comicSeriesVerifed(updatedComic);
+    } else if (propertyName === 'publishedAt' && updatedComic.publishedAt) {
+      this.mailService.comicSeriesPublished(updatedComic);
     }
 
     if (withMessage) {
