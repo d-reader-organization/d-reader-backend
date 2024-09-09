@@ -18,7 +18,7 @@ export const validateSignComicCommandParams = (
 ) => {
   const { address, user } = params;
   if (!user) {
-    throw new BadRequestException('User initiated the command is invalid');
+    throw new BadRequestException('Invalid user initiated the command');
   } else if (!isSolanaAddress(address)) {
     throw new BadRequestException('Please provide a valid NFT address.');
   }

@@ -24,9 +24,9 @@ const fieldData = <T>({
       ...prev,
       {
         name: curr.toUpperCase(),
-        value: `${strikethrough(oldValue.toString())} -> ${bold(
-          newValue.toString(),
-        )}`,
+        value: `${
+          oldValue ? strikethrough(oldValue.toString()) : 'no value'
+        } -> ${bold(newValue.toString())}`,
         inline: false,
       },
     ];

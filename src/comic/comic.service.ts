@@ -417,20 +417,18 @@ export class ComicService {
     propertyName: keyof Pick<Comic, 'publishedAt' | 'verifiedAt'>;
     withMessage?: boolean;
   }): Promise<string | void> {
-    const comic = await this.prisma.comic.findFirst({
-      where: { slug },
-    });
+    const comic = await this.prisma.comic.findUnique({ where: { slug } });
+
     if (!comic) {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
+
     const updatedComic = await this.prisma.comic.update({
       data: {
         [propertyName]: !!comic[propertyName] ? null : new Date(),
       },
       where: { slug },
-      include: {
-        creator: true,
-      },
+      include: { creator: true },
     });
 
     if (propertyName === 'verifiedAt' && updatedComic.verifiedAt) {
