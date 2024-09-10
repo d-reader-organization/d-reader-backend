@@ -377,16 +377,19 @@ export class HeliusService {
 
       let splTokenAddress = SOL_ADDRESS;
       let balanceTransferAddress = ownerAddress;
-      if (label && label !== AUTHORITY_GROUP_LABEL) {
-        const group = await this.prisma.candyMachineGroup.findUnique({
+
+      const couponCurrencySetting =
+        await this.prisma.candyMachineCouponCurrencySetting.findUnique({
           where: { label_candyMachineAddress: { label, candyMachineAddress } },
         });
-        splTokenAddress = group.splTokenAddress;
+
+      if (label && label !== AUTHORITY_GROUP_LABEL) {
+        splTokenAddress = couponCurrencySetting.splTokenAddress;
         balanceTransferAddress =
           splTokenAddress == SOL_ADDRESS
             ? ownerAddress
             : findAssociatedTokenPda(this.umi, {
-                mint: publicKey(group.splTokenAddress),
+                mint: publicKey(couponCurrencySetting.splTokenAddress),
                 owner: publicKey(ownerAddress),
               })[0];
       }
@@ -417,7 +420,7 @@ export class HeliusService {
         description: enrichedTransaction.description,
         transactionSignature: enrichedTransaction.signature,
         splTokenAddress,
-        label,
+        couponId: couponCurrencySetting.couponId,
       };
 
       if (userId) {
@@ -970,6 +973,17 @@ export class HeliusService {
       const ixData = mintV2Struct.deserialize(
         bs58.decode(enrichedTransaction.instructions.at(-1).data),
       );
+
+      const couponCurrencySetting =
+        await this.prisma.candyMachineCouponCurrencySetting.findUnique({
+          where: {
+            label_candyMachineAddress: {
+              label: ixData[0].label,
+              candyMachineAddress,
+            },
+          },
+        });
+
       const receiptData: Prisma.CandyMachineReceiptCreateInput = {
         collectibleComic: { connect: { address: mint.toBase58() } },
         candyMachine: { connect: { address: candyMachineAddress } },
@@ -984,7 +998,7 @@ export class HeliusService {
         description: enrichedTransaction.description,
         transactionSignature: nftTransactionInfo.signature,
         splTokenAddress,
-        label: ixData[0].label,
+        couponId: couponCurrencySetting.couponId,
       };
 
       if (userId) {

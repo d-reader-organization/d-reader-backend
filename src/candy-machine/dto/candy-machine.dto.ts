@@ -1,13 +1,13 @@
-import { IsArray, IsInt, IsNumber, Min } from 'class-validator';
+import { IsArray, IsInt, Min } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { Type, plainToInstance } from 'class-transformer';
 import { CandyMachine } from '@prisma/client';
-import {
-  CandyMachineGroupDto,
-  toCandyMachineGroupDtoArray,
-} from './candy-machine-group.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { CandyMachineGroupSettings } from './types';
+import { CandyMachineCouponWithStats } from './types';
+import {
+  CandyMachineCouponDto,
+  toCandyMachineCouponDtoArray,
+} from './candy-machine-coupon.dto';
 export class CandyMachineDto {
   @IsSolanaAddress()
   address: string;
@@ -20,26 +20,22 @@ export class CandyMachineDto {
   @Min(0)
   itemsMinted: number;
 
-  @IsNumber()
-  discount: number;
-
   @IsArray()
-  @Type(() => CandyMachineGroupDto)
-  @ApiProperty({ type: [CandyMachineGroupDto] })
-  groups: CandyMachineGroupDto[];
+  @Type(() => CandyMachineCouponDto)
+  @ApiProperty({ type: [CandyMachineCouponDto] })
+  coupons: CandyMachineCouponDto[];
 }
 
-type CandyMachineWithGroups = CandyMachine & {
-  groups: CandyMachineGroupSettings[];
-  discount: number;
+type CandyMachineWithCoupons = CandyMachine & {
+  coupons: CandyMachineCouponWithStats[];
 };
-export async function toCandyMachineDto(candyMachine: CandyMachineWithGroups) {
+
+export async function toCandyMachineDto(candyMachine: CandyMachineWithCoupons) {
   const plainCandyMachineDto: CandyMachineDto = {
     address: candyMachine.address,
     supply: candyMachine.supply,
     itemsMinted: candyMachine.itemsMinted,
-    discount: candyMachine.discount,
-    groups: toCandyMachineGroupDtoArray(candyMachine.groups),
+    coupons: toCandyMachineCouponDtoArray(candyMachine.coupons),
   };
 
   const candyMachineDto = plainToInstance(
@@ -50,7 +46,7 @@ export async function toCandyMachineDto(candyMachine: CandyMachineWithGroups) {
 }
 
 export const toCandyMachineDtoArray = (
-  candyMachines: CandyMachineWithGroups[],
+  candyMachines: CandyMachineWithCoupons[],
 ) => {
   return Promise.all(candyMachines.map(toCandyMachineDto));
 };

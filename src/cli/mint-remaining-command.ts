@@ -1,10 +1,7 @@
 import { PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, cuy, log, logErr } from './chalk';
-import {
-  constructCoreMintTransaction,
-  constructMintOneTransaction,
-} from '../candy-machine/instructions';
+import { constructCoreMintTransaction } from '../candy-machine/instructions';
 import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex, umi } from '../utils/metaplex';
 import { AUTHORITY_GROUP_LABEL } from '../constants';
@@ -61,30 +58,22 @@ export class MintRemainingCommand extends CommandRunner {
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress.toString() },
     });
-    let encodedTransactions: string[];
-    if (candyMachine.standard === TokenStandard.Core) {
-      const CORE_MINT_COMPUTE_BUDGET = 800000;
-
-      encodedTransactions = await getTransactionWithPriorityFee(
-        constructCoreMintTransaction,
-        CORE_MINT_COMPUTE_BUDGET,
-        this.umi,
-        publicKey(candyMachineAddress),
-        publicKey(authority.publicKey),
-        AUTHORITY_GROUP_LABEL,
-        [authority.publicKey.toString()],
-        candyMachine.lookupTable,
-        false,
-      );
-    } else {
-      encodedTransactions = await constructMintOneTransaction(
-        this.metaplex,
-        authority.publicKey,
-        candyMachineAddress,
-        AUTHORITY_GROUP_LABEL,
-        [authority.publicKey.toString()],
-      );
+    if (candyMachine.standard !== TokenStandard.Core) {
+      throw new Error('Only Core mint is supported');
     }
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
+
+    const encodedTransactions = await getTransactionWithPriorityFee(
+      constructCoreMintTransaction,
+      CORE_MINT_COMPUTE_BUDGET,
+      this.umi,
+      publicKey(candyMachineAddress),
+      publicKey(authority.publicKey),
+      AUTHORITY_GROUP_LABEL,
+      [authority.publicKey.toString()],
+      candyMachine.lookupTable,
+      false,
+    );
 
     const transactions = encodedTransactions.map((encodedTransaction) => {
       const transactionBuffer = Buffer.from(encodedTransaction, 'base64');

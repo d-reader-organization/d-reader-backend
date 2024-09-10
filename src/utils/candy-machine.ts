@@ -1,50 +1,55 @@
 import {
-  CandyMachine,
-  DefaultCandyGuardSettings,
-  JsonMetadata,
-  Metaplex,
-  MetaplexFile,
-  PublicKey,
-  TransactionBuilder,
-  getMerkleRoot,
-  toBigNumber,
-  toDateTime,
-} from '@metaplex-foundation/js';
+  dateTime,
+  some,
+  lamports,
+  publicKey,
+  Umi,
+  PublicKey as UmiPublicKey,
+  chunk,
+} from '@metaplex-foundation/umi';
 import {
-  ATTRIBUTE_COMBINATIONS,
+  GuardGroupArgs,
+  DefaultGuardSetArgs,
+  getMerkleRoot,
+  ThirdPartySigner,
+} from '@metaplex-foundation/mpl-core-candy-machine';
+import {
   AUTHORITY_GROUP_LABEL,
-  D_PUBLISHER_SYMBOL,
-  D_READER_FRONTEND_URL,
   FUNDS_DESTINATION_ADDRESS,
-  MIN_COMPUTE_PRICE_IX,
   MIN_CORE_MINT_PROTOCOL_FEE,
   MIN_MINT_PROTOCOL_FEE,
   PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
+  rateLimitQuota,
+} from '../constants';
+import { Metaplex, MetaplexFile } from '@metaplex-foundation/js';
+import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
+import { RarityCoverFiles } from 'src/types/shared';
+import { pRateLimit } from 'p-ratelimit';
+import { TokenStandard } from '@prisma/client';
+import { getThirdPartySigner } from './metaplex';
+import { getTransactionWithPriorityFee } from './das';
+import { constructInsertItemsTransaction } from '../candy-machine/instructions/insert-items';
+import { decodeUmiTransaction } from './transactions';
+import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
+import { BadRequestException } from '@nestjs/common';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { JsonMetadata } from '@metaplex-foundation/js';
+import {
+  ATTRIBUTE_COMBINATIONS,
+  D_PUBLISHER_SYMBOL,
+  D_READER_FRONTEND_URL,
   RARITY_MAP,
   RARITY_TRAIT,
   SIGNED_TRAIT,
   USED_TRAIT,
   getRarityShareTable,
-  rateLimitQuota,
 } from '../constants';
-import { initializeAuthority } from '../candy-machine/instructions';
-import { CoverFiles, ItemMetadata, RarityCoverFiles } from '../types/shared';
-import { ComicStates, ComicRarity } from 'dreader-comic-verse';
-import { ComicIssueCMInput } from '../comic-issue/dto/types';
+import { CoverFiles, ItemMetadata } from '../types/shared';
+import { ComicRarity } from 'dreader-comic-verse';
 import { writeFiles } from './metaplex';
-import { chunk, shuffle } from 'lodash';
-import { pRateLimit } from 'p-ratelimit';
-import {
-  LAMPORTS_PER_SOL,
-  Transaction,
-  sendAndConfirmTransaction,
-} from '@solana/web3.js';
-import { BadRequestException } from '@nestjs/common';
-import { GuardParams } from 'src/candy-machine/dto/types';
-import { solFromLamports } from './helpers';
-import { TokenStandard } from '@prisma/client';
-import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
+import { shuffle } from 'lodash';
+import { CreateCandyMachineParams } from 'src/candy-machine/dto/types';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -110,7 +115,6 @@ export async function uploadMetadata(
 
 export async function uploadAllMetadata(
   metaplex: Metaplex,
-  candyMachineAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
@@ -149,9 +153,7 @@ export async function uploadAllMetadata(
 
 export async function uploadItemMetadata(
   metaplex: Metaplex,
-  candyMachineAddress: PublicKey,
   comicIssue: ComicIssueCMInput,
-  collectionNftAddress: PublicKey,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
@@ -159,7 +161,6 @@ export async function uploadItemMetadata(
   comicIssueSupply: number,
   onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
-  tokenStandard?: TokenStandard,
 ) {
   const items: { uri: string; name: string }[] = [];
   // TODO: rarityShares is not reliable, we should pull this info from the database
@@ -170,7 +171,6 @@ export async function uploadItemMetadata(
     const { rarity } = rarityShare;
     const itemMetadata = await uploadAllMetadata(
       metaplex,
-      candyMachineAddress,
       comicIssue,
       comicName,
       royaltyWallets,
@@ -179,33 +179,6 @@ export async function uploadItemMetadata(
       RARITY_MAP[rarity],
     );
     itemMetadatas.push(...itemMetadata);
-  }
-
-  if (tokenStandard == TokenStandard.Legacy) {
-    // initialize comic authority
-    for await (const rarityShare of rarityShares) {
-      const allData = itemMetadatas.filter(
-        (item) => item.rarity === RARITY_MAP[rarityShare.rarity],
-      );
-      const comicStates: ComicStates = {
-        unusedSigned: allData.find((data) => !data.isUsed && data.isSigned)
-          .metadata.uri,
-        unusedUnsigned: allData.find((data) => !data.isUsed && !data.isSigned)
-          .metadata.uri,
-        usedSigned: allData.find((data) => data.isUsed && data.isSigned)
-          .metadata.uri,
-        usedUnsigned: allData.find((data) => data.isUsed && !data.isSigned)
-          .metadata.uri,
-      };
-
-      await initializeAuthority(
-        metaplex,
-        candyMachineAddress,
-        collectionNftAddress,
-        RARITY_MAP[rarityShare.rarity],
-        comicStates,
-      );
-    }
   }
 
   const unusedUnsignedMetadatas = itemMetadatas.filter(
@@ -240,11 +213,62 @@ export async function uploadItemMetadata(
   return { items: shuffle(items), itemMetadatas };
 }
 
-export async function insertItems(
+export function toUmiGroups(
+  umi: Umi,
+  createCandyMachineParams: CreateCandyMachineParams,
+  isPublic: boolean,
+): GuardGroupArgs<DefaultGuardSetArgs>[] {
+  const { startsAt, expiresAt, mintPrice, numberOfRedemptions, supply } =
+    createCandyMachineParams;
+  const groups: GuardGroupArgs<DefaultGuardSetArgs>[] = [
+    {
+      label: AUTHORITY_GROUP_LABEL,
+      guards: {
+        allowList: {
+          merkleRoot: getMerkleRoot([umi.identity.publicKey.toString()]),
+        },
+        solPayment: {
+          lamports: lamports(0),
+          destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+        },
+      },
+    },
+  ];
+
+  if (isPublic) {
+    const thirdPartySigner = getThirdPartySigner();
+    const thirdPartySignerGuard: ThirdPartySigner = {
+      signerKey: publicKey(thirdPartySigner),
+    };
+
+    groups.push({
+      label: PUBLIC_GROUP_LABEL,
+      guards: {
+        startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
+        endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
+        solPayment: some({
+          lamports: lamports(mintPrice),
+          destination: publicKey(FUNDS_DESTINATION_ADDRESS),
+        }),
+        mintLimit: numberOfRedemptions
+          ? {
+              id: PUBLIC_GROUP_MINT_LIMIT_ID,
+              limit: numberOfRedemptions,
+            }
+          : undefined,
+        redeemedAmount: some({ maximum: supply }),
+        thirdPartySigner: some(thirdPartySignerGuard),
+      },
+    });
+  }
+  return groups;
+}
+
+export async function insertCoreItems(
+  umi: Umi,
   metaplex: Metaplex,
-  candyMachine: CandyMachine<DefaultCandyGuardSettings>,
+  candyMachinePubkey: UmiPublicKey,
   comicIssue: ComicIssueCMInput,
-  collectionNftAddress: PublicKey,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
   statelessCovers: MetaplexFile[],
@@ -255,9 +279,7 @@ export async function insertItems(
 ) {
   const { items, itemMetadatas } = await uploadItemMetadata(
     metaplex,
-    candyMachine.address,
     comicIssue,
-    collectionNftAddress,
     comicName,
     royaltyWallets,
     statelessCovers.length,
@@ -266,92 +288,43 @@ export async function insertItems(
     onChainName,
     rarityCoverFiles,
   );
+
   const INSERT_CHUNK_SIZE = 8;
   const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
+
   let index = 0;
-  const transactionBuilders: TransactionBuilder[] = [];
+  const transactions: string[] = [];
   for (const itemsChunk of itemChunks) {
     console.info(`Inserting items ${index}-${index + itemsChunk.length} `);
-    const transactionBuilder = metaplex.candyMachines().builders().insertItems({
-      candyMachine,
+
+    const defaultComputeBudget = 800_000;
+    const transaction = await getTransactionWithPriorityFee(
+      constructInsertItemsTransaction,
+      defaultComputeBudget,
+      umi,
+      candyMachinePubkey,
       index,
-      items: itemsChunk,
-    });
+      itemsChunk,
+    );
     index += itemsChunk.length;
-    transactionBuilders.push(transactionBuilder);
+
+    transactions.push(transaction);
   }
+
   const rateLimit = pRateLimit(rateLimitQuota);
-  for (const transactionBuilder of transactionBuilders) {
-    const latestBlockhash = await metaplex.connection.getLatestBlockhash();
-    const insertItemTransaction =
-      transactionBuilder.toTransaction(latestBlockhash);
-
-    const transaction = new Transaction({
-      feePayer: metaplex.identity().publicKey,
-      ...latestBlockhash,
-    }).add(MIN_COMPUTE_PRICE_IX, insertItemTransaction);
-
+  for (const addConfigLinesTransaction of transactions) {
+    const deserializedTransaction = decodeUmiTransaction(
+      addConfigLinesTransaction,
+      'base64',
+    );
     rateLimit(() => {
-      return sendAndConfirmTransaction(
-        metaplex.connection,
-        transaction,
-        [metaplex.identity()],
-        { commitment: 'confirmed', skipPreflight: true },
-      );
+      return umi.rpc.sendTransaction(deserializedTransaction, {
+        skipPreflight: true,
+        commitment: 'confirmed',
+      });
     });
   }
   return itemMetadatas;
-}
-
-export function toLegacyGroups(
-  metaplex: Metaplex,
-  guardParams: GuardParams,
-  isPublic: boolean,
-) {
-  const { startDate, endDate, mintLimit, freezePeriod, mintPrice, supply } =
-    guardParams;
-
-  const groups: {
-    label: string;
-    guards: Partial<DefaultCandyGuardSettings>;
-  }[] = [
-    {
-      label: AUTHORITY_GROUP_LABEL,
-      guards: {
-        allowList: {
-          merkleRoot: getMerkleRoot([metaplex.identity().publicKey.toString()]),
-        },
-        solPayment: {
-          amount: solFromLamports(0),
-          destination: FUNDS_DESTINATION_ADDRESS,
-        },
-      },
-    },
-  ];
-
-  if (isPublic) {
-    const paymentGuard = freezePeriod ? 'freezeSolPayment' : 'solPayment';
-    groups.push({
-      label: PUBLIC_GROUP_LABEL,
-      guards: {
-        startDate: { date: toDateTime(startDate) },
-        endDate: { date: toDateTime(endDate) },
-        [paymentGuard]: {
-          amount: solFromLamports(mintPrice),
-          destination: FUNDS_DESTINATION_ADDRESS,
-        },
-        mintLimit: mintLimit
-          ? {
-              id: PUBLIC_GROUP_MINT_LIMIT_ID,
-              limit: mintLimit,
-            }
-          : undefined,
-        redeemedAmount: { maximum: toBigNumber(supply) },
-      },
-    });
-  }
-
-  return groups;
 }
 
 export function calculateMissingSOL(missingFunds: number): number {

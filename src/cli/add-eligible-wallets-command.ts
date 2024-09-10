@@ -3,16 +3,15 @@ import { log, logErr } from './chalk';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 
 interface Options {
-  candyMachineAddress: string;
-  label: string;
-  allowList: string[];
+  couponId: number;
+  wallets: string[];
 }
 
 @Command({
-  name: 'add-allow-list',
-  description: 'add or update allowlist guard',
+  name: 'add-eligible-wallets',
+  description: 'add eligible wallets to coupon',
 })
-export class AddAllowList extends CommandRunner {
+export class AddEligibleWalletsCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
@@ -22,21 +21,20 @@ export class AddAllowList extends CommandRunner {
 
   async run(_: string[], options: Options): Promise<void> {
     options = await this.inquirerService.ask('add-allow-list', options);
-    await this.addAllowList(options);
+    await this.addEligibleWallets(options);
   }
 
-  addAllowList = async (options: Options) => {
-    log('\n🏗️  updating candymachine with allowlist');
+  async addEligibleWallets(options: Options) {
+    log('\n🏗️  adding eligible wallets to coupon');
     try {
-      const { candyMachineAddress, label, allowList } = options;
-      await this.candyMachineService.addAllowList(
-        candyMachineAddress,
-        allowList,
-        label,
+      const { couponId, wallets } = options;
+      await this.candyMachineService.addEligibleWalletsToCoupon(
+        couponId,
+        wallets,
       );
     } catch (error) {
       logErr(`Error : ${error}`);
     }
     log('\n');
-  };
+  }
 }

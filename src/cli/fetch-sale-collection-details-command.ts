@@ -1,13 +1,14 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { PrismaService } from 'nestjs-prisma';
 import { isEmpty } from 'lodash';
-import { ComicRarity } from '@prisma/client';
+import { ComicRarity, CouponType } from '@prisma/client';
 import { Umi } from '@metaplex-foundation/umi';
 import { umi } from '../utils/metaplex';
 import { getAssetsByGroup } from '../utils/das';
 import { getRarityShareTable } from '../constants';
 import { toSol } from '../utils/helpers';
 import { cb, cerr, cg, chb, log } from './chalk';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
 interface Options {
   collection: string;
@@ -43,10 +44,11 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
         where: { address: collection },
       });
 
-    const groups = await this.prisma.candyMachineGroup.findMany({
+    const candyMachineCoupons = await this.prisma.candyMachineCoupon.findMany({
       where: {
         candyMachine: { collectionAddress: collection },
       },
+      include: { currencySettings: true },
     });
 
     const candyMachine = await this.prisma.candyMachine.findFirst({
@@ -120,22 +122,29 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
       },
     });
 
-    // Public groups should start from 'p' and then _currency. Eg: p_sol
-    const publicGroup = groups.find((group) => group.label.startsWith('p'));
-    // User groups should start from 'u' and then _currency. Eg: u_sol
-    const userGroup = groups.find((group) => group.label.startsWith('u'));
-
-    const publicMintRevenue = toSol(
-      publicMints * Number(publicGroup.mintPrice),
+    const publicCoupon = candyMachineCoupons.find(
+      (coupon) => coupon.type === CouponType.PublicUser,
     );
-    const userMintRevenue = toSol(userMints * Number(userGroup.mintPrice));
+    const userCoupon = candyMachineCoupons.find(
+      (coupon) => coupon.type === CouponType.RegisteredUser,
+    );
+
+    const publicCouponSolPrice = publicCoupon?.currencySettings.find(
+      (currency) => currency.splTokenAddress === WRAPPED_SOL_MINT.toString(),
+    )?.mintPrice;
+    const userCouponSolPrice = userCoupon?.currencySettings.find(
+      (currency) => currency.splTokenAddress === WRAPPED_SOL_MINT.toString(),
+    )?.mintPrice;
+
+    const publicMintRevenue = toSol(publicMints * Number(publicCouponSolPrice));
+    const userMintRevenue = toSol(userMints * Number(userCouponSolPrice));
     const totalRevenue = publicMintRevenue + userMintRevenue;
 
     // new registered users and minters
-    const registerationStartDate = new Date(userGroup.startDate.getTime());
+    const registerationStartDate = new Date(userCoupon.startsAt.getTime());
     registerationStartDate.setDate(registerationStartDate.getDate() - 1);
 
-    const registerationEndDate = new Date(userGroup.startDate.getTime());
+    const registerationEndDate = new Date(userCoupon.startsAt.getTime());
     registerationEndDate.setDate(registerationEndDate.getDate() + 7);
 
     const newRegistersIn1WeekOfMint = await this.prisma.user.count({
@@ -194,11 +203,11 @@ export class FetchCollectionSaleDetailsCommand extends CommandRunner {
         });
 
       totalRevenueGeneratedByHolders =
-        toSol(numberOfMintsByHolderAndUser * Number(userGroup.mintPrice)) +
+        toSol(numberOfMintsByHolderAndUser * Number(userCouponSolPrice)) +
         toSol(
           (numberOfMintsByParentCollectionHolders -
             numberOfMintsByHolderAndUser) *
-            Number(publicGroup.mintPrice),
+            Number(publicCouponSolPrice),
         );
     }
     log('\n');
