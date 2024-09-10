@@ -3,7 +3,13 @@ import {
   DefaultCandyGuardSettings,
   PublicKey,
 } from '@metaplex-foundation/js';
-import { CandyMachineGroup, WhiteListType } from '@prisma/client';
+import {
+  CandyMachineCoupon,
+  CandyMachineCouponCurrencySetting,
+  CandyMachineCouponEligibleUser,
+  CandyMachineCouponEligibleWallet,
+  CouponType,
+} from '@prisma/client';
 
 export type MintSettings = {
   candyMachine: CandyMachine<DefaultCandyGuardSettings>;
@@ -14,39 +20,58 @@ export type MintSettings = {
   allowList?: string[];
 };
 
-export type CandyMachineGroupSettings = {
-  id: number;
-  label: string;
-  displayLabel: string;
-  supply: number;
-  itemsMinted: number;
-  splTokenAddress: string;
-  startDate: Date;
-  endDate: Date;
-  mintPrice: number;
-  whiteListType: WhiteListType;
-  walletStats?: CandyMachineGroupStats;
-  userStats?: CandyMachineGroupStats;
-  mintLimit?: number;
+export type CandyMachineCouponWithStats = Omit<
+  CandyMachineCoupon,
+  'candyMachineAddress'
+> & {
+  discount: number;
+  stats: CandyMachineCouponMintStats;
+  prices: CandyMachineCouponPrice[];
 };
 
-export type CandyMachineGroupStats = {
-  itemsMinted: number;
+export type CandyMachineCouponPrice = {
+  mintPrice: number;
+  usdcEquivalent: number;
+  splTokenAddress: string;
+};
+
+export type CandyMachineCouponMintStats = {
+  itemsMinted?: number;
   isEligible: boolean;
 };
 
-export type GuardParams = {
-  mintPrice: number;
-  startDate?: Date;
-  endDate?: Date;
+export type AddCandyMachineCouponParams = AddCandyMachineCouponConfigParams & {
+  name: string;
+  description: string;
+};
+
+export type AddCandyMachineCouponConfigParams =
+  AddCandyMachineCouponPriceConfigParams & {
+    startsAt?: Date;
+    expiresAt?: Date;
+    numberOfRedemptions?: number;
+    supply: number;
+    couponType: CouponType;
+  };
+
+export type AddCandyMachineCouponPriceConfigParams = {
   label: string;
-  displayLabel: string;
-  supply: number;
+  mintPrice: number;
+  usdcEquivalent: number;
   splTokenAddress: string;
-  mintLimit?: number;
-  freezePeriod?: number;
-  frozen?: boolean;
-  whiteListType?: WhiteListType;
+};
+
+export type CreateCandyMachineParams = {
+  comicName: string;
+  assetOnChainName: string;
+  startsAt?: Date;
+  expiresAt?: Date;
+  numberOfRedemptions?: number;
+  mintPrice: number;
+  usdcEquivalentMintPrice: number;
+  supply: number;
+  couponType: CouponType;
+  splTokenAddress?: string;
 };
 
 export type DarkblockTraits = {
@@ -54,7 +79,9 @@ export type DarkblockTraits = {
   value: string;
 };
 
-export type GroupWithWhiteListDetails = CandyMachineGroup & {
-  users: { userId: number }[];
-  wallets: { walletAddress: string }[];
-};
+export type CandyMachineCouponWithEligibleUsersAndWallets =
+  CandyMachineCoupon & {
+    currencySettings: CandyMachineCouponCurrencySetting[];
+  } & { users: CandyMachineCouponEligibleUser[] } & {
+    wallets: CandyMachineCouponEligibleWallet[];
+  };

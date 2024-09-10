@@ -22,6 +22,7 @@ import {
   StatelessCover,
   Genre,
   CollectibleComicCollection,
+  TokenStandard,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -29,7 +30,7 @@ import { UserComicIssueService } from './user-comic-issue.service';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { PUBLIC_GROUP_LABEL, getRarityShare, minSupply } from '../constants';
+import { getRarityShare, minSupply } from '../constants';
 import { CreateStatelessCoverDto } from './dto/covers/create-stateless-cover.dto';
 import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
@@ -47,7 +48,7 @@ import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
-import { GuardParams } from '../candy-machine/dto/types';
+import { CreateCandyMachineParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordNotificationService } from '../discord/notification.service';
 import { generateMessageAfterAdminAction } from '../utils/discord';
@@ -134,8 +135,10 @@ export class ComicIssueService {
       where: {
         collection: { comicIssueId },
         itemsRemaining: { gt: 0 },
-        groups: {
-          some: { OR: [{ endDate: { gt: new Date() } }, { endDate: null }] },
+        coupons: {
+          some: {
+            OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
+          },
         },
       },
     });
@@ -665,16 +668,20 @@ export class ComicIssueService {
     const {
       onChainName,
       royaltyWallets,
-      startDate,
-      endDate,
-      publicMintLimit,
-      freezePeriod,
+      startsAt,
+      expiresAt,
+      numberOfRedemptions,
       supply,
       mintPrice,
       tokenStandard,
-      whiteListType,
+      couponType,
+      usdcEquivalentMintPrice,
       ...updatePayload
     } = publishOnChainDto;
+
+    if (tokenStandard !== TokenStandard.Core) {
+      throw new BadRequestException('Only core candy machine is supported');
+    }
 
     let creatorBackupAddress: string;
 
@@ -693,28 +700,26 @@ export class ComicIssueService {
       },
     });
 
-    const guardParams: GuardParams = {
-      startDate,
-      endDate,
-      mintLimit: publicMintLimit,
-      freezePeriod,
+    const createCandyMachineParams: CreateCandyMachineParams = {
+      startsAt,
+      expiresAt,
+      numberOfRedemptions,
+      comicName: updatedComicIssue.comic.title,
+      assetOnChainName: onChainName,
       splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
+      usdcEquivalentMintPrice,
       mintPrice,
-      label: PUBLIC_GROUP_LABEL,
-      displayLabel: PUBLIC_GROUP_LABEL,
       supply,
-      whiteListType,
+      couponType,
     };
+
     try {
       await this.candyMachineService.createComicIssueCM({
         comicIssue: {
           ...updatedComicIssue,
           royaltyWallets,
         },
-        comicName: updatedComicIssue.comic.title,
-        onChainName,
-        guardParams,
-        tokenStandard,
+        createCandyMachineParams,
       });
     } catch (e) {
       // revert in case of failure, handle it gracefully:

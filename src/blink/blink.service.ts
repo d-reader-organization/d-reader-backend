@@ -7,12 +7,7 @@ import {
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ActionSpecGetResponse, LinkedAction } from './dto/types';
 import { s3Service } from '../aws/s3.service';
-import {
-  Comic,
-  ComicIssue,
-  StatelessCover,
-  WhiteListType,
-} from '@prisma/client';
+import { Comic, ComicIssue, CouponType, StatelessCover } from '@prisma/client';
 import { isNumberString } from 'class-validator';
 import { SOL_ADDRESS } from '../constants';
 import { toSol } from '../utils/helpers';
@@ -20,12 +15,16 @@ import { TransactionService } from '../transactions/transaction.service';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey } from '@solana/web3.js';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
-
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { publicKey } from '@metaplex-foundation/umi';
+import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi';
 @Injectable()
 export class BlinkService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly comicIssueService: ComicIssueService,
+    private readonly candyMachineService: CandyMachineService,
     private readonly s3: s3Service,
     private readonly transactionService: TransactionService,
   ) {}
@@ -60,16 +59,20 @@ export class BlinkService {
       throw new Error('No active mint for this issue');
     }
 
-    const publicSolGroup = await this.prisma.candyMachineGroup.findFirst({
-      where: {
-        candyMachineAddress: activeCandyMachine,
-        whiteListType: WhiteListType.Public,
-        splTokenAddress: SOL_ADDRESS,
-      },
-    });
+    const publicCouponPriceConfig =
+      await this.prisma.candyMachineCouponCurrencySetting.findFirst({
+        where: {
+          coupon: {
+            candyMachineAddress: activeCandyMachine,
+            type: CouponType.PublicUser,
+          },
+          splTokenAddress: SOL_ADDRESS,
+        },
+      });
+
     const defaultCover = statelessCovers.find((cover) => cover.isDefault);
-    const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${activeCandyMachine}`;
-    const mintPrice = toSol(Number(publicSolGroup.mintPrice));
+    const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${publicCouponPriceConfig.couponId}`;
+    const mintPrice = toSol(Number(publicCouponPriceConfig.mintPrice));
 
     return {
       icon: this.s3.getPublicUrl(defaultCover.image),
@@ -153,6 +156,35 @@ export class BlinkService {
       address,
       creator,
       ComicStateArgs.Sign,
+    );
+  }
+
+  async mintComicAction(account: UmiPublicKey, couponId: number) {
+    const { candyMachineAddress, currencySettings } =
+      await this.prisma.candyMachineCoupon.findUnique({
+        where: { id: couponId },
+        include: { currencySettings: true },
+      });
+
+    if (!candyMachineAddress) {
+      throw new BadRequestException('No active mint found');
+    }
+
+    const currencySetting = currencySettings.find(
+      (setting) => setting.splTokenAddress === WRAPPED_SOL_MINT.toString(),
+    );
+
+    if (!currencySetting) {
+      throw new BadRequestException(
+        'Mint is not active in SOL, try minting from platform',
+      );
+    }
+
+    return this.candyMachineService.createMintOneTransaction(
+      publicKey(account),
+      publicKey(candyMachineAddress),
+      currencySetting.label,
+      couponId,
     );
   }
 }

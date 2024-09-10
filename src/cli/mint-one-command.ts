@@ -11,6 +11,8 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { cb, cuy, log, logErr } from './chalk';
 import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
+import { PrismaService } from 'nestjs-prisma';
+import { publicKey } from '@metaplex-foundation/umi';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -25,6 +27,7 @@ export class MintOneCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
+    private readonly prisma: PrismaService,
   ) {
     super();
   }
@@ -47,11 +50,27 @@ export class MintOneCommand extends CommandRunner {
     const keypair = Keypair.fromSecretKey(
       Buffer.from(JSON.parse(wallet.toString(Utf8))),
     );
+
+    const coupon = await this.prisma.candyMachineCoupon.findFirst({
+      where: {
+        candyMachineAddress: options.candyMachineAddress.toString(),
+        currencySettings: { some: { label: options.label } },
+      },
+    });
+
+    if (!coupon) {
+      logErr(
+        `Coupon not found for candy machine address: ${options.candyMachineAddress.toString()}`,
+      );
+      return;
+    }
+
     const encodedTransactions =
       await this.candyMachineService.createMintOneTransaction(
-        keypair.publicKey,
-        options.candyMachineAddress,
+        publicKey(keypair.publicKey.toString()),
+        publicKey(options.candyMachineAddress.toString()),
         options.label,
+        coupon.id,
       );
     const transactions = encodedTransactions.map((encodedTransaction) => {
       const transactionBuffer = Buffer.from(encodedTransaction, 'base64');

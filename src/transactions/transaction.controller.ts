@@ -53,6 +53,7 @@ import {
   CreateOneOfOneCollectionFilesDto,
 } from 'src/digital-asset/dto/create-one-of-one-collection-dto';
 import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
+import { publicKey } from '@metaplex-foundation/umi';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -73,14 +74,15 @@ export class TransactionController {
     @Query() query: MintParams,
     @UserEntity() user?: UserPayload,
   ) {
-    const publicKey = new PublicKey(query.minterAddress);
-    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
+    const minterAddress = publicKey(query.minterAddress);
+    const candyMachineAddress = publicKey(query.candyMachineAddress);
     const label = query.label ?? PUBLIC_GROUP_LABEL;
 
     return await this.candyMachineService.createMintOneTransaction(
-      publicKey,
+      minterAddress,
       candyMachineAddress,
       label,
+      query.couponId,
       user ? user.id : null,
     );
   }
@@ -88,17 +90,14 @@ export class TransactionController {
   /* For blink clients to make request for mint transaction */
   @Post('/blink/mint/:candyMachine')
   async constructBlinkMintTransaction(
-    @Param('candyMachine') candyMachine: string,
+    @Param('couponId') couponId: number,
     @Body() actionPayload: ActionPayloadDto,
   ) {
-    const publicKey = new PublicKey(actionPayload.account);
-    const candyMachineAddress = new PublicKey(candyMachine);
-    const label = PUBLIC_GROUP_LABEL;
+    const account = publicKey(actionPayload.account);
 
-    const transaction = await this.candyMachineService.createMintOneTransaction(
-      publicKey,
-      candyMachineAddress,
-      label,
+    const transaction = await this.blinkService.mintComicAction(
+      account,
+      couponId,
     );
 
     //todo: blink supports only single transaction
@@ -128,14 +127,17 @@ export class TransactionController {
     @Query() query: MintParams,
     @UserEntity() user?: UserPayload,
   ) {
-    const publicKey = new PublicKey(query.minterAddress);
-    const candyMachineAddress = new PublicKey(query.candyMachineAddress);
-    const label = query.label ?? PUBLIC_GROUP_LABEL;
+    const minterAddress = publicKey(query.minterAddress);
+    const candyMachineAddress = publicKey(query.candyMachineAddress);
+    const couponId = query.couponId;
+    const label = query.label ?? PUBLIC_GROUP_LABEL; // TODO: calculate label;
     const mintCount = query.mintCount ? +query.mintCount : 1;
+
     return await this.candyMachineService.createMintTransaction(
-      publicKey,
+      minterAddress,
       candyMachineAddress,
       label,
+      couponId,
       mintCount,
       user ? user.id : null,
     );

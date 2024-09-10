@@ -4,11 +4,12 @@ import { DAS } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { isEmpty } from 'lodash';
-import { Prisma } from '@prisma/client';
+import { CouponType, Prisma } from '@prisma/client';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { umi } from '../utils/metaplex';
 import { getAssetsByGroup } from '../utils/das';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
 interface Options {
   collection: string;
@@ -96,6 +97,18 @@ export class SyncCoreAssetCommand extends CommandRunner {
 
     if (!doesReceiptExists) {
       try {
+        const coupon = await this.prisma.candyMachineCoupon.findFirst({
+          where: {
+            candyMachineAddress,
+            type: CouponType.PublicUser,
+            currencySettings: {
+              some: {
+                splTokenAddress: WRAPPED_SOL_MINT.toString(),
+              },
+            },
+          },
+        });
+
         const UNKNOWN = 'UNKNOWN';
         const userId: number = owner?.userId;
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
@@ -112,7 +125,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
           description: `${walletAddress} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
-          label: UNKNOWN,
+          couponId: coupon.id,
         };
 
         if (userId) {

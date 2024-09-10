@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
-import { UserComicIssue } from '@prisma/client';
+import { CouponType, UserComicIssue } from '@prisma/client';
 import { ComicIssueStats } from '../comic/types/comic-issue-stats';
 import { ComicIssue } from '@prisma/client';
-import { LOCKED_COLLECTIONS, PUBLIC_GROUP_LABEL } from '../constants';
+import { LOCKED_COLLECTIONS } from '../constants';
+import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 
 @Injectable()
 export class UserComicIssueService {
@@ -101,18 +102,28 @@ export class UserComicIssueService {
       where: {
         collection: { comicIssueId: issue.id },
         itemsRemaining: { gt: 0 },
-        groups: {
+        coupons: {
           some: {
-            label: PUBLIC_GROUP_LABEL,
-            endDate: { gt: new Date() },
+            type: CouponType.PublicUser,
+            expiresAt: { gt: new Date() },
           },
         },
       },
-      include: { groups: { where: { label: PUBLIC_GROUP_LABEL } } },
+      include: {
+        coupons: {
+          where: { type: CouponType.PublicUser },
+          include: { currencySettings: true },
+        },
+      },
     });
 
     if (activeCandyMachine) {
-      const mintPrice = activeCandyMachine.groups[0]?.mintPrice;
+      const solCurrencySettings =
+        activeCandyMachine.coupons[0]?.currencySettings.find(
+          (currency) =>
+            currency.splTokenAddress === WRAPPED_SOL_MINT.toString(),
+        );
+      const mintPrice = solCurrencySettings?.mintPrice;
       return mintPrice ? Number(mintPrice) : undefined;
     }
 
