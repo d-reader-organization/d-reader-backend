@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { Metaplex } from '@metaplex-foundation/js';
+import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { PublicKey } from '@solana/web3.js';
 import { metaplex } from '../utils/metaplex';
 import { HeliusService } from '../webhooks/helius/helius.service';
@@ -9,7 +9,7 @@ import {
   SAGA_COLLECTION_ADDRESS,
 } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { Prisma } from '@prisma/client';
+import { CouponType, Prisma } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { isEmpty } from 'lodash';
 import { hasCompletedSetup } from '../utils/user';
@@ -126,6 +126,12 @@ export class WalletService {
       const candyMachine = await this.prisma.candyMachine.findFirst({
         where: { collectionAddress: group.group_value },
       });
+
+      if (!candyMachine) {
+        console.log(`Candy machine not found for ${group.group_value}`);
+        continue;
+      }
+
       const indexedAsset = await this.heliusService.reIndexAsset(
         asset,
         candyMachine.address,
@@ -142,6 +148,18 @@ export class WalletService {
         const { owner, ownerAddress } = indexedAsset.digitalAsset;
         const userId: number = owner?.userId;
 
+        const coupon = await this.prisma.candyMachineCoupon.findFirst({
+          where: {
+            candyMachineAddress: candyMachine.address,
+            type: CouponType.PublicUser,
+            currencySettings: {
+              some: {
+                splTokenAddress: WRAPPED_SOL_MINT.toString(),
+              },
+            },
+          },
+        });
+
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
           collectibleComic: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine.address } },
@@ -156,7 +174,7 @@ export class WalletService {
           description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
-          label: UNKNOWN,
+          couponId: coupon.id,
         };
 
         if (userId) {
@@ -232,6 +250,18 @@ export class WalletService {
         },
       );
 
+      const coupon = await this.prisma.candyMachineCoupon.findFirst({
+        where: {
+          candyMachineAddress: candyMachine,
+          type: CouponType.PublicUser,
+          currencySettings: {
+            some: {
+              splTokenAddress: WRAPPED_SOL_MINT.toString(),
+            },
+          },
+        },
+      });
+
       if (!doesReceiptExists) {
         const UNKNOWN = 'UNKNOWN';
         const { owner, ownerAddress } = indexedAsset.digitalAsset;
@@ -251,7 +281,8 @@ export class WalletService {
           description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
-          label: UNKNOWN,
+          // assiging public coupon to the receipt for unknown receipts
+          couponId: coupon.id,
         };
 
         if (userId) {

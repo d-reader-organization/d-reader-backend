@@ -17,13 +17,15 @@ import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
-import { AddAllowListDto } from './dto/add-allow-list.dto';
+import { AddWalletWhiteListDto } from './dto/add-wallet-whitelist.dto';
 import { AdminGuard } from '../guards/roles.guard';
-import { AddGroupDto } from './dto/add-group.dto';
+import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
+import { AddUserWhiteListDto } from './dto/add-user-whitelist.dto';
+import { AddCandyMachineCouponPriceConfigDto } from './dto/add-coupon-price-config.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -51,27 +53,50 @@ export class CandyMachineController {
   }
 
   @AdminGuard()
-  @Post('add-allow-list')
-  async addAllowList(@Body() addAllowListDto: AddAllowListDto) {
-    const { candyMachineAddress, label, allowList } = addAllowListDto;
-    await this.candyMachineService.addAllowList(
-      candyMachineAddress,
-      allowList,
-      label,
+  @Post('whitelist-wallets')
+  async whitelistWallets(@Body() addWalletWhiteListDto: AddWalletWhiteListDto) {
+    const { couponId, walletWhiteList } = addWalletWhiteListDto;
+    await this.candyMachineService.addEligibleWalletsToCoupon(
+      couponId,
+      walletWhiteList,
     );
   }
 
   @AdminGuard()
-  @Post('add-group/:candyMachineAddress')
-  async addGroup(
+  @Post('whitelist-users')
+  async whitelistUsers(@Body() addUserWhiteListDto: AddUserWhiteListDto) {
+    const { couponId, userWhiteList } = addUserWhiteListDto;
+    await this.candyMachineService.addEligibleUsersToCoupon(
+      couponId,
+      userWhiteList,
+    );
+  }
+
+  @AdminGuard()
+  @Post('add-coupon/:candyMachineAddress')
+  async addCandyMachineCoupon(
     @Param('candyMachineAddress') candyMachineAddress: string,
-    @Body() addGroupDto: AddGroupDto,
+    @Body() addCandyMachineCouponDto: AddCandyMachineCouponDto,
   ) {
     const splTokenAddress =
-      addGroupDto.splTokenAddress ?? WRAPPED_SOL_MINT.toBase58();
-    await this.candyMachineService.addCandyMachineGroup(candyMachineAddress, {
-      ...addGroupDto,
+      addCandyMachineCouponDto.splTokenAddress ?? WRAPPED_SOL_MINT.toBase58();
+
+    await this.candyMachineService.addCandyMachineCoupon(candyMachineAddress, {
+      ...addCandyMachineCouponDto,
       splTokenAddress,
     });
+  }
+
+  @AdminGuard()
+  @Post('add-coupon-price-config/:couponId')
+  async addCandyMachineCouponPriceConfig(
+    @Param('couponId') couponId: number,
+    @Body()
+    addCandyMachineCouponPriceConfigDto: AddCandyMachineCouponPriceConfigDto,
+  ) {
+    await this.candyMachineService.addCandyMachineCouponPriceConfig(
+      couponId,
+      addCandyMachineCouponPriceConfigDto,
+    );
   }
 }

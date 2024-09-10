@@ -15,7 +15,7 @@ import {
 import { IsLamport } from '../../decorators/IsLamport';
 import { TransformDateStringToDate } from '../../utils/transform';
 import { MAX_ON_CHAIN_TITLE_LENGTH } from '../../constants';
-import { TokenStandard, WhiteListType } from '@prisma/client';
+import { CouponType, TokenStandard } from '@prisma/client';
 import { MAX_CREATOR_LIMIT } from '@metaplex-foundation/mpl-core-candy-machine';
 import { RoyaltyWalletDto } from './royalty-wallet.dto';
 import { Type } from 'class-transformer';
@@ -31,28 +31,26 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   @IsLamport()
   mintPrice: number;
 
+  @IsNumber()
+  usdcEquivalentMintPrice: number;
+
   @Min(10)
   @IsNumber()
   supply: number;
 
   @IsDate()
   @TransformDateStringToDate()
-  startDate: Date;
+  startsAt: Date;
 
   @IsDate()
   @IsOptional()
   @TransformDateStringToDate()
-  endDate?: Date;
+  expiresAt?: Date;
 
   @IsOptional()
   @IsInt()
   @Min(1)
-  publicMintLimit?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  freezePeriod?: number;
+  numberOfRedemptions?: number;
 
   @IsOptional()
   @IsEnum(TokenStandard)
@@ -60,9 +58,9 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
   tokenStandard?: TokenStandard;
 
   @IsOptional()
-  @IsEnum(WhiteListType)
-  @ApiProperty({ enum: WhiteListType })
-  whiteListType?: WhiteListType;
+  @IsEnum(CouponType)
+  @ApiProperty({ enum: CouponType })
+  couponType?: CouponType;
 
   @IsOptional()
   @IsArray()

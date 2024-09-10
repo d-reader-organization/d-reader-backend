@@ -1,7 +1,17 @@
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import {
+  IsNumber,
+  IsNumberString,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { TransformStringToNumber } from '../../utils/transform';
 
 export class MintParams {
+  @TransformStringToNumber()
+  @IsNumber()
+  couponId: number;
+
   @IsSolanaAddress()
   candyMachineAddress: string;
 

@@ -6,8 +6,11 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import { HIGH_VALUE, LOW_VALUE } from '../constants';
-import { WhiteListType } from '@prisma/client';
-import { CandyMachineGroupSettings } from 'src/candy-machine/dto/types';
+import {
+  CandyMachineCoupon,
+  CandyMachineCouponCurrencySetting,
+  CouponType,
+} from '@prisma/client';
 
 export const currencyFormat = Object.freeze(
   new Intl.NumberFormat('en-US', {
@@ -144,20 +147,60 @@ export function removeTwitter(string?: string) {
   } else return '';
 }
 
-export function findCandyMachineDiscount(groups: CandyMachineGroupSettings[]) {
-  const publicGroup = groups.find(
-    (group) => group.whiteListType === WhiteListType.Public,
-  );
-  const userGroup = groups.find(
-    (group) =>
-      group.whiteListType === WhiteListType.User &&
-      group.splTokenAddress === publicGroup?.splTokenAddress,
+export function findCandyMachineCouponDiscount(
+  coupon: CandyMachineCoupon & {
+    currencySettings: CandyMachineCouponCurrencySetting[];
+  },
+  defaultCoupon: CandyMachineCoupon & {
+    currencySettings: CandyMachineCouponCurrencySetting[];
+  },
+): number {
+  const findCouponCurrencySetting = (
+    configs: CandyMachineCouponCurrencySetting[],
+    splTokenAddress: string,
+  ) => configs.find((config) => config.splTokenAddress === splTokenAddress);
+
+  const defaultCouponConfig = defaultCoupon.currencySettings.find(
+    (defaultCouponPriceConfig) =>
+      findCouponCurrencySetting(
+        coupon.currencySettings,
+        defaultCouponPriceConfig.splTokenAddress,
+      ),
   );
 
-  if (!userGroup) return 0;
+  if (!defaultCouponConfig) {
+    return 0;
+  }
 
-  const difference =
-    Math.abs(publicGroup.mintPrice - userGroup.mintPrice) * 100;
-  const discount = Math.ceil(difference / userGroup.mintPrice);
+  const couponCurrencySetting = findCouponCurrencySetting(
+    coupon.currencySettings,
+    defaultCouponConfig.splTokenAddress,
+  );
+
+  if (!couponCurrencySetting) {
+    throw new Error('Matching coupon currency setting not found');
+  }
+
+  const defaultCouponMintPrice = Number(defaultCouponConfig.mintPrice);
+  const couponMintPrice = Number(couponCurrencySetting.mintPrice);
+
+  const difference = Math.abs(defaultCouponMintPrice - couponMintPrice) * 100;
+  const discount = Math.ceil(difference / defaultCouponMintPrice);
+
   return discount;
+}
+
+/// There should not be more than 10 coupons of same type and more than 100 currencies in database to avoid conflicts
+export function getCouponLabel(
+  couponType: CouponType,
+  typeIteration: number,
+  currencyCouponIteration: number,
+) {
+  const couponMap = {
+    [CouponType.PublicUser]: 'pu',
+    [CouponType.WhitelistedUser]: 'wu',
+    [CouponType.RegisteredUser]: 'ru',
+    [CouponType.WhitelistedWallet]: 'ww',
+  };
+  return `${couponMap[couponType]}${typeIteration}-${currencyCouponIteration}`;
 }

@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsDate,
   IsEnum,
   IsNumber,
@@ -7,21 +6,24 @@ import {
   IsString,
 } from 'class-validator';
 import { TransformDateStringToDate } from '../../utils/transform';
-import { WhiteListType } from '@prisma/client';
+import { CouponType } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AddGroupDto {
+export class AddCandyMachineCouponDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  description: string;
+
   @IsNumber()
   mintPrice: number;
 
-  @IsString()
-  displayLabel: string;
+  @IsNumber()
+  usdcEquivalent: number;
 
   @IsNumber()
   supply: number;
-
-  @IsString()
-  label: string;
 
   @IsOptional()
   @IsString()
@@ -30,26 +32,18 @@ export class AddGroupDto {
   @IsDate()
   @IsOptional()
   @TransformDateStringToDate()
-  startDate?: Date;
+  startsAt?: Date;
 
   @IsDate()
   @IsOptional()
   @TransformDateStringToDate()
-  endDate?: Date;
+  expiresAt?: Date;
 
   @IsOptional()
   @IsNumber()
-  mintLimit?: number;
+  numberOfRedemptions?: number;
 
-  @IsOptional()
-  @IsNumber()
-  freezePeriod?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  frozen?: boolean;
-
-  @IsEnum(WhiteListType)
-  @ApiProperty({ enum: WhiteListType })
-  whiteListType: WhiteListType;
+  @IsEnum(CouponType)
+  @ApiProperty({ enum: CouponType })
+  couponType: CouponType;
 }

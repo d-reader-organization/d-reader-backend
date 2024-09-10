@@ -19,17 +19,13 @@ import { SyncWebhookQuestions } from './sync-webhook-questions';
 import { WalletService } from '../wallet/wallet.service';
 import { SyncWalletCommand } from './sync-wallet-command';
 import { SyncWalletQuestions } from './sync-wallet-questions';
-import { AddAllowList } from './add-allow-list-command';
-import { AddAllowListQuestions } from './add-allow-list-questions';
-import { ThawCollectionCommand } from './thaw-collection-command';
-import { ThawCollectionQuestions } from './thaw-collection-question';
+import { AddEligibleWalletsCommand } from './add-eligible-wallets-command';
+import { AddEligibleWalletsQuestions } from './add-eligible-wallets-questions';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
 import { MintRemainingCommand } from './mint-remaining-command';
 import { MintRemainingQuestions } from './mint-remaining-questions';
 import { LoginUserQuestions } from './login-user-questions';
-import { AddGroupQuestions } from './add-group-questions';
-import { AddGroupCommand } from './add-group-command';
 import { FetchCandyMachineQuestions } from './fetch-candy-machine-questions';
 import { FetchCandyMachineCommand } from './fetch-candy-machine-command';
 import { BundlrFundCommand } from './bundlr-fund-command';
@@ -103,8 +99,6 @@ import { DiscordNotificationService } from '../discord/notification.service';
     CreateAuctionHouseCommand,
     CreateAuctionHouseQuestions,
     SyncWebhookCommand,
-    ThawCollectionCommand,
-    ThawCollectionQuestions,
     SyncWebhookQuestions,
     AirdropSolCommand,
     AirdropSolQuestions,
@@ -119,15 +113,13 @@ import { DiscordNotificationService } from '../discord/notification.service';
     HeliusService,
     SyncWalletQuestions,
     SyncWalletCommand,
-    AddAllowListQuestions,
+    AddEligibleWalletsQuestions,
     MintRemainingCommand,
     MintRemainingQuestions,
-    AddAllowList,
+    AddEligibleWalletsCommand,
     WalletService,
     DarkblockService,
     UserService,
-    AddGroupQuestions,
-    AddGroupCommand,
     FetchCandyMachineQuestions,
     FetchCandyMachineCommand,
     AddCollectionDarkblockCommand,
