@@ -13,9 +13,9 @@ export const COMIC_PAGES_UPSERT = ({
   payload.body = {
     content: `Comic pages created/updated for  (${
       comicIssue.verifiedAt ? 'verified' : 'unverified'
-    },${
+    }, ${
       comicIssue.publishedAt ? 'published' : 'unpublished'
-    } )  comic episode ${bold(comicIssue.title)}! [Details](${hyperlink})`,
+    })  comic episode ${bold(comicIssue.title)}! [Details](${hyperlink})`,
   };
   return payload;
 };
