@@ -33,9 +33,9 @@ export const COMIC_ISSUE_UPDATED = ({
   payload.body = {
     content: `📙 ${bold(oldIssue.title)} (${
       updatedIssue.verifiedAt ? 'verified' : 'unverified'
-    },${
+    }, ${
       updatedIssue.publishedAt ? 'published' : 'unpublished'
-    } ) comic episode updated! [Details](${hyperlink})`,
+    }) comic episode updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<ComicIssue>({
         title: `ComicIssue: ${updatedIssue.id}`,
