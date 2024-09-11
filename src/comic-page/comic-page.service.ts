@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import imageSize from 'image-size';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) => {
   return `comics/${comicSlug}/issues/${comicIssueSlug}/pages/`;
@@ -22,7 +22,7 @@ export class ComicPageService {
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
-    private readonly discordService: DiscordNotificationService,
+    private readonly discordService: DiscordService,
   ) {}
 
   async createMany(
@@ -84,7 +84,7 @@ export class ComicPageService {
         data: { isPreviewable: false },
       });
       await this.prisma.$transaction([previewComicPages, hideComicPages]);
-      this.discordService.notifyComicPagesUpsert(comicIssue);
+      this.discordService.comicPagesUpserted(comicIssue);
       return;
     }
 
@@ -130,7 +130,7 @@ export class ComicPageService {
           data: newComicPagesData,
         });
       }
-      this.discordService.notifyComicPagesUpsert(comicIssue);
+      this.discordService.comicPagesUpserted(comicIssue);
     } catch (e) {
       await this.s3.deleteObjects(newFileKeys);
       throw e;

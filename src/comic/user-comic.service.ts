@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { UserComic } from '@prisma/client';
-import { ComicStats } from './types/comic-stats';
+import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
 
 @Injectable()

@@ -18,3 +18,8 @@ export class RarityShare {
   rarity: ComicRarity;
   value: number;
 }
+
+export type ComicIssueStatusProperty = keyof Pick<
+  ComicIssue,
+  'publishedAt' | 'verifiedAt'
+>;

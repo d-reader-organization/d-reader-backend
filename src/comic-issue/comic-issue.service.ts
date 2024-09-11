@@ -34,7 +34,7 @@ import { getRarityShare, minSupply } from '../constants';
 import { CreateStatelessCoverDto } from './dto/covers/create-stateless-cover.dto';
 import { CreateStatefulCoverDto } from './dto/covers/create-stateful-cover.dto';
 import { getComicIssuesQuery } from './comic-issue.queries';
-import { ComicIssueStats } from '../comic/types/comic-issue-stats';
+import { ComicIssueStats } from '../comic/dto/types';
 import { ComicIssueInput } from './dto/comic-issue.dto';
 import {
   getStatefulCoverName,
@@ -46,14 +46,14 @@ import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
-import { RawComicIssueStats } from '../comic/types/raw-comic-issue-stats';
+import { RawComicIssueStats } from '../comic/dto/types';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { CreateCandyMachineParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
-import { DiscordNotificationService } from '../discord/notification.service';
-import { generateMessageAfterAdminAction } from '../utils/discord';
+import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { BasicComicIssueParams } from './dto/basic-comic-issue-params.dto';
+import { ComicIssueStatusProperty } from './dto/types';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -69,7 +69,7 @@ export class ComicIssueService {
     private readonly comicPageService: ComicPageService,
     private readonly candyMachineService: CandyMachineService,
     private readonly userComicIssueService: UserComicIssueService,
-    private readonly discordService: DiscordNotificationService,
+    private readonly discordService: DiscordService,
     private readonly mailService: MailService,
   ) {
     this.metaplex = metaplex;
@@ -120,7 +120,7 @@ export class ComicIssueService {
           collaborators: { createMany: { data: collaborators } },
         },
       });
-      this.discordService.notifyComicIssueCreated(comicIssue);
+      this.discordService.comicIssueCreated(comicIssue);
       return comicIssue;
     } catch (e) {
       console.error(e);
@@ -461,7 +461,7 @@ export class ComicIssueService {
         // where: { id, publishedAt: null },
         data: { number, ...rest, creatorBackupAddress },
       });
-      this.discordService.notifyComicIssueUpdated({
+      this.discordService.comicIssueUpdated({
         oldIssue: comicIssue,
         updatedIssue: updatedComicIssue,
       });
@@ -758,14 +758,12 @@ export class ComicIssueService {
     }
   }
 
-  async toggleDatePropUpdate({
+  async toggleDate({
     id,
-    propertyName,
-    withMessage,
+    property,
   }: {
     id: number;
-    propertyName: keyof Pick<ComicIssue, 'publishedAt' | 'verifiedAt'>;
-    withMessage?: boolean;
+    property: ComicIssueStatusProperty;
   }): Promise<string | void> {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where: { id },
@@ -775,7 +773,7 @@ export class ComicIssueService {
     }
     const updatedComicIssue = await this.prisma.comicIssue.update({
       data: {
-        [propertyName]: !!comicIssue[propertyName] ? null : new Date(),
+        [property]: !!comicIssue[property] ? null : new Date(),
       },
       where: { id },
       include: {
@@ -787,21 +785,11 @@ export class ComicIssueService {
       },
     });
 
-    if (propertyName === 'verifiedAt' && updatedComicIssue.verifiedAt) {
+    this.discordService.comicIssueStatusUpdated(updatedComicIssue, property);
+    if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
       this.mailService.comicIssueVerified(updatedComicIssue);
-    } else if (
-      propertyName === 'publishedAt' &&
-      updatedComicIssue.publishedAt
-    ) {
+    } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
       this.mailService.comicIssuePublished(updatedComicIssue);
-    }
-
-    if (withMessage) {
-      return generateMessageAfterAdminAction({
-        isPropertySet: !!updatedComicIssue[propertyName],
-        propertyName,
-        startOfTheMessage: `Comic issue ${updatedComicIssue.title} has been`,
-      });
     }
   }
 

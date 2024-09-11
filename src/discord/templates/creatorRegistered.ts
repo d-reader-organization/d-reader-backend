@@ -2,6 +2,8 @@ import { Creator } from '@prisma/client';
 import { MessagePayload } from 'discord.js';
 import { format } from 'date-fns';
 import { D_PUBLISHER_LINKS } from '../../utils/client-links';
+import { DiscordKey } from '../dto/enums';
+import { DISCORD_KEY_SEPARATOR } from '../dto/constants';
 
 export const CREATOR_REGISTERED = (
   creator: Creator,
@@ -10,7 +12,7 @@ export const CREATOR_REGISTERED = (
   payload.body = {
     embeds: [
       {
-        title: `creator: ${creator.slug}`,
+        title: DiscordKey.Creator + DISCORD_KEY_SEPARATOR + creator.slug,
         description: 'A new creator has registered. Here are the details:',
         color: 0x4caf50,
         fields: [

@@ -13,7 +13,7 @@ import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
-import { CreatorStats } from '../comic/types/creator-stats';
+import { CreatorStats } from '../comic/dto/types';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
 import { appendTimestamp, sleep } from '../utils/helpers';
 import { RegisterDto } from '../types/register.dto';
@@ -30,12 +30,11 @@ import { insensitive } from '../utils/lodash';
 import { isEmail } from 'class-validator';
 import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 import { CreatorFile } from '../discord/dto/types';
-import { CreatorFileProperty } from './dto/types';
+import { CreatorFileProperty, CreatorStatusProperty } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
-import { generateMessageAfterAdminAction } from '../utils/discord';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -48,7 +47,7 @@ export class CreatorService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
-    private readonly discordService: DiscordNotificationService,
+    private readonly discordService: DiscordService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -75,7 +74,7 @@ export class CreatorService {
       },
     });
     this.mailService.creatorRegistered(creator);
-    this.discordService.notifyCreatorRegistration(creator);
+    this.discordService.creatorRegistered(creator);
     return creator;
   }
 
@@ -225,7 +224,7 @@ export class CreatorService {
       where: { slug: creatorSlug },
       data: otherData,
     });
-    this.discordService.notifyCreatorProfileUpdate({
+    this.discordService.creatorProfileUpdated({
       oldCreator: creator,
       updatedCreator,
     });
@@ -308,7 +307,7 @@ export class CreatorService {
       throw new BadRequestException('Email already verified');
     }
 
-    this.discordService.notifyCreatorEmailVerification(creator);
+    this.discordService.creatorEmailVerified(creator);
     return await this.prisma.creator.update({
       where: { id: payload.id },
       data: { email: payload.email, emailVerifiedAt: new Date() },
@@ -380,7 +379,7 @@ export class CreatorService {
         { type: 'banner', value: bannerKey },
         { type: 'logo', value: logoKey },
       ];
-      this.discordService.notifyCreatorFilesUpdate(creator.name, creatorFiles);
+      this.discordService.creatorFilesUpdated(creator.name, creatorFiles);
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException('Malformed file upload');
@@ -425,7 +424,7 @@ export class CreatorService {
     }
 
     const creatorFiles: CreatorFile[] = [{ type: field, value: newFileKey }];
-    this.discordService.notifyCreatorFilesUpdate(creator.name, creatorFiles);
+    this.discordService.creatorFilesUpdated(creator.name, creatorFiles);
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
 
     return creator;
@@ -456,14 +455,12 @@ export class CreatorService {
     }
   }
 
-  async toggleDatePropUpdate({
+  async toggleDate({
     slug,
-    propertyName,
-    withMessage,
+    property,
   }: {
     slug: string;
-    propertyName: keyof Pick<Creator, 'verifiedAt'>;
-    withMessage?: boolean;
+    property: CreatorStatusProperty;
   }): Promise<string | void> {
     const creator = await this.prisma.creator.findFirst({
       where: { slug },
@@ -473,19 +470,14 @@ export class CreatorService {
     }
     const updatedCreator = await this.prisma.creator.update({
       data: {
-        [propertyName]: !!creator[propertyName] ? null : new Date(),
+        [property]: !!creator[property] ? null : new Date(),
       },
       where: { slug },
     });
+
+    this.discordService.creatorStatusUpdated(updatedCreator, property);
     if (updatedCreator.verifiedAt) {
       this.mailService.creatorVerified(updatedCreator);
-    }
-    if (withMessage) {
-      return generateMessageAfterAdminAction({
-        isPropertySet: !!updatedCreator[propertyName],
-        propertyName,
-        startOfTheMessage: `Creator ${updatedCreator.name} has been`,
-      });
     }
   }
 

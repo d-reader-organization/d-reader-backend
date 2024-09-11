@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
 import { CouponType, UserComicIssue } from '@prisma/client';
-import { ComicIssueStats } from '../comic/types/comic-issue-stats';
+import { ComicIssueStats } from '../comic/dto/types';
 import { ComicIssue } from '@prisma/client';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';

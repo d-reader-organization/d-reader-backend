@@ -43,7 +43,7 @@ import {
   RoyaltyWalletDto,
   toRoyaltyWalletDtoArray,
 } from './royalty-wallet.dto';
-import { RawComicIssueStats } from 'src/comic/types/raw-comic-issue-stats';
+import { RawComicIssueStats } from 'src/comic/dto/types';
 import { RawComicIssueStatsDto } from './raw-comic-issue-stats.dto';
 import {
   PartialGenreDto,

@@ -1,7 +1,7 @@
 import { bold, MessagePayload } from 'discord.js';
 import { ComicIssue } from '@prisma/client';
 import { embedsForUpdateNotification } from '../utils';
-import { ButtonKey } from '../dto/enums.dto';
+import { DiscordKey } from '../dto/enums';
 import { DISCORD_KEY_SEPARATOR } from '../dto/constants';
 
 export const COMIC_ISSUE_CREATED = ({
@@ -40,7 +40,7 @@ export const COMIC_ISSUE_UPDATED = ({
     }) comic episode updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<ComicIssue>({
-        title: ButtonKey.ComicIssue + DISCORD_KEY_SEPARATOR + updatedIssue.id,
+        title: DiscordKey.ComicIssue + DISCORD_KEY_SEPARATOR + updatedIssue.id,
         oldData: oldIssue,
         updatedData: updatedIssue,
       }),

@@ -12,7 +12,7 @@ const allowedUserIds = [
 
 const dPublisherChannelId = '1177212861525790750';
 
-export class DReaderRoleGuard implements CanActivate {
+export class DiscordAdminRoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const interaction = context.getArgByIndex(0) as Interaction;
     if (
