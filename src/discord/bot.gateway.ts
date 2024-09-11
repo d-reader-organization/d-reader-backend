@@ -15,16 +15,12 @@ import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
 import { ComicService } from 'src/comic/comic.service';
 import { CreatorService } from 'src/creator/creator.service';
 import { DReaderRoleGuard } from 'src/guards/discord.guard';
+import { DISCORD_KEY_SEPARATOR } from './dto/constants';
+import { ButtonKey } from './dto/enums.dto';
 
 enum Action {
   publish = 'publish',
   verify = 'verify',
-}
-
-enum ButtonKey {
-  comic = 'Comic',
-  comicIssue = 'ComicIssue',
-  creator = 'Creator',
 }
 
 @SkipThrottle()
@@ -42,7 +38,7 @@ export class BotGateway {
     if (!embedsTitle) {
       return;
     }
-    const [key, value] = embedsTitle.split(': ');
+    const [key, value] = embedsTitle.split(DISCORD_KEY_SEPARATOR);
 
     if (!Object.values<string>(ButtonKey).includes(key)) {
       return;
@@ -52,8 +48,8 @@ export class BotGateway {
       .setLabel('(Un)verify')
       .setStyle(ButtonStyle.Primary);
 
-    if (key === ButtonKey.creator) {
-      verify.setCustomId(`${Action.verify};${ButtonKey.creator};${value}`);
+    if (key === ButtonKey.Creator) {
+      verify.setCustomId(`${Action.verify};${ButtonKey.Creator};${value}`);
       await message.reply({
         components: [
           new ActionRowBuilder<MessageActionRowComponentBuilder>({
@@ -68,12 +64,12 @@ export class BotGateway {
       .setLabel('(Un)publish')
       .setStyle(ButtonStyle.Primary);
 
-    if (key === ButtonKey.comic) {
-      publish.setCustomId(`${Action.publish};${ButtonKey.comic};${value}`);
-      verify.setCustomId(`${Action.verify};${ButtonKey.comic};${value}`);
-    } else if (key === ButtonKey.comicIssue) {
-      publish.setCustomId(`${Action.publish};${ButtonKey.comicIssue};${value}`);
-      verify.setCustomId(`${Action.verify};${ButtonKey.comicIssue};${value}`);
+    if (key === ButtonKey.Comic) {
+      publish.setCustomId(`${Action.publish};${ButtonKey.Comic};${value}`);
+      verify.setCustomId(`${Action.verify};${ButtonKey.Comic};${value}`);
+    } else if (key === ButtonKey.ComicIssue) {
+      publish.setCustomId(`${Action.publish};${ButtonKey.ComicIssue};${value}`);
+      verify.setCustomId(`${Action.verify};${ButtonKey.ComicIssue};${value}`);
     }
     const row = new ActionRowBuilder<MessageActionRowComponentBuilder>({
       components: [publish, verify],
@@ -92,21 +88,21 @@ export class BotGateway {
 
     const propertyName =
       action === Action.publish ? 'publishedAt' : 'verifiedAt';
-    if (key === ButtonKey.comic) {
+    if (key === ButtonKey.Comic) {
       const message = (await this.comicService.toggleDatePropUpdate({
         slug: value,
         propertyName,
         withMessage: true,
       })) as string;
       await buttonInteraction.followUp({ content: message });
-    } else if (key === ButtonKey.comicIssue) {
+    } else if (key === ButtonKey.ComicIssue) {
       const message = (await this.comicIssueService.toggleDatePropUpdate({
         id: +value,
         propertyName,
         withMessage: true,
       })) as string;
       await buttonInteraction.followUp({ content: message });
-    } else if (key === ButtonKey.creator) {
+    } else if (key === ButtonKey.Creator) {
       const message = (await this.creatorService.toggleDatePropUpdate({
         slug: value,
         propertyName: 'verifiedAt',
