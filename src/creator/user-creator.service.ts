@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { CreatorStats } from '../comic/types/creator-stats';
+import { CreatorStats } from '../comic/dto/types';
 import { UserCreatorMyStatsDto } from './dto/types';
 import { UserCreator } from '@prisma/client';
 import { PickByType } from 'src/types/shared';

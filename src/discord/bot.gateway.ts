@@ -14,9 +14,9 @@ import {
 import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
 import { ComicService } from 'src/comic/comic.service';
 import { CreatorService } from 'src/creator/creator.service';
-import { DReaderRoleGuard } from 'src/guards/discord.guard';
+import { DiscordAdminRoleGuard } from 'src/guards/discord.guard';
 import { DISCORD_KEY_SEPARATOR } from './dto/constants';
-import { ButtonKey } from './dto/enums.dto';
+import { DiscordKey } from './dto/enums';
 
 enum Action {
   publish = 'publish',
@@ -40,7 +40,7 @@ export class BotGateway {
     }
     const [key, value] = embedsTitle.split(DISCORD_KEY_SEPARATOR);
 
-    if (!Object.values<string>(ButtonKey).includes(key)) {
+    if (!Object.values<string>(DiscordKey).includes(key)) {
       return;
     }
 
@@ -48,8 +48,8 @@ export class BotGateway {
       .setLabel('(Un)verify')
       .setStyle(ButtonStyle.Primary);
 
-    if (key === ButtonKey.Creator) {
-      verify.setCustomId(`${Action.verify};${ButtonKey.Creator};${value}`);
+    if (key === DiscordKey.Creator) {
+      verify.setCustomId(`${Action.verify};${DiscordKey.Creator};${value}`);
       await message.reply({
         components: [
           new ActionRowBuilder<MessageActionRowComponentBuilder>({
@@ -64,12 +64,14 @@ export class BotGateway {
       .setLabel('(Un)publish')
       .setStyle(ButtonStyle.Primary);
 
-    if (key === ButtonKey.Comic) {
-      publish.setCustomId(`${Action.publish};${ButtonKey.Comic};${value}`);
-      verify.setCustomId(`${Action.verify};${ButtonKey.Comic};${value}`);
-    } else if (key === ButtonKey.ComicIssue) {
-      publish.setCustomId(`${Action.publish};${ButtonKey.ComicIssue};${value}`);
-      verify.setCustomId(`${Action.verify};${ButtonKey.ComicIssue};${value}`);
+    if (key === DiscordKey.Comic) {
+      publish.setCustomId(`${Action.publish};${DiscordKey.Comic};${value}`);
+      verify.setCustomId(`${Action.verify};${DiscordKey.Comic};${value}`);
+    } else if (key === DiscordKey.ComicIssue) {
+      publish.setCustomId(
+        `${Action.publish};${DiscordKey.ComicIssue};${value}`,
+      );
+      verify.setCustomId(`${Action.verify};${DiscordKey.ComicIssue};${value}`);
     }
     const row = new ActionRowBuilder<MessageActionRowComponentBuilder>({
       components: [publish, verify],
@@ -78,7 +80,7 @@ export class BotGateway {
   }
 
   @On('interactionCreate')
-  @UseGuards(DReaderRoleGuard)
+  @UseGuards(DiscordAdminRoleGuard)
   async onButtonClicked(
     @EventParams() eventArgs: ClientEvents['interactionCreate'],
   ): Promise<InteractionReplyOptions> {
@@ -86,29 +88,17 @@ export class BotGateway {
     await buttonInteraction.deferReply({ ephemeral: false });
     const [action, key, value] = buttonInteraction.customId.split(';');
 
-    const propertyName =
-      action === Action.publish ? 'publishedAt' : 'verifiedAt';
-    if (key === ButtonKey.Comic) {
-      const message = (await this.comicService.toggleDatePropUpdate({
+    const property = action === Action.publish ? 'publishedAt' : 'verifiedAt';
+
+    if (key === DiscordKey.Comic) {
+      await this.comicService.toggleDate({ slug: value, property });
+    } else if (key === DiscordKey.ComicIssue) {
+      await this.comicIssueService.toggleDate({ id: +value, property });
+    } else if (key === DiscordKey.Creator) {
+      await this.creatorService.toggleDate({
         slug: value,
-        propertyName,
-        withMessage: true,
-      })) as string;
-      await buttonInteraction.followUp({ content: message });
-    } else if (key === ButtonKey.ComicIssue) {
-      const message = (await this.comicIssueService.toggleDatePropUpdate({
-        id: +value,
-        propertyName,
-        withMessage: true,
-      })) as string;
-      await buttonInteraction.followUp({ content: message });
-    } else if (key === ButtonKey.Creator) {
-      const message = (await this.creatorService.toggleDatePropUpdate({
-        slug: value,
-        propertyName: 'verifiedAt',
-        withMessage: true,
-      })) as string;
-      await buttonInteraction.followUp({ content: message });
+        property: 'verifiedAt',
+      });
     }
     return;
   }

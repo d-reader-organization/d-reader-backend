@@ -1,7 +1,7 @@
 import { Optional } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { Min } from 'class-validator';
-import { CreatorStats } from 'src/comic/types/creator-stats';
+import { CreatorStats } from 'src/comic/dto/types';
 
 export class CreatorStatsDto {
   @Min(0)

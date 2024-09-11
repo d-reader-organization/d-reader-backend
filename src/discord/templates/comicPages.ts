@@ -11,7 +11,7 @@ export const COMIC_PAGES_UPSERT = ({
   payload: MessagePayload;
 }) => {
   payload.body = {
-    content: `Comic pages created/updated for  (${
+    content: `Comic pages created/updated for (${
       comicIssue.verifiedAt ? 'verified' : 'unverified'
     }, ${
       comicIssue.publishedAt ? 'published' : 'unpublished'

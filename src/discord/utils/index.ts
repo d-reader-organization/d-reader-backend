@@ -1,4 +1,8 @@
 import { APIEmbedField, bold, strikethrough } from 'discord.js';
+import { CreatorFileProperty } from '../../creator/dto/types';
+import { BadRequestException } from '@nestjs/common';
+import { CreatorFile, GetSignedComicCommandParams } from '../dto/types';
+import { isSolanaAddress } from '../../decorators/IsSolanaAddress';
 
 const keysToIgnore = ['createdAt', 'updatedAt'];
 
@@ -49,3 +53,22 @@ export const embedsForUpdateNotification = <T>({
     updatedData,
   }),
 });
+
+export const findCreatorFile = (
+  files: CreatorFile[],
+  type: CreatorFileProperty,
+) => {
+  const file = files.find((file) => file.type === type);
+  return file ? file.value : undefined;
+};
+
+export const validateSignComicCommandParams = (
+  params: GetSignedComicCommandParams,
+) => {
+  const { address, user } = params;
+  if (!user) {
+    throw new BadRequestException('Invalid user initiated the command');
+  } else if (!isSolanaAddress(address)) {
+    throw new BadRequestException('Please provide a valid NFT address.');
+  }
+};

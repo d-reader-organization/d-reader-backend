@@ -43,7 +43,6 @@ import {
   delegateAuthority,
   verifyMintCreator,
 } from '../candy-machine/instructions';
-import { validateSignComicCommandParams } from '../utils/discord';
 import { getPublicUrl } from 'src/aws/s3client';
 import {
   CollectibleComicCollection,
@@ -58,6 +57,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
+import { validateSignComicCommandParams } from './utils';
 
 @SkipThrottle()
 @Command({

@@ -1,5 +1,5 @@
 import { IsInt, IsOptional, Min } from 'class-validator';
-import { ComicStats } from '../types/comic-stats';
+import { ComicStats } from '../dto/types';
 import { plainToInstance } from 'class-transformer';
 import { IsNumberRange } from '../../decorators/IsNumberRange';
 import { round } from 'lodash';

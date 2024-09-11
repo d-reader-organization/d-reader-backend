@@ -11,7 +11,7 @@ import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto, toComicStatsDto } from './comic-stats.dto';
 import { toUserComicDto, UserComicDto } from './user-comic.dto';
-import { ComicStats } from 'src/comic/types/comic-stats';
+import { ComicStats } from 'src/comic/dto/types';
 import { ApiProperty } from '@nestjs/swagger';
 import { getPublicUrl } from '../../aws/s3client';
 import { Comic, Genre, UserComic, Creator, AudienceType } from '@prisma/client';

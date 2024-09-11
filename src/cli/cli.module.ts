@@ -67,7 +67,7 @@ import { InsertItemsQuestions } from './insert-items-questions';
 import { FetchCollectionSaleDetailsCommand } from './fetch-sale-collection-details-command';
 import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-details-questions';
 import { WebSocketModule } from '../websockets/websockets.module';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 
 @Module({
   imports: [
@@ -147,7 +147,7 @@ import { DiscordNotificationService } from '../discord/notification.service';
     InsertItemsQuestions,
     FetchCollectionSaleDetailsCommand,
     FetchCollectionSaleDetailsQuestions,
-    DiscordNotificationService,
+    DiscordService,
   ],
 })
 export class CLIModule {}

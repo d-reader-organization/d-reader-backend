@@ -15,7 +15,7 @@ import {
   ComicIssueStatsDto,
   toComicIssueStatsDto,
 } from './comic-issue-stats.dto';
-import { ComicIssueStats } from 'src/comic/types/comic-issue-stats';
+import { ComicIssueStats } from 'src/comic/dto/types';
 import { toUserComicIssueDto, UserComicIssueDto } from './user-comic-issue.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import {

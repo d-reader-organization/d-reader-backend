@@ -9,7 +9,7 @@ import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { NonceService } from '../nonce/nonce.service';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -28,7 +28,7 @@ import { WalletService } from '../wallet/wallet.service';
     HeliusService,
     DarkblockService,
     NonceService,
-    DiscordNotificationService,
+    DiscordService,
     MailService,
     AuthService,
     JwtService,

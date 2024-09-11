@@ -437,7 +437,7 @@ export class MailService {
     }
   }
 
-  async comicSeriesVerifed(comic: Comic & { creator: Creator }) {
+  async comicVerifed(comic: Comic & { creator: Creator }) {
     try {
       await this.mailerService.sendMail({
         to: comic.creator.email,
@@ -454,7 +454,7 @@ export class MailService {
     }
   }
 
-  async comicSeriesPublished(comic: Comic & { creator: Creator }) {
+  async comicPublished(comic: Comic & { creator: Creator }) {
     try {
       await this.mailerService.sendMail({
         to: comic.creator.email,

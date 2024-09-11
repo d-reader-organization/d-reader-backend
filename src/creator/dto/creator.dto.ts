@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto, toCreatorStatsDto } from './creator-stats.dto';
-import { CreatorStats } from 'src/comic/types/creator-stats';
+import { CreatorStats } from 'src/comic/dto/types';
 import { Creator, Genre, Role } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';

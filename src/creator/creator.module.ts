@@ -7,7 +7,7 @@ import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { WalletModule } from '../wallet/wallet.module';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 import { DiscordModule } from '@discord-nestjs/core';
 @Module({
   imports: [WalletModule, DiscordModule.forFeature()],
@@ -19,7 +19,7 @@ import { DiscordModule } from '@discord-nestjs/core';
     MailService,
     AuthService,
     JwtService,
-    DiscordNotificationService,
+    DiscordService,
   ],
 })
 export class CreatorModule {}

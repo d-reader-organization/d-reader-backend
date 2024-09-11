@@ -11,7 +11,7 @@ import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -32,7 +32,7 @@ import { WalletService } from '../wallet/wallet.service';
     ComicPageService,
     UserComicIssueService,
     DigitalAssetService,
-    DiscordNotificationService,
+    DiscordService,
     MailService,
     AuthService,
     JwtService,

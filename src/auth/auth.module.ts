@@ -14,7 +14,7 @@ import { CreatorService } from '../creator/creator.service';
 import { UserCreatorService } from '../creator/user-creator.service';
 import { MailModule } from '../mail/mail.module';
 import { WalletModule } from '../wallet/wallet.module';
-import { DiscordNotificationService } from '../discord/notification.service';
+import { DiscordService } from '../discord/discord.service';
 import { DiscordModule } from '@discord-nestjs/core';
 import { GoogleAuthService } from '../third-party/google-auth/google-auth.service';
 import { NonceService } from '../nonce/nonce.service';
@@ -57,7 +57,7 @@ import { NonceService } from '../nonce/nonce.service';
     UserService,
     CreatorService,
     UserCreatorService,
-    DiscordNotificationService,
+    DiscordService,
     GoogleAuthService,
     NonceService,
   ],

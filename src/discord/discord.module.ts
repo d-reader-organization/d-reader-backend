@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DiscordNotificationService } from './notification.service';
+import { DiscordService } from './discord.service';
 import { GetSignCommand } from './sign-comic.command';
 import { TransactionService } from '../transactions/transaction.service';
 import { DiscordModule as ParentDiscordModule } from '@discord-nestjs/core';
@@ -26,7 +26,7 @@ import { FirebaseService } from 'src/third-party/firebase/firebase.service';
 @Module({
   imports: [ParentDiscordModule.forFeature()],
   providers: [
-    DiscordNotificationService,
+    DiscordService,
     GetSignCommand,
     TransactionService,
     NonceService,

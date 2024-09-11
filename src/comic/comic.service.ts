@@ -12,7 +12,7 @@ import { Comic, Genre, Creator } from '@prisma/client';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { ComicStats } from './types/comic-stats';
+import { ComicStats } from './dto/types';
 import { getComicsQuery } from './comic.queries';
 import { insensitive } from '../utils/lodash';
 import { RawComicParams } from './dto/raw-comic-params.dto';
@@ -20,10 +20,10 @@ import { getRawComicsQuery } from './raw-comic.queries';
 import { Prisma } from '@prisma/client';
 import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
-import { DiscordNotificationService } from '../discord/notification.service';
-import { generateMessageAfterAdminAction } from '../utils/discord';
+import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
+import { ComicStatusProperty } from './dto/types';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -34,7 +34,7 @@ export class ComicService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly userComicService: UserComicService,
-    private readonly discordService: DiscordNotificationService,
+    private readonly discordService: DiscordService,
     private readonly mailService: MailService,
   ) {}
 
@@ -58,7 +58,7 @@ export class ComicService {
           genres: { connect: genres.map((slug) => ({ slug })) },
         },
       });
-      this.discordService.notifyComicCreated(comic);
+      this.discordService.comicCreated(comic);
       return comic;
     } catch (e) {
       console.error(e);
@@ -270,7 +270,7 @@ export class ComicService {
           genres: genresData,
         },
       });
-      this.discordService.notifyComicUpdated({ updatedComic, oldComic: comic });
+      this.discordService.comicUpdated({ updatedComic, oldComic: comic });
       return updatedComic;
     } catch {
       throw new NotFoundException(`Comic ${slug} does not exist`);
@@ -408,14 +408,12 @@ export class ComicService {
     }
   }
 
-  async toggleDatePropUpdate({
+  async toggleDate({
     slug,
-    propertyName,
-    withMessage,
+    property,
   }: {
     slug: string;
-    propertyName: keyof Pick<Comic, 'publishedAt' | 'verifiedAt'>;
-    withMessage?: boolean;
+    property: ComicStatusProperty;
   }): Promise<string | void> {
     const comic = await this.prisma.comic.findUnique({ where: { slug } });
 
@@ -425,24 +423,17 @@ export class ComicService {
 
     const updatedComic = await this.prisma.comic.update({
       data: {
-        [propertyName]: !!comic[propertyName] ? null : new Date(),
+        [property]: !!comic[property] ? null : new Date(),
       },
       where: { slug },
       include: { creator: true },
     });
 
-    if (propertyName === 'verifiedAt' && updatedComic.verifiedAt) {
-      this.mailService.comicSeriesVerifed(updatedComic);
-    } else if (propertyName === 'publishedAt' && updatedComic.publishedAt) {
-      this.mailService.comicSeriesPublished(updatedComic);
-    }
-
-    if (withMessage) {
-      return generateMessageAfterAdminAction({
-        isPropertySet: !!updatedComic[propertyName],
-        propertyName,
-        startOfTheMessage: `Comic ${updatedComic.title} has been`,
-      });
+    this.discordService.comicStatusUpdated(updatedComic, property);
+    if (property === 'verifiedAt' && updatedComic.verifiedAt) {
+      this.mailService.comicVerifed(updatedComic);
+    } else if (property === 'publishedAt' && updatedComic.publishedAt) {
+      this.mailService.comicPublished(updatedComic);
     }
   }
 

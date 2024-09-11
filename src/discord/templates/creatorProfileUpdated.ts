@@ -1,7 +1,7 @@
 import { Creator } from '@prisma/client';
 import { bold, MessagePayload } from 'discord.js';
 import { embedsForUpdateNotification } from '../utils';
-import { ButtonKey } from '../dto/enums.dto';
+import { DiscordKey } from '../dto/enums';
 import { DISCORD_KEY_SEPARATOR } from '../dto/constants';
 
 export const CREATOR_PROFILE_UPDATED = ({
@@ -21,7 +21,7 @@ export const CREATOR_PROFILE_UPDATED = ({
     }) creator profile updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<Creator>({
-        title: ButtonKey.Creator + DISCORD_KEY_SEPARATOR + updatedCreator.slug,
+        title: DiscordKey.Creator + DISCORD_KEY_SEPARATOR + updatedCreator.slug,
         oldData: oldCreator,
         updatedData: updatedCreator,
       }),

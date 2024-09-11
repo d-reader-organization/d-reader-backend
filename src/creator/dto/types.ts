@@ -9,3 +9,5 @@ export type CreatorFileProperty = PickFields<
 export type UserCreatorMyStatsDto = {
   isFollowing: boolean;
 };
+
+export type CreatorStatusProperty = keyof Pick<Creator, 'verifiedAt'>;
