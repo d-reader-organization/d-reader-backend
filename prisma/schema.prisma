@@ -40,7 +40,7 @@ model User {
   notifications                    UserNotification[]
   devices                          Device[]
   consents                         UserPrivacyConsent[]
-  eligibleCandyMachineCoupons      CandyMachineCouponEligibleUser[]
+  whitelistedCandyMachineCoupons      CandyMachineCouponWhitelistedUser[]
 }
 
 model Wallet {
@@ -51,7 +51,7 @@ model Wallet {
   connectedAt                        DateTime?
   user                               User?                               @relation(fields: [userId], references: [id])
   mintReceipts                       CandyMachineReceipt[]
-  eligibleCandyMachineCoupons        CandyMachineCouponEligibleWallet[]
+  whitelistedCandyMachineCoupons        CandyMachineCouponWhitelistedWallet[]
   digitalAssets                      DigitalAsset[]
 }
 
@@ -317,8 +317,8 @@ model CandyMachineCoupon {
   numberOfRedemptions                Int?
   startsAt                           DateTime?
   expiresAt                          DateTime?
-  wallets                            CandyMachineCouponEligibleWallet[]
-  users                              CandyMachineCouponEligibleUser[]
+  wallets                            CandyMachineCouponWhitelistedWallet[]
+  users                              CandyMachineCouponWhitelistedUser[]
   type                               CouponType
   candyMachineAddress                String
   candyMachine                       CandyMachine                        @relation(fields: [candyMachineAddress], references: [address])
@@ -346,7 +346,7 @@ enum CouponType {
   PublicUser
 }
 
-model CandyMachineCouponEligibleWallet {
+model CandyMachineCouponWhitelistedWallet {
   wallet               Wallet             @relation(fields: [walletAddress], references: [address])
   walletAddress        String
   coupon               CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
@@ -355,7 +355,7 @@ model CandyMachineCouponEligibleWallet {
   @@id([couponId, walletAddress])
 }
 
-model CandyMachineCouponEligibleUser {
+model CandyMachineCouponWhitelistedUser {
   user                 User               @relation(fields: [userId], references: [id])
   userId               Int
   coupon               CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
@@ -378,6 +378,7 @@ model CandyMachineReceipt {
   candyMachineAddress     String
   transactionSignature    String
   splTokenAddress         String
+  label                   String
   couponId                Int
 }
 

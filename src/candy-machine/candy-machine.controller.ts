@@ -56,7 +56,7 @@ export class CandyMachineController {
   @Post('whitelist-wallets')
   async whitelistWallets(@Body() addWalletWhiteListDto: AddWalletWhiteListDto) {
     const { couponId, walletWhiteList } = addWalletWhiteListDto;
-    await this.candyMachineService.addEligibleWalletsToCoupon(
+    await this.candyMachineService.addWhitelistedWalletsToCoupon(
       couponId,
       walletWhiteList,
     );
@@ -66,7 +66,7 @@ export class CandyMachineController {
   @Post('whitelist-users')
   async whitelistUsers(@Body() addUserWhiteListDto: AddUserWhiteListDto) {
     const { couponId, userWhiteList } = addUserWhiteListDto;
-    await this.candyMachineService.addEligibleUsersToCoupon(
+    await this.candyMachineService.addWhitelistedUsersToCoupon(
       couponId,
       userWhiteList,
     );
@@ -88,8 +88,8 @@ export class CandyMachineController {
   }
 
   @AdminGuard()
-  @Post('add-coupon-price-config/:couponId')
-  async addCandyMachineCouponPriceConfig(
+  @Post('add-coupon-currency/:couponId')
+  async addCandyMachineCouponCurrency(
     @Param('couponId') couponId: number,
     @Body()
     addCandyMachineCouponCurrencySettingDto: AddCandyMachineCouponCurrencySettingDto,
