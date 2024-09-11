@@ -19,8 +19,8 @@ import { SyncWebhookQuestions } from './sync-webhook-questions';
 import { WalletService } from '../wallet/wallet.service';
 import { SyncWalletCommand } from './sync-wallet-command';
 import { SyncWalletQuestions } from './sync-wallet-questions';
-import { AddEligibleWalletsCommand } from './add-eligible-wallets-command';
-import { AddEligibleWalletsQuestions } from './add-eligible-wallets-questions';
+import { AddWhitelistedWalletsCommand } from './add-whitelisted-wallets-command';
+import { AddWhitelistedWalletsQuestions } from './add-whitelisted-wallets-questions';
 import { DarkblockService } from '../candy-machine/darkblock.service';
 import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
 import { MintRemainingCommand } from './mint-remaining-command';
@@ -113,10 +113,10 @@ import { DiscordNotificationService } from '../discord/notification.service';
     HeliusService,
     SyncWalletQuestions,
     SyncWalletCommand,
-    AddEligibleWalletsQuestions,
+    AddWhitelistedWalletsQuestions,
     MintRemainingCommand,
     MintRemainingQuestions,
-    AddEligibleWalletsCommand,
+    AddWhitelistedWalletsCommand,
     WalletService,
     DarkblockService,
     UserService,

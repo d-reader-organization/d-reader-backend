@@ -8,10 +8,10 @@ interface Options {
 }
 
 @Command({
-  name: 'add-eligible-wallets',
+  name: 'add-whitelisted-wallets',
   description: 'add eligible wallets to coupon',
 })
-export class AddEligibleWalletsCommand extends CommandRunner {
+export class AddWhitelistedWalletsCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly candyMachineService: CandyMachineService,
@@ -20,15 +20,18 @@ export class AddEligibleWalletsCommand extends CommandRunner {
   }
 
   async run(_: string[], options: Options): Promise<void> {
-    options = await this.inquirerService.ask('add-allow-list', options);
-    await this.addEligibleWallets(options);
+    options = await this.inquirerService.ask(
+      'add-whitelisted-wallets',
+      options,
+    );
+    await this.addWhitelistedWallets(options);
   }
 
-  async addEligibleWallets(options: Options) {
-    log('\n🏗️  adding eligible wallets to coupon');
+  async addWhitelistedWallets(options: Options) {
+    log('\n🏗️  adding whitelisted wallets to coupon');
     try {
       const { couponId, wallets } = options;
-      await this.candyMachineService.addEligibleWalletsToCoupon(
+      await this.candyMachineService.addWhitelistedWalletsToCoupon(
         couponId,
         wallets,
       );

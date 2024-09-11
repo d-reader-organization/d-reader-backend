@@ -161,10 +161,10 @@ export function findCandyMachineCouponDiscount(
   ) => configs.find((config) => config.splTokenAddress === splTokenAddress);
 
   const defaultCouponConfig = defaultCoupon.currencySettings.find(
-    (defaultCouponPriceConfig) =>
+    (defaultCouponCurrency) =>
       findCouponCurrencySetting(
         coupon.currencySettings,
-        defaultCouponPriceConfig.splTokenAddress,
+        defaultCouponCurrency.splTokenAddress,
       ),
   );
 
@@ -209,3 +209,5 @@ export function getCouponLabel(
   };
   return `${couponMap[couponType]}${couponTypeIteration}-${currencyCouponIteration}`;
 }
+
+export const PUBLIC_COUPON_LABEL = getCouponLabel(CouponType.PublicUser, 0, 0);

@@ -20,7 +20,7 @@ export class CouponStatsDto {
   isEligible: boolean;
 }
 
-export class CandyMachineCouponPriceConfigDto {
+export class CandyMachineCouponCurrencySettingDto {
   @IsNumber()
   mintPrice: number;
 
@@ -61,9 +61,9 @@ export class CandyMachineCouponDto {
   @ApiProperty({ type: CouponStatsDto })
   stats: CouponStatsDto;
 
-  @Type(() => CandyMachineCouponPriceConfigDto)
-  @ApiProperty({ type: [CandyMachineCouponPriceConfigDto] })
-  prices: CandyMachineCouponPriceConfigDto[];
+  @Type(() => CandyMachineCouponCurrencySettingDto)
+  @ApiProperty({ type: [CandyMachineCouponCurrencySettingDto] })
+  prices: CandyMachineCouponCurrencySettingDto[];
 }
 
 export function toCandyMachineCouponDto(coupon: CandyMachineCouponWithStats) {

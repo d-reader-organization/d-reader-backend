@@ -1,13 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `label` on the `CandyMachineReceipt` table. All the data in the column will be lost.
-  - You are about to drop the `CandyMachineGroup` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `UserCandyMachineGroup` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `WalletCandyMachineGroup` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `couponId` to the `CandyMachineReceipt` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "CouponType" AS ENUM ('WhitelistedWallet', 'WhitelistedUser', 'RegisteredUser', 'PublicUser');
 
@@ -59,19 +49,19 @@ CREATE TABLE "CandyMachineCouponCurrencySetting" (
 );
 
 -- CreateTable
-CREATE TABLE "CandyMachineCouponEligibleWallet" (
+CREATE TABLE "CandyMachineCouponWhitelistedWallet" (
     "walletAddress" TEXT NOT NULL,
     "couponId" INTEGER NOT NULL,
 
-    CONSTRAINT "CandyMachineCouponEligibleWallet_pkey" PRIMARY KEY ("couponId","walletAddress")
+    CONSTRAINT "CandyMachineCouponWhitelistedWallet_pkey" PRIMARY KEY ("couponId","walletAddress")
 );
 
 -- CreateTable
-CREATE TABLE "CandyMachineCouponEligibleUser" (
+CREATE TABLE "CandyMachineCouponWhitelistedUser" (
     "userId" INTEGER NOT NULL,
     "couponId" INTEGER NOT NULL,
 
-    CONSTRAINT "CandyMachineCouponEligibleUser_pkey" PRIMARY KEY ("couponId","userId")
+    CONSTRAINT "CandyMachineCouponWhitelistedUser_pkey" PRIMARY KEY ("couponId","userId")
 );
 
 -- CreateIndex
@@ -87,13 +77,13 @@ ALTER TABLE "CandyMachineCoupon" ADD CONSTRAINT "CandyMachineCoupon_candyMachine
 ALTER TABLE "CandyMachineCouponCurrencySetting" ADD CONSTRAINT "CandyMachineCouponCurrencySetting_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "CandyMachineCoupon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineCouponEligibleWallet" ADD CONSTRAINT "CandyMachineCouponEligibleWallet_walletAddress_fkey" FOREIGN KEY ("walletAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CandyMachineCouponWhitelistedWallet" ADD CONSTRAINT "CandyMachineCouponWhitelistedWallet_walletAddress_fkey" FOREIGN KEY ("walletAddress") REFERENCES "Wallet"("address") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineCouponEligibleWallet" ADD CONSTRAINT "CandyMachineCouponEligibleWallet_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "CandyMachineCoupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CandyMachineCouponWhitelistedWallet" ADD CONSTRAINT "CandyMachineCouponWhitelistedWallet_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "CandyMachineCoupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineCouponEligibleUser" ADD CONSTRAINT "CandyMachineCouponEligibleUser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CandyMachineCouponWhitelistedUser" ADD CONSTRAINT "CandyMachineCouponWhitelistedUser_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CandyMachineCouponEligibleUser" ADD CONSTRAINT "CandyMachineCouponEligibleUser_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "CandyMachineCoupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "CandyMachineCouponWhitelistedUser" ADD CONSTRAINT "CandyMachineCouponWhitelistedUser_couponId_fkey" FOREIGN KEY ("couponId") REFERENCES "CandyMachineCoupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;
