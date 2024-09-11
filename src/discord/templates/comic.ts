@@ -1,6 +1,8 @@
 import { bold, MessagePayload } from 'discord.js';
 import { Comic } from '@prisma/client';
 import { embedsForUpdateNotification } from '../utils';
+import { ButtonKey } from '../dto/enums.dto';
+import { DISCORD_KEY_SEPARATOR } from '../dto/constants';
 
 export const COMIC_CREATED = ({
   comic,
@@ -38,7 +40,7 @@ export const COMIC_UPDATED = ({
     }) comic series updated! [Details](${hyperlink})`,
     embeds: [
       embedsForUpdateNotification<Comic>({
-        title: `Comic: ${updatedComic.slug}`,
+        title: ButtonKey.Comic + DISCORD_KEY_SEPARATOR + updatedComic.slug,
         oldData: oldComic,
         updatedData: updatedComic,
       }),
