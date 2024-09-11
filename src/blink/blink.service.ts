@@ -59,7 +59,7 @@ export class BlinkService {
       throw new Error('No active mint for this issue');
     }
 
-    const publicCouponPriceConfig =
+    const publicCouponCurrecySetting =
       await this.prisma.candyMachineCouponCurrencySetting.findFirst({
         where: {
           coupon: {
@@ -71,8 +71,8 @@ export class BlinkService {
       });
 
     const defaultCover = statelessCovers.find((cover) => cover.isDefault);
-    const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${publicCouponPriceConfig.couponId}`;
-    const mintPrice = toSol(Number(publicCouponPriceConfig.mintPrice));
+    const actionEndpoint = `${process.env.API_URL}/transaction/blink/mint/${publicCouponCurrecySetting.couponId}`;
+    const mintPrice = toSol(Number(publicCouponCurrecySetting.mintPrice));
 
     return {
       icon: this.s3.getPublicUrl(defaultCover.image),

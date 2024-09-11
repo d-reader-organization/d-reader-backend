@@ -38,7 +38,7 @@
     "mint-remaining": "npx ts-node src/cli/main.ts mint-remaining",
     "bundlr-withdraw": "npx ts-node src/cli/main.ts bundlr-withdraw",
     "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
-    "add-eligible-wallets": "npx ts-node src/cli/main.ts add-eligible-wallets",
+    "add-whitelisted-wallets": "npx ts-node src/cli/main.ts add-whitelisted-wallets",
     "fetch-candy-machine": "npx ts-node src/cli/main.ts fetch-candy-machine",
     "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
     "update-date": "npx ts-node src/cli/main.ts update-date",

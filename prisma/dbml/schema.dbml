@@ -29,7 +29,7 @@ Table User {
   notifications UserNotification [not null]
   devices Device [not null]
   consents UserPrivacyConsent [not null]
-  eligibleCandyMachineCoupons CandyMachineCouponEligibleUser [not null]
+  whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
 }
 
 Table Wallet {
@@ -40,7 +40,7 @@ Table Wallet {
   connectedAt DateTime
   user User
   mintReceipts CandyMachineReceipt [not null]
-  eligibleCandyMachineCoupons CandyMachineCouponEligibleWallet [not null]
+  whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
   digitalAssets DigitalAsset [not null]
 }
 
@@ -275,8 +275,8 @@ Table CandyMachineCoupon {
   numberOfRedemptions Int
   startsAt DateTime
   expiresAt DateTime
-  wallets CandyMachineCouponEligibleWallet [not null]
-  users CandyMachineCouponEligibleUser [not null]
+  wallets CandyMachineCouponWhitelistedWallet [not null]
+  users CandyMachineCouponWhitelistedUser [not null]
   type CouponType [not null]
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]
@@ -299,7 +299,7 @@ Table CandyMachineCouponCurrencySetting {
   }
 }
 
-Table CandyMachineCouponEligibleWallet {
+Table CandyMachineCouponWhitelistedWallet {
   wallet Wallet [not null]
   walletAddress String [not null]
   coupon CandyMachineCoupon [not null]
@@ -310,7 +310,7 @@ Table CandyMachineCouponEligibleWallet {
   }
 }
 
-Table CandyMachineCouponEligibleUser {
+Table CandyMachineCouponWhitelistedUser {
   user User [not null]
   userId Int [not null]
   coupon CandyMachineCoupon [not null]
@@ -335,6 +335,7 @@ Table CandyMachineReceipt {
   candyMachineAddress String [not null]
   transactionSignature String [not null]
   splTokenAddress String [not null]
+  label String [not null]
   couponId Int [not null]
 }
 
@@ -795,13 +796,13 @@ Ref: CandyMachineCoupon.candyMachineAddress > CandyMachine.address
 
 Ref: CandyMachineCouponCurrencySetting.couponId > CandyMachineCoupon.id
 
-Ref: CandyMachineCouponEligibleWallet.walletAddress > Wallet.address
+Ref: CandyMachineCouponWhitelistedWallet.walletAddress > Wallet.address
 
-Ref: CandyMachineCouponEligibleWallet.couponId > CandyMachineCoupon.id [delete: Cascade]
+Ref: CandyMachineCouponWhitelistedWallet.couponId > CandyMachineCoupon.id [delete: Cascade]
 
-Ref: CandyMachineCouponEligibleUser.userId > User.id
+Ref: CandyMachineCouponWhitelistedUser.userId > User.id
 
-Ref: CandyMachineCouponEligibleUser.couponId > CandyMachineCoupon.id [delete: Cascade]
+Ref: CandyMachineCouponWhitelistedUser.couponId > CandyMachineCoupon.id [delete: Cascade]
 
 Ref: CandyMachineReceipt.collectibleComicAddress - CollectibleComic.address
 

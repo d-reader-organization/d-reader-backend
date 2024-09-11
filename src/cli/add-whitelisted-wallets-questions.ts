@@ -1,12 +1,12 @@
 import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
-@QuestionSet({ name: 'add-eligible-wallets' })
-export class AddEligibleWalletsQuestions {
+@QuestionSet({ name: 'add-whitelisted-wallets' })
+export class AddWhitelistedWalletsQuestions {
   @Question({
     type: 'input',
     name: 'couponId',
-    message: 'id of coupon to add eligible wallets to',
+    message: 'id of coupon to add whitelisted wallets to',
     validate: async function (value: string) {
       if (!value) {
         return 'Coupon id must be a number';
@@ -22,7 +22,7 @@ export class AddEligibleWalletsQuestions {
     type: 'input',
     name: 'wallets',
     message:
-      'list of eligible wallets to add in coupon (empty if no wallet to add)',
+      'list of whitelisted wallets to add in coupon (empty if no wallet to add)',
     default: [],
     validate: async function (wallets: string[]) {
       wallets.forEach((wallet) => {

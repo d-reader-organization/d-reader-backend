@@ -6,8 +6,8 @@ import {
 import {
   CandyMachineCoupon,
   CandyMachineCouponCurrencySetting,
-  CandyMachineCouponEligibleUser,
-  CandyMachineCouponEligibleWallet,
+  CandyMachineCouponWhitelistedUser,
+  CandyMachineCouponWhitelistedWallet,
   CouponType,
 } from '@prisma/client';
 
@@ -46,7 +46,7 @@ export type AddCandyMachineCouponParams = AddCandyMachineCouponConfigParams & {
 };
 
 export type AddCandyMachineCouponConfigParams =
-  AddCandyMachineCouponPriceConfigParams & {
+  AddCandyMachineCouponCurrencyParams & {
     startsAt?: Date;
     expiresAt?: Date;
     numberOfRedemptions?: number;
@@ -54,7 +54,7 @@ export type AddCandyMachineCouponConfigParams =
     couponType: CouponType;
   };
 
-export type AddCandyMachineCouponPriceConfigParams = {
+export type AddCandyMachineCouponCurrencyParams = {
   label: string;
   mintPrice: number;
   usdcEquivalent: number;
@@ -79,9 +79,8 @@ export type DarkblockTraits = {
   value: string;
 };
 
-export type CandyMachineCouponWithEligibleUsersAndWallets =
-  CandyMachineCoupon & {
-    currencySettings: CandyMachineCouponCurrencySetting[];
-  } & { users: CandyMachineCouponEligibleUser[] } & {
-    wallets: CandyMachineCouponEligibleWallet[];
-  };
+export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
+  currencySettings: CandyMachineCouponCurrencySetting[];
+} & { users: CandyMachineCouponWhitelistedUser[] } & {
+  wallets: CandyMachineCouponWhitelistedWallet[];
+};
