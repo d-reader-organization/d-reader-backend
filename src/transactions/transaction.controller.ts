@@ -25,7 +25,6 @@ import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PUBLIC_GROUP_LABEL } from '../constants';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
 import { UserAuth } from '../guards/user-auth.guard';
@@ -76,12 +75,11 @@ export class TransactionController {
   ) {
     const minterAddress = publicKey(query.minterAddress);
     const candyMachineAddress = publicKey(query.candyMachineAddress);
-    const label = query.label ?? PUBLIC_GROUP_LABEL;
 
     return await this.candyMachineService.createMintOneTransaction(
       minterAddress,
       candyMachineAddress,
-      label,
+      query.label,
       query.couponId,
       user ? user.id : null,
     );
@@ -129,8 +127,7 @@ export class TransactionController {
   ) {
     const minterAddress = publicKey(query.minterAddress);
     const candyMachineAddress = publicKey(query.candyMachineAddress);
-    const couponId = query.couponId;
-    const label = query.label ?? PUBLIC_GROUP_LABEL; // TODO: calculate label;
+    const { couponId, label } = query;
     const mintCount = query.mintCount ? +query.mintCount : 1;
 
     return await this.candyMachineService.createMintTransaction(
