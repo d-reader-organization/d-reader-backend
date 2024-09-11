@@ -11,5 +11,5 @@ block content
         p(style='font-size: 18px; margin: 8px 0;') Share the wonderful news on Twitter so other creators can connect with you.
 
 block action
-    a.action-link.green-bg(href=shareOnTwitterLink) Share on 𝕏
-
+    if shareOnTwitterLink 
+        a.action-link.twitter-button(href=shareOnTwitterLink) Share on 𝕏
