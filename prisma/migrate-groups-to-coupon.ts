@@ -4,8 +4,9 @@ import { CouponType, PrismaClient, WhiteListType } from '@prisma/client';
 /*
   STEPS TO MIGRATE:
   1). Run the migration script : ``candy_machine_coupon_migrations
-  2). Run this script with ``npx ts-node ./prisma/migrate-groups-to-coupon.ts``
-  3). Run the migration script drop_group_table_migrations
+  2). Use Groups and options coupon id for schema dbml
+  3). Run this script with ``npx ts-node ./prisma/migrate-groups-to-coupon.ts``
+  4). Run the migration script drop_group_table_migrations
 */
 
 const prisma = new PrismaClient();
@@ -65,7 +66,7 @@ async function migrateGroupstoCoupon() {
           },
         },
       });
-      couponId = coupon.id;
+      couponId = coupon?.id;
     } else {
       const coupon = await prisma.candyMachineCoupon.findFirst({
         where: {
@@ -77,7 +78,10 @@ async function migrateGroupstoCoupon() {
           },
         },
       });
-      couponId = coupon.id;
+      couponId = coupon?.id;
+    }
+    if(!couponId){
+      continue;
     }
     console.log('Coupon ID', couponId);
     await prisma.candyMachineReceipt.update({
