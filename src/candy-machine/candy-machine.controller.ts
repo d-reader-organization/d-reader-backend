@@ -25,7 +25,7 @@ import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { AddUserWhiteListDto } from './dto/add-user-whitelist.dto';
-import { AddCandyMachineCouponPriceConfigDto } from './dto/add-coupon-price-config.dto';
+import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
@@ -92,11 +92,11 @@ export class CandyMachineController {
   async addCandyMachineCouponPriceConfig(
     @Param('couponId') couponId: number,
     @Body()
-    addCandyMachineCouponPriceConfigDto: AddCandyMachineCouponPriceConfigDto,
+    addCandyMachineCouponCurrencySettingDto: AddCandyMachineCouponCurrencySettingDto,
   ) {
-    await this.candyMachineService.addCandyMachineCouponPriceConfig(
+    await this.candyMachineService.addCandyMachineCouponCurrency(
       couponId,
-      addCandyMachineCouponPriceConfigDto,
+      addCandyMachineCouponCurrencySettingDto,
     );
   }
 }

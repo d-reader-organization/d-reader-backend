@@ -20,7 +20,7 @@ export class MintParams {
 
   @IsOptional()
   @IsString()
-  label?: string;
+  label: string;
 
   @IsOptional()
   @IsNumberString()
