@@ -99,7 +99,7 @@ import { NonceService } from '../nonce/nonce.service';
 import { getTransactionWithPriorityFee } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
-import { AddCandyMachineCouponPriceConfigDto } from './dto/add-coupon-price-config.dto';
+import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
 
 @Injectable()
 export class CandyMachineService {
@@ -153,6 +153,10 @@ export class CandyMachineService {
     } = createCandyMachineParams;
 
     const isPublicMint = couponType === CouponType.PublicUser;
+    // When a candymachine is created, public coupon would be the first coupon so iteration would be 0
+    const publicGroupLabel = isPublicMint
+      ? getCouponLabel(CouponType.PublicUser, 0, 0)
+      : undefined;
 
     console.log('Create Core Candy Machine');
     const nonceArgs = await this.nonceService.getNonce();
@@ -160,7 +164,7 @@ export class CandyMachineService {
       this.umi,
       publicKey(collectionAddress),
       createCandyMachineParams,
-      isPublicMint,
+      publicGroupLabel,
       nonceArgs,
     );
 
@@ -203,7 +207,7 @@ export class CandyMachineService {
                   create: {
                     mintPrice,
                     splTokenAddress,
-                    label: getCouponLabel(CouponType.PublicUser, 0, 0),
+                    label: publicGroupLabel,
                     usdcEquivalent: usdcEquivalentMintPrice,
                     candyMachineAddress,
                   },
@@ -537,14 +541,15 @@ export class CandyMachineService {
       usdcEquivalent,
     } = params;
 
-    const couponsCount = await this.prisma.candyMachineCoupon.count({
+    const couponTypeIteration = await this.prisma.candyMachineCoupon.count({
       where: {
         type: couponType,
         candyMachineAddress,
       },
     });
 
-    const label = getCouponLabel(couponType, couponsCount, 0);
+    // When a coupon adds for first time, the currency iterations would always be 0
+    const label = getCouponLabel(couponType, couponTypeIteration, 0);
     const splTokenAddress =
       params.splTokenAddress ?? WRAPPED_SOL_MINT.toBase58();
 
@@ -590,9 +595,9 @@ export class CandyMachineService {
     return candyMachineCoupon;
   }
 
-  async addCandyMachineCouponPriceConfig(
+  async addCandyMachineCouponCurrency(
     couponId: number,
-    params: AddCandyMachineCouponPriceConfigDto,
+    params: AddCandyMachineCouponCurrencySettingDto,
   ) {
     const { mintPrice, usdcEquivalent } = params;
 
@@ -612,14 +617,15 @@ export class CandyMachineService {
 
     const candyMachineAddress = candyMachineCoupon.candyMachineAddress;
 
-    const couponsCount = await this.prisma.candyMachineCoupon.count({
+    // TODO: Maybe use a coupon priority or number for labels
+    const couponTypeIteration = await this.prisma.candyMachineCoupon.count({
       where: {
         type: candyMachineCoupon.type,
         candyMachineAddress,
       },
     });
 
-    const currencySettingsCount =
+    const currencyCouponIteration =
       await this.prisma.candyMachineCouponCurrencySetting.count({
         where: {
           couponId,
@@ -628,8 +634,8 @@ export class CandyMachineService {
 
     const label = getCouponLabel(
       candyMachineCoupon.type,
-      couponsCount,
-      currencySettingsCount,
+      couponTypeIteration,
+      currencyCouponIteration,
     );
 
     await this.addCoreCandyMachineGroupOnChain(candyMachineAddress, {

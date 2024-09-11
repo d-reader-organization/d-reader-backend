@@ -18,7 +18,6 @@ import {
   FUNDS_DESTINATION_ADDRESS,
   MIN_CORE_MINT_PROTOCOL_FEE,
   MIN_MINT_PROTOCOL_FEE,
-  PUBLIC_GROUP_LABEL,
   PUBLIC_GROUP_MINT_LIMIT_ID,
   rateLimitQuota,
 } from '../constants';
@@ -216,7 +215,7 @@ export async function uploadItemMetadata(
 export function toUmiGroups(
   umi: Umi,
   createCandyMachineParams: CreateCandyMachineParams,
-  isPublic: boolean,
+  publicGroupLabel?: string,
 ): GuardGroupArgs<DefaultGuardSetArgs>[] {
   const { startsAt, expiresAt, mintPrice, numberOfRedemptions, supply } =
     createCandyMachineParams;
@@ -235,14 +234,14 @@ export function toUmiGroups(
     },
   ];
 
-  if (isPublic) {
+  if (publicGroupLabel) {
     const thirdPartySigner = getThirdPartySigner();
     const thirdPartySignerGuard: ThirdPartySigner = {
       signerKey: publicKey(thirdPartySigner),
     };
 
     groups.push({
-      label: PUBLIC_GROUP_LABEL,
+      label: publicGroupLabel,
       guards: {
         startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
         endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,

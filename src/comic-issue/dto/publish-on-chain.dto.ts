@@ -59,7 +59,7 @@ export class PublishOnChainDto extends PickType(CreateComicIssueDto, [
 
   @IsOptional()
   @IsEnum(CouponType)
-  @ApiProperty({ enum: CouponType })
+  @ApiProperty({ enum: CouponType, example: CouponType.PublicUser })
   couponType?: CouponType;
 
   @IsOptional()

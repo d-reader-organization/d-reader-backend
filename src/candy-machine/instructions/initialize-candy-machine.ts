@@ -23,7 +23,7 @@ export async function createCoreCandyMachine(
   umi: Umi,
   collectionNftAddress: UmiPublicKey,
   params: CreateCandyMachineParams,
-  isPublic?: boolean,
+  publicGroupLabel?: string,
   nonceArgs?: NonceAccountArgs,
 ) {
   const candyMachineKey = generateSigner(umi);
@@ -38,7 +38,7 @@ export async function createCoreCandyMachine(
         lastInstruction: true,
       }),
     },
-    groups: toUmiGroups(umi, params, isPublic),
+    groups: toUmiGroups(umi, params, publicGroupLabel),
     configLineSettings: some({
       prefixName: '',
       nameLength: 32,

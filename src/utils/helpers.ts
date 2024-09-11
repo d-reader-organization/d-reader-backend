@@ -190,10 +190,15 @@ export function findCandyMachineCouponDiscount(
   return discount;
 }
 
-/// There should not be more than 10 coupons of same type and more than 100 currencies in database to avoid conflicts
+/**
+ * There should not be more than 10 coupons of same type and more than 100 currencies in a coupon to avoid conflicts.
+ * ``couponTypeIteration``: current number of coupon of same type in a candymachine.
+ * ``currencyCouponIteration``: current number of currency in same coupon
+ * */
+
 export function getCouponLabel(
   couponType: CouponType,
-  typeIteration: number,
+  couponTypeIteration: number,
   currencyCouponIteration: number,
 ) {
   const couponMap = {
@@ -202,5 +207,5 @@ export function getCouponLabel(
     [CouponType.RegisteredUser]: 'ru',
     [CouponType.WhitelistedWallet]: 'ww',
   };
-  return `${couponMap[couponType]}${typeIteration}-${currencyCouponIteration}`;
+  return `${couponMap[couponType]}${couponTypeIteration}-${currencyCouponIteration}`;
 }

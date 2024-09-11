@@ -13,10 +13,11 @@ import * as Utf8 from 'crypto-js/enc-utf8';
 import * as AES from 'crypto-js/aes';
 import { PrismaService } from 'nestjs-prisma';
 import { publicKey } from '@metaplex-foundation/umi';
+import { SOL_ADDRESS } from '../constants';
+import { CouponType } from '@prisma/client';
 
 interface Options {
   candyMachineAddress: PublicKey;
-  label: string;
 }
 
 @Command({
@@ -54,7 +55,11 @@ export class MintOneCommand extends CommandRunner {
     const coupon = await this.prisma.candyMachineCoupon.findFirst({
       where: {
         candyMachineAddress: options.candyMachineAddress.toString(),
-        currencySettings: { some: { label: options.label } },
+        type: CouponType.PublicUser,
+        currencySettings: { some: { splTokenAddress: SOL_ADDRESS } },
+      },
+      include: {
+        currencySettings: { where: { splTokenAddress: SOL_ADDRESS } },
       },
     });
 
@@ -69,7 +74,7 @@ export class MintOneCommand extends CommandRunner {
       await this.candyMachineService.createMintOneTransaction(
         publicKey(keypair.publicKey.toString()),
         publicKey(options.candyMachineAddress.toString()),
-        options.label,
+        coupon.currencySettings.at(-1).label,
         coupon.id,
       );
     const transactions = encodedTransactions.map((encodedTransaction) => {
