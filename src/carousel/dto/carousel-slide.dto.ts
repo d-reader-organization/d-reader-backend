@@ -1,6 +1,8 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -9,9 +11,19 @@ import {
   IsString,
   IsUrl,
 } from 'class-validator';
-import { CarouselSlide, CarouselLocation } from '@prisma/client';
+import { CarouselLocation } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 import { getPublicUrl } from 'src/aws/s3client';
+import { CarouselWithTags } from 'src/types/carousel';
+
+export class CarouselTagDto {
+  @IsString()
+  title: string;
+
+  @IsDateString()
+  @IsOptional()
+  timestamp?: string;
+}
 
 export class CarouselSlideDto {
   @IsPositive()
@@ -56,9 +68,14 @@ export class CarouselSlideDto {
   @IsOptional()
   @IsString()
   externalLink?: string;
+
+  @IsOptional()
+  @Type(() => CarouselTagDto)
+  @IsArray()
+  tags?: CarouselTagDto[];
 }
 
-export function toCarouselSlideDto(slide: CarouselSlide) {
+export function toCarouselSlideDto(slide: CarouselWithTags) {
   const currentDate = new Date();
 
   const plainSlideDto: CarouselSlideDto = {
@@ -74,12 +91,13 @@ export function toCarouselSlideDto(slide: CarouselSlide) {
     comicSlug: slide.comicSlug,
     creatorSlug: slide.creatorSlug,
     externalLink: slide.externalLink,
+    tags: slide.tags,
   };
 
   const slideDto = plainToInstance(CarouselSlideDto, plainSlideDto);
   return slideDto;
 }
 
-export const toCarouselSlideDtoArray = (slides: CarouselSlide[]) => {
+export const toCarouselSlideDtoArray = (slides: CarouselWithTags[]) => {
   return slides.map(toCarouselSlideDto);
 };
