@@ -9,10 +9,20 @@ import {
   CreateCarouselSlideFilesDto,
 } from '../carousel/dto/create-carousel-slide.dto';
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
-import { CarouselSlide } from '@prisma/client';
-import { addDays } from 'date-fns';
+import {
+  CarouselSlide,
+  CollectibleComicCollection,
+  ComicIssue,
+  CouponType,
+} from '@prisma/client';
+import { addDays, differenceInMonths } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
+import {
+  CarouselTag,
+  CarouselTagTitle,
+  CarouselWithTags,
+} from '../types/carousel';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -59,7 +69,7 @@ export class CarouselService {
     return carouselSlide;
   }
 
-  async findAll(isExpired?: boolean) {
+  async findAll(isExpired?: boolean): Promise<CarouselWithTags[]> {
     const carouselSlides = await this.prisma.carouselSlide.findMany({
       where: {
         expiredAt: !isExpired ? { gt: new Date() } : undefined,
@@ -67,7 +77,23 @@ export class CarouselService {
       },
       orderBy: { priority: 'asc' },
     });
-    return carouselSlides;
+    return await Promise.all(
+      carouselSlides.map<Promise<CarouselWithTags>>(async (slide) => {
+        const tags: CarouselTag[] = [];
+        if (slide.externalLink) {
+          tags.push({
+            title: CarouselTagTitle.Highlighted,
+          });
+        } else if (slide.comicSlug) {
+          await this.handleComicCase({ slide, tags });
+        } else if (slide.creatorSlug) {
+          await this.handleCreatorCase({ slide, tags });
+        } else if (slide.comicIssueId) {
+          await this.handleComicIssueCase({ slide, tags });
+        }
+        return { ...slide, tags };
+      }),
+    );
   }
 
   async findOne(id: number) {
@@ -127,6 +153,102 @@ export class CarouselService {
       });
     } catch {
       throw new NotFoundException(`Carousel slide with id ${id} not found`);
+    }
+  }
+
+  async handleComicCase({
+    slide,
+    tags,
+  }: {
+    slide: CarouselSlide;
+    tags: CarouselTag[];
+  }) {
+    const comic = await this.prisma.comic.findFirst({
+      where: { slug: slide.comicSlug },
+    });
+    const isNew = !differenceInMonths(new Date(), comic.publishedAt);
+    if (isNew) {
+      tags.push({
+        title: CarouselTagTitle.NewComic,
+      });
+    }
+  }
+
+  async handleCreatorCase({
+    slide,
+    tags,
+  }: {
+    slide: CarouselSlide;
+    tags: CarouselTag[];
+  }) {
+    const creator = await this.prisma.creator.findFirst({
+      where: { slug: slide.creatorSlug },
+    });
+    const isNew = !differenceInMonths(new Date(), creator.verifiedAt);
+    if (isNew) {
+      tags.push({
+        title: CarouselTagTitle.NewCreator,
+      });
+    }
+  }
+
+  async handleComicIssueCase({
+    slide,
+    tags,
+  }: {
+    slide: CarouselSlide;
+    tags: CarouselTag[];
+  }) {
+    const comicIssue = await this.prisma.comicIssue.findFirst({
+      where: {
+        id: slide.comicIssueId,
+      },
+      include: { collectibleComicCollection: true },
+    });
+
+    if (!comicIssue.collectibleComicCollection && comicIssue.isFreeToRead) {
+      tags.push({ title: CarouselTagTitle.Free });
+      return;
+    }
+
+    const { coupons } = await this.prisma.candyMachine.findFirst({
+      include: {
+        coupons: true,
+      },
+      where: {
+        collection: { comicIssueId: slide.comicIssueId },
+        itemsRemaining: { gt: 0 },
+        coupons: {
+          some: {
+            OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
+          },
+        },
+      },
+    });
+
+    const defaultCoupon = coupons?.find(
+      (coupon) =>
+        coupon.type === CouponType.PublicUser ||
+        coupon.type === CouponType.RegisteredUser,
+    );
+
+    const isSoldOut = comicIssue.collectibleComicCollection && !defaultCoupon;
+    if (isSoldOut) {
+      tags.push({
+        title: CarouselTagTitle.Sold,
+      });
+      return;
+    }
+
+    const mintDate = defaultCoupon?.startsAt;
+    if (mintDate) {
+      const isUpcomingMint = mintDate > new Date();
+      tags.push({
+        title: isUpcomingMint
+          ? `${CarouselTagTitle.UpcomingMint} {{timestamp}}`
+          : CarouselTagTitle.Minting,
+        ...(isUpcomingMint && { timestamp: mintDate.toString() }),
+      });
     }
   }
 }
