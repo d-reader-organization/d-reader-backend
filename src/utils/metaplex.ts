@@ -28,60 +28,6 @@ export type MetadataFile = {
 };
 
 /**
- * Retrieves the backend authority keypair from encrypted environment variables.
- * @returns {Keypair} The backend authority keypair.
- */
-const getBackendAuthorityKeypair = () => {
-  const backendAuthoritySigner = AES.decrypt(
-    process.env.BACKEND_AUTHORITY_PRIVATE_KEY,
-    process.env.BACKEND_AUTHORITY_SECRET,
-  );
-  const backendAuthorityKeypair = Keypair.fromSecretKey(
-    Buffer.from(JSON.parse(backendAuthoritySigner.toString(Utf8))),
-  );
-  return backendAuthorityKeypair;
-};
-
-/**
- * Returns the public key of the backend authority.
- * @returns {PublicKey} The public key of the backend authority.
- */
-export const getBackendAuthority = () => {
-  return getBackendAuthorityKeypair().publicKey;
-};
-
-/**
- * Signs a legacy transaction with the backend authority.
- * @param {Transaction} transaction - The transaction to sign.
- * @returns {Promise<Transaction>} The signed transaction.
- */
-export const getBackendAuthorityLegacySignature = async (
-  transaction: Transaction,
-) => {
-  const signer = getBackendAuthorityKeypair();
-  transaction.partialSign(signer);
-  return transaction;
-};
-
-/**
- * Signs a UMI transaction with the backend authority.
- * @param {UmiTransaction} transaction - The UMI transaction to sign.
- * @returns {Promise<UmiTransaction>} The signed UMI transaction.
- */
-export const getBackendAuthoritySignature = async (
-  transaction: UmiTransaction,
-) => {
-  const backendAuthorityKeypair = fromWeb3JsKeypair(
-    getBackendAuthorityKeypair(),
-  );
-  const backendAuthoritySigner = createSignerFromKeypair(
-    umi,
-    backendAuthorityKeypair,
-  );
-  return backendAuthoritySigner.signTransaction(transaction);
-};
-
-/**
  * Retrieves the third-party signer keypair from encrypted environment variables.
  * @returns {Keypair} The third-party signer keypair.
  */

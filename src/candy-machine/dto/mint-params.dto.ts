@@ -21,6 +21,6 @@ export class MintParams {
   @TransformStringToNumber()
   @IsNumber()
   @Min(1)
-  @Max(5)
+  @Max(4)
   numberOfItems?: string;
 }
