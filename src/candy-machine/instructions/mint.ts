@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import {
   createNoopSigner,
   generateSigner,
@@ -8,6 +8,7 @@ import {
   PublicKey as UmiPublicKey,
   AddressLookupTableInput,
   publicKey,
+  KeypairSigner,
 } from '@metaplex-foundation/umi';
 import {
   CandyMachine as CoreCandyMachine,
@@ -22,80 +23,169 @@ import {
   setComputeUnitLimit,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
-import { getThirdPartyUmiSignature } from '../../utils/metaplex';
+import {
+  getBackendAuthority,
+  getBackendAuthorityLegacySignature,
+} from '../../utils/metaplex';
 import { encodeUmiTransaction } from '../../utils/transactions';
+import { createMemoInstruction } from '@solana/spl-memo';
+import { toWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 
-export const METAPLEX_PROGRAM_ID = new PublicKey(
-  'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
-);
-
-export async function constructCoreMintTransaction(
+export async function constructMultipleMintTransaction(
   umi: Umi,
   candyMachineAddress: UmiPublicKey,
   minter: UmiPublicKey,
   label: string,
+  numberOfItems: number,
   lookupTableAddress?: string,
-  thirdPartySign?: boolean,
   computePrice?: number,
-) {
-  try {
-    const transactions: string[] = [];
+): Promise<string[]> {
+  const transactions: string[] = [];
+  const lookupTable = await fetchLookupTable(umi, lookupTableAddress);
+  const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
+  const signer = createNoopSigner(minter);
+  const mintArgs = await getMintArgs(umi, candyMachine, label);
+
+  const builder = createTransactionBuilder(umi, numberOfItems, computePrice);
+  const { assetSigners, builder: mintBuilder } =
+    addMintBuildersAndGenerateSigners(
+      umi,
+      numberOfItems,
+      builder,
+      candyMachine,
+      signer,
+      label,
+      mintArgs,
+    );
+
+  const mintTransaction = await buildAndSignTransaction(
+    mintBuilder,
+    umi,
+    signer,
+    lookupTable,
+  );
+
+  const authorizationTx = await createAuthorizationTransaction(
+    umi,
+    minter,
+    assetSigners,
+  );
+  transactions.push(authorizationTx);
+
+  const encodedMintTransaction = encodeUmiTransaction(
+    mintTransaction,
+    'base64',
+  );
+  transactions.push(encodedMintTransaction);
+
+  return transactions;
+}
+
+async function fetchLookupTable(
+  umi: Umi,
+  address?: string,
+): Promise<AddressLookupTableInput | undefined> {
+  if (!address) return undefined;
+  return fetchAddressLookupTable(umi, publicKey(address), {
+    commitment: 'confirmed',
+  });
+}
+
+function createTransactionBuilder(
+  umi: Umi,
+  numberOfItems: number,
+  computePrice?: number,
+): ReturnType<typeof transactionBuilder> {
+  const CORE_MINT_COMPUTE_UNITS = 160000;
+  let builder = transactionBuilder().add(
+    setComputeUnitLimit(umi, {
+      units: CORE_MINT_COMPUTE_UNITS * numberOfItems,
+    }),
+  );
+
+  if (computePrice) {
+    builder = builder.add(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  return builder;
+}
+
+function addMintBuildersAndGenerateSigners(
+  umi: Umi,
+  numberOfItems: number,
+  builder: ReturnType<typeof transactionBuilder>,
+  candyMachine: CoreCandyMachine,
+  signer: ReturnType<typeof createNoopSigner>,
+  label: string,
+  mintArgs: Awaited<ReturnType<typeof getMintArgs>>,
+): {
+  assetSigners: KeypairSigner[];
+  builder: ReturnType<typeof transactionBuilder>;
+} {
+  const assetSigners: KeypairSigner[] = [];
+
+  for (let i = 0; i < numberOfItems; i++) {
     const asset = generateSigner(umi);
-    const signer = createNoopSigner(minter);
+    assetSigners.push(asset);
 
-    const isPriorityFeeCalculated = !!computePrice;
-    const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
-
-    let lookupTable: AddressLookupTableInput;
-    if (lookupTableAddress) {
-      lookupTable = await fetchAddressLookupTable(
-        umi,
-        publicKey(lookupTableAddress),
-        { commitment: 'confirmed' },
-      );
-    }
-    const mintArgs = await getMintArgs(umi, candyMachine, label);
-
-    const CORE_MINT_COMPUTE_UNITS = 160000;
-    let builder = transactionBuilder().add(
-      setComputeUnitLimit(umi, {
-        units: CORE_MINT_COMPUTE_UNITS,
+    builder = builder.add(
+      CoreMintV1(umi, {
+        candyMachine: candyMachine.publicKey,
+        minter: signer,
+        collection: candyMachine.collectionMint,
+        asset,
+        group: some(label),
+        payer: signer,
+        mintArgs,
       }),
     );
-    if (isPriorityFeeCalculated) {
-      builder = builder.add(
-        setComputeUnitPrice(umi, {
-          microLamports: computePrice,
-        }),
-      );
-    }
-
-    let transaction = await builder
-      .add(
-        CoreMintV1(umi, {
-          candyMachine: candyMachine.publicKey,
-          minter: signer,
-          collection: candyMachine.collectionMint,
-          asset,
-          group: some(label),
-          payer: signer,
-          mintArgs,
-        }),
-      )
-      .setAddressLookupTables(lookupTable ? [lookupTable] : [])
-      .buildAndSign({ ...umi, payer: signer });
-
-    if (thirdPartySign) {
-      transaction = await getThirdPartyUmiSignature(transaction);
-    }
-
-    const encodedMintTransaction = encodeUmiTransaction(transaction, 'base64');
-    transactions.push(encodedMintTransaction);
-
-    return transactions;
-  } catch (e) {
-    console.error(`Error constructing mint transaction ${e}`);
   }
+
+  return { assetSigners, builder };
+}
+
+async function buildAndSignTransaction(
+  builder: ReturnType<typeof transactionBuilder>,
+  umi: Umi,
+  signer: ReturnType<typeof createNoopSigner>,
+  lookupTable?: AddressLookupTableInput,
+) {
+  return builder
+    .setAddressLookupTables(lookupTable ? [lookupTable] : [])
+    .buildAndSign({ ...umi, payer: signer });
+}
+
+async function createAuthorizationTransaction(
+  umi: Umi,
+  minter: UmiPublicKey,
+  assetSigners: KeypairSigner[],
+): Promise<string> {
+  const backendAuthority = getBackendAuthority();
+  const minterPublicKey = new PublicKey(minter.toString());
+
+  const authorizationMemo = createMemoInstruction('Authorized Mint!', [
+    backendAuthority,
+    minterPublicKey,
+    ...assetSigners.map((signer) => new PublicKey(signer.publicKey)),
+  ]);
+
+  const latestBlockHash = await umi.rpc.getLatestBlockhash({
+    commitment: 'confirmed',
+  });
+  const memoTx = new Transaction({
+    feePayer: minterPublicKey,
+    ...latestBlockHash,
+  }).add(authorizationMemo);
+  const signedMemoTx = await getBackendAuthorityLegacySignature(memoTx);
+  signedMemoTx.partialSign(
+    ...assetSigners.map((signer) => toWeb3JsKeypair(signer)),
+  );
+
+  return signedMemoTx
+    .serialize({ requireAllSignatures: false })
+    .toString('base64');
 }
 
 async function getMintArgs(

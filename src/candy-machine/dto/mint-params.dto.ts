@@ -1,9 +1,4 @@
-import {
-  IsNumber,
-  IsNumberString,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
 import { TransformStringToNumber } from '../../utils/transform';
 
@@ -23,6 +18,9 @@ export class MintParams {
   label: string;
 
   @IsOptional()
-  @IsNumberString()
-  mintCount?: string;
+  @TransformStringToNumber()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  numberOfItems?: string;
 }

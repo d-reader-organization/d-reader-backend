@@ -76,11 +76,12 @@ export class TransactionController {
     const minterAddress = publicKey(query.minterAddress);
     const candyMachineAddress = publicKey(query.candyMachineAddress);
 
-    return await this.candyMachineService.createMintOneTransaction(
+    return await this.candyMachineService.createMintTransaction(
       minterAddress,
       candyMachineAddress,
       query.label,
       query.couponId,
+      1,
       user ? user.id : null,
     );
   }
@@ -128,14 +129,14 @@ export class TransactionController {
     const minterAddress = publicKey(query.minterAddress);
     const candyMachineAddress = publicKey(query.candyMachineAddress);
     const { couponId, label } = query;
-    const mintCount = query.mintCount ? +query.mintCount : 1;
+    const numberOfItems = query.numberOfItems ? +query.numberOfItems : 1;
 
     return await this.candyMachineService.createMintTransaction(
       minterAddress,
       candyMachineAddress,
       label,
       couponId,
-      mintCount,
+      numberOfItems,
       user ? user.id : null,
     );
   }

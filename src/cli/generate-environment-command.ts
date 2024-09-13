@@ -1,11 +1,6 @@
 import { Cluster, clusterApiUrl } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
-import {
-  Metaplex,
-  MetaplexError,
-  sol,
-  WRAPPED_SOL_MINT,
-} from '@metaplex-foundation/js';
+import { sol } from '@metaplex-foundation/js';
 import { generateSecret, createWallet } from '../utils/wallet';
 import { Cluster as ClusterEnum } from '../types/cluster';
 import { cb, cg, cgray, cuy, log, logEnv, logErr } from './chalk';
@@ -94,63 +89,4 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     log(cg('\n💻 Happy hacking! \n'));
     return;
   };
-
-  async createAuctionHouse(metaplex: Metaplex) {
-    // https://docs.metaplex.com/programs/auction-house/how-to-guides/manage-auction-house-using-cli
-    log('\n🏗️  Creating new auction house...');
-
-    const identityKey = metaplex.identity().publicKey;
-
-    try {
-      const response = await metaplex.auctionHouse().create({
-        sellerFeeBasisPoints: 200, // 2%
-        requiresSignOff: false,
-        canChangeSalePrice: false,
-        treasuryMint: WRAPPED_SOL_MINT,
-        authority: metaplex.identity(),
-        feeWithdrawalDestination: identityKey,
-        treasuryWithdrawalDestinationOwner: identityKey,
-        auctioneerAuthority: undefined, // out of scope for now
-        auctioneerScopes: undefined,
-      });
-
-      const { auctionHouse } = response;
-
-      if (metaplex.cluster !== ClusterEnum.MainnetBeta) {
-        try {
-          log(cb('🪂 Airdropping SOL'));
-          await sleep(8000);
-          await metaplex.rpc().airdrop(auctionHouse.address, sol(2));
-          log(`✅ Airdropped ${cuy('2 Sol')} to the auction house...`);
-        } catch (e) {
-          logErr('Failed to airdrop Sol to the auction house!');
-          log(cuy('Try airdropping manually on ', cb('https://solfaucet.com')));
-        }
-      }
-
-      return auctionHouse.address.toBase58();
-    } catch (error) {
-      logErr('Failed to create the auction house!');
-
-      if (error instanceof MetaplexError) {
-        const auctionHouse = await metaplex
-          .auctionHouse()
-          .findByCreatorAndMint({
-            creator: identityKey,
-            treasuryMint: WRAPPED_SOL_MINT,
-          });
-
-        log(`${identityKey.toBase58()} already has AuctionHouse assigned`);
-        log('AuctionHouse address: ', cuy(auctionHouse.address.toBase58()));
-        log(
-          'Check it out on Explorer: ',
-          cb(
-            `https://explorer.solana.com/address/${auctionHouse.address.toBase58()}/anchor-account?cluster=${
-              metaplex.cluster
-            }`,
-          ),
-        );
-      } else log(error);
-    }
-  }
 }

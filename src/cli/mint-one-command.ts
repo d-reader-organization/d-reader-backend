@@ -71,7 +71,7 @@ export class MintOneCommand extends CommandRunner {
     }
 
     const encodedTransactions =
-      await this.candyMachineService.createMintOneTransaction(
+      await this.candyMachineService.createMintTransaction(
         publicKey(keypair.publicKey.toString()),
         publicKey(options.candyMachineAddress.toString()),
         coupon.currencySettings.at(-1).label,
