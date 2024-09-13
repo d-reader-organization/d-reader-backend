@@ -9,7 +9,7 @@ import {
 } from 'lodash';
 
 export interface MemoizeDebouncedFunction<T extends (...args: any[]) => any> {
-  (...args: Parameters<T>): void;
+  (...args: Parameters<T>): ReturnType<T>;
   flush: (...args: Parameters<T>) => void;
 }
 
