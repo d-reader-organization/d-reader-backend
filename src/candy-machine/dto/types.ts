@@ -40,39 +40,51 @@ export type CandyMachineCouponMintStats = {
   isEligible: boolean;
 };
 
-export type AddCandyMachineCouponParams = AddCandyMachineCouponConfigParams & {
-  name: string;
-  description: string;
-};
-
-export type AddCandyMachineCouponConfigParams =
-  AddCandyMachineCouponCurrencyParams & {
-    startsAt?: Date;
-    expiresAt?: Date;
-    numberOfRedemptions?: number;
-    supply: number;
-    couponType: CouponType;
-  };
-
-export type AddCandyMachineCouponCurrencyParams = {
+export type AddCandyMachineGroupOnChainParams = {
   label: string;
   mintPrice: number;
+  splTokenAddress?: string;
+  supply: number;
+};
+
+export type AddCandyMachineCouponParams = {
+  name: string;
+  description: string;
+  startsAt?: Date;
+  expiresAt?: Date;
+  numberOfRedemptions?: number;
+  supply: number;
+  currencySettings: AddCandyMachineCouponCurrencyParams[];
+  type: CouponType;
+};
+
+export type AddCandyMachineCouponCurrencyParams = {
+  mintPrice: number;
   usdcEquivalent: number;
-  splTokenAddress: string;
+  splTokenAddress?: string;
 };
 
 export type CreateCandyMachineParams = {
   comicName: string;
   assetOnChainName: string;
-  startsAt?: Date;
-  expiresAt?: Date;
-  numberOfRedemptions?: number;
-  mintPrice: number;
-  usdcEquivalentMintPrice: number;
   supply: number;
-  couponType: CouponType;
-  splTokenAddress?: string;
+  coupons: AddCandyMachineCouponParams[];
 };
+
+export interface AddCandyMachineCouponCurrencyParamsWithLabel {
+  label: string;
+  mintPrice: number;
+  usdcEquivalent: number;
+  splTokenAddress: string;
+}
+export interface AddCandyMachineCouponParamsWithLabels
+  extends Omit<AddCandyMachineCouponParams, 'currencySettings'> {
+  currencySettings: AddCandyMachineCouponCurrencyParamsWithLabel[];
+}
+export interface CreateCandyMachineParamsWithLabels
+  extends Omit<CreateCandyMachineParams, 'coupons'> {
+  coupons: AddCandyMachineCouponParamsWithLabels[];
+}
 
 export type DarkblockTraits = {
   name: string;

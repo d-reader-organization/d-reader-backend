@@ -7,23 +7,26 @@ import {
   lamports,
   publicKey,
   generateSigner,
+  transactionBuilder,
 } from '@metaplex-foundation/umi';
 import {
   create,
   createLutForCandyMachine,
+  findCandyGuardPda,
+  updateCandyGuard,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { toUmiGroups } from '../../utils/candy-machine';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { NonceAccountArgs } from '../../nonce/types';
 import { fromWeb3JsInstruction } from '@metaplex-foundation/umi-web3js-adapters';
-import { CreateCandyMachineParams } from '../dto/types';
+import { CreateCandyMachineParamsWithLabels } from '../dto/types';
+import { base58 } from '@metaplex-foundation/umi/serializers';
 
 // Core CandyMachine
 export async function createCoreCandyMachine(
   umi: Umi,
   collectionNftAddress: UmiPublicKey,
-  params: CreateCandyMachineParams,
-  publicGroupLabel?: string,
+  params: CreateCandyMachineParamsWithLabels,
   nonceArgs?: NonceAccountArgs,
 ) {
   const candyMachineKey = generateSigner(umi);
@@ -32,13 +35,6 @@ export async function createCoreCandyMachine(
     collection: collectionNftAddress,
     collectionUpdateAuthority: umi.identity,
     itemsAvailable: params.supply,
-    guards: {
-      botTax: some({
-        lamports: lamports(BOT_TAX),
-        lastInstruction: true,
-      }),
-    },
-    groups: toUmiGroups(umi, params, publicGroupLabel),
     configLineSettings: some({
       prefixName: '',
       nameLength: 32,
@@ -81,8 +77,15 @@ export async function createCoreCandyMachine(
       },
     });
   } else {
-    await builder.sendAndConfirm(umi, {
+    const latestBlockHash = await umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const { signature } = await builder.sendAndConfirm(umi, {
       send: { commitment: 'confirmed', skipPreflight: true },
+    });
+    await umi.rpc.confirmTransaction(signature, {
+      commitment: 'confirmed',
+      strategy: { type: 'blockhash', ...latestBlockHash },
     });
   }
 
@@ -100,6 +103,51 @@ export async function createCoreCandyMachine(
   } catch (e) {
     console.error(
       `Error creating lookup table for candymachine ${candyMachineKey.publicKey.toString()}`,
+      e,
+    );
+  }
+
+  try {
+    const candyGuard = findCandyGuardPda(umi, {
+      base: candyMachineKey.publicKey,
+    });
+    const guards = {
+      botTax: some({
+        lamports: lamports(BOT_TAX),
+        lastInstruction: true,
+      }),
+    };
+
+    const updateBuilder = updateCandyGuard(umi, {
+      groups: toUmiGroups(umi, params.coupons),
+      guards,
+      candyGuard,
+    });
+
+    const latestBlockHash = await umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const builder = transactionBuilder()
+      .add(setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }))
+      .add(updateBuilder);
+
+    const response = await builder.sendAndConfirm(umi, {
+      send: { commitment: 'confirmed', skipPreflight: true },
+    });
+
+    const signature = base58.deserialize(response.signature);
+    await umi.rpc.confirmTransaction(response.signature, {
+      commitment: 'confirmed',
+      strategy: { type: 'blockhash', ...latestBlockHash },
+    });
+
+    console.log(
+      'guards and groups added in the candymachine successfully',
+      signature,
+    );
+  } catch (e) {
+    console.error(
+      `Error adding guards and groups onchain in candymachine ${candyMachineKey.publicKey.toString()}`,
       e,
     );
   }
