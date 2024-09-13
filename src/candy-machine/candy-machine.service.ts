@@ -21,13 +21,13 @@ import {
   D_READER_FRONTEND_URL,
   FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE,
+  SOL_ADDRESS,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
   findUserInUserWhiteList,
   findWalletInWalletWhiteList,
   getCouponLabel,
-  PUBLIC_COUPON_LABEL,
 } from '../utils/helpers';
 import {
   MetadataFile,
@@ -51,10 +51,12 @@ import {
   CouponType,
 } from '@prisma/client';
 import {
-  AddCandyMachineCouponConfigParams,
   CandyMachineCouponWithWhitelist,
   CandyMachineCouponWithStats,
   CreateCandyMachineParams,
+  AddCandyMachineCouponParams,
+  AddCandyMachineGroupOnChainParams,
+  AddCandyMachineCouponParamsWithLabels,
 } from './dto/types';
 import { ComicRarity } from 'dreader-comic-verse';
 import { createCoreCandyMachine } from './instructions/initialize-candy-machine';
@@ -140,30 +142,16 @@ export class CandyMachineService {
         statefulCovers,
       );
 
-    const {
-      startsAt,
-      expiresAt,
-      numberOfRedemptions,
-      mintPrice,
-      usdcEquivalentMintPrice,
-      supply,
-      couponType,
-      splTokenAddress,
-      assetOnChainName,
-      comicName,
-    } = createCandyMachineParams;
-
-    const isPublicMint = couponType === CouponType.PublicUser;
-    // When a candymachine is created, public coupon would be the first coupon so iteration would be 0
-    const publicGroupLabel = isPublicMint ? PUBLIC_COUPON_LABEL : undefined;
+    const { supply, assetOnChainName, comicName, coupons } =
+      createCandyMachineParams;
+    const couponsWithLabel = this.getCouponsWithLabels(coupons);
 
     console.log('Create Core Candy Machine');
     const nonceArgs = await this.nonceService.getNonce();
     const [candyMachinePubkey, lut] = await createCoreCandyMachine(
       this.umi,
       publicKey(collectionAddress),
-      createCandyMachineParams,
-      publicGroupLabel,
+      { ...createCandyMachineParams, coupons: couponsWithLabel },
       nonceArgs,
     );
 
@@ -192,28 +180,17 @@ export class CandyMachineService {
         supply,
         standard: TokenStandard.Core,
         lookupTable: lut ? lut.toString() : undefined,
-        coupons: isPublicMint
-          ? {
-              create: {
-                name: 'Public Coupon',
-                description: 'Public Coupon',
-                supply,
-                numberOfRedemptions,
-                startsAt,
-                expiresAt,
-                type: CouponType.PublicUser,
-                currencySettings: {
-                  create: {
-                    mintPrice,
-                    splTokenAddress,
-                    label: publicGroupLabel,
-                    usdcEquivalent: usdcEquivalentMintPrice,
-                    candyMachineAddress,
-                  },
-                },
-              },
-            }
-          : undefined,
+        coupons: {
+          create: couponsWithLabel.map((coupon) => ({
+            ...coupon,
+            currencySettings: {
+              create: coupon.currencySettings.map((setting) => ({
+                ...setting,
+                candyMachineAddress,
+              })),
+            },
+          })),
+        },
       },
     });
 
@@ -348,6 +325,18 @@ export class CandyMachineService {
           );
         }
       }
+    } else {
+      if (couponType === CouponType.WhitelistedWallet) {
+        const isWhitelisted = findWalletInWalletWhiteList(
+          feePayer,
+          whitelistedWallets,
+        );
+        if (!isWhitelisted) {
+          throw new UnauthorizedException(
+            'Wallet selected is not eligible for this mint !',
+          );
+        }
+      }
     }
 
     if (numberOfRedemptions) {
@@ -374,7 +363,6 @@ export class CandyMachineService {
       publicKey(candyMachineAddress),
       publicKey(feePayer),
       label,
-      whitelistedWallets,
       lookupTable,
       true,
     );
@@ -638,8 +626,7 @@ export class CandyMachineService {
     );
 
     await this.addCoreCandyMachineGroupOnChain(candyMachineAddress, {
-      ...candyMachineCoupon,
-      couponType: candyMachineCoupon.type,
+      supply: candyMachineCoupon.supply,
       label,
       ...params,
       splTokenAddress,
@@ -892,9 +879,7 @@ export class CandyMachineService {
 
       return {
         couponType: candyMachineCoupon.type,
-        whitelistedWallets: whitelistedWallets.length
-          ? whitelistedWallets.map((item) => item.walletAddress)
-          : [],
+        whitelistedWallets: whitelistedWallets.length ? whitelistedWallets : [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
         lookupTable: candyMachine.lookupTable,
@@ -911,7 +896,7 @@ export class CandyMachineService {
 
   private async addCoreCandyMachineGroupOnChain(
     candyMachineAddress: string,
-    params: AddCandyMachineCouponConfigParams,
+    params: AddCandyMachineGroupOnChainParams,
   ) {
     const { mintPrice, supply, splTokenAddress, label } = params;
 
@@ -1150,5 +1135,50 @@ export class CandyMachineService {
     });
 
     return { collectionAddress, darkblockId };
+  }
+
+  // Create labels for each currency setting in coupon
+  private getCouponsWithLabels(
+    coupons: AddCandyMachineCouponParams[],
+  ): AddCandyMachineCouponParamsWithLabels[] {
+    const typeFrequencyMap = new Map<CouponType, number>();
+
+    // Initialize type frequency map
+    coupons.forEach((coupon) => {
+      typeFrequencyMap.set(
+        coupon.type,
+        (typeFrequencyMap.get(coupon.type) || 0) + 1,
+      );
+    });
+
+    const couponsWithLabel: AddCandyMachineCouponParamsWithLabels[] =
+      coupons.map((coupon) => {
+        let currencyFrequency = coupon.currencySettings.length;
+
+        // Generate labels for each currency setting
+        const typeFrequency = typeFrequencyMap.get(coupon.type)! - 1;
+        const currencySettings = coupon.currencySettings.map((currency) => {
+          const splTokenAddress = currency.splTokenAddress ?? SOL_ADDRESS;
+          currencyFrequency--;
+
+          return {
+            ...currency,
+            splTokenAddress,
+            label: getCouponLabel(
+              coupon.type,
+              typeFrequency,
+              currencyFrequency,
+            ),
+          };
+        });
+        typeFrequencyMap.set(coupon.type, typeFrequency);
+
+        return {
+          ...coupon,
+          currencySettings,
+        };
+      });
+
+    return couponsWithLabel;
   }
 }

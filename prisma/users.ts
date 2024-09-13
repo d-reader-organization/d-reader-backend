@@ -29,6 +29,14 @@ export const usersToSeed = async (): Promise<
     referralsRemaining: 0,
   },
   {
+    name: 'athar',
+    email: 'athar.mohammad+local@dreader.io',
+    password: await hashPassword('athar'),
+    emailVerifiedAt: new Date(),
+    role: Role.Admin,
+    referralsRemaining: 0,
+  },
+  {
     name: 'josip',
     email: 'josip.volarevic@dreader.io',
     password: await hashPassword('josip'),

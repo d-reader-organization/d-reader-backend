@@ -1,9 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
 import {
-  ALLOW_LIST_PROOF_COMPUTE_PRICE,
-  ALLOW_LIST_PROOF_COMPUTE_UNITS,
-} from '../../constants';
-import {
   createNoopSigner,
   generateSigner,
   some,
@@ -12,16 +8,12 @@ import {
   PublicKey as UmiPublicKey,
   AddressLookupTableInput,
   publicKey,
-  none,
 } from '@metaplex-foundation/umi';
 import {
   CandyMachine as CoreCandyMachine,
   fetchCandyGuard,
   DefaultGuardSetMintArgs,
   DefaultGuardSet,
-  getMerkleRoot,
-  route,
-  getMerkleProof,
   fetchCandyMachine,
   mintV1 as CoreMintV1,
 } from '@metaplex-foundation/mpl-core-candy-machine';
@@ -42,7 +34,6 @@ export async function constructCoreMintTransaction(
   candyMachineAddress: UmiPublicKey,
   minter: UmiPublicKey,
   label: string,
-  allowList?: string[],
   lookupTableAddress?: string,
   thirdPartySign?: boolean,
   computePrice?: number,
@@ -53,38 +44,7 @@ export async function constructCoreMintTransaction(
     const signer = createNoopSigner(minter);
 
     const isPriorityFeeCalculated = !!computePrice;
-
     const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
-    if (allowList) {
-      const allowListTransaction = await transactionBuilder()
-        .add(
-          setComputeUnitLimit(umi, { units: ALLOW_LIST_PROOF_COMPUTE_UNITS }),
-        )
-        .add(
-          setComputeUnitPrice(umi, {
-            microLamports: ALLOW_LIST_PROOF_COMPUTE_PRICE,
-          }),
-        )
-        .add(
-          route(umi, {
-            candyMachine: candyMachine.publicKey,
-            guard: 'allowList',
-            routeArgs: {
-              path: 'proof',
-              merkleRoot: getMerkleRoot(allowList),
-              merkleProof: getMerkleProof(allowList, minter),
-            },
-            payer: signer,
-            group: label ?? none(),
-          }),
-        )
-        .buildAndSign({ ...umi, payer: signer });
-      const encodedTransaction = encodeUmiTransaction(
-        allowListTransaction,
-        'base64',
-      );
-      transactions.push(encodedTransaction);
-    }
 
     let lookupTable: AddressLookupTableInput;
     if (lookupTableAddress) {
