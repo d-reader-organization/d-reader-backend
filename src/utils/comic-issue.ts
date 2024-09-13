@@ -13,7 +13,6 @@ import { CreateStatefulCoverBodyDto } from '../comic-issue/dto/covers/create-sta
 import { isSolanaAddress } from '../decorators/IsSolanaAddress';
 import { isBasisPoints } from '../decorators/IsBasisPoints';
 import { BadRequestException } from '@nestjs/common';
-import { min } from 'class-validator';
 
 export const findDefaultCover = (statelessCovers: StatelessCover[]) => {
   return statelessCovers.find((cover) => cover.isDefault);
@@ -49,8 +48,6 @@ export const validateWeb3PublishInfo = (
     throw new BadRequestException('Seller fee bps should be in range 0-10,000');
   } else if (!isSolanaAddress(publishOnChainDto.creatorAddress)) {
     throw new BadRequestException('Comic issue missing valid creator address');
-  } else if (!min(publishOnChainDto.mintPrice, 0)) {
-    throw new BadRequestException('Price must be greater than or equal to 0');
   }
 };
 

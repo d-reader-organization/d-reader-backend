@@ -1,17 +1,12 @@
 import { LAMPORTS_PER_SOL, clusterApiUrl } from '@solana/web3.js';
 import { chance, getRandomInt, maybeDateNow } from '../src/utils/helpers';
 import { PrismaClient } from '@prisma/client';
-import { CandyMachineService } from '../src/candy-machine/candy-machine.service';
 import { HeliusService } from '../src/webhooks/helius/helius.service';
 import { PrismaService } from 'nestjs-prisma';
 import { WebSocketGateway } from '../src/websockets/websocket.gateway';
-import { ComicIssueService } from '../src/comic-issue/comic-issue.service';
-import { ComicPageService } from '../src/comic-page/comic-page.service';
-import { UserComicIssueService } from '../src/comic-issue/user-comic-issue.service';
 import { s3Service } from '../src/aws/s3.service';
 import { BundlrStorageDriver, sol } from '@metaplex-foundation/js';
 import { initMetaplex } from '../src/utils/metaplex';
-import { DarkblockService } from '../src/candy-machine/darkblock.service';
 import { digitalAssetGenresToSeed, genresToSeed } from './genres';
 import { carouselSlidesToSeed } from './carousel-slides';
 import { usersToSeed, generateDummyUsersData } from './users';
@@ -74,44 +69,18 @@ import {
   wretchesEp5Data,
   wretchesEp6Data,
 } from './comic-issues';
-import { addDays } from 'date-fns';
 import { splTokensToSeed } from './spl-tokens';
-import { MAX_ON_CHAIN_TITLE_LENGTH } from '../src/constants';
 import { NonceService } from '../src/nonce/nonce.service';
-import { DiscordService } from '../src/discord/discord.service';
 
 const s3 = new s3Service();
 const prisma = new PrismaClient();
 const prismaService = new PrismaService();
 const webSocketGateway = new WebSocketGateway();
-const discordService = new DiscordService();
 const nonceService = new NonceService(prismaService);
 const heliusService = new HeliusService(
   prismaService,
   webSocketGateway,
   nonceService,
-);
-const comicPageService = new ComicPageService(
-  s3,
-  prismaService,
-  discordService,
-);
-const darkblockService = new DarkblockService(s3);
-const candyMachineService = new CandyMachineService(
-  prismaService,
-  heliusService,
-  darkblockService,
-  nonceService,
-);
-const userComicIssueService = new UserComicIssueService(prismaService);
-const comicIssueService = new ComicIssueService(
-  s3,
-  prismaService,
-  comicPageService,
-  candyMachineService,
-  userComicIssueService,
-  discordService,
-  null,
 );
 const seedBucket = process.env.AWS_SEED_BUCKET_NAME;
 const metaplex = initMetaplex(heliusService.helius.endpoint);
@@ -179,8 +148,8 @@ async function main() {
   await prisma.comicIssueCollaborator.deleteMany();
   await prisma.listing.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
-  await prisma.walletCandyMachineGroup.deleteMany();
-  await prisma.candyMachineGroup.deleteMany();
+  await prisma.candyMachineCouponWhitelistedWallet.deleteMany();
+  await prisma.candyMachineCoupon.deleteMany();
   await prisma.digitalAsset.deleteMany();
   await prisma.candyMachine.deleteMany();
   await prisma.collectibleComicCollection.deleteMany();
@@ -331,48 +300,9 @@ async function main() {
     await prisma.comicIssue.create({ data: wretchesEp6Data(wretchesC.slug) });
     await prisma.comicIssue.create({ data: janaEp2Data(janaC.slug) });
     await prisma.comicIssue.create({ data: countyEp2Data(countyC.slug) });
-
-    let i = 1;
-    for (const comicIssue of comicIssues) {
-      await refillBundlr();
-
-      if (
-        (comicIssue.comicSlug === portalC.slug &&
-          comicIssue.slug === 'concept-art') ||
-        (comicIssue.comicSlug === countyC.slug &&
-          comicIssue.slug === 'issue-2') ||
-        comicIssue.comicSlug === wretchesC.slug ||
-        (comicIssue.comicSlug === lupersC.slug &&
-          comicIssue.slug === 'tome-of-knowledge')
-      ) {
-        console.info('Skipping comic issue ', comicIssue.id);
-        continue;
-      } else {
-        console.info(i, ': publishing comic issue ' + comicIssue.id);
-        const onChainName = comicIssue.title.slice(
-          0,
-          MAX_ON_CHAIN_TITLE_LENGTH,
-        );
-        await comicIssueService.publishOnChain(comicIssue.id, {
-          onChainName,
-          supply: getRandomInt(1, 2) * 10, // 10-20 supply
-          mintPrice: getRandomInt(1, 2) * 0.1 * LAMPORTS_PER_SOL, // 0.1-0.2 price
-          sellerFeeBasisPoints: 500, // 5%
-          startDate: new Date(),
-          endDate: addDays(new Date(), 7),
-          creatorAddress: metaplex.identity().publicKey.toString(),
-          royaltyWallets: [
-            {
-              address: metaplex.identity().publicKey.toString(),
-              share: 100,
-            },
-          ],
-        });
-        i++;
-      }
-    }
   }
 
+  await refillBundlr();
   console.info(
     "⚠️ Please make sure to run 'yarn sync-webhook' command in order to set Helius webhooks correctly",
   );

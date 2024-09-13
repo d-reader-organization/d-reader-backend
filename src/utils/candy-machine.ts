@@ -12,14 +12,16 @@ import {
   DefaultGuardSetArgs,
   getMerkleRoot,
   ThirdPartySigner,
+  SolPayment,
+  TokenPayment,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   AUTHORITY_GROUP_LABEL,
   FUNDS_DESTINATION_ADDRESS,
   MIN_CORE_MINT_PROTOCOL_FEE,
   MIN_MINT_PROTOCOL_FEE,
-  PUBLIC_GROUP_MINT_LIMIT_ID,
   rateLimitQuota,
+  SOL_ADDRESS,
 } from '../constants';
 import { Metaplex, MetaplexFile } from '@metaplex-foundation/js';
 import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
@@ -48,7 +50,8 @@ import { CoverFiles, ItemMetadata } from '../types/shared';
 import { ComicRarity } from 'dreader-comic-verse';
 import { writeFiles } from './metaplex';
 import { shuffle } from 'lodash';
-import { CreateCandyMachineParams } from 'src/candy-machine/dto/types';
+import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
+import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -214,11 +217,8 @@ export async function uploadItemMetadata(
 
 export function toUmiGroups(
   umi: Umi,
-  createCandyMachineParams: CreateCandyMachineParams,
-  publicGroupLabel?: string,
+  coupons: AddCandyMachineCouponParamsWithLabels[],
 ): GuardGroupArgs<DefaultGuardSetArgs>[] {
-  const { startsAt, expiresAt, mintPrice, numberOfRedemptions, supply } =
-    createCandyMachineParams;
   const groups: GuardGroupArgs<DefaultGuardSetArgs>[] = [
     {
       label: AUTHORITY_GROUP_LABEL,
@@ -234,32 +234,58 @@ export function toUmiGroups(
     },
   ];
 
-  if (publicGroupLabel) {
-    const thirdPartySigner = getThirdPartySigner();
-    const thirdPartySignerGuard: ThirdPartySigner = {
-      signerKey: publicKey(thirdPartySigner),
-    };
+  const thirdPartySigner = getThirdPartySigner();
+  const thirdPartySignerGuard: ThirdPartySigner = {
+    signerKey: publicKey(thirdPartySigner),
+  };
 
-    groups.push({
-      label: publicGroupLabel,
-      guards: {
-        startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
-        endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
-        solPayment: some({
+  coupons.forEach((coupon) => {
+    const { startsAt, expiresAt, currencySettings, supply } = coupon;
+    currencySettings.forEach((setting) => {
+      let paymentGuardName: string;
+
+      let paymentGuard: TokenPayment | SolPayment;
+      const { splTokenAddress, mintPrice } = setting;
+      const isSolPayment = splTokenAddress === SOL_ADDRESS;
+
+      if (isSolPayment) {
+        paymentGuardName = 'solPayment';
+        paymentGuard = {
           lamports: lamports(mintPrice),
           destination: publicKey(FUNDS_DESTINATION_ADDRESS),
-        }),
-        mintLimit: numberOfRedemptions
-          ? {
-              id: PUBLIC_GROUP_MINT_LIMIT_ID,
-              limit: numberOfRedemptions,
-            }
-          : undefined,
-        redeemedAmount: some({ maximum: supply }),
-        thirdPartySigner: some(thirdPartySignerGuard),
-      },
+        };
+      } else {
+        paymentGuardName = 'tokenPayment';
+        paymentGuard = {
+          amount: BigInt(mintPrice),
+          destinationAta: findAssociatedTokenPda(umi, {
+            mint: publicKey(splTokenAddress),
+            owner: publicKey(FUNDS_DESTINATION_ADDRESS),
+          })[0],
+          mint: publicKey(splTokenAddress),
+        };
+      }
+
+      groups.push({
+        label: setting.label,
+        guards: {
+          startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
+          endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
+          [paymentGuardName]: some(paymentGuard),
+          // Currently using centralized mint limit
+          // mintLimit: numberOfRedemptions
+          //   ? {
+          //       id: index,
+          //       limit: numberOfRedemptions,
+          //     }
+          //   : undefined,
+          redeemedAmount: some({ maximum: supply }),
+          thirdPartySigner: some(thirdPartySignerGuard),
+        },
+      });
     });
-  }
+  });
+
   return groups;
 }
 

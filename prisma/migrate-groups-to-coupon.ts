@@ -80,7 +80,7 @@ async function migrateGroupstoCoupon() {
       });
       couponId = coupon?.id;
     }
-    if(!couponId){
+    if (!couponId) {
       continue;
     }
     console.log('Coupon ID', couponId);
