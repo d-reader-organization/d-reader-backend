@@ -180,7 +180,7 @@ export class BlinkService {
       );
     }
 
-    return this.candyMachineService.createMintOneTransaction(
+    return this.candyMachineService.createMintTransaction(
       publicKey(account),
       publicKey(candyMachineAddress),
       currencySetting.label,

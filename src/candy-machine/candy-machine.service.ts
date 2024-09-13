@@ -12,7 +12,7 @@ import {
   MetaplexFile,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
-import { constructCoreMintTransaction } from './instructions';
+import { constructMultipleMintTransaction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import {
@@ -244,39 +244,48 @@ export class CandyMachineService {
 
   /* Create Multiple Mint transactions */
   async createMintTransaction(
-    feePayer: UmiPublicKey,
+    walletAddress: UmiPublicKey,
     candyMachineAddress: UmiPublicKey,
     label: string,
     couponId: number,
-    mintCount?: number,
+    numberOfItems?: number,
     userId?: number,
   ) {
-    const transactions: Promise<string[]>[] = [];
-    for (let i = 0; i < mintCount; i++) {
-      transactions.push(
-        this.createMintOneTransaction(
-          feePayer,
-          candyMachineAddress,
-          label,
-          couponId,
-          userId,
-        ),
-      );
-    }
-    return await Promise.all(transactions);
+    const lookupTable = await this.validateMintTransactionRequest(
+      walletAddress,
+      candyMachineAddress,
+      label,
+      couponId,
+      numberOfItems,
+      userId,
+    );
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
+
+    const transactions = await getTransactionWithPriorityFee(
+      constructMultipleMintTransaction,
+      CORE_MINT_COMPUTE_BUDGET,
+      this.umi,
+      publicKey(candyMachineAddress),
+      walletAddress,
+      label,
+      numberOfItems ?? 1,
+      lookupTable,
+    );
+
+    return transactions;
   }
 
-  /* Create Single Mint transaction */
-  async createMintOneTransaction(
-    feePayer: UmiPublicKey,
+  /* Validate if mint is allowed */
+  async validateMintTransactionRequest(
+    walletAddress: UmiPublicKey,
     candyMachineAddress: UmiPublicKey,
     label: string,
     couponId: number,
+    numberOfItems: number,
     userId?: number,
-  ) {
+  ): Promise<string | undefined> {
     const {
       whitelistedWallets,
-      lookupTable,
       mintPrice,
       tokenStandard,
       whitelistedUsers,
@@ -284,31 +293,72 @@ export class CandyMachineService {
       numberOfRedemptions,
       startsAt,
       expiresAt,
+      lookupTable,
     } = await this.findCandyMachineCouponData(couponId, label);
 
+    this.validateCouponDates(startsAt, expiresAt);
+    await this.validateWalletBalance(walletAddress, mintPrice, tokenStandard);
+    this.validateTokenStandard(tokenStandard);
+    this.validateMintEligibility(
+      couponType,
+      userId,
+      walletAddress,
+      whitelistedUsers,
+      whitelistedWallets,
+    );
+    await this.validateMintLimit(
+      numberOfRedemptions,
+      numberOfItems,
+      couponType,
+      candyMachineAddress,
+      walletAddress,
+      userId,
+    );
+
+    return lookupTable;
+  }
+
+  private validateCouponDates(startsAt?: Date, expiresAt?: Date): void {
     const currentDate = new Date();
     if (startsAt && startsAt > currentDate) {
       throw new UnauthorizedException('Coupon is not active yet.');
     }
-
     if (expiresAt && expiresAt < currentDate) {
       throw new UnauthorizedException('Coupon is expired.');
     }
+  }
 
-    const balance = await this.umi.rpc.getBalance(feePayer);
+  private async validateWalletBalance(
+    walletAddress: UmiPublicKey,
+    mintPrice: number,
+    tokenStandard: TokenStandard,
+  ): Promise<void> {
+    const balance = await this.umi.rpc.getBalance(walletAddress);
     validateBalanceForMint(
       mintPrice,
       Number(balance.basisPoints),
       tokenStandard,
     );
+  }
 
+  private validateTokenStandard(tokenStandard: TokenStandard): void {
     if (tokenStandard !== TokenStandard.Core) {
       throw new BadRequestException('Invalid token standard');
     }
+  }
 
-    const isPublicMint =
-      couponType === CouponType.PublicUser ||
-      couponType === CouponType.WhitelistedWallet;
+  private validateMintEligibility(
+    couponType: CouponType,
+    userId: number | undefined,
+    walletAddress: UmiPublicKey,
+    whitelistedUsers: any[],
+    whitelistedWallets: any[],
+  ): void {
+    const publicMintTypes: CouponType[] = [
+      CouponType.PublicUser,
+      CouponType.WhitelistedWallet,
+    ];
+    const isPublicMint = publicMintTypes.includes(couponType);
 
     if (!isPublicMint) {
       if (!userId) {
@@ -316,56 +366,51 @@ export class CandyMachineService {
           "Mint is limited to Users, make sure you're signed in!",
         );
       }
-
-      if (couponType === CouponType.WhitelistedUser) {
-        const isWhitelisted = findUserInUserWhiteList(userId, whitelistedUsers);
-        if (!isWhitelisted) {
-          throw new UnauthorizedException(
-            'User is not eligible for this mint !',
-          );
-        }
+      if (
+        couponType === CouponType.WhitelistedUser &&
+        !findUserInUserWhiteList(userId, whitelistedUsers)
+      ) {
+        throw new UnauthorizedException('User is not eligible for this mint!');
       }
-    } else {
-      if (couponType === CouponType.WhitelistedWallet) {
-        const isWhitelisted = findWalletInWalletWhiteList(
-          feePayer,
-          whitelistedWallets,
-        );
-        if (!isWhitelisted) {
-          throw new UnauthorizedException(
-            'Wallet selected is not eligible for this mint !',
-          );
-        }
-      }
+    } else if (
+      couponType === CouponType.WhitelistedWallet &&
+      !findWalletInWalletWhiteList(walletAddress, whitelistedWallets)
+    ) {
+      throw new UnauthorizedException(
+        'Wallet selected is not eligible for this mint!',
+      );
     }
+  }
 
+  private async validateMintLimit(
+    numberOfRedemptions: number | undefined,
+    numberOfItems: number,
+    couponType: CouponType,
+    candyMachineAddress: UmiPublicKey,
+    walletAddress: UmiPublicKey,
+    userId: number | undefined,
+  ): Promise<void> {
     if (numberOfRedemptions) {
+      const publicMintTypes: CouponType[] = [
+        CouponType.PublicUser,
+        CouponType.WhitelistedWallet,
+      ];
+      const isPublicMint = publicMintTypes.includes(couponType);
+
       const itemsMinted = isPublicMint
         ? await this.countWalletItemsMintedQuery(
             candyMachineAddress.toString(),
-            feePayer.toString(),
+            walletAddress.toString(),
           )
         : await this.countUserItemsMintedQuery(
             candyMachineAddress.toString(),
             userId,
           );
 
-      if (itemsMinted >= numberOfRedemptions) {
-        throw new UnauthorizedException('Mint limit reached !');
+      if (itemsMinted + numberOfItems > numberOfRedemptions) {
+        throw new UnauthorizedException('Mint limit reached!');
       }
     }
-
-    const CORE_MINT_COMPUTE_BUDGET = 800000;
-    return await getTransactionWithPriorityFee(
-      constructCoreMintTransaction,
-      CORE_MINT_COMPUTE_BUDGET,
-      umi,
-      publicKey(candyMachineAddress),
-      publicKey(feePayer),
-      label,
-      lookupTable,
-      true,
-    );
   }
 
   /* Find Candy Machine And Coupon Details*/

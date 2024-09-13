@@ -1,7 +1,7 @@
 import { PublicKey, VersionedTransaction } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, cuy, log, logErr } from './chalk';
-import { constructCoreMintTransaction } from '../candy-machine/instructions';
+import { constructMultipleMintTransaction } from '../candy-machine/instructions';
 import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex, umi } from '../utils/metaplex';
 import { AUTHORITY_GROUP_LABEL } from '../constants';
@@ -62,17 +62,17 @@ export class MintRemainingCommand extends CommandRunner {
       throw new Error('Only Core mint is supported');
     }
     const CORE_MINT_COMPUTE_BUDGET = 800000;
-
+    // Todo: use chunking to do 5 mint in 1 tx
     const encodedTransactions = await getTransactionWithPriorityFee(
-      constructCoreMintTransaction,
+      constructMultipleMintTransaction,
       CORE_MINT_COMPUTE_BUDGET,
       this.umi,
       publicKey(candyMachineAddress),
       publicKey(authority.publicKey),
       AUTHORITY_GROUP_LABEL,
       [authority.publicKey.toString()],
+      1,
       candyMachine.lookupTable,
-      false,
     );
 
     const transactions = encodedTransactions.map((encodedTransaction) => {

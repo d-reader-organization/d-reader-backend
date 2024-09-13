@@ -114,7 +114,7 @@ export async function createCoreCandyMachine(
     const guards = {
       botTax: some({
         lamports: lamports(BOT_TAX),
-        lastInstruction: true,
+        lastInstruction: false,
       }),
     };
 
