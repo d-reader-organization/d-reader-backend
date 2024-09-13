@@ -24,8 +24,8 @@ import {
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
 import {
-  getBackendAuthority,
-  getBackendAuthorityLegacySignature,
+  getThirdPartyLegacySignature,
+  getThirdPartySigner,
 } from '../../utils/metaplex';
 import { encodeUmiTransaction } from '../../utils/transactions';
 import { createMemoInstruction } from '@solana/spl-memo';
@@ -40,45 +40,49 @@ export async function constructMultipleMintTransaction(
   lookupTableAddress?: string,
   computePrice?: number,
 ): Promise<string[]> {
-  const transactions: string[] = [];
-  const lookupTable = await fetchLookupTable(umi, lookupTableAddress);
-  const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
-  const signer = createNoopSigner(minter);
-  const mintArgs = await getMintArgs(umi, candyMachine, label);
+  try {
+    const transactions: string[] = [];
+    const lookupTable = await fetchLookupTable(umi, lookupTableAddress);
+    const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
+    const signer = createNoopSigner(minter);
+    const mintArgs = await getMintArgs(umi, candyMachine, label);
 
-  const builder = createTransactionBuilder(umi, numberOfItems, computePrice);
-  const { assetSigners, builder: mintBuilder } =
-    addMintBuildersAndGenerateSigners(
+    const builder = createTransactionBuilder(umi, numberOfItems, computePrice);
+    const { assetSigners, builder: mintBuilder } =
+      addMintBuildersAndGenerateSigners(
+        umi,
+        numberOfItems,
+        builder,
+        candyMachine,
+        signer,
+        label,
+        mintArgs,
+      );
+
+    const mintTransaction = await buildAndSignTransaction(
+      mintBuilder,
       umi,
-      numberOfItems,
-      builder,
-      candyMachine,
       signer,
-      label,
-      mintArgs,
+      lookupTable,
     );
 
-  const mintTransaction = await buildAndSignTransaction(
-    mintBuilder,
-    umi,
-    signer,
-    lookupTable,
-  );
+    const authorizationTx = await createAuthorizationTransaction(
+      umi,
+      minter,
+      assetSigners,
+    );
+    transactions.push(authorizationTx);
 
-  const authorizationTx = await createAuthorizationTransaction(
-    umi,
-    minter,
-    assetSigners,
-  );
-  transactions.push(authorizationTx);
+    const encodedMintTransaction = encodeUmiTransaction(
+      mintTransaction,
+      'base64',
+    );
+    transactions.push(encodedMintTransaction);
 
-  const encodedMintTransaction = encodeUmiTransaction(
-    mintTransaction,
-    'base64',
-  );
-  transactions.push(encodedMintTransaction);
-
-  return transactions;
+    return transactions;
+  } catch (e) {
+    console.error('Error construction mint transaction', e);
+  }
 }
 
 async function fetchLookupTable(
@@ -162,11 +166,11 @@ async function createAuthorizationTransaction(
   minter: UmiPublicKey,
   assetSigners: KeypairSigner[],
 ): Promise<string> {
-  const backendAuthority = getBackendAuthority();
+  const thirdPartySigner = getThirdPartySigner();
   const minterPublicKey = new PublicKey(minter.toString());
 
   const authorizationMemo = createMemoInstruction('Authorized Mint!', [
-    backendAuthority,
+    thirdPartySigner,
     minterPublicKey,
     ...assetSigners.map((signer) => new PublicKey(signer.publicKey)),
   ]);
@@ -178,7 +182,7 @@ async function createAuthorizationTransaction(
     feePayer: minterPublicKey,
     ...latestBlockHash,
   }).add(authorizationMemo);
-  const signedMemoTx = await getBackendAuthorityLegacySignature(memoTx);
+  const signedMemoTx = getThirdPartyLegacySignature(memoTx);
   signedMemoTx.partialSign(
     ...assetSigners.map((signer) => toWeb3JsKeypair(signer)),
   );
