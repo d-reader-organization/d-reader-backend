@@ -9,12 +9,7 @@ import {
   CreateCarouselSlideFilesDto,
 } from '../carousel/dto/create-carousel-slide.dto';
 import { UpdateCarouselSlideDto } from '../carousel/dto/update-carousel-slide.dto';
-import {
-  CarouselSlide,
-  CollectibleComicCollection,
-  ComicIssue,
-  CouponType,
-} from '@prisma/client';
+import { CarouselSlide, CouponType } from '@prisma/client';
 import { addDays, differenceInMonths } from 'date-fns';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';

@@ -325,6 +325,18 @@ export class CandyMachineService {
           );
         }
       }
+    } else {
+      if (couponType === CouponType.WhitelistedWallet) {
+        const isWhitelisted = findWalletInWalletWhiteList(
+          feePayer,
+          whitelistedWallets,
+        );
+        if (!isWhitelisted) {
+          throw new UnauthorizedException(
+            'Wallet selected is not eligible for this mint !',
+          );
+        }
+      }
     }
 
     if (numberOfRedemptions) {
@@ -351,7 +363,6 @@ export class CandyMachineService {
       publicKey(candyMachineAddress),
       publicKey(feePayer),
       label,
-      whitelistedWallets,
       lookupTable,
       true,
     );
@@ -868,9 +879,7 @@ export class CandyMachineService {
 
       return {
         couponType: candyMachineCoupon.type,
-        whitelistedWallets: whitelistedWallets.length
-          ? whitelistedWallets.map((item) => item.walletAddress)
-          : [],
+        whitelistedWallets: whitelistedWallets.length ? whitelistedWallets : [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
         lookupTable: candyMachine.lookupTable,
