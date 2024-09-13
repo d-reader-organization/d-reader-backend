@@ -42,7 +42,7 @@ import {
   validateWeb3PublishInfo,
 } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
-import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
@@ -668,14 +668,9 @@ export class ComicIssueService {
     const {
       onChainName,
       royaltyWallets,
-      startsAt,
-      expiresAt,
-      numberOfRedemptions,
       supply,
-      mintPrice,
       tokenStandard,
-      couponType,
-      usdcEquivalentMintPrice,
+      coupons,
       ...updatePayload
     } = publishOnChainDto;
 
@@ -701,16 +696,10 @@ export class ComicIssueService {
     });
 
     const createCandyMachineParams: CreateCandyMachineParams = {
-      startsAt,
-      expiresAt,
-      numberOfRedemptions,
       comicName: updatedComicIssue.comic.title,
       assetOnChainName: onChainName,
-      splTokenAddress: WRAPPED_SOL_MINT.toBase58(),
-      usdcEquivalentMintPrice,
-      mintPrice,
       supply,
-      couponType,
+      coupons,
     };
 
     try {
