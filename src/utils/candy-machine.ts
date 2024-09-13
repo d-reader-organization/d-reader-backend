@@ -359,31 +359,39 @@ export function calculateMissingSOL(missingFunds: number): number {
 export function validateBalanceForMint(
   mintPrice: number,
   balance: number,
+  numberOfItems: number,
   tokenStandard?: TokenStandard,
 ): void {
-  // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint an NFT with price 0
+  // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint a single asset with price 0
+
   const protocolFee =
     tokenStandard === TokenStandard.Core
       ? MIN_CORE_MINT_PROTOCOL_FEE
       : MIN_MINT_PROTOCOL_FEE;
 
-  const missingFunds = mintPrice
-    ? mintPrice + protocolFee - balance
-    : protocolFee - balance;
+  const totalMintPrice = numberOfItems * mintPrice;
+  const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  if (!mintPrice && balance < protocolFee) {
+  const missingFunds = totalMintPrice
+    ? totalMintPrice + totalProtocolFeeRequired - balance
+    : totalProtocolFeeRequired - balance;
+
+  if (!totalMintPrice && balance < totalProtocolFeeRequired) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
         missingFunds,
       )} more SOL in your wallet to pay for protocol fees`,
     );
-  } else if (mintPrice && balance < mintPrice) {
+  } else if (totalMintPrice && balance < totalMintPrice) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
         missingFunds,
       )} more SOL in your wallet to pay for purchase`,
     );
-  } else if (mintPrice && balance < mintPrice + protocolFee) {
+  } else if (
+    totalMintPrice &&
+    balance < totalMintPrice + totalProtocolFeeRequired
+  ) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
         missingFunds,

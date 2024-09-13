@@ -297,7 +297,12 @@ export class CandyMachineService {
     } = await this.findCandyMachineCouponData(couponId, label);
 
     this.validateCouponDates(startsAt, expiresAt);
-    await this.validateWalletBalance(walletAddress, mintPrice, tokenStandard);
+    await this.validateWalletBalance(
+      walletAddress,
+      mintPrice,
+      tokenStandard,
+      numberOfItems,
+    );
     this.validateTokenStandard(tokenStandard);
     this.validateMintEligibility(
       couponType,
@@ -332,11 +337,13 @@ export class CandyMachineService {
     walletAddress: UmiPublicKey,
     mintPrice: number,
     tokenStandard: TokenStandard,
+    numberOfItems: number,
   ): Promise<void> {
     const balance = await this.umi.rpc.getBalance(walletAddress);
     validateBalanceForMint(
       mintPrice,
       Number(balance.basisPoints),
+      numberOfItems,
       tokenStandard,
     );
   }
