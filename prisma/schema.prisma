@@ -424,6 +424,8 @@ model CarouselSlide {
 
 enum CarouselLocation {
   Home
+  Primary
+  Secondary
 }
 
 model Newsletter {

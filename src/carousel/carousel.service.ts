@@ -18,6 +18,7 @@ import {
   CarouselTagTitle,
   CarouselWithTags,
 } from '../types/carousel';
+import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -64,12 +65,20 @@ export class CarouselService {
     return carouselSlide;
   }
 
-  async findAll(isExpired?: boolean): Promise<CarouselWithTags[]> {
+  async findAll({
+    isExpired,
+    params: { location, take },
+  }: {
+    isExpired?: boolean;
+    params?: GetCarouselSlidesParams;
+  }): Promise<CarouselWithTags[]> {
     const carouselSlides = await this.prisma.carouselSlide.findMany({
       where: {
         expiredAt: !isExpired ? { gt: new Date() } : undefined,
         publishedAt: { lt: new Date() },
+        location,
       },
+      take,
       orderBy: { priority: 'asc' },
     });
     return await Promise.all(

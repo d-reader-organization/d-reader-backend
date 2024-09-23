@@ -743,6 +743,8 @@ Enum CouponType {
 
 Enum CarouselLocation {
   Home
+  Primary
+  Secondary
 }
 
 Enum GlobalStatusType {
