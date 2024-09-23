@@ -377,7 +377,7 @@ Table CarouselSlide {
   externalLink String
   publishedAt DateTime [default: `now()`, not null]
   expiredAt DateTime [not null]
-  location CarouselLocation [not null, default: 'Home']
+  location CarouselLocation [not null, default: 'HomePrimary']
 }
 
 Table Newsletter {
@@ -742,7 +742,8 @@ Enum CouponType {
 }
 
 Enum CarouselLocation {
-  Home
+  HomePrimary
+  HomeSecondary
 }
 
 Enum GlobalStatusType {
