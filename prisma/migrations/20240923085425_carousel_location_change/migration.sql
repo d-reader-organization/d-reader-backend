@@ -6,5 +6,11 @@
 -- the enum.
 
 
-ALTER TYPE "CarouselLocation" ADD VALUE 'Primary';
-ALTER TYPE "CarouselLocation" ADD VALUE 'Secondary';
+BEGIN;
+ALTER TYPE "CarouselLocation" ADD VALUE 'HomePrimary';
+ALTER TYPE "CarouselLocation" ADD VALUE 'HomeSecondary';
+COMMIT;
+
+UPDATE "CarouselSlide" SET "location" = 'HomePrimary' WHERE "location"='Home';
+ALTER TABLE "CarouselSlide" ALTER COLUMN "location" SET DEFAULT 'HomePrimary';
+

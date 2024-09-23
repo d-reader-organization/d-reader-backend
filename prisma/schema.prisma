@@ -419,13 +419,12 @@ model CarouselSlide {
   externalLink String?
   publishedAt  DateTime         @default(now())
   expiredAt    DateTime
-  location     CarouselLocation @default(Home)
+  location     CarouselLocation @default(HomePrimary)
 }
 
 enum CarouselLocation {
-  Home
-  Primary
-  Secondary
+  HomePrimary
+  HomeSecondary
 }
 
 model Newsletter {

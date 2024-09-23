@@ -7,13 +7,6 @@ import {
   TransformStringToNumber,
 } from 'src/utils/transform';
 
-export class CarouselSlideFilterParams {
-  @IsOptional()
-  @TransformStringToBoolean()
-  @IsBoolean()
-  isExpired?: boolean;
-}
-
 export class GetCarouselSlidesParams {
   @IsOptional()
   @IsIntRange(1, 20)
@@ -25,4 +18,9 @@ export class GetCarouselSlidesParams {
   @IsEnum(CarouselLocation)
   @ApiProperty({ enum: CarouselLocation })
   location?: CarouselLocation;
+
+  @IsOptional()
+  @TransformStringToBoolean()
+  @IsBoolean()
+  isExpired?: boolean;
 }

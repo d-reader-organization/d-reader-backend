@@ -32,10 +32,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import {
-  CarouselSlideFilterParams,
-  GetCarouselSlidesParams,
-} from './dto/carousel-slide-params.dto';
+import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 
 @UseGuards(ThrottlerGuard)
@@ -65,8 +62,8 @@ export class CarouselController {
   }
 
   private throttledFindAll = memoizeThrottle(
-    async (input: { isExpired?: boolean; params: GetCarouselSlidesParams }) => {
-      const carouselSlides = await this.carouselService.findAll(input);
+    async (query: GetCarouselSlidesParams) => {
+      const carouselSlides = await this.carouselService.findAll(query);
       return toCarouselSlideDtoArray(carouselSlides);
     },
     15 * 60 * 1000, // 15 minutes
@@ -74,17 +71,15 @@ export class CarouselController {
 
   /* Get all carousel slides */
   @Get('slides/get')
-  async findAll(@Query() params: GetCarouselSlidesParams) {
-    return this.throttledFindAll({ params });
+  async findAll(@Query() query: GetCarouselSlidesParams) {
+    return this.throttledFindAll(query);
   }
 
   /* Get all raw carousel slides */
   @AdminGuard()
   @Get('slides/get-raw')
-  async findAllRaw(@Query() params: CarouselSlideFilterParams) {
-    const rawCarouselSlides = await this.carouselService.findAll({
-      isExpired: params.isExpired,
-    });
+  async findAllRaw(@Query() query: GetCarouselSlidesParams) {
+    const rawCarouselSlides = await this.carouselService.findAll(query);
     return toCarouselSlideDtoArray(rawCarouselSlides);
   }
 
