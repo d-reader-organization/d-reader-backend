@@ -37,18 +37,15 @@ import {
 } from '../../candy-machine/instructions';
 import * as jwt from 'jsonwebtoken';
 import {
-  AUTHORITY_GROUP_LABEL,
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
   MINT_CORE_V1_DISCRIMINATOR,
-  SOL_ADDRESS,
   TCOMP_PROGRAM_ID,
   TRANSFER_CORE_V1_DISCRIMINANT,
   UPDATE_CORE_V1_DISCRIMINANT,
 } from '../../constants';
-import { mintV2Struct } from '@metaplex-foundation/mpl-candy-guard';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
-import { Prisma } from '@prisma/client';
+import { Prisma, TransactionStatus } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import {
   AssetV1,
@@ -58,13 +55,14 @@ import {
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { array, base58, u8 } from '@metaplex-foundation/umi/serializers';
-import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
+import {
+  fetchCandyMachine,
+  MPL_CORE_CANDY_GUARD_PROGRAM_ID,
+} from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
-import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { isEqual } from 'lodash';
 import { getAssetFromTensor } from '../../utils/das';
 import { TENSOR_ASSET } from './dto/types';
-import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
 
@@ -143,8 +141,6 @@ export class HeliusService {
     return Promise.all(
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
-          case TransactionType.NFT_MINT:
-            return this.handleMintEvent(transaction);
           case TransactionType.TRANSFER:
             return this.handleAssetTransfer(transaction);
           case TransactionType.NFT_LISTING:
@@ -326,14 +322,10 @@ export class HeliusService {
   }
 
   private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
-    const mintInstruction = enrichedTransaction.instructions.at(-1);
-    const mintV1Serializer = getMintV1InstructionDataSerializer();
-
-    const candyMachineAddress =
-      enrichedTransaction.instructions.at(-1).accounts[2];
+    const baseInstruction = enrichedTransaction.instructions.at(-1);
+    const candyMachineAddress = baseInstruction.accounts[2];
     const ownerAddress =
       enrichedTransaction.nativeTransfers.at(0).fromUserAccount;
-    const mint = enrichedTransaction.instructions.at(-1).accounts[7];
 
     const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
       'confirmed',
@@ -346,81 +338,46 @@ export class HeliusService {
         'confirmed',
       );
 
-    const nft = await fetchAssetV1(this.umi, publicKey(mint), {
-      commitment: 'confirmed',
+    const receipt = await this.prisma.candyMachineReceipt.findFirst({
+      where: { transactionSignature: enrichedTransaction.signature },
     });
-    const offChainMetadata = await fetchOffChainMetadata(nft.uri);
-
     let comicIssueId: number = undefined,
       userId: number = undefined;
+
+    const assetAccounts: string[] = [];
+    enrichedTransaction.instructions.forEach((instruction) => {
+      const isMintInstruction =
+        instruction.programId.toString() ===
+        MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
+      if (isMintInstruction) {
+        const assetAddress = instruction.accounts.at(7); // TODO: Put correct index
+        assetAccounts.push(assetAddress);
+      }
+    });
+
     try {
-      const comicIssueAsset = await this.indexCoreAsset(
-        nft,
-        offChainMetadata,
+      const assets = await Promise.all(
+        assetAccounts.map((account) =>
+          fetchAssetV1(this.umi, publicKey(account)),
+        ),
+      );
+      const comicIssueAssets = await this.indexCoreAsset(
+        assets,
         ownerAddress,
         candyMachineAddress,
+        receipt.id,
       );
 
-      comicIssueId = comicIssueAsset.metadata.collection.comicIssueId;
-      userId = comicIssueAsset.digitalAsset.owner?.userId;
-      await this.subscribeTo(comicIssueAsset.address);
+      comicIssueId = comicIssueAssets[0].metadata.collection.comicIssueId;
+      userId = comicIssueAssets[0].digitalAsset.owner?.userId;
     } catch (e) {
       console.error(e);
     }
 
     try {
-      const ixData = mintV1Serializer.deserialize(
-        bs58.decode(mintInstruction.data),
-      )[0];
-      const label =
-        ixData.group.__option == 'Some' ? ixData.group.value : undefined;
-
-      let splTokenAddress = SOL_ADDRESS;
-      let balanceTransferAddress = ownerAddress;
-
-      const couponCurrencySetting =
-        await this.prisma.candyMachineCouponCurrencySetting.findUnique({
-          where: { label_candyMachineAddress: { label, candyMachineAddress } },
-        });
-
-      if (label && label !== AUTHORITY_GROUP_LABEL) {
-        splTokenAddress = couponCurrencySetting.splTokenAddress;
-        balanceTransferAddress =
-          splTokenAddress == SOL_ADDRESS
-            ? ownerAddress
-            : findAssociatedTokenPda(this.umi, {
-                mint: publicKey(couponCurrencySetting.splTokenAddress),
-                owner: publicKey(ownerAddress),
-              })[0];
-      }
-
-      const ownerAccountData = enrichedTransaction.accountData.find(
-        (data) => data.account == balanceTransferAddress,
-      );
-      const price =
-        splTokenAddress === SOL_ADDRESS
-          ? Math.abs(ownerAccountData.nativeBalanceChange)
-          : Math.abs(
-              +ownerAccountData.tokenBalanceChanges.find(
-                (balance) => balance.mint === splTokenAddress,
-              ).rawTokenAmount.tokenAmount,
-            );
-
-      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-        collectibleComic: { connect: { address: mint } },
-        candyMachine: { connect: { address: candyMachineAddress } },
-        buyer: {
-          connectOrCreate: {
-            where: { address: ownerAddress },
-            create: { address: ownerAddress },
-          },
-        },
-        price,
+      const receiptData: Prisma.CandyMachineReceiptUpdateInput = {
         timestamp: new Date(enrichedTransaction.timestamp * 1000),
-        description: enrichedTransaction.description,
-        transactionSignature: enrichedTransaction.signature,
-        splTokenAddress,
-        couponId: couponCurrencySetting.couponId,
+        status: TransactionStatus.Confirmed,
       };
 
       if (userId) {
@@ -428,8 +385,12 @@ export class HeliusService {
           connect: { id: userId },
         };
       }
-      const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { collectibleComic: true, buyer: { include: { user: true } } },
+      const updatedReceipt = await this.prisma.candyMachineReceipt.update({
+        where: { id: receipt.id },
+        include: {
+          collectibleComics: true,
+          buyer: { include: { user: true } },
+        },
         data: receiptData,
       });
 
@@ -441,6 +402,7 @@ export class HeliusService {
       const itemsRemaining =
         Number(candyMachine.data.itemsAvailable) -
         Number(candyMachine.itemsRedeemed);
+
       await this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
@@ -453,8 +415,8 @@ export class HeliusService {
         this.removeSubscription(candyMachine.publicKey.toString());
       }
 
-      this.websocketGateway.handleAssetMinted(comicIssueId, receipt);
-      this.websocketGateway.handleWalletAssetMinted(receipt);
+      this.websocketGateway.handleAssetMinted(comicIssueId, updatedReceipt);
+      this.websocketGateway.handleWalletAssetMinted(updatedReceipt);
     } catch (e) {
       console.error(e);
     }
@@ -923,120 +885,6 @@ export class HeliusService {
     }
   }
 
-  private async handleMintEvent(enrichedTransaction: EnrichedTransaction) {
-    const mint = new PublicKey(enrichedTransaction.tokenTransfers.at(0).mint);
-    const metadataPda = this.metaplex.nfts().pdas().metadata({ mint });
-
-    // Put this into a separate function and place it in an exponential backoff
-    const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
-    await this.metaplex
-      .rpc()
-      .confirmTransaction(
-        enrichedTransaction.signature,
-        { ...latestBlockhash },
-        'confirmed',
-      );
-
-    const info = await this.metaplex.rpc().getAccount(metadataPda);
-    const metadata = toMetadata(toMetadataAccount(info));
-    const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-
-    // Candy Machine Guard program is the last instruction
-    // Candy Machine address is the 3rd account in the guard instruction
-    const candyMachineAddress =
-      enrichedTransaction.instructions.at(-1).accounts[2];
-    const ownerAddress = enrichedTransaction.tokenTransfers.at(0).toUserAccount;
-
-    let comicIssueId: number = undefined,
-      userId: number = undefined;
-    try {
-      const comicIssueAsset = await this.indexAsset(
-        metadata,
-        offChainMetadata,
-        ownerAddress,
-        candyMachineAddress,
-      );
-
-      comicIssueId = comicIssueAsset.metadata.collection.comicIssueId;
-      userId = comicIssueAsset.digitalAsset.owner?.userId;
-      await this.subscribeTo(comicIssueAsset.address);
-    } catch (e) {
-      console.error(e);
-    }
-
-    try {
-      const nftTransactionInfo = enrichedTransaction.events.nft;
-      let splTokenAddress = SOL_ADDRESS;
-      if (enrichedTransaction.tokenTransfers.at(1)) {
-        splTokenAddress = enrichedTransaction.tokenTransfers.at(1).mint;
-      }
-      const ixData = mintV2Struct.deserialize(
-        bs58.decode(enrichedTransaction.instructions.at(-1).data),
-      );
-
-      const couponCurrencySetting =
-        await this.prisma.candyMachineCouponCurrencySetting.findUnique({
-          where: {
-            label_candyMachineAddress: {
-              label: ixData[0].label,
-              candyMachineAddress,
-            },
-          },
-        });
-
-      const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-        collectibleComic: { connect: { address: mint.toBase58() } },
-        candyMachine: { connect: { address: candyMachineAddress } },
-        buyer: {
-          connectOrCreate: {
-            where: { address: nftTransactionInfo.buyer },
-            create: { address: nftTransactionInfo.buyer },
-          },
-        },
-        price: nftTransactionInfo.amount,
-        timestamp: new Date(nftTransactionInfo.timestamp * 1000),
-        description: enrichedTransaction.description,
-        transactionSignature: nftTransactionInfo.signature,
-        splTokenAddress,
-        couponId: couponCurrencySetting.couponId,
-      };
-
-      if (userId) {
-        receiptData.user = {
-          connect: { id: userId },
-        };
-      }
-      const receipt = await this.prisma.candyMachineReceipt.create({
-        include: { collectibleComic: true, buyer: { include: { user: true } } },
-        data: receiptData,
-      });
-      const candyMachine = await this.metaplex
-        .candyMachines()
-        .findByAddress(
-          { address: new PublicKey(candyMachineAddress) },
-          { commitment: 'confirmed' },
-        );
-
-      const itemsRemaining = candyMachine.itemsRemaining.toNumber();
-      await this.prisma.candyMachine.update({
-        where: { address: candyMachineAddress },
-        data: {
-          itemsRemaining,
-          itemsMinted: candyMachine.itemsMinted.toNumber(),
-        },
-      });
-
-      if (itemsRemaining === 0) {
-        this.removeSubscription(candyMachine.address.toString());
-      }
-
-      this.websocketGateway.handleAssetMinted(comicIssueId, receipt);
-      this.websocketGateway.handleWalletAssetMinted(receipt);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
   private async handleMintRejectedEvent(
     enrichedTransaction: EnrichedTransaction,
   ) {
@@ -1185,51 +1033,59 @@ export class HeliusService {
   }
 
   async indexCoreAsset(
-    asset: AssetV1,
-    offChainMetadata: JsonMetadata,
+    assets: AssetV1[],
     walletAddress: string,
     candMachineAddress: string,
+    receiptId: number,
   ) {
-    const digitalAsset = await this.prisma.collectibleComic.create({
-      include: {
-        metadata: {
-          include: { collection: { select: { comicIssueId: true } } },
-        },
-        digitalAsset: { include: { owner: { select: { userId: true } } } },
-      },
-      data: {
-        name: asset.name,
-        candyMachine: { connect: { address: candMachineAddress } },
-        metadata: {
-          connectOrCreate: {
-            where: { uri: asset.uri },
-            create: {
-              collectionName: offChainMetadata.name,
-              uri: asset.uri,
-              isUsed: findUsedTrait(offChainMetadata),
-              isSigned: findSignedTrait(offChainMetadata),
-              rarity: findRarityTrait(offChainMetadata),
-              collectionAddress: asset.updateAuthority.address.toString(),
-            },
+    const digitalAssets = [];
+    for (const asset of assets) {
+      const offChainMetadata = await fetchOffChainMetadata(asset.uri);
+
+      const digitalAsset = await this.prisma.collectibleComic.create({
+        include: {
+          metadata: {
+            include: { collection: { select: { comicIssueId: true } } },
           },
+          digitalAsset: { include: { owner: { select: { userId: true } } } },
         },
-        digitalAsset: {
-          create: {
-            address: asset.publicKey.toString(),
-            owner: {
-              connectOrCreate: {
-                where: { address: walletAddress },
-                create: { address: walletAddress },
+        data: {
+          name: asset.name,
+          candyMachine: { connect: { address: candMachineAddress } },
+          metadata: {
+            connectOrCreate: {
+              where: { uri: asset.uri },
+              create: {
+                collectionName: offChainMetadata.name,
+                uri: asset.uri,
+                isUsed: findUsedTrait(offChainMetadata),
+                isSigned: findSignedTrait(offChainMetadata),
+                rarity: findRarityTrait(offChainMetadata),
+                collectionAddress: asset.updateAuthority.address.toString(),
               },
             },
-            ownerChangedAt: new Date(),
+          },
+          receipt: { connect: { id: receiptId } },
+          digitalAsset: {
+            create: {
+              address: asset.publicKey.toString(),
+              owner: {
+                connectOrCreate: {
+                  where: { address: walletAddress },
+                  create: { address: walletAddress },
+                },
+              },
+              ownerChangedAt: new Date(),
+            },
           },
         },
-      },
-    });
+      });
 
-    await this.subscribeTo(asset.publicKey.toString());
-    return digitalAsset;
+      digitalAssets.push(digitalAsset);
+      await this.subscribeTo(asset.publicKey.toString());
+    }
+
+    return digitalAssets;
   }
 
   async indexAsset(

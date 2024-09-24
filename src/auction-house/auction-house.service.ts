@@ -614,7 +614,9 @@ export class AuctionHouseService {
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
       where: {
-        collectibleComic: { metadata: { collection: { comicIssueId } } },
+        collectibleComics: {
+          every: { metadata: { collection: { comicIssueId } } },
+        },
       },
       _sum: { price: true },
     });

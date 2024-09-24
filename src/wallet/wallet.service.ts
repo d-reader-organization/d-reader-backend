@@ -9,7 +9,7 @@ import {
   SAGA_COLLECTION_ADDRESS,
 } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { CouponType, Prisma } from '@prisma/client';
+import { CouponType, Prisma, TransactionStatus } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { isEmpty } from 'lodash';
 import { hasCompletedSetup } from '../utils/user';
@@ -139,7 +139,9 @@ export class WalletService {
 
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { collectibleComicAddress: indexedAsset.address },
+          where: {
+            collectibleComics: { some: { address: indexedAsset.address } },
+          },
         },
       );
 
@@ -161,7 +163,7 @@ export class WalletService {
         });
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          collectibleComic: { connect: { address: indexedAsset.address } },
+          collectibleComics: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine.address } },
           buyer: {
             connectOrCreate: {
@@ -169,6 +171,8 @@ export class WalletService {
               create: { address: ownerAddress },
             },
           },
+          status: TransactionStatus.Confirmed,
+          numberOfItems: 1,
           price: 0,
           timestamp: new Date(),
           description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
@@ -246,7 +250,9 @@ export class WalletService {
       );
       const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
         {
-          where: { collectibleComicAddress: indexedAsset.address },
+          where: {
+            collectibleComics: { some: { address: indexedAsset.address } },
+          },
         },
       );
 
@@ -268,7 +274,7 @@ export class WalletService {
         const userId: number = owner?.userId;
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          collectibleComic: { connect: { address: indexedAsset.address } },
+          collectibleComics: { connect: { address: indexedAsset.address } },
           candyMachine: { connect: { address: candyMachine } },
           buyer: {
             connectOrCreate: {
@@ -276,6 +282,8 @@ export class WalletService {
               create: { address: ownerAddress },
             },
           },
+          status: TransactionStatus.Confirmed,
+          numberOfItems: 1,
           price: 0,
           timestamp: new Date(),
           description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,

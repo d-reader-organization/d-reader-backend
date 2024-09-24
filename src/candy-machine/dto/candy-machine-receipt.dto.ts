@@ -1,4 +1,4 @@
-import { IsDateString, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
 import {
   CandyMachineReceipt,
@@ -13,6 +13,11 @@ import { PickType } from '@nestjs/swagger';
 export class PartialAssetDto extends PickType(AssetDto, ['address', 'name']) {}
 
 export class CandyMachineReceiptDto {
+  @IsArray()
+  @Type(() => PartialAssetDto)
+  assets: PartialAssetDto[];
+
+  /* @deprecated */
   @Type(() => PartialAssetDto)
   asset: PartialAssetDto;
 
@@ -37,20 +42,26 @@ export class CandyMachineReceiptDto {
 }
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
-  collectibleComic: CollectibleComic;
+  collectibleComics: CollectibleComic[];
   buyer: Wallet & { user: User };
 };
 
 export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
+  const assets = receipt.collectibleComics.map((collectibleComic) => ({
+    address: collectibleComic.address,
+    name: collectibleComic.name,
+  }));
+
   const plainReceiptDto: CandyMachineReceiptDto = {
     nft: {
-      address: receipt.collectibleComic.address,
-      name: receipt.collectibleComic.name,
+      address: receipt.collectibleComics[0].address,
+      name: receipt.collectibleComics[0].name,
     },
     asset: {
-      address: receipt.collectibleComic.address,
-      name: receipt.collectibleComic.name,
+      address: receipt.collectibleComics[0].address,
+      name: receipt.collectibleComics[0].name,
     },
+    assets,
     buyer: await toBuyerDto(receipt.buyer),
     candyMachineAddress: receipt.candyMachineAddress,
     price: Number(receipt.price),
