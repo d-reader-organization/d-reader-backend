@@ -2,6 +2,7 @@ import { Transaction } from '@solana/web3.js';
 import { umi } from './metaplex';
 import { Transaction as UmiTransaction } from '@metaplex-foundation/umi';
 import { base58, base64 } from '@metaplex-foundation/umi/serializers';
+import * as nacl from 'tweetnacl';
 
 export const decodeBs58 = (encodedString: string) => {
   return new TextEncoder().encode(encodedString);
@@ -50,4 +51,21 @@ export const encodeUmiTransaction = (
   } else {
     throw new Error('Unsupported encoding format, base58 and base64 supported');
   }
+};
+
+export const verifySignature = (
+  messageBytes: Uint8Array,
+  signatures: Uint8Array[],
+  publicKey: Uint8Array,
+) => {
+  return signatures.some((signature) => {
+    const isSigned = nacl.sign.detached.verify(
+      messageBytes,
+      signature,
+      publicKey,
+    );
+
+    console.log('VALUE', isSigned);
+    return isSigned;
+  });
 };

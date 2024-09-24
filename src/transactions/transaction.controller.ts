@@ -53,6 +53,9 @@ import {
 } from 'src/digital-asset/dto/create-one-of-one-collection-dto';
 import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
 import { publicKey } from '@metaplex-foundation/umi';
+import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
+import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
+import { MINT_MUTEX_IDENTIFIER } from 'src/constants';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -138,6 +141,18 @@ export class TransactionController {
       couponId,
       numberOfItems,
       user ? user.id : null,
+    );
+  }
+
+  @UseInterceptors(MutexInterceptor(MINT_MUTEX_IDENTIFIER, { id: 'param' }))
+  @Post('/send-mint-transaction/:walletAddress')
+  async sendMintTransaction(
+    @Param('walletAddress') walletAddress: string,
+    @Body() body: SendMintTransactionBodyDto,
+  ) {
+    return await this.candyMachineService.validateAndSendMintTransaction(
+      body.transactions,
+      walletAddress,
     );
   }
 

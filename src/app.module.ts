@@ -38,6 +38,7 @@ import { NonceModule } from './nonce/nonce.module';
 import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/draft-comic-issue-sales-data.module';
 import { TwitterModule } from './twitter/twitter.module';
 import { BlinkModule } from './blink/blink.module';
+import { MutexModule } from './mutex/mutex.module';
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { BlinkModule } from './blink/blink.module';
     DraftComicIssueSalesDataModule,
     TwitterModule,
     BlinkModule,
+    MutexModule,
   ],
   controllers: [AppController],
   providers: [

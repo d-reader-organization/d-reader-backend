@@ -4,7 +4,7 @@ import { DAS } from 'helius-sdk';
 import { PrismaService } from 'nestjs-prisma';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { isEmpty } from 'lodash';
-import { CouponType, Prisma } from '@prisma/client';
+import { CouponType, Prisma, TransactionStatus } from '@prisma/client';
 import { fetchCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { umi } from '../utils/metaplex';
@@ -92,9 +92,10 @@ export class SyncCoreAssetCommand extends CommandRunner {
 
     const owner = digitalAsset.owner;
     const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst({
-      where: { collectibleComicAddress: asset.id },
+      where: { collectibleComics: { some: { address: asset.id } } },
     });
 
+    /** If receipt doesn't exists for a asset, it might be hard to get the actual signauture with all asset created in batch but we can create multiple receipts for all those assets here */
     if (!doesReceiptExists) {
       try {
         const coupon = await this.prisma.candyMachineCoupon.findFirst({
@@ -112,7 +113,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
         const UNKNOWN = 'UNKNOWN';
         const userId: number = owner?.userId;
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          collectibleComic: { connect: { address: asset.id } },
+          collectibleComics: { connect: { address: asset.id } },
           candyMachine: { connect: { address: candyMachineAddress } },
           buyer: {
             connectOrCreate: {
@@ -125,6 +126,8 @@ export class SyncCoreAssetCommand extends CommandRunner {
           description: `${walletAddress} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
           splTokenAddress: UNKNOWN,
           transactionSignature: UNKNOWN,
+          status: TransactionStatus.Confirmed,
+          numberOfItems: 1,
           couponId: coupon.id,
         };
 

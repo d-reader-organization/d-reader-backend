@@ -14,45 +14,45 @@ generator dbml {
 }
 
 model User {
-  id                               Int                               @id @default(autoincrement())
-  email                            String                            @unique
-  password                         String
-  name                             String                            @unique
-  avatar                           String                            @default("")
-  nonce                            String                            @unique @default(uuid())
-  role                             Role                              @default(User)
-  referrerId                       Int?
-  referralsRemaining               Int                               @default(0)
-  deletedAt                        DateTime?
-  referredAt                       DateTime?
-  lastLogin                        DateTime?
-  lastActiveAt                     DateTime?
-  emailVerifiedAt                  DateTime?
-  createdAt                        DateTime                          @default(now())
-  referCompeletedAt                DateTime?
-  mintReceipts                     CandyMachineReceipt[]
-  comics                           UserComic[]
-  comicIssues                      UserComicIssue[]
-  creators                         UserCreator[]
-  wallets                          Wallet[]
-  referrer                         User?                             @relation("ReferrerToReferral", fields: [referrerId], references: [id])
-  referrals                        User[]                            @relation("ReferrerToReferral")
-  notifications                    UserNotification[]
-  devices                          Device[]
-  consents                         UserPrivacyConsent[]
-  whitelistedCandyMachineCoupons      CandyMachineCouponWhitelistedUser[]
+  id                             Int                                 @id @default(autoincrement())
+  email                          String                              @unique
+  password                       String
+  name                           String                              @unique
+  avatar                         String                              @default("")
+  nonce                          String                              @unique @default(uuid())
+  role                           Role                                @default(User)
+  referrerId                     Int?
+  referralsRemaining             Int                                 @default(0)
+  deletedAt                      DateTime?
+  referredAt                     DateTime?
+  lastLogin                      DateTime?
+  lastActiveAt                   DateTime?
+  emailVerifiedAt                DateTime?
+  createdAt                      DateTime                            @default(now())
+  referCompeletedAt              DateTime?
+  mintReceipts                   CandyMachineReceipt[]
+  comics                         UserComic[]
+  comicIssues                    UserComicIssue[]
+  creators                       UserCreator[]
+  wallets                        Wallet[]
+  referrer                       User?                               @relation("ReferrerToReferral", fields: [referrerId], references: [id])
+  referrals                      User[]                              @relation("ReferrerToReferral")
+  notifications                  UserNotification[]
+  devices                        Device[]
+  consents                       UserPrivacyConsent[]
+  whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
 }
 
 model Wallet {
-  address                            String                              @id
-  label                              String                              @default("")
-  userId                             Int?
-  createdAt                          DateTime                            @default(now())
-  connectedAt                        DateTime?
-  user                               User?                               @relation(fields: [userId], references: [id])
-  mintReceipts                       CandyMachineReceipt[]
-  whitelistedCandyMachineCoupons        CandyMachineCouponWhitelistedWallet[]
-  digitalAssets                      DigitalAsset[]
+  address                        String                                @id
+  label                          String                                @default("")
+  userId                         Int?
+  createdAt                      DateTime                              @default(now())
+  connectedAt                    DateTime?
+  user                           User?                                 @relation(fields: [userId], references: [id])
+  mintReceipts                   CandyMachineReceipt[]
+  whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet[]
+  digitalAssets                  DigitalAsset[]
 }
 
 enum Role {
@@ -280,7 +280,8 @@ model CollectibleComic {
   name                String
   candyMachine        CandyMachine             @relation(fields: [candyMachineAddress], references: [address])
   candyMachineAddress String
-  receipt             CandyMachineReceipt?
+  receipt             CandyMachineReceipt?     @relation(fields: [receiptId], references: [id])
+  receiptId           Int?
   digitalAsset        DigitalAsset             @relation(fields: [address], references: [address])
 }
 
@@ -310,32 +311,32 @@ enum TokenStandard {
 }
 
 model CandyMachineCoupon {
-  id                                 Int                                 @id @default(autoincrement())
-  name                               String
-  description                        String
-  supply                             Int
-  numberOfRedemptions                Int?
-  startsAt                           DateTime?
-  expiresAt                          DateTime?
-  wallets                            CandyMachineCouponWhitelistedWallet[]
-  users                              CandyMachineCouponWhitelistedUser[]
-  type                               CouponType
-  candyMachineAddress                String
-  candyMachine                       CandyMachine                        @relation(fields: [candyMachineAddress], references: [address])
-  currencySettings                   CandyMachineCouponCurrencySetting[]
+  id                  Int                                   @id @default(autoincrement())
+  name                String
+  description         String
+  supply              Int
+  numberOfRedemptions Int?
+  startsAt            DateTime?
+  expiresAt           DateTime?
+  wallets             CandyMachineCouponWhitelistedWallet[]
+  users               CandyMachineCouponWhitelistedUser[]
+  type                CouponType
+  candyMachineAddress String
+  candyMachine        CandyMachine                          @relation(fields: [candyMachineAddress], references: [address])
+  currencySettings    CandyMachineCouponCurrencySetting[]
 }
 
 model CandyMachineCouponCurrencySetting {
-  label           String
-  mintPrice       BigInt
-  usdcEquivalent  Int
-  splTokenAddress String
-  coupon          CandyMachineCoupon @relation(fields: [couponId], references: [id])
-  couponId        Int
-  candyMachineAddress String @map("candyMachineAddress")
+  label               String
+  mintPrice           BigInt
+  usdcEquivalent      Int
+  splTokenAddress     String
+  coupon              CandyMachineCoupon @relation(fields: [couponId], references: [id])
+  couponId            Int
+  candyMachineAddress String             @map("candyMachineAddress")
 
-  @@unique([label, candyMachineAddress])
   @@id([label, couponId])
+  @@unique([label, candyMachineAddress])
   @@unique([splTokenAddress, couponId])
 }
 
@@ -347,39 +348,47 @@ enum CouponType {
 }
 
 model CandyMachineCouponWhitelistedWallet {
-  wallet               Wallet             @relation(fields: [walletAddress], references: [address])
-  walletAddress        String
-  coupon               CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  couponId             Int
+  wallet        Wallet             @relation(fields: [walletAddress], references: [address])
+  walletAddress String
+  coupon        CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  couponId      Int
 
   @@id([couponId, walletAddress])
 }
 
 model CandyMachineCouponWhitelistedUser {
-  user                 User               @relation(fields: [userId], references: [id])
-  userId               Int
-  coupon               CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  couponId             Int
+  user     User               @relation(fields: [userId], references: [id])
+  userId   Int
+  coupon   CandyMachineCoupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  couponId Int
 
   @@id([couponId, userId])
 }
 
+enum TransactionStatus {
+  Processing
+  Confirmed
+  Failed
+}
+
 model CandyMachineReceipt {
-  collectibleComicAddress String           @id
-  collectibleComic        CollectibleComic @relation(fields: [collectibleComicAddress], references: [address])
-  buyer                   Wallet           @relation(fields: [buyerAddress], references: [address])
-  userId                  Int?
-  user                    User?            @relation(fields: [userId], references: [id])
-  buyerAddress            String
-  price                   BigInt
-  timestamp               DateTime
-  description             String
-  candyMachine            CandyMachine     @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
-  candyMachineAddress     String
-  transactionSignature    String
-  splTokenAddress         String
-  label                   String           @default("UNKNOWN")
-  couponId                Int
+  id                   Int                @id @default(autoincrement())
+  collectibleComics    CollectibleComic[]
+  buyer                Wallet             @relation(fields: [buyerAddress], references: [address])
+  userId               Int?
+  user                 User?              @relation(fields: [userId], references: [id])
+  buyerAddress         String
+  price                BigInt
+  timestamp            DateTime
+  description          String
+  candyMachine         CandyMachine       @relation(fields: [candyMachineAddress], references: [address], onDelete: Cascade)
+  candyMachineAddress  String
+  transactionSignature String
+  splTokenAddress      String
+  label                String             @default("UNKNOWN")
+  status               TransactionStatus
+  couponId             Int
+  numberOfItems        Int
 }
 
 model CollectibleComicCollection {

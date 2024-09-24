@@ -4,7 +4,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PublicKey } from '@solana/web3.js';
+import {
+  PublicKey,
+  TransactionMessage,
+  VersionedTransaction,
+} from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import {
   Metaplex,
@@ -22,6 +26,7 @@ import {
   FUNDS_DESTINATION_ADDRESS,
   MIN_COMPUTE_PRICE,
   SOL_ADDRESS,
+  AUTHORITY_GROUP_LABEL,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
@@ -32,6 +37,7 @@ import {
 import {
   MetadataFile,
   getThirdPartySigner,
+  getThirdPartyUmiSignature,
   metaplex,
   umi,
   writeFiles,
@@ -49,6 +55,7 @@ import {
   TokenStandard,
   ComicRarity as PrismaComicRarity,
   CouponType,
+  TransactionStatus,
 } from '@prisma/client';
 import {
   CandyMachineCouponWithWhitelist,
@@ -83,6 +90,7 @@ import {
   ThirdPartySigner,
   TokenPayment,
   SolPayment,
+  MPL_CORE_CANDY_GUARD_PROGRAM_ID,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   insertCoreItems,
@@ -103,6 +111,8 @@ import { getTransactionWithPriorityFee } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
+import { decodeUmiTransaction } from 'src/utils/transactions';
+import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 
 @Injectable()
 export class CandyMachineService {
@@ -163,6 +173,21 @@ export class CandyMachineService {
       commitment: 'confirmed',
     });
     const candyMachineAddress = candyMachine.publicKey.toString();
+    const comicVaultCoupon = {
+      name: AUTHORITY_GROUP_LABEL,
+      supply: 0,
+      type: CouponType.WhitelistedWallet,
+      description: 'This coupon is for Comic vault items',
+      currencySettings: [
+        {
+          label: AUTHORITY_GROUP_LABEL,
+          splTokenAddress: SOL_ADDRESS,
+          mintPrice: 0,
+          usdcEquivalent: 0,
+        },
+      ],
+    };
+    couponsWithLabel.push(comicVaultCoupon);
 
     await this.prisma.candyMachine.create({
       data: {
@@ -323,101 +348,149 @@ export class CandyMachineService {
     return lookupTable;
   }
 
-  private validateCouponDates(startsAt?: Date, expiresAt?: Date): void {
-    const currentDate = new Date();
-    if (startsAt && startsAt > currentDate) {
-      throw new UnauthorizedException('Coupon is not active yet.');
-    }
-    if (expiresAt && expiresAt < currentDate) {
-      throw new UnauthorizedException('Coupon is expired.');
-    }
-  }
-
-  private async validateWalletBalance(
-    walletAddress: UmiPublicKey,
-    mintPrice: number,
-    tokenStandard: TokenStandard,
-    numberOfItems: number,
-  ): Promise<void> {
-    const balance = await this.umi.rpc.getBalance(walletAddress);
-    validateBalanceForMint(
-      mintPrice,
-      Number(balance.basisPoints),
-      numberOfItems,
-      tokenStandard,
+  async validateAndSendMintTransaction(
+    transactions: string[],
+    walletAddress: string,
+  ) {
+    const mintTransaction = VersionedTransaction.deserialize(
+      Buffer.from(transactions[1], 'base64'),
     );
-  }
+    const authenticationTransaction = VersionedTransaction.deserialize(
+      Buffer.from(transactions[0], 'base64'),
+    );
 
-  private validateTokenStandard(tokenStandard: TokenStandard): void {
-    if (tokenStandard !== TokenStandard.Core) {
-      throw new BadRequestException('Invalid token standard');
+    // TODO: Check indexes
+    const lookupTable = await this.metaplex.connection.getAddressLookupTable(
+      new PublicKey('4naXjSixRmSHFQwSjs4Rk9DcFrsBWazXC5dtj3Q4tADG'),
+    );
+    const mintInstructions = TransactionMessage.decompile(
+      mintTransaction.message,
+      { addressLookupTableAccounts: [lookupTable.value] },
+    );
+
+    const baseInstruction = mintInstructions.instructions.at(-1);
+    const baseInstructionAccounts = baseInstruction.keys;
+
+    const candyMachineAddress = baseInstructionAccounts.at(2).pubkey.toString();
+    const minterAddress = baseInstructionAccounts.at(5).pubkey.toString();
+
+    if (minterAddress != walletAddress) {
+      throw new BadRequestException('Invalid minter address!');
     }
-  }
 
-  private validateMintEligibility(
-    couponType: CouponType,
-    userId: number | undefined,
-    walletAddress: UmiPublicKey,
-    whitelistedUsers: any[],
-    whitelistedWallets: any[],
-  ): void {
-    const publicMintTypes: CouponType[] = [
-      CouponType.PublicUser,
-      CouponType.WhitelistedWallet,
-    ];
-    const isPublicMint = publicMintTypes.includes(couponType);
+    const mintV1Serializer = getMintV1InstructionDataSerializer();
+    const ixData = mintV1Serializer.deserialize(baseInstruction.data)[0];
+    const label =
+      ixData.group.__option == 'Some' ? ixData.group.value : undefined;
 
-    if (!isPublicMint) {
-      if (!userId) {
-        throw new UnauthorizedException(
-          "Mint is limited to Users, make sure you're signed in!",
-        );
+    let splTokenAddress = SOL_ADDRESS;
+    const couponCurrencySetting =
+      await this.prisma.candyMachineCouponCurrencySetting.findUnique({
+        where: { label_candyMachineAddress: { label, candyMachineAddress } },
+      });
+
+    if (label && label !== AUTHORITY_GROUP_LABEL) {
+      splTokenAddress = couponCurrencySetting.splTokenAddress;
+    }
+
+    const couponId = couponCurrencySetting.couponId;
+    const { currencySettings, ...coupon } =
+      await this.prisma.candyMachineCoupon.findUnique({
+        where: { id: couponId },
+        include: { currencySettings: { where: { label } } },
+      });
+
+    const { mintPrice } = currencySettings[0];
+    const assetAccounts: PublicKey[] = [];
+
+    mintInstructions.instructions.forEach((instruction) => {
+      const isMintInstruction =
+        instruction.programId.toString() ===
+        MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
+
+      if (isMintInstruction) {
+        const assetAddress = instruction.keys.at(7); // TODO: Check if correct index
+        assetAccounts.push(assetAddress.pubkey);
       }
-      if (
-        couponType === CouponType.WhitelistedUser &&
-        !findUserInUserWhiteList(userId, whitelistedUsers)
-      ) {
-        throw new UnauthorizedException('User is not eligible for this mint!');
-      }
-    } else if (
-      couponType === CouponType.WhitelistedWallet &&
-      !findWalletInWalletWhiteList(walletAddress, whitelistedWallets)
-    ) {
-      throw new UnauthorizedException(
-        'Wallet selected is not eligible for this mint!',
+    });
+
+    const numberOfItems = assetAccounts.length;
+    const thirdPartySigner = getThirdPartySigner();
+
+    /** TODO: Verification should be handled better */
+    const totalSignatureRequired = authenticationTransaction.signatures.length;
+    if (totalSignatureRequired != assetAccounts.length + 2) {
+      throw new BadRequestException('Unauthorized mint transaction');
+    }
+
+    const memoInstruction = TransactionMessage.decompile(
+      authenticationTransaction.message,
+    ).instructions.at(-1);
+    const thirdPartyAccountMeta = memoInstruction.keys.find((key) =>
+      key.pubkey.equals(thirdPartySigner),
+    );
+
+    if (!thirdPartyAccountMeta || !thirdPartyAccountMeta.isSigner) {
+      throw new BadRequestException('Unauthorized mint transaction');
+    }
+
+    for (const assetAccount of assetAccounts) {
+      const assetAccountPublicKey = new PublicKey(assetAccount);
+      const accountMeta = memoInstruction.keys.find((key) =>
+        key.pubkey.equals(assetAccountPublicKey),
       );
-    }
-  }
 
-  private async validateMintLimit(
-    numberOfRedemptions: number | undefined,
-    numberOfItems: number,
-    couponType: CouponType,
-    candyMachineAddress: UmiPublicKey,
-    walletAddress: UmiPublicKey,
-    userId: number | undefined,
-  ): Promise<void> {
-    if (numberOfRedemptions) {
-      const publicMintTypes: CouponType[] = [
-        CouponType.PublicUser,
-        CouponType.WhitelistedWallet,
-      ];
-      const isPublicMint = publicMintTypes.includes(couponType);
-
-      const itemsMinted = isPublicMint
-        ? await this.countWalletItemsMintedQuery(
-            candyMachineAddress.toString(),
-            walletAddress.toString(),
-          )
-        : await this.countUserItemsMintedQuery(
-            candyMachineAddress.toString(),
-            userId,
-          );
-
-      if (itemsMinted + numberOfItems > numberOfRedemptions) {
-        throw new UnauthorizedException('Mint limit reached!');
+      if (!accountMeta || !accountMeta.isSigner) {
+        throw new BadRequestException(`Unauthorized mint transaction.`);
       }
     }
+
+    if (coupon.numberOfRedemptions) {
+      const receipt = await this.prisma.candyMachineReceipt.aggregate({
+        where: { candyMachineAddress, couponId, buyerAddress: minterAddress },
+        _sum: { numberOfItems: true },
+      });
+
+      const itemsAlreadyClaimed = receipt?._sum?.numberOfItems || 0;
+      if (itemsAlreadyClaimed + numberOfItems > coupon.numberOfRedemptions) {
+        throw new BadRequestException("You've already redeemed coupon");
+      }
+    }
+
+    const umiMintTransaction = decodeUmiTransaction(transactions[1]);
+    const signedMintTransaction = await getThirdPartyUmiSignature(
+      umiMintTransaction,
+    );
+    // const latestBlockhash = await this.umi.rpc.getLatestBlockhash();
+
+    const signature = await this.umi.rpc.sendTransaction(signedMintTransaction);
+    // await this.umi.rpc.confirmTransaction(signature,{commitment:'confirmed',strategy:{type:'blockhash',...latestBlockhash}});
+
+    const transactionSignature = base58.deserialize(signature)[0];
+    await this.prisma.candyMachineReceipt.create({
+      data: {
+        description: 'Mint', // TODO: Put a better description
+        candyMachine: {
+          connect: { address: candyMachineAddress },
+        },
+        couponId,
+        buyer: {
+          connectOrCreate: {
+            where: { address: minterAddress },
+            create: { address: minterAddress },
+          },
+        },
+        label,
+        numberOfItems,
+        status: TransactionStatus.Processing,
+        transactionSignature,
+        price: mintPrice, // Should this be numberOfItems*mintPrice ?
+        timestamp: new Date(),
+        splTokenAddress,
+      },
+    });
+
+    return signature;
   }
 
   /* Find Candy Machine And Coupon Details*/
@@ -493,7 +566,7 @@ export class CandyMachineService {
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
-      include: { collectibleComic: true, buyer: { include: { user: true } } },
+      include: { collectibleComics: true, buyer: { include: { user: true } } },
       orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,
@@ -1232,5 +1305,102 @@ export class CandyMachineService {
       });
 
     return couponsWithLabel;
+  }
+
+  private validateCouponDates(startsAt?: Date, expiresAt?: Date): void {
+    const currentDate = new Date();
+    if (startsAt && startsAt > currentDate) {
+      throw new UnauthorizedException('Coupon is not active yet.');
+    }
+    if (expiresAt && expiresAt < currentDate) {
+      throw new UnauthorizedException('Coupon is expired.');
+    }
+  }
+
+  private async validateWalletBalance(
+    walletAddress: UmiPublicKey,
+    mintPrice: number,
+    tokenStandard: TokenStandard,
+    numberOfItems: number,
+  ): Promise<void> {
+    const balance = await this.umi.rpc.getBalance(walletAddress);
+    validateBalanceForMint(
+      mintPrice,
+      Number(balance.basisPoints),
+      numberOfItems,
+      tokenStandard,
+    );
+  }
+
+  private validateTokenStandard(tokenStandard: TokenStandard): void {
+    if (tokenStandard !== TokenStandard.Core) {
+      throw new BadRequestException('Invalid token standard');
+    }
+  }
+
+  private validateMintEligibility(
+    couponType: CouponType,
+    userId: number | undefined,
+    walletAddress: UmiPublicKey,
+    whitelistedUsers: any[],
+    whitelistedWallets: any[],
+  ): void {
+    const publicMintTypes: CouponType[] = [
+      CouponType.PublicUser,
+      CouponType.WhitelistedWallet,
+    ];
+    const isPublicMint = publicMintTypes.includes(couponType);
+
+    if (!isPublicMint) {
+      if (!userId) {
+        throw new UnauthorizedException(
+          "Mint is limited to Users, make sure you're signed in!",
+        );
+      }
+      if (
+        couponType === CouponType.WhitelistedUser &&
+        !findUserInUserWhiteList(userId, whitelistedUsers)
+      ) {
+        throw new UnauthorizedException('User is not eligible for this mint!');
+      }
+    } else if (
+      couponType === CouponType.WhitelistedWallet &&
+      !findWalletInWalletWhiteList(walletAddress, whitelistedWallets)
+    ) {
+      throw new UnauthorizedException(
+        'Wallet selected is not eligible for this mint!',
+      );
+    }
+  }
+
+  private async validateMintLimit(
+    numberOfRedemptions: number | undefined,
+    numberOfItems: number,
+    couponType: CouponType,
+    candyMachineAddress: UmiPublicKey,
+    walletAddress: UmiPublicKey,
+    userId: number | undefined,
+  ): Promise<void> {
+    if (numberOfRedemptions) {
+      const publicMintTypes: CouponType[] = [
+        CouponType.PublicUser,
+        CouponType.WhitelistedWallet,
+      ];
+      const isPublicMint = publicMintTypes.includes(couponType);
+
+      const itemsMinted = isPublicMint
+        ? await this.countWalletItemsMintedQuery(
+            candyMachineAddress.toString(),
+            walletAddress.toString(),
+          )
+        : await this.countUserItemsMintedQuery(
+            candyMachineAddress.toString(),
+            userId,
+          );
+
+      if (itemsMinted + numberOfItems > numberOfRedemptions) {
+        throw new UnauthorizedException('Mint limit reached!');
+      }
+    }
   }
 }

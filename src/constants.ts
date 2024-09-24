@@ -216,3 +216,5 @@ export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
 export const MINT_CORE_V1_DISCRIMINATOR = [
   145, 98, 192, 118, 184, 147, 118, 104,
 ];
+
+export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';

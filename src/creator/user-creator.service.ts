@@ -54,9 +54,11 @@ export class UserCreatorService {
 
     const getPrimaryVolume = this.prisma.candyMachineReceipt.aggregate({
       where: {
-        collectibleComic: {
-          metadata: {
-            collection: { comicIssue: { comic: { creator: { slug } } } },
+        collectibleComics: {
+          every: {
+            metadata: {
+              collection: { comicIssue: { comic: { creator: { slug } } } },
+            },
           },
         },
       },

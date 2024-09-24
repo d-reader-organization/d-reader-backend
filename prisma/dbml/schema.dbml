@@ -245,6 +245,7 @@ Table CollectibleComic {
   candyMachine CandyMachine [not null]
   candyMachineAddress String [not null]
   receipt CandyMachineReceipt
+  receiptId Int
   digitalAsset DigitalAsset [not null]
 }
 
@@ -322,8 +323,8 @@ Table CandyMachineCouponWhitelistedUser {
 }
 
 Table CandyMachineReceipt {
-  collectibleComicAddress String [pk]
-  collectibleComic CollectibleComic [not null]
+  id Int [pk, increment]
+  collectibleComics CollectibleComic [not null]
   buyer Wallet [not null]
   userId Int
   user User
@@ -336,7 +337,9 @@ Table CandyMachineReceipt {
   transactionSignature String [not null]
   splTokenAddress String [not null]
   label String [not null, default: 'UNKNOWN']
+  status TransactionStatus [not null]
   couponId Int [not null]
+  numberOfItems Int [not null]
 }
 
 Table CollectibleComicCollection {
@@ -741,6 +744,12 @@ Enum CouponType {
   PublicUser
 }
 
+Enum TransactionStatus {
+  Processing
+  Confirmed
+  Failed
+}
+
 Enum CarouselLocation {
   HomePrimary
   HomeSecondary
@@ -789,6 +798,8 @@ Ref: CollectibleComic.uri > CollectibleComicMetadata.uri
 
 Ref: CollectibleComic.candyMachineAddress > CandyMachine.address
 
+Ref: CollectibleComic.receiptId > CandyMachineReceipt.id
+
 Ref: CollectibleComic.address - DigitalAsset.address
 
 Ref: CandyMachine.collectionAddress > CollectibleComicCollection.address
@@ -804,8 +815,6 @@ Ref: CandyMachineCouponWhitelistedWallet.couponId > CandyMachineCoupon.id [delet
 Ref: CandyMachineCouponWhitelistedUser.userId > User.id
 
 Ref: CandyMachineCouponWhitelistedUser.couponId > CandyMachineCoupon.id [delete: Cascade]
-
-Ref: CandyMachineReceipt.collectibleComicAddress - CollectibleComic.address
 
 Ref: CandyMachineReceipt.buyerAddress > Wallet.address
 
