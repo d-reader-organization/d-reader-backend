@@ -1005,7 +1005,10 @@ export class CandyMachineService {
 
       return {
         couponType: candyMachineCoupon.type,
-        whitelistedWallets: whitelistedWallets.length ? whitelistedWallets : [],
+        whitelistedWallets:
+          whitelistedWallets && whitelistedWallets.length
+            ? whitelistedWallets
+            : [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
         lookupTable: candyMachine.lookupTable,
