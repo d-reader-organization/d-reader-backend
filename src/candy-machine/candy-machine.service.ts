@@ -547,6 +547,7 @@ export class CandyMachineService {
             ...coupon,
             discount,
             prices: coupon.currencySettings.map((price) => ({
+              label: price.label,
               mintPrice: Number(price.mintPrice),
               usdcEquivalent: price.usdcEquivalent,
               splTokenAddress: price.splTokenAddress,

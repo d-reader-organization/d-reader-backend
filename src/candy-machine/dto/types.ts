@@ -30,6 +30,7 @@ export type CandyMachineCouponWithStats = Omit<
 };
 
 export type CandyMachineCouponPrice = {
+  label: string;
   mintPrice: number;
   usdcEquivalent: number;
   splTokenAddress: string;
