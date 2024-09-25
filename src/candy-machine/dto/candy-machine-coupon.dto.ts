@@ -23,7 +23,7 @@ export class CouponStatsDto {
 export class CandyMachineCouponCurrencySettingDto {
   @IsString()
   label: string;
-  
+
   @IsNumber()
   mintPrice: number;
 

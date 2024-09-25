@@ -1168,9 +1168,11 @@ export class CandyMachineService {
 
     let darkblockId = '';
 
-    // Core standard doesn't allow same collection to be expanded in supply as of now so candymachine create will fail if used old collection
     if (collectionAsset) {
-      throw new BadRequestException('Collection already exists');
+      return {
+        collectionAddress: collectionAsset.address,
+        darkblockId: collectionAsset.darkblockId || '',
+      };
     }
 
     let darkblockMetadataFile: MetadataFile;
