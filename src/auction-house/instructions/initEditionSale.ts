@@ -1,3 +1,4 @@
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 import { createNoopSigner, publicKey, Umi } from '@metaplex-foundation/umi';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import {
@@ -16,6 +17,7 @@ export async function createInitEditionSaleTransaction(
   price: number,
   startDate: Date,
   endDate: Date,
+  computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
   const collection = publicKey(collectionAddress);
@@ -39,11 +41,15 @@ export async function createInitEditionSaleTransaction(
     endDate: endDate.getTime(),
   };
 
-  const transaction = await initEditionSale(
-    umi,
-    initEditionSaleInstructionData,
-  ).buildAndSign(umi);
+  let builder = initEditionSale(umi, initEditionSaleInstructionData);
 
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign(umi);
   const serializedTransaction = base64.deserialize(
     umi.transactions.serialize(transaction),
   )[0];

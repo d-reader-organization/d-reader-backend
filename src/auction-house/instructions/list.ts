@@ -18,6 +18,7 @@ import { getTreasuryPublicKey } from '../../utils/metaplex';
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { ListingConfigData } from '../dto/types/listing-config-data';
+import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
 
 export async function createSellTransaction(
   umi: Umi,
@@ -26,6 +27,7 @@ export async function createSellTransaction(
   auctionHouseAddress: string,
   price: number,
   collectionAddress?: string,
+  computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
   const sellerSigner = createNoopSigner(seller);
@@ -57,7 +59,15 @@ export async function createSellTransaction(
     price,
   };
 
-  const transaction = await sell(umi, sellInstructionData).buildAndSign({
+  let builder = sell(umi, sellInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign({
     ...umi,
     payer: sellerSigner,
   });

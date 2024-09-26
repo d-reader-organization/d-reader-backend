@@ -12,11 +12,15 @@ import {
   findAuctionHouseTreasuryPda,
 } from 'core-auctions';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import {
+  findAssociatedTokenPda,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 
 export async function createAuctionHouse(
   umi: Umi,
   createAuctionHouseDto: CreateAuctionHouseDto,
+  computePrice?: number,
 ) {
   const {
     treasuryAddress,
@@ -70,9 +74,14 @@ export async function createAuctionHouse(
     canChangeSalePrice: canChangeSalePrice ?? false,
   };
 
-  const transaction = await create(
-    umi,
-    createAuctionHouseInstructionData,
-  ).buildAndSign(umi);
+  let builder = create(umi, createAuctionHouseInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = builder.buildAndSign(umi);
   return transaction;
 }

@@ -1,5 +1,8 @@
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import {
+  findAssociatedTokenPda,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 import { Umi, publicKey, createNoopSigner } from '@metaplex-foundation/umi';
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { base64 } from '@metaplex-foundation/umi/serializers';
@@ -25,6 +28,7 @@ export async function createBidTransaction(
   splTokenAddress: string,
   bidPrice: number,
   isTimedAuction: boolean,
+  computePrice?: number,
 ) {
   const bidder = publicKey(bidderAddress);
   const auctionHouse = publicKey(auctionHouseAddress);
@@ -63,7 +67,15 @@ export async function createBidTransaction(
     bidPrice,
   };
 
-  const transaction = await buy(umi, buyInstructionData).buildAndSign({
+  let builder = buy(umi, buyInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign({
     ...umi,
     payer: wallet,
   });

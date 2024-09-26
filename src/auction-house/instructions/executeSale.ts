@@ -1,5 +1,8 @@
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import {
+  findAssociatedTokenPda,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 import { publicKey, Umi } from '@metaplex-foundation/umi';
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { base64 } from '@metaplex-foundation/umi/serializers';
@@ -24,6 +27,7 @@ export async function createExecuteSaleTransaction(
   bidderAddress: string,
   splTokenAddress: string,
   isTimedAuction: boolean,
+  computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
   const buyer = publicKey(bidderAddress);
@@ -78,11 +82,15 @@ export async function createExecuteSaleTransaction(
     sellerPaymentReceiptAccount,
   };
 
-  const transaction = await executeSale(
-    umi,
-    executeSaleInstructionData,
-  ).buildAndSign(umi);
+  let builder = executeSale(umi, executeSaleInstructionData);
 
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign(umi);
   const serializedTransaction = base64.deserialize(
     umi.transactions.serialize(transaction),
   )[0];
