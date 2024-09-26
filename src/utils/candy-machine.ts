@@ -28,7 +28,7 @@ import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
 import { TokenStandard } from '@prisma/client';
-import { getThirdPartySigner } from './metaplex';
+import { getIrysUri, getThirdPartySigner } from './metaplex';
 import { getTransactionWithPriorityFee } from './das';
 import { constructInsertItemsTransaction } from '../candy-machine/instructions/insert-items';
 import { decodeUmiTransaction } from './transactions';
@@ -48,10 +48,10 @@ import {
 } from '../constants';
 import { CoverFiles, ItemMetadata } from '../types/shared';
 import { ComicRarity } from 'dreader-comic-verse';
-import { writeFiles } from './metaplex';
 import { shuffle } from 'lodash';
 import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -67,7 +67,7 @@ export async function uploadMetadata(
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
-  image: MetaplexFile,
+  imageFile: MetaplexFile,
   isUsed: string,
   isSigned: string,
   rarity: ComicRarity,
@@ -80,12 +80,14 @@ export async function uploadMetadata(
     };
   });
 
-  return await umi.uploader.uploadJson({
+  const [image] = await umi.uploader.upload([imageFile]);
+
+  const jsonMetadata: DigitalAssetJsonMetadata = {
     name: comicIssue.title,
     symbol: D_PUBLISHER_SYMBOL,
     description: comicIssue.description,
     seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
-    image,
+    image: getIrysUri(image),
     external_url: D_READER_FRONTEND_URL,
     attributes: [
       {
@@ -103,16 +105,15 @@ export async function uploadMetadata(
     ],
     properties: {
       creators,
-      files: [
-        ...writeFiles(image),
-        darkblockId ? { type: 'Darkblock', uri: darkblockId } : undefined,
-      ],
+      files: darkblockId ? [{ type: 'Darkblock', uri: darkblockId }] : [],
     },
     collection: {
       name: comicIssue.title,
       family: comicName,
     },
-  });
+  };
+
+  return await umi.uploader.uploadJson(jsonMetadata);
 }
 
 export async function uploadAllMetadata(
@@ -129,7 +130,6 @@ export async function uploadAllMetadata(
     ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
       const property = generatePropertyName(isUsed, isSigned);
       const darkblock = isUsed ? darkblockId : undefined;
-      const isDevnet = process.env.SOLANA_CLUSTER == 'devnet';
 
       const uri = await uploadMetadata(
         umi,
@@ -144,9 +144,7 @@ export async function uploadAllMetadata(
       );
 
       itemMetadata.push({
-        uri: isDevnet
-          ? `https://gateway.irys.xyz/${uri.split('/').at(-1)}`
-          : uri,
+        uri: getIrysUri(uri),
         isUsed,
         isSigned,
         rarity,
