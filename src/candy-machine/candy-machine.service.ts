@@ -360,9 +360,12 @@ export class CandyMachineService {
     );
 
     // TODO: Check indexes
+    const lookupTableAddress =
+      mintTransaction.message.addressTableLookups[0].accountKey;
     const lookupTable = await this.metaplex.connection.getAddressLookupTable(
-      new PublicKey('4naXjSixRmSHFQwSjs4Rk9DcFrsBWazXC5dtj3Q4tADG'),
+      lookupTableAddress,
     );
+
     const mintInstructions = TransactionMessage.decompile(
       mintTransaction.message,
       { addressLookupTableAccounts: [lookupTable.value] },
@@ -829,7 +832,12 @@ export class CandyMachineService {
     couponId?: number,
   ) => {
     return this.prisma.candyMachineReceipt.count({
-      where: { candyMachineAddress, userId, couponId },
+      where: {
+        candyMachineAddress,
+        userId,
+        couponId,
+        status: TransactionStatus.Confirmed,
+      },
     });
   };
 
@@ -844,6 +852,7 @@ export class CandyMachineService {
         candyMachineAddress,
         buyerAddress,
         couponId,
+        status: TransactionStatus.Confirmed,
       },
     });
   };
