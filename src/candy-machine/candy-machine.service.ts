@@ -222,7 +222,6 @@ export class CandyMachineService {
     try {
       const itemMetadatas = await insertCoreItems(
         this.umi,
-        this.metaplex,
         candyMachine.publicKey,
         comicIssue,
         comicName,
@@ -236,7 +235,7 @@ export class CandyMachineService {
 
       const metadataCreateData = itemMetadatas.map((item) => {
         return {
-          uri: item.metadata.uri,
+          uri: item.uri,
           isUsed: item.isUsed,
           isSigned: item.isSigned,
           rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],

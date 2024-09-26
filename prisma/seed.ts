@@ -149,10 +149,14 @@ async function main() {
   await prisma.listing.deleteMany();
   await prisma.candyMachineReceipt.deleteMany();
   await prisma.candyMachineCouponWhitelistedWallet.deleteMany();
+  await prisma.candyMachineCouponCurrencySetting.deleteMany();
   await prisma.candyMachineCoupon.deleteMany();
-  await prisma.digitalAsset.deleteMany();
+  await prisma.collectibleComic.deleteMany();
+  await prisma.royaltyWallet.deleteMany();
   await prisma.candyMachine.deleteMany();
+  await prisma.collectibleComicMetadata.deleteMany();
   await prisma.collectibleComicCollection.deleteMany();
+  await prisma.digitalAsset.deleteMany();
   await prisma.comicPage.deleteMany();
   await prisma.comicIssue.deleteMany();
   await prisma.userComic.deleteMany();

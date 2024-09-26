@@ -1,7 +1,6 @@
 import {
   DefaultCandyGuardSettings,
   MetaplexFile,
-  UploadMetadataOutput,
 } from '@metaplex-foundation/js';
 import { ComicRarity as PrismaComicRarity, User, Wallet } from '@prisma/client';
 import { ComicRarity } from 'dreader-comic-verse';
@@ -19,7 +18,7 @@ export type CoverFiles = {
 
 export type RarityCoverFiles = { [rarity in PrismaComicRarity]: CoverFiles };
 export type ItemMetadata = {
-  metadata: UploadMetadataOutput;
+  uri: string;
   isUsed: boolean;
   isSigned: boolean;
   rarity: ComicRarity;

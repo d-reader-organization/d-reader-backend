@@ -23,7 +23,7 @@ import {
   rateLimitQuota,
   SOL_ADDRESS,
 } from '../constants';
-import { Metaplex, MetaplexFile } from '@metaplex-foundation/js';
+import { MetaplexFile } from '@metaplex-foundation/js';
 import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
@@ -63,7 +63,7 @@ export function generatePropertyName(
 }
 
 export async function uploadMetadata(
-  metaplex: Metaplex,
+  umi: Umi,
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
@@ -80,7 +80,7 @@ export async function uploadMetadata(
     };
   });
 
-  return await metaplex.nfts().uploadMetadata({
+  return await umi.uploader.uploadJson({
     name: comicIssue.title,
     symbol: D_PUBLISHER_SYMBOL,
     description: comicIssue.description,
@@ -116,7 +116,7 @@ export async function uploadMetadata(
 }
 
 export async function uploadAllMetadata(
-  metaplex: Metaplex,
+  umi: Umi,
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
@@ -129,8 +129,10 @@ export async function uploadAllMetadata(
     ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
       const property = generatePropertyName(isUsed, isSigned);
       const darkblock = isUsed ? darkblockId : undefined;
-      const metadata = await uploadMetadata(
-        metaplex,
+      const isDevnet = process.env.SOLANA_CLUSTER == 'devnet';
+
+      const uri = await uploadMetadata(
+        umi,
         comicIssue,
         comicName,
         royaltyWallets,
@@ -142,7 +144,9 @@ export async function uploadAllMetadata(
       );
 
       itemMetadata.push({
-        metadata,
+        uri: isDevnet
+          ? `https://gateway.irys.xyz/${uri.split('/').at(-1)}`
+          : uri,
         isUsed,
         isSigned,
         rarity,
@@ -154,7 +158,7 @@ export async function uploadAllMetadata(
 }
 
 export async function uploadItemMetadata(
-  metaplex: Metaplex,
+  umi: Umi,
   comicIssue: ComicIssueCMInput,
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
@@ -172,7 +176,7 @@ export async function uploadItemMetadata(
   for (const rarityShare of rarityShares) {
     const { rarity } = rarityShare;
     const itemMetadata = await uploadAllMetadata(
-      metaplex,
+      umi,
       comicIssue,
       comicName,
       royaltyWallets,
@@ -204,7 +208,7 @@ export async function uploadItemMetadata(
     const itemsInserted = indexArray.map(() => {
       nameIndex++;
       return {
-        uri: data.metadata.uri,
+        uri: data.uri,
         name: `${onChainName} #${nameIndex}`,
       };
     });
@@ -291,7 +295,6 @@ export function toUmiGroups(
 
 export async function insertCoreItems(
   umi: Umi,
-  metaplex: Metaplex,
   candyMachinePubkey: UmiPublicKey,
   comicIssue: ComicIssueCMInput,
   comicName: string,
@@ -303,7 +306,7 @@ export async function insertCoreItems(
   rarityCoverFiles?: RarityCoverFiles,
 ) {
   const { items, itemMetadatas } = await uploadItemMetadata(
-    metaplex,
+    umi,
     comicIssue,
     comicName,
     royaltyWallets,
