@@ -191,3 +191,9 @@ export function writeFiles(...files: MetaplexFile[]): MetadataFile[] {
     type: file.contentType,
   }));
 }
+
+export function getIrysUri(uri: string) {
+  const isDevnet = process.env.SOLANA_CLUSTER == 'devnet';
+
+  return isDevnet ? `https://gateway.irys.xyz/${uri.split('/').at(-1)}` : uri;
+}

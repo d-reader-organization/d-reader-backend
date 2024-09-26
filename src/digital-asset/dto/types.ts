@@ -5,9 +5,9 @@ export interface DigitalAssetJsonMetadata {
   image: string;
   animation_url?: string;
   external_url?: string;
-  isNSFW: boolean;
-  tags: string[];
-  genres: string[];
+  isNSFW?: boolean;
+  tags?: string[];
+  genres?: string[];
   attributes?: Array<{
     trait_type?: string;
     value?: string;
