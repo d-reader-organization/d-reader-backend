@@ -1,5 +1,8 @@
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
+import {
+  findAssociatedTokenPda,
+  setComputeUnitPrice,
+} from '@metaplex-foundation/mpl-toolbox';
 import {
   createNoopSigner,
   PublicKey as UmiPublicKey,
@@ -22,6 +25,7 @@ export async function createBuyPrintEditionTransaction(
   sellerAddress: string,
   buyerAddress: string,
   splTokenAddress: string,
+  computePrice?: number,
 ) {
   const collection = publicKey(collectionAddress);
   const seller = publicKey(sellerAddress);
@@ -64,10 +68,15 @@ export async function createBuyPrintEditionTransaction(
     currencyMint,
   };
 
-  const transaction = await buyEdition(
-    umi,
-    buyEditionInstructionData,
-  ).buildAndSign({
+  let builder = buyEdition(umi, buyEditionInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign({
     ...umi,
     payer: buyerSigner,
   });
