@@ -21,7 +21,7 @@ import {
   fetchCollection,
   fetchAsset,
 } from '@metaplex-foundation/mpl-core';
-import { umi } from '../utils/metaplex';
+import { getIrysUri, umi } from '../utils/metaplex';
 import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
@@ -707,7 +707,7 @@ export class DigitalAssetService {
       name,
       symbol: D_READER_SYMBOL,
       description,
-      image: imageUri,
+      image: getIrysUri(imageUri),
       attributes: attributes.map((attribute) => ({
         trait_type: attribute.trait_type,
         value: attribute.value,
@@ -724,6 +724,6 @@ export class DigitalAssetService {
 
     const uri = await this.umi.uploader.uploadJson(jsonMetadata);
 
-    return uri;
+    return getIrysUri(uri);
   }
 }
