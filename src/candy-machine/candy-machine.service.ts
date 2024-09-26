@@ -111,7 +111,7 @@ import { getTransactionWithPriorityFee } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
-import { decodeUmiTransaction } from 'src/utils/transactions';
+import { decodeUmiTransaction, verifySignature } from 'src/utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 
 @Injectable()
@@ -418,32 +418,33 @@ export class CandyMachineService {
 
     const numberOfItems = assetAccounts.length;
     const thirdPartySigner = getThirdPartySigner();
+    const authMessageBytes = authenticationTransaction.message.serialize();
+    const authTransactionSignatures = authenticationTransaction.signatures;
 
-    /** TODO: Verification should be handled better */
-    const totalSignatureRequired = authenticationTransaction.signatures.length;
-    if (totalSignatureRequired != assetAccounts.length + 2) {
-      throw new BadRequestException('Unauthorized mint transaction');
+    /** Verify signature for third party signer */
+    if (
+      !verifySignature(
+        authMessageBytes,
+        authTransactionSignatures,
+        thirdPartySigner.toBytes(),
+      )
+    ) {
+      throw new UnauthorizedException('Unverified Transaction');
     }
 
-    const memoInstruction = TransactionMessage.decompile(
-      authenticationTransaction.message,
-    ).instructions.at(-1);
-    const thirdPartyAccountMeta = memoInstruction.keys.find((key) =>
-      key.pubkey.equals(thirdPartySigner),
-    );
-
-    if (!thirdPartyAccountMeta || !thirdPartyAccountMeta.isSigner) {
-      throw new BadRequestException('Unauthorized mint transaction');
-    }
-
+    /** Verify signatures for all asset accounts */
     for (const assetAccount of assetAccounts) {
       const assetAccountPublicKey = new PublicKey(assetAccount);
-      const accountMeta = memoInstruction.keys.find((key) =>
-        key.pubkey.equals(assetAccountPublicKey),
-      );
-
-      if (!accountMeta || !accountMeta.isSigner) {
-        throw new BadRequestException(`Unauthorized mint transaction.`);
+      if (
+        !verifySignature(
+          authMessageBytes,
+          authTransactionSignatures,
+          assetAccountPublicKey.toBytes(),
+        )
+      ) {
+        throw new BadRequestException(
+          `Unauthorized mint transaction for asset account: ${assetAccountPublicKey.toString()}`,
+        );
       }
     }
 
