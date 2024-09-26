@@ -147,6 +147,7 @@ export function initMetaplex(customEndpoint?: string) {
     .use(keypairIdentity(treasuryKeypair))
     .use(
       bundlrStorage({
+        providerUrl: 'https://gateway.irys.xyz',
         address: BUNDLR_ADDRESS,
         timeout: 60000,
       }),
@@ -170,7 +171,7 @@ export function initUmi(customEndpoint?: string) {
     .use(mplTokenMetadata())
     .use(mplCore())
     .use(mplCandyMachine())
-    .use(irysUploader())
+    .use(irysUploader({}))
     .use(umiKeypairIdentity(fromWeb3JsKeypair(treasuryKeypair)));
 
   return umi;
