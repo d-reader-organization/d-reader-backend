@@ -39,6 +39,10 @@ import * as jwt from 'jsonwebtoken';
 import {
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
+  D_READER_AUCTION,
+  D_READER_AUCTION_BID_DISCRIMINATOR,
+  D_READER_AUCTION_SELL_DISCRIMINATOR,
+  D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR,
   MINT_CORE_V1_DISCRIMINATOR,
   TCOMP_PROGRAM_ID,
   TRANSFER_CORE_V1_DISCRIMINANT,
@@ -65,6 +69,12 @@ import { getAssetFromTensor } from '../../utils/das';
 import { TENSOR_ASSET } from './dto/types';
 import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
+import {
+  CORE_AUCTIONS_PROGRAM_ID,
+  fetchBid,
+  getSellInstructionDataSerializer,
+  getTimedAuctionSellInstructionDataSerializer,
+} from 'core-auctions';
 
 @Injectable()
 export class HeliusService {
@@ -152,36 +162,217 @@ export class HeliusService {
           case TransactionType.NFT_MINT_REJECTED:
             return this.handleMintRejectedEvent(transaction);
           default:
-            const instruction = transaction.instructions.at(-1);
-            const data = bs58.decode(instruction.data);
-            if (instruction.programId == CMA_PROGRAM_ID) {
-              const discriminator = array(u8(), { size: 8 }).deserialize(
-                data.subarray(0, 8),
-              );
-              if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
-                return this.handleCoreMintEvent(transaction);
-              }
-            } else if (
-              instruction.programId == MPL_CORE_PROGRAM_ID.toString()
-            ) {
-              // Check if it's transfer or update transaction as per discriminant
-              const discriminant = u8().deserialize(data.subarray(0, 8));
-              if (discriminant[0] == TRANSFER_CORE_V1_DISCRIMINANT) {
-                return this.handleCoreNftTransfer(transaction);
-              } else if (discriminant[0] == UPDATE_CORE_V1_DISCRIMINANT) {
-                return this.handleChangeCoreComicState(transaction);
-              }
-            } else if (instruction.programId == TCOMP_PROGRAM_ID) {
-              return this.handleCoreSecondary(transaction);
-            }
-            console.log('Unhandled webhook', JSON.stringify(transaction));
-            // this is here in case Helius still hasn't parsted our transactions for new contract
-            return this.handleChangeComicState(transaction);
+            return this.handleUnknownWebhookEvent(transaction);
         }
       }),
     );
   }
 
+  /**
+   * Handles unknown webhook events by processing the transaction's last instruction.
+   */
+  private handleUnknownWebhookEvent(
+    transaction: EnrichedTransaction,
+  ): Promise<void> | undefined {
+    const lastInstruction = transaction.instructions.at(-1);
+    if (!lastInstruction) {
+      console.warn('No instructions found in transaction');
+      return;
+    }
+
+    const data = bs58.decode(lastInstruction.data);
+
+    switch (lastInstruction.programId) {
+      case CMA_PROGRAM_ID: {
+        const discriminator = array(u8(), { size: 8 }).deserialize(
+          data.subarray(0, 8),
+        );
+        if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
+          return this.handleCoreMintEvent(transaction);
+        }
+        break;
+      }
+
+      case MPL_CORE_PROGRAM_ID.toString(): {
+        const discriminant = u8().deserialize(data.subarray(0, 1))[0];
+
+        if (discriminant === TRANSFER_CORE_V1_DISCRIMINANT) {
+          return this.handleCoreNftTransfer(transaction);
+        } else if (discriminant === UPDATE_CORE_V1_DISCRIMINANT) {
+          return this.handleChangeCoreComicState(transaction);
+        }
+        break;
+      }
+
+      case CORE_AUCTIONS_PROGRAM_ID.toString(): {
+        const discriminator = array(u8(), { size: 8 }).deserialize(
+          data.subarray(0, 8),
+        );
+        if (isEqual(discriminator[0], D_READER_AUCTION_SELL_DISCRIMINATOR)) {
+          return this.handleAssetListing(transaction);
+        } else if (
+          isEqual(discriminator[0], D_READER_AUCTION_BID_DISCRIMINATOR)
+        ) {
+          return this.handleAssetBid(transaction);
+        } else if (
+          isEqual(discriminator[0], D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR)
+        ) {
+          return this.handleAssetTimedListing(transaction);
+        }
+      }
+
+      default:
+        console.log('Unhandled webhook', JSON.stringify(transaction, null, 2));
+    }
+  }
+
+  private async handleAssetListing(transaction: EnrichedTransaction) {
+    const lastInstruction = transaction.instructions.at(-1);
+    if (!lastInstruction) {
+      console.warn('No instructions found in transaction');
+      return;
+    }
+
+    const data = bs58.decode(lastInstruction.data);
+    const sellData = getSellInstructionDataSerializer().deserialize(data)[0];
+    const assetAddress = lastInstruction.accounts.at(4);
+    const auctionHouseAddress = lastInstruction.accounts.at(2);
+    const sellerAddress = lastInstruction.accounts.at(0);
+
+    await this.prisma.listing.create({
+      data: {
+        digitalAsset: {
+          connect: {
+            address: assetAddress,
+          },
+        },
+        auctionHouse: {
+          connect: {
+            address: auctionHouseAddress,
+          },
+        },
+        sellerAddress,
+        signature: transaction.signature,
+        source: D_READER_AUCTION,
+        createdAt: new Date(),
+        price: sellData.price,
+        closedAt: new Date(0),
+      },
+    });
+  }
+
+  private async handleAssetBid(transaction: EnrichedTransaction) {
+    const lastInstruction = transaction.instructions.at(-1);
+    if (!lastInstruction) {
+      console.warn('No instructions found in transaction');
+      return;
+    }
+
+    const bidderAddress = lastInstruction.accounts.at(0);
+    const bidAddress = lastInstruction.accounts.at(9);
+
+    const bidData = await fetchBid(this.umi, publicKey(bidAddress));
+    const assetAddress = bidData.asset.toString();
+    const auctionHouseAddress = lastInstruction.accounts.at(6);
+    const bid = await this.prisma.bid.create({
+      data: {
+        digitalAsset: {
+          connect: { address: assetAddress },
+        },
+        bidderAddress,
+        signature: transaction.signature,
+        closedAt: new Date(0),
+        createdAt: new Date(),
+        amount: bidData.amount,
+        auctionHouse: {
+          connect: { address: auctionHouseAddress },
+        },
+      },
+    });
+
+    const listingData = await this.prisma.listing.findUnique({
+      where: { assetAddress_closedAt: { assetAddress, closedAt: new Date(0) } },
+      include: { listingConfig: true },
+    });
+
+    if (listingData.listingConfig) {
+      const highestBid = listingData.listingConfig.highestBidId
+        ? await this.prisma.bid.findUnique({
+            where: { id: listingData.listingConfig.highestBidId },
+          })
+        : undefined;
+
+      if (!highestBid || highestBid.amount < bidData.amount) {
+        await this.prisma.listingConfig.update({
+          where: { listingId: listingData.id },
+          data: { highestBidId: bid.id },
+        });
+      }
+    }
+  }
+
+  private async handleAssetTimedListing(transaction: EnrichedTransaction) {
+    const lastInstruction = transaction.instructions.at(-1);
+    if (!lastInstruction) {
+      console.warn('No instructions found in transaction');
+      return;
+    }
+
+    const data = bs58.decode(lastInstruction.data);
+    const timedAuctionSellData =
+      getTimedAuctionSellInstructionDataSerializer().deserialize(data)[0];
+    const assetAddress = lastInstruction.accounts.at(4);
+    const auctionHouseAddress = lastInstruction.accounts.at(2);
+    const sellerAddress = lastInstruction.accounts.at(0);
+    const {
+      reservePrice,
+      startDate,
+      endDate,
+      allowHighBidCancel,
+      minBidIncrement,
+    } = timedAuctionSellData;
+
+    await this.prisma.listing.create({
+      data: {
+        digitalAsset: {
+          connect: {
+            address: assetAddress,
+          },
+        },
+        auctionHouse: {
+          connect: {
+            address: auctionHouseAddress,
+          },
+        },
+        sellerAddress,
+        signature: transaction.signature,
+        source: D_READER_AUCTION,
+        createdAt: new Date(),
+        price: 0,
+        closedAt: new Date(0),
+        listingConfig: {
+          create: {
+            startDate: new Date(Number(startDate)),
+            endDate: new Date(Number(endDate)),
+            allowHighBidCancel:
+              allowHighBidCancel.__option === 'Some'
+                ? allowHighBidCancel.value
+                : false,
+            minBidIncrement:
+              minBidIncrement.__option === 'Some'
+                ? Number(minBidIncrement.value)
+                : 0,
+            reservePrice:
+              reservePrice.__option === 'Some' ? Number(reservePrice) : 0,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Handles NFT transfer events by updating the asset's owner and related listings.
+   */
   private async handleCoreNftTransfer(
     enrichedTransaction: EnrichedTransaction,
   ) {
@@ -249,6 +440,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles changes to the core comic state by updating metadata and nonce if applicable.
+   */
   private async handleChangeCoreComicState(
     enrichedTransaction: EnrichedTransaction,
   ) {
@@ -321,6 +515,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles mint events for core assets by confirming transactions and updating receipts.
+   */
   private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
     const baseInstruction = enrichedTransaction.instructions.at(-1);
     const candyMachineAddress = baseInstruction.accounts[2];
@@ -422,6 +619,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles secondary transactions by determining if the asset is being listed or bought.
+   */
   private async handleCoreSecondary(transaction: EnrichedTransaction) {
     const instruction = transaction.instructions.at(-1);
     const coreProgramInstruction = instruction.innerInstructions.find(
@@ -436,6 +636,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles the buying of core assets by updating ownership and listing information.
+   */
   private async handleCoreBuying(
     transaction: EnrichedTransaction,
     assetInfo: TENSOR_ASSET,
@@ -529,6 +732,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles the listing of core assets by updating or creating listings in the database.
+   */
   private async handleCoreListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
@@ -609,6 +815,9 @@ export class HeliusService {
     );
   }
 
+  /**
+   * Handles changes to comic state by verifying metadata and updating the collectible comic.
+   */
   private async handleChangeComicState(transaction: EnrichedTransaction) {
     try {
       if (
@@ -670,6 +879,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles the cancellation of NFT listings by updating the listing's closedAt timestamp.
+   */
   private async handleCancelListing(transaction: EnrichedTransaction) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
@@ -723,6 +935,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles NFT listing events by updating or creating listings in the database.
+   */
   private async handleNftListing(transaction: EnrichedTransaction) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
@@ -804,6 +1019,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles asset transfer events by updating ownership and notifying relevant parties.
+   */
   private async handleAssetTransfer(enrichedTransaction: EnrichedTransaction) {
     try {
       const tokenTransfers = enrichedTransaction.tokenTransfers[0];
@@ -885,6 +1103,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Handles rejected mint events by notifying the relevant parties of the rejection.
+   */
   private async handleMintRejectedEvent(
     enrichedTransaction: EnrichedTransaction,
   ) {
@@ -906,6 +1127,9 @@ export class HeliusService {
     }
   }
 
+  /**
+   * Generates a JWT header for webhook authentication.
+   */
   private generateJwtHeader() {
     const token = jwt.sign({ webhook: true }, process.env.JWT_ACCESS_SECRET, {
       expiresIn: '7d',
@@ -914,6 +1138,9 @@ export class HeliusService {
     return `Bearer ${token}`;
   }
 
+  /**
+   * Verifies if the metadata account is valid and associated with a collection in the database.
+   */
   async verifyMetadataAccount(collection: {
     address: PublicKey;
     verified: boolean;
@@ -926,6 +1153,9 @@ export class HeliusService {
     );
   }
 
+  /**
+   * Re-indexes an asset based on its metadata and updates the database accordingly.
+   */
   async reIndexAsset(asset: DAS.GetAssetResponse, candMachineAddress: string) {
     const updateAuthority = asset.authorities.find((authority) =>
       authority.scopes.find((scope) => scope == Scope.METADATA),
@@ -1032,6 +1262,9 @@ export class HeliusService {
     return digitalAsset;
   }
 
+  /**
+   * Indexes core assets by fetching off-chain metadata and creating/updating records in the database.
+   */
   async indexCoreAsset(
     assets: AssetV1[],
     walletAddress: string,
@@ -1088,6 +1321,9 @@ export class HeliusService {
     return digitalAssets;
   }
 
+  /**
+   * Indexes an asset based on its metadata and updates the database accordingly.
+   */
   async indexAsset(
     metadataOrNft: Metadata<JsonMetadata<string>> | Nft,
     collectionMetadata: JsonMetadata,
@@ -1164,7 +1400,9 @@ export class HeliusService {
     return asset;
   }
 
-  // Refresh auth token each day
+  /**
+   * Refreshes the webhook token daily to maintain authentication.
+   */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async refreshWebhookToken() {
     if (!this.webhookID) return;

@@ -210,11 +210,21 @@ export const TENSOR_MAINNET_API_ENDPOINT = 'https://api.mainnet.tensordev.io';
 
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
 export const TCOMP_PROGRAM_ID = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp';
+export const D_READER_AUCTION = 'DCoAH';
 
 export const UPDATE_CORE_V1_DISCRIMINANT = 15;
 export const TRANSFER_CORE_V1_DISCRIMINANT = 14;
 export const MINT_CORE_V1_DISCRIMINATOR = [
   145, 98, 192, 118, 184, 147, 118, 104,
+];
+export const D_READER_AUCTION_SELL_DISCRIMINATOR = [
+  51, 230, 133, 164, 1, 127, 131, 173,
+];
+export const D_READER_AUCTION_BID_DISCRIMINATOR = [
+  102, 6, 61, 18, 1, 218, 235, 234,
+];
+export const D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR = [
+  252, 105, 35, 122, 230, 22, 164, 77,
 ];
 
 export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';
