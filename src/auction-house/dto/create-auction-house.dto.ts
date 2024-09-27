@@ -2,7 +2,7 @@ import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateAuctionHouseDto {
   @IsString()
-  treasuryAddress: string;
+  treasuryMintAddress: string;
 
   @IsNumber()
   sellerFeeBasisPoints: number;

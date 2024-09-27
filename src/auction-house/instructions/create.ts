@@ -23,7 +23,7 @@ export async function createAuctionHouse(
   computePrice?: number,
 ) {
   const {
-    treasuryAddress,
+    treasuryMintAddress,
     sellerFeeBasisPoints,
     canChangeSalePrice,
     requiresSignOff,
@@ -31,7 +31,7 @@ export async function createAuctionHouse(
   const authorityPubkey = getTreasuryPublicKey();
   const authority = fromWeb3JsPublicKey(authorityPubkey);
 
-  const treasuryMint = publicKey(treasuryAddress);
+  const treasuryMint = publicKey(treasuryMintAddress);
   const auctionHouse = findAuctionHousePda(umi, {
     authority,
     treasuryMint: treasuryMint,
@@ -48,7 +48,7 @@ export async function createAuctionHouse(
   const treasuryWithdrawalDestinationOwner = authority;
   let treasuryWithdrawalDestination = authority;
 
-  const isNative = treasuryAddress === WRAPPED_SOL_MINT.toString();
+  const isNative = treasuryMintAddress === WRAPPED_SOL_MINT.toString();
   if (!isNative) {
     treasuryWithdrawalDestination = findAssociatedTokenPda(umi, {
       mint: treasuryMint,

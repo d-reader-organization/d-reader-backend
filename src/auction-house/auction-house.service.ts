@@ -193,11 +193,11 @@ export class AuctionHouseService {
     const {
       canChangeSalePrice,
       requiresSignOff,
-      treasuryAddress,
+      treasuryMintAddress,
       sellerFeeBasisPoints,
     } = createAuctionHouseDto;
 
-    const treasuryMint = publicKey(treasuryAddress);
+    const treasuryMint = publicKey(treasuryMintAddress);
     const auctionHouseAddress = findAuctionHousePda(this.umi, {
       authority: fromWeb3JsPublicKey(authority),
       treasuryMint,
@@ -209,7 +209,7 @@ export class AuctionHouseService {
         canChangeSalePrice: canChangeSalePrice ?? false,
         sellerFeeBasisPoints,
         requiresSignOff: requiresSignOff ?? false,
-        treasuryMint: treasuryAddress,
+        treasuryMint: treasuryMintAddress,
       },
     });
   }
