@@ -409,6 +409,11 @@ export class ComicIssueService {
     return pages;
   }
 
+  async getPreviewPages(comicIssueId: number) {
+    const pages = await this.comicPageService.findAll(comicIssueId, true);
+    return pages;
+  }
+
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
     await this.throwIfComicIsPublishedOnChain(id);
 

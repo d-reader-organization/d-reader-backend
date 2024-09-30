@@ -186,6 +186,12 @@ export class ComicIssueController {
     return toComicPageDtoArray(pages);
   }
 
+  @Get('get/:id/preview-pages')
+  async getPreviewPages(@Param('id') id: string): Promise<ComicPageDto[]> {
+    const pages = await this.comicIssueService.getPreviewPages(+id);
+    return toComicPageDtoArray(pages);
+  }
+
   /* Update specific comic issue */
   @ComicIssueOwnerAuth()
   @Patch('update/:id')
