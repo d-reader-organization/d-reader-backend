@@ -824,35 +824,41 @@ export class CandyMachineService {
     }
   }
 
-  private countUserItemsMintedQuery = (
+  private countUserItemsMintedQuery = async (
     candyMachineAddress: string,
     userId: number,
     couponId: number,
   ) => {
-    return this.prisma.candyMachineReceipt.count({
+    const data = await this.prisma.candyMachineReceipt.aggregate({
       where: {
         candyMachineAddress,
         userId,
         couponId,
         status: TransactionStatus.Confirmed,
       },
+      _sum: { numberOfItems: true },
     });
+
+    return data?._sum?.numberOfItems || 0;
   };
 
   // Wallet whitelist group should be public
-  private countWalletItemsMintedQuery = (
+  private countWalletItemsMintedQuery = async (
     candyMachineAddress: string,
     buyerAddress: string,
     couponId: number,
   ) => {
-    return this.prisma.candyMachineReceipt.count({
+    const data = await this.prisma.candyMachineReceipt.aggregate({
       where: {
         candyMachineAddress,
         buyerAddress,
         couponId,
         status: TransactionStatus.Confirmed,
       },
+      _sum: { numberOfItems: true },
     });
+
+    return data?._sum?.numberOfItems || 0;
   };
 
   private async checkWhitelistedWalletCouponEligibility(
