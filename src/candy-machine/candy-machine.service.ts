@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
+  AddressLookupTableAccount,
   PublicKey,
   TransactionMessage,
   VersionedTransaction,
@@ -335,11 +336,13 @@ export class CandyMachineService {
       whitelistedUsers,
       whitelistedWallets,
     );
+
     await this.validateMintLimit(
       numberOfRedemptions,
       numberOfItems,
       couponType,
       candyMachineAddress,
+      couponId,
       walletAddress,
       userId,
     );
@@ -359,15 +362,19 @@ export class CandyMachineService {
     );
 
     // TODO: Check indexes
-    const lookupTableAddress =
-      mintTransaction.message.addressTableLookups[0].accountKey;
-    const lookupTable = await this.metaplex.connection.getAddressLookupTable(
-      lookupTableAddress,
-    );
+    let lookupTableAccounts: AddressLookupTableAccount;
+    if (mintTransaction.message.addressTableLookups.length) {
+      const lookupTableAddress =
+        mintTransaction.message.addressTableLookups[0].accountKey;
+      const lookupTable = await this.metaplex.connection.getAddressLookupTable(
+        lookupTableAddress,
+      );
+      lookupTableAccounts = lookupTable.value;
+    }
 
     const mintInstructions = TransactionMessage.decompile(
       mintTransaction.message,
-      { addressLookupTableAccounts: [lookupTable.value] },
+      { addressLookupTableAccounts: [lookupTableAccounts] },
     );
 
     const baseInstruction = mintInstructions.instructions.at(-1);
@@ -450,7 +457,12 @@ export class CandyMachineService {
 
     if (coupon.numberOfRedemptions) {
       const receipt = await this.prisma.candyMachineReceipt.aggregate({
-        where: { candyMachineAddress, couponId, buyerAddress: minterAddress },
+        where: {
+          candyMachineAddress,
+          couponId,
+          buyerAddress: minterAddress,
+          status: TransactionStatus.Confirmed,
+        },
         _sum: { numberOfItems: true },
       });
 
@@ -464,10 +476,9 @@ export class CandyMachineService {
     const signedMintTransaction = await getThirdPartyUmiSignature(
       umiMintTransaction,
     );
-    // const latestBlockhash = await this.umi.rpc.getLatestBlockhash();
 
+    console.log(`Mint by wallet ${walletAddress} is verified`);
     const signature = await this.umi.rpc.sendTransaction(signedMintTransaction);
-    // await this.umi.rpc.confirmTransaction(signature,{commitment:'confirmed',strategy:{type:'blockhash',...latestBlockhash}});
 
     const transactionSignature = base58.deserialize(signature)[0];
     await this.prisma.candyMachineReceipt.create({
@@ -519,19 +530,6 @@ export class CandyMachineService {
       (coupon) => coupon.type === CouponType.PublicUser,
     );
 
-    let numberOfUserMints = 0;
-    if (userId) {
-      numberOfUserMints = await this.countUserItemsMintedQuery(
-        candyMachine.address,
-        userId,
-      );
-    } else {
-      numberOfUserMints = await this.countWalletItemsMintedQuery(
-        candyMachine.address,
-        walletAddress,
-      );
-    }
-
     const coupons: CandyMachineCouponWithStats[] = await Promise.all(
       candyMachine.coupons.map(
         async (coupon): Promise<CandyMachineCouponWithStats> => {
@@ -564,7 +562,7 @@ export class CandyMachineService {
       ),
     );
 
-    return { ...candyMachine, numberOfUserMints, coupons };
+    return { ...candyMachine, coupons };
   }
 
   async findReceipts(query: CandyMachineReceiptParams) {
@@ -829,7 +827,7 @@ export class CandyMachineService {
   private countUserItemsMintedQuery = (
     candyMachineAddress: string,
     userId: number,
-    couponId?: number,
+    couponId: number,
   ) => {
     return this.prisma.candyMachineReceipt.count({
       where: {
@@ -845,7 +843,7 @@ export class CandyMachineService {
   private countWalletItemsMintedQuery = (
     candyMachineAddress: string,
     buyerAddress: string,
-    couponId?: number,
+    couponId: number,
   ) => {
     return this.prisma.candyMachineReceipt.count({
       where: {
@@ -1393,6 +1391,7 @@ export class CandyMachineService {
     numberOfItems: number,
     couponType: CouponType,
     candyMachineAddress: UmiPublicKey,
+    couponId: number,
     walletAddress: UmiPublicKey,
     userId: number | undefined,
   ): Promise<void> {
@@ -1407,10 +1406,12 @@ export class CandyMachineService {
         ? await this.countWalletItemsMintedQuery(
             candyMachineAddress.toString(),
             walletAddress.toString(),
+            couponId,
           )
         : await this.countUserItemsMintedQuery(
             candyMachineAddress.toString(),
             userId,
+            couponId,
           );
 
       if (itemsMinted + numberOfItems > numberOfRedemptions) {

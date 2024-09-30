@@ -65,7 +65,6 @@ export const verifySignature = (
       publicKey,
     );
 
-    console.log('VALUE', isSigned);
     return isSigned;
   });
 };
