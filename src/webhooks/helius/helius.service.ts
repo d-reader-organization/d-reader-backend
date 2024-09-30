@@ -41,6 +41,7 @@ import {
   CMA_PROGRAM_ID,
   D_READER_AUCTION,
   D_READER_AUCTION_BID_DISCRIMINATOR,
+  D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR,
   D_READER_AUCTION_SELL_DISCRIMINATOR,
   D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR,
   MINT_CORE_V1_DISCRIMINATOR,
@@ -218,12 +219,87 @@ export class HeliusService {
           isEqual(discriminator[0], D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR)
         ) {
           return this.handleAssetTimedListing(transaction);
+        } else if (
+          isEqual(discriminator[0], D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR)
+        ) {
+          return this.handleAssetSale(transaction);
         }
       }
 
       default:
         console.log('Unhandled webhook', JSON.stringify(transaction, null, 2));
     }
+  }
+
+  private async handleAssetSale(transaction: EnrichedTransaction) {
+    const lastInstruction = transaction.instructions.at(-1);
+    if (!lastInstruction) {
+      console.warn('No instructions found in transaction');
+      return;
+    }
+    const buyerAddress = lastInstruction.accounts.at(0);
+    const assetAddress = lastInstruction.accounts.at(9);
+    const auctionHouseAddress = lastInstruction.accounts.at(6);
+    const bidAddress = lastInstruction.accounts.at(11);
+    // TODO: Bid account would have been closed, get price from somewhere else
+    const bidData = await fetchBid(this.umi, publicKey(bidAddress));
+    const amount = bidData.amount;
+
+    const createSale = this.prisma.auctionSale.create({
+      data: {
+        auctionHouse: {
+          connect: { address: auctionHouseAddress },
+        },
+        soldAt: new Date(),
+        signature: transaction.signature,
+        price: amount,
+        listing: {
+          connect: {
+            assetAddress_closedAt: { assetAddress, closedAt: new Date(0) },
+          },
+        },
+        bid: {
+          connectOrCreate: {
+            where: {
+              assetAddress_bidderAddress_closedAt: {
+                assetAddress,
+                bidderAddress: buyerAddress,
+                closedAt: new Date(0),
+              },
+            },
+            create: {
+              bidderAddress: buyerAddress,
+              digitalAsset: { connect: { address: assetAddress } },
+              signature: transaction.signature,
+              auctionHouse: {
+                connect: { address: auctionHouseAddress },
+              },
+              createdAt: new Date(),
+              closedAt: new Date(),
+              amount,
+            },
+          },
+        },
+      },
+    });
+
+    const updateListing = this.prisma.listing.update({
+      where: { assetAddress_closedAt: { assetAddress, closedAt: new Date(0) } },
+      data: { closedAt: new Date() },
+    });
+
+    const updateBid = this.prisma.bid.update({
+      where: {
+        assetAddress_bidderAddress_closedAt: {
+          assetAddress,
+          bidderAddress: buyerAddress,
+          closedAt: new Date(0),
+        },
+      },
+      data: { closedAt: new Date() },
+    });
+
+    await this.prisma.$transaction([createSale, updateListing, updateBid]);
   }
 
   private async handleAssetListing(transaction: EnrichedTransaction) {

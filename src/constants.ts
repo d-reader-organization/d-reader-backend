@@ -226,5 +226,8 @@ export const D_READER_AUCTION_BID_DISCRIMINATOR = [
 export const D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR = [
   252, 105, 35, 122, 230, 22, 164, 77,
 ];
+export const D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR = [
+  37, 74, 217, 157, 79, 49, 35, 6,
+];
 
 export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';
