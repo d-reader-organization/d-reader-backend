@@ -4,6 +4,7 @@ import {
   DAS,
   EnrichedTransaction,
   Helius,
+  Instruction,
   Interface,
   Scope,
   Source,
@@ -37,11 +38,15 @@ import {
 } from '../../candy-machine/instructions';
 import * as jwt from 'jsonwebtoken';
 import {
+  BUY_EDITION_DISCRIMINATOR,
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
   D_READER_AUCTION,
   D_READER_AUCTION_BID_DISCRIMINATOR,
+  D_READER_AUCTION_CANCEL_BID_DISCRIMINATOR,
+  D_READER_AUCTION_CANCEL_LISTING_DISCRIMINATOR,
   D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR,
+  D_READER_AUCTION_REPRICE_DISCRIMINATOR,
   D_READER_AUCTION_SELL_DISCRIMINATOR,
   D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR,
   MINT_CORE_V1_DISCRIMINATOR,
@@ -73,6 +78,7 @@ import { ListingInput } from '../../auction-house/dto/listing.dto';
 import {
   CORE_AUCTIONS_PROGRAM_ID,
   fetchBid,
+  getRepriceInstructionDataSerializer,
   getSellInstructionDataSerializer,
   getTimedAuctionSellInstructionDataSerializer,
 } from 'core-auctions';
@@ -157,7 +163,7 @@ export class HeliusService {
           case TransactionType.NFT_LISTING:
             return this.handleNftListing(transaction);
           case TransactionType.NFT_CANCEL_LISTING:
-            return this.handleCancelListing(transaction);
+            return this.handleCancelLegacyNftListing(transaction);
           case TransactionType.CHANGE_COMIC_STATE:
             return this.handleChangeComicState(transaction);
           case TransactionType.NFT_MINT_REJECTED:
@@ -172,7 +178,7 @@ export class HeliusService {
   /**
    * Handles unknown webhook events by processing the transaction's last instruction.
    */
-  private handleUnknownWebhookEvent(
+  private async handleUnknownWebhookEvent(
     transaction: EnrichedTransaction,
   ): Promise<void> | undefined {
     const lastInstruction = transaction.instructions.at(-1);
@@ -181,69 +187,179 @@ export class HeliusService {
       return;
     }
 
-    const data = bs58.decode(lastInstruction.data);
+    const handleInstruction = async (instruction: Instruction) => {
+      const data = bs58.decode(instruction.data);
+      const discriminator = array(u8(), { size: 8 }).deserialize(
+        data.subarray(0, 8),
+      );
+      switch (instruction.programId) {
+        case CMA_PROGRAM_ID:
+          if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
+            return this.handleCoreMintEvent(transaction);
+          }
+          console.log('No handler for this instruction event');
+          break;
 
-    switch (lastInstruction.programId) {
-      case CMA_PROGRAM_ID: {
-        const discriminator = array(u8(), { size: 8 }).deserialize(
-          data.subarray(0, 8),
-        );
-        if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
-          return this.handleCoreMintEvent(transaction);
-        }
-        break;
+        case MPL_CORE_PROGRAM_ID.toString():
+          const discriminant = u8().deserialize(data.subarray(0, 1))[0];
+          if (discriminant === TRANSFER_CORE_V1_DISCRIMINANT) {
+            await this.handleCoreNftTransfer(instruction);
+          } else if (discriminant === UPDATE_CORE_V1_DISCRIMINANT) {
+            await this.handleChangeCoreComicState(
+              instruction,
+              transaction.signature,
+            );
+          }
+          break;
+
+        case CORE_AUCTIONS_PROGRAM_ID.toString():
+          switch (discriminator[0]) {
+            case D_READER_AUCTION_SELL_DISCRIMINATOR:
+              await this.handleAssetListing(instruction, transaction.signature);
+              break;
+            case D_READER_AUCTION_BID_DISCRIMINATOR:
+              await this.handleAssetBid(instruction, transaction.signature);
+              break;
+            case D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR:
+              await this.handleAssetTimedListing(
+                instruction,
+                transaction.signature,
+              );
+              break;
+            case D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR:
+              await this.handleAssetSale(instruction, transaction.signature);
+              break;
+            case D_READER_AUCTION_REPRICE_DISCRIMINATOR:
+              await this.handleListingReprice(instruction);
+              break;
+            case D_READER_AUCTION_CANCEL_BID_DISCRIMINATOR:
+              await this.handleCancelBid(instruction);
+              break;
+            case D_READER_AUCTION_CANCEL_LISTING_DISCRIMINATOR:
+              await this.handleCancelListing(instruction);
+              break;
+            case BUY_EDITION_DISCRIMINATOR:
+              await this.handleBuyEdition(instruction);
+              break;
+            default:
+              console.log(
+                'Unhandled webhook',
+                JSON.stringify(transaction, null, 2),
+              );
+              return;
+          }
+          break;
+        default:
+          return;
       }
+    };
 
-      case MPL_CORE_PROGRAM_ID.toString(): {
-        const discriminant = u8().deserialize(data.subarray(0, 1))[0];
+    if (lastInstruction.programId === CMA_PROGRAM_ID) {
+      return handleInstruction(lastInstruction);
+    }
 
-        if (discriminant === TRANSFER_CORE_V1_DISCRIMINANT) {
-          return this.handleCoreNftTransfer(transaction);
-        } else if (discriminant === UPDATE_CORE_V1_DISCRIMINANT) {
-          return this.handleChangeCoreComicState(transaction);
-        }
-        break;
-      }
-
-      case CORE_AUCTIONS_PROGRAM_ID.toString(): {
-        const discriminator = array(u8(), { size: 8 }).deserialize(
-          data.subarray(0, 8),
-        );
-        if (isEqual(discriminator[0], D_READER_AUCTION_SELL_DISCRIMINATOR)) {
-          return this.handleAssetListing(transaction);
-        } else if (
-          isEqual(discriminator[0], D_READER_AUCTION_BID_DISCRIMINATOR)
-        ) {
-          return this.handleAssetBid(transaction);
-        } else if (
-          isEqual(discriminator[0], D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR)
-        ) {
-          return this.handleAssetTimedListing(transaction);
-        } else if (
-          isEqual(discriminator[0], D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR)
-        ) {
-          return this.handleAssetSale(transaction);
-        }
-      }
-
-      default:
-        console.log('Unhandled webhook', JSON.stringify(transaction, null, 2));
+    for (const instruction of transaction.instructions) {
+      await handleInstruction(instruction);
     }
   }
 
-  private async handleAssetSale(transaction: EnrichedTransaction) {
-    const lastInstruction = transaction.instructions.at(-1);
-    if (!lastInstruction) {
-      console.warn('No instructions found in transaction');
-      return;
-    }
-    const buyerAddress = lastInstruction.accounts.at(0);
-    const assetAddress = lastInstruction.accounts.at(9);
-    const auctionHouseAddress = lastInstruction.accounts.at(6);
-    const bidAddress = lastInstruction.accounts.at(11);
-    // TODO: Bid account would have been closed, get price from somewhere else
-    const bidData = await fetchBid(this.umi, publicKey(bidAddress));
-    const amount = bidData.amount;
+  private async handleBuyEdition(instruction: Instruction) {
+    const address = instruction.accounts.at(4);
+    const ownerAddress = instruction.accounts.at(6);
+    const collectionAddress =
+      instruction.accounts.at(5) == CORE_AUCTIONS_PROGRAM_ID
+        ? null
+        : instruction.accounts.at(5);
+    const asset = await fetchAssetV1(this.umi, publicKey(address));
+
+    await this.prisma.printEdition.create({
+      data: {
+        digitalAsset: {
+          create: {
+            address,
+            owner: {
+              connectOrCreate: {
+                where: { address: ownerAddress },
+                create: { address: ownerAddress },
+              },
+            },
+            ownerChangedAt: new Date(),
+          },
+        },
+        printEditionCollection: collectionAddress
+          ? {
+              connect: { address: collectionAddress },
+            }
+          : undefined,
+        number: asset.edition.number,
+      },
+    });
+  }
+
+  private async handleAssetSale(
+    instruction: Instruction,
+    transactionSignature: string,
+  ) {
+    const buyerAddress = instruction.accounts.at(0);
+    const assetAddress = instruction.accounts.at(9);
+    const auctionHouseAddress = instruction.accounts.at(6);
+
+    // Either it's an instant buy or instant sell (with reprice or direct sell) : for this bid with sell amount wont exists in db and need to get price from instruction
+    // let price: bigint;
+    // for (const ix of transaction.instructions) {
+    //   const data = bs58.decode(ix.data);
+    //   const discriminant = array(u8(), { size: 8 }).deserialize(
+    //     data.subarray(0, 8),
+    //   );
+
+    //   switch (discriminant) {
+    //     case D_READER_AUCTION_REPRICE_DISCRIMINATOR: {
+    //       const deserializedData =
+    //         getRepriceInstructionDataSerializer().deserialize(data)[0];
+    //       price = deserializedData.price;
+    //       break;
+    //     }
+    //     case D_READER_AUCTION_BID_DISCRIMINATOR: {
+    //       const deserializedData =
+    //         getBuyInstructionDataSerializer().deserialize(data)[0];
+    //       price = deserializedData.bidPrice;
+    //       break;
+    //     }
+    //     case D_READER_AUCTION_SELL_DISCRIMINATOR: {
+    //       const deserializedData =
+    //         getSellInstructionDataSerializer().deserialize(data)[0];
+    //       price = deserializedData.price;
+    //       break;
+    //     }
+    //     default:
+    //       continue;
+    //   }
+    //   break;
+    // }
+
+    // else it would be execute sale for timedAuctionSell, buy and sell order matching : for these case bid should exists in our database
+    // if (!price) {
+    //   const bid = await this.prisma.bid.findUnique({
+    //     where: {
+    //       assetAddress_bidderAddress_closedAt: {
+    //         assetAddress,
+    //         bidderAddress: buyerAddress,
+    //         closedAt: new Date(0),
+    //       },
+    //     },
+    //   });
+    //   price = bid.amount;
+    // }
+
+    const bid = await this.prisma.bid.findUnique({
+      where: {
+        assetAddress_bidderAddress_closedAt: {
+          assetAddress,
+          bidderAddress: buyerAddress,
+          closedAt: new Date(0),
+        },
+      },
+    });
 
     const createSale = this.prisma.auctionSale.create({
       data: {
@@ -251,33 +367,33 @@ export class HeliusService {
           connect: { address: auctionHouseAddress },
         },
         soldAt: new Date(),
-        signature: transaction.signature,
-        price: amount,
+        signature: transactionSignature,
+        price: bid.amount,
         listing: {
           connect: {
             assetAddress_closedAt: { assetAddress, closedAt: new Date(0) },
           },
         },
         bid: {
-          connectOrCreate: {
-            where: {
-              assetAddress_bidderAddress_closedAt: {
-                assetAddress,
-                bidderAddress: buyerAddress,
-                closedAt: new Date(0),
-              },
-            },
-            create: {
+          connect: {
+            // where: {
+            assetAddress_bidderAddress_closedAt: {
+              assetAddress,
               bidderAddress: buyerAddress,
-              digitalAsset: { connect: { address: assetAddress } },
-              signature: transaction.signature,
-              auctionHouse: {
-                connect: { address: auctionHouseAddress },
-              },
-              createdAt: new Date(),
-              closedAt: new Date(),
-              amount,
+              closedAt: new Date(0),
+              // },
             },
+            // create: {
+            //   bidderAddress: buyerAddress,
+            //   digitalAsset: { connect: { address: assetAddress } },
+            //   signature: transaction.signature,
+            //   auctionHouse: {
+            //     connect: { address: auctionHouseAddress },
+            //   },
+            //   createdAt: new Date(),
+            //   closedAt: new Date(),
+            //   amount: price,
+            // },
           },
         },
       },
@@ -302,18 +418,54 @@ export class HeliusService {
     await this.prisma.$transaction([createSale, updateListing, updateBid]);
   }
 
-  private async handleAssetListing(transaction: EnrichedTransaction) {
-    const lastInstruction = transaction.instructions.at(-1);
-    if (!lastInstruction) {
-      console.warn('No instructions found in transaction');
-      return;
-    }
+  private async handleCancelBid(instruction: Instruction) {
+    const bidderAddress = instruction.accounts.at(0);
+    const assetAddress = instruction.accounts.at(1);
 
-    const data = bs58.decode(lastInstruction.data);
+    await this.prisma.bid.update({
+      where: {
+        assetAddress_bidderAddress_closedAt: {
+          assetAddress,
+          bidderAddress,
+          closedAt: new Date(0),
+        },
+      },
+      data: { closedAt: new Date() },
+    });
+  }
+
+  private async handleCancelListing(instruction: Instruction) {
+    const assetAddress = instruction.accounts.at(1);
+
+    await this.prisma.listing.update({
+      where: { assetAddress_closedAt: { assetAddress, closedAt: new Date(0) } },
+      data: { closedAt: new Date() },
+    });
+  }
+
+  private async handleListingReprice(instruction: Instruction) {
+    const assetAddress = instruction.accounts.at(3);
+    const data = bs58.decode(instruction.data);
+    const repriceData =
+      getRepriceInstructionDataSerializer().deserialize(data)[0];
+
+    await this.prisma.listing.update({
+      where: { assetAddress_closedAt: { assetAddress, closedAt: new Date(0) } },
+      data: {
+        price: repriceData.price,
+      },
+    });
+  }
+
+  private async handleAssetListing(
+    instruction: Instruction,
+    transactionSignature: string,
+  ) {
+    const data = bs58.decode(instruction.data);
     const sellData = getSellInstructionDataSerializer().deserialize(data)[0];
-    const assetAddress = lastInstruction.accounts.at(4);
-    const auctionHouseAddress = lastInstruction.accounts.at(2);
-    const sellerAddress = lastInstruction.accounts.at(0);
+    const assetAddress = instruction.accounts.at(4);
+    const auctionHouseAddress = instruction.accounts.at(2);
+    const sellerAddress = instruction.accounts.at(0);
 
     await this.prisma.listing.create({
       data: {
@@ -328,7 +480,7 @@ export class HeliusService {
           },
         },
         sellerAddress,
-        signature: transaction.signature,
+        signature: transactionSignature,
         source: D_READER_AUCTION,
         createdAt: new Date(),
         price: sellData.price,
@@ -337,26 +489,23 @@ export class HeliusService {
     });
   }
 
-  private async handleAssetBid(transaction: EnrichedTransaction) {
-    const lastInstruction = transaction.instructions.at(-1);
-    if (!lastInstruction) {
-      console.warn('No instructions found in transaction');
-      return;
-    }
-
-    const bidderAddress = lastInstruction.accounts.at(0);
-    const bidAddress = lastInstruction.accounts.at(9);
+  private async handleAssetBid(
+    instruction: Instruction,
+    transactionSignature: string,
+  ) {
+    const bidderAddress = instruction.accounts.at(0);
+    const bidAddress = instruction.accounts.at(9);
 
     const bidData = await fetchBid(this.umi, publicKey(bidAddress));
     const assetAddress = bidData.asset.toString();
-    const auctionHouseAddress = lastInstruction.accounts.at(6);
+    const auctionHouseAddress = instruction.accounts.at(6);
     const bid = await this.prisma.bid.create({
       data: {
         digitalAsset: {
           connect: { address: assetAddress },
         },
         bidderAddress,
-        signature: transaction.signature,
+        signature: transactionSignature,
         closedAt: new Date(0),
         createdAt: new Date(),
         amount: bidData.amount,
@@ -387,19 +536,16 @@ export class HeliusService {
     }
   }
 
-  private async handleAssetTimedListing(transaction: EnrichedTransaction) {
-    const lastInstruction = transaction.instructions.at(-1);
-    if (!lastInstruction) {
-      console.warn('No instructions found in transaction');
-      return;
-    }
-
-    const data = bs58.decode(lastInstruction.data);
+  private async handleAssetTimedListing(
+    instruction: Instruction,
+    transactionSignature: string,
+  ) {
+    const data = bs58.decode(instruction.data);
     const timedAuctionSellData =
       getTimedAuctionSellInstructionDataSerializer().deserialize(data)[0];
-    const assetAddress = lastInstruction.accounts.at(4);
-    const auctionHouseAddress = lastInstruction.accounts.at(2);
-    const sellerAddress = lastInstruction.accounts.at(0);
+    const assetAddress = instruction.accounts.at(4);
+    const auctionHouseAddress = instruction.accounts.at(2);
+    const sellerAddress = instruction.accounts.at(0);
     const {
       reservePrice,
       startDate,
@@ -421,7 +567,7 @@ export class HeliusService {
           },
         },
         sellerAddress,
-        signature: transaction.signature,
+        signature: transactionSignature,
         source: D_READER_AUCTION,
         createdAt: new Date(),
         price: 0,
@@ -449,10 +595,7 @@ export class HeliusService {
   /**
    * Handles NFT transfer events by updating the asset's owner and related listings.
    */
-  private async handleCoreNftTransfer(
-    enrichedTransaction: EnrichedTransaction,
-  ) {
-    const transferInstruction = enrichedTransaction.instructions.at(-1);
+  private async handleCoreNftTransfer(transferInstruction: Instruction) {
     const address = transferInstruction.accounts.at(0);
     try {
       const ownerAddress = transferInstruction.accounts.at(-3);
@@ -482,11 +625,11 @@ export class HeliusService {
                   },
                   create: {
                     address: ownerAddress,
-                    createdAt: new Date(enrichedTransaction.timestamp * 1000),
+                    createdAt: new Date(),
                   },
                 },
               },
-              ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
+              ownerChangedAt: new Date(),
             },
           },
         },
@@ -502,7 +645,7 @@ export class HeliusService {
             },
           },
           data: {
-            closedAt: new Date(enrichedTransaction.timestamp * 1000),
+            closedAt: new Date(),
           },
         });
       }
@@ -520,14 +663,14 @@ export class HeliusService {
    * Handles changes to the core comic state by updating metadata and nonce if applicable.
    */
   private async handleChangeCoreComicState(
-    enrichedTransaction: EnrichedTransaction,
+    updateInstruction: Instruction,
+    transactionSignature: string,
   ) {
     try {
-      const updateInstruction = enrichedTransaction.instructions.at(-1);
       try {
         // Update nonce account if used in ChangeCoreComicState transaction
         const transactionData = await this.umi.rpc.getTransaction(
-          base58.serialize(enrichedTransaction.signature),
+          base58.serialize(transactionSignature),
         );
         const blockhash = transactionData.message.blockhash;
 
@@ -958,7 +1101,7 @@ export class HeliusService {
   /**
    * Handles the cancellation of NFT listings by updating the listing's closedAt timestamp.
    */
-  private async handleCancelListing(transaction: EnrichedTransaction) {
+  private async handleCancelLegacyNftListing(transaction: EnrichedTransaction) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
       const listing = await this.prisma.listing.update({
