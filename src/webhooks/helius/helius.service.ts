@@ -72,7 +72,7 @@ import {
 import { NonceService } from '../../nonce/nonce.service';
 import { isEqual } from 'lodash';
 import { getAssetFromTensor } from '../../utils/das';
-import { TENSOR_ASSET } from './dto/types';
+import { IndexCoreAssetReturnType, TENSOR_ASSET } from './dto/types';
 import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
 import {
@@ -771,13 +771,14 @@ export class HeliusService {
       }
     });
 
+    let comicIssueAssets: IndexCoreAssetReturnType[];
     try {
       const assets = await Promise.all(
         assetAccounts.map((account) =>
           fetchAssetV1(this.umi, publicKey(account)),
         ),
       );
-      const comicIssueAssets = await this.indexCoreAsset(
+      comicIssueAssets = await this.indexCoreAsset(
         assets,
         ownerAddress,
         candyMachineAddress,
@@ -831,8 +832,14 @@ export class HeliusService {
         this.removeSubscription(candyMachine.publicKey.toString());
       }
 
-      this.websocketGateway.handleAssetMinted(comicIssueId, updatedReceipt);
-      this.websocketGateway.handleWalletAssetMinted(updatedReceipt);
+      this.websocketGateway.handleAssetMinted(comicIssueId, {
+        receipt: updatedReceipt,
+        comicIssueAssets,
+      });
+      this.websocketGateway.handleWalletAssetMinted({
+        receipt: updatedReceipt,
+        comicIssueAssets,
+      });
     } catch (e) {
       console.error(e);
     }
@@ -1490,9 +1497,13 @@ export class HeliusService {
     candMachineAddress: string,
     receiptId: number,
   ) {
-    const digitalAssets = [];
+    const digitalAssets: IndexCoreAssetReturnType[] = [];
+
     for (const asset of assets) {
       const offChainMetadata = await fetchOffChainMetadata(asset.uri);
+      const isUsed = findUsedTrait(offChainMetadata);
+      const isSigned = findSignedTrait(offChainMetadata);
+      const rarity = findRarityTrait(offChainMetadata);
 
       const digitalAsset = await this.prisma.collectibleComic.create({
         include: {
@@ -1510,9 +1521,9 @@ export class HeliusService {
               create: {
                 collectionName: offChainMetadata.name,
                 uri: asset.uri,
-                isUsed: findUsedTrait(offChainMetadata),
-                isSigned: findSignedTrait(offChainMetadata),
-                rarity: findRarityTrait(offChainMetadata),
+                isUsed,
+                isSigned,
+                rarity,
                 collectionAddress: asset.updateAuthority.address.toString(),
               },
             },
@@ -1533,7 +1544,19 @@ export class HeliusService {
         },
       });
 
-      digitalAssets.push(digitalAsset);
+      const comicIssueId = digitalAsset.metadata.collection.comicIssueId;
+      const cover = await this.prisma.statefulCover.findUnique({
+        where: {
+          comicIssueId_isSigned_isUsed_rarity: {
+            comicIssueId,
+            isSigned,
+            isUsed,
+            rarity,
+          },
+        },
+      });
+
+      digitalAssets.push({ ...digitalAsset, image: cover.image });
       await this.subscribeTo(asset.publicKey.toString());
     }
 
