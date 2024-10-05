@@ -4,13 +4,12 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import {
-  CandyMachineReceiptInput,
-  toCMReceiptDto,
-} from '../candy-machine/dto/candy-machine-receipt.dto';
+import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
+import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
+import { toAssetMintEventDto } from 'src/webhooks/helius/dto/assetMintEvent.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -27,9 +26,12 @@ export class WebSocketGateway {
 
   async handleAssetMinted(
     comicIssueId: number,
-    receipt: CandyMachineReceiptInput,
+    data: {
+      receipt: CandyMachineReceiptInput;
+      comicIssueAssets: IndexCoreAssetReturnType[];
+    },
   ) {
-    const receiptDto = await toCMReceiptDto(receipt);
+    const receiptDto = await toAssetMintEventDto(data);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-minted`,
       receiptDto,
@@ -66,10 +68,13 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetMinted(receipt: CandyMachineReceiptInput) {
-    const receiptDto = await toCMReceiptDto(receipt);
+  async handleWalletAssetMinted(data: {
+    receipt: CandyMachineReceiptInput;
+    comicIssueAssets: IndexCoreAssetReturnType[];
+  }) {
+    const receiptDto = await toAssetMintEventDto(data);
     return this.server.sockets.emit(
-      `wallet/${receipt.buyerAddress}/item-minted`,
+      `wallet/${data.receipt.buyerAddress}/item-minted`,
       receiptDto,
     );
   }

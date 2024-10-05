@@ -203,6 +203,8 @@ export class AuctionHouseService {
       treasuryMint,
     });
 
+    await this.heliusService.subscribeTo(auctionHouseAddress.toString());
+
     return await this.prisma.auctionHouse.create({
       data: {
         address: auctionHouseAddress[0],
@@ -501,7 +503,7 @@ export class AuctionHouseService {
 
   /* Cancel Sell Order */
   async cancelListing(listingId: number) {
-    const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
+    const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
       include: { auctionHouse: true },
     });
@@ -514,14 +516,14 @@ export class AuctionHouseService {
       throw new BadRequestException('Listing is already closed');
     }
 
-    const { assetAddress, sellerAddress } = listing;
+    const { sellerAddress } = listing;
 
     const transaction = await getTransactionWithPriorityFee(
       createCancelListingTransaction,
       MIN_COMPUTE_PRICE,
       this.umi,
-      auctionHouse.address,
-      assetAddress,
+      listing.auctionHouse.address,
+      listing.assetAddress,
       sellerAddress,
     );
     return transaction;

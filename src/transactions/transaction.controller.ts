@@ -256,12 +256,12 @@ export class TransactionController {
   }
 
   @Get('/cancel-bid/:bidId')
-  async constructCancelBidTransaction(@Query('bidId') bidId: number) {
+  async constructCancelBidTransaction(@Param('bidId') bidId: string) {
     return await this.auctionHouseService.cancelBid(+bidId);
   }
 
   @Get('/cancel-listing/:listingId')
-  async createCancelListingTransaction(@Query('listingId') listingId: number) {
+  async createCancelListingTransaction(@Param('listingId') listingId: string) {
     return await this.auctionHouseService.cancelListing(+listingId);
   }
 
