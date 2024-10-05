@@ -5,9 +5,10 @@ import {
 } from '../../../candy-machine/dto/candy-machine-receipt.dto';
 import { IndexCoreAssetReturnType } from './types';
 import { plainToInstance, Type } from 'class-transformer';
-import { AssetDto } from 'src/digital-asset/dto/digital-asset.dto';
+import { AssetDto } from '../../../digital-asset/dto/digital-asset.dto';
 import { OmitType, PickType } from '@nestjs/swagger';
-import { toBuyerDto } from 'src/auction-house/dto/types/buyer.dto';
+import { toBuyerDto } from '../../../auction-house/dto/types/buyer.dto';
+import { getPublicUrl } from '../../../aws/s3client';
 
 export class PartialAssetMintDto extends PickType(AssetDto, [
   'address',
@@ -34,7 +35,7 @@ export async function toAssetMintEventDto(eventData: {
   const assets: PartialAssetMintDto[] = comicIssueAssets.map((asset) => ({
     address: asset.digitalAsset.address,
     name: asset.name,
-    image: asset.image,
+    image: getPublicUrl(asset.image),
     isSigned: asset.metadata.isSigned,
     isUsed: asset.metadata.isUsed,
     rarity: asset.metadata.rarity,
