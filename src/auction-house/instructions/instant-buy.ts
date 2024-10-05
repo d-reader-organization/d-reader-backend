@@ -102,8 +102,8 @@ export async function createInstantBuyTransaction(
     sellerPaymentReceiptAccount,
   };
 
-  let builder = executeSale(umi, executeSaleInstructionData).add(
-    buy(umi, buyInstructionData),
+  let builder = buy(umi, buyInstructionData).add(
+    executeSale(umi, executeSaleInstructionData),
   );
 
   if (computePrice) {
