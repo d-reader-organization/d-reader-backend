@@ -17,6 +17,9 @@ export const COMIC_ISSUE_CREATED = ({
     content: `📙 ${bold(
       comicIssue.title,
     )} comic episode created! [Details](${hyperlink})`,
+    embeds: [
+      { title: DiscordKey.ComicIssue + DISCORD_KEY_SEPARATOR + comicIssue.id },
+    ],
   };
   return payload;
 };
