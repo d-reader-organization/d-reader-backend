@@ -17,6 +17,11 @@ export const COMIC_CREATED = ({
     content: `📗 ${bold(
       comic.title,
     )} comic series created! [Details](${hyperlink})`,
+    embeds: [
+      {
+        title: DiscordKey.Comic + DISCORD_KEY_SEPARATOR + comic.slug,
+      },
+    ],
   };
   return payload;
 };
