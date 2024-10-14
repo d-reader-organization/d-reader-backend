@@ -100,7 +100,6 @@ export class BotGateway {
         property: 'verifiedAt',
       });
     }
-    await buttonInteraction.followUp({ content: `Done` });
     return;
   }
 }
