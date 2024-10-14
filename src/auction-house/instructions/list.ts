@@ -149,9 +149,11 @@ export async function createCancelListingTransaction(
   auctionHouseAddress: string,
   assetAddress: string,
   sellerAddress: string,
+  computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
   const asset = publicKey(assetAddress);
+  const signer = createNoopSigner(seller);
 
   const auctionHouse = publicKey(auctionHouseAddress);
   const auctionHouseAssetVault = findAuctionHouseAssetVaultPda(umi, {
@@ -171,12 +173,18 @@ export async function createCancelListingTransaction(
     asset,
     auctionHouseFeeAccount,
     auctionHouseAssetVault,
+    mplCoreProgram: MPL_CORE_PROGRAM_ID,
   };
 
-  const transaction = await cancelListing(
-    umi,
-    cancelListInstructionData,
-  ).buildAndSign(umi);
+  let builder = cancelListing(umi, cancelListInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign({ ...umi, payer: signer });
   const serializedTransaction = base64.deserialize(
     umi.transactions.serialize(transaction),
   )[0];

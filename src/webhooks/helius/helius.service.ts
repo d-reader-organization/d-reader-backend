@@ -188,10 +188,18 @@ export class HeliusService {
     }
 
     const handleInstruction = async (instruction: Instruction) => {
+      if (!instruction.data) return;
+
       const data = bs58.decode(instruction.data);
-      const discriminator = array(u8(), { size: 8 }).deserialize(
-        data.subarray(0, 8),
-      );
+      let discriminator = null;
+      try {
+        discriminator = array(u8(), { size: 8 }).deserialize(
+          data.subarray(0, 8),
+        );
+      } catch (e) {
+        return;
+      }
+
       switch (instruction.programId) {
         case CMA_PROGRAM_ID:
           if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
@@ -213,40 +221,49 @@ export class HeliusService {
           break;
 
         case CORE_AUCTIONS_PROGRAM_ID.toString():
-          switch (discriminator[0]) {
-            case D_READER_AUCTION_SELL_DISCRIMINATOR:
-              await this.handleAssetListing(instruction, transaction.signature);
-              break;
-            case D_READER_AUCTION_BID_DISCRIMINATOR:
-              await this.handleAssetBid(instruction, transaction.signature);
-              break;
-            case D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR:
-              await this.handleAssetTimedListing(
-                instruction,
-                transaction.signature,
-              );
-              break;
-            case D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR:
-              await this.handleAssetSale(instruction, transaction.signature);
-              break;
-            case D_READER_AUCTION_REPRICE_DISCRIMINATOR:
-              await this.handleListingReprice(instruction);
-              break;
-            case D_READER_AUCTION_CANCEL_BID_DISCRIMINATOR:
-              await this.handleCancelBid(instruction);
-              break;
-            case D_READER_AUCTION_CANCEL_LISTING_DISCRIMINATOR:
-              await this.handleCancelListing(instruction);
-              break;
-            case BUY_EDITION_DISCRIMINATOR:
-              await this.handleBuyEdition(instruction);
-              break;
-            default:
-              console.log(
-                'Unhandled webhook',
-                JSON.stringify(transaction, null, 2),
-              );
-              return;
+          if (isEqual(discriminator[0], D_READER_AUCTION_SELL_DISCRIMINATOR)) {
+            await this.handleAssetListing(instruction, transaction.signature);
+          } else if (
+            isEqual(discriminator[0], D_READER_AUCTION_BID_DISCRIMINATOR)
+          ) {
+            await this.handleAssetBid(instruction, transaction.signature);
+          } else if (
+            isEqual(discriminator[0], D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR)
+          ) {
+            await this.handleAssetTimedListing(
+              instruction,
+              transaction.signature,
+            );
+          } else if (
+            isEqual(
+              discriminator[0],
+              D_READER_AUCTION_EXECUTE_SALE_DISCRIMINATOR,
+            )
+          ) {
+            await this.handleAssetSale(instruction, transaction.signature);
+          } else if (
+            isEqual(discriminator[0], D_READER_AUCTION_REPRICE_DISCRIMINATOR)
+          ) {
+            await this.handleListingReprice(instruction);
+          } else if (
+            isEqual(discriminator[0], D_READER_AUCTION_CANCEL_BID_DISCRIMINATOR)
+          ) {
+            await this.handleCancelBid(instruction);
+          } else if (
+            isEqual(
+              discriminator[0],
+              D_READER_AUCTION_CANCEL_LISTING_DISCRIMINATOR,
+            )
+          ) {
+            await this.handleCancelListing(instruction);
+          } else if (isEqual(discriminator[0], BUY_EDITION_DISCRIMINATOR)) {
+            await this.handleBuyEdition(instruction);
+          } else {
+            console.log(
+              'Unhandled webhook',
+              JSON.stringify(transaction, null, 2),
+            );
+            return;
           }
           break;
         default:

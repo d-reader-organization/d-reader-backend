@@ -23,7 +23,7 @@ import {
   ListingFilterParams,
   ListingSortTag,
 } from './dto/listing-fliter-params.dto';
-import { isBoolean, sortBy } from 'lodash';
+import { isBoolean, isEqual, sortBy } from 'lodash';
 import { InstantBuyArgs } from './dto/types/instant-buy-args';
 import {
   getIdentityUmiSignature,
@@ -475,7 +475,7 @@ export class AuctionHouseService {
 
   /* Cancel Buy Order */
   async cancelBid(bidId: number) {
-    const { auctionHouse, ...bid } = await this.prisma.bid.findUnique({
+    const bid = await this.prisma.bid.findUnique({
       where: { id: bidId },
       include: { auctionHouse: true },
     });
@@ -484,11 +484,11 @@ export class AuctionHouseService {
       throw new NotFoundException(`Bid not found`);
     }
 
-    if (bid.closedAt != new Date(0)) {
+    if (!isEqual(bid.closedAt, new Date(0))) {
       throw new BadRequestException('Bid is already closed');
     }
 
-    const { assetAddress, bidderAddress } = bid;
+    const { assetAddress, bidderAddress, auctionHouse } = bid;
 
     const transaction = await getTransactionWithPriorityFee(
       createCancelBidTransaction,
@@ -512,18 +512,18 @@ export class AuctionHouseService {
       throw new NotFoundException(`Listing not found`);
     }
 
-    if (listing.closedAt != new Date(0)) {
+    if (!isEqual(listing.closedAt, new Date(0))) {
       throw new BadRequestException('Listing is already closed');
     }
 
-    const { sellerAddress } = listing;
+    const { sellerAddress, auctionHouse, assetAddress } = listing;
 
     const transaction = await getTransactionWithPriorityFee(
       createCancelListingTransaction,
       MIN_COMPUTE_PRICE,
       this.umi,
-      listing.auctionHouse.address,
-      listing.assetAddress,
+      auctionHouse.address,
+      assetAddress,
       sellerAddress,
     );
     return transaction;
