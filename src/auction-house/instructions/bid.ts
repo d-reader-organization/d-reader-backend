@@ -57,6 +57,7 @@ export async function createBidTransaction(
   const buyInstructionData: BuyInstructionAccounts & BuyInstructionArgs = {
     wallet,
     auctionHouse,
+    asset,
     paymentAccount,
     escrowPaymentAccount,
     listing,

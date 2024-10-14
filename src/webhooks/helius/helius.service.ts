@@ -77,7 +77,7 @@ import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
 import {
   CORE_AUCTIONS_PROGRAM_ID,
-  fetchBid,
+  getBuyInstructionDataSerializer,
   getRepriceInstructionDataSerializer,
   getSellInstructionDataSerializer,
   getTimedAuctionSellInstructionDataSerializer,
@@ -511,11 +511,12 @@ export class HeliusService {
     transactionSignature: string,
   ) {
     const bidderAddress = instruction.accounts.at(0);
-    const bidAddress = instruction.accounts.at(9);
+    const assetAddress = instruction.accounts.at(2);
 
-    const bidData = await fetchBid(this.umi, publicKey(bidAddress));
-    const assetAddress = bidData.asset.toString();
-    const auctionHouseAddress = instruction.accounts.at(6);
+    const bidData = getBuyInstructionDataSerializer().deserialize(
+      bs58.decode(instruction.data),
+    )[0];
+    const auctionHouseAddress = instruction.accounts.at(7);
     const bid = await this.prisma.bid.create({
       data: {
         digitalAsset: {
@@ -525,7 +526,7 @@ export class HeliusService {
         signature: transactionSignature,
         closedAt: new Date(0),
         createdAt: new Date(),
-        amount: bidData.amount,
+        amount: bidData.bidPrice,
         auctionHouse: {
           connect: { address: auctionHouseAddress },
         },
@@ -544,7 +545,7 @@ export class HeliusService {
           })
         : undefined;
 
-      if (!highestBid || highestBid.amount < bidData.amount) {
+      if (!highestBid || highestBid.amount < bidData.bidPrice) {
         await this.prisma.listingConfig.update({
           where: { listingId: listingData.id },
           data: { highestBidId: bid.id },
