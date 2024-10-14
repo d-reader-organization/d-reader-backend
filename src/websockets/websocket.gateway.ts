@@ -9,7 +9,7 @@ import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
-import { toAssetMintEventDto } from 'src/webhooks/helius/dto/assetMintEvent.dto';
+import { toAssetMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
