@@ -3,7 +3,7 @@ import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
-import { createNoopSigner } from '@metaplex-foundation/umi';
+import { AccountMeta, createNoopSigner } from '@metaplex-foundation/umi';
 import { publicKey, Umi } from '@metaplex-foundation/umi';
 import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { base64 } from '@metaplex-foundation/umi/serializers';
@@ -21,6 +21,7 @@ import {
   findListingPda,
 } from 'core-auctions';
 import { getTreasuryPublicKey } from '../../utils/metaplex';
+import { fetchAsset, MPL_CORE_PROGRAM_ID } from '@metaplex-foundation/mpl-core';
 
 export async function createInstantBuyTransaction(
   umi: Umi,
@@ -77,6 +78,7 @@ export async function createInstantBuyTransaction(
   const buyInstructionData: BuyInstructionAccounts & BuyInstructionArgs = {
     wallet,
     auctionHouse,
+    asset,
     paymentAccount,
     escrowPaymentAccount,
     listing,
@@ -85,6 +87,15 @@ export async function createInstantBuyTransaction(
     bid,
     bidPrice,
   };
+
+  const assetData = await fetchAsset(umi, assetAddress);
+  const remainingAccounts: AccountMeta[] = assetData.royalties.creators.map(
+    (creator) => ({
+      pubkey: creator.address,
+      isSigner: false,
+      isWritable: false,
+    }),
+  );
 
   const executeSaleInstructionData: ExecuteSaleInstructionAccounts = {
     buyer,
@@ -100,11 +111,14 @@ export async function createInstantBuyTransaction(
     asset,
     listing,
     sellerPaymentReceiptAccount,
+    mplCoreProgram: MPL_CORE_PROGRAM_ID,
   };
 
-  let builder = buy(umi, buyInstructionData).add(
-    executeSale(umi, executeSaleInstructionData),
-  );
+  const executeSaleBuilder = executeSale(
+    umi,
+    executeSaleInstructionData,
+  ).addRemainingAccounts(remainingAccounts);
+  let builder = buy(umi, buyInstructionData).add(executeSaleBuilder);
 
   if (computePrice) {
     builder = builder.prepend(
