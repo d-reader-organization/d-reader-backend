@@ -194,16 +194,19 @@ export class HeliusService {
 
       const data = bs58.decode(instruction.data);
       let discriminator = null;
-      try {
-        discriminator = array(u8(), { size: 8 }).deserialize(
-          data.subarray(0, 8),
-        );
-      } catch (e) {
-        return;
-      }
 
       switch (instruction.programId) {
         case CMA_PROGRAM_ID:
+          try {
+            discriminator = array(u8(), { size: 8 }).deserialize(
+              data.subarray(0, 8),
+            );
+          } catch (e) {
+            console.log(
+              `This Instruction in program ${CMA_PROGRAM_ID} is not supported`,
+            );
+            return;
+          }
           if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
             return this.handleCoreCollectibleComicMintEvent(transaction);
           }
@@ -223,6 +226,17 @@ export class HeliusService {
           break;
 
         case CORE_AUCTIONS_PROGRAM_ID.toString():
+          try {
+            discriminator = array(u8(), { size: 8 }).deserialize(
+              data.subarray(0, 8),
+            );
+          } catch (e) {
+            console.log(
+              `This Instruction in program ${CORE_AUCTIONS_PROGRAM_ID} is not supported`,
+            );
+            return;
+          }
+
           if (isEqual(discriminator[0], D_READER_AUCTION_SELL_DISCRIMINATOR)) {
             await this.handleAssetListing(instruction, transaction.signature);
           } else if (
