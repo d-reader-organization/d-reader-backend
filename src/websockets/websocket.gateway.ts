@@ -9,7 +9,7 @@ import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
-import { toAssetMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
+import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -24,27 +24,40 @@ export class WebSocketGateway {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
   }
 
-  async handleAssetMinted(
+  async handleCollectibleComicMinted(
     comicIssueId: number,
     data: {
       receipt: CandyMachineReceiptInput;
       comicIssueAssets: IndexCoreAssetReturnType[];
     },
   ) {
-    const receiptDto = await toAssetMintEventDto(data);
+    const receiptDto = await toCollectibleComicMintEventDto(data);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-minted`,
       receiptDto,
     );
   }
 
-  handleAssetMintRejected(comicIssueId: number) {
+  async handleWalletCollectibleComicMinted(data: {
+    receipt: CandyMachineReceiptInput;
+    comicIssueAssets: IndexCoreAssetReturnType[];
+  }) {
+    const receiptDto = await toCollectibleComicMintEventDto(data);
+    return this.server.sockets.emit(
+      `wallet/${data.receipt.buyerAddress}/item-minted`,
+      receiptDto,
+    );
+  }
+
+  /* Legacy websocket events */
+
+  handleLegacyCollectibleComicMintRejected(comicIssueId: number) {
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-mint-rejected`,
     );
   }
 
-  async handleAssetSold(comicIssueId: number, listing: ListingInput) {
+  async handleLegacyAssetSold(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-sold`,
@@ -52,7 +65,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleAssetListed(comicIssueId: number, listing: ListingInput) {
+  async handleLegacyAssetListed(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-listed`,
@@ -60,7 +73,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleAssetDelisted(comicIssueId: number, listing: ListingInput) {
+  async handleLegacyAssetDelisted(comicIssueId: number, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-delisted`,
@@ -68,24 +81,13 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetMinted(data: {
-    receipt: CandyMachineReceiptInput;
-    comicIssueAssets: IndexCoreAssetReturnType[];
-  }) {
-    const receiptDto = await toAssetMintEventDto(data);
-    return this.server.sockets.emit(
-      `wallet/${data.receipt.buyerAddress}/item-minted`,
-      receiptDto,
-    );
-  }
-
-  handleWalletAssetMintRejected(buyerAddress: string) {
+  handleWalletLegacyCollectibleComicMintRejected(buyerAddress: string) {
     return this.server.sockets.emit(
       `wallet/${buyerAddress}/item-mint-rejected`,
     );
   }
 
-  async handleWalletAssetListed(owner: string, asset: AssetInput) {
+  async handleWalletLegacyAssetListed(owner: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
@@ -95,7 +97,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetDelisted(owner: string, asset: AssetInput) {
+  async handleWalletLegacyAssetDelisted(owner: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     const assetDto = toAssetDto(asset);
     return this.server.sockets.emit(
@@ -105,7 +107,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetBought(buyer: string, asset: AssetInput) {
+  async handleWalletLegacyAssetBought(buyer: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${buyer}/item-bought`,
@@ -113,12 +115,12 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetSold(seller: string, listing: ListingInput) {
+  async handleWalletLegacyAssetSold(seller: string, listing: ListingInput) {
     const listingDto = await toListingDto(listing);
     return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
   }
 
-  async handleWalletAssetReceived(receiver: string, asset: AssetInput) {
+  async handleWalletLegacyAssetReceived(receiver: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${receiver}/item-received`,
@@ -126,7 +128,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetSent(sender: string, asset: AssetInput) {
+  async handleWalletLegacyAssetSent(sender: string, asset: AssetInput) {
     const walletAssetDto = await toWalletAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${sender}/item-sent`,
@@ -134,7 +136,7 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletAssetUsed(asset: AssetInput) {
+  async handleWalletLegacyAssetUsed(asset: AssetInput) {
     const assetDto = await toAssetDto(asset);
     return this.server.sockets.emit(
       `wallet/${assetDto.ownerAddress}/item-used`,

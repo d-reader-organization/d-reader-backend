@@ -27,7 +27,7 @@ export class AssetMintEventDto extends OmitType(CandyMachineReceiptDto, [
   assets: PartialAssetMintDto[];
 }
 
-export async function toAssetMintEventDto(eventData: {
+export async function toCollectibleComicMintEventDto(eventData: {
   receipt: CandyMachineReceiptInput;
   comicIssueAssets: IndexCoreAssetReturnType[];
 }) {
