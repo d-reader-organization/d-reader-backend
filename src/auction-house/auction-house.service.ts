@@ -16,6 +16,7 @@ import {
   createExecuteSaleTransaction,
   createInitEditionSaleTransaction,
   createInstantBuyTransaction,
+  createRepirceListingTransaction,
 } from './instructions';
 import { PrismaService } from 'nestjs-prisma';
 import { CollectonMarketplaceStats } from './dto/types/collection-marketplace-stats';
@@ -526,6 +527,35 @@ export class AuctionHouseService {
       assetAddress,
       sellerAddress,
     );
+    return transaction;
+  }
+
+  async repriceListing(listingId: number, price: number) {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      include: { auctionHouse: true },
+    });
+
+    if (!listing) {
+      throw new NotFoundException(`Listing not found`);
+    }
+
+    if (!isEqual(listing.closedAt, new Date(0))) {
+      throw new BadRequestException('Listing is already closed');
+    }
+
+    const { sellerAddress, auctionHouse, assetAddress } = listing;
+
+    const transaction = await getTransactionWithPriorityFee(
+      createRepirceListingTransaction,
+      MIN_COMPUTE_PRICE,
+      this.umi,
+      auctionHouse.address,
+      assetAddress,
+      sellerAddress,
+      price,
+    );
+
     return transaction;
   }
 
