@@ -7,6 +7,9 @@ import {
   findAuctionHouseFeePda,
   findListingConfigPda,
   findListingPda,
+  reprice,
+  RepriceInstructionAccounts,
+  RepriceInstructionDataArgs,
   sell,
   SellInstructionAccounts,
   SellInstructionArgs,
@@ -177,6 +180,50 @@ export async function createCancelListingTransaction(
   };
 
   let builder = cancelListing(umi, cancelListInstructionData);
+
+  if (computePrice) {
+    builder = builder.prepend(
+      setComputeUnitPrice(umi, { microLamports: computePrice }),
+    );
+  }
+
+  const transaction = await builder.buildAndSign({ ...umi, payer: signer });
+  const serializedTransaction = base64.deserialize(
+    umi.transactions.serialize(transaction),
+  )[0];
+
+  return serializedTransaction;
+}
+
+export async function createRepirceListingTransaction(
+  umi: Umi,
+  auctionHouseAddress: string,
+  assetAddress: string,
+  sellerAddress: string,
+  price: number,
+  computePrice?: number,
+) {
+  const seller = publicKey(sellerAddress);
+  const asset = publicKey(assetAddress);
+  const signer = createNoopSigner(seller);
+
+  const auctionHouse = publicKey(auctionHouseAddress);
+  const listing = findListingPda(umi, { asset, auctionHouse });
+
+  const identityPublicKey = fromWeb3JsPublicKey(getTreasuryPublicKey());
+  const authority = publicKey(identityPublicKey);
+
+  const repriceListingInstructionData: RepriceInstructionAccounts &
+    RepriceInstructionDataArgs = {
+    asset,
+    auctionHouse,
+    authority,
+    wallet: seller,
+    listing,
+    price,
+  };
+
+  let builder = reprice(umi, repriceListingInstructionData);
 
   if (computePrice) {
     builder = builder.prepend(
