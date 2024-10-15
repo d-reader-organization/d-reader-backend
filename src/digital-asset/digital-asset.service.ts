@@ -256,6 +256,7 @@ export class DigitalAssetService {
     }
 
     try {
+      await this.helius.subscribeTo(address);
       return await this.prisma.oneOfOneCollection.create({
         data: {
           name,
@@ -414,6 +415,7 @@ export class DigitalAssetService {
     });
 
     try {
+      await this.helius.subscribeTo(address);
       return await this.prisma.oneOfOne.create({
         data: {
           name,
@@ -581,6 +583,7 @@ export class DigitalAssetService {
     });
 
     try {
+      await this.helius.subscribeTo(address);
       return await this.prisma.printEditionCollection.create({
         data: {
           name,
