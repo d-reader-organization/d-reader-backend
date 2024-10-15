@@ -159,15 +159,17 @@ export class HeliusService {
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
           case TransactionType.TRANSFER:
-            return this.handleAssetTransfer(transaction);
+            return this.handleLegacyCollectibleComicTransfer(transaction);
           case TransactionType.NFT_LISTING:
-            return this.handleNftListing(transaction);
+            return this.handleLegacyCollectibleComicListing(transaction);
           case TransactionType.NFT_CANCEL_LISTING:
             return this.handleCancelLegacyNftListing(transaction);
           case TransactionType.CHANGE_COMIC_STATE:
-            return this.handleChangeComicState(transaction);
+            return this.handleChangeLegacyCollectibleComicState(transaction);
           case TransactionType.NFT_MINT_REJECTED:
-            return this.handleMintRejectedEvent(transaction);
+            return this.handleLegacyCollectibleComicMintRejectedEvent(
+              transaction,
+            );
           default:
             return this.handleUnknownWebhookEvent(transaction);
         }
@@ -203,7 +205,7 @@ export class HeliusService {
       switch (instruction.programId) {
         case CMA_PROGRAM_ID:
           if (isEqual(discriminator[0], MINT_CORE_V1_DISCRIMINATOR)) {
-            return this.handleCoreMintEvent(transaction);
+            return this.handleCoreCollectibleComicMintEvent(transaction);
           }
           console.log('No handler for this instruction event');
           break;
@@ -211,9 +213,9 @@ export class HeliusService {
         case MPL_CORE_PROGRAM_ID.toString():
           const discriminant = u8().deserialize(data.subarray(0, 1))[0];
           if (discriminant === TRANSFER_CORE_V1_DISCRIMINANT) {
-            await this.handleCoreNftTransfer(instruction);
+            await this.handleAssetTransfer(instruction);
           } else if (discriminant === UPDATE_CORE_V1_DISCRIMINANT) {
-            await this.handleChangeCoreComicState(
+            await this.handleChangeCoreCollectibleComicState(
               instruction,
               transaction.signature,
             );
@@ -321,53 +323,6 @@ export class HeliusService {
     const assetAddress = instruction.accounts.at(9);
     const auctionHouseAddress = instruction.accounts.at(6);
 
-    // Either it's an instant buy or instant sell (with reprice or direct sell) : for this bid with sell amount wont exists in db and need to get price from instruction
-    // let price: bigint;
-    // for (const ix of transaction.instructions) {
-    //   const data = bs58.decode(ix.data);
-    //   const discriminant = array(u8(), { size: 8 }).deserialize(
-    //     data.subarray(0, 8),
-    //   );
-
-    //   switch (discriminant) {
-    //     case D_READER_AUCTION_REPRICE_DISCRIMINATOR: {
-    //       const deserializedData =
-    //         getRepriceInstructionDataSerializer().deserialize(data)[0];
-    //       price = deserializedData.price;
-    //       break;
-    //     }
-    //     case D_READER_AUCTION_BID_DISCRIMINATOR: {
-    //       const deserializedData =
-    //         getBuyInstructionDataSerializer().deserialize(data)[0];
-    //       price = deserializedData.bidPrice;
-    //       break;
-    //     }
-    //     case D_READER_AUCTION_SELL_DISCRIMINATOR: {
-    //       const deserializedData =
-    //         getSellInstructionDataSerializer().deserialize(data)[0];
-    //       price = deserializedData.price;
-    //       break;
-    //     }
-    //     default:
-    //       continue;
-    //   }
-    //   break;
-    // }
-
-    // else it would be execute sale for timedAuctionSell, buy and sell order matching : for these case bid should exists in our database
-    // if (!price) {
-    //   const bid = await this.prisma.bid.findUnique({
-    //     where: {
-    //       assetAddress_bidderAddress_closedAt: {
-    //         assetAddress,
-    //         bidderAddress: buyerAddress,
-    //         closedAt: new Date(0),
-    //       },
-    //     },
-    //   });
-    //   price = bid.amount;
-    // }
-
     const bid = await this.prisma.bid.findUnique({
       where: {
         assetAddress_bidderAddress_closedAt: {
@@ -393,24 +348,11 @@ export class HeliusService {
         },
         bid: {
           connect: {
-            // where: {
             assetAddress_bidderAddress_closedAt: {
               assetAddress,
               bidderAddress: buyerAddress,
               closedAt: new Date(0),
-              // },
             },
-            // create: {
-            //   bidderAddress: buyerAddress,
-            //   digitalAsset: { connect: { address: assetAddress } },
-            //   signature: transaction.signature,
-            //   auctionHouse: {
-            //     connect: { address: auctionHouseAddress },
-            //   },
-            //   createdAt: new Date(),
-            //   closedAt: new Date(),
-            //   amount: price,
-            // },
           },
         },
       },
@@ -611,48 +553,35 @@ export class HeliusService {
   }
 
   /**
-   * Handles NFT transfer events by updating the asset's owner and related listings.
+   * Handles Core Asset transfer events by updating the asset's owner and related listings.
    */
-  private async handleCoreNftTransfer(transferInstruction: Instruction) {
+  private async handleAssetTransfer(transferInstruction: Instruction) {
     const address = transferInstruction.accounts.at(0);
     try {
       const ownerAddress = transferInstruction.accounts.at(-3);
-      const previousOwner = transferInstruction.accounts.at(-4);
 
-      const asset = await this.prisma.collectibleComic.update({
+      const asset = await this.prisma.digitalAsset.update({
         where: { address },
         include: {
-          digitalAsset: {
-            include: { listings: { where: { closedAt: new Date(0) } } },
-          },
-          metadata: {
-            include: {
-              collection: {
-                include: { comicIssue: { include: { statefulCovers: true } } },
-              },
-            },
-          },
+          listings: { where: { closedAt: new Date(0) } },
         },
         data: {
-          digitalAsset: {
-            update: {
-              owner: {
-                connectOrCreate: {
-                  where: {
-                    address: ownerAddress,
-                  },
-                  create: {
-                    address: ownerAddress,
-                    createdAt: new Date(),
-                  },
-                },
+          owner: {
+            connectOrCreate: {
+              where: {
+                address: ownerAddress,
               },
-              ownerChangedAt: new Date(),
+              create: {
+                address: ownerAddress,
+                createdAt: new Date(),
+              },
             },
           },
+          ownerChangedAt: new Date(),
         },
       });
-      const listings = asset.digitalAsset.listings;
+
+      const listings = asset.listings;
 
       if (listings && listings.length > 0) {
         await this.prisma.listing.update({
@@ -667,9 +596,6 @@ export class HeliusService {
           },
         });
       }
-
-      this.websocketGateway.handleWalletAssetReceived(ownerAddress, asset);
-      this.websocketGateway.handleWalletAssetSent(previousOwner, asset);
     } catch (e) {
       console.error(
         `Failed to index Core Asset ${address} While transfer event`,
@@ -680,7 +606,7 @@ export class HeliusService {
   /**
    * Handles changes to the core comic state by updating metadata and nonce if applicable.
    */
-  private async handleChangeCoreComicState(
+  private async handleChangeCoreCollectibleComicState(
     updateInstruction: Instruction,
     transactionSignature: string,
   ) {
@@ -745,7 +671,7 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletAssetUsed(collectibleComic);
+        this.websocketGateway.handleWalletLegacyAssetUsed(collectibleComic);
       }
     } catch (e) {
       console.error(`Error changing core comic state`, e);
@@ -755,7 +681,9 @@ export class HeliusService {
   /**
    * Handles mint events for core assets by confirming transactions and updating receipts.
    */
-  private async handleCoreMintEvent(enrichedTransaction: EnrichedTransaction) {
+  private async handleCoreCollectibleComicMintEvent(
+    enrichedTransaction: EnrichedTransaction,
+  ) {
     const baseInstruction = enrichedTransaction.instructions.at(-1);
     const candyMachineAddress = baseInstruction.accounts[2];
     const ownerAddress =
@@ -850,11 +778,11 @@ export class HeliusService {
         this.removeSubscription(candyMachine.publicKey.toString());
       }
 
-      this.websocketGateway.handleAssetMinted(comicIssueId, {
+      this.websocketGateway.handleCollectibleComicMinted(comicIssueId, {
         receipt: updatedReceipt,
         comicIssueAssets,
       });
-      this.websocketGateway.handleWalletAssetMinted({
+      this.websocketGateway.handleWalletCollectibleComicMinted({
         receipt: updatedReceipt,
         comicIssueAssets,
       });
@@ -963,11 +891,11 @@ export class HeliusService {
         digitalAsset: { ...digitalAsset, collectibleComic },
       };
 
-      this.websocketGateway.handleAssetSold(
+      this.websocketGateway.handleLegacyAssetSold(
         collection.comicIssueId,
         listingInput,
       );
-      this.websocketGateway.handleWalletAssetBought(
+      this.websocketGateway.handleWalletLegacyAssetBought(
         digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1049,11 +977,11 @@ export class HeliusService {
       ...assetListing,
       digitalAsset: { ...digitalAsset, collectibleComic },
     };
-    this.websocketGateway.handleAssetListed(
+    this.websocketGateway.handleLegacyAssetListed(
       collection.comicIssueId,
       listingInput,
     );
-    this.websocketGateway.handleWalletAssetListed(
+    this.websocketGateway.handleWalletLegacyAssetListed(
       digitalAsset.ownerAddress,
       collectibleComic,
     );
@@ -1062,7 +990,9 @@ export class HeliusService {
   /**
    * Handles changes to comic state by verifying metadata and updating the collectible comic.
    */
-  private async handleChangeComicState(transaction: EnrichedTransaction) {
+  private async handleChangeLegacyCollectibleComicState(
+    transaction: EnrichedTransaction,
+  ) {
     try {
       if (
         transaction.instructions.at(-1).programId ==
@@ -1116,7 +1046,7 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletAssetUsed(collectibleComic);
+        this.websocketGateway.handleWalletLegacyAssetUsed(collectibleComic);
       }
     } catch (e) {
       console.error('Failed to handle comic state update', e);
@@ -1163,14 +1093,14 @@ export class HeliusService {
 
       const comicIssueId =
         listing.digitalAsset.collectibleComic.metadata.collection.comicIssueId;
-      this.websocketGateway.handleAssetDelisted(comicIssueId, listing);
+      this.websocketGateway.handleLegacyAssetDelisted(comicIssueId, listing);
 
       const collectibleComic: AssetInput = {
         ...listing.digitalAsset.collectibleComic,
         digitalAsset: listing.digitalAsset,
       };
 
-      this.websocketGateway.handleWalletAssetDelisted(
+      this.websocketGateway.handleWalletLegacyAssetDelisted(
         listing.digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1180,9 +1110,11 @@ export class HeliusService {
   }
 
   /**
-   * Handles NFT listing events by updating or creating listings in the database.
+   * Handles legacy collectible comic listing events by updating or creating listings in the database.
    */
-  private async handleNftListing(transaction: EnrichedTransaction) {
+  private async handleLegacyCollectibleComicListing(
+    transaction: EnrichedTransaction,
+  ) {
     try {
       const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
       const price = transaction.events.nft.amount;
@@ -1253,8 +1185,8 @@ export class HeliusService {
         digitalAsset: { ...digitalAsset, collectibleComic },
       };
 
-      this.websocketGateway.handleAssetListed(comicIssueId, listingInput);
-      this.websocketGateway.handleWalletAssetListed(
+      this.websocketGateway.handleLegacyAssetListed(comicIssueId, listingInput);
+      this.websocketGateway.handleWalletLegacyAssetListed(
         digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1264,9 +1196,11 @@ export class HeliusService {
   }
 
   /**
-   * Handles asset transfer events by updating ownership and notifying relevant parties.
+   * Handles legacy collectible comic transfer events by updating ownership and notifying relevant parties.
    */
-  private async handleAssetTransfer(enrichedTransaction: EnrichedTransaction) {
+  private async handleLegacyCollectibleComicTransfer(
+    enrichedTransaction: EnrichedTransaction,
+  ) {
     try {
       const tokenTransfers = enrichedTransaction.tokenTransfers[0];
       const address = tokenTransfers.mint;
@@ -1334,11 +1268,11 @@ export class HeliusService {
         });
       }
 
-      this.websocketGateway.handleWalletAssetReceived(
+      this.websocketGateway.handleWalletLegacyAssetReceived(
         ownerAddress,
         collectibleComic,
       );
-      this.websocketGateway.handleWalletAssetSent(
+      this.websocketGateway.handleWalletLegacyAssetSent(
         previousOwner,
         collectibleComic,
       );
@@ -1350,7 +1284,7 @@ export class HeliusService {
   /**
    * Handles rejected mint events by notifying the relevant parties of the rejection.
    */
-  private async handleMintRejectedEvent(
+  private async handleLegacyCollectibleComicMintRejectedEvent(
     enrichedTransaction: EnrichedTransaction,
   ) {
     try {
@@ -1362,8 +1296,10 @@ export class HeliusService {
           where: { address: collectionNftAddress },
         },
       );
-      this.websocketGateway.handleAssetMintRejected(collection.comicIssueId);
-      this.websocketGateway.handleWalletAssetMintRejected(
+      this.websocketGateway.handleLegacyCollectibleComicMintRejected(
+        collection.comicIssueId,
+      );
+      this.websocketGateway.handleWalletLegacyCollectibleComicMintRejected(
         nftTransactionInfo.buyer,
       );
     } catch (e) {
