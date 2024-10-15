@@ -4,6 +4,7 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { cb, cuy, log, logEnv, logErr } from './chalk';
 import { PrismaService } from 'nestjs-prisma';
 import { Helius } from 'helius-sdk';
+import { CORE_AUCTIONS_PROGRAM_ID } from 'core-auctions';
 
 interface Options {
   webhookURL: string;
@@ -79,7 +80,7 @@ export class SyncWebhookCommand extends CommandRunner {
 
   /** Collect all candy machine, NFT, and AuctionHouse addresses to listen to */
   async collectAddresses() {
-    const foundNfts = await this.prisma.collectibleComic.findMany({
+    const foundNfts = await this.prisma.digitalAsset.findMany({
       select: { address: true },
     });
 
@@ -91,8 +92,10 @@ export class SyncWebhookCommand extends CommandRunner {
 
     const nftAddresses = foundNfts.map((nft) => nft.address);
     const candyMachineAddresses = foundCandyMachines.map((cm) => cm.address);
-    const auctionHouseAddresses = []; // TODO: fetch all auction house addresses from the db
 
-    return nftAddresses.concat(candyMachineAddresses, auctionHouseAddresses);
+    return nftAddresses.concat(
+      candyMachineAddresses,
+      CORE_AUCTIONS_PROGRAM_ID.toString(),
+    );
   }
 }
