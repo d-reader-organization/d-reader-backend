@@ -67,6 +67,7 @@ import { memoizeThrottle } from '../utils/lodash';
 import { InitializePrintEditionSaleParams } from './dto/initialize-edition-sale-params.dto';
 import { createBuyPrintEditionTransaction } from './instructions/buy-edition';
 import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
+import { RepriceListingParams } from './dto/reprice-listing-params.dto';
 
 @Injectable()
 export class AuctionHouseService {
@@ -530,7 +531,9 @@ export class AuctionHouseService {
     return transaction;
   }
 
-  async repriceListing(listingId: number, price: number) {
+  async repriceListing(repriceListingParams: RepriceListingParams) {
+    const { listingId, price } = repriceListingParams;
+
     const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
       include: { auctionHouse: true },

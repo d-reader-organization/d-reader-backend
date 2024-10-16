@@ -56,6 +56,7 @@ import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
 import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
 import { MINT_MUTEX_IDENTIFIER } from 'src/constants';
+import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -234,6 +235,13 @@ export class TransactionController {
     return await this.auctionHouseService.timedAuctionList(
       timedAuctionListParams,
     );
+  }
+
+  @Get('/reprice')
+  async constructRepriceListingTransaction(
+    @Query() repriceListingParams: RepriceListingParams,
+  ) {
+    return await this.auctionHouseService.repriceListing(repriceListingParams);
   }
 
   @Get('/bid')
