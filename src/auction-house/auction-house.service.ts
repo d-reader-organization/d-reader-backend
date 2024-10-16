@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Metaplex } from '@metaplex-foundation/js';
 import {
@@ -587,11 +588,13 @@ export class AuctionHouseService {
       });
 
     if (!printEditionCollection) {
-      throw new Error('Print Edition Collection not found !');
+      throw new BadRequestException('Print Edition Collection not found !');
     }
 
     if (!printEditionCollection.verifiedAt) {
-      throw new Error('Only verified print editions can put on sale');
+      throw new UnauthorizedException(
+        'Only verified print editions can put on sale',
+      );
     }
 
     const transaction = await getTransactionWithPriorityFee(

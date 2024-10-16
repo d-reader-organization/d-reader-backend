@@ -22,6 +22,7 @@ import { fromWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { ListingConfigData } from '../dto/types/listing-config-data';
 import { setComputeUnitPrice } from '@metaplex-foundation/mpl-toolbox';
+import { getUnixTimestamp } from '../../utils/helpers';
 
 export async function createSellTransaction(
   umi: Umi,
@@ -129,8 +130,8 @@ export async function createTimedAuctionSellTransaction(
     authority,
     collection,
     mplCoreProgram: MPL_CORE_PROGRAM_ID,
-    startDate: startDate.getTime(),
-    endDate: endDate.getTime(),
+    startDate: getUnixTimestamp(startDate),
+    endDate: getUnixTimestamp(endDate),
     allowHighBidCancel,
     minBidIncrement,
     reservePrice,

@@ -1,4 +1,4 @@
-import { IsDate, IsNumber, IsString, Min } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import {
   TransformDateStringToDate,
@@ -23,5 +23,6 @@ export class InitializePrintEditionSaleParams {
   price: number;
 
   @IsString()
-  splTokenAddress: string;
+  @IsOptional()
+  splTokenAddress?: string;
 }

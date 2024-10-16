@@ -55,8 +55,10 @@ import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-
 import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
 import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
-import { MINT_MUTEX_IDENTIFIER } from 'src/constants';
+import { MINT_MUTEX_IDENTIFIER, SOL_ADDRESS } from 'src/constants';
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
+import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
+import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -221,6 +223,25 @@ export class TransactionController {
       ComicStateArgs.Use,
       user.id,
     );
+  }
+
+  @Get('/init-edition-sale')
+  async constructInitializeEditionSaleTransaction(
+    @Query() initializeEditionSaleParams: InitializePrintEditionSaleParams,
+  ) {
+    const splTokenAddress =
+      initializeEditionSaleParams.splTokenAddress || SOL_ADDRESS;
+    return this.auctionHouseService.initializePrintEditionSale({
+      ...initializeEditionSaleParams,
+      splTokenAddress,
+    });
+  }
+
+  @Get('/buy-print-edition')
+  async constructBuyPrintEditionTransaction(
+    @Query() buyPrintEditionParams: BuyPrintEditionParams,
+  ) {
+    return this.auctionHouseService.buyPrintEdition(buyPrintEditionParams);
   }
 
   @Get('/list')
