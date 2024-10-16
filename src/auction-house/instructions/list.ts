@@ -1,5 +1,10 @@
 import { MPL_CORE_PROGRAM_ID } from '@metaplex-foundation/mpl-core';
-import { Umi, publicKey, createNoopSigner } from '@metaplex-foundation/umi';
+import {
+  Umi,
+  publicKey,
+  createNoopSigner,
+  none,
+} from '@metaplex-foundation/umi';
 import {
   cancelListing,
   CancelListingInstructionAccounts,
@@ -132,9 +137,9 @@ export async function createTimedAuctionSellTransaction(
     mplCoreProgram: MPL_CORE_PROGRAM_ID,
     startDate: getUnixTimestamp(startDate),
     endDate: getUnixTimestamp(endDate),
-    allowHighBidCancel,
-    minBidIncrement,
-    reservePrice,
+    allowHighBidCancel: allowHighBidCancel ?? none(),
+    minBidIncrement: minBidIncrement ?? none(),
+    reservePrice: reservePrice ?? none(),
   };
 
   const transaction = await timedAuctionSell(
@@ -153,6 +158,8 @@ export async function createCancelListingTransaction(
   auctionHouseAddress: string,
   assetAddress: string,
   sellerAddress: string,
+  isTimedAuction: boolean,
+  collectionAddress?: string,
   computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
@@ -165,16 +172,25 @@ export async function createCancelListingTransaction(
   });
   const auctionHouseFeeAccount = findAuctionHouseFeePda(umi, { auctionHouse });
 
-  const listing = findListingPda(umi, { asset, auctionHouse });
+  const listing = findListingPda(umi, { asset, auctionHouse })[0];
   const identityPublicKey = fromWeb3JsPublicKey(getTreasuryPublicKey());
   const authority = publicKey(identityPublicKey);
+
+  const collection = collectionAddress
+    ? publicKey(collectionAddress)
+    : undefined;
+  const listingConfig = isTimedAuction
+    ? findListingConfigPda(umi, { listing })
+    : undefined;
 
   const cancelListInstructionData: CancelListingInstructionAccounts = {
     auctionHouse,
     authority,
     wallet: seller,
     listing,
+    listingConfig,
     asset,
+    collection,
     auctionHouseFeeAccount,
     auctionHouseAssetVault,
     mplCoreProgram: MPL_CORE_PROGRAM_ID,

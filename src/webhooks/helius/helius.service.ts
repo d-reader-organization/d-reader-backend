@@ -606,7 +606,7 @@ export class HeliusService {
                 ? Number(minBidIncrement.value)
                 : 0,
             reservePrice:
-              reservePrice.__option === 'Some' ? Number(reservePrice) : 0,
+              reservePrice.__option === 'Some' ? Number(reservePrice.value) : 0,
           },
         },
       },

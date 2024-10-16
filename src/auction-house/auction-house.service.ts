@@ -508,7 +508,21 @@ export class AuctionHouseService {
   async cancelListing(listingId: number) {
     const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
-      include: { auctionHouse: true },
+      include: {
+        auctionHouse: true,
+        listingConfig: true,
+        digitalAsset: {
+          include: {
+            printEdition: true,
+            collectibleComic: {
+              include: {
+                metadata: true,
+              },
+            },
+            oneOfOne: true,
+          },
+        },
+      },
     });
 
     if (!listing) {
@@ -519,7 +533,22 @@ export class AuctionHouseService {
       throw new BadRequestException('Listing is already closed');
     }
 
-    const { sellerAddress, auctionHouse, assetAddress } = listing;
+    const {
+      sellerAddress,
+      auctionHouse,
+      assetAddress,
+      listingConfig,
+      digitalAsset,
+    } = listing;
+    const { printEdition, collectibleComic, oneOfOne } = digitalAsset;
+    let collectionAddress: string;
+
+    if (printEdition) collectionAddress = printEdition.collectionAddress;
+    else if (collectibleComic)
+      collectionAddress = collectibleComic.metadata.collectionAddress;
+    else if (oneOfOne) collectionAddress = oneOfOne.collectionAddress;
+
+    const isTimedAuction = !!listingConfig;
 
     const transaction = await getTransactionWithPriorityFee(
       createCancelListingTransaction,
@@ -528,7 +557,10 @@ export class AuctionHouseService {
       auctionHouse.address,
       assetAddress,
       sellerAddress,
+      isTimedAuction,
+      collectionAddress,
     );
+
     return transaction;
   }
 

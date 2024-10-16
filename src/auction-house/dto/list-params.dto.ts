@@ -38,11 +38,13 @@ export class TimedAuctionListParams extends OmitType(ListParams, [
   endDate: Date;
 
   @IsOptional()
+  @TransformStringToNumber()
   @IsNumber()
   @Min(0)
   reservePrice?: number;
 
   @IsOptional()
+  @TransformStringToNumber()
   @IsNumber()
   @Min(0)
   minBidIncrement?: number;
