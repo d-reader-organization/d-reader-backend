@@ -8,6 +8,7 @@ import {
   InitEditionSaleInstructionAccounts,
   InitEditionSaleInstructionArgs,
 } from 'core-auctions';
+import { getUnixTimestamp } from '../../utils/helpers';
 
 export async function createInitEditionSaleTransaction(
   umi: Umi,
@@ -37,8 +38,8 @@ export async function createInitEditionSaleTransaction(
     currencyMint,
     masterEditionAuthority,
     price,
-    startDate: startDate.getTime(),
-    endDate: endDate.getTime(),
+    startDate: getUnixTimestamp(startDate),
+    endDate: getUnixTimestamp(endDate),
   };
 
   let builder = initEditionSale(umi, initEditionSaleInstructionData);

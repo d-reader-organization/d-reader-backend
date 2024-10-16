@@ -522,6 +522,7 @@ export class DigitalAssetService {
     const createCollectionBuilder = createCollection(umi, {
       collection,
       name,
+      updateAuthority: payer.publicKey,
       uri,
       plugins,
     });

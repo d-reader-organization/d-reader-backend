@@ -49,6 +49,7 @@ import {
   D_READER_AUCTION_REPRICE_DISCRIMINATOR,
   D_READER_AUCTION_SELL_DISCRIMINATOR,
   D_READER_AUCTION_TIMED_SELL_DISCRIMINATOR,
+  INIT_EDITION_SALE_DISCRIMINATOR,
   MINT_CORE_V1_DISCRIMINATOR,
   TCOMP_PROGRAM_ID,
   TRANSFER_CORE_V1_DISCRIMINANT,
@@ -62,6 +63,7 @@ import {
   fetchAssetV1,
   MPL_CORE_PROGRAM_ID,
   getUpdateV1InstructionDataSerializer,
+  fetchCollection,
 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { array, base58, u8 } from '@metaplex-foundation/umi/serializers';
@@ -78,6 +80,7 @@ import { ListingInput } from '../../auction-house/dto/listing.dto';
 import {
   CORE_AUCTIONS_PROGRAM_ID,
   getBuyInstructionDataSerializer,
+  getInitEditionSaleInstructionDataSerializer,
   getRepriceInstructionDataSerializer,
   getSellInstructionDataSerializer,
   getTimedAuctionSellInstructionDataSerializer,
@@ -272,6 +275,10 @@ export class HeliusService {
             )
           ) {
             await this.handleCancelListing(instruction);
+          } else if (
+            isEqual(discriminator[0], INIT_EDITION_SALE_DISCRIMINATOR)
+          ) {
+            await this.handleInitEditionSale(instruction);
           } else if (isEqual(discriminator[0], BUY_EDITION_DISCRIMINATOR)) {
             await this.handleBuyEdition(instruction);
           } else {
@@ -296,13 +303,57 @@ export class HeliusService {
     }
   }
 
+  private async handleInitEditionSale(instruction: Instruction) {
+    const data = getInitEditionSaleInstructionDataSerializer().deserialize(
+      bs58.decode(instruction.data),
+    )[0];
+
+    const { price } = data;
+    const startDate =
+      data.startDate.__option == 'Some'
+        ? new Date(Number(data.startDate.value) * 1000)
+        : undefined;
+    const endDate =
+      data.endDate.__option == 'Some'
+        ? new Date(Number(data.endDate.value) * 1000)
+        : undefined;
+
+    const currencyMint = instruction.accounts.at(3);
+    const address = instruction.accounts.at(4);
+
+    const collection = await fetchCollection(this.umi, publicKey(address));
+    const supply = collection.masterEdition.maxSupply;
+
+    await this.prisma.printEditionCollection.update({
+      where: { address },
+      data: {
+        printEditionSaleConfig: {
+          upsert: {
+            update: {
+              startDate,
+              endDate,
+              mintPrice: price,
+              supply,
+              isActive: true,
+            },
+            create: {
+              startDate,
+              endDate,
+              mintPrice: price,
+              currencyMint,
+              supply,
+            },
+          },
+        },
+      },
+    });
+  }
+
   private async handleBuyEdition(instruction: Instruction) {
     const address = instruction.accounts.at(4);
     const ownerAddress = instruction.accounts.at(6);
-    const collectionAddress =
-      instruction.accounts.at(5) == CORE_AUCTIONS_PROGRAM_ID
-        ? null
-        : instruction.accounts.at(5);
+    const collectionAddress = instruction.accounts.at(5);
+
     const asset = await fetchAssetV1(this.umi, publicKey(address));
 
     await this.prisma.printEdition.create({
@@ -319,11 +370,7 @@ export class HeliusService {
             ownerChangedAt: new Date(),
           },
         },
-        printEditionCollection: collectionAddress
-          ? {
-              connect: { address: collectionAddress },
-            }
-          : undefined,
+        printEditionCollection: { connect: { address: collectionAddress } },
         number: asset.edition.number,
       },
     });
@@ -548,8 +595,8 @@ export class HeliusService {
         closedAt: new Date(0),
         listingConfig: {
           create: {
-            startDate: new Date(Number(startDate)),
-            endDate: new Date(Number(endDate)),
+            startDate: new Date(Number(startDate) * 1000),
+            endDate: new Date(Number(endDate) * 1000),
             allowHighBidCancel:
               allowHighBidCancel.__option === 'Some'
                 ? allowHighBidCancel.value

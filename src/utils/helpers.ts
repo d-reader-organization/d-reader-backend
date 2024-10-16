@@ -107,6 +107,9 @@ export const importDynamic = new Function(
   'return import(modulePath)',
 );
 
+export const getUnixTimestamp = (date: Date) =>
+  Math.floor(date.getTime() / 1000);
+
 export async function findOwnerByMint(
   connection: Connection,
   mintAddress: PublicKey,

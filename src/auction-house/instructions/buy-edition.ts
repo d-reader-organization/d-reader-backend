@@ -5,7 +5,6 @@ import {
 } from '@metaplex-foundation/mpl-toolbox';
 import {
   createNoopSigner,
-  PublicKey as UmiPublicKey,
   publicKey,
   Umi,
   generateSigner,
@@ -40,8 +39,9 @@ export async function createBuyPrintEditionTransaction(
   });
   const currencyMint = publicKey(splTokenAddress);
 
-  let sellerPaymentReciept: UmiPublicKey,
-    paymentAccount = buyer;
+  let sellerPaymentReciept = seller;
+  let paymentAccount = buyer;
+
   const isNative = splTokenAddress === WRAPPED_SOL_MINT.toString();
   if (!isNative) {
     sellerPaymentReciept = findAssociatedTokenPda(umi, {
