@@ -156,7 +156,7 @@ export class CreatorService {
   async findAllRaw(query: RawCreatorFilterParams) {
     let where: Prisma.CreatorWhereInput;
     if (query.nameSubstring) {
-      where = { name: { contains: query.nameSubstring } };
+      where = { name: { contains: query.nameSubstring, mode: 'insensitive' } };
     }
     return await this.prisma.creator.findMany({
       where,

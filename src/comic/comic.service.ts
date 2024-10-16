@@ -114,7 +114,7 @@ export class ComicService {
       include: { genres: true, creator: true },
       where: {
         creator: { slug: creatorSlug },
-        title: { contains: titleSubstring },
+        title: { contains: titleSubstring, mode: 'insensitive' },
       },
       orderBy: { title: sortOrder },
     });

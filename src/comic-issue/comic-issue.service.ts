@@ -278,6 +278,7 @@ export class ComicIssueService {
         },
         title: {
           contains: titleSubstring,
+          mode: 'insensitive',
         },
       },
       orderBy: {
