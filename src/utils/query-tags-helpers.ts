@@ -51,7 +51,7 @@ export const sortComicBy = (tag: ComicSortTag): Prisma.Sql => {
     case ComicSortTag.Likes:
       return Prisma.sql`"favouritesCount"`;
     case ComicSortTag.Rating:
-      return Prisma.sql`"averageRating"`;
+      return Prisma.sql`"averageRating" desc, "ratersCount"`;
     case ComicSortTag.Readers:
       return Prisma.sql`"readersCount"`;
     case ComicSortTag.Viewers:
