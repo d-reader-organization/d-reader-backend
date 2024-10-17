@@ -11,12 +11,12 @@ export class FirebaseService {
     topic,
   }: SendMessageToTopicDto) {
     const fcm = messaging();
-    await fcm.sendToTopic(topic, {
+    await fcm.send({
       ...(data && { data }),
+      topic,
       notification: {
         body: notification.body,
         title: notification.title,
-        color: '#FCEB54',
       },
     });
   }
