@@ -276,14 +276,15 @@ export class CandyMachineService {
     numberOfItems?: number,
     userId?: number,
   ) {
-    const lookupTable = await this.validateMintTransactionRequest(
-      walletAddress,
-      candyMachineAddress,
-      label,
-      couponId,
-      numberOfItems,
-      userId,
-    );
+    const { lookupTable, isFreeMint } =
+      await this.validateMintTransactionRequest(
+        walletAddress,
+        candyMachineAddress,
+        label,
+        couponId,
+        numberOfItems,
+        userId,
+      );
     const CORE_MINT_COMPUTE_BUDGET = 800000;
 
     const transactions = await getTransactionWithPriorityFee(
@@ -295,6 +296,7 @@ export class CandyMachineService {
       label,
       numberOfItems ?? 1,
       lookupTable,
+      isFreeMint,
     );
 
     return transactions;
@@ -308,13 +310,14 @@ export class CandyMachineService {
     couponId: number,
     numberOfItems: number,
     userId?: number,
-  ): Promise<string | undefined> {
+  ): Promise<{ lookupTable: string | undefined; isFreeMint: boolean }> {
     const {
       whitelistedWallets,
       mintPrice,
       tokenStandard,
       whitelistedUsers,
       couponType,
+      isFreeMint,
       numberOfRedemptions,
       startsAt,
       expiresAt,
@@ -327,6 +330,7 @@ export class CandyMachineService {
       mintPrice,
       tokenStandard,
       numberOfItems,
+      isFreeMint,
     );
     this.validateTokenStandard(tokenStandard);
     this.validateMintEligibility(
@@ -347,7 +351,7 @@ export class CandyMachineService {
       userId,
     );
 
-    return lookupTable;
+    return { lookupTable, isFreeMint };
   }
 
   async validateAndSendMintTransaction(
@@ -1024,6 +1028,7 @@ export class CandyMachineService {
             : [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
+        isFreeMint: false, //TODO: either hardcode for one time or use it from db
         lookupTable: candyMachine.lookupTable,
         mintPrice: Number(currencySetting.mintPrice),
         tokenStandard: candyMachine.standard,
@@ -1341,7 +1346,10 @@ export class CandyMachineService {
     mintPrice: number,
     tokenStandard: TokenStandard,
     numberOfItems: number,
+    isFreeMint = false,
   ): Promise<void> {
+    if (isFreeMint) return;
+
     const balance = await this.umi.rpc.getBalance(walletAddress);
     validateBalanceForMint(
       mintPrice,

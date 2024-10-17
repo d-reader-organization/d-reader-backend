@@ -24,8 +24,11 @@ import {
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
 import {
+  getIdentitySignature,
+  getIdentityUmiSignature,
   getThirdPartyLegacySignature,
   getThirdPartySigner,
+  getTreasuryPublicKey,
 } from '../../utils/metaplex';
 import { encodeUmiTransaction } from '../../utils/transactions';
 import { createMemoInstruction } from '@solana/spl-memo';
@@ -38,6 +41,7 @@ export async function constructMultipleMintTransaction(
   label: string,
   numberOfItems: number,
   lookupTableAddress?: string,
+  isFreeMint = false,
   computePrice?: number,
 ): Promise<string[]> {
   try {
@@ -57,6 +61,7 @@ export async function constructMultipleMintTransaction(
         signer,
         label,
         mintArgs,
+        isFreeMint,
       );
 
     const mintTransaction = await buildAndSignTransaction(
@@ -64,12 +69,14 @@ export async function constructMultipleMintTransaction(
       umi,
       signer,
       lookupTable,
+      isFreeMint,
     );
 
     const authorizationTx = await createAuthorizationTransaction(
       umi,
       minter,
       assetSigners,
+      isFreeMint,
     );
     transactions.push(authorizationTx);
 
@@ -124,10 +131,15 @@ function addMintBuildersAndGenerateSigners(
   signer: ReturnType<typeof createNoopSigner>,
   label: string,
   mintArgs: Awaited<ReturnType<typeof getMintArgs>>,
+  isFreeMint = false,
 ): {
   assetSigners: KeypairSigner[];
   builder: ReturnType<typeof transactionBuilder>;
 } {
+  const identityPublicKey = getTreasuryPublicKey();
+  const payer = isFreeMint
+    ? createNoopSigner(publicKey(identityPublicKey))
+    : signer;
   const assetSigners: KeypairSigner[] = [];
 
   for (let i = 0; i < numberOfItems; i++) {
@@ -141,7 +153,7 @@ function addMintBuildersAndGenerateSigners(
         collection: candyMachine.collectionMint,
         asset,
         group: some(label),
-        payer: signer,
+        payer,
         mintArgs,
       }),
     );
@@ -155,19 +167,29 @@ async function buildAndSignTransaction(
   umi: Umi,
   signer: ReturnType<typeof createNoopSigner>,
   lookupTable?: AddressLookupTableInput,
+  isFreeMint = false,
 ) {
-  return builder
+  const identityPublicKey = getTreasuryPublicKey();
+  const payer = isFreeMint
+    ? createNoopSigner(publicKey(identityPublicKey))
+    : signer;
+
+  const transaction = await builder
     .setAddressLookupTables(lookupTable ? [lookupTable] : [])
-    .buildAndSign({ ...umi, payer: signer });
+    .buildAndSign({ ...umi, payer });
+
+  return isFreeMint ? getIdentityUmiSignature(transaction) : transaction;
 }
 
 async function createAuthorizationTransaction(
   umi: Umi,
   minter: UmiPublicKey,
   assetSigners: KeypairSigner[],
+  isFreeMint = false,
 ): Promise<string> {
   const thirdPartySigner = getThirdPartySigner();
   const minterPublicKey = new PublicKey(minter.toString());
+  const feePayer = isFreeMint ? getTreasuryPublicKey() : minterPublicKey;
 
   const authorizationMemo = createMemoInstruction('Authorized Mint!', [
     thirdPartySigner,
@@ -179,15 +201,19 @@ async function createAuthorizationTransaction(
     commitment: 'confirmed',
   });
   const memoTx = new Transaction({
-    feePayer: minterPublicKey,
+    feePayer,
     ...latestBlockHash,
   }).add(authorizationMemo);
+
   const signedMemoTx = getThirdPartyLegacySignature(memoTx);
   signedMemoTx.partialSign(
     ...assetSigners.map((signer) => toWeb3JsKeypair(signer)),
   );
 
-  return signedMemoTx
+  const transaction = isFreeMint
+    ? getIdentitySignature(signedMemoTx)
+    : signedMemoTx;
+  return transaction
     .serialize({ requireAllSignatures: false })
     .toString('base64');
 }
