@@ -61,9 +61,8 @@ export class PasswordService {
         publicKeyBytes,
       );
 
-      if (!isVerified) {
-        throw new UnauthorizedException('Malformed message!');
-      } else return true;
+      if (isVerified) return true;
+      else console.error('Malformed Message');
     } catch (e) {
       console.error('Failed to construct a Message object: ', e);
     }
@@ -81,20 +80,15 @@ export class PasswordService {
         .at(-1)
         .data.equals(oneTimePasswordBytes);
 
-      console.log('before if condition');
       if (
         txHasOnlyOneSigner &&
         txSignerMatchesPublicKey &&
         txInstructionMatchesOTP
       ) {
-        console.log('before isVerified');
         const isVerified = transaction.verifySignatures();
-        console.log('after isVerified: ', isVerified);
-
-        if (!isVerified) {
-          throw new UnauthorizedException('Malformed transaction!');
-        } else return true;
+        if (isVerified) return true;
       }
+      console.error('Malformed Transaction Message');
     } catch (e) {
       // Failed to construct a Transaction object
       throw new UnauthorizedException('Failed to connect the wallet!', e);
