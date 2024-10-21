@@ -357,9 +357,19 @@ export function calculateMissingSOL(missingFunds: number): number {
   return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(3)) + 0.001;
 }
 
+export function calculateMissingToken(
+  missingFunds: number,
+  decimals: number,
+): number {
+  return parseFloat((missingFunds / Math.pow(10, decimals)).toFixed(3));
+}
+
 export function validateBalanceForMint(
   mintPrice: number,
-  balance: number,
+  solBalance: number,
+  tokenBalance: number,
+  tokenSymbol: string,
+  tokenDecimals: number,
   numberOfItems: number,
   tokenStandard?: TokenStandard,
 ): void {
@@ -373,30 +383,39 @@ export function validateBalanceForMint(
   const totalMintPrice = numberOfItems * mintPrice;
   const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  const missingFunds = totalMintPrice
-    ? totalMintPrice + totalProtocolFeeRequired - balance
-    : totalProtocolFeeRequired - balance;
+  const isSolPayment = tokenBalance > 0;
 
-  if (!totalMintPrice && balance < totalProtocolFeeRequired) {
-    throw new BadRequestException(
-      `You need ~${calculateMissingSOL(
-        missingFunds,
-      )} more SOL in your wallet to pay for protocol fees`,
-    );
-  } else if (totalMintPrice && balance < totalMintPrice) {
-    throw new BadRequestException(
-      `You need ~${calculateMissingSOL(
-        missingFunds,
-      )} more SOL in your wallet to pay for purchase`,
-    );
-  } else if (
-    totalMintPrice &&
-    balance < totalMintPrice + totalProtocolFeeRequired
+  const missingSolFunds = isSolPayment
+    ? totalMintPrice + totalProtocolFeeRequired - solBalance
+    : totalProtocolFeeRequired - solBalance;
+
+  if (
+    (!isSolPayment || !totalMintPrice) &&
+    solBalance < totalProtocolFeeRequired
   ) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
-        missingFunds,
+        missingSolFunds,
       )} more SOL in your wallet to pay for protocol fees`,
     );
+  }
+
+  if (isSolPayment && solBalance < totalMintPrice + totalProtocolFeeRequired) {
+    throw new BadRequestException(
+      `You need ~${calculateMissingSOL(
+        missingSolFunds,
+      )} more SOL in your wallet to pay for protocol fees`,
+    );
+  } else {
+    const missingTokenFunds = totalMintPrice - tokenBalance;
+
+    if (tokenBalance < totalMintPrice) {
+      throw new BadRequestException(
+        `You need ~${calculateMissingToken(
+          missingTokenFunds,
+          tokenDecimals,
+        )} more ${tokenSymbol} in your wallet to pay for purchase`,
+      );
+    }
   }
 }
