@@ -45,15 +45,16 @@ import {
 } from 'core-auctions';
 import { toMetaplexFile, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { fetchDigitalAssetOffChainMetadata } from 'src/utils/nft-metadata';
-import { imageUrlToS3File } from 'src/utils/files';
-import { RoyaltyWalletDto } from 'src/comic-issue/dto/royalty-wallet.dto';
+import { fetchDigitalAssetOffChainMetadata } from '../utils/nft-metadata';
+import { imageUrlToS3File } from '../utils/files';
+import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
 import { DigitalAssetJsonMetadata } from './dto/types';
 import { AssetType } from '../types/assetType';
+import { kebabCase } from 'lodash';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
-  `${assetType}/${address}/`;
+  `${kebabCase(assetType)}/${address}/`;
 
 @Injectable()
 export class DigitalAssetService {
