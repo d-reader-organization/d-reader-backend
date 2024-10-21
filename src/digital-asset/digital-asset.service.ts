@@ -75,6 +75,7 @@ export class DigitalAssetService {
             address: query?.ownerAddress,
             userId: query.userId ? +query.userId : undefined,
           },
+          isBurned: false,
         },
         metadata: {
           collection: {

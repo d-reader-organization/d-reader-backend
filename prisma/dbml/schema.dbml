@@ -556,6 +556,7 @@ Table DigitalAssetGenre {
 
 Table DigitalAsset {
   address String [pk]
+  isBurned Boolean [not null, default: false]
   ownerAddress String [not null]
   ownerChangedAt DateTime [not null]
   owner Wallet [not null]

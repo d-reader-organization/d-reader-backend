@@ -38,6 +38,8 @@ import {
 } from '../../candy-machine/instructions';
 import * as jwt from 'jsonwebtoken';
 import {
+  BURN_CORE_COLLECTION_V1_DISCRIMINANT,
+  BURN_CORE_V1_DISCRIMINANT,
   BUY_EDITION_DISCRIMINATOR,
   CHANGE_COMIC_STATE_ACCOUNT_LEN,
   CMA_PROGRAM_ID,
@@ -225,6 +227,11 @@ export class HeliusService {
               instruction,
               transaction.signature,
             );
+          } else if (
+            discriminant === BURN_CORE_V1_DISCRIMINANT ||
+            discriminant === BURN_CORE_COLLECTION_V1_DISCRIMINANT
+          ) {
+            await this.handleAssetBurn(instruction);
           }
           break;
 
@@ -300,6 +307,20 @@ export class HeliusService {
 
     for (const instruction of transaction.instructions) {
       await handleInstruction(instruction);
+    }
+  }
+
+  private async handleAssetBurn(instruction: Instruction) {
+    const address = instruction.accounts.at(0);
+
+    try {
+      await this.prisma.digitalAsset.update({
+        where: { address },
+        data: { isBurned: true },
+      });
+      await this.removeSubscription(address);
+    } catch (e) {
+      console.error(`Error handling burn for asset ${address}`);
     }
   }
 

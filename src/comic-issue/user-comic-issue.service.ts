@@ -182,7 +182,7 @@ export class UserComicIssueService {
               collectionAddress: collectibleComicCollection.address,
               isUsed: isCollectionLocked ? undefined : true,
             }, // only take into account "unwrapped" comics
-            digitalAsset: { owner: { userId } },
+            digitalAsset: { owner: { userId }, isBurned: false },
           },
         });
 
