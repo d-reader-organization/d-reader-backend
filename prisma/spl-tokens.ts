@@ -8,7 +8,7 @@ export const splTokensToSeed: Prisma.SplTokenCreateManyArgs['data'] = [
     priority: 1,
     symbol: '$SOL',
     decimals: 9,
-    icon: 'spl-tokens/wrapped-sol/icon.png',
+    icon: 'spl-tokens/wrapped-sol.svg',
   },
   {
     name: 'USD Coin',
@@ -16,23 +16,6 @@ export const splTokensToSeed: Prisma.SplTokenCreateManyArgs['data'] = [
     priority: 2,
     symbol: '$USDC',
     decimals: 6,
-    icon: 'spl-tokens/usd-coin/icon.png',
+    icon: 'spl-tokens/usd-coin.png',
   },
-  /* In future we can add them when adding support for them */
-  // {
-  //   name: 'NANA Token',
-  //   address: 'HxRELUQfvvjToVbacjr9YECdfQMUqGgPYB68jVDYxkbr',
-  //   priority: 3,
-  //   symbol: '$NANA',
-  //   decimals: 9,
-  //   icon: 'spl-tokens/nana-token/icon.png',
-  // },
-  // {
-  //   name: 'COCO Token',
-  //   address: '74DSHnK1qqr4z1pXjLjPAVi8XFngZ635jEVpdkJtnizQ',
-  //   priority: 3,
-  //   symbol: '$COCO',
-  //   decimals: 5,
-  //   icon: 'spl-tokens/coco-token/icon.png',
-  // },
 ];
