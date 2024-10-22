@@ -159,12 +159,21 @@ export class ComicService {
     return { ...comic, stats };
   }
 
-  async findAllByOwner(query: ComicParams, userId: number): Promise<Comic[]> {
+  async findAllByOwner(query: ComicParams, userId: number) {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
       include: {
         creator: true,
+        issues: {
+          orderBy: {
+            number: 'asc',
+          },
+          select: {
+            id: true,
+          },
+          take: 1,
+        },
       },
       where: {
         issues: {

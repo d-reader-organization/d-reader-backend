@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
   IsUrl,
@@ -99,15 +100,21 @@ export class ComicDto {
   @IsOptional()
   @Type(() => UserComicDto)
   myStats?: UserComicDto;
+
+  // temp solution for owned comics
+  @IsOptional()
+  @IsNumber()
+  issueId?: number;
 }
 
 type WithGenres = { genres?: Genre[] };
 type WithCreator = { creator?: Creator };
 type WithStats = { stats?: Partial<ComicStats> };
 type WithMyStats = { myStats?: UserComic };
+type WithComicIssueIds = { issues?: { id: number }[] };
 
 export type ComicInput = With<
-  [Comic, WithGenres, WithCreator, WithStats, WithMyStats]
+  [Comic, WithGenres, WithComicIssueIds, WithCreator, WithStats, WithMyStats]
 >;
 
 export function toComicDto(comic: ComicInput) {
@@ -135,6 +142,7 @@ export function toComicDto(comic: ComicInput) {
     stats: ifDefined(comic.stats, toComicStatsDto),
     creator: ifDefined(comic.creator, toPartialCreatorDto),
     myStats: ifDefined(comic.myStats, toUserComicDto),
+    issueId: comic.issues?.at(0).id,
   };
 
   const comicDto = plainToInstance(ComicDto, plainComicDto);
