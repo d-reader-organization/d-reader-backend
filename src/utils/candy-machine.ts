@@ -381,7 +381,7 @@ export function validateBalanceForMint(
   const totalMintPrice = numberOfItems * mintPrice;
   const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  const isSolPayment = tokenBalance > 0;
+  const isSolPayment = tokenBalance == 0;
 
   const missingSolFunds = isSolPayment
     ? totalMintPrice + totalProtocolFeeRequired - solBalance
@@ -404,7 +404,7 @@ export function validateBalanceForMint(
         missingSolFunds,
       )} more SOL in your wallet to pay for protocol fees`,
     );
-  } else {
+  } else if (!isSolPayment) {
     const missingTokenFunds = totalMintPrice - tokenBalance;
 
     if (tokenBalance < totalMintPrice) {
