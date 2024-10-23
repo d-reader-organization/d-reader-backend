@@ -16,12 +16,20 @@ export const TWITTER_INTENT = {
   // Get Tweet content for sharing the minted comic
   comicMinted: (args: ComicMintedTweetArgs) => {
     const titleLine = `I just minted a ${args.comicAssetRarity} '${args.comicTitle}: ${args.comicIssueTitle}' comic on @dReaderApp! 🔥\n\n`;
-    const creatorLine = `✍️ story by ${args.creatorName}\n`;
+
+    const isGeckos = args.creatorName.toLowerCase() === '@galacticgeckosg';
+    let addOnLine = '';
+    let creatorLine = `✍️ story by ${args.creatorName}\n`;
+
+    if (isGeckos) {
+      addOnLine = `🦎 ${args.creatorName} story\n`;
+      creatorLine = `✍️ written by  @RoachWrites_\n`;
+    }
     const coverArtistLine = `🖌️ cover by ${args.coverArtistName}\n\n`;
     const mintLinkCTALine = 'Mint yours here! 👇\n';
 
     const tweetBody = encodeURIComponent(
-      titleLine + creatorLine + coverArtistLine + mintLinkCTALine,
+      titleLine + addOnLine + creatorLine + coverArtistLine + mintLinkCTALine,
     );
 
     const mintLinkPrefix = encodeURI('https://dreader.app/mint/');
