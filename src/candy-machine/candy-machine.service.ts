@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   AddressLookupTableAccount,
+  Connection,
   PublicKey,
   TransactionMessage,
   VersionedTransaction,
@@ -37,6 +38,7 @@ import {
 } from '../utils/helpers';
 import {
   MetadataFile,
+  getConnection,
   getThirdPartySigner,
   getThirdPartyUmiSignature,
   metaplex,
@@ -65,6 +67,7 @@ import {
   AddCandyMachineCouponParams,
   AddCandyMachineGroupOnChainParams,
   AddCandyMachineCouponParamsWithLabels,
+  CandyMachineMintData,
 } from './dto/types';
 import { ComicRarity } from 'dreader-comic-verse';
 import { createCoreCandyMachine } from './instructions/initialize-candy-machine';
@@ -119,6 +122,7 @@ import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-cor
 export class CandyMachineService {
   private readonly metaplex: Metaplex;
   private readonly umi: Umi;
+  private readonly connection: Connection;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -128,6 +132,7 @@ export class CandyMachineService {
   ) {
     this.metaplex = metaplex;
     this.umi = umi;
+    this.connection = getConnection();
   }
 
   /* Create Candy Machine for Comic Issue */
@@ -322,6 +327,7 @@ export class CandyMachineService {
       startsAt,
       expiresAt,
       lookupTable,
+      splToken,
     } = await this.findCandyMachineCouponData(couponId, label);
 
     this.validateCouponDates(startsAt, expiresAt);
@@ -330,6 +336,7 @@ export class CandyMachineService {
       mintPrice,
       tokenStandard,
       numberOfItems,
+      splToken,
       isFreeMint,
     );
     this.validateTokenStandard(tokenStandard);
@@ -994,7 +1001,10 @@ export class CandyMachineService {
     }
   }
 
-  private async findCandyMachineCouponData(couponId: number, label: string) {
+  private async findCandyMachineCouponData(
+    couponId: number,
+    label: string,
+  ): Promise<CandyMachineMintData> {
     try {
       const {
         wallets: whitelistedWallets,
@@ -1020,6 +1030,11 @@ export class CandyMachineService {
         (item) => item.label === label,
       );
 
+      const supportedTokens = await this.prisma.splToken.findMany({});
+      const splToken = supportedTokens.find(
+        (token) => token.address == currencySetting.splTokenAddress,
+      );
+
       return {
         couponType: candyMachineCoupon.type,
         whitelistedWallets:
@@ -1031,6 +1046,11 @@ export class CandyMachineService {
         isFreeMint: false, //TODO: either hardcode for one time or use it from db
         lookupTable: candyMachine.lookupTable,
         mintPrice: Number(currencySetting.mintPrice),
+        splToken: {
+          splTokenAddress: currencySetting.splTokenAddress,
+          tokenDecimals: splToken.decimals,
+          tokenSymbol: splToken.symbol,
+        },
         tokenStandard: candyMachine.standard,
         numberOfRedemptions: candyMachineCoupon.numberOfRedemptions,
         startsAt: candyMachineCoupon.startsAt,
@@ -1346,14 +1366,28 @@ export class CandyMachineService {
     mintPrice: number,
     tokenStandard: TokenStandard,
     numberOfItems: number,
+    splToken: CandyMachineMintData['splToken'],
     isFreeMint = false,
   ): Promise<void> {
     if (isFreeMint) return;
 
-    const balance = await this.umi.rpc.getBalance(walletAddress);
+    const solBalance = await this.umi.rpc.getBalance(walletAddress);
+    const isSolPayment = splToken.splTokenAddress == SOL_ADDRESS;
+    let tokenBalance = 0;
+    if (!isSolPayment) {
+      const tokenAccount = new PublicKey('');
+      const balance = await this.connection.getTokenAccountBalance(
+        tokenAccount,
+      );
+      tokenBalance = Number(balance.value.amount);
+    }
+
     validateBalanceForMint(
       mintPrice,
-      Number(balance.basisPoints),
+      Number(solBalance.basisPoints),
+      tokenBalance,
+      splToken.tokenSymbol,
+      splToken.tokenDecimals,
       numberOfItems,
       tokenStandard,
     );

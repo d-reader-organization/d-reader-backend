@@ -9,6 +9,7 @@ import {
   CandyMachineCouponWhitelistedUser,
   CandyMachineCouponWhitelistedWallet,
   CouponType,
+  TokenStandard,
 } from '@prisma/client';
 
 export type MintSettings = {
@@ -96,4 +97,22 @@ export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
   currencySettings: CandyMachineCouponCurrencySetting[];
 } & { users: CandyMachineCouponWhitelistedUser[] } & {
   wallets: CandyMachineCouponWhitelistedWallet[];
+};
+
+export type CandyMachineMintData = {
+  couponType: CouponType;
+  whitelistedWallets: CandyMachineCouponWhitelistedWallet[];
+  whitelistedUsers: CandyMachineCouponWhitelistedUser[];
+  isFreeMint: boolean;
+  lookupTable: string;
+  mintPrice: number;
+  splToken: {
+    splTokenAddress: string;
+    tokenDecimals: number;
+    tokenSymbol: string;
+  };
+  tokenStandard: TokenStandard;
+  numberOfRedemptions: number;
+  startsAt: Date;
+  expiresAt: Date;
 };
