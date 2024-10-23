@@ -247,7 +247,8 @@ export class CarouselService {
       const isUpcomingMint = mintDate > new Date();
       tags.push({
         title: isUpcomingMint
-          ? `${CarouselTagTitle.UpcomingMint} {{timestamp}}`
+          ? // ? `${CarouselTagTitle.UpcomingMint} {{timestamp}}`
+            `Minting soon` // TODO: replace this
           : CarouselTagTitle.Minting,
         ...(isUpcomingMint && { timestamp: mintDate.toString() }),
       });
