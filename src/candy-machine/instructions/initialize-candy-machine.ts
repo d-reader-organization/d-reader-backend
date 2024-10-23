@@ -96,7 +96,11 @@ export async function createCoreCandyMachine(
       recentSlot,
       candyMachineKey.publicKey,
     );
-    await lutBuilder.sendAndConfirm(umi, {
+    const builder = lutBuilder.prepend(
+      setComputeUnitPrice(umi, { microLamports: MIN_COMPUTE_PRICE }),
+    );
+
+    await builder.sendAndConfirm(umi, {
       send: { commitment: 'confirmed', skipPreflight: true },
     });
     lookupTable = lut.publicKey;

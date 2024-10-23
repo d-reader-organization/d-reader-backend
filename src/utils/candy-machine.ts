@@ -1,5 +1,4 @@
 import {
-  dateTime,
   some,
   lamports,
   publicKey,
@@ -48,7 +47,6 @@ import {
 } from '../constants';
 import { CoverFiles, ItemMetadata } from '../types/shared';
 import { ComicRarity } from 'dreader-comic-verse';
-import { shuffle } from 'lodash';
 import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
@@ -242,7 +240,7 @@ export function toUmiGroups(
   };
 
   coupons.forEach((coupon) => {
-    const { startsAt, expiresAt, currencySettings, supply } = coupon;
+    const { currencySettings, supply } = coupon;
     currencySettings.forEach((setting) => {
       let paymentGuardName: string;
 
