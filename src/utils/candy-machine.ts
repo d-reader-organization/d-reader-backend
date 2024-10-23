@@ -214,7 +214,7 @@ export async function uploadItemMetadata(
     items.push(...itemsInserted);
     index++;
   }
-  return { items: shuffle(items), itemMetadatas };
+  return { items, itemMetadatas };
 }
 
 export function toUmiGroups(
@@ -271,8 +271,8 @@ export function toUmiGroups(
       groups.push({
         label: setting.label,
         guards: {
-          startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
-          endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
+          // startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
+          // endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
           [paymentGuardName]: some(paymentGuard),
           // Currently using centralized mint limit
           // mintLimit: numberOfRedemptions
