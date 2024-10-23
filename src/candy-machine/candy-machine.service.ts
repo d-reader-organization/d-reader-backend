@@ -117,6 +117,7 @@ import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
 import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 
 @Injectable()
 export class CandyMachineService {
@@ -1375,7 +1376,10 @@ export class CandyMachineService {
     const isSolPayment = splToken.splTokenAddress == SOL_ADDRESS;
     let tokenBalance = 0;
     if (!isSolPayment) {
-      const tokenAccount = new PublicKey('');
+      const tokenAccount = await getAssociatedTokenAddress(
+        new PublicKey(splToken.splTokenAddress),
+        new PublicKey(walletAddress.toString()),
+      );
       const balance = await this.connection.getTokenAccountBalance(
         tokenAccount,
       );
