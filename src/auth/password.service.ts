@@ -66,6 +66,7 @@ export class PasswordService {
     } catch (e) {
       console.error('Failed to construct a Message object: ', e);
     }
+    return;
 
     // Try to construct a Transaction and match its instruction data against OTP bytes
     try {
