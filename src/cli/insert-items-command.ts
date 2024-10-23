@@ -74,7 +74,9 @@ export class InsertItemsCommand extends CommandRunner {
 
     for (const data of unusedUnsignedMetadatas) {
       let supply: number;
-      const { value } = rarityShares.find(share=>share.rarity==data.rarity);
+      const { value } = rarityShares.find(
+        (share) => share.rarity == data.rarity,
+      );
 
       if (itr == rarityShares.length - 1) {
         supply = supplyLeft;
