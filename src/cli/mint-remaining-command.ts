@@ -70,9 +70,9 @@ export class MintRemainingCommand extends CommandRunner {
       publicKey(candyMachineAddress),
       publicKey(authority.publicKey),
       AUTHORITY_GROUP_LABEL,
-      [authority.publicKey.toString()],
       1,
       candyMachine.lookupTable,
+      false,
     );
 
     const transactions = encodedTransactions.map((encodedTransaction) => {
