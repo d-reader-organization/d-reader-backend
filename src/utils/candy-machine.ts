@@ -381,7 +381,7 @@ export function validateBalanceForMint(
   const totalMintPrice = numberOfItems * mintPrice;
   const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  const isSolPayment = tokenBalance > 0;
+  const isSolPayment = tokenBalance == 0;
 
   const missingSolFunds = isSolPayment
     ? totalMintPrice + totalProtocolFeeRequired - solBalance
