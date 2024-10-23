@@ -892,7 +892,7 @@ export class CandyMachineService {
 
     return {
       isEligible,
-      walletItemsMinted,
+      itemsMinted: walletItemsMinted,
     };
   }
 
