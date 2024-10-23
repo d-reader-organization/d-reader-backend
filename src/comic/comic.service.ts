@@ -163,6 +163,9 @@ export class ComicService {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
+      include: {
+        creator: true,
+      },
       where: {
         issues: {
           some: {

@@ -45,6 +45,16 @@ export class FetchCandyMachineCommand extends CommandRunner {
         log(group.guards);
         log('-------------------------------');
       });
+      const rarityMap = new Map();
+      candyMachine.items.forEach((item) => {
+        if (rarityMap.get(item.uri)) {
+          const count = rarityMap.get(item.uri) + 1;
+          rarityMap.set(item.uri, count);
+        } else {
+          rarityMap.set(item.uri, 1);
+        }
+      });
+      console.log('RARITY MAP', rarityMap);
       log(candyMachine);
     } catch (e) {
       logErr(

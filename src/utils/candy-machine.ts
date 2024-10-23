@@ -1,5 +1,4 @@
 import {
-  dateTime,
   some,
   lamports,
   publicKey,
@@ -48,7 +47,6 @@ import {
 } from '../constants';
 import { CoverFiles, ItemMetadata } from '../types/shared';
 import { ComicRarity } from 'dreader-comic-verse';
-import { shuffle } from 'lodash';
 import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
@@ -214,7 +212,7 @@ export async function uploadItemMetadata(
     items.push(...itemsInserted);
     index++;
   }
-  return { items: shuffle(items), itemMetadatas };
+  return { items, itemMetadatas };
 }
 
 export function toUmiGroups(
@@ -242,7 +240,7 @@ export function toUmiGroups(
   };
 
   coupons.forEach((coupon) => {
-    const { startsAt, expiresAt, currencySettings, supply } = coupon;
+    const { currencySettings, supply } = coupon;
     currencySettings.forEach((setting) => {
       let paymentGuardName: string;
 
@@ -271,8 +269,8 @@ export function toUmiGroups(
       groups.push({
         label: setting.label,
         guards: {
-          startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
-          endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
+          // startDate: startsAt ? some({ date: dateTime(startsAt) }) : undefined,
+          // endDate: expiresAt ? some({ date: dateTime(expiresAt) }) : undefined,
           [paymentGuardName]: some(paymentGuard),
           // Currently using centralized mint limit
           // mintLimit: numberOfRedemptions
@@ -357,9 +355,19 @@ export function calculateMissingSOL(missingFunds: number): number {
   return parseFloat((missingFunds / LAMPORTS_PER_SOL).toFixed(3)) + 0.001;
 }
 
+export function calculateMissingToken(
+  missingFunds: number,
+  decimals: number,
+): number {
+  return parseFloat((missingFunds / Math.pow(10, decimals)).toFixed(3));
+}
+
 export function validateBalanceForMint(
   mintPrice: number,
-  balance: number,
+  solBalance: number,
+  tokenBalance: number,
+  tokenSymbol: string,
+  tokenDecimals: number,
   numberOfItems: number,
   tokenStandard?: TokenStandard,
 ): void {
@@ -373,30 +381,39 @@ export function validateBalanceForMint(
   const totalMintPrice = numberOfItems * mintPrice;
   const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  const missingFunds = totalMintPrice
-    ? totalMintPrice + totalProtocolFeeRequired - balance
-    : totalProtocolFeeRequired - balance;
+  const isSolPayment = tokenBalance > 0;
 
-  if (!totalMintPrice && balance < totalProtocolFeeRequired) {
-    throw new BadRequestException(
-      `You need ~${calculateMissingSOL(
-        missingFunds,
-      )} more SOL in your wallet to pay for protocol fees`,
-    );
-  } else if (totalMintPrice && balance < totalMintPrice) {
-    throw new BadRequestException(
-      `You need ~${calculateMissingSOL(
-        missingFunds,
-      )} more SOL in your wallet to pay for purchase`,
-    );
-  } else if (
-    totalMintPrice &&
-    balance < totalMintPrice + totalProtocolFeeRequired
+  const missingSolFunds = isSolPayment
+    ? totalMintPrice + totalProtocolFeeRequired - solBalance
+    : totalProtocolFeeRequired - solBalance;
+
+  if (
+    (!isSolPayment || !totalMintPrice) &&
+    solBalance < totalProtocolFeeRequired
   ) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
-        missingFunds,
+        missingSolFunds,
       )} more SOL in your wallet to pay for protocol fees`,
     );
+  }
+
+  if (isSolPayment && solBalance < totalMintPrice + totalProtocolFeeRequired) {
+    throw new BadRequestException(
+      `You need ~${calculateMissingSOL(
+        missingSolFunds,
+      )} more SOL in your wallet to pay for protocol fees`,
+    );
+  } else {
+    const missingTokenFunds = totalMintPrice - tokenBalance;
+
+    if (tokenBalance < totalMintPrice) {
+      throw new BadRequestException(
+        `You need ~${calculateMissingToken(
+          missingTokenFunds,
+          tokenDecimals,
+        )} more ${tokenSymbol} in your wallet to pay for purchase`,
+      );
+    }
   }
 }

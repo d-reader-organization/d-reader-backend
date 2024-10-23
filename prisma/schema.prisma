@@ -615,6 +615,7 @@ model DigitalAssetGenre {
 
 model DigitalAsset {
   address                    String                      @id
+  isBurned                   Boolean                     @default(false)
   ownerAddress               String
   ownerChangedAt             DateTime
   owner                      Wallet                      @relation(fields: [ownerAddress], references: [address])
