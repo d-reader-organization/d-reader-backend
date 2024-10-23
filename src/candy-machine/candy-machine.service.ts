@@ -637,7 +637,6 @@ export class CandyMachineService {
         wallets: {
           create: filteredWallets.map((wallet) => {
             return {
-              walletAddress: wallet,
               wallet: {
                 connectOrCreate: {
                   where: { address: wallet },
