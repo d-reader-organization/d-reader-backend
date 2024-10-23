@@ -29,8 +29,11 @@ export const TWITTER_INTENT = {
       `${args.comicSlug}_${args.comicIssueSlug}`,
     );
     const mintLinkSource = encodeURI('?ref=') + encodeURIComponent(args.source);
+    const coverRarity =
+      encodeURI('&rarity=') + encodeURIComponent(args.comicAssetRarity);
 
-    const tweetMintLink = mintLinkPrefix + mintLinkComicSlug + mintLinkSource;
+    const tweetMintLink =
+      mintLinkPrefix + mintLinkComicSlug + mintLinkSource + coverRarity;
     const tweetText = TWITTER_INTENT_PREFIX + tweetBody + tweetMintLink;
 
     return tweetText;
