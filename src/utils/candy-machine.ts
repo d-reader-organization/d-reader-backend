@@ -404,7 +404,7 @@ export function validateBalanceForMint(
         missingSolFunds,
       )} more SOL in your wallet to pay for protocol fees`,
     );
-  } else {
+  } else if (!isSolPayment) {
     const missingTokenFunds = totalMintPrice - tokenBalance;
 
     if (tokenBalance < totalMintPrice) {
