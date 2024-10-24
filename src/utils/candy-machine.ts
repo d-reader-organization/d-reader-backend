@@ -9,7 +9,6 @@ import {
 import {
   GuardGroupArgs,
   DefaultGuardSetArgs,
-  getMerkleRoot,
   ThirdPartySigner,
   SolPayment,
   TokenPayment,
@@ -219,13 +218,19 @@ export function toUmiGroups(
   umi: Umi,
   coupons: AddCandyMachineCouponParamsWithLabels[],
 ): GuardGroupArgs<DefaultGuardSetArgs>[] {
+  const thirdPartySigner = getThirdPartySigner();
+  const thirdPartySignerGuard: ThirdPartySigner = {
+    signerKey: publicKey(thirdPartySigner),
+  };
+
   const groups: GuardGroupArgs<DefaultGuardSetArgs>[] = [
     {
       label: AUTHORITY_GROUP_LABEL,
       guards: {
-        allowList: {
-          merkleRoot: getMerkleRoot([umi.identity.publicKey.toString()]),
-        },
+        // allowList: {
+        //   merkleRoot: getMerkleRoot([umi.identity.publicKey.toString()]),
+        // },
+        thirdPartySigner: some(thirdPartySignerGuard),
         solPayment: {
           lamports: lamports(0),
           destination: publicKey(FUNDS_DESTINATION_ADDRESS),
@@ -233,11 +238,6 @@ export function toUmiGroups(
       },
     },
   ];
-
-  const thirdPartySigner = getThirdPartySigner();
-  const thirdPartySignerGuard: ThirdPartySigner = {
-    signerKey: publicKey(thirdPartySigner),
-  };
 
   coupons.forEach((coupon) => {
     const { currencySettings, supply } = coupon;
