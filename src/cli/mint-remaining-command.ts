@@ -2,12 +2,9 @@ import { PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, cuy, log, logErr } from './chalk';
 import { constructMultipleMintTransaction } from '../candy-machine/instructions';
-import { Metaplex } from '@metaplex-foundation/js';
 import {
   getIdentityUmiSignature,
-  getThirdPartyUmiSignature,
   getTreasuryPublicKey,
-  metaplex,
   umi,
 } from '../utils/metaplex';
 import { AUTHORITY_GROUP_LABEL } from '../constants';
@@ -15,8 +12,12 @@ import { PrismaService } from 'nestjs-prisma';
 import { TokenStandard } from '@prisma/client';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { getTransactionWithPriorityFee } from '../utils/das';
-import { decodeUmiTransaction } from '../utils/transactions';
+import {
+  decodeUmiTransaction,
+  encodeUmiTransaction,
+} from '../utils/transactions';
 import { base58 } from '@metaplex-foundation/umi/serializers';
+import { CandyMachineService } from '../candy-machine/candy-machine.service';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -28,14 +29,13 @@ interface Options {
   description: 'Mint from remaining candymachine supply by authority',
 })
 export class MintRemainingCommand extends CommandRunner {
-  private readonly metaplex: Metaplex;
   private readonly umi: Umi;
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly prisma: PrismaService,
+    private readonly candyMachineService: CandyMachineService,
   ) {
     super();
-    this.metaplex = metaplex;
     this.umi = umi;
   }
 
@@ -48,9 +48,12 @@ export class MintRemainingCommand extends CommandRunner {
     log("🏗️  Starting 'mint remaining' command...");
     const { candyMachineAddress, supply } = options;
     let i = 0;
-    for (; i < supply; i++) {
+    let supplyLeft = supply;
+    for (; i < Math.ceil(supply / 3); i++) {
       try {
-        await this.mint(candyMachineAddress);
+        const numberOfItems = Math.min(3, supplyLeft);
+        await this.mint(candyMachineAddress, numberOfItems);
+        supplyLeft -= numberOfItems;
       } catch (e) {
         logErr(
           `Mint stopped due to failiure from candymachine ${candyMachineAddress.toBase58()}: ${e}`,
@@ -58,10 +61,10 @@ export class MintRemainingCommand extends CommandRunner {
         break;
       }
     }
-    log(cb(`Successfully minted ${i} nfts`));
+    log(cb(`Successfully minted ${supply - supplyLeft} assets`));
   }
 
-  async mint(candyMachineAddress: PublicKey) {
+  async mint(candyMachineAddress: PublicKey, numberOfItems: number) {
     const authority = getTreasuryPublicKey();
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress.toString() },
@@ -78,31 +81,32 @@ export class MintRemainingCommand extends CommandRunner {
       publicKey(candyMachineAddress),
       authority,
       AUTHORITY_GROUP_LABEL,
-      1,
+      numberOfItems,
       candyMachine.lookupTable,
       false,
     );
 
-    const mintTransaction = encodedTransactions.at(-1);
-    const transaction = decodeUmiTransaction(mintTransaction);
-    const transactionSignedByThirdParty = await getThirdPartyUmiSignature(
-      transaction,
-    );
-    const signedTransaction = await getIdentityUmiSignature(
-      transactionSignedByThirdParty,
-    );
+    const signedTransactions: string[] = [];
+
+    for (const transaction of encodedTransactions) {
+      const decodedTransaction = decodeUmiTransaction(transaction);
+      const signedTransaction = await getIdentityUmiSignature(
+        decodedTransaction,
+      );
+
+      const encodedTransaction = encodeUmiTransaction(
+        signedTransaction,
+        'base64',
+      );
+      signedTransactions.push(encodedTransaction);
+    }
 
     log(cb('⛏️  Minting'));
-    const latestBlockHash = await this.umi.rpc.getLatestBlockhash({
-      commitment: 'confirmed',
-    });
-
-    const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
-      skipPreflight: true,
-    });
-    await this.umi.rpc.confirmTransaction(signature, {
-      strategy: { type: 'blockhash', ...latestBlockHash },
-    });
+    const signature =
+      await this.candyMachineService.validateAndSendMintTransaction(
+        signedTransactions,
+        authority.toString(),
+      );
 
     log(`✍️  Signature: ${cuy(base58.deserialize(signature))}`);
     log('✅ Minted successfully');
