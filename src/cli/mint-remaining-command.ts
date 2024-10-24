@@ -1,14 +1,22 @@
-import { PublicKey, VersionedTransaction } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { cb, cuy, log, logErr } from './chalk';
 import { constructMultipleMintTransaction } from '../candy-machine/instructions';
 import { Metaplex } from '@metaplex-foundation/js';
-import { metaplex, umi } from '../utils/metaplex';
+import {
+  getIdentityUmiSignature,
+  getThirdPartyUmiSignature,
+  getTreasuryPublicKey,
+  metaplex,
+  umi,
+} from '../utils/metaplex';
 import { AUTHORITY_GROUP_LABEL } from '../constants';
 import { PrismaService } from 'nestjs-prisma';
 import { TokenStandard } from '@prisma/client';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { getTransactionWithPriorityFee } from '../utils/das';
+import { decodeUmiTransaction } from '../utils/transactions';
+import { base58 } from '@metaplex-foundation/umi/serializers';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -54,7 +62,7 @@ export class MintRemainingCommand extends CommandRunner {
   }
 
   async mint(candyMachineAddress: PublicKey) {
-    const authority = this.metaplex.identity();
+    const authority = getTreasuryPublicKey();
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress.toString() },
     });
@@ -68,27 +76,35 @@ export class MintRemainingCommand extends CommandRunner {
       CORE_MINT_COMPUTE_BUDGET,
       this.umi,
       publicKey(candyMachineAddress),
-      publicKey(authority.publicKey),
+      authority,
       AUTHORITY_GROUP_LABEL,
       1,
       candyMachine.lookupTable,
       false,
     );
 
-    const transactions = encodedTransactions.map((encodedTransaction) => {
-      const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
-      const transaction = VersionedTransaction.deserialize(transactionBuffer);
-      transaction.sign([authority]);
-      return transaction;
-    });
+    const mintTransaction = encodedTransactions.at(-1);
+    const transaction = decodeUmiTransaction(mintTransaction);
+    const transactionSignedByThirdParty = await getThirdPartyUmiSignature(
+      transaction,
+    );
+    const signedTransaction = await getIdentityUmiSignature(
+      transactionSignedByThirdParty,
+    );
+
     log(cb('⛏️  Minting'));
-    for (const transaction of transactions) {
-      const signature = await metaplex.connection.sendRawTransaction(
-        transaction.serialize(),
-        { skipPreflight: true },
-      );
-      log(`✍️  Signature: ${cuy(signature)}`);
-    }
+    const latestBlockHash = await this.umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+
+    const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
+      skipPreflight: true,
+    });
+    await this.umi.rpc.confirmTransaction(signature, {
+      strategy: { type: 'blockhash', ...latestBlockHash },
+    });
+
+    log(`✍️  Signature: ${cuy(base58.deserialize(signature))}`);
     log('✅ Minted successfully');
   }
 }
