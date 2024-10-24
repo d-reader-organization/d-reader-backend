@@ -1372,16 +1372,23 @@ export class CandyMachineService {
 
     const solBalance = await this.umi.rpc.getBalance(walletAddress);
     const isSolPayment = splToken.splTokenAddress == SOL_ADDRESS;
+
     let tokenBalance = 0;
     if (!isSolPayment) {
       const tokenAccount = await getAssociatedTokenAddress(
         new PublicKey(splToken.splTokenAddress),
         new PublicKey(walletAddress.toString()),
       );
-      const balance = await this.connection.getTokenAccountBalance(
+
+      const response = await this.connection.getAccountInfoAndContext(
         tokenAccount,
       );
-      tokenBalance = Number(balance.value.amount);
+      if (response.value) {
+        const balance = await this.connection.getTokenAccountBalance(
+          tokenAccount,
+        );
+        tokenBalance = Number(balance.value.amount);
+      }
     }
 
     validateBalanceForMint(
@@ -1391,6 +1398,7 @@ export class CandyMachineService {
       splToken.tokenSymbol,
       splToken.tokenDecimals,
       numberOfItems,
+      isSolPayment,
       tokenStandard,
     );
   }

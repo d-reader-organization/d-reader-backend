@@ -369,6 +369,7 @@ export function validateBalanceForMint(
   tokenSymbol: string,
   tokenDecimals: number,
   numberOfItems: number,
+  isSolPayment: boolean,
   tokenStandard?: TokenStandard,
 ): void {
   // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint a single asset with price 0
@@ -381,16 +382,11 @@ export function validateBalanceForMint(
   const totalMintPrice = numberOfItems * mintPrice;
   const totalProtocolFeeRequired = numberOfItems * protocolFee;
 
-  const isSolPayment = tokenBalance == 0;
-
   const missingSolFunds = isSolPayment
     ? totalMintPrice + totalProtocolFeeRequired - solBalance
     : totalProtocolFeeRequired - solBalance;
 
-  if (
-    (!isSolPayment || !totalMintPrice) &&
-    solBalance < totalProtocolFeeRequired
-  ) {
+  if (solBalance < totalProtocolFeeRequired) {
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
         missingSolFunds,
@@ -402,7 +398,7 @@ export function validateBalanceForMint(
     throw new BadRequestException(
       `You need ~${calculateMissingSOL(
         missingSolFunds,
-      )} more SOL in your wallet to pay for protocol fees`,
+      )} more SOL in your wallet to pay for purchase`,
     );
   } else if (!isSolPayment) {
     const missingTokenFunds = totalMintPrice - tokenBalance;
