@@ -69,6 +69,8 @@ import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-det
 import { WebSocketModule } from '../websockets/websockets.module';
 import { DiscordService } from '../discord/discord.service';
 import { SyncMintReceptsCommand } from './sync-mint-receipts-command';
+import { UpdateCMGroupPriceCommand } from './update-cm-group-price-command';
+import { UpdateCMGroupPriceQuestions } from './update-cm-group-price-questions';
 
 @Module({
   imports: [
@@ -148,6 +150,8 @@ import { SyncMintReceptsCommand } from './sync-mint-receipts-command';
     InsertItemsQuestions,
     FetchCollectionSaleDetailsCommand,
     FetchCollectionSaleDetailsQuestions,
+    UpdateCMGroupPriceCommand,
+    UpdateCMGroupPriceQuestions,
     DiscordService,
     SyncMintReceptsCommand,
   ],
