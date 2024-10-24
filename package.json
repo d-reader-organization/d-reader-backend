@@ -51,7 +51,11 @@
     "sync-core-asset": "npx ts-node src/cli/main.ts sync-core-asset",
     "update-nonce": "npx ts-node src/cli/main.ts update-nonce",
     "insert-items": "npx ts-node src/cli/main.ts insert-items",
+<<<<<<< HEAD
     "sync-mint-receipts": "npx ts-node src/cli/main.ts sync-mint-receipts",
+=======
+    "update-cm-group-price": "npx ts-node src/cli/main.ts update-cm-group-price",
+>>>>>>> 84f8be3 (feat: update-cm-group-price-command)
     "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details"
   },
   "prisma": {
