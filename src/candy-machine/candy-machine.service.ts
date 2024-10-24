@@ -373,7 +373,6 @@ export class CandyMachineService {
       Buffer.from(transactions[0], 'base64'),
     );
 
-    // TODO: Check indexes
     let lookupTableAccounts: AddressLookupTableAccount;
     if (mintTransaction.message.addressTableLookups.length) {
       const lookupTableAddress =

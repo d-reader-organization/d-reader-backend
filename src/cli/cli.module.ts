@@ -68,6 +68,7 @@ import { FetchCollectionSaleDetailsCommand } from './fetch-sale-collection-detai
 import { FetchCollectionSaleDetailsQuestions } from './fetch-sale-collection-details-questions';
 import { WebSocketModule } from '../websockets/websockets.module';
 import { DiscordService } from '../discord/discord.service';
+import { SyncMintReceptsCommand } from './sync-mint-receipts-command';
 
 @Module({
   imports: [
@@ -148,6 +149,7 @@ import { DiscordService } from '../discord/discord.service';
     FetchCollectionSaleDetailsCommand,
     FetchCollectionSaleDetailsQuestions,
     DiscordService,
+    SyncMintReceptsCommand,
   ],
 })
 export class CLIModule {}
