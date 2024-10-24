@@ -794,7 +794,7 @@ export class HeliusService {
         instruction.programId.toString() ===
         MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
       if (isMintInstruction) {
-        const assetAddress = instruction.accounts.at(7); // TODO: Put correct index
+        const assetAddress = instruction.accounts.at(7);
         assetAccounts.push(assetAddress);
       }
     });
@@ -806,7 +806,7 @@ export class HeliusService {
           fetchAssetV1(this.umi, publicKey(account)),
         ),
       );
-      comicIssueAssets = await this.indexCoreAsset(
+      comicIssueAssets = await this.indexCoreAssets(
         assets,
         ownerAddress,
         candyMachineAddress,
@@ -1527,7 +1527,7 @@ export class HeliusService {
   /**
    * Indexes core assets by fetching off-chain metadata and creating/updating records in the database.
    */
-  async indexCoreAsset(
+  async indexCoreAssets(
     assets: AssetV1[],
     walletAddress: string,
     candMachineAddress: string,
@@ -1540,15 +1540,35 @@ export class HeliusService {
       const isUsed = findUsedTrait(offChainMetadata);
       const isSigned = findSignedTrait(offChainMetadata);
       const rarity = findRarityTrait(offChainMetadata);
+      const assetAddress = asset.publicKey.toString();
 
-      const digitalAsset = await this.prisma.collectibleComic.create({
+      const digitalAsset = await this.prisma.collectibleComic.upsert({
+        where: {
+          address: assetAddress,
+        },
         include: {
           metadata: {
             include: { collection: { select: { comicIssueId: true } } },
           },
           digitalAsset: { include: { owner: { select: { userId: true } } } },
         },
-        data: {
+        update: {
+          metadata: {
+            connectOrCreate: {
+              where: { uri: asset.uri },
+              create: {
+                collectionName: offChainMetadata.name,
+                uri: asset.uri,
+                isUsed,
+                isSigned,
+                rarity,
+                collectionAddress: asset.updateAuthority.address.toString(),
+              },
+            },
+          },
+          receipt: { connect: { id: receiptId } },
+        },
+        create: {
           name: asset.name,
           candyMachine: { connect: { address: candMachineAddress } },
           metadata: {
@@ -1567,7 +1587,7 @@ export class HeliusService {
           receipt: { connect: { id: receiptId } },
           digitalAsset: {
             create: {
-              address: asset.publicKey.toString(),
+              address: assetAddress,
               owner: {
                 connectOrCreate: {
                   where: { address: walletAddress },

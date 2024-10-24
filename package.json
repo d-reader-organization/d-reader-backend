@@ -51,6 +51,7 @@
     "sync-core-asset": "npx ts-node src/cli/main.ts sync-core-asset",
     "update-nonce": "npx ts-node src/cli/main.ts update-nonce",
     "insert-items": "npx ts-node src/cli/main.ts insert-items",
+    "sync-mint-receipts": "npx ts-node src/cli/main.ts sync-mint-receipts",
     "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details"
   },
   "prisma": {
@@ -93,7 +94,7 @@
     "@project-serum/anchor": "^0.26.0",
     "@solana/spl-memo": "^0.2.5",
     "@solana/spl-token": "^0.3.8",
-    "@solana/web3.js": "^1.78.0",
+    "@solana/web3.js": "^1.95.4",
     "@types/ejs": "^3.0.3",
     "@types/inquirer": "^9.0.3",
     "@types/pug": "2.0.6",
