@@ -23,7 +23,7 @@ export const TWITTER_INTENT = {
 
     if (isGeckos) {
       addOnLine = `🦎 ${args.creatorName} story\n`;
-      creatorLine = `✍️ written by  @RoachWrites_\n`;
+      creatorLine = `✍️ written by @RoachWrites_\n`;
     }
     const coverArtistLine = `🖌️ cover by ${args.coverArtistName}\n\n`;
     const mintLinkCTALine = 'Mint yours here! 👇\n';
