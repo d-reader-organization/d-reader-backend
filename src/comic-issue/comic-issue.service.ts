@@ -359,10 +359,7 @@ export class ComicIssueService {
     query: ComicIssueParams,
     userId: number,
   ): Promise<OwnedComicIssueInput[]> {
-    const ownedComicIssues = await this.prisma.comicIssue.findMany({
-      distinct: 'title',
-      orderBy: { title: 'asc' },
-      include: { collectibleComicCollection: true, statelessCovers: true },
+    const ownedIssues = await this.prisma.comicIssue.findMany({
       where: {
         comicSlug: query.comicSlug,
         collectibleComicCollection: {
@@ -375,23 +372,40 @@ export class ComicIssueService {
           },
         },
       },
+      include: {
+        collectibleComicCollection: {
+          include: {
+            metadatas: {
+              include: {
+                collectibleComics: {
+                  where: { digitalAsset: { owner: { userId } } },
+                  include: { digitalAsset: true, metadata: true },
+                },
+              },
+            },
+          },
+        },
+        statelessCovers: true,
+        statefulCovers: true,
+      },
+      orderBy: { title: 'asc' },
       skip: query.skip,
       take: query.take,
     });
 
-    return await Promise.all(
-      ownedComicIssues.map(async (comicIssue) => {
-        const collectionAddress = comicIssue.collectibleComicCollection.address;
-        const ownedCopiesCount = await this.prisma.collectibleComic.count({
-          where: {
-            metadata: { collectionAddress },
-            digitalAsset: { owner: { userId } },
-          },
-        });
-
-        return { ...comicIssue, ownedCopiesCount };
-      }),
-    );
+    return ownedIssues.map((issue) => ({
+      ...issue,
+      collectibles:
+        issue.collectibleComicCollection?.metadatas.flatMap((metadata) =>
+          metadata.collectibleComics.map((comic) => ({
+            ...comic,
+            metadata,
+            digitalAsset: comic.digitalAsset,
+            statefulCovers: issue.statefulCovers,
+          })),
+        ) || [],
+      statelessCovers: issue.statelessCovers,
+    }));
   }
 
   async getPages(comicIssueId: number, userId: number) {

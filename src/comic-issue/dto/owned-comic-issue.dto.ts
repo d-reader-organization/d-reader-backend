@@ -1,9 +1,21 @@
-import { plainToInstance } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsPositive, IsUrl, Min } from 'class-validator';
+import { plainToInstance, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsPositive,
+  IsUrl,
+  Min,
+} from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { ComicIssue, StatelessCover } from '@prisma/client';
 import { findDefaultCover } from 'src/utils/comic-issue';
+import {
+  CollectibleComicDto,
+  CollectibleComicInput,
+  toCollectibleComicDtoArray,
+} from 'src/digital-asset/dto/collectibleComic.dto';
 
 export class OwnedComicIssueDto {
   @IsPositive()
@@ -22,24 +34,35 @@ export class OwnedComicIssueDto {
   @IsUrl()
   cover: string;
 
+  @IsArray()
+  @Type(() => CollectibleComicDto)
+  collectibles: CollectibleComicDto[];
+
   @IsInt()
   @Min(0)
   ownedCopiesCount: number;
 }
 
-export type OwnedComicIssueInput = ComicIssue & {
-  ownedCopiesCount: number;
-  statelessCovers?: StatelessCover[];
-};
+type WithStatelessCovers = { statelessCovers?: StatelessCover[] };
+type WithCollectibles = { collectibles: CollectibleComicInput[] };
 
-export async function toOwnedComicIssueDto(issue: OwnedComicIssueInput) {
+export type OwnedComicIssueInput = ComicIssue &
+  WithCollectibles &
+  WithStatelessCovers;
+
+export async function toOwnedComicIssueDto(
+  ownedComicIssueInput: OwnedComicIssueInput,
+) {
+  const { collectibles, statelessCovers, ...comicIssue } = ownedComicIssueInput;
+
   const plainComicIssueDto: OwnedComicIssueDto = {
-    id: issue.id,
-    number: issue.number,
-    title: issue.title,
-    slug: issue.slug,
-    cover: getPublicUrl(findDefaultCover(issue.statelessCovers).image) || '',
-    ownedCopiesCount: issue.ownedCopiesCount,
+    id: comicIssue.id,
+    number: comicIssue.number,
+    title: comicIssue.title,
+    slug: comicIssue.slug,
+    cover: getPublicUrl(findDefaultCover(statelessCovers).image) || '',
+    collectibles: await toCollectibleComicDtoArray(collectibles),
+    ownedCopiesCount: collectibles.length,
   };
 
   const issueDto = plainToInstance(OwnedComicIssueDto, plainComicIssueDto);
