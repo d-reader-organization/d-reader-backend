@@ -377,6 +377,7 @@ export class CandyMachineService {
     if (mintTransaction.message.addressTableLookups.length) {
       const lookupTableAddress =
         mintTransaction.message.addressTableLookups[0].accountKey;
+
       const lookupTable = await this.metaplex.connection.getAddressLookupTable(
         lookupTableAddress,
       );
@@ -385,7 +386,11 @@ export class CandyMachineService {
 
     const mintInstructions = TransactionMessage.decompile(
       mintTransaction.message,
-      { addressLookupTableAccounts: [lookupTableAccounts] },
+      {
+        addressLookupTableAccounts: lookupTableAccounts
+          ? [lookupTableAccounts]
+          : [],
+      },
     );
 
     const baseInstruction = mintInstructions.instructions.at(-1);
@@ -403,24 +408,15 @@ export class CandyMachineService {
     const label =
       ixData.group.__option == 'Some' ? ixData.group.value : undefined;
 
-    let splTokenAddress = SOL_ADDRESS;
-    const couponCurrencySetting =
+    const splTokenAddress = SOL_ADDRESS;
+
+    const { coupon, ...currencySetting } =
       await this.prisma.candyMachineCouponCurrencySetting.findUnique({
         where: { label_candyMachineAddress: { label, candyMachineAddress } },
+        include: { coupon: true },
       });
 
-    if (label && label !== AUTHORITY_GROUP_LABEL) {
-      splTokenAddress = couponCurrencySetting.splTokenAddress;
-    }
-
-    const couponId = couponCurrencySetting.couponId;
-    const { currencySettings, ...coupon } =
-      await this.prisma.candyMachineCoupon.findUnique({
-        where: { id: couponId },
-        include: { currencySettings: { where: { label } } },
-      });
-
-    const { mintPrice } = currencySettings[0];
+    const { mintPrice } = currencySetting;
     const assetAccounts: PublicKey[] = [];
 
     mintInstructions.instructions.forEach((instruction) => {
@@ -429,7 +425,7 @@ export class CandyMachineService {
         MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
 
       if (isMintInstruction) {
-        const assetAddress = instruction.keys.at(7); // TODO: Check if correct index
+        const assetAddress = instruction.keys.at(7);
         assetAccounts.push(assetAddress.pubkey);
       }
     });
@@ -453,6 +449,7 @@ export class CandyMachineService {
     /** Verify signatures for all asset accounts */
     for (const assetAccount of assetAccounts) {
       const assetAccountPublicKey = new PublicKey(assetAccount);
+
       if (
         !verifySignature(
           authMessageBytes,
@@ -467,17 +464,12 @@ export class CandyMachineService {
     }
 
     if (coupon.numberOfRedemptions) {
-      const receipt = await this.prisma.candyMachineReceipt.aggregate({
-        where: {
-          candyMachineAddress,
-          couponId,
-          buyerAddress: minterAddress,
-          status: TransactionStatus.Confirmed,
-        },
-        _sum: { numberOfItems: true },
-      });
+      const itemsAlreadyClaimed = await this.countWalletItemsMintedQuery(
+        candyMachineAddress,
+        minterAddress,
+        coupon.id,
+      );
 
-      const itemsAlreadyClaimed = receipt?._sum?.numberOfItems || 0;
       if (itemsAlreadyClaimed + numberOfItems > coupon.numberOfRedemptions) {
         throw new BadRequestException("You've already redeemed coupon");
       }
@@ -494,11 +486,11 @@ export class CandyMachineService {
     const transactionSignature = base58.deserialize(signature)[0];
     await this.prisma.candyMachineReceipt.create({
       data: {
-        description: 'Mint', // TODO: Put a better description
+        description: `Minted ${numberOfItems} items from ${candyMachineAddress}`,
         candyMachine: {
           connect: { address: candyMachineAddress },
         },
-        couponId,
+        couponId: coupon.id,
         buyer: {
           connectOrCreate: {
             where: { address: minterAddress },
