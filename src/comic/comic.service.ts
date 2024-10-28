@@ -24,6 +24,8 @@ import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { ComicStatusProperty } from './dto/types';
+import { ComicInput } from './dto/comic.dto';
+import { UserComicInput } from './dto/user-comic.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -159,7 +161,10 @@ export class ComicService {
     return { ...comic, stats };
   }
 
-  async findAllByOwner(query: ComicParams, userId: number): Promise<Comic[]> {
+  async findAllByOwner(
+    query: ComicParams,
+    userId: number,
+  ): Promise<ComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
@@ -185,16 +190,12 @@ export class ComicService {
       take: query.take,
     });
 
-    return await Promise.all(
-      ownedComics.map(async (ownedComic) => {
-        const issuesCount = await this.prisma.comicIssue.count({
-          where: {
-            comicSlug: ownedComic.slug,
-            verifiedAt: { not: null },
-            publishedAt: { not: null },
-          },
-        });
-        return { ...ownedComic, stats: { issuesCount } };
+    return Promise.all(
+      ownedComics.map(async (comic) => {
+        const stats = await this.getOwnedComicStats(comic.slug, userId);
+        const { issuesCount, ...myStats } = stats;
+
+        return { ...comic, stats: { issuesCount }, myStats };
       }),
     );
   }
@@ -467,5 +468,52 @@ export class ComicService {
       comic.cover,
     ]);
     return assets;
+  }
+
+  private async getOwnedComicStats(comicSlug: string, userId: number) {
+    const [issuesCount, myStats] = await Promise.all([
+      this.getIssuesCount(comicSlug),
+      this.getUserComicStats(comicSlug, userId),
+    ]);
+
+    return { issuesCount, ...myStats };
+  }
+
+  private async getIssuesCount(comicSlug: string) {
+    return this.prisma.comicIssue.count({
+      where: {
+        comicSlug,
+        verifiedAt: { not: null },
+        publishedAt: { not: null },
+      },
+    });
+  }
+
+  private async getUserComicStats(
+    comicSlug: string,
+    userId: number,
+  ): Promise<UserComicInput> {
+    const getCollectibleCount = this.prisma.collectibleComic.count({
+      where: {
+        metadata: {
+          collection: {
+            comicIssue: { comicSlug },
+          },
+        },
+        digitalAsset: {
+          owner: { userId },
+        },
+      },
+    });
+
+    const getUserStats = this.prisma.userComic.findUnique({
+      where: { comicSlug_userId: { userId, comicSlug } },
+    });
+
+    const [collectiblesCount, stats] = await Promise.all([
+      getCollectibleCount,
+      getUserStats,
+    ]);
+    return { collectiblesCount, ...stats };
   }
 }

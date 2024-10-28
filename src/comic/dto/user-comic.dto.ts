@@ -1,6 +1,6 @@
 import { UserComic } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional } from 'class-validator';
 import { IsNumberRange } from '../../decorators/IsNumberRange';
 
 export class UserComicDto {
@@ -16,14 +16,21 @@ export class UserComicDto {
 
   @IsBoolean()
   isBookmarked: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  collectiblesCount?: number;
 }
 
-export function toUserComicDto(userComic: UserComic) {
+export type UserComicInput = UserComic & { collectiblesCount?: number };
+
+export function toUserComicDto(userComic: UserComicInput) {
   const plainUserComicDto: UserComicDto = {
     rating: userComic.rating,
     // isSubscribed: !!userComic.subscribedAt,
     isFavourite: !!userComic.favouritedAt,
     isBookmarked: !!userComic.bookmarkedAt,
+    collectiblesCount: userComic.collectiblesCount,
   };
 
   const userComicDto = plainToInstance(UserComicDto, plainUserComicDto);
