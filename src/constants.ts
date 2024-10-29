@@ -16,7 +16,7 @@ export const MAX_ON_CHAIN_TITLE_LENGTH = MAX_NAME_LENGTH - MIN_SUPPLY_LIMIT - 2;
 export const D_READER_SYMBOL = 'dReader';
 export const D_PUBLISHER_SYMBOL = 'dPublisher';
 
-export const D_READER_FRONTEND_URL = 'https://dreader.app';
+export const D_READER_FRONTEND_URL = 'https://www.dreader.app';
 
 export const HUNDRED = 100;
 export const HUNDRED_PERCENT_TAX = 10000;
