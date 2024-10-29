@@ -7,12 +7,11 @@ import { isEmpty, kebabCase } from 'lodash';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
 import { D_READER_LINKS } from './client-links';
 import { toOrdinal } from './lodash';
+import { D_READER_FRONTEND_URL } from '../constants';
 
 export const TWITTER_INTENT_PREFIX = encodeURI(
   'https://x.com/intent/tweet?text=',
 );
-
-const frontendUrl = process.env.D_READER_FRONTEND_URL;
 
 export const TWITTER_INTENT = {
   // Get Tweet content for sharing the minted comic
@@ -34,7 +33,7 @@ export const TWITTER_INTENT = {
       titleLine + addOnLine + creatorLine + coverArtistLine + mintLinkCTALine,
     );
 
-    const mintLinkPrefix = encodeURI(`${frontendUrl}/mint/`);
+    const mintLinkPrefix = encodeURI(`${D_READER_FRONTEND_URL}/mint/`);
     const mintLinkComicSlug = encodeURIComponent(
       `${args.comicSlug}_${args.comicIssueSlug}`,
     );
@@ -106,7 +105,9 @@ export const TWITTER_INTENT = {
     const personalizedText = `<INSERT SOMETHING PERSONAL>`;
 
     const comicLinkCallToActionLine = `Link below 🔗👇`;
-    const comicLinkLine = `${frontendUrl}/comic/${kebabCase(comicTitle)}`;
+    const comicLinkLine = `${D_READER_FRONTEND_URL}/comic/${kebabCase(
+      comicTitle,
+    )}`;
     const endOfTweet = `You can read the first ${previewPageCount} pages in-app now!\n\nShow it some love if you can and give both @${creatorTag} and ${comicTitle} series a LIKE, some STARS, and a FOLLOW on there!`;
 
     const tweetText = encodeURI(
