@@ -52,17 +52,21 @@ export class PasswordService {
       throw new NotFoundException(`No user found with id ${address}`);
     }
 
-    const oneTimePassword = `${process.env.SIGN_MESSAGE}${user.nonce}`;
-    const oneTimePasswordBytes = new TextEncoder().encode(oneTimePassword);
+    let dataBytes: Uint8Array;
     let signatures: Uint8Array[];
 
     try {
       if (type == SignedDataType.Message) {
+        const oneTimePassword = `${process.env.SIGN_MESSAGE}${user.nonce}`;
+
+        dataBytes = new TextEncoder().encode(oneTimePassword);
         signatures = [bs58.decode(encoding)];
       } else {
         const transaction = VersionedTransaction.deserialize(
           Buffer.from(encoding, 'base64'),
         );
+
+        dataBytes = transaction.message.serialize();
         signatures = transaction.signatures;
       }
     } catch (e) {
@@ -72,7 +76,7 @@ export class PasswordService {
     }
 
     const publicKeyBytes = bs58.decode(address);
-    if (!verifySignature(oneTimePasswordBytes, signatures, publicKeyBytes)) {
+    if (!verifySignature(dataBytes, signatures, publicKeyBytes)) {
       throw new UnauthorizedException('Unverified Transaction');
     }
   }
