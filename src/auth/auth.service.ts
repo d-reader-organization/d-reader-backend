@@ -21,6 +21,7 @@ import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
 import { WalletService } from '../wallet/wallet.service';
+import { SignedDataType } from './dto/connect-wallet.dto';
 
 const sanitizePayload = (payload: JwtPayload) => {
   return pick(payload, 'type', 'id', 'email', 'name', 'role');
@@ -37,8 +38,13 @@ export class AuthService {
     private readonly walletService: WalletService,
   ) {}
 
-  async connectWallet(userId: number, address: string, encoding: string) {
-    await this.passwordService.validateWallet(userId, address, encoding);
+  async connectWallet(
+    userId: number,
+    address: string,
+    encoding: string,
+    type: SignedDataType,
+  ) {
+    await this.passwordService.validateWallet(userId, address, encoding, type);
     const publicKey = new PublicKey(address);
     const wallet = await this.prisma.wallet.upsert({
       where: { address },

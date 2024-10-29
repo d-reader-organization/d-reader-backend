@@ -4,13 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Transaction } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
 import config from '../configs/config';
 import { v4 as uuidv4 } from 'uuid';
-import * as nacl from 'tweetnacl';
 import * as bs58 from 'bs58';
 import * as bcrypt from 'bcrypt';
+import { verifySignature } from '../utils/transactions';
+import { VersionedTransaction } from '@solana/web3.js';
+import { SignedDataType } from './dto/connect-wallet.dto';
 
 @Injectable()
 export class PasswordService {
@@ -39,7 +40,12 @@ export class PasswordService {
     }
   }
 
-  async validateWallet(userId: number, address: string, encoding: string) {
+  async validateWallet(
+    userId: number,
+    address: string,
+    encoding: string,
+    type: SignedDataType,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
@@ -48,51 +54,26 @@ export class PasswordService {
 
     const oneTimePassword = `${process.env.SIGN_MESSAGE}${user.nonce}`;
     const oneTimePasswordBytes = new TextEncoder().encode(oneTimePassword);
+    let signatures: Uint8Array[];
+
+    try {
+      if (type == SignedDataType.Message) {
+        signatures = [bs58.decode(encoding)];
+      } else {
+        const transaction = VersionedTransaction.deserialize(
+          Buffer.from(encoding, 'base64'),
+        );
+        signatures = transaction.signatures;
+      }
+    } catch (e) {
+      throw new BadRequestException(
+        "There's a problem with the signed message. try again",
+      );
+    }
 
     const publicKeyBytes = bs58.decode(address);
-    const signatureBytes = bs58.decode(encoding);
-
-    // Try to construct a Message and match message bytes with OTP bytes
-    try {
-      // @deprecated: const message = Message.from(signatureBytes);
-      const isVerified = nacl.sign.detached.verify(
-        oneTimePasswordBytes,
-        signatureBytes,
-        publicKeyBytes,
-      );
-
-      if (isVerified) return true;
-      else console.error('Malformed Message');
-    } catch (e) {
-      console.error('Failed to construct a Message object: ', e);
-    }
-    return;
-
-    // Try to construct a Transaction and match its instruction data against OTP bytes
-    try {
-      console.log('Trying fallback for the ledger');
-      const transaction = Transaction.from(signatureBytes);
-
-      const txHasOnlyOneSigner = transaction.signatures.length === 1;
-      const txSignerMatchesPublicKey = transaction.signatures[0].publicKey
-        .toBuffer()
-        .equals(publicKeyBytes);
-      const txInstructionMatchesOTP = transaction.instructions
-        .at(-1)
-        .data.equals(oneTimePasswordBytes);
-
-      if (
-        txHasOnlyOneSigner &&
-        txSignerMatchesPublicKey &&
-        txInstructionMatchesOTP
-      ) {
-        const isVerified = transaction.verifySignatures();
-        if (isVerified) return true;
-      }
-      console.error('Malformed Transaction Message');
-    } catch (e) {
-      // Failed to construct a Transaction object
-      throw new UnauthorizedException('Failed to connect the wallet!', e);
+    if (!verifySignature(oneTimePasswordBytes, signatures, publicKeyBytes)) {
+      throw new UnauthorizedException('Unverified Transaction');
     }
   }
 }

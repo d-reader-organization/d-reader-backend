@@ -28,6 +28,7 @@ import { CreatorService } from '../creator/creator.service';
 import { UserAuth } from '../guards/user-auth.guard';
 import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
 import { GoogleUserAuth } from '../guards/google-auth.guard';
+import { ConnectWalletDto, SignedDataType } from './dto/connect-wallet.dto';
 @UseGuards(ThrottlerGuard)
 @ApiTags('Auth')
 @Controller('auth')
@@ -152,15 +153,36 @@ export class AuthController {
     return await this.passwordService.generateOneTimePassword(user.id);
   }
 
-  /* Connect your wallet with a signed and encoded one time password */
+  /** @deprecated */
   @UserAuth()
   @Patch('wallet/connect/:address/:encoding')
-  async connectWallet(
+  async connectWalletDeprecated(
     @Param('address') address: string,
     @Param('encoding') encoding: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.authService.connectWallet(user.id, address, encoding);
+    await this.authService.connectWallet(
+      user.id,
+      address,
+      encoding,
+      SignedDataType.Message,
+    );
+  }
+
+  /* Connect your wallet with a signed and encoded one time password */
+  @UserAuth()
+  @Patch('wallet/connect')
+  async connectWallet(
+    @Body() connectWalletDto: ConnectWalletDto,
+    @UserEntity() user: UserPayload,
+  ) {
+    const { address, encoding, signedDataType } = connectWalletDto;
+    await this.authService.connectWallet(
+      user.id,
+      address,
+      encoding,
+      signedDataType,
+    );
   }
 
   /* Disconnect your wallet */
