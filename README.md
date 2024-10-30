@@ -29,7 +29,7 @@ yarn add & cp .env.example .env
 Next run the command for generating env variables and replace placeholder values from `.env` as per instructions in the terminal. Fill in any remaining variables by following notes from the [.env section](#🌱-env):
 
 ```bash
-yarn generate-environment
+yarn generate-env
 ```
 
 Then run migrations and seed the database:

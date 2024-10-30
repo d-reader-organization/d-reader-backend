@@ -35,7 +35,7 @@ export function toSol(funds: number) {
 }
 
 export function chance(chanceForTrue: number) {
-  return getRandomInt(0, 10) > chanceForTrue / 10;
+  return getRandomInt(0, 10) < chanceForTrue / 10;
 }
 
 export function maybeDateNow(chanceForTrue: number) {
