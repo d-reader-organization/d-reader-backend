@@ -23,6 +23,7 @@ import {
   Genre,
   CollectibleComicCollection,
   TokenStandard,
+  CandyMachine,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -130,7 +131,7 @@ export class ComicIssueService {
 
   async findActiveCandyMachine(
     comicIssueId: number,
-  ): Promise<string | undefined> {
+  ): Promise<CandyMachine | undefined> {
     const candyMachine = await this.prisma.candyMachine.findFirst({
       where: {
         collection: { comicIssueId },
@@ -142,7 +143,7 @@ export class ComicIssueService {
         },
       },
     });
-    return candyMachine?.address;
+    return candyMachine;
   }
 
   async findAll(query: ComicIssueParams): Promise<ComicIssueInput[]> {
@@ -249,11 +250,11 @@ export class ComicIssueService {
     });
 
     const id = comicIssue.id;
-    const activeCandyMachineAddress = await this.findActiveCandyMachine(id);
+    const activeCandyMachine = await this.findActiveCandyMachine(id);
 
     return {
       ...comicIssue,
-      activeCandyMachineAddress,
+      activeCandyMachineAddress: activeCandyMachine.address,
       stats: {
         favouritesCount: 0,
         ratersCount: 0,
@@ -302,6 +303,7 @@ export class ComicIssueService {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
         statelessCovers: true,
+        collectibleComicCollection: true,
       },
     });
 
@@ -314,13 +316,12 @@ export class ComicIssueService {
       userId,
     );
 
-    const [activeCandyMachineAddress, stats, myStats, canRead] =
-      await Promise.all([
-        findActiveCandyMachine,
-        getStats,
-        getMyStats,
-        checkCanUserRead,
-      ]);
+    const [activeCandyMachine, stats, myStats, canRead] = await Promise.all([
+      findActiveCandyMachine,
+      getStats,
+      getMyStats,
+      checkCanUserRead,
+    ]);
 
     if (!comicIssue) {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
@@ -330,7 +331,8 @@ export class ComicIssueService {
       ...comicIssue,
       stats,
       myStats: { ...myStats, canRead },
-      activeCandyMachineAddress,
+      activeCandyMachineAddress: activeCandyMachine?.address,
+      collectionAddress: comicIssue.collectibleComicCollection?.address,
     };
   }
 
