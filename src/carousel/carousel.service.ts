@@ -213,7 +213,7 @@ export class CarouselService {
       return;
     }
 
-    const { coupons } = await this.prisma.candyMachine.findFirst({
+    const activeCandyMachine = await this.prisma.candyMachine.findFirst({
       include: {
         coupons: true,
       },
@@ -228,19 +228,21 @@ export class CarouselService {
       },
     });
 
-    const defaultCoupon = coupons?.find(
-      (coupon) =>
-        coupon.type === CouponType.PublicUser ||
-        coupon.type === CouponType.RegisteredUser,
-    );
-
-    const isSoldOut = comicIssue.collectibleComicCollection && !defaultCoupon;
+    const isSoldOut =
+      comicIssue.collectibleComicCollection && !activeCandyMachine;
     if (isSoldOut) {
       tags.push({
         title: CarouselTagTitle.Sold,
       });
       return;
     }
+
+    const coupons = activeCandyMachine.coupons;
+    const defaultCoupon = coupons?.find(
+      (coupon) =>
+        coupon.type === CouponType.PublicUser ||
+        coupon.type === CouponType.RegisteredUser,
+    );
 
     const mintDate = defaultCoupon?.startsAt;
     if (mintDate) {
