@@ -63,7 +63,7 @@ export class BlinkService {
       await this.prisma.candyMachineCouponCurrencySetting.findFirst({
         where: {
           coupon: {
-            candyMachineAddress: activeCandyMachine,
+            candyMachineAddress: activeCandyMachine.address,
             type: CouponType.PublicUser,
           },
           splTokenAddress: SOL_ADDRESS,

@@ -131,6 +131,10 @@ export class ComicIssueDto {
   @IsString()
   activeCandyMachineAddress?: string;
 
+  @IsOptional()
+  @IsString()
+  collectionAddress?: string;
+
   @IsSolanaAddress()
   creatorAddress: string;
 
@@ -162,7 +166,12 @@ type WithComic = { comic?: Comic & { creator?: Creator; genres?: Genre[] } };
 type WithGenres = { genres?: Genre[] };
 type WithStats = { stats?: ComicIssueStats };
 type WithMyStats = { myStats?: UserComicIssue & { canRead: boolean } };
+/** @deprecated */
 type WithActiveCandyMachineAddress = { activeCandyMachineAddress?: string };
+type WithCollectibleData = {
+  activeCandyMachineAddress?: string;
+  collectionAddress?: string;
+};
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
 type WithStatelessCovers = { statelessCovers?: StatelessCover[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
@@ -173,6 +182,7 @@ export type ComicIssueInput = With<
     WithComic,
     WithGenres,
     WithStats,
+    WithCollectibleData,
     WithMyStats,
     WithActiveCandyMachineAddress,
     WithCollaborators,
@@ -204,6 +214,7 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isPopular: !!issue.popularizedAt,
     isVerified: !!issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
+    collectionAddress: issue.collectionAddress,
     creator: ifDefined(issue.comic?.creator, toPartialCreatorDto),
     comic: ifDefined(issue.comic, toPartialComicDto),
     genres: ifDefined(genres, toPartialGenreDtoArray),
