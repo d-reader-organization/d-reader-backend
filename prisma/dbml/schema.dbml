@@ -282,6 +282,7 @@ Table CandyMachineCoupon {
   candyMachineAddress String [not null]
   candyMachine CandyMachine [not null]
   currencySettings CandyMachineCouponCurrencySetting [not null]
+  isSponsored Boolean [not null, default: false]
 }
 
 Table CandyMachineCouponCurrencySetting {

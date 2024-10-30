@@ -282,7 +282,7 @@ export class CandyMachineService {
     numberOfItems?: number,
     userId?: number,
   ) {
-    const { lookupTable, isFreeMint } =
+    const { lookupTable, isSponsored } =
       await this.validateMintTransactionRequest(
         walletAddress,
         candyMachineAddress,
@@ -302,7 +302,7 @@ export class CandyMachineService {
       label,
       numberOfItems ?? 1,
       lookupTable,
-      isFreeMint,
+      isSponsored,
     );
 
     return transactions;
@@ -316,14 +316,14 @@ export class CandyMachineService {
     couponId: number,
     numberOfItems: number,
     userId?: number,
-  ): Promise<{ lookupTable: string | undefined; isFreeMint: boolean }> {
+  ): Promise<{ lookupTable: string | undefined; isSponsored: boolean }> {
     const {
       whitelistedWallets,
       mintPrice,
       tokenStandard,
       whitelistedUsers,
       couponType,
-      isFreeMint,
+      isSponsored,
       numberOfRedemptions,
       startsAt,
       expiresAt,
@@ -338,7 +338,7 @@ export class CandyMachineService {
       tokenStandard,
       numberOfItems,
       splToken,
-      isFreeMint,
+      isSponsored,
     );
     this.validateTokenStandard(tokenStandard);
     this.validateMintEligibility(
@@ -359,7 +359,7 @@ export class CandyMachineService {
       userId,
     );
 
-    return { lookupTable, isFreeMint };
+    return { lookupTable, isSponsored };
   }
 
   async validateAndSendMintTransaction(
@@ -1034,7 +1034,7 @@ export class CandyMachineService {
             : [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
-        isFreeMint: false, //TODO: either hardcode for one time or use it from db
+        isSponsored: candyMachineCoupon.isSponsored,
         lookupTable: candyMachine.lookupTable,
         mintPrice: Number(currencySetting.mintPrice),
         splToken: {
@@ -1358,9 +1358,9 @@ export class CandyMachineService {
     tokenStandard: TokenStandard,
     numberOfItems: number,
     splToken: CandyMachineMintData['splToken'],
-    isFreeMint = false,
+    isSponsored = false,
   ): Promise<void> {
-    if (isFreeMint) return;
+    if (isSponsored) return;
 
     const solBalance = await this.umi.rpc.getBalance(walletAddress);
     const isSolPayment = splToken.splTokenAddress == SOL_ADDRESS;
