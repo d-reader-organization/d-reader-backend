@@ -324,6 +324,7 @@ model CandyMachineCoupon {
   candyMachineAddress String
   candyMachine        CandyMachine                          @relation(fields: [candyMachineAddress], references: [address])
   currencySettings    CandyMachineCouponCurrencySetting[]
+  isSponsored         Boolean                               @default(false)
 }
 
 model CandyMachineCouponCurrencySetting {

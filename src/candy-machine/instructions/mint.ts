@@ -41,7 +41,7 @@ export async function constructMultipleMintTransaction(
   label: string,
   numberOfItems: number,
   lookupTableAddress?: string,
-  isFreeMint = false,
+  isSponsored = false,
   computePrice?: number,
 ): Promise<string[]> {
   try {
@@ -61,7 +61,7 @@ export async function constructMultipleMintTransaction(
         signer,
         label,
         mintArgs,
-        isFreeMint,
+        isSponsored,
       );
 
     const mintTransaction = await buildAndSignTransaction(
@@ -69,14 +69,14 @@ export async function constructMultipleMintTransaction(
       umi,
       signer,
       lookupTable,
-      isFreeMint,
+      isSponsored,
     );
 
     const authorizationTx = await createAuthorizationTransaction(
       umi,
       minter,
       assetSigners,
-      isFreeMint,
+      isSponsored,
     );
     transactions.push(authorizationTx);
 
@@ -131,13 +131,13 @@ function addMintBuildersAndGenerateSigners(
   signer: ReturnType<typeof createNoopSigner>,
   label: string,
   mintArgs: Awaited<ReturnType<typeof getMintArgs>>,
-  isFreeMint = false,
+  isSponsored = false,
 ): {
   assetSigners: KeypairSigner[];
   builder: ReturnType<typeof transactionBuilder>;
 } {
   const identityPublicKey = getTreasuryPublicKey();
-  const payer = isFreeMint
+  const payer = isSponsored
     ? createNoopSigner(publicKey(identityPublicKey))
     : signer;
   const assetSigners: KeypairSigner[] = [];
@@ -167,10 +167,10 @@ async function buildAndSignTransaction(
   umi: Umi,
   signer: ReturnType<typeof createNoopSigner>,
   lookupTable?: AddressLookupTableInput,
-  isFreeMint = false,
+  isSponsored = false,
 ) {
   const identityPublicKey = getTreasuryPublicKey();
-  const payer = isFreeMint
+  const payer = isSponsored
     ? createNoopSigner(publicKey(identityPublicKey))
     : signer;
 
@@ -178,18 +178,18 @@ async function buildAndSignTransaction(
     .setAddressLookupTables(lookupTable ? [lookupTable] : [])
     .buildAndSign({ ...umi, payer });
 
-  return isFreeMint ? getIdentityUmiSignature(transaction) : transaction;
+  return isSponsored ? getIdentityUmiSignature(transaction) : transaction;
 }
 
 async function createAuthorizationTransaction(
   umi: Umi,
   minter: UmiPublicKey,
   assetSigners: KeypairSigner[],
-  isFreeMint = false,
+  isSponsored = false,
 ): Promise<string> {
   const thirdPartySigner = getThirdPartySigner();
   const minterPublicKey = new PublicKey(minter.toString());
-  const feePayer = isFreeMint ? getTreasuryPublicKey() : minterPublicKey;
+  const feePayer = isSponsored ? getTreasuryPublicKey() : minterPublicKey;
 
   const authorizationMemo = createMemoInstruction('Authorized Mint!', [
     thirdPartySigner,
@@ -210,7 +210,7 @@ async function createAuthorizationTransaction(
     ...assetSigners.map((signer) => toWeb3JsKeypair(signer)),
   );
 
-  const transaction = isFreeMint
+  const transaction = isSponsored
     ? getIdentitySignature(signedMemoTx)
     : signedMemoTx;
   return transaction

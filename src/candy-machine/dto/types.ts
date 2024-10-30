@@ -103,7 +103,7 @@ export type CandyMachineMintData = {
   couponType: CouponType;
   whitelistedWallets: CandyMachineCouponWhitelistedWallet[];
   whitelistedUsers: CandyMachineCouponWhitelistedUser[];
-  isFreeMint: boolean;
+  isSponsored: boolean;
   lookupTable: string;
   mintPrice: number;
   splToken: {
