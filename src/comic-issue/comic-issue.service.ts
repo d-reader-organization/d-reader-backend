@@ -238,6 +238,7 @@ export class ComicIssueService {
         comic: { include: { creator: true, genres: true } },
         collaborators: true,
         statelessCovers: true,
+        collectibleComicCollection: true,
       },
     });
 
@@ -255,6 +256,7 @@ export class ComicIssueService {
     return {
       ...comicIssue,
       activeCandyMachineAddress: activeCandyMachine?.address,
+      collectionAddress: comicIssue.collectibleComicCollection?.address,
       stats: {
         favouritesCount: 0,
         ratersCount: 0,
