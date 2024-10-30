@@ -254,7 +254,7 @@ export class ComicIssueService {
 
     return {
       ...comicIssue,
-      activeCandyMachineAddress: activeCandyMachine.address,
+      activeCandyMachineAddress: activeCandyMachine?.address,
       stats: {
         favouritesCount: 0,
         ratersCount: 0,
