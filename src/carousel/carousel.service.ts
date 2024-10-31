@@ -16,9 +16,11 @@ import { PickFields } from '../types/shared';
 import {
   CarouselTag,
   CarouselTagTitle,
+  CarouselTagType,
   CarouselWithTags,
 } from '../types/carousel';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
+import { TENSOR_TRADE_URL } from '../constants';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -85,6 +87,11 @@ export class CarouselService {
         if (slide.externalLink) {
           tags.push({
             title: CarouselTagTitle.Highlighted,
+            type: CarouselTagType.Subject,
+          });
+          tags.push({
+            title: CarouselTagTitle.Checkout,
+            type: CarouselTagType.Button,
           });
         } else if (slide.comicSlug) {
           await this.handleComicCase({ slide, tags });
@@ -172,8 +179,13 @@ export class CarouselService {
     if (isNew) {
       tags.push({
         title: CarouselTagTitle.NewComic,
+        type: CarouselTagType.Subject,
       });
     }
+    tags.push({
+      title: CarouselTagTitle.Checkout,
+      type: CarouselTagType.Button,
+    });
   }
 
   async handleCreatorCase({
@@ -190,8 +202,13 @@ export class CarouselService {
     if (isNew) {
       tags.push({
         title: CarouselTagTitle.NewCreator,
+        type: CarouselTagType.Subject,
       });
     }
+    tags.push({
+      title: CarouselTagTitle.Checkout,
+      type: CarouselTagType.Button,
+    });
   }
 
   async handleComicIssueCase({
@@ -209,7 +226,15 @@ export class CarouselService {
     });
 
     if (!comicIssue.collectibleComicCollection && comicIssue.isFreeToRead) {
-      tags.push({ title: CarouselTagTitle.Free });
+      tags.push({
+        title: CarouselTagTitle.Free,
+        type: CarouselTagType.Subject,
+      });
+
+      tags.push({
+        title: CarouselTagTitle.Checkout,
+        type: CarouselTagType.Button,
+      });
       return;
     }
 
@@ -228,11 +253,18 @@ export class CarouselService {
       },
     });
 
-    const isSoldOut =
-      comicIssue.collectibleComicCollection && !activeCandyMachine;
+    const collection = comicIssue.collectibleComicCollection;
+    const isSoldOut = collection && !activeCandyMachine;
     if (isSoldOut) {
       tags.push({
         title: CarouselTagTitle.Sold,
+        type: CarouselTagType.Subject,
+      });
+
+      tags.push({
+        title: CarouselTagTitle.Tensor,
+        type: CarouselTagType.Button,
+        href: `${TENSOR_TRADE_URL}/${collection.address}`,
       });
       return;
     }
@@ -249,10 +281,15 @@ export class CarouselService {
       const isUpcomingMint = mintDate > new Date();
       tags.push({
         title: isUpcomingMint
-          ? // ? `${CarouselTagTitle.UpcomingMint} {{timestamp}}`
-            `Minting soon` // TODO: replace this
+          ? CarouselTagTitle.UpcomingMint
           : CarouselTagTitle.Minting,
-        ...(isUpcomingMint && { timestamp: mintDate.toString() }),
+        type: CarouselTagType.Subject,
+        timestamp: mintDate.toString(),
+      });
+
+      tags.push({
+        title: CarouselTagTitle.Launchpad,
+        type: CarouselTagType.Button,
       });
     }
   }

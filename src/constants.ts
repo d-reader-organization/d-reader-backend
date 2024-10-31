@@ -207,6 +207,7 @@ export const RARITY_PRECEDENCE = [
 
 export const TENSOR_GRAPHQL_API_ENDPOINT = 'https://api.tensor.so/graphql';
 export const TENSOR_MAINNET_API_ENDPOINT = 'https://api.mainnet.tensordev.io';
+export const TENSOR_TRADE_URL = 'https://www.tensor.trade/trade';
 
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
 export const TCOMP_PROGRAM_ID = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp';
