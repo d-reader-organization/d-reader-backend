@@ -768,8 +768,6 @@ export class HeliusService {
   ) {
     const baseInstruction = enrichedTransaction.instructions.at(-1);
     const candyMachineAddress = baseInstruction.accounts[2];
-    const ownerAddress =
-      enrichedTransaction.nativeTransfers.at(0).fromUserAccount;
 
     const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
       'confirmed',
@@ -808,7 +806,6 @@ export class HeliusService {
       );
       comicIssueAssets = await this.indexCoreAssets(
         assets,
-        ownerAddress,
         candyMachineAddress,
         receipt.id,
       );
@@ -1529,7 +1526,6 @@ export class HeliusService {
    */
   async indexCoreAssets(
     assets: AssetV1[],
-    walletAddress: string,
     candMachineAddress: string,
     receiptId: number,
   ) {
@@ -1541,6 +1537,7 @@ export class HeliusService {
       const isSigned = findSignedTrait(offChainMetadata);
       const rarity = findRarityTrait(offChainMetadata);
       const assetAddress = asset.publicKey.toString();
+      const ownerAddress = asset.owner.toString();
 
       const digitalAsset = await this.prisma.collectibleComic.upsert({
         where: {
@@ -1590,8 +1587,8 @@ export class HeliusService {
               address: assetAddress,
               owner: {
                 connectOrCreate: {
-                  where: { address: walletAddress },
-                  create: { address: walletAddress },
+                  where: { address: ownerAddress },
+                  create: { address: ownerAddress },
                 },
               },
               ownerChangedAt: new Date(),

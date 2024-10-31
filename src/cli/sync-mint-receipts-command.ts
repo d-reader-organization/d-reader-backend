@@ -48,8 +48,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
 
   async syncTransaction(receipt: CandyMachineReceipt) {
     try {
-      const { transactionSignature, candyMachineAddress, buyerAddress, id } =
-        receipt;
+      const { transactionSignature, candyMachineAddress, id } = receipt;
       const transactionStatus = await this.connection.getSignatureStatuses(
         [transactionSignature],
         {
@@ -95,7 +94,6 @@ export class SyncMintReceptsCommand extends CommandRunner {
           const reIndexAsset = this.reIndexCoreAsset(
             decompiledTransaction,
             candyMachineAddress,
-            buyerAddress,
             id,
           );
           const updatedReceipt = this.prisma.candyMachineReceipt.update({
@@ -114,7 +112,6 @@ export class SyncMintReceptsCommand extends CommandRunner {
   async reIndexCoreAsset(
     transaction: TransactionMessage,
     candyMachineAddress: string,
-    buyerAddress: string,
     receiptId: number,
   ) {
     const assetAccounts: string[] = [];
@@ -136,7 +133,6 @@ export class SyncMintReceptsCommand extends CommandRunner {
       );
       await this.heliusService.indexCoreAssets(
         assets,
-        buyerAddress,
         candyMachineAddress,
         receiptId,
       );
