@@ -8,10 +8,20 @@ export enum CarouselTagTitle {
   Sold = 'Sold out',
   Minting = 'Minting live',
   UpcomingMint = 'Minting in',
+  Launchpad = 'To launchpad',
+  Tensor = 'Trade on Tensor',
+  Checkout = 'Check out',
+}
+
+export enum CarouselTagType {
+  Chip = 'Chip',
+  Button = 'Button',
 }
 
 export type CarouselTag = {
   title: string;
+  type: CarouselTagType;
+  href?: string;
   timestamp?: string;
 };
 
