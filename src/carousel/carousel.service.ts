@@ -87,7 +87,7 @@ export class CarouselService {
         if (slide.externalLink) {
           tags.push({
             title: CarouselTagTitle.Highlighted,
-            type: CarouselTagType.Subject,
+            type: CarouselTagType.Chip,
           });
           tags.push({
             title: CarouselTagTitle.Checkout,
@@ -179,7 +179,7 @@ export class CarouselService {
     if (isNew) {
       tags.push({
         title: CarouselTagTitle.NewComic,
-        type: CarouselTagType.Subject,
+        type: CarouselTagType.Chip,
       });
     }
     tags.push({
@@ -202,7 +202,7 @@ export class CarouselService {
     if (isNew) {
       tags.push({
         title: CarouselTagTitle.NewCreator,
-        type: CarouselTagType.Subject,
+        type: CarouselTagType.Chip,
       });
     }
     tags.push({
@@ -228,7 +228,7 @@ export class CarouselService {
     if (!comicIssue.collectibleComicCollection && comicIssue.isFreeToRead) {
       tags.push({
         title: CarouselTagTitle.Free,
-        type: CarouselTagType.Subject,
+        type: CarouselTagType.Chip,
       });
 
       tags.push({
@@ -258,7 +258,7 @@ export class CarouselService {
     if (isSoldOut) {
       tags.push({
         title: CarouselTagTitle.Sold,
-        type: CarouselTagType.Subject,
+        type: CarouselTagType.Chip,
       });
 
       tags.push({
@@ -283,7 +283,7 @@ export class CarouselService {
         title: isUpcomingMint
           ? CarouselTagTitle.UpcomingMint
           : CarouselTagTitle.Minting,
-        type: CarouselTagType.Subject,
+        type: CarouselTagType.Chip,
         timestamp: mintDate.toString(),
       });
 

@@ -14,7 +14,7 @@ export enum CarouselTagTitle {
 }
 
 export enum CarouselTagType {
-  Subject = 'Subject',
+  Chip = 'Chip',
   Button = 'Button',
 }
 
