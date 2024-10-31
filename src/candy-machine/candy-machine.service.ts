@@ -59,6 +59,7 @@ import {
   ComicRarity as PrismaComicRarity,
   CouponType,
   TransactionStatus,
+  Prisma,
 } from '@prisma/client';
 import {
   CandyMachineCouponWithWhitelist,
@@ -365,6 +366,7 @@ export class CandyMachineService {
   async validateAndSendMintTransaction(
     transactions: string[],
     walletAddress: string,
+    userId?: number,
   ) {
     const mintTransaction = VersionedTransaction.deserialize(
       Buffer.from(transactions[1], 'base64'),
@@ -415,6 +417,17 @@ export class CandyMachineService {
         where: { label_candyMachineAddress: { label, candyMachineAddress } },
         include: { coupon: true },
       });
+
+    if (
+      coupon.type == CouponType.RegisteredUser ||
+      coupon.type == CouponType.WhitelistedUser
+    ) {
+      if (!userId) {
+        throw new UnauthorizedException(
+          'Only registered users are eligible for this coupon !',
+        );
+      }
+    }
 
     const { mintPrice } = currencySetting;
     const assetAccounts: PublicKey[] = [];
@@ -484,27 +497,35 @@ export class CandyMachineService {
     const signature = await this.umi.rpc.sendTransaction(signedMintTransaction);
 
     const transactionSignature = base58.deserialize(signature)[0];
-    await this.prisma.candyMachineReceipt.create({
-      data: {
-        description: `Minted ${numberOfItems} items from ${candyMachineAddress}`,
-        candyMachine: {
-          connect: { address: candyMachineAddress },
-        },
-        couponId: coupon.id,
-        buyer: {
-          connectOrCreate: {
-            where: { address: minterAddress },
-            create: { address: minterAddress },
-          },
-        },
-        label,
-        numberOfItems,
-        status: TransactionStatus.Processing,
-        transactionSignature,
-        price: mintPrice, // Should this be numberOfItems*mintPrice ?
-        timestamp: new Date(),
-        splTokenAddress,
+    const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+      description: `Minted ${numberOfItems} items from ${candyMachineAddress}`,
+      candyMachine: {
+        connect: { address: candyMachineAddress },
       },
+      couponId: coupon.id,
+      buyer: {
+        connectOrCreate: {
+          where: { address: minterAddress },
+          create: { address: minterAddress },
+        },
+      },
+      label,
+      numberOfItems,
+      status: TransactionStatus.Processing,
+      transactionSignature,
+      price: mintPrice, // Should this be numberOfItems*mintPrice ?
+      timestamp: new Date(),
+      splTokenAddress,
+    };
+
+    if (userId) {
+      receiptData.user = {
+        connect: { id: userId },
+      };
+    }
+
+    await this.prisma.candyMachineReceipt.create({
+      data: receiptData,
     });
 
     return signature;

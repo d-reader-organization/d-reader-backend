@@ -148,14 +148,17 @@ export class TransactionController {
   }
 
   @UseInterceptors(MutexInterceptor(MINT_MUTEX_IDENTIFIER, { id: 'param' }))
+  @OptionalUserAuth()
   @Post('/send-mint-transaction/:walletAddress')
   async sendMintTransaction(
     @Param('walletAddress') walletAddress: string,
     @Body() body: SendMintTransactionBodyDto,
+    @UserEntity() user?: UserPayload,
   ) {
     return await this.candyMachineService.validateAndSendMintTransaction(
       body.transactions,
       walletAddress,
+      user ? user.id : null,
     );
   }
 
