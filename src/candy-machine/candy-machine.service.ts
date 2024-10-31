@@ -119,6 +119,7 @@ import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-curren
 import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { isNull } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -940,7 +941,7 @@ export class CandyMachineService {
       coupon.id,
     );
 
-    const isEligible = coupon.numberOfRedemptions
+    const isEligible = !isNull(coupon.numberOfRedemptions)
       ? coupon.numberOfRedemptions > itemsMinted
       : true;
 
@@ -1466,6 +1467,10 @@ export class CandyMachineService {
     walletAddress: UmiPublicKey,
     userId: number | undefined,
   ): Promise<void> {
+    if (numberOfRedemptions == 0) {
+      throw new UnauthorizedException('Unauthorized to use this coupon');
+    }
+
     if (numberOfRedemptions) {
       const publicMintTypes: CouponType[] = [
         CouponType.PublicUser,
