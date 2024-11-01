@@ -82,6 +82,7 @@ import {
   BasicComicIssueDto,
   toBasicComicIssueDtoArray,
 } from './dto/basic-comic-issue.dto';
+import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -173,6 +174,14 @@ export class ComicIssueController {
   async findOneRaw(@Param('id') id: string): Promise<RawComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOneRaw(+id);
     return toRawComicIssueDto(comicIssue);
+  }
+
+  @Get('get-upcoming-collectibles')
+  async findManyUpcoming(
+    @Query() query: UpcomingCollectibleIssueParams,
+  ): Promise<ComicIssueDto[]> {
+    const comicIssues = await this.comicIssueService.findManyUpcoming(query);
+    return toComicIssueDtoArray(comicIssues);
   }
 
   /* Get specific comic issue's pages */

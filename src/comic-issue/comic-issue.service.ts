@@ -11,7 +11,7 @@ import {
   UpdateComicIssueDto,
   UpdateComicIssueFilesDto,
 } from './dto/update-comic-issue.dto';
-import { isEmpty, isNil } from 'lodash';
+import { isEmpty, isNil, isNull } from 'lodash';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import {
   Prisma,
@@ -24,6 +24,7 @@ import {
   CollectibleComicCollection,
   TokenStandard,
   CandyMachine,
+  CouponType,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -55,6 +56,7 @@ import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { BasicComicIssueParams } from './dto/basic-comic-issue-params.dto';
 import { ComicIssueStatusProperty } from './dto/types';
+import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -231,7 +233,72 @@ export class ComicIssueService {
     return normalizedComicIssues;
   }
 
-  async findOnePublic(where: Prisma.ComicIssueWhereInput) {
+  async findManyUpcoming(
+    query: UpcomingCollectibleIssueParams,
+  ): Promise<ComicIssueInput[]> {
+    try {
+      const now = new Date();
+      const comicIssues = await this.prisma.comicIssue.findMany({
+        where: {
+          collectibleComicCollection: {
+            candyMachines: {
+              some: {
+                coupons: {
+                  some: {
+                    type: CouponType.PublicUser,
+                    startsAt: {
+                      gt: now,
+                      not: null,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        include: {
+          collectibleComicCollection: {
+            include: {
+              candyMachines: {
+                include: {
+                  coupons: { where: { type: CouponType.PublicUser } },
+                },
+              },
+            },
+          },
+        },
+        skip: query.skip,
+        take: query.take,
+      });
+
+      return comicIssues.flatMap((issue) => {
+        return issue.collectibleComicCollection.candyMachines.map(
+          (candyMachine): ComicIssueInput => {
+            const publicCoupon = candyMachine.coupons.find(
+              (coupon) => coupon.type == CouponType.PublicUser,
+            );
+            return {
+              ...issue,
+              collectibleInfo: {
+                collectionAddress: issue.collectibleComicCollection.address,
+                candyMachineAddress: candyMachine.address,
+                startsAt: publicCoupon?.startsAt,
+              },
+            };
+          },
+        );
+      });
+    } catch (e) {
+      console.error('Failed to fetch upcoming collectible issue: ', e);
+      throw new BadRequestException(
+        'Failed to fetch upcoming collectible issue',
+      );
+    }
+  }
+
+  async findOnePublic(
+    where: Prisma.ComicIssueWhereInput,
+  ): Promise<ComicIssueInput> {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where,
       include: {
@@ -252,11 +319,17 @@ export class ComicIssueService {
 
     const id = comicIssue.id;
     const activeCandyMachine = await this.findActiveCandyMachine(id);
+    const isCollectible = !isNull(comicIssue.collectibleComicCollection);
 
     return {
       ...comicIssue,
       activeCandyMachineAddress: activeCandyMachine?.address,
-      collectionAddress: comicIssue.collectibleComicCollection?.address,
+      collectibleInfo: isCollectible
+        ? {
+            candyMachineAddress: activeCandyMachine?.address,
+            collectionAddress: comicIssue.collectibleComicCollection.address,
+          }
+        : undefined,
       stats: {
         favouritesCount: 0,
         ratersCount: 0,

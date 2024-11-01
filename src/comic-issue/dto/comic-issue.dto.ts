@@ -54,6 +54,11 @@ import {
 import { ifDefined } from 'src/utils/lodash';
 import { With } from 'src/types/shared';
 import { IsNumberRange } from 'src/decorators/IsNumberRange';
+import {
+  ComicIssueCollectibleInfoDto,
+  ComicIssueCollectibleInfoInput,
+  toComicIssueCollectibleInfoDto,
+} from './comic-issue-collectible-info.dto';
 
 export class ComicIssueDto {
   @IsPositive()
@@ -128,12 +133,12 @@ export class ComicIssueDto {
   myStats?: UserComicIssueDto;
 
   @IsOptional()
-  @IsString()
-  activeCandyMachineAddress?: string;
+  @Type(() => ComicIssueCollectibleInfoDto)
+  collectibleInfo?: ComicIssueCollectibleInfoDto;
 
   @IsOptional()
   @IsString()
-  collectionAddress?: string;
+  activeCandyMachineAddress?: string;
 
   @IsSolanaAddress()
   creatorAddress: string;
@@ -168,10 +173,7 @@ type WithStats = { stats?: ComicIssueStats };
 type WithMyStats = { myStats?: UserComicIssue & { canRead: boolean } };
 /** @deprecated */
 type WithActiveCandyMachineAddress = { activeCandyMachineAddress?: string };
-type WithCollectibleData = {
-  activeCandyMachineAddress?: string;
-  collectionAddress?: string;
-};
+type WithCollectibleInfo = { collectibleInfo?: ComicIssueCollectibleInfoInput };
 type WithCollaborators = { collaborators?: ComicIssueCollaborator[] };
 type WithStatelessCovers = { statelessCovers?: StatelessCover[] };
 type WithStatefulCovers = { statefulCovers?: StatefulCover[] };
@@ -182,7 +184,7 @@ export type ComicIssueInput = With<
     WithComic,
     WithGenres,
     WithStats,
-    WithCollectibleData,
+    WithCollectibleInfo,
     WithMyStats,
     WithActiveCandyMachineAddress,
     WithCollaborators,
@@ -214,11 +216,14 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     isPopular: !!issue.popularizedAt,
     isVerified: !!issue.verifiedAt,
     creatorAddress: issue.creatorAddress,
-    collectionAddress: issue.collectionAddress,
     creator: ifDefined(issue.comic?.creator, toPartialCreatorDto),
     comic: ifDefined(issue.comic, toPartialComicDto),
     genres: ifDefined(genres, toPartialGenreDtoArray),
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
+    collectibleInfo: ifDefined(
+      issue.collectibleInfo,
+      toComicIssueCollectibleInfoDto,
+    ),
     // statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
     statelessCovers: toStatelessCoverDtoArray(issue.statelessCovers),
     // royaltyWallets: ifDefined(issue.royaltyWallets, toRoyaltyWalletsDtoArray),
