@@ -10,7 +10,7 @@ export enum CarouselTagTitle {
   UpcomingMint = 'Minting in',
   Launchpad = 'To launchpad',
   Tensor = 'Trade on Tensor',
-  Checkout = 'Check out',
+  Explore = 'Explore',
 }
 
 export enum CarouselTagType {

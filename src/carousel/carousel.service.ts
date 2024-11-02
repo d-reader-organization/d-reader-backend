@@ -90,7 +90,7 @@ export class CarouselService {
             type: CarouselTagType.Chip,
           });
           tags.push({
-            title: CarouselTagTitle.Checkout,
+            title: CarouselTagTitle.Explore,
             type: CarouselTagType.Button,
           });
         } else if (slide.comicSlug) {
@@ -183,7 +183,7 @@ export class CarouselService {
       });
     }
     tags.push({
-      title: CarouselTagTitle.Checkout,
+      title: CarouselTagTitle.Explore,
       type: CarouselTagType.Button,
     });
   }
@@ -206,7 +206,7 @@ export class CarouselService {
       });
     }
     tags.push({
-      title: CarouselTagTitle.Checkout,
+      title: CarouselTagTitle.Explore,
       type: CarouselTagType.Button,
     });
   }
@@ -232,7 +232,7 @@ export class CarouselService {
       });
 
       tags.push({
-        title: CarouselTagTitle.Checkout,
+        title: CarouselTagTitle.Explore,
         type: CarouselTagType.Button,
       });
       return;
