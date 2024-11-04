@@ -41,6 +41,7 @@ model User {
   devices                        Device[]
   consents                       UserPrivacyConsent[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
+  interestExpressed              UserInterestedReceipt[]
 }
 
 model Wallet {
@@ -53,6 +54,7 @@ model Wallet {
   mintReceipts                   CandyMachineReceipt[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet[]
   digitalAssets                  DigitalAsset[]
+  interestExpressed              UserInterestedReceipt[]
 }
 
 enum Role {
@@ -749,6 +751,19 @@ model DigitalAssetTrait {
   value        String
   assetAddress String
   digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
+}
+
+model UserInterestedReceipt {
+  id                   Int      @id @default(autoincrement())
+  projectId            Int
+  walletAddress        String
+  wallet               Wallet   @relation(fields: [walletAddress], references: [address])
+  transactionSignature String   @unique
+  timestamp            DateTime
+  userId               Int
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@unique([projectId,userId])
 }
 
 // TODO: remove or change the way referrals work

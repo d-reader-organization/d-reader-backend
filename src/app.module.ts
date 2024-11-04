@@ -39,6 +39,7 @@ import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/d
 import { TwitterModule } from './twitter/twitter.module';
 import { BlinkModule } from './blink/blink.module';
 import { MutexModule } from './mutex/mutex.module';
+import { InvestModule } from './invest/invest.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { MutexModule } from './mutex/mutex.module';
     TwitterModule,
     BlinkModule,
     MutexModule,
+    InvestModule,
   ],
   controllers: [AppController],
   providers: [
