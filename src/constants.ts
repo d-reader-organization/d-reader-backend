@@ -108,6 +108,8 @@ export const ONE_RARITY_SHARE: RarityShare[] = [
 ];
 
 export const SOL_ADDRESS = 'So11111111111111111111111111111111111111112';
+export const USDC_ADDRESS = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
 export const MIN_COMPUTE_PRICE = 600_000;
 export const MIN_COMPUTE_PRICE_IX = ComputeBudgetProgram.setComputeUnitPrice({
   microLamports: MIN_COMPUTE_PRICE,

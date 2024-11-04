@@ -59,6 +59,8 @@ import { MINT_MUTEX_IDENTIFIER, SOL_ADDRESS } from 'src/constants';
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
+import { InvestService } from 'src/invest/invest.service';
+import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
@@ -70,6 +72,7 @@ export class TransactionController {
     private readonly auctionHouseService: AuctionHouseService,
     private readonly transactionService: TransactionService,
     private readonly digitalAssetService: DigitalAssetService,
+    private readonly investService: InvestService,
   ) {}
 
   /** @deprecated */
@@ -90,6 +93,23 @@ export class TransactionController {
       1,
       user ? user.id : null,
     );
+  }
+
+  @UserAuth()
+  @Get('/express-interest')
+  async constructExpressInterestTransaction(
+    @Query() query: ExpressInterestTransactionParams,
+    @UserEntity() user: UserPayload,
+  ) {
+    const splTokenAddress = query.splTokenAddress ?? SOL_ADDRESS;
+    const transaction =
+      await this.investService.createExpressInterestTransaction(
+        query.walletAddress,
+        query.projectId,
+        user.id,
+        splTokenAddress,
+      );
+    return transaction;
   }
 
   /* For blink clients to make request for mint transaction */

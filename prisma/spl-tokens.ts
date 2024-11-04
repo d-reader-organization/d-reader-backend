@@ -1,5 +1,6 @@
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { Prisma } from '@prisma/client';
+import { USDC_ADDRESS } from '../src/constants';
 
 export const splTokensToSeed: Prisma.SplTokenCreateManyArgs['data'] = [
   {
@@ -12,7 +13,7 @@ export const splTokensToSeed: Prisma.SplTokenCreateManyArgs['data'] = [
   },
   {
     name: 'USD Coin',
-    address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    address: USDC_ADDRESS,
     priority: 2,
     symbol: '$USDC',
     decimals: 6,

@@ -30,6 +30,7 @@ Table User {
   devices Device [not null]
   consents UserPrivacyConsent [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
+  interestExpressed UserInterestedReceipt [not null]
 }
 
 Table Wallet {
@@ -42,6 +43,7 @@ Table Wallet {
   mintReceipts CandyMachineReceipt [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
   digitalAssets DigitalAsset [not null]
+  interestExpressed UserInterestedReceipt [not null]
 }
 
 Table Creator {
@@ -694,6 +696,21 @@ Table DigitalAssetTrait {
   digitalAsset DigitalAsset [not null]
 }
 
+Table UserInterestedReceipt {
+  id Int [pk, increment]
+  projectId Int [not null]
+  walletAddress String [not null]
+  wallet Wallet [not null]
+  transactionSignature String [unique, not null]
+  timestamp DateTime [not null]
+  userId Int [not null]
+  user User [not null]
+
+  indexes {
+    (projectId, userId) [unique]
+  }
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -883,3 +900,7 @@ Ref: OneOfOne.address - DigitalAsset.address
 Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
 
 Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
+
+Ref: UserInterestedReceipt.walletAddress > Wallet.address
+
+Ref: UserInterestedReceipt.userId > User.id
