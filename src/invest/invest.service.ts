@@ -1,6 +1,7 @@
 import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
+  transferSol,
   transferTokens,
 } from '@metaplex-foundation/mpl-toolbox';
 import { encodeUmiTransaction } from '../utils/transactions';
@@ -14,7 +15,11 @@ import {
   USDC_ADDRESS,
 } from '../constants';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { publicKey, createNoopSigner } from '@metaplex-foundation/umi';
+import {
+  publicKey,
+  createNoopSigner,
+  lamports,
+} from '@metaplex-foundation/umi';
 import { Umi } from '@metaplex-foundation/umi';
 import { PrismaService } from 'nestjs-prisma';
 import { getConnection, umi } from '../utils/metaplex';
@@ -58,24 +63,37 @@ export class InvestService {
 
     const signer = createNoopSigner(wallet);
     const fundsTreasury = publicKey(FUNDS_DESTINATION_ADDRESS);
-    const amount = isSol
-      ? solPrice * LAMPORTS_PER_SOL
-      : usdcPrice * Math.pow(10, 6);
 
-    const source = isSol
-      ? wallet
-      : findAssociatedTokenPda(this.umi, { mint, owner: wallet });
-    const destination = isSol
-      ? fundsTreasury
-      : findAssociatedTokenPda(this.umi, { mint, owner: fundsTreasury });
+    if (isSol) {
+      const amount = solPrice * LAMPORTS_PER_SOL;
+      const transferTransaction = await setComputeUnitPrice(this.umi, {
+        microLamports: MIN_COMPUTE_PRICE,
+      })
+        .add(
+          transferSol(this.umi, {
+            source: signer,
+            destination: fundsTreasury,
+            amount: lamports(amount),
+          }),
+        )
+        .buildAndSign({ ...this.umi, payer: signer });
 
-    const transferTransaction = await setComputeUnitPrice(this.umi, {
-      microLamports: MIN_COMPUTE_PRICE,
-    })
-      .add(transferTokens(this.umi, { source, destination, amount }))
-      .buildAndSign({ ...this.umi, payer: signer });
+      return encodeUmiTransaction(transferTransaction);
+    } else {
+      const amount = usdcPrice * Math.pow(10, 6);
+      const source = findAssociatedTokenPda(this.umi, { mint, owner: wallet });
+      const destination = findAssociatedTokenPda(this.umi, {
+        mint,
+        owner: fundsTreasury,
+      });
 
-    return encodeUmiTransaction(transferTransaction);
+      const transferTransaction = await setComputeUnitPrice(this.umi, {
+        microLamports: MIN_COMPUTE_PRICE,
+      })
+        .add(transferTokens(this.umi, { source, destination, amount }))
+        .buildAndSign({ ...this.umi, payer: signer });
+      return encodeUmiTransaction(transferTransaction);
+    }
   }
 
   async expressUserInterest(
