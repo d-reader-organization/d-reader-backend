@@ -1,11 +1,6 @@
-import { IsNumber, IsString } from 'class-validator';
-import { TransformStringToNumber } from 'src/utils/transform';
+import { IsString } from 'class-validator';
 
 export class ExpressInterestDto {
   @IsString()
-  transactionSignature: string;
-
-  @TransformStringToNumber()
-  @IsNumber()
-  projectId: number;
+  transaction: string;
 }

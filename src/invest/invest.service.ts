@@ -79,50 +79,65 @@ export class InvestService {
   }
 
   async expressUserInterest(
-    transactionSignature: string,
+    expressInterestTransaction: string,
     projectId: number,
     userId: number,
   ) {
-    const transaction = VersionedTransaction.deserialize(
-      Buffer.from(transactionSignature, 'base64'),
-    );
-
-    let lookupTableAccounts: AddressLookupTableAccount;
-    if (transaction.message.addressTableLookups.length) {
-      const lookupTableAddress =
-        transaction.message.addressTableLookups[0].accountKey;
-
-      const lookupTable = await this.connection.getAddressLookupTable(
-        lookupTableAddress,
+    try {
+      const transaction = VersionedTransaction.deserialize(
+        Buffer.from(expressInterestTransaction, 'base64'),
       );
-      lookupTableAccounts = lookupTable.value;
-    }
 
-    const instructions = TransactionMessage.decompile(transaction.message, {
-      addressLookupTableAccounts: lookupTableAccounts
-        ? [lookupTableAccounts]
-        : [],
-    });
+      let lookupTableAccounts: AddressLookupTableAccount;
+      if (transaction.message.addressTableLookups.length) {
+        const lookupTableAddress =
+          transaction.message.addressTableLookups[0].accountKey;
 
-    const baseInstruction = instructions.instructions.at(-1);
-    const address = baseInstruction.keys[0].pubkey.toString();
+        const lookupTable = await this.connection.getAddressLookupTable(
+          lookupTableAddress,
+        );
+        lookupTableAccounts = lookupTable.value;
+      }
 
-    await this.prisma.userInterestedReceipt.create({
-      data: {
-        transactionSignature,
-        projectId,
-        timestamp: new Date(),
-        wallet: {
-          connectOrCreate: {
-            where: { address },
-            create: { address },
+      const instructions = TransactionMessage.decompile(transaction.message, {
+        addressLookupTableAccounts: lookupTableAccounts
+          ? [lookupTableAccounts]
+          : [],
+      });
+
+      const baseInstruction = instructions.instructions.at(-1);
+      const address = baseInstruction.keys[0].pubkey.toString();
+
+      const latestBlockhash = await this.connection.getLatestBlockhash({
+        commitment: 'confirmed',
+      });
+      const transactionSignature = await this.connection.sendTransaction(
+        transaction,
+      );
+      await this.connection.confirmTransaction({
+        ...latestBlockhash,
+        signature: transactionSignature,
+      });
+
+      await this.prisma.userInterestedReceipt.create({
+        data: {
+          transactionSignature,
+          projectId,
+          timestamp: new Date(),
+          wallet: {
+            connectOrCreate: {
+              where: { address },
+              create: { address },
+            },
+          },
+          user: {
+            connect: { id: userId },
           },
         },
-        user: {
-          connect: { id: userId },
-        },
-      },
-    });
+      });
+    } catch (e) {
+      console.error('Failed to send transaction to express interest', e);
+    }
   }
 
   async findAllInvestProjects() {
