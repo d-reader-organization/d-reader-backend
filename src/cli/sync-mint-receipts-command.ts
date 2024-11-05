@@ -11,7 +11,7 @@ import {
   Connection,
   TransactionMessage,
 } from '@solana/web3.js';
-import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
+import { safeFetchAssetV1 } from '@metaplex-foundation/mpl-core';
 
 @Command({
   name: 'sync-mint-receipts',
@@ -37,7 +37,16 @@ export class SyncMintReceptsCommand extends CommandRunner {
   syncMintReceipts = async () => {
     log('\n🏗️  Syncing...');
     const receipts = await this.prisma.candyMachineReceipt.findMany({
-      where: { status: 'Processing' },
+      where: {
+        OR: [
+          { status: 'Processing' },
+          {
+            collectibleComics: {
+              none: {},
+            },
+          },
+        ],
+      },
     });
 
     for await (const receipt of receipts) {
@@ -126,11 +135,15 @@ export class SyncMintReceptsCommand extends CommandRunner {
     });
 
     try {
-      const assets = await Promise.all(
-        assetAccounts.map((account) =>
-          fetchAssetV1(this.umi, publicKey(account)),
-        ),
-      );
+      const assets = (
+        await Promise.all(
+          assetAccounts.map((account) => {
+            const assetData = safeFetchAssetV1(this.umi, publicKey(account));
+            return assetData || null;
+          }),
+        )
+      ).filter(Boolean);
+
       await this.heliusService.indexCoreAssets(
         assets,
         candyMachineAddress,
