@@ -12,17 +12,14 @@ import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 export class InvestController {
   constructor(private readonly investService: InvestService) {}
   @UserAuth()
-  @Post('/express-interest')
+  @Post('/express-interest/:id')
   async expressInterest(
+    @Param('id') id: string,
     @Body() expressInterestDto: ExpressInterestDto,
     @UserEntity() user: UserPayload,
   ) {
-    const { transactionSignature, projectId } = expressInterestDto;
-    return this.investService.expressUserInterest(
-      transactionSignature,
-      projectId,
-      user.id,
-    );
+    const { transaction } = expressInterestDto;
+    return this.investService.expressUserInterest(transaction, +id, user.id);
   }
 
   @Get('/get')
