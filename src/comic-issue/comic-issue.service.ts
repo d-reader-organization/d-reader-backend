@@ -509,7 +509,13 @@ export class ComicIssueService {
   }
 
   async getPreviewPages(comicIssueId: number, userId?: number) {
-    const getPages = this.comicPageService.findAll(comicIssueId, true);
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id: comicIssueId },
+    });
+    const getPages = this.comicPageService.findAll(
+      comicIssueId,
+      comicIssue.isFreeToRead ? undefined : true,
+    );
 
     if (userId) {
       const updateUserStats = this.userComicIssueService.getAndUpdateUserStats(
