@@ -25,6 +25,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { getConnection, umi } from '../utils/metaplex';
 import { Connection } from '@solana/web3.js';
 import { isNull } from 'lodash';
+import { ProjectInput } from './dto/project.dto';
 
 @Injectable()
 export class InvestService {
@@ -160,7 +161,7 @@ export class InvestService {
     }
   }
 
-  async findAllInvestProjects() {
+  async findAllInvestProjects(): Promise<ProjectInput[]> {
     const query = await this.prisma.userInterestedReceipt.groupBy({
       by: ['projectSlug'],
       _count: {
@@ -172,13 +173,16 @@ export class InvestService {
     });
 
     const projectInterestCounts = query.map((arg) => ({
-      id: arg.projectSlug,
-      count: arg._count.projectSlug,
+      slug: arg.projectSlug,
+      countOfUserExpressedInterest: arg._count.projectSlug,
     }));
     return projectInterestCounts;
   }
 
-  async findOneInvestProject(projectSlug: string, userId?: number) {
+  async findOneInvestProject(
+    projectSlug: string,
+    userId?: number,
+  ): Promise<ProjectInput> {
     const query = userId
       ? await this.prisma.userInterestedReceipt.findUnique({
           where: { projectSlug_userId: { projectSlug, userId } },
@@ -187,6 +191,10 @@ export class InvestService {
 
     const countOfUserExpressedInterest =
       await this.prisma.userInterestedReceipt.count({ where: { projectSlug } });
-    return { countOfUserExpressedInterest, isInvested: !isNull(query) };
+    return {
+      slug: projectSlug,
+      countOfUserExpressedInterest,
+      isUserInterested: !isNull(query),
+    };
   }
 }

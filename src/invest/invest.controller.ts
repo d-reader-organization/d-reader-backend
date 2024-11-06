@@ -6,6 +6,7 @@ import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
+import { toProjectDto, toProjectDtoArray } from './dto/project.dto';
 
 @ApiTags('Invest')
 @Controller('invest')
@@ -29,7 +30,8 @@ export class InvestController {
 
   @Get('/get')
   async findAll() {
-    return this.investService.findAllInvestProjects();
+    const projects = await this.investService.findAllInvestProjects();
+    return toProjectDtoArray(projects);
   }
 
   @OptionalUserAuth()
@@ -39,6 +41,11 @@ export class InvestController {
     @UserEntity() user?: UserPayload,
   ) {
     const userId = user ? user.id : null;
-    return this.investService.findOneInvestProject(projectSlug, userId);
+
+    const project = await this.investService.findOneInvestProject(
+      projectSlug,
+      userId,
+    );
+    return toProjectDto(project);
   }
 }
