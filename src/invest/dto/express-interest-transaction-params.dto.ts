@@ -1,6 +1,5 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { TransformStringToNumber } from 'src/utils/transform';
 
 export class ExpressInterestTransactionParams {
   @IsSolanaAddress()
@@ -10,7 +9,6 @@ export class ExpressInterestTransactionParams {
   @IsSolanaAddress()
   splTokenAddress?: string;
 
-  @TransformStringToNumber()
-  @IsNumber()
-  projectId: number;
+  @IsString()
+  projectSlug: string;
 }
