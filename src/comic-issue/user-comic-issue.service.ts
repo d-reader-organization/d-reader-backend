@@ -145,16 +145,33 @@ export class UserComicIssueService {
     return Number(cheapestItem.price);
   }
 
-  getUserStats(comicIssueId: number, userId: number): Promise<UserComicIssue> {
-    return this.prisma.userComicIssue.upsert({
+  async getAndUpdateUserStats(
+    comicIssueId: number,
+    userId: number,
+  ): Promise<UserComicIssue> {
+    const userComicIssueStats = await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: {
         userId,
         comicIssueId,
         viewedAt: new Date(),
       },
+      include: { comicIssue: true },
       update: { readAt: new Date() },
     });
+
+    const comicSlug = userComicIssueStats.comicIssue.comicSlug;
+    await this.prisma.userComic.upsert({
+      where: { comicSlug_userId: { comicSlug, userId } },
+      create: {
+        userId,
+        comicSlug,
+        viewedAt: new Date(),
+      },
+      update: { viewedAt: new Date() },
+    });
+
+    return userComicIssueStats;
   }
 
   async checkCanUserRead(

@@ -385,7 +385,10 @@ export class ComicIssueService {
     const id = comicIssue.id;
     const findActiveCandyMachine = this.findActiveCandyMachine(id);
     const getStats = this.userComicIssueService.getComicIssueStats(id);
-    const getMyStats = this.userComicIssueService.getUserStats(id, userId);
+    const getMyStats = this.userComicIssueService.getAndUpdateUserStats(
+      id,
+      userId,
+    );
     const checkCanUserRead = this.userComicIssueService.checkCanUserRead(
       id,
       userId,
@@ -496,14 +499,29 @@ export class ComicIssueService {
 
     const getPages = this.comicPageService.findAll(comicIssueId, isPreviewable);
     const readComic = this.read(comicIssueId, userId);
-    const [pages] = await Promise.all([getPages, readComic]);
+    const viewComic = this.userComicIssueService.getAndUpdateUserStats(
+      comicIssueId,
+      userId,
+    );
 
+    const [pages] = await Promise.all([getPages, readComic, viewComic]);
     return pages;
   }
 
-  async getPreviewPages(comicIssueId: number) {
-    const pages = await this.comicPageService.findAll(comicIssueId, true);
-    return pages;
+  async getPreviewPages(comicIssueId: number, userId?: number) {
+    const getPages = this.comicPageService.findAll(comicIssueId, true);
+
+    if (userId) {
+      const updateUserStats = this.userComicIssueService.getAndUpdateUserStats(
+        comicIssueId,
+        userId,
+      );
+      const [pages] = await Promise.all([getPages, updateUserStats]);
+
+      return pages;
+    }
+
+    return await getPages;
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
