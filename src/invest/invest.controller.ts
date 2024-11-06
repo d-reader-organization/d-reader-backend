@@ -12,14 +12,19 @@ import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 export class InvestController {
   constructor(private readonly investService: InvestService) {}
   @UserAuth()
-  @Post('/express-interest/:id')
+  @Post('/express-interest/:slug')
   async expressInterest(
-    @Param('id') id: string,
+    @Param('slug') slug: string,
     @Body() expressInterestDto: ExpressInterestDto,
     @UserEntity() user: UserPayload,
   ) {
-    const { transaction } = expressInterestDto;
-    return this.investService.expressUserInterest(transaction, +id, user.id);
+    const { transaction, expressedAmount } = expressInterestDto;
+    return this.investService.expressUserInterest(
+      transaction,
+      slug,
+      expressedAmount,
+      user.id,
+    );
   }
 
   @Get('/get')
@@ -28,12 +33,12 @@ export class InvestController {
   }
 
   @OptionalUserAuth()
-  @Get('/get/:projectId')
+  @Get('/get/:projectSlug')
   async findOne(
-    @Param('projectId') projectId: number,
+    @Param('projectSlug') projectSlug: string,
     @UserEntity() user?: UserPayload,
   ) {
     const userId = user ? user.id : null;
-    return this.investService.findOneInvestProject(projectId, userId);
+    return this.investService.findOneInvestProject(projectSlug, userId);
   }
 }

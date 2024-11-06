@@ -105,7 +105,7 @@ export class TransactionController {
     const transaction =
       await this.investService.createExpressInterestTransaction(
         query.walletAddress,
-        query.projectId,
+        query.projectSlug,
         user.id,
         splTokenAddress,
       );

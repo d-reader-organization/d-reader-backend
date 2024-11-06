@@ -38,7 +38,7 @@ export class InvestService {
 
   async createExpressInterestTransaction(
     walletAddress: string,
-    projectId: number,
+    projectSlug: string,
     userId: number,
     splTokenAddress: string,
   ) {
@@ -48,7 +48,7 @@ export class InvestService {
 
     const isUserAlreadyInvested =
       await this.prisma.userInterestedReceipt.findUnique({
-        where: { projectId_userId: { projectId, userId } },
+        where: { projectSlug_userId: { projectSlug, userId } },
       });
     if (isUserAlreadyInvested) {
       throw new BadRequestException('User already expressed interest !');
@@ -98,7 +98,8 @@ export class InvestService {
 
   async expressUserInterest(
     expressInterestTransaction: string,
-    projectId: number,
+    projectSlug: string,
+    expressedAmount: number,
     userId: number,
   ) {
     try {
@@ -140,8 +141,9 @@ export class InvestService {
       await this.prisma.userInterestedReceipt.create({
         data: {
           transactionSignature,
-          projectId,
+          projectSlug,
           timestamp: new Date(),
+          expressedAmount,
           wallet: {
             connectOrCreate: {
               where: { address },
@@ -160,31 +162,31 @@ export class InvestService {
 
   async findAllInvestProjects() {
     const query = await this.prisma.userInterestedReceipt.groupBy({
-      by: ['projectId'],
+      by: ['projectSlug'],
       _count: {
-        projectId: true,
+        projectSlug: true,
       },
       orderBy: {
-        projectId: 'asc',
+        projectSlug: 'asc',
       },
     });
 
     const projectInterestCounts = query.map((arg) => ({
-      id: arg.projectId,
-      count: arg._count.projectId,
+      id: arg.projectSlug,
+      count: arg._count.projectSlug,
     }));
     return projectInterestCounts;
   }
 
-  async findOneInvestProject(projectId: number, userId?: number) {
+  async findOneInvestProject(projectSlug: string, userId?: number) {
     const query = userId
       ? await this.prisma.userInterestedReceipt.findUnique({
-          where: { projectId_userId: { projectId, userId } },
+          where: { projectSlug_userId: { projectSlug, userId } },
         })
       : null;
 
     const countOfUserExpressedInterest =
-      await this.prisma.userInterestedReceipt.count({ where: { projectId } });
+      await this.prisma.userInterestedReceipt.count({ where: { projectSlug } });
     return { countOfUserExpressedInterest, isInvested: !isNull(query) };
   }
 }

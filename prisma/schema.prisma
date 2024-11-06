@@ -755,15 +755,16 @@ model DigitalAssetTrait {
 
 model UserInterestedReceipt {
   id                   Int      @id @default(autoincrement())
-  projectId            Int
+  projectSlug          String
   walletAddress        String
   wallet               Wallet   @relation(fields: [walletAddress], references: [address])
   transactionSignature String   @unique
   timestamp            DateTime
   userId               Int
   user                 User     @relation(fields: [userId], references: [id])
+  expressedAmount      Int      @default(0)
 
-  @@unique([projectId,userId])
+  @@unique([projectSlug,userId])
 }
 
 // TODO: remove or change the way referrals work

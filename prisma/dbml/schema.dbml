@@ -698,16 +698,17 @@ Table DigitalAssetTrait {
 
 Table UserInterestedReceipt {
   id Int [pk, increment]
-  projectId Int [not null]
+  projectSlug String [not null]
   walletAddress String [not null]
   wallet Wallet [not null]
   transactionSignature String [unique, not null]
   timestamp DateTime [not null]
   userId Int [not null]
   user User [not null]
+  expressedAmount Int [not null, default: 0]
 
   indexes {
-    (projectId, userId) [unique]
+    (projectSlug, userId) [unique]
   }
 }
 
