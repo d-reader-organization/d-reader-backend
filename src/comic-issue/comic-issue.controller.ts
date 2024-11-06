@@ -83,6 +83,7 @@ import {
   toBasicComicIssueDtoArray,
 } from './dto/basic-comic-issue.dto';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
+import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
@@ -195,9 +196,15 @@ export class ComicIssueController {
     return toComicPageDtoArray(pages);
   }
 
+  @OptionalUserAuth()
   @Get('get/:id/preview-pages')
-  async getPreviewPages(@Param('id') id: string): Promise<ComicPageDto[]> {
-    const pages = await this.comicIssueService.getPreviewPages(+id);
+  async getPreviewPages(
+    @Param('id') id: string,
+    @UserEntity() user?: UserPayload,
+  ): Promise<ComicPageDto[]> {
+    const userId = user ? user.id : undefined;
+
+    const pages = await this.comicIssueService.getPreviewPages(+id, userId);
     return toComicPageDtoArray(pages);
   }
 
