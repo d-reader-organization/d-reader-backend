@@ -7,6 +7,7 @@ import { UserPayload } from '../auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { toProjectDto, toProjectDtoArray } from './dto/project.dto';
+import { toUserInterestedReceiptDtoArray } from './dto/userInterestedReceipt.dto';
 
 @ApiTags('Invest')
 @Controller('invest')
@@ -47,5 +48,13 @@ export class InvestController {
       userId,
     );
     return toProjectDto(project);
+  }
+
+  @Get('/get/:projectSlug/interest-receipts')
+  async find(@Param('projectSlug') projectSlug: string) {
+    const receipts = await this.investService.findUserInterestedReceipts(
+      projectSlug,
+    );
+    return toUserInterestedReceiptDtoArray(receipts);
   }
 }
