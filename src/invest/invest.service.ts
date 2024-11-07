@@ -197,4 +197,12 @@ export class InvestService {
       isUserInterested: !isNull(query),
     };
   }
+
+  async findUserInterestedReceipts(projectSlug: string) {
+    const receipts = await this.prisma.userInterestedReceipt.findMany({
+      where: { projectSlug },
+      include: { user: true },
+    });
+    return receipts;
+  }
 }
