@@ -52,14 +52,14 @@ export class InvestService {
         where: { projectSlug_userId: { projectSlug, userId } },
       });
     if (isUserAlreadyInvested) {
-      throw new BadRequestException('User already expressed interest !');
+      throw new BadRequestException("You've already expressed interest!");
     }
 
     const isSol = splTokenAddress === SOL_ADDRESS;
     const mint = publicKey(splTokenAddress);
     const wallet = publicKey(walletAddress);
 
-    const solPrice = 0.006;
+    const solPrice = 0.005;
     const usdcPrice = 1;
 
     const signer = createNoopSigner(wallet);
