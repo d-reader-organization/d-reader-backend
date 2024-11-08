@@ -189,11 +189,15 @@ export class InvestService {
         })
       : null;
 
-    const countOfUserExpressedInterest =
-      await this.prisma.userInterestedReceipt.count({ where: { projectSlug } });
+    const data = await this.prisma.userInterestedReceipt.aggregate({
+      where: { projectSlug },
+      _count: { id: true },
+      _sum: { expressedAmount: true },
+    });
     return {
       slug: projectSlug,
-      countOfUserExpressedInterest,
+      countOfUserExpressedInterest: data?._count?.id || 0,
+      expectedPledgedAmount: data?._sum?.expressedAmount || 0,
       isUserInterested: !isNull(query),
     };
   }
