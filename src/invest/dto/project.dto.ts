@@ -16,6 +16,10 @@ export class ProjectDto {
   countOfUserExpressedInterest: number;
 
   @IsOptional()
+  @IsNumber()
+  expectedPledgedAmount?: number;
+
+  @IsOptional()
   @IsBoolean()
   isUserInterested?: boolean;
 }
@@ -23,6 +27,7 @@ export class ProjectDto {
 export type ProjectInput = {
   slug: string;
   countOfUserExpressedInterest: number;
+  expectedPledgedAmount?: number;
   isUserInterested?: boolean;
 };
 
@@ -31,6 +36,7 @@ export function toProjectDto(projectInput: ProjectInput) {
     slug: projectInput.slug,
     countOfUserExpressedInterest: projectInput.countOfUserExpressedInterest,
     isUserInterested: projectInput.isUserInterested,
+    expectedPledgedAmount: projectInput.expectedPledgedAmount,
   };
 
   return plainToInstance(ProjectDto, plainProjectDto);
