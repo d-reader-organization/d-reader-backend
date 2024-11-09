@@ -206,7 +206,7 @@ export class InvestService {
     const receipts = await this.prisma.userInterestedReceipt.findMany({
       where: { projectSlug },
       include: { user: true },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: 'asc' },
     });
     return receipts;
   }
