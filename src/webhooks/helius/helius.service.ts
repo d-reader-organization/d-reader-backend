@@ -4,6 +4,7 @@ import {
   DAS,
   EnrichedTransaction,
   Helius,
+  InnerInstruction,
   Instruction,
   Interface,
   Scope,
@@ -194,7 +195,9 @@ export class HeliusService {
       return;
     }
 
-    const handleInstruction = async (instruction: Instruction) => {
+    const handleInstruction = async (
+      instruction: Instruction | InnerInstruction,
+    ) => {
       if (!instruction.data) return;
 
       const data = bs58.decode(instruction.data);
@@ -297,6 +300,11 @@ export class HeliusService {
           }
           break;
         default:
+          if ('innerInstructions' in instruction) {
+            for (const innerInstruction of instruction.innerInstructions) {
+              await handleInstruction(innerInstruction);
+            }
+          }
           return;
       }
     };
@@ -310,7 +318,7 @@ export class HeliusService {
     }
   }
 
-  private async handleAssetBurn(instruction: Instruction) {
+  private async handleAssetBurn(instruction: Instruction | InnerInstruction) {
     const address = instruction.accounts.at(0);
 
     try {
@@ -324,7 +332,9 @@ export class HeliusService {
     }
   }
 
-  private async handleInitEditionSale(instruction: Instruction) {
+  private async handleInitEditionSale(
+    instruction: Instruction | InnerInstruction,
+  ) {
     const data = getInitEditionSaleInstructionDataSerializer().deserialize(
       bs58.decode(instruction.data),
     )[0];
@@ -370,7 +380,7 @@ export class HeliusService {
     });
   }
 
-  private async handleBuyEdition(instruction: Instruction) {
+  private async handleBuyEdition(instruction: Instruction | InnerInstruction) {
     const address = instruction.accounts.at(4);
     const ownerAddress = instruction.accounts.at(6);
     const collectionAddress = instruction.accounts.at(5);
@@ -398,7 +408,7 @@ export class HeliusService {
   }
 
   private async handleAssetSale(
-    instruction: Instruction,
+    instruction: Instruction | InnerInstruction,
     transactionSignature: string,
   ) {
     const buyerAddress = instruction.accounts.at(0);
@@ -459,7 +469,7 @@ export class HeliusService {
     await this.prisma.$transaction([createSale, updateListing, updateBid]);
   }
 
-  private async handleCancelBid(instruction: Instruction) {
+  private async handleCancelBid(instruction: Instruction | InnerInstruction) {
     const bidderAddress = instruction.accounts.at(0);
     const assetAddress = instruction.accounts.at(1);
 
@@ -475,7 +485,9 @@ export class HeliusService {
     });
   }
 
-  private async handleCancelListing(instruction: Instruction) {
+  private async handleCancelListing(
+    instruction: Instruction | InnerInstruction,
+  ) {
     const assetAddress = instruction.accounts.at(1);
 
     await this.prisma.listing.update({
@@ -484,7 +496,9 @@ export class HeliusService {
     });
   }
 
-  private async handleListingReprice(instruction: Instruction) {
+  private async handleListingReprice(
+    instruction: Instruction | InnerInstruction,
+  ) {
     const assetAddress = instruction.accounts.at(3);
     const data = bs58.decode(instruction.data);
     const repriceData =
@@ -499,7 +513,7 @@ export class HeliusService {
   }
 
   private async handleAssetListing(
-    instruction: Instruction,
+    instruction: Instruction | InnerInstruction,
     transactionSignature: string,
   ) {
     const data = bs58.decode(instruction.data);
@@ -531,7 +545,7 @@ export class HeliusService {
   }
 
   private async handleAssetBid(
-    instruction: Instruction,
+    instruction: Instruction | InnerInstruction,
     transactionSignature: string,
   ) {
     const bidderAddress = instruction.accounts.at(0);
@@ -579,7 +593,7 @@ export class HeliusService {
   }
 
   private async handleAssetTimedListing(
-    instruction: Instruction,
+    instruction: Instruction | InnerInstruction,
     transactionSignature: string,
   ) {
     const data = bs58.decode(instruction.data);
@@ -637,7 +651,9 @@ export class HeliusService {
   /**
    * Handles Core Asset transfer events by updating the asset's owner and related listings.
    */
-  private async handleAssetTransfer(transferInstruction: Instruction) {
+  private async handleAssetTransfer(
+    transferInstruction: Instruction | InnerInstruction,
+  ) {
     const address = transferInstruction.accounts.at(0);
     try {
       const ownerAddress = transferInstruction.accounts.at(-3);
@@ -689,7 +705,7 @@ export class HeliusService {
    * Handles changes to the core comic state by updating metadata and nonce if applicable.
    */
   private async handleChangeCoreCollectibleComicState(
-    updateInstruction: Instruction,
+    updateInstruction: Instruction | InnerInstruction,
     transactionSignature: string,
   ) {
     try {
