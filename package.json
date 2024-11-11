@@ -53,6 +53,7 @@
     "insert-items": "npx ts-node src/cli/main.ts insert-items",
     "sync-mint-receipts": "npx ts-node src/cli/main.ts sync-mint-receipts",
     "update-cm-group-price": "npx ts-node src/cli/main.ts update-cm-group-price",
+    "vault-transfer": "npx ts-node src/cli/main.ts vault-transfer",
     "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details"
   },
   "prisma": {
