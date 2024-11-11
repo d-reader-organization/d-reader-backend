@@ -67,8 +67,13 @@ import {
   MPL_CORE_PROGRAM_ID,
   getUpdateV1InstructionDataSerializer,
   fetchCollection,
+  safeFetchAllAssetV1,
 } from '@metaplex-foundation/mpl-core';
-import { Umi, publicKey } from '@metaplex-foundation/umi';
+import {
+  Umi,
+  publicKey,
+  PublicKey as UmiPublicKey,
+} from '@metaplex-foundation/umi';
 import { array, base58, u8 } from '@metaplex-foundation/umi/serializers';
 import {
   fetchCandyMachine,
@@ -802,24 +807,20 @@ export class HeliusService {
     let comicIssueId: number = undefined,
       userId: number = undefined;
 
-    const assetAccounts: string[] = [];
+    const assetAccounts: UmiPublicKey[] = [];
     enrichedTransaction.instructions.forEach((instruction) => {
       const isMintInstruction =
         instruction.programId.toString() ===
         MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
       if (isMintInstruction) {
-        const assetAddress = instruction.accounts.at(7);
+        const assetAddress = publicKey(instruction.accounts.at(7));
         assetAccounts.push(assetAddress);
       }
     });
 
     let comicIssueAssets: IndexCoreAssetReturnType[];
     try {
-      const assets = await Promise.all(
-        assetAccounts.map((account) =>
-          fetchAssetV1(this.umi, publicKey(account)),
-        ),
-      );
+      const assets = await safeFetchAllAssetV1(this.umi, assetAccounts);
       comicIssueAssets = await this.indexCoreAssets(
         assets,
         candyMachineAddress,
@@ -1548,6 +1549,8 @@ export class HeliusService {
     const digitalAssets: IndexCoreAssetReturnType[] = [];
 
     for (const asset of assets) {
+      if (!asset) continue;
+
       const offChainMetadata = await fetchOffChainMetadata(asset.uri);
       const isUsed = findUsedTrait(offChainMetadata);
       const isSigned = findSignedTrait(offChainMetadata);
