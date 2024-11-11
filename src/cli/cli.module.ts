@@ -71,6 +71,8 @@ import { DiscordService } from '../discord/discord.service';
 import { SyncMintReceptsCommand } from './sync-mint-receipts-command';
 import { UpdateCMGroupPriceCommand } from './update-cm-group-price-command';
 import { UpdateCMGroupPriceQuestions } from './update-cm-group-price-questions';
+import { VaultTransferCommand } from './vault-transfer-command';
+import { VaultTransferQuestions } from './vault-transfer-questions';
 
 @Module({
   imports: [
@@ -154,6 +156,8 @@ import { UpdateCMGroupPriceQuestions } from './update-cm-group-price-questions';
     UpdateCMGroupPriceQuestions,
     DiscordService,
     SyncMintReceptsCommand,
+    VaultTransferCommand,
+    VaultTransferQuestions,
   ],
 })
 export class CLIModule {}
