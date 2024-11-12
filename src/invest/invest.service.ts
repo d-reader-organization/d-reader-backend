@@ -144,7 +144,7 @@ export class InvestService {
           transactionSignature,
           projectSlug,
           timestamp: new Date(),
-          expressedAmount,
+          expressedAmount: Math.min(1000, expressedAmount),
           wallet: {
             connectOrCreate: {
               where: { address },
