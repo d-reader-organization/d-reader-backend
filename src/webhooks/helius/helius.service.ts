@@ -67,7 +67,6 @@ import {
   MPL_CORE_PROGRAM_ID,
   getUpdateV1InstructionDataSerializer,
   fetchCollection,
-  safeFetchAllAssetV1,
 } from '@metaplex-foundation/mpl-core';
 import {
   Umi,
@@ -809,7 +808,9 @@ export class HeliusService {
 
     let comicIssueAssets: IndexCoreAssetReturnType[];
     try {
-      const assets = await safeFetchAllAssetV1(this.umi, assetAccounts);
+      const assets = await Promise.all(
+        assetAccounts.map((account) => fetchAssetV1(this.umi, account)),
+      );
       comicIssueAssets = await this.indexCoreAssets(
         assets,
         candyMachineAddress,
