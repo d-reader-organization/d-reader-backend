@@ -66,7 +66,8 @@ export class SyncMintReceptsCommand extends CommandRunner {
       );
       console.log(transactionStatus.value);
       if (
-        transactionStatus.value[0].confirmationStatus === 'confirmed' ||
+        (transactionStatus.value[0] &&
+          transactionStatus.value[0].confirmationStatus === 'confirmed') ||
         transactionStatus.value[0].confirmationStatus === 'finalized'
       ) {
         console.log('Syncing receipt :', id);

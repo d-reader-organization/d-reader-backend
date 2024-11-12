@@ -790,17 +790,6 @@ export class HeliusService {
     const baseInstruction = enrichedTransaction.instructions.at(-1);
     const candyMachineAddress = baseInstruction.accounts[2];
 
-    const latestBlockhash = await this.metaplex.connection.getLatestBlockhash(
-      'confirmed',
-    );
-    await this.metaplex
-      .rpc()
-      .confirmTransaction(
-        enrichedTransaction.signature,
-        { ...latestBlockhash },
-        'confirmed',
-      );
-
     const receipt = await this.prisma.candyMachineReceipt.findFirst({
       where: { transactionSignature: enrichedTransaction.signature },
     });
