@@ -490,9 +490,14 @@ export class CandyMachineService {
     }
 
     const umiMintTransaction = decodeUmiTransaction(transactions[1]);
-    const signedMintTransaction = await getThirdPartyUmiSignature(
-      umiMintTransaction,
-    );
+    let signedMintTransaction = umiMintTransaction;
+    if (coupon.id == 51 && splTokenAddress === SOL_ADDRESS) {
+      signedMintTransaction = umiMintTransaction;
+    } else {
+      signedMintTransaction = await getThirdPartyUmiSignature(
+        umiMintTransaction,
+      );
+    }
 
     console.log(`Mint by wallet ${walletAddress} is verified`);
     const signature = await this.umi.rpc.sendTransaction(signedMintTransaction);
