@@ -54,13 +54,15 @@ export class VaultTransferCommand extends CommandRunner {
         },
       });
 
-      let i = 0;
-      let supplyLeft = Math.min(supply, assets.length);
-      for (; i < supply / 3; i++) {
+      const BATCH_SIZE = 3;
+      let transferred = 0;
+      let remaining = Math.min(supply, assets.length);
+
+      while (remaining > 0) {
         try {
-          const numberOfItems = Math.min(3, supplyLeft);
+          const batchSize = Math.min(BATCH_SIZE, remaining);
           const assetAddresses = assets
-            .slice(i, i + numberOfItems)
+            .slice(transferred, transferred + batchSize)
             .map((asset) => asset.address);
 
           await this.transfer(
@@ -68,14 +70,16 @@ export class VaultTransferCommand extends CommandRunner {
             collectionAddress,
             destinationAddress,
           );
-          supplyLeft -= numberOfItems;
+
+          transferred += batchSize;
+          remaining -= batchSize;
         } catch (e) {
           logErr(`Failed to transfer: ${e}`);
           break;
         }
       }
 
-      console.log(`Transferred ${supply - supplyLeft} assets`);
+      console.log(`Transferred ${supply - remaining} assets`);
     } catch (error) {
       logErr(`Error : ${error}`);
     }
