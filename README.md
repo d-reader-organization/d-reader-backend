@@ -11,7 +11,7 @@
 
 > **Note** generate a new Helius **API key** via [Helius Dashboard](https://dev.helius.xyz/dashboard/app)
 
-To test webhooks we recommend creating a reverse proxy to your local machine on which your localhost websever is running. We suggest using **ngrok**, which you can set up by following these [instructions](https://ngrok.com/docs/getting-started)
+To test webhooks we recommend creating a reverse proxy to your local machine on which your localhost webserver is running. We suggest using **ngrok**, which you can set up by following these [instructions](https://ngrok.com/docs/getting-started)
 
 > **Note** ask DevOps engineer to generate new IAM user credentials for you
 
@@ -67,7 +67,7 @@ yarn authorize-wallet
 - **`AWS_ACCESS_KEY_ID`** and **`AWS_SECRET_ACCESS_KEY`** are necessary for app to work as intended since app relies on AWS S3 for file storage. These credentials can be obtained upon IAM user creation (contact sysadmin to create IAM user for you)
 - **`AWS_BUCKET_NAME`** should be delivered by sysadmin alongside AWS credentials
 - **`TREASURY_PRIVATE_KEY`** is the AES encrypted private key of a wallet used as a Treasury. All royalties will be collected there and all our payments will be done with it.
-- **`TREASURY_SECRET`** is the secret key used for AES encription/decription of the Treasury wallet's private key, preferably 64 byte long
+- **`TREASURY_SECRET`** is the secret key used for AES encryption/decryption of the Treasury wallet's private key, preferably 64 byte long
 - **`MAIL_SERVICE`** and other mail related variables are unnecessary unless working on email-related features. Make sure to [download NodemailerApp](https://nodemailer.com/app) for local development. For production setup follow the [nodemailer-gmail-smtp guide](https://blog.iamstarcode.com/how-to-send-emails-using-nestjs-nodemailer-smtp-gmail-and-oauth2)
 - **`HELIUS_API_KEY`** can be obtained via [Helius Dashboard](https://dev.helius.xyz/dashboard/app)
 - **`DARKBLOCK_API_KEY`** can be obtained via [Darkblock Docs](https://darkblock.redoc.ly/apikey)
