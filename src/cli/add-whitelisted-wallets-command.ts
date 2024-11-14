@@ -33,21 +33,21 @@ export class AddWhitelistedWalletsCommand extends CommandRunner {
     log('\n🏗️  adding whitelisted wallets to coupon');
     try {
       const { couponId, collection } = options;
-      const limit = 1000;
+      const limit = 1;
       let page = 1;
       let assets = await getAssetsByGroup(collection, page, limit);
       const wallets: Set<string> = new Set();
 
-      while (!isEmpty(assets)) {
-        console.log(`Adding ${assets.length} assets in the array...!`);
+      // while (!isEmpty(assets)) {
+      console.log(`Adding ${assets.length} assets in the array...!`);
 
-        for (const asset of assets) {
-          const ownerAddress = asset.ownership.owner;
-          wallets.add(ownerAddress);
-        }
-        page++;
-        assets = await getAssetsByGroup(collection, page, limit);
+      for (const asset of assets) {
+        const ownerAddress = asset.ownership.owner;
+        wallets.add(ownerAddress);
       }
+      page++;
+      assets = await getAssetsByGroup(collection, page, limit);
+      // }
       await this.candyMachineService.addWhitelistedWalletsToCoupon(
         couponId,
         Array.from(wallets),
