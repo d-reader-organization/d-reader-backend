@@ -1,10 +1,12 @@
 import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { getAssetsByGroup } from '../utils/das';
+import { isEmpty } from 'lodash';
 
 interface Options {
+  collection: string;
   couponId: number;
-  wallets: string[];
 }
 
 @Command({
@@ -30,11 +32,27 @@ export class AddWhitelistedWalletsCommand extends CommandRunner {
   async addWhitelistedWallets(options: Options) {
     log('\n🏗️  adding whitelisted wallets to coupon');
     try {
-      const { couponId, wallets } = options;
+      const { couponId, collection } = options;
+      const limit = 1000;
+      let page = 1;
+      let assets = await getAssetsByGroup(collection, page, limit);
+      const wallets: Set<string> = new Set();
+
+      while (!isEmpty(assets)) {
+        console.log(`Adding ${assets.length} assets in the array...!`);
+
+        for (const asset of assets) {
+          const ownerAddress = asset.ownership.owner;
+          wallets.add(ownerAddress);
+        }
+        page++;
+        assets = await getAssetsByGroup(collection, page, limit);
+      }
       await this.candyMachineService.addWhitelistedWalletsToCoupon(
         couponId,
-        wallets,
+        Array.from(wallets),
       );
+      log(`Added ${wallets.size} unique wallets in whitelist\n`);
     } catch (error) {
       logErr(`Error : ${error}`);
     }

@@ -1,4 +1,3 @@
-import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
 @QuestionSet({ name: 'add-whitelisted-wallets' })
@@ -20,20 +19,15 @@ export class AddWhitelistedWalletsQuestions {
 
   @Question({
     type: 'input',
-    name: 'wallets',
-    message:
-      'list of whitelisted wallets to add in coupon (empty if no wallet to add)',
+    name: 'collection',
+    message: 'Address of collection whose holders will be added in whitelist',
     default: [],
-    validate: async function (wallets: string[]) {
-      wallets.forEach((wallet) => {
-        if (wallet && !PublicKey.isOnCurve(wallet)) {
-          return 'Address must be a solana address';
-        }
-      });
+    validate: async function (collection: string) {
+      if (!collection) return false;
       return true;
     },
   })
-  parseWalletAddress(wallets: string): string[] {
-    return JSON.parse(wallets);
+  parseCollectionAddress(collection: string): string {
+    return collection;
   }
 }
