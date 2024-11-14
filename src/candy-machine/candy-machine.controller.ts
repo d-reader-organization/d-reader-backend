@@ -55,10 +55,12 @@ export class CandyMachineController {
   @AdminGuard()
   @Post('whitelist-wallets')
   async whitelistWallets(@Body() addWalletWhiteListDto: AddWalletWhiteListDto) {
-    const { couponId, walletWhiteList } = addWalletWhiteListDto;
+    const { couponId, walletWhiteList, collectionAddress } =
+      addWalletWhiteListDto;
     await this.candyMachineService.addWhitelistedWalletsToCoupon(
       couponId,
       walletWhiteList,
+      collectionAddress,
     );
   }
 

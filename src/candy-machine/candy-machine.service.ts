@@ -112,14 +112,14 @@ import {
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
-import { getTransactionWithPriorityFee } from '../utils/das';
+import { getAssetsByGroup, getTransactionWithPriorityFee } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
 import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { isNull } from 'lodash';
+import { isEmpty, isNull } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -633,7 +633,15 @@ export class CandyMachineService {
     });
   }
 
-  async addWhitelistedWalletsToCoupon(couponId: number, wallets: string[]) {
+  async addWhitelistedWalletsToCoupon(
+    couponId: number,
+    wallets: string[],
+    collectionAddress?: string,
+  ) {
+    let collectionHolders: string[] = [];
+    if (collectionAddress) {
+      collectionHolders = await this.fetchCollectionHolders(collectionAddress);
+    }
     const whiteListedWallets =
       await this.prisma.candyMachineCouponWhitelistedWallet
         .findMany({
@@ -645,7 +653,8 @@ export class CandyMachineService {
           ),
         );
 
-    const filteredWallets = wallets.filter(
+    const totalWallets = [...collectionHolders, ...wallets];
+    const filteredWallets = totalWallets.filter(
       (wallet) => !whiteListedWallets.includes(wallet),
     );
 
@@ -1499,5 +1508,24 @@ export class CandyMachineService {
         throw new UnauthorizedException('Mint limit reached!');
       }
     }
+  }
+
+  private async fetchCollectionHolders(collectionAddress: string) {
+    const limit = 1000;
+    let page = 1;
+    let assets = await getAssetsByGroup(collectionAddress, page, limit);
+    const wallets: Set<string> = new Set();
+
+    while (!isEmpty(assets)) {
+      console.log(`Adding ${assets.length} assets in the array...!`);
+
+      for (const asset of assets) {
+        const ownerAddress = asset.ownership.owner;
+        wallets.add(ownerAddress);
+      }
+      page++;
+      assets = await getAssetsByGroup(collectionAddress, page, limit);
+    }
+    return Array.from(wallets);
   }
 }
