@@ -15,15 +15,7 @@ import {
 } from '@nestjs/common';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ComicService } from './comic.service';
-import {
-  ComicDto,
-  DetailedComicDto,
-  OwnedComicDto,
-  toComicDto,
-  toComicDtoArray,
-  toDetailedComicDto,
-  toOwnedComicDtoArray,
-} from './dto/comic.dto';
+import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
 import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
 import { RateComicDto } from './dto/rate-comic.dto';
@@ -104,9 +96,9 @@ export class ComicController {
   async findOne(
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
-  ): Promise<DetailedComicDto> {
+  ): Promise<ComicDto> {
     const comic = await this.comicService.findOne(slug, user.id);
-    return toDetailedComicDto(comic);
+    return toComicDto(comic);
   }
 
   /* Get specific comic in raw format by unique slug */
@@ -121,9 +113,9 @@ export class ComicController {
   async findOwnedComics(
     @Param('userId') userId: string,
     @Query() query: ComicParams,
-  ): Promise<OwnedComicDto[]> {
+  ): Promise<ComicDto[]> {
     const comics = await this.comicService.findAllByOwner(query, +userId);
-    return toOwnedComicDtoArray(comics);
+    return toComicDtoArray(comics);
   }
 
   @Get('get/favorites/:userId')

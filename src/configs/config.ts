@@ -38,10 +38,9 @@ const config: Config = {
     clientId: process.env.GOOGLE_AUTH_CLIENT_ID ?? '',
     clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET ?? '',
   },
-  // TODO: change this back to 30 and 180 after bugfix
   throttle: {
-    ttl: 3,
-    limit: 18000000000,
+    ttl: 30,
+    limit: 180,
     ignoreUserAgents: [],
   },
 };
