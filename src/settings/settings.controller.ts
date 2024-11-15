@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   GlobalStatusDto,
@@ -18,7 +9,6 @@ import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { toSplTokenArray } from './dto/spl-token.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Settings')
 @Controller('settings')
 export class SettingsController {

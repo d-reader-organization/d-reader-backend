@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   UseInterceptors,
   UploadedFile,
   Query,
@@ -21,7 +20,7 @@ import {
   ResetPasswordDto,
   UpdatePasswordDto,
 } from 'src/types/update-password.dto';
-import { minutes, Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 import {
@@ -41,7 +40,6 @@ import {
 } from './dto/user-consent.dto';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('User')
 @Controller('user')
 export class UserController {
@@ -134,7 +132,7 @@ export class UserController {
     60 * 1000, // cache for 1 minute
   );
 
-  @Throttle({ default: { ttl: minutes(1), limit: 4 } })
+  @Throttle({ long: { limit: 3 } })
   @UserOwnerAuth()
   @Patch('request-email-change')
   async requestEmailChange(
@@ -203,7 +201,7 @@ export class UserController {
   );
 
   @UserOwnerAuth()
-  @Throttle({ default: { ttl: minutes(1), limit: 8 } })
+  @Throttle({ long: { limit: 3 } })
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
     return this.throttledSyncWallets(+id);

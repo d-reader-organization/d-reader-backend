@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   Query,
   ForbiddenException,
   Post,
@@ -29,7 +28,6 @@ import {
 } from '../comic-page/entities/comic-page.dto';
 import { PublishOnChainDto } from './dto/publish-on-chain.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import {
   OwnedComicIssueDto,
   toOwnedComicIssueDtoArray,
@@ -85,7 +83,6 @@ import {
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
 export class ComicIssueController {

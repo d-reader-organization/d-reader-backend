@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { CandyMachineService } from './candy-machine.service';
 import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
 import {
@@ -15,7 +7,6 @@ import {
 } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { AddWalletWhiteListDto } from './dto/add-wallet-whitelist.dto';
 import { AdminGuard } from '../guards/roles.guard';
@@ -27,7 +18,6 @@ import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { AddUserWhiteListDto } from './dto/add-user-whitelist.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
 export class CandyMachineController {
