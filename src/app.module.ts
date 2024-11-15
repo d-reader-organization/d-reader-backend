@@ -40,6 +40,7 @@ import { TwitterModule } from './twitter/twitter.module';
 import { BlinkModule } from './blink/blink.module';
 import { MutexModule } from './mutex/mutex.module';
 import { InvestModule } from './invest/invest.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { InvestModule } from './invest/invest.module';
         };
       },
     }),
+    CacheModule.register(),
     WalletModule,
     CreatorModule,
     ComicModule,
