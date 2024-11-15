@@ -8,9 +8,6 @@ export class UserComicDto {
   @IsOptional()
   rating: number | null;
 
-  // @IsBoolean()
-  // isSubscribed: boolean;
-
   @IsBoolean()
   isFavourite: boolean;
 
@@ -22,12 +19,13 @@ export class UserComicDto {
   collectiblesCount?: number;
 }
 
-export type UserComicInput = UserComic & { collectiblesCount?: number };
+export type UserComicInput = Partial<UserComic> & {
+  collectiblesCount?: number;
+};
 
 export function toUserComicDto(userComic: UserComicInput) {
   const plainUserComicDto: UserComicDto = {
     rating: userComic.rating,
-    // isSubscribed: !!userComic.subscribedAt,
     isFavourite: !!userComic.favouritedAt,
     isBookmarked: !!userComic.bookmarkedAt,
     collectiblesCount: userComic.collectiblesCount,

@@ -24,8 +24,7 @@ import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { ComicStatusProperty } from './dto/types';
-import { ComicInput } from './dto/comic.dto';
-import { UserComicInput } from './dto/user-comic.dto';
+import { OwnedComicInput } from './dto/comic.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -164,13 +163,11 @@ export class ComicService {
   async findAllByOwner(
     query: ComicParams,
     userId: number,
-  ): Promise<ComicInput[]> {
+  ): Promise<OwnedComicInput[]> {
     const ownedComics = await this.prisma.comic.findMany({
       distinct: 'title',
       orderBy: { title: 'asc' },
-      include: {
-        creator: true,
-      },
+      include: { creator: true },
       where: {
         issues: {
           some: {
@@ -193,9 +190,13 @@ export class ComicService {
     return Promise.all(
       ownedComics.map(async (comic) => {
         const stats = await this.getOwnedComicStats(comic.slug, userId);
-        const { issuesCount, ...myStats } = stats;
+        const { issuesCount, collectiblesCount } = stats;
 
-        return { ...comic, stats: { issuesCount }, myStats };
+        return {
+          ...comic,
+          stats: { issuesCount },
+          myStats: { collectiblesCount },
+        };
       }),
     );
   }
@@ -471,12 +472,12 @@ export class ComicService {
   }
 
   private async getOwnedComicStats(comicSlug: string, userId: number) {
-    const [issuesCount, myStats] = await Promise.all([
+    const [issuesCount, collectiblesCount] = await Promise.all([
       this.getIssuesCount(comicSlug),
-      this.getUserComicStats(comicSlug, userId),
+      this.getUserCollectiblesCount(comicSlug, userId),
     ]);
 
-    return { issuesCount, ...myStats };
+    return { issuesCount, collectiblesCount };
   }
 
   private async getIssuesCount(comicSlug: string) {
@@ -489,31 +490,21 @@ export class ComicService {
     });
   }
 
-  private async getUserComicStats(
+  private async getUserCollectiblesCount(
     comicSlug: string,
     userId: number,
-  ): Promise<UserComicInput> {
-    const getCollectibleCount = this.prisma.collectibleComic.count({
+  ): Promise<number> {
+    const collectiblesCount = await this.prisma.collectibleComic.count({
       where: {
         metadata: {
           collection: {
             comicIssue: { comicSlug },
           },
         },
-        digitalAsset: {
-          owner: { userId },
-        },
+        digitalAsset: { owner: { userId } },
       },
     });
 
-    const getUserStats = this.prisma.userComic.findUnique({
-      where: { comicSlug_userId: { userId, comicSlug } },
-    });
-
-    const [collectiblesCount, stats] = await Promise.all([
-      getCollectibleCount,
-      getUserStats,
-    ]);
-    return { collectiblesCount, ...stats };
+    return collectiblesCount;
   }
 }

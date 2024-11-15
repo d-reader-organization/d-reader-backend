@@ -24,7 +24,6 @@ import {
   toPartialGenreDtoArray,
 } from '../../genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
-import { ifDefined } from 'src/utils/lodash';
 
 export class ComicDto {
   @IsString()
@@ -84,33 +83,14 @@ export class ComicDto {
 
   @IsEmptyOrUrl()
   youTube: string;
-
-  @IsArray()
-  @Type(() => PartialGenreDto)
-  genres?: PartialGenreDto[];
-
-  @Type(() => PartialCreatorDto)
-  creator?: PartialCreatorDto;
-
-  @IsOptional()
-  @Type(() => ComicStatsDto)
-  stats?: ComicStatsDto;
-
-  @IsOptional()
-  @Type(() => UserComicDto)
-  myStats?: UserComicDto;
 }
 
-type WithGenres = { genres?: Genre[] };
-type WithCreator = { creator?: Creator };
-type WithStats = { stats?: Partial<ComicStats> };
-type WithMyStats = { myStats?: UserComicInput };
+type WithGenres = { genres: Genre[] };
+type WithCreator = { creator: Creator };
+type WithStats = { stats: Partial<ComicStats> };
+type WithMyStats = { myStats: UserComicInput };
 
-export type ComicInput = With<
-  [Comic, WithGenres, WithCreator, WithStats, WithMyStats]
->;
-
-export function toComicDto(comic: ComicInput) {
+export function toComicDto(comic: Comic): ComicDto {
   const plainComicDto: ComicDto = {
     title: comic.title,
     slug: comic.slug,
@@ -131,16 +111,81 @@ export function toComicDto(comic: ComicInput) {
     instagram: comic.instagram,
     tikTok: comic.tikTok,
     youTube: comic.youTube,
-    genres: ifDefined(comic.genres, toPartialGenreDtoArray),
-    stats: ifDefined(comic.stats, toComicStatsDto),
-    creator: ifDefined(comic.creator, toPartialCreatorDto),
-    myStats: ifDefined(comic.myStats, toUserComicDto),
   };
 
   const comicDto = plainToInstance(ComicDto, plainComicDto);
   return comicDto;
 }
 
-export const toComicDtoArray = (comics: ComicInput[]) => {
+export const toComicDtoArray = (comics: Comic[]) => {
   return comics.map(toComicDto);
+};
+
+/** Detailed Comic DTO */
+export class DetailedComicDto extends ComicDto {
+  @IsArray()
+  @Type(() => PartialGenreDto)
+  genres: PartialGenreDto[];
+
+  @Type(() => PartialCreatorDto)
+  creator: PartialCreatorDto;
+
+  @IsOptional()
+  @Type(() => ComicStatsDto)
+  stats: ComicStatsDto;
+
+  @IsOptional()
+  @Type(() => UserComicDto)
+  myStats: UserComicDto;
+}
+
+export type DetailedComicInput = With<
+  [Comic, WithGenres, WithCreator, WithStats, WithMyStats]
+>;
+
+export function toDetailedComicDto(
+  comic: DetailedComicInput,
+): DetailedComicDto {
+  return {
+    ...toComicDto(comic),
+    genres: toPartialGenreDtoArray(comic.genres),
+    stats: toComicStatsDto(comic.stats),
+    creator: toPartialCreatorDto(comic.creator),
+    myStats: toUserComicDto(comic.myStats),
+  };
+}
+
+export const toDetailedComicDtoArray = (comics: DetailedComicInput[]) => {
+  return comics.map(toDetailedComicDto);
+};
+
+/** Owned Comic DTO */
+export class OwnedComicDto extends ComicDto {
+  @Type(() => PartialCreatorDto)
+  creator: PartialCreatorDto;
+
+  @IsOptional()
+  @Type(() => ComicStatsDto)
+  stats: ComicStatsDto;
+
+  @IsOptional()
+  @Type(() => UserComicDto)
+  myStats: UserComicDto;
+}
+
+export type OwnedComicInput = With<
+  [Comic, WithCreator, WithStats, WithMyStats]
+>;
+
+export function toOwnedComicDto(comic: OwnedComicInput): OwnedComicDto {
+  return {
+    ...toComicDto(comic),
+    stats: toComicStatsDto(comic.stats),
+    creator: toPartialCreatorDto(comic.creator),
+    myStats: toUserComicDto(comic.myStats),
+  };
+}
+
+export const toOwnedComicDtoArray = (comics: OwnedComicInput[]) => {
+  return comics.map(toOwnedComicDto);
 };

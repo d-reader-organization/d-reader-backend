@@ -123,20 +123,6 @@ import { isEmpty, isNull } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
-  private walletCache = new Map<
-    number,
-    {
-      walletAddress: string;
-      couponId: number;
-    }[]
-  >();
-  private userCache = new Map<
-    number,
-    {
-      userId: number;
-      couponId: number;
-    }[]
-  >();
   private readonly metaplex: Metaplex;
   private readonly umi: Umi;
   private readonly connection: Connection;
@@ -348,6 +334,7 @@ export class CandyMachineService {
     } = await this.findCandyMachineCouponData(couponId, label);
 
     this.validateCouponDates(startsAt, expiresAt);
+    this.validateTokenStandard(tokenStandard);
     await this.validateWalletBalance(
       walletAddress,
       mintPrice,
@@ -356,7 +343,6 @@ export class CandyMachineService {
       splToken,
       isSponsored,
     );
-    this.validateTokenStandard(tokenStandard);
     this.validateMintEligibility(
       couponType,
       userId,
@@ -1056,21 +1042,15 @@ export class CandyMachineService {
           },
         });
 
-      if (!this.walletCache.get(couponId)) {
-        const fetchedWallets =
-          await this.prisma.candyMachineCouponWhitelistedWallet.findMany({
-            where: { couponId },
-          });
-        this.walletCache.set(couponId, fetchedWallets || []);
-      }
+      const whitelistedWallets =
+        await this.prisma.candyMachineCouponWhitelistedWallet.findMany({
+          where: { couponId },
+        });
 
-      if (!this.userCache.get(couponId)) {
-        const fetchedUsers =
-          await this.prisma.candyMachineCouponWhitelistedUser.findMany({
-            where: { couponId },
-          });
-        this.userCache.set(couponId, fetchedUsers || []);
-      }
+      const whitelistedUsers =
+        await this.prisma.candyMachineCouponWhitelistedUser.findMany({
+          where: { couponId },
+        });
 
       if (!candyMachineCoupon) {
         throw new NotFoundException();
@@ -1084,15 +1064,10 @@ export class CandyMachineService {
       const splToken = supportedTokens.find(
         (token) => token.address == currencySetting.splTokenAddress,
       );
-      const whitelistedWallets = this.walletCache.get(couponId);
-      const whitelistedUsers = this.userCache.get(couponId);
 
       return {
         couponType: candyMachineCoupon.type,
-        whitelistedWallets:
-          whitelistedWallets && whitelistedWallets.length
-            ? whitelistedWallets
-            : [],
+        whitelistedWallets: whitelistedWallets ?? [],
         whitelistedUsers:
           whitelistedUsers && whitelistedUsers.length ? whitelistedUsers : [],
         isSponsored: candyMachineCoupon.isSponsored,
