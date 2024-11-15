@@ -6,8 +6,6 @@ import {
 import {
   CandyMachineCoupon,
   CandyMachineCouponCurrencySetting,
-  CandyMachineCouponWhitelistedUser,
-  CandyMachineCouponWhitelistedWallet,
   CouponType,
   TokenStandard,
 } from '@prisma/client';
@@ -95,14 +93,10 @@ export type DarkblockTraits = {
 
 export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
   currencySettings: CandyMachineCouponCurrencySetting[];
-} & { users: CandyMachineCouponWhitelistedUser[] } & {
-  wallets: CandyMachineCouponWhitelistedWallet[];
 };
 
 export type CandyMachineMintData = {
   couponType: CouponType;
-  whitelistedWallets: CandyMachineCouponWhitelistedWallet[];
-  whitelistedUsers: CandyMachineCouponWhitelistedUser[];
   isSponsored: boolean;
   lookupTable: string;
   mintPrice: number;
