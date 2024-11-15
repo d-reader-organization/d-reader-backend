@@ -16,7 +16,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   /* Hello World test endpoint */
-  @UseInterceptors(CacheInterceptor(15)) // 15 sec cache
+  @UseInterceptors(CacheInterceptor({ ttl: 15 })) // 15 sec cache
   @Get('hello')
   get(): string {
     return this.appService.get();
@@ -24,7 +24,7 @@ export class AppController {
 
   /* User authenticated Hello World test endpoint */
   @UserAuth()
-  @UseInterceptors(CacheInterceptor(15)) // 15 sec cache
+  @UseInterceptors(CacheInterceptor({ ttl: 15, userScope: true })) // 15 sec cache
   @Get('hello-authenticated-user')
   getUserAuth(@UserEntity() user: UserPayload): string {
     return this.appService.getAuth(user.id);
