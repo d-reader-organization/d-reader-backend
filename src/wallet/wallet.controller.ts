@@ -1,14 +1,13 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiTags } from '@nestjs/swagger';
 import { toWalletDto, WalletDto } from './dto/wallet.dto';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { minutes, Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { memoizeThrottle } from '../utils/lodash';
 import { WalletOwnerAuth } from '../guards/wallet-owner.guard';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Wallet')
 @Controller('wallet')
 export class WalletController {
@@ -53,7 +52,7 @@ export class WalletController {
     return toWalletDto(wallet);
   }
 
-  @Throttle({ default: { ttl: minutes(1), limit: 8 } })
+  @Throttle({ long: { limit: 3 } })
   @Get('sync/:address')
   syncWallet(@Param('address') address: string) {
     return this.throttledSyncWallet(address);

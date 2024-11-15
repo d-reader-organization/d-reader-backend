@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
@@ -29,10 +28,8 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-params.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from 'src/utils/lodash';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Genre')
 @Controller('genre')
 export class GenreController {

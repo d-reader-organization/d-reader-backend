@@ -6,17 +6,14 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { DraftComicIssueSalesDataService } from './draft-comic-issue-sales-data.service';
 import { CreateDraftComicIssueSalesDataDto } from './dto/create-draft-comic-issue-sales-data.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { UpdateDraftComicIssueSalesDataDto } from './dto/update-draft-comic-issue-sales-data.dto';
 import { DraftComicIssueSalesDataAuth } from 'src/guards/draft-comic-issue-auth.guard';
 import { toDraftComicIssueSalesDataDto } from './dto/draft-comic-issue-sales-data.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Draft Comic Issue Sales Data')
 @Controller('draft-comic-issue-sales-data')
 export class DraftComicIssueSalesDataController {

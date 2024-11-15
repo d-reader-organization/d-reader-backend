@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   UseInterceptors,
   UploadedFiles,
   UploadedFile,
@@ -31,11 +30,9 @@ import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Carousel')
 @Controller('carousel')
 export class CarouselController {

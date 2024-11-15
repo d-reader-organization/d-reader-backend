@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   Query,
   ForbiddenException,
   Post,
@@ -19,7 +18,6 @@ import { ComicDto, toComicDto, toComicDtoArray } from './dto/comic.dto';
 import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
 import { RateComicDto } from './dto/rate-comic.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
@@ -45,7 +43,6 @@ import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Comic')
 @Controller('comic')
 export class ComicController {

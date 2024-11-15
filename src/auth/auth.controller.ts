@@ -1,21 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Patch,
-  UseGuards,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Patch, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
-import {
-  seconds,
-  SkipThrottle,
-  Throttle,
-  ThrottlerGuard,
-} from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import {
   validateCreatorName,
@@ -34,7 +21,7 @@ import { UserAuth } from '../guards/user-auth.guard';
 import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
 import { GoogleUserAuth } from '../guards/google-auth.guard';
 import { ConnectWalletDto, SignedDataType } from './dto/connect-wallet.dto';
-@UseGuards(ThrottlerGuard)
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -144,7 +131,7 @@ export class AuthController {
   }
 
   // WALLET ENDPOINTS
-  @Throttle({ default: { ttl: seconds(10), limit: 10 } })
+  @Throttle({ default: { limit: 10 } })
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')

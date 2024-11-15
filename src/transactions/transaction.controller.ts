@@ -5,7 +5,6 @@ import {
   Param,
   Post,
   Query,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -23,7 +22,6 @@ import { validateAndFormatParams } from '../utils/validate-params';
 import { MultipleBuyParams } from '../auction-house/dto/instant-buy-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
@@ -62,7 +60,6 @@ import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-p
 import { InvestService } from 'src/invest/invest.service';
 import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Transaction')
 @Controller('transaction')
 export class TransactionController {

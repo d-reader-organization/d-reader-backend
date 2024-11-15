@@ -42,25 +42,25 @@ const config: Config = {
     {
       name: 'short',
       ttl: 1000, // 1 second
-      limit: 12, // 6 requests
+      limit: 6,
       ignoreUserAgents: [],
     },
     {
       name: 'default',
       ttl: 10000, // 10 seconds
-      limit: 120, // 60 requests
+      limit: 60,
+      ignoreUserAgents: [],
+    },
+    {
+      name: 'medium',
+      ttl: 30000, // 30 seconds
+      limit: 120,
       ignoreUserAgents: [],
     },
     {
       name: 'long',
-      ttl: 30000, // 30 seconds
-      limit: 240, // 120 requests
-      ignoreUserAgents: [],
-    },
-    {
-      name: 'extralong',
       ttl: 60000, // 60 seconds
-      limit: 20, // 180 requests
+      limit: 1,
       ignoreUserAgents: [],
     },
   ],

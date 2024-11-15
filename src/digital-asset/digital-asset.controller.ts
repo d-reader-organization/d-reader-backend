@@ -1,12 +1,10 @@
-import { Controller, Get, UseGuards, Query, Param, Post } from '@nestjs/common';
+import { Controller, Get, Query, Param, Post } from '@nestjs/common';
 import { DigitalAssetService } from './digital-asset.service';
 import { ApiTags } from '@nestjs/swagger';
 import { AssetDto, toAssetDto, toAssetDtoArray } from './dto/digital-asset.dto';
 import { DigitalAssetFilterParams } from './dto/digital-asset-params.dto';
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 /* @deprecated */
-@UseGuards(ThrottlerGuard)
 @ApiTags('NFTs')
 @Controller('nft')
 export class NftController {
@@ -27,7 +25,6 @@ export class NftController {
   }
 }
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Assets')
 @Controller('asset')
 export class DigitalAssetController {

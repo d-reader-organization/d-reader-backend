@@ -1,12 +1,10 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuctionHouseService } from './auction-house.service';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { toListingDtoArray } from './dto/listing.dto';
 import { ListingFilterParams } from './dto/listing-fliter-params.dto';
 import { toCollectionStats } from './dto/collection-stats.dto';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Auction House')
 @Controller('auction-house')
 export class AuctionHouseController {

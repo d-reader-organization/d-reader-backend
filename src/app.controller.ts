@@ -1,5 +1,5 @@
-import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
-import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import { UserAuth } from './guards/user-auth.guard';
 import { CreatorAuth } from './guards/creator-auth.guard';
@@ -9,7 +9,6 @@ import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from './interceptors/cache.interceptor';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('App')
 @Controller('app')
 export class AppController {

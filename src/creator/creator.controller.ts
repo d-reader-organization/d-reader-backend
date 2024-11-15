@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  UseGuards,
   UseInterceptors,
   UploadedFile,
   Query,
@@ -25,7 +24,6 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
 import {
   RequestPasswordResetDto,
@@ -46,7 +44,6 @@ import {
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Creator')
 @Controller('creator')
 export class CreatorController {

@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -18,13 +17,11 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { toUserNotificationsDtoArray } from './dto/user-notification.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { FirebaseService } from 'src/third-party/firebase/firebase.service';
 import { SendMessageToTopicDto } from './dto/send-notification-to-topic.dto';
 import { SendMessageToDevicesDto } from './dto/send-notification-to-devices.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
 
-@UseGuards(ThrottlerGuard)
 @ApiTags('Notification')
 @Controller('notification')
 export class NotificationController {
