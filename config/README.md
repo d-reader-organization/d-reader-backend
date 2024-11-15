@@ -91,6 +91,24 @@ ssh root@new_server_ip
 After you've verified that ssh connection is working, edit ip address list
 section `servers.web.hosts:` in `config.<env>.yml`.
 
+### How to kill dangling process on server
+
+Sometimes an orphaned process might be left on the server and taking over the port, while preventing new deploys:
+
+```sh
+# load environment in ssh-agent
+./config/scripts/ssh.sh dev-devnet
+
+# list processes
+docker ps
+
+# stop the process with id/name
+docker stop [name]
+```
+
+After you've stopped the process, redeploy your latest build on server.
+
+
 ## Monitoring
 
 ### Grafana

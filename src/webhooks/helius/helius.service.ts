@@ -164,7 +164,6 @@ export class HeliusService {
   }
 
   handleWebhookEvent(enrichedTransactions: EnrichedTransaction[]) {
-    console.log(enrichedTransactions);
     return Promise.all(
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {

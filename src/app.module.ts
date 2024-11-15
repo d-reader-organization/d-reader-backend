@@ -13,10 +13,10 @@ import { MailModule } from './mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SecurityConfig, ThrottleConfig } from 'src/configs/config.interface';
+import { SecurityConfig } from 'src/configs/config.interface';
 import { GenreModule } from './genre/genre.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerOptions } from '@nestjs/throttler';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
 import { AuctionHouseModule } from './auction-house/auction-house.module';
@@ -69,16 +69,16 @@ import { CacheModule } from '@nestjs/cache-manager';
       },
     }),
     ScheduleModule.forRoot(),
-    // TODO: prettier rate limit error messages (https://github.com/nestjs/throttler/pull/357)
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        const throttleConfig = configService.get<ThrottleConfig>('throttle');
+        const throttlersConfig =
+          configService.get<ThrottlerOptions[]>('throttlers');
         return {
-          ttl: throttleConfig.ttl,
-          limit: throttleConfig.limit,
-          ignoreUserAgents: throttleConfig.ignoreUserAgents,
+          throttlers: throttlersConfig,
+          errorMessage:
+            "You've sent too many requests. Please try again in a minute",
         };
       },
     }),

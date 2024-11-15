@@ -38,11 +38,32 @@ const config: Config = {
     clientId: process.env.GOOGLE_AUTH_CLIENT_ID ?? '',
     clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET ?? '',
   },
-  throttle: {
-    ttl: 30,
-    limit: 180,
-    ignoreUserAgents: [],
-  },
+  throttlers: [
+    {
+      name: 'short',
+      ttl: 1000, // 1 second
+      limit: 12, // 6 requests
+      ignoreUserAgents: [],
+    },
+    {
+      name: 'default',
+      ttl: 10000, // 10 seconds
+      limit: 120, // 60 requests
+      ignoreUserAgents: [],
+    },
+    {
+      name: 'long',
+      ttl: 30000, // 30 seconds
+      limit: 240, // 120 requests
+      ignoreUserAgents: [],
+    },
+    {
+      name: 'extralong',
+      ttl: 60000, // 60 seconds
+      limit: 20, // 180 requests
+      ignoreUserAgents: [],
+    },
+  ],
 };
 
 export default (): Config => config;

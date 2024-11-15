@@ -5,9 +5,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SecurityConfig, ThrottleConfig } from '../configs/config.interface';
+import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerOptions } from '@nestjs/throttler';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { UserService } from '../user/user.service';
 import { CreatorService } from '../creator/creator.service';
@@ -37,11 +37,12 @@ import { NonceService } from '../nonce/nonce.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        const throttleConfig = configService.get<ThrottleConfig>('throttle');
+        const throttlersConfig =
+          configService.get<ThrottlerOptions[]>('throttlers');
         return {
-          ttl: throttleConfig.ttl,
-          limit: throttleConfig.limit,
-          ignoreUserAgents: throttleConfig.ignoreUserAgents,
+          throttlers: throttlersConfig,
+          errorMessage:
+            "You've sent too many requests. Please try again in a minute",
         };
       },
     }),

@@ -1,4 +1,5 @@
 import { AwsCredentialIdentity } from '@aws-sdk/types';
+import { ThrottlerOptions } from '@nestjs/throttler';
 
 export interface Config {
   client: ClientConfig;
@@ -8,7 +9,7 @@ export interface Config {
   security: SecurityConfig;
   s3: S3Config;
   googleAuth: GoogleAuthConfig;
-  throttle: ThrottleConfig;
+  throttlers: ThrottlerOptions[];
 }
 
 export interface ClientConfig {
@@ -45,12 +46,6 @@ export interface S3Config {
   bucket: string;
   cdn?: string;
   credentials: AwsCredentialIdentity;
-}
-
-export interface ThrottleConfig {
-  ttl: number;
-  limit: number;
-  ignoreUserAgents: RegExp[];
 }
 
 interface GoogleAuthConfig {

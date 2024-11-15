@@ -4,11 +4,9 @@ import { getClientIp } from 'request-ip';
 
 @Injectable()
 export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
-  protected getTracker(req: Record<string, any>): string {
+  protected async getTracker(req: Record<string, any>): Promise<string> {
     const clientIp = getClientIp(req);
-
     console.log(`DEBUG: throttler ip: ${clientIp}`);
-
     return clientIp;
   }
 }
