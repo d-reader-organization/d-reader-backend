@@ -2,7 +2,6 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { getAssetsByGroup } from '../utils/das';
-import { isEmpty } from 'lodash';
 
 interface Options {
   collection: string;
