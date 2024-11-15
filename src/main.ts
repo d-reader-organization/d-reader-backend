@@ -11,10 +11,12 @@ import {
 } from './configs/config.interface';
 import * as express from 'express';
 import { initializeFirebase } from './utils/firebase';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Boot Strap
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', 'loopback'); // Trust requests from the loopback address
 
   // Validation
   // strip validated object of any properties that don't have any decorator
