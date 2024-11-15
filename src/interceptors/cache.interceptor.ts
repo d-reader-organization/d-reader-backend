@@ -12,7 +12,8 @@ import { Request } from 'express';
 import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 
-export function CacheInterceptor(ttl = 60, userScope = false) {
+// 60 seconds
+export function CacheInterceptor({ ttl = 60, userScope = false }) {
   @Injectable()
   class CacheInterceptorMixin implements NestInterceptor {
     constructor(@Inject(CACHE_MANAGER) readonly cacheManager: Cache) {}
