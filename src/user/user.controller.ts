@@ -21,7 +21,7 @@ import {
   ResetPasswordDto,
   UpdatePasswordDto,
 } from 'src/types/update-password.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { minutes, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 import {
@@ -131,10 +131,10 @@ export class UserController {
     (user: UserPayload, newEmail: string) => {
       return this.userService.requestEmailChange(user, newEmail);
     },
-    10 * 60 * 1000, // cache for 10 minutes
+    60 * 1000, // cache for 1 minute
   );
 
-  @Throttle(5, 60)
+  @Throttle({ default: { ttl: minutes(1), limit: 4 } })
   @UserOwnerAuth()
   @Patch('request-email-change')
   async requestEmailChange(
@@ -199,11 +199,11 @@ export class UserController {
 
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
-    5 * 60 * 1000, // 5 minutes
+    3 * 60 * 1000, // 3 minutes
   );
 
   @UserOwnerAuth()
-  @Throttle(10, 60)
+  @Throttle({ default: { ttl: minutes(1), limit: 8 } })
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
     return this.throttledSyncWallets(+id);

@@ -12,7 +12,7 @@ import { Request } from 'src/types/request';
 import { UAParser } from 'ua-parser-js';
 import { RequestUserData } from '../types/request-user-data';
 import { RealIP } from 'nestjs-real-ip';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const geoip = require('geoip-lite');
 
@@ -24,7 +24,6 @@ export class NewsletterController {
 
   // This route should have a captcha on frontend
   /* Subscribe to newsletter */
-  @Throttle(2, 60)
   @Post('subscribe/:email')
   async subscribe(
     @Param('email') email: string,

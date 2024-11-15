@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiTags } from '@nestjs/swagger';
-import { toWalletDto, toWalletDtoArray, WalletDto } from './dto/wallet.dto';
+import { toWalletDto, WalletDto } from './dto/wallet.dto';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { minutes, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { memoizeThrottle } from '../utils/lodash';
 import { WalletOwnerAuth } from '../guards/wallet-owner.guard';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
@@ -15,11 +15,11 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   /* Get all wallets */
-  @Get('get')
-  async findAll(): Promise<WalletDto[]> {
-    const wallets = await this.walletService.findAll();
-    return toWalletDtoArray(wallets);
-  }
+  // @Get('get')
+  // async findAll(): Promise<WalletDto[]> {
+  //   const wallets = await this.walletService.findAll();
+  //   return toWalletDtoArray(wallets);
+  // }
 
   /* Get specific wallet by unique address */
   @Get('get/:address')
@@ -53,7 +53,7 @@ export class WalletController {
     return toWalletDto(wallet);
   }
 
-  @Throttle(10, 60)
+  @Throttle({ default: { ttl: minutes(1), limit: 8 } })
   @Get('sync/:address')
   syncWallet(@Param('address') address: string) {
     return this.throttledSyncWallet(address);

@@ -10,7 +10,12 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
-import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import {
+  seconds,
+  SkipThrottle,
+  Throttle,
+  ThrottlerGuard,
+} from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import {
   validateCreatorName,
@@ -48,7 +53,6 @@ export class AuthController {
     return await this.userService.throwIfNameTaken(name);
   }
 
-  @Throttle(10, 60)
   @GoogleUserAuth()
   @Patch(['user/google-login', 'user/login-with-google'])
   async googleLogin(
@@ -58,7 +62,6 @@ export class AuthController {
   }
 
   /* Register a new google user */
-  @Throttle(10, 60)
   @GoogleUserAuth()
   @Post('user/register-with-google')
   async registerGoogleUser(
@@ -81,7 +84,6 @@ export class AuthController {
   }
 
   /* Register a new user */
-  @Throttle(10, 60)
   @Post('user/register')
   async registerUser(@Body() registerDto: RegisterDto): Promise<Authorization> {
     const user = await this.userService.register(registerDto);
@@ -89,7 +91,6 @@ export class AuthController {
   }
 
   /* Login as a user */
-  @Throttle(10, 60)
   @Patch('user/login')
   async loginUser(@Body() loginDto: LoginDto): Promise<Authorization> {
     const user = await this.userService.login(loginDto);
@@ -119,7 +120,6 @@ export class AuthController {
   }
 
   /* Register a new user */
-  @Throttle(10, 60)
   @Post('creator/register')
   async registerCreator(
     @Body() registerDto: RegisterDto,
@@ -129,7 +129,6 @@ export class AuthController {
   }
 
   /* Login as a user */
-  @Throttle(10, 60)
   @Patch('creator/login')
   async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
     const creator = await this.creatorService.login(loginDto);
@@ -145,7 +144,7 @@ export class AuthController {
   }
 
   // WALLET ENDPOINTS
-  @Throttle(5, 30)
+  @Throttle({ default: { ttl: seconds(10), limit: 10 } })
   @UserAuth()
   /* Request a new one time password for your wallet to sign */
   @Patch('wallet/request-password/:address')
