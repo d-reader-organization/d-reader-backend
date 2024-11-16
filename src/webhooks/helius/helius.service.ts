@@ -62,17 +62,12 @@ import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
 import { Prisma, TransactionStatus } from '@prisma/client';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import {
-  AssetV1,
   fetchAssetV1,
   MPL_CORE_PROGRAM_ID,
   getUpdateV1InstructionDataSerializer,
   fetchCollection,
 } from '@metaplex-foundation/mpl-core';
-import {
-  Umi,
-  publicKey,
-  PublicKey as UmiPublicKey,
-} from '@metaplex-foundation/umi';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { array, base58, u8 } from '@metaplex-foundation/umi/serializers';
 import {
   fetchCandyMachine,
@@ -80,7 +75,7 @@ import {
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
 import { isEqual } from 'lodash';
-import { getAssetFromTensor } from '../../utils/das';
+import { getAsset, getAssetFromTensor } from '../../utils/das';
 import { IndexCoreAssetReturnType, TENSOR_ASSET } from './dto/types';
 import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
@@ -164,6 +159,7 @@ export class HeliusService {
   }
 
   handleWebhookEvent(enrichedTransactions: EnrichedTransaction[]) {
+    console.log(enrichedTransactions);
     return Promise.all(
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
@@ -787,6 +783,7 @@ export class HeliusService {
   ) {
     const baseInstruction = enrichedTransaction.instructions.at(-1);
     const candyMachineAddress = baseInstruction.accounts[2];
+    const collectionAddress = baseInstruction.accounts[8];
 
     const receipt = await this.prisma.candyMachineReceipt.findFirst({
       where: { transactionSignature: enrichedTransaction.signature },
@@ -794,13 +791,13 @@ export class HeliusService {
     let comicIssueId: number = undefined,
       userId: number = undefined;
 
-    const assetAccounts: UmiPublicKey[] = [];
+    const assetAccounts: string[] = [];
     enrichedTransaction.instructions.forEach((instruction) => {
       const isMintInstruction =
         instruction.programId.toString() ===
         MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
       if (isMintInstruction) {
-        const assetAddress = publicKey(instruction.accounts.at(7));
+        const assetAddress = instruction.accounts.at(7);
         assetAccounts.push(assetAddress);
       }
     });
@@ -808,11 +805,12 @@ export class HeliusService {
     let comicIssueAssets: IndexCoreAssetReturnType[];
     try {
       const assets = await Promise.all(
-        assetAccounts.map((account) => fetchAssetV1(this.umi, account)),
+        assetAccounts.map((account) => getAsset(account)),
       );
       comicIssueAssets = await this.indexCoreAssets(
         assets,
         candyMachineAddress,
+        collectionAddress,
         receipt.id,
       );
 
@@ -1531,8 +1529,9 @@ export class HeliusService {
    * Indexes core assets by fetching off-chain metadata and creating/updating records in the database.
    */
   async indexCoreAssets(
-    assets: AssetV1[],
+    assets: DAS.GetAssetResponse[],
     candMachineAddress: string,
+    collectionAddress: string,
     receiptId: number,
   ) {
     const digitalAssets: IndexCoreAssetReturnType[] = [];
@@ -1540,12 +1539,16 @@ export class HeliusService {
     for (const asset of assets) {
       if (!asset) continue;
 
-      const offChainMetadata = await fetchOffChainMetadata(asset.uri);
+      const uri = asset.content.json_uri;
+      const name = asset.content.metadata.name;
+      const publicKey = asset.id;
+      const ownerAddress = asset.ownership.owner;
+
+      const offChainMetadata = await fetchOffChainMetadata(uri);
       const isUsed = findUsedTrait(offChainMetadata);
       const isSigned = findSignedTrait(offChainMetadata);
       const rarity = findRarityTrait(offChainMetadata);
-      const assetAddress = asset.publicKey.toString();
-      const ownerAddress = asset.owner.toString();
+      const assetAddress = publicKey;
 
       const digitalAsset = await this.prisma.collectibleComic.upsert({
         where: {
@@ -1560,32 +1563,32 @@ export class HeliusService {
         update: {
           metadata: {
             connectOrCreate: {
-              where: { uri: asset.uri },
+              where: { uri },
               create: {
                 collectionName: offChainMetadata.name,
-                uri: asset.uri,
+                uri,
                 isUsed,
                 isSigned,
                 rarity,
-                collectionAddress: asset.updateAuthority.address.toString(),
+                collectionAddress,
               },
             },
           },
           receipt: { connect: { id: receiptId } },
         },
         create: {
-          name: asset.name,
+          name,
           candyMachine: { connect: { address: candMachineAddress } },
           metadata: {
             connectOrCreate: {
-              where: { uri: asset.uri },
+              where: { uri },
               create: {
                 collectionName: offChainMetadata.name,
-                uri: asset.uri,
+                uri,
                 isUsed,
                 isSigned,
                 rarity,
-                collectionAddress: asset.updateAuthority.address.toString(),
+                collectionAddress,
               },
             },
           },
@@ -1618,7 +1621,7 @@ export class HeliusService {
       });
 
       digitalAssets.push({ ...digitalAsset, image: cover.image });
-      await this.subscribeTo(asset.publicKey.toString());
+      await this.subscribeTo(publicKey);
     }
 
     return digitalAssets;
