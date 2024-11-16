@@ -2,16 +2,16 @@ import { Command, CommandRunner, InquirerService } from 'nest-commander';
 import { log } from './chalk';
 import { PrismaService } from 'nestjs-prisma';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { CandyMachineReceipt } from '@prisma/client';
+import { CandyMachine, CandyMachineReceipt } from '@prisma/client';
 import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
-import { Umi, publicKey } from '@metaplex-foundation/umi';
+import { Umi } from '@metaplex-foundation/umi';
 import { getConnection, umi } from '../utils/metaplex';
 import {
   AddressLookupTableAccount,
   Connection,
   TransactionMessage,
 } from '@solana/web3.js';
-import { safeFetchAssetV1 } from '@metaplex-foundation/mpl-core';
+import { getAsset } from '../utils/das';
 
 @Command({
   name: 'sync-mint-receipts',
@@ -48,6 +48,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
           },
         ],
       },
+      include: { candyMachine: true },
     });
 
     for await (const receipt of receipts) {
@@ -56,9 +57,12 @@ export class SyncMintReceptsCommand extends CommandRunner {
     log('Receipts Synced !');
   };
 
-  async syncTransaction(receipt: CandyMachineReceipt) {
+  async syncTransaction(
+    receipt: CandyMachineReceipt & { candyMachine: CandyMachine },
+  ) {
     try {
-      const { transactionSignature, candyMachineAddress, id } = receipt;
+      const { transactionSignature, candyMachineAddress, id, candyMachine } =
+        receipt;
       const transactionStatus = await this.connection.getSignatureStatuses(
         [transactionSignature],
         {
@@ -114,6 +118,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
           const reIndexAsset = this.reIndexCoreAsset(
             decompiledTransaction,
             candyMachineAddress,
+            candyMachine.collectionAddress,
             id,
           );
           const updatedReceipt = this.prisma.candyMachineReceipt.update({
@@ -132,6 +137,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
   async reIndexCoreAsset(
     transaction: TransactionMessage,
     candyMachineAddress: string,
+    collectionAddress: string,
     receiptId: number,
   ) {
     const assetAccounts: string[] = [];
@@ -149,7 +155,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
       const assets = (
         await Promise.all(
           assetAccounts.map((account) => {
-            const assetData = safeFetchAssetV1(this.umi, publicKey(account));
+            const assetData = getAsset(account);
             return assetData || null;
           }),
         )
@@ -158,6 +164,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
       await this.heliusService.indexCoreAssets(
         assets,
         candyMachineAddress,
+        collectionAddress,
         receiptId,
       );
     } catch (e) {
