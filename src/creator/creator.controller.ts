@@ -35,14 +35,15 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { plainToInstance } from 'class-transformer';
-import { memoizeThrottle } from '../utils/lodash';
 import {
   RawCreatorDto,
   toRawCreatorDto,
   toRawCreatorDtoArray,
 } from './dto/raw-creator.dto';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
-import { AdminGuard } from 'src/guards/roles.guard';
+import { AdminGuard } from '../guards/roles.guard';
+import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Creator')
 @Controller('creator')
@@ -61,6 +62,7 @@ export class CreatorController {
   }
 
   /* Get all creators */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @Get('get')
   async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
@@ -132,18 +134,12 @@ export class CreatorController {
     await this.creatorService.updatePassword(slug, updatePasswordDto);
   }
 
-  private throttledRequestPasswordReset = memoizeThrottle(
-    (email: string) => {
-      return this.creatorService.requestPasswordReset(email);
-    },
-    3 * 60 * 1000, // cache for 3 minutes
-  );
-
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
   @Patch('request-password-reset')
-  async requestPasswordReset(
+  requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
   ) {
-    return this.throttledRequestPasswordReset(
+    return this.creatorService.requestPasswordReset(
       requestPasswordResetDto.nameOrEmail,
     );
   }
@@ -154,16 +150,12 @@ export class CreatorController {
     await this.creatorService.resetPassword(resetPasswordDto);
   }
 
-  private throttledRequestEmailVerification = memoizeThrottle(
-    (email: string) => this.creatorService.requestEmailVerification(email),
-    2 * 60 * 1000, // cache for 2 minutes
-  );
-
   /* Verify your email address */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
   @CreatorOwnerAuth()
   @Patch('request-email-verification')
   async requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
-    return this.throttledRequestEmailVerification(creator.email);
+    return this.creatorService.requestEmailVerification(creator.email);
   }
 
   /* Verify an email address */

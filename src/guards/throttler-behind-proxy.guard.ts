@@ -6,7 +6,6 @@ import { getClientIp } from 'request-ip';
 export class ThrottlerBehindProxyGuard extends ThrottlerGuard {
   protected async getTracker(req: Record<string, any>): Promise<string> {
     const clientIp = getClientIp(req);
-    console.log(`DEBUG: throttler ip: ${clientIp}`);
     return clientIp;
   }
 }

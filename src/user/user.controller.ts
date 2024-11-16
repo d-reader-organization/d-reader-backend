@@ -20,9 +20,8 @@ import {
   ResetPasswordDto,
   UpdatePasswordDto,
 } from 'src/types/update-password.dto';
-import { Throttle } from '@nestjs/throttler';
+import { minutes, Throttle } from '@nestjs/throttler';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
-import { memoizeThrottle } from 'src/utils/lodash';
 import {
   WalletAssetDto,
   toWalletAssetDtoArray,
@@ -39,6 +38,7 @@ import {
   toUserPrivacyConsentDtoArray,
 } from './dto/user-consent.dto';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
+import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
 
 @ApiTags('User')
 @Controller('user')
@@ -104,18 +104,12 @@ export class UserController {
     await this.userService.updatePassword(+id, updatePasswordDto);
   }
 
-  private throttledRequestPasswordReset = memoizeThrottle(
-    (email: string) => {
-      return this.userService.requestPasswordReset(email);
-    },
-    3 * 60 * 1000, // cache for 3 minutes
-  );
-
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
   @Patch('request-password-reset')
-  async requestPasswordReset(
+  requestPasswordReset(
     @Body() requestPasswordResetDto: RequestPasswordResetDto,
   ) {
-    return this.throttledRequestPasswordReset(
+    return this.userService.requestPasswordReset(
       requestPasswordResetDto.nameOrEmail,
     );
   }
@@ -125,33 +119,24 @@ export class UserController {
     await this.userService.resetPassword(resetPasswordDto);
   }
 
-  private throttledRequestEmailChange = memoizeThrottle(
-    (user: UserPayload, newEmail: string) => {
-      return this.userService.requestEmailChange(user, newEmail);
-    },
-    60 * 1000, // cache for 1 minute
-  );
-
   @Throttle({ long: { limit: 3 } })
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
   @UserOwnerAuth()
   @Patch('request-email-change')
-  async requestEmailChange(
+  requestEmailChange(
     @UserEntity() user: UserPayload,
     @Body() { newEmail }: RequestEmailChangeDto,
   ) {
-    return this.throttledRequestEmailChange(user, newEmail);
+    return this.userService.requestEmailChange(user, newEmail);
   }
 
-  private throttledRequestEmailVerification = memoizeThrottle(
-    (email: string) => this.userService.requestEmailVerification(email),
-    10 * 60 * 1000, // cache for 10 minutes
-  );
-
   /* Verify your email address */
+  @Throttle({ long: { limit: 3 } })
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
   @UserOwnerAuth()
   @Patch('request-email-verification')
-  async requestEmailVerification(@UserEntity() user: UserPayload) {
-    return this.throttledRequestEmailVerification(user.email);
+  requestEmailVerification(@UserEntity() user: UserPayload) {
+    return this.userService.requestEmailVerification(user.email);
   }
 
   /* Verify an email address */
@@ -195,16 +180,12 @@ export class UserController {
     return toUserDto(updatedUser);
   }
 
-  private throttledSyncWallets = memoizeThrottle(
-    (id: number) => this.userService.syncWallets(id),
-    3 * 60 * 1000, // 3 minutes
-  );
-
   @UserOwnerAuth()
-  @Throttle({ long: { limit: 3 } })
+  @Throttle({ long: { ttl: minutes(3), limit: 3 } })
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(3), userScope: true }))
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
-    return this.throttledSyncWallets(+id);
+    return this.userService.syncWallets(+id);
   }
 
   /* Pseudo delete genre */

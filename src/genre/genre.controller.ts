@@ -28,7 +28,8 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-params.dto';
-import { memoizeThrottle } from 'src/utils/lodash';
+import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { hours } from '@nestjs/throttler';
 
 @ApiTags('Genre')
 @Controller('genre')
@@ -52,18 +53,12 @@ export class GenreController {
     return toGenreDto(genre);
   }
 
-  private throttledFindAll = memoizeThrottle(
-    async (query: GenreFilterParams) => {
-      const genres = await this.genreService.findAll(query);
-      return toGenreDtoArray(genres);
-    },
-    12 * 60 * 60 * 1000, // 12 hours,
-  );
-
   /* Get all genres */
+  @UseInterceptors(CacheInterceptor({ ttl: hours(12) }))
   @Get('get')
-  findAll(@Query() query: GenreFilterParams) {
-    return this.throttledFindAll(query);
+  async findAll(@Query() query: GenreFilterParams) {
+    const genres = await this.genreService.findAll(query);
+    return toGenreDtoArray(genres);
   }
 
   /* Get specific genre by unique slug */

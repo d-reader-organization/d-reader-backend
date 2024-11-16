@@ -1,12 +1,19 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  UseInterceptors,
+} from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiTags } from '@nestjs/swagger';
 import { toWalletDto, WalletDto } from './dto/wallet.dto';
 import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
-import { Throttle } from '@nestjs/throttler';
-import { memoizeThrottle } from '../utils/lodash';
+import { minutes, Throttle } from '@nestjs/throttler';
 import { WalletOwnerAuth } from '../guards/wallet-owner.guard';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
+import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
 
 @ApiTags('Wallet')
 @Controller('wallet')
@@ -36,11 +43,6 @@ export class WalletController {
     return toWalletAssetDtoArray(assets);
   }
 
-  private throttledSyncWallet = memoizeThrottle(
-    (address: string) => this.walletService.syncWallet(address),
-    5 * 60 * 1000, // 5 minutes
-  );
-
   /* Update specific wallet */
   @WalletOwnerAuth()
   @Patch('update/:address')
@@ -52,9 +54,10 @@ export class WalletController {
     return toWalletDto(wallet);
   }
 
-  @Throttle({ long: { limit: 3 } })
+  @Throttle({ long: { ttl: minutes(3), limit: 3 } })
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(3), userScope: true }))
   @Get('sync/:address')
   syncWallet(@Param('address') address: string) {
-    return this.throttledSyncWallet(address);
+    return this.walletService.syncWallet(address);
   }
 }

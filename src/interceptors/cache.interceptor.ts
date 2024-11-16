@@ -26,6 +26,18 @@ export function CacheInterceptor({ ttl = 60, userScope = false }) {
         .switchToHttp()
         .getRequest();
 
+      console.log('starting the cache process: ' + request.url);
+      if (
+        // TODO: standardize searches as 'searchString' or something like that
+        request.url.includes('titleSubstring') ||
+        request.url.includes('nameSubstring')
+      ) {
+        console.log(
+          'opting out of cache, titleSubstring / nameSubstring detected!',
+        );
+        return next.handle().pipe();
+      }
+
       let cacheKey = `cacheinterceptor:"${request.url}"`;
       if (userScope) cacheKey += `:${request.user.id}`;
 

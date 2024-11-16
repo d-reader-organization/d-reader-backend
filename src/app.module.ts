@@ -40,11 +40,12 @@ import { TwitterModule } from './twitter/twitter.module';
 import { BlinkModule } from './blink/blink.module';
 import { MutexModule } from './mutex/mutex.module';
 import { InvestModule } from './invest/invest.module';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CacheModule } from './interceptors/cache.module';
 
 @Module({
   imports: [
     AuthModule,
+    CacheModule,
     ConfigModule.forRoot({ isGlobal: true, load: [config] }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     DiscordModule.forRootAsync({
@@ -82,7 +83,6 @@ import { CacheModule } from '@nestjs/cache-manager';
         };
       },
     }),
-    CacheModule.register(),
     WalletModule,
     CreatorModule,
     ComicModule,
