@@ -60,7 +60,7 @@ const config: Config = {
     {
       name: 'long',
       ttl: 60000, // 60 seconds
-      limit: 1,
+      limit: 180,
       ignoreUserAgents: [],
     },
   ],
