@@ -31,7 +31,8 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
-import { memoizeThrottle } from 'src/utils/lodash';
+import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
+import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Carousel')
 @Controller('carousel')
@@ -58,18 +59,12 @@ export class CarouselController {
     return toCarouselSlideDto(carouselSlide);
   }
 
-  private throttledFindAll = memoizeThrottle(
-    async (query: GetCarouselSlidesParams) => {
-      const carouselSlides = await this.carouselService.findAll(query);
-      return toCarouselSlideDtoArray(carouselSlides);
-    },
-    15 * 60 * 1000, // 15 minutes
-  );
-
   /* Get all carousel slides */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(15) }))
   @Get('slides/get')
   async findAll(@Query() query: GetCarouselSlidesParams) {
-    return this.throttledFindAll(query);
+    const carouselSlides = await this.carouselService.findAll(query);
+    return toCarouselSlideDtoArray(carouselSlides);
   }
 
   /* Get all raw carousel slides */

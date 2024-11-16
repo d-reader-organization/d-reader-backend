@@ -81,7 +81,9 @@ import {
   toBasicComicIssueDtoArray,
 } from './dto/basic-comic-issue.dto';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
-import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
+import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
+import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
@@ -107,6 +109,7 @@ export class ComicIssueController {
   }
 
   /* Get all comic issues */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @Get('get')
   async findAll(@Query() query: ComicIssueParams): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
@@ -159,6 +162,7 @@ export class ComicIssueController {
     return toComicIssueDto(comicIssue);
   }
 
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @Get('get-public/:id')
   async findOnePublic(@Param('id') id: string): Promise<ComicIssueDto> {
     const processedId = processComicIssueIdString(id);

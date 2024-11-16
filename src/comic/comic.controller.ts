@@ -42,6 +42,8 @@ import {
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
+import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -64,6 +66,7 @@ export class ComicController {
   }
 
   /* Get all comics */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @Get('get')
   async findAll(@Query() query: ComicParams): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll(query);

@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ExpressInterestDto } from './dto/express-interest.dto';
 import { InvestService } from './invest.service';
@@ -8,6 +15,8 @@ import { UserAuth } from 'src/guards/user-auth.guard';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { toProjectDto, toProjectDtoArray } from './dto/project.dto';
 import { toUserInterestedReceiptDtoArray } from './dto/userInterestedReceipt.dto';
+import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Invest')
 @Controller('invest')
@@ -29,6 +38,7 @@ export class InvestController {
     );
   }
 
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('/get')
   async findAll() {
     const projects = await this.investService.findAllInvestProjects();
