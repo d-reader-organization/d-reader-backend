@@ -41,6 +41,7 @@ export class SyncMintReceptsCommand extends CommandRunner {
         OR: [
           { status: 'Processing' },
           {
+            status: 'Processing',
             collectibleComics: {
               none: {},
             },
@@ -65,6 +66,15 @@ export class SyncMintReceptsCommand extends CommandRunner {
         },
       );
       console.log(transactionStatus.value);
+
+      if (!transactionStatus || !transactionStatus.value[0]) {
+        await this.prisma.candyMachineReceipt.update({
+          where: { id: receipt.id },
+          data: { status: 'Failed' },
+        });
+        return;
+      }
+
       if (
         (transactionStatus.value[0] &&
           transactionStatus.value[0].confirmationStatus === 'confirmed') ||
