@@ -7,6 +7,7 @@ import {
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { umi } from '../utils/metaplex';
 import { publicKey } from '@metaplex-foundation/umi';
+import { PrismaService } from 'nestjs-prisma';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -17,7 +18,7 @@ interface Options {
   description: 'Fetch Core Candy Machine info from the address',
 })
 export class FetchCandyMachineCommand extends CommandRunner {
-  constructor(private readonly inquirerService: InquirerService) {
+  constructor(private readonly inquirerService: InquirerService, private readonly prisma: PrismaService) {
     super();
   }
 
@@ -56,6 +57,11 @@ export class FetchCandyMachineCommand extends CommandRunner {
       });
       console.log('RARITY MAP', rarityMap);
       log(candyMachine);
+      const itemsMinted = Number(candyMachine.itemsRedeemed);
+      const itemsAvailable = Number(candyMachine.data.itemsAvailable);
+
+      const itemsRemaining = itemsAvailable - itemsMinted;
+      await this.prisma.candyMachine.update({where:{address:candyMachine.publicKey.toString()}, data:{itemsMinted,itemsAvailable,itemsRemaining}})
     } catch (e) {
       logErr(
         `Failed to fetch the candy machine on address ${options.candyMachineAddress.toBase58()}: ${e}`,
