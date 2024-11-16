@@ -1,6 +1,6 @@
 import { Config } from './config.interface';
 
-const config: Config = {
+export const CONFIG: Config = {
   client: {
     dReaderUrl: process.env.D_READER_URL,
     dPublisherUrl: process.env.D_PUBLISHER_URL,
@@ -38,6 +38,7 @@ const config: Config = {
     clientId: process.env.GOOGLE_AUTH_CLIENT_ID ?? '',
     clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET ?? '',
   },
+  // TODO: we should set the ignoreUserAgents to ignore Discord and Helius webhooks
   throttlers: [
     {
       name: 'short',
@@ -66,4 +67,4 @@ const config: Config = {
   ],
 };
 
-export default (): Config => config;
+export default (): Config => CONFIG;

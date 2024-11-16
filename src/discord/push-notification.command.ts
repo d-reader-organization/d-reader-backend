@@ -10,8 +10,9 @@ import {
 } from 'discord.js';
 import { UseGuards } from '@nestjs/common/decorators/core';
 import { PushNotificationGuard } from 'src/guards/discord.guard';
+import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
 
-@SkipThrottle()
+@SkipThrottle(SKIP_THROTTLERS_CONFIG)
 @Command({
   name: 'push-notification',
   description: 'Send push notification to all devices',

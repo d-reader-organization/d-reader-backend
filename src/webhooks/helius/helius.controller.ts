@@ -20,6 +20,7 @@ import { HeliusService } from './helius.service';
 import { AdminGuard } from '../../guards/roles.guard';
 import { WebhookGuard } from '../../guards/webhook.guard';
 import { SkipThrottle } from '@nestjs/throttler';
+import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
 
 @ApiTags('Helius')
 @Controller('helius')
@@ -58,7 +59,7 @@ export class HeliusController {
 
   /* Receive data from webhooks */
   @UseGuards(WebhookGuard)
-  @SkipThrottle()
+  @SkipThrottle(SKIP_THROTTLERS_CONFIG)
   @Post('handle')
   async handle(@Body() enrichedTransactions: EnrichedTransaction[]) {
     await this.heliusService.handleWebhookEvent(enrichedTransactions);

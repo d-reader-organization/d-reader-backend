@@ -54,12 +54,12 @@ import {
   CandyMachine,
 } from '@prisma/client';
 import { SkipThrottle } from '@nestjs/throttler';
-import { LOCKED_COLLECTIONS } from '../constants';
+import { LOCKED_COLLECTIONS, SKIP_THROTTLERS_CONFIG } from '../constants';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
 import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { validateSignComicCommandParams } from './utils';
 
-@SkipThrottle()
+@SkipThrottle(SKIP_THROTTLERS_CONFIG)
 @Command({
   name: 'get-signature',
   description: 'Get your comic signed',

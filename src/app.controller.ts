@@ -1,5 +1,5 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import { UserAuth } from './guards/user-auth.guard';
 import { CreatorAuth } from './guards/creator-auth.guard';
@@ -8,6 +8,7 @@ import { CreatorEntity } from './decorators/creator.decorator';
 import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { LOOSE_THROTTLER_CONFIG } from './constants';
 
 @ApiTags('App')
 @Controller('app')
@@ -36,7 +37,7 @@ export class AppController {
     return this.appService.getAuth(creator.id);
   }
 
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('healthcheck')
   async healthCheck(): Promise<string> {
     return await this.appService.healthCheck();

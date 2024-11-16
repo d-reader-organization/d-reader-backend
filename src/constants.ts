@@ -3,6 +3,7 @@ import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { IsStrongPasswordOptions } from 'class-validator';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
+import { CONFIG } from './configs/config';
 
 export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
 
@@ -250,3 +251,17 @@ export const INIT_EDITION_SALE_DISCRIMINATOR = [
 export const BUY_EDITION_DISCRIMINATOR = [30, 208, 80, 182, 61, 221, 252, 249];
 
 export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';
+
+export const SKIP_THROTTLERS_CONFIG: Record<string, boolean> =
+  CONFIG.throttlers.reduce<Record<string, boolean>>((acc, throttler) => {
+    if (!throttler.name) return acc;
+    return { ...acc, [throttler.name]: true };
+  }, {});
+
+export const LOOSE_THROTTLER_CONFIG: Record<
+  string,
+  { ttl: number; limit: number }
+> = CONFIG.throttlers.reduce((acc, throttler) => {
+  if (!throttler.limit) return acc;
+  return { ...acc, [throttler.name]: { limit: 300, ttl: 60 } };
+}, {});
