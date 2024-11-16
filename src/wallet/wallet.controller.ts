@@ -55,7 +55,6 @@ export class WalletController {
   }
 
   @Throttle({ long: { ttl: minutes(3), limit: 3 } })
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(3), userScope: true }))
   @Get('sync/:address')
   syncWallet(@Param('address') address: string) {
     return this.walletService.syncWallet(address);
