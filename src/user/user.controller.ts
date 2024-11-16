@@ -39,6 +39,7 @@ import {
 } from './dto/user-consent.dto';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
+import { memoizeThrottle } from 'src/utils/lodash';
 
 @ApiTags('User')
 @Controller('user')
@@ -180,12 +181,16 @@ export class UserController {
     return toUserDto(updatedUser);
   }
 
+  private throttledSyncWallets = memoizeThrottle(
+    (id: number) => this.userService.syncWallets(id),
+    3 * 60 * 1000, // 3 minutes
+  );
+
   @UserOwnerAuth()
   @Throttle({ long: { ttl: minutes(3), limit: 3 } })
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(3), userScope: true }))
   @Get('sync-wallets/:id')
   syncWallet(@Param('id') id: string) {
-    return this.userService.syncWallets(+id);
+    return this.throttledSyncWallets(+id);
   }
 
   /* Pseudo delete genre */
