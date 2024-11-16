@@ -17,13 +17,14 @@ import { CreatorService } from 'src/creator/creator.service';
 import { DiscordAdminRoleGuard } from 'src/guards/discord.guard';
 import { DISCORD_KEY_SEPARATOR } from './dto/constants';
 import { DiscordKey } from './dto/enums';
+import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
 
 enum Action {
   publish = 'publish',
   verify = 'verify',
 }
 
-@SkipThrottle()
+@SkipThrottle(SKIP_THROTTLERS_CONFIG)
 @Injectable()
 export class BotGateway {
   constructor(

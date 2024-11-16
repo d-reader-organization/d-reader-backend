@@ -2,7 +2,7 @@ import { Controller, Get, Post, Param, Patch, Body } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import {
   validateCreatorName,
@@ -21,6 +21,7 @@ import { UserAuth } from '../guards/user-auth.guard';
 import { GoogleUserEntity, UserEntity } from '../decorators/user.decorator';
 import { GoogleUserAuth } from '../guards/google-auth.guard';
 import { ConnectWalletDto, SignedDataType } from './dto/connect-wallet.dto';
+import { LOOSE_THROTTLER_CONFIG } from '../constants';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,7 +34,7 @@ export class AuthController {
   ) {}
 
   // USER ENDPOINTS
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('user/validate-name/:name')
   async validateUserName(@Param('name') name: string) {
     validateName(name);
@@ -63,7 +64,7 @@ export class AuthController {
     return this.authService.authorizeUser(user);
   }
 
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('user/validate-email/:email')
   async validateUserEmail(@Param('email') email: string) {
     validateEmail(email);
@@ -85,21 +86,21 @@ export class AuthController {
   }
 
   /* Refresh access token */
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Patch('user/refresh-token/:refreshToken')
   async reauthorizeUser(@Param('refreshToken') refreshToken: string) {
     return await this.authService.refreshAccessToken(refreshToken);
   }
 
   // CREATOR ENDPOINTS
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('creator/validate-name/:name')
   async validateCreatorName(@Param('name') name: string) {
     validateCreatorName(name);
     return await this.creatorService.throwIfNameTaken(name);
   }
 
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('creator/validate-email/:email')
   async validateCreatorEmail(@Param('email') email: string) {
     validateEmail(email);
@@ -124,7 +125,7 @@ export class AuthController {
 
   // Should this be an authorized endpoint? How do refresh tokens actually work??
   /* Refresh access token */
-  @SkipThrottle()
+  @Throttle(LOOSE_THROTTLER_CONFIG)
   @Patch('creator/refresh-token/:refreshToken')
   async reauthorizeCreator(@Param('refreshToken') refreshToken: string) {
     return await this.authService.refreshAccessToken(refreshToken);
