@@ -26,16 +26,15 @@ export function CacheInterceptor({ ttl = 60, userScope = false }) {
         .switchToHttp()
         .getRequest();
 
-      console.log('starting the cache process: ' + request.url);
+      console.log('processing cache: ' + request.url);
       if (
         // TODO: standardize searches as 'searchString' or something like that
         request.url.includes('titleSubstring') ||
         request.url.includes('nameSubstring')
       ) {
-        console.log(
-          'opting out of cache, titleSubstring / nameSubstring detected!',
-        );
-        return next.handle().pipe();
+        console.info('opting out of cache!');
+        return next.handle();
+        // return next.handle().pipe(map((response) => response));
       }
 
       let cacheKey = `cacheinterceptor:"${request.url}"`;
@@ -44,11 +43,11 @@ export function CacheInterceptor({ ttl = 60, userScope = false }) {
       const data = await this.cacheManager.get(cacheKey);
 
       if (data) {
-        console.log(`DEBUG: from cache [${cacheKey}]`);
+        console.warn(`DEBUG: from cache [${cacheKey}]`);
         return of(JSON.parse(data as string));
       }
 
-      console.log(`DEBUG: not from cache [${cacheKey}]`);
+      console.warn(`DEBUG: not from cache [${cacheKey}]`);
 
       return next.handle().pipe(
         map(async (response) => {

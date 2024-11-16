@@ -86,6 +86,8 @@ export class ComicController {
   async findAllBasic(
     @Query() query: BasicComicParams,
   ): Promise<BasicComicDto[]> {
+    // TODO: use this instead /get on the search input on the web app
+    // TODO: we only need the basic comic data like the cover, title, slug, number of episodes?
     const comics = await this.comicService.findAllBasic(query);
     return toBasicComicDtoArray(comics);
   }
