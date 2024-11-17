@@ -96,8 +96,7 @@ export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
 };
 
 export type CandyMachineMintData = {
-  couponType: CouponType;
-  isSponsored: boolean;
+  coupon: CandyMachineCoupon,
   lookupTable: string;
   mintPrice: number;
   splToken: {
@@ -106,7 +105,4 @@ export type CandyMachineMintData = {
     tokenSymbol: string;
   };
   tokenStandard: TokenStandard;
-  numberOfRedemptions: number;
-  startsAt: Date;
-  expiresAt: Date;
 };

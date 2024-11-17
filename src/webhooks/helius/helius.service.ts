@@ -785,7 +785,7 @@ export class HeliusService {
     const candyMachineAddress = baseInstruction.accounts[2];
     const collectionAddress = baseInstruction.accounts[8];
 
-    const receipt = await this.prisma.candyMachineReceipt.findFirst({
+    const receipt = await this.prisma.candyMachineReceipt.findUnique({
       where: { transactionSignature: enrichedTransaction.signature },
     });
     let comicIssueId: number = undefined,
@@ -831,15 +831,6 @@ export class HeliusService {
           connect: { id: userId },
         };
       }
-      const updatedReceipt = await this.prisma.candyMachineReceipt.update({
-        where: { id: receipt.id },
-        include: {
-          collectibleComics: true,
-          buyer: { include: { user: true } },
-        },
-        data: receiptData,
-      });
-
       const candyMachine = await fetchCandyMachine(
         this.umi,
         publicKey(candyMachineAddress),
@@ -849,13 +840,45 @@ export class HeliusService {
         Number(candyMachine.data.itemsAvailable) -
         Number(candyMachine.itemsRedeemed);
 
-      await this.prisma.candyMachine.update({
+      const updateReceipt = this.prisma.candyMachineReceipt.update({
+        where: { id: receipt.id },
+        include: {
+          collectibleComics: true,
+          buyer: { include: { user: true } },
+        },
+        data: receiptData,
+      });
+
+      const updateCandyMachine = this.prisma.candyMachine.update({
         where: { address: candyMachineAddress },
         data: {
           itemsRemaining,
           itemsMinted: Number(candyMachine.itemsRedeemed),
         },
       });
+      const isPublicMint =
+        receipt.label.startsWith('pu') || receipt.label.startsWith('ww');
+      const couponId = receipt.couponId;
+      const walletAddress = receipt.buyerAddress;
+      const itemsRedeemed = assetAccounts.length;
+
+      const updateCouponStats = isPublicMint
+        ? this.prisma.candyMachineCouponWallet.upsert({
+            where: { couponId_walletAddress: { couponId, walletAddress } },
+            create: { couponId, walletAddress, itemsRedeemed },
+            update: { itemsRedeemed: { increment: itemsRedeemed } },
+          })
+        : this.prisma.candyMachineCouponUser.upsert({
+            where: { couponId_userId: { couponId, userId } },
+            create: { couponId, userId, itemsRedeemed },
+            update: { itemsRedeemed: { increment: itemsRedeemed } },
+          });
+
+      const [updatedReceipt] = await Promise.all([
+        updateReceipt,
+        updateCandyMachine,
+        updateCouponStats,
+      ]);
 
       if (itemsRemaining === 0) {
         this.removeSubscription(candyMachine.publicKey.toString());

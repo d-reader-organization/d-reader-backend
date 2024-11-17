@@ -143,7 +143,7 @@ export class TransactionController {
     return toActionResponseDto(transaction);
   }
 
-  @OptionalUserAuth()
+  // @OptionalUserAuth()
   @Get('/mint')
   async constructMintTransaction(
     @Query() query: MintParams,

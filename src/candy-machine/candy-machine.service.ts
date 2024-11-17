@@ -58,9 +58,9 @@ import {
   CouponType,
   TransactionStatus,
   Prisma,
+  CandyMachineCoupon,
 } from '@prisma/client';
 import {
-  CandyMachineCouponWithWhitelist,
   CandyMachineCouponWithStats,
   CreateCandyMachineParams,
   AddCandyMachineCouponParams,
@@ -117,7 +117,7 @@ import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-curren
 import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { isEmpty, isNull } from 'lodash';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class CandyMachineService {
@@ -285,14 +285,13 @@ export class CandyMachineService {
     const { lookupTable, isSponsored } =
       await this.validateMintTransactionRequest(
         walletAddress,
-        candyMachineAddress,
         label,
         couponId,
         numberOfItems,
         userId,
       );
-    const CORE_MINT_COMPUTE_BUDGET = 800000;
 
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
     const transactions = await getTransactionWithPriorityFee(
       constructMultipleMintTransaction,
       CORE_MINT_COMPUTE_BUDGET,
@@ -311,23 +310,14 @@ export class CandyMachineService {
   /* Validate if mint is allowed */
   async validateMintTransactionRequest(
     walletAddress: UmiPublicKey,
-    candyMachineAddress: UmiPublicKey,
     label: string,
     couponId: number,
     numberOfItems: number,
     userId?: number,
   ): Promise<{ lookupTable: string | undefined; isSponsored: boolean }> {
-    const {
-      mintPrice,
-      tokenStandard,
-      couponType,
-      isSponsored,
-      numberOfRedemptions,
-      startsAt,
-      expiresAt,
-      lookupTable,
-      splToken,
-    } = await this.findCandyMachineCouponData(couponId, label);
+    const { coupon, mintPrice, tokenStandard, lookupTable, splToken } =
+      await this.findCandyMachineCouponData(couponId, label);
+    const { startsAt, expiresAt, isSponsored } = coupon;
 
     this.validateCouponDates(startsAt, expiresAt);
     this.validateTokenStandard(tokenStandard);
@@ -339,17 +329,7 @@ export class CandyMachineService {
       splToken,
       isSponsored,
     );
-    this.validateMintEligibility(couponType, userId, walletAddress, couponId);
-
-    await this.validateMintLimit(
-      numberOfRedemptions,
-      numberOfItems,
-      couponType,
-      candyMachineAddress,
-      couponId,
-      walletAddress,
-      userId,
-    );
+    await this.validateMintEligibility(coupon, userId, walletAddress);
 
     return { lookupTable, isSponsored };
   }
@@ -359,6 +339,7 @@ export class CandyMachineService {
     walletAddress: string,
     userId?: number,
   ) {
+    /** Deserialize transactions */
     const mintTransaction = VersionedTransaction.deserialize(
       Buffer.from(transactions[1], 'base64'),
     );
@@ -366,6 +347,7 @@ export class CandyMachineService {
       Buffer.from(transactions[0], 'base64'),
     );
 
+    /** Fetch lookup table and decompile mint transaction */
     let lookupTableAccounts: AddressLookupTableAccount;
     if (mintTransaction.message.addressTableLookups.length) {
       const lookupTableAddress =
@@ -374,7 +356,7 @@ export class CandyMachineService {
       const lookupTable = await this.metaplex.connection.getAddressLookupTable(
         lookupTableAddress,
       );
-      lookupTableAccounts = lookupTable.value;
+      lookupTableAccounts = lookupTable.value; //todo: cache this
     }
 
     const mintInstructions = TransactionMessage.decompile(
@@ -401,18 +383,19 @@ export class CandyMachineService {
     const label =
       ixData.group.__option == 'Some' ? ixData.group.value : undefined;
 
-    const splTokenAddress = SOL_ADDRESS;
-
+    /** Fetch coupon details and run assertions */
     const { coupon, ...currencySetting } =
       await this.prisma.candyMachineCouponCurrencySetting.findUnique({
         where: { label_candyMachineAddress: { label, candyMachineAddress } },
         include: { coupon: true },
       });
 
-    if (
-      coupon.type == CouponType.RegisteredUser ||
-      coupon.type == CouponType.WhitelistedUser
-    ) {
+    const publicMintTypes: CouponType[] = [
+      CouponType.PublicUser,
+      CouponType.WhitelistedWallet,
+    ];
+    const isPublicMint = publicMintTypes.includes(coupon.type);
+    if (!isPublicMint) {
       if (!userId) {
         throw new UnauthorizedException(
           'Only registered users are eligible for this coupon !',
@@ -420,7 +403,7 @@ export class CandyMachineService {
       }
     }
 
-    const { mintPrice } = currencySetting;
+    const { mintPrice, splTokenAddress } = currencySetting;
     const assetAccounts: PublicKey[] = [];
 
     mintInstructions.instructions.forEach((instruction) => {
@@ -468,17 +451,20 @@ export class CandyMachineService {
     }
 
     if (coupon.numberOfRedemptions) {
-      const itemsAlreadyClaimed = await this.countWalletItemsMintedQuery(
-        candyMachineAddress,
-        minterAddress,
-        coupon.id,
+      const { itemsMinted } = await this.getCandyMachineCouponStats(
+        coupon,
+        walletAddress,
+        userId,
       );
-
-      if (itemsAlreadyClaimed + numberOfItems > coupon.numberOfRedemptions) {
+      if (
+        itemsMinted &&
+        itemsMinted + numberOfItems > coupon.numberOfRedemptions
+      ) {
         throw new BadRequestException("You've already redeemed coupon");
       }
     }
 
+    /** sign and send mint transaction */
     const umiMintTransaction = decodeUmiTransaction(transactions[1]);
     let signedMintTransaction = umiMintTransaction;
     if (coupon.id == 51 && splTokenAddress === SOL_ADDRESS) {
@@ -509,7 +495,7 @@ export class CandyMachineService {
       numberOfItems,
       status: TransactionStatus.Processing,
       transactionSignature,
-      price: mintPrice, // Should this be numberOfItems*mintPrice ?
+      price: mintPrice,
       timestamp: new Date(),
       splTokenAddress,
     };
@@ -599,27 +585,15 @@ export class CandyMachineService {
 
   async addWhitelistedUsersToCoupon(couponId: number, usernames: string[]) {
     const users = await this.prisma.user.findMany({
-      where: {
-        name: { in: usernames },
-        whitelistedCandyMachineCoupons: {
-          none: { couponId },
-        },
-      },
+      where: { name: { in: usernames } },
     });
-
-    await this.prisma.candyMachineCoupon.update({
-      where: { id: couponId },
-      data: {
-        users: {
-          create: users.map((user) => {
-            return {
-              user: {
-                connect: { id: user.id },
-              },
-            };
-          }),
-        },
-      },
+    await this.prisma.candyMachineCouponUser.createMany({
+      data: users.map((user) => ({
+        userId: user.id,
+        couponId,
+        itemsRedeemed: 0,
+      })),
+      skipDuplicates: true,
     });
   }
 
@@ -632,38 +606,28 @@ export class CandyMachineService {
     if (collectionAddress) {
       collectionHolders = await this.fetchCollectionHolders(collectionAddress);
     }
-    const whiteListedWallets =
-      await this.prisma.candyMachineCouponWhitelistedWallet
-        .findMany({
-          where: { couponId },
-        })
-        .then((whiteListedWallets) =>
-          whiteListedWallets.map(
-            (whiteListedWallet) => whiteListedWallet.walletAddress,
-          ),
-        );
+    const whiteListedWallets = await this.prisma.candyMachineCouponWallet
+      .findMany({
+        where: { couponId },
+      })
+      .then((whiteListedWallets) =>
+        whiteListedWallets.map(
+          (whiteListedWallet) => whiteListedWallet.walletAddress,
+        ),
+      );
 
     const totalWallets = [...collectionHolders, ...wallets];
     const filteredWallets = totalWallets.filter(
       (wallet) => !whiteListedWallets.includes(wallet),
     );
 
-    await this.prisma.candyMachineCoupon.update({
-      where: { id: couponId },
-      data: {
-        wallets: {
-          create: filteredWallets.map((wallet) => {
-            return {
-              wallet: {
-                connectOrCreate: {
-                  where: { address: wallet },
-                  create: { address: wallet },
-                },
-              },
-            };
-          }),
-        },
-      },
+    await this.prisma.candyMachineCouponWallet.createMany({
+      data: filteredWallets.map((wallet) => ({
+        walletAddress: wallet,
+        couponId,
+        itemsRedeemed: 0,
+      })),
+      skipDuplicates: true,
     });
   }
 
@@ -890,97 +854,103 @@ export class CandyMachineService {
   };
 
   private async checkWhitelistedWalletCouponEligibility(
-    coupon: CandyMachineCouponWithWhitelist,
+    coupon: CandyMachineCoupon,
     walletAddress: string,
   ) {
-    const walletItemsMinted = await this.countWalletItemsMintedQuery(
-      coupon.candyMachineAddress,
-      walletAddress,
-      coupon.id,
-    );
-    const redemptionLimitReached = coupon.numberOfRedemptions
-      ? coupon.numberOfRedemptions <= walletItemsMinted
-      : false;
+    const couponId = coupon.id;
+    const couponWallet = await this.prisma.candyMachineCouponWallet.findUnique({
+      where: { couponId_walletAddress: { couponId, walletAddress } },
+    });
 
-    let isEligible = !redemptionLimitReached;
-    if (isEligible) {
-      isEligible = await this.findWalletWhitelisted(walletAddress, coupon.id);
+    if (!couponWallet) {
+      return {
+        isEligible: false,
+      };
     }
+
+    const isEligible = coupon.numberOfRedemptions
+      ? coupon.numberOfRedemptions > couponWallet.itemsRedeemed
+      : true;
 
     return {
       isEligible,
-      itemsMinted: walletItemsMinted,
+      itemsMinted: couponWallet.itemsRedeemed,
     };
   }
 
   private async checkWhitelistedUserCouponEligibility(
-    coupon: CandyMachineCouponWithWhitelist,
+    coupon: CandyMachineCoupon,
     userId: number,
   ) {
-    const itemsMinted = await this.countUserItemsMintedQuery(
-      coupon.candyMachineAddress,
-      userId,
-      coupon.id,
-    );
+    const couponId = coupon.id;
+    const couponUser = await this.prisma.candyMachineCouponUser.findUnique({
+      where: { couponId_userId: { couponId, userId } },
+    });
 
-    const redemptionLimitReached = coupon.numberOfRedemptions
-      ? coupon.numberOfRedemptions <= itemsMinted
-      : false;
-
-    let isEligible = !redemptionLimitReached;
-
-    if (isEligible) {
-      isEligible = await this.findUserWhitelisted(userId, coupon.id);
+    if (!couponUser) {
+      return {
+        isEligible: false,
+      };
     }
+
+    const isEligible = coupon.numberOfRedemptions
+      ? coupon.numberOfRedemptions > couponUser.itemsRedeemed
+      : true;
 
     return {
       isEligible,
-      itemsMinted,
+      itemsMinted: couponUser.itemsRedeemed,
     };
   }
 
   private async checkPublicCouponEligibility(
-    coupon: CandyMachineCouponWithWhitelist,
+    coupon: CandyMachineCoupon,
     walletAddress: string,
   ) {
-    const itemsMinted = await this.countWalletItemsMintedQuery(
-      coupon.candyMachineAddress,
-      walletAddress,
-      coupon.id,
-    );
+    const couponId = coupon.id;
+    const couponWallet = await this.prisma.candyMachineCouponWallet.findUnique({
+      where: { couponId_walletAddress: { couponId, walletAddress } },
+    });
 
-    const isEligible = !isNull(coupon.numberOfRedemptions)
-      ? coupon.numberOfRedemptions > itemsMinted
+    if (!couponWallet) {
+      return { isEligible: true, itemsMinted: 0 };
+    }
+
+    const isEligible = coupon.numberOfRedemptions
+      ? coupon.numberOfRedemptions > couponWallet.itemsRedeemed
       : true;
 
     return {
       isEligible,
-      itemsMinted,
+      itemsMinted: couponWallet.itemsRedeemed,
     };
   }
 
   private async checkUserCouponEligibility(
-    coupon: CandyMachineCouponWithWhitelist,
+    coupon: CandyMachineCoupon,
     userId: number,
   ) {
-    const itemsMinted = await this.countUserItemsMintedQuery(
-      coupon.candyMachineAddress,
-      userId,
-      coupon.id,
-    );
+    const couponId = coupon.id;
+    const couponUser = await this.prisma.candyMachineCouponUser.findUnique({
+      where: { couponId_userId: { couponId, userId } },
+    });
+
+    if (!couponUser) {
+      return { isEligible: true, itemsMinted: 0 };
+    }
 
     const isEligible = coupon.numberOfRedemptions
-      ? coupon.numberOfRedemptions > itemsMinted
+      ? coupon.numberOfRedemptions > couponUser.itemsRedeemed
       : true;
 
     return {
       isEligible,
-      itemsMinted,
+      itemsMinted: couponUser.itemsRedeemed,
     };
   }
 
   private async getCandyMachineCouponStats(
-    coupon: CandyMachineCouponWithWhitelist,
+    coupon: CandyMachineCoupon,
     walletAddress?: string,
     userId?: number,
   ): Promise<{
@@ -1044,14 +1014,13 @@ export class CandyMachineService {
         (item) => item.label === label,
       );
 
-      const supportedTokens = await this.prisma.splToken.findMany({});
+      const supportedTokens = await this.prisma.splToken.findMany({}); //todo: cache this query
       const splToken = supportedTokens.find(
         (token) => token.address == currencySetting.splTokenAddress,
       );
 
       return {
-        couponType: candyMachineCoupon.type,
-        isSponsored: candyMachineCoupon.isSponsored,
+        coupon: candyMachineCoupon,
         lookupTable: candyMachine.lookupTable,
         mintPrice: Number(currencySetting.mintPrice),
         splToken: {
@@ -1060,9 +1029,6 @@ export class CandyMachineService {
           tokenSymbol: splToken.symbol,
         },
         tokenStandard: candyMachine.standard,
-        numberOfRedemptions: candyMachineCoupon.numberOfRedemptions,
-        startsAt: candyMachineCoupon.startsAt,
-        expiresAt: candyMachineCoupon.expiresAt,
       };
     } catch (e) {
       console.error(e);
@@ -1419,16 +1385,15 @@ export class CandyMachineService {
   }
 
   private async validateMintEligibility(
-    couponType: CouponType,
+    coupon: CandyMachineCoupon,
     userId: number | undefined,
     walletAddress: UmiPublicKey,
-    couponId: number,
   ): Promise<void> {
     const publicMintTypes: CouponType[] = [
       CouponType.PublicUser,
       CouponType.WhitelistedWallet,
     ];
-    const isPublicMint = publicMintTypes.includes(couponType);
+    const isPublicMint = publicMintTypes.includes(coupon.type);
 
     if (!isPublicMint) {
       if (!userId) {
@@ -1436,76 +1401,19 @@ export class CandyMachineService {
           "Mint is limited to Users, make sure you're signed in!",
         );
       }
-      if (
-        couponType === CouponType.WhitelistedUser &&
-        !(await this.findUserWhitelisted(userId, couponId))
-      ) {
+    }
+    const { isEligible } = await this.getCandyMachineCouponStats(
+      coupon,
+      walletAddress,
+      userId,
+    );
+    if (!isEligible) {
+      if (!isPublicMint) {
         throw new UnauthorizedException('User is not eligible for this mint!');
-      }
-    } else if (
-      couponType === CouponType.WhitelistedWallet &&
-      !(await this.findWalletWhitelisted(walletAddress, couponId))
-    ) {
-      throw new UnauthorizedException(
-        'Wallet selected is not eligible for this mint!',
-      );
-    }
-  }
-
-  private async findWalletWhitelisted(walletAddress: string, couponId: number) {
-    const isWhitelisted = await this.prisma.wallet.findUnique({
-      where: {
-        address: walletAddress,
-        whitelistedCandyMachineCoupons: { some: { couponId } },
-      },
-    });
-    return !!isWhitelisted;
-  }
-
-  private async findUserWhitelisted(userId: number, couponId: number) {
-    const isWhitelisted = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-        whitelistedCandyMachineCoupons: { some: { couponId } },
-      },
-    });
-    return !!isWhitelisted;
-  }
-
-  private async validateMintLimit(
-    numberOfRedemptions: number | undefined,
-    numberOfItems: number,
-    couponType: CouponType,
-    candyMachineAddress: UmiPublicKey,
-    couponId: number,
-    walletAddress: UmiPublicKey,
-    userId: number | undefined,
-  ): Promise<void> {
-    if (numberOfRedemptions == 0) {
-      throw new UnauthorizedException('Unauthorized to use this coupon');
-    }
-
-    if (numberOfRedemptions) {
-      const publicMintTypes: CouponType[] = [
-        CouponType.PublicUser,
-        CouponType.WhitelistedWallet,
-      ];
-      const isPublicMint = publicMintTypes.includes(couponType);
-
-      const itemsMinted = isPublicMint
-        ? await this.countWalletItemsMintedQuery(
-            candyMachineAddress.toString(),
-            walletAddress.toString(),
-            couponId,
-          )
-        : await this.countUserItemsMintedQuery(
-            candyMachineAddress.toString(),
-            userId,
-            couponId,
-          );
-
-      if (itemsMinted + numberOfItems > numberOfRedemptions) {
-        throw new UnauthorizedException('Mint limit reached!');
+      } else {
+        throw new UnauthorizedException(
+          'Wallet selected is not eligible for this mint!',
+        );
       }
     }
   }
