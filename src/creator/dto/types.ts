@@ -11,3 +11,7 @@ export type UserCreatorMyStatsDto = {
 };
 
 export type CreatorStatusProperty = keyof Pick<Creator, 'verifiedAt'>;
+
+export type SearchCreator = Pick<Creator, 'avatar' | 'name' | 'slug'> & {
+  issuesCount: number;
+};

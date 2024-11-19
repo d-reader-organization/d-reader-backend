@@ -40,3 +40,7 @@ export type RawComicIssueStats = Omit<
   ComicIssueStats,
   'price' | 'totalIssuesCount'
 >;
+
+export type SearchComic = Pick<Comic, 'cover' | 'slug' | 'title'> & {
+  issuesCount: number;
+};
