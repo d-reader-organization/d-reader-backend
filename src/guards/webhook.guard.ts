@@ -6,6 +6,7 @@ export class WebhookGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const { headers } = context.switchToHttp().getRequest();
 
+    // TODO: uncomment the line below
     // if (!headers.authorization) return false;
     const [, token] = headers.authorization.split('Bearer ');
 
