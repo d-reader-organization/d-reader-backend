@@ -3,9 +3,8 @@ import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
 
 export class SearchCreatorParams extends Pagination {
-  @IsOptional()
   @IsString()
-  nameSubstring?: string;
+  nameSubstring: string;
 
   @IsEnum(SortOrder)
   @IsOptional()
