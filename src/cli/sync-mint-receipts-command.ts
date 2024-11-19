@@ -11,7 +11,6 @@ import {
   Connection,
   TransactionMessage,
 } from '@solana/web3.js';
-import { getAsset } from '../utils/das';
 
 @Command({
   name: 'sync-mint-receipts',
@@ -152,17 +151,8 @@ export class SyncMintReceptsCommand extends CommandRunner {
     });
 
     try {
-      const assets = (
-        await Promise.all(
-          assetAccounts.map((account) => {
-            const assetData = getAsset(account);
-            return assetData || null;
-          }),
-        )
-      ).filter(Boolean);
-
       await this.heliusService.indexCoreAssets(
-        assets,
+        assetAccounts,
         candyMachineAddress,
         collectionAddress,
         receiptId,

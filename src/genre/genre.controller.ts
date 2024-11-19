@@ -28,7 +28,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { GenreFilterParams } from './dto/genre-params.dto';
-import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { CacheInterceptor } from '../cache/cache.interceptor';
 import { hours } from '@nestjs/throttler';
 
 @ApiTags('Genre')

@@ -82,7 +82,7 @@ import {
 } from './dto/basic-comic-issue.dto';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
-import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Comic Issue')
