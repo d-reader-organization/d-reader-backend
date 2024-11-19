@@ -12,7 +12,7 @@ import { Comic, Genre, Creator } from '@prisma/client';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
-import { ComicStats } from './dto/types';
+import { ComicStats, SearchComic } from './dto/types';
 import { getComicsQuery } from './comic.queries';
 import { insensitive } from '../utils/lodash';
 import { RawComicParams } from './dto/raw-comic-params.dto';
@@ -25,6 +25,7 @@ import { MailService } from '../mail/mail.service';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { ComicStatusProperty } from './dto/types';
 import { ComicInput } from './dto/comic.dto';
+import { SearchComicParams } from './dto/search-comic-params.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -121,6 +122,37 @@ export class ComicService {
     });
 
     return comics;
+  }
+
+  async searchAll(params: SearchComicParams): Promise<SearchComic[]> {
+    const { titleSubstring, sortOrder } = params;
+
+    const comics = await this.prisma.comic.findMany({
+      select: {
+        cover: true,
+        slug: true,
+        title: true,
+      },
+      where: {
+        title: { contains: titleSubstring, mode: 'insensitive' },
+      },
+      orderBy: { title: sortOrder },
+      skip: params.skip,
+      take: params.take,
+    });
+
+    return await Promise.all(
+      comics.map(async (comic) => {
+        const issuesCount = await this.prisma.comicIssue.count({
+          where: {
+            publishedAt: { not: null },
+            verifiedAt: { not: null },
+            comicSlug: comic.slug,
+          },
+        });
+        return { ...comic, issuesCount };
+      }),
+    );
   }
 
   async findOne(slug: string, userId?: number) {

@@ -44,6 +44,8 @@ import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
 import { CacheInterceptor } from '../interceptors/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
+import { SearchComicParams } from './dto/search-comic-params.dto';
+import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -86,10 +88,18 @@ export class ComicController {
   async findAllBasic(
     @Query() query: BasicComicParams,
   ): Promise<BasicComicDto[]> {
-    // TODO: use this instead /get on the search input on the web app
-    // TODO: we only need the basic comic data like the cover, title, slug, number of episodes?
     const comics = await this.comicService.findAllBasic(query);
     return toBasicComicDtoArray(comics);
+  }
+
+  /* Search all comics */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
+  @Get('search')
+  async searchAll(
+    @Query() query: SearchComicParams,
+  ): Promise<SearchComicDto[]> {
+    const comics = await this.comicService.searchAll(query);
+    return toSearchComicDtoArray(comics);
   }
 
   /* Get specific comic by unique slug */

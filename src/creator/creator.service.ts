@@ -32,9 +32,14 @@ import { kebabCase } from 'lodash';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { DiscordService } from '../discord/discord.service';
 import { CreatorFile } from '../discord/dto/types';
-import { CreatorFileProperty, CreatorStatusProperty } from './dto/types';
+import {
+  SearchCreator,
+  CreatorFileProperty,
+  CreatorStatusProperty,
+} from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
+import { SearchCreatorParams } from './dto/search-creator-params.dto';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -124,6 +129,43 @@ export class CreatorService {
       }
     }
     return filteredCreators;
+  }
+
+  async searchAll({
+    nameSubstring,
+    skip,
+    take,
+    sortOrder,
+  }: SearchCreatorParams): Promise<SearchCreator[]> {
+    const creators = await this.prisma.creator.findMany({
+      select: {
+        avatar: true,
+        id: true,
+        name: true,
+        slug: true,
+      },
+      where: {
+        name: { contains: nameSubstring, mode: 'insensitive' },
+      },
+      orderBy: { name: sortOrder },
+      skip,
+      take,
+    });
+
+    return await Promise.all(
+      creators.map(async (creator) => {
+        const issuesCount = await this.prisma.comicIssue.count({
+          where: {
+            publishedAt: { not: null },
+            verifiedAt: { not: null },
+            comic: {
+              creatorId: creator.id,
+            },
+          },
+        });
+        return { ...creator, issuesCount };
+      }),
+    );
   }
 
   async findMe(id: number) {
