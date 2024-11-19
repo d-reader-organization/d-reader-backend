@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { ApiTags } from '@nestjs/swagger';
 import { toWalletDto, WalletDto } from './dto/wallet.dto';
@@ -13,7 +6,6 @@ import { toWalletAssetDtoArray, WalletAssetDto } from './dto/wallet-asset.dto';
 import { minutes, Throttle } from '@nestjs/throttler';
 import { WalletOwnerAuth } from '../guards/wallet-owner.guard';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
-import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
 
 @ApiTags('Wallet')
 @Controller('wallet')

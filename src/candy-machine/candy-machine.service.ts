@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -29,6 +30,7 @@ import {
   MIN_COMPUTE_PRICE,
   SOL_ADDRESS,
   AUTHORITY_GROUP_LABEL,
+  HOUR_SECONDS,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
@@ -118,6 +120,7 @@ import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { isEmpty, isNull } from 'lodash';
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 
 @Injectable()
 export class CandyMachineService {
@@ -130,6 +133,7 @@ export class CandyMachineService {
     private readonly heliusService: HeliusService,
     private readonly darkblockService: DarkblockService,
     private readonly nonceService: NonceService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.metaplex = metaplex;
     this.umi = umi;
@@ -371,10 +375,27 @@ export class CandyMachineService {
       const lookupTableAddress =
         mintTransaction.message.addressTableLookups[0].accountKey;
 
-      const lookupTable = await this.metaplex.connection.getAddressLookupTable(
-        lookupTableAddress,
-      );
-      lookupTableAccounts = lookupTable.value;
+      const cacheKey = `lookupTable:${lookupTableAddress}`;
+      const cachedAccounts =
+        await this.cacheManager.get<AddressLookupTableAccount>(cacheKey);
+
+      if (cachedAccounts) {
+        lookupTableAccounts = cachedAccounts;
+      } else {
+        console.log('Caching lookup table accounts !');
+
+        const lookupTable =
+          await this.metaplex.connection.getAddressLookupTable(
+            lookupTableAddress,
+          );
+
+        lookupTableAccounts = lookupTable.value;
+        await this.cacheManager.set(
+          cacheKey,
+          lookupTableAccounts,
+          2 * HOUR_SECONDS,
+        );
+      }
     }
 
     const mintInstructions = TransactionMessage.decompile(
