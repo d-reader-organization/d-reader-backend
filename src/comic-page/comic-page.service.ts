@@ -74,16 +74,16 @@ export class ComicPageService {
     });
     const arePagesAdded = !!pagesDto.at(0).image;
     if (!arePagesAdded) {
-      const previewComicPages = this.prisma.comicPage.updateMany({
+      const setPreviewPages = this.prisma.comicPage.updateMany({
         where: { comicIssueId, pageNumber: { lte: pagesDto.length } },
         data: { isPreviewable: true },
       });
 
-      const hideComicPages = this.prisma.comicPage.updateMany({
+      const setNonPreviewPages = this.prisma.comicPage.updateMany({
         where: { comicIssueId, pageNumber: { gt: pagesDto.length } },
         data: { isPreviewable: false },
       });
-      await this.prisma.$transaction([previewComicPages, hideComicPages]);
+      await this.prisma.$transaction([setPreviewPages, setNonPreviewPages]);
       this.discordService.comicPagesUpserted(comicIssue);
       return;
     }

@@ -286,15 +286,14 @@ export class CandyMachineService {
     numberOfItems?: number,
     userId?: number,
   ) {
-    const { lookupTable, isSponsored } =
-      await this.validateMintTransactionRequest(
-        walletAddress,
-        candyMachineAddress,
-        label,
-        couponId,
-        numberOfItems,
-        userId,
-      );
+    const { lookupTable, isSponsored } = await this.prepareMintTransaction(
+      walletAddress,
+      candyMachineAddress,
+      label,
+      couponId,
+      numberOfItems,
+      userId,
+    );
     const CORE_MINT_COMPUTE_BUDGET = 800000;
 
     const transactions = await getTransactionWithPriorityFee(
@@ -312,8 +311,8 @@ export class CandyMachineService {
     return transactions;
   }
 
-  /* Validate if mint is allowed */
-  async validateMintTransactionRequest(
+  /* Validate if mint transaction should be constructed and partially prepare it */
+  async prepareMintTransaction(
     walletAddress: UmiPublicKey,
     candyMachineAddress: UmiPublicKey,
     label: string,
@@ -335,6 +334,8 @@ export class CandyMachineService {
 
     this.validateCouponDates(startsAt, expiresAt);
     this.validateTokenStandard(tokenStandard);
+    this.validateMintEligibility(couponType, userId, walletAddress, couponId);
+
     await this.validateWalletBalance(
       walletAddress,
       mintPrice,
@@ -343,7 +344,6 @@ export class CandyMachineService {
       splToken,
       isSponsored,
     );
-    this.validateMintEligibility(couponType, userId, walletAddress, couponId);
 
     await this.validateMintLimit(
       numberOfRedemptions,
@@ -490,7 +490,6 @@ export class CandyMachineService {
 
     if (coupon.numberOfRedemptions) {
       const itemsAlreadyClaimed = await this.countWalletItemsMintedQuery(
-        candyMachineAddress,
         minterAddress,
         coupon.id,
       );
@@ -874,13 +873,11 @@ export class CandyMachineService {
   }
 
   private countUserItemsMintedQuery = async (
-    candyMachineAddress: string,
     userId: number,
     couponId: number,
   ) => {
     const data = await this.prisma.candyMachineReceipt.aggregate({
       where: {
-        candyMachineAddress,
         userId,
         couponId,
         status: TransactionStatus.Confirmed,
@@ -893,13 +890,11 @@ export class CandyMachineService {
 
   // Wallet whitelist group should be public
   private countWalletItemsMintedQuery = async (
-    candyMachineAddress: string,
     buyerAddress: string,
     couponId: number,
   ) => {
     const data = await this.prisma.candyMachineReceipt.aggregate({
       where: {
-        candyMachineAddress,
         buyerAddress,
         couponId,
         status: TransactionStatus.Confirmed,
@@ -915,7 +910,6 @@ export class CandyMachineService {
     walletAddress: string,
   ) {
     const walletItemsMinted = await this.countWalletItemsMintedQuery(
-      coupon.candyMachineAddress,
       walletAddress,
       coupon.id,
     );
@@ -938,11 +932,7 @@ export class CandyMachineService {
     coupon: CandyMachineCouponWithWhitelist,
     userId: number,
   ) {
-    const itemsMinted = await this.countUserItemsMintedQuery(
-      coupon.candyMachineAddress,
-      userId,
-      coupon.id,
-    );
+    const itemsMinted = await this.countUserItemsMintedQuery(userId, coupon.id);
 
     const redemptionLimitReached = coupon.numberOfRedemptions
       ? coupon.numberOfRedemptions <= itemsMinted
@@ -965,7 +955,6 @@ export class CandyMachineService {
     walletAddress: string,
   ) {
     const itemsMinted = await this.countWalletItemsMintedQuery(
-      coupon.candyMachineAddress,
       walletAddress,
       coupon.id,
     );
@@ -984,11 +973,7 @@ export class CandyMachineService {
     coupon: CandyMachineCouponWithWhitelist,
     userId: number,
   ) {
-    const itemsMinted = await this.countUserItemsMintedQuery(
-      coupon.candyMachineAddress,
-      userId,
-      coupon.id,
-    );
+    const itemsMinted = await this.countUserItemsMintedQuery(userId, coupon.id);
 
     const isEligible = coupon.numberOfRedemptions
       ? coupon.numberOfRedemptions > itemsMinted
@@ -1047,47 +1032,43 @@ export class CandyMachineService {
     couponId: number,
     label: string,
   ): Promise<CandyMachineMintData> {
-    try {
-      const { candyMachine, currencySettings, ...candyMachineCoupon } =
-        await this.prisma.candyMachineCoupon.findUnique({
-          where: { id: couponId },
-          include: {
-            candyMachine: true,
-            currencySettings: true,
-          },
-        });
-
-      if (!candyMachineCoupon) {
-        throw new NotFoundException();
-      }
-
-      const currencySetting = currencySettings.find(
-        (item) => item.label === label,
-      );
-
-      const supportedTokens = await this.prisma.splToken.findMany({});
-      const splToken = supportedTokens.find(
-        (token) => token.address == currencySetting.splTokenAddress,
-      );
-
-      return {
-        couponType: candyMachineCoupon.type,
-        isSponsored: candyMachineCoupon.isSponsored,
-        lookupTable: candyMachine.lookupTable,
-        mintPrice: Number(currencySetting.mintPrice),
-        splToken: {
-          splTokenAddress: currencySetting.splTokenAddress,
-          tokenDecimals: splToken.decimals,
-          tokenSymbol: splToken.symbol,
+    const { candyMachine, currencySettings, ...candyMachineCoupon } =
+      await this.prisma.candyMachineCoupon.findUnique({
+        where: { id: couponId },
+        include: {
+          candyMachine: true,
+          currencySettings: true,
         },
-        tokenStandard: candyMachine.standard,
-        numberOfRedemptions: candyMachineCoupon.numberOfRedemptions,
-        startsAt: candyMachineCoupon.startsAt,
-        expiresAt: candyMachineCoupon.expiresAt,
-      };
-    } catch (e) {
-      console.error(e);
+      });
+
+    if (!candyMachineCoupon) {
+      throw new NotFoundException();
     }
+
+    const currencySetting = currencySettings.find(
+      (item) => item.label === label,
+    );
+
+    const supportedTokens = await this.prisma.splToken.findMany();
+    const splToken = supportedTokens.find(
+      (token) => token.address == currencySetting.splTokenAddress,
+    );
+
+    return {
+      couponType: candyMachineCoupon.type,
+      isSponsored: candyMachineCoupon.isSponsored,
+      lookupTable: candyMachine.lookupTable,
+      mintPrice: Number(currencySetting.mintPrice),
+      splToken: {
+        address: currencySetting.splTokenAddress,
+        decimals: splToken.decimals,
+        symbol: splToken.symbol,
+      },
+      tokenStandard: candyMachine.standard,
+      numberOfRedemptions: candyMachineCoupon.numberOfRedemptions,
+      startsAt: candyMachineCoupon.startsAt,
+      expiresAt: candyMachineCoupon.expiresAt,
+    };
   }
 
   private async addCoreCandyMachineGroupOnChain(
@@ -1398,15 +1379,16 @@ export class CandyMachineService {
     splToken: CandyMachineMintData['splToken'],
     isSponsored = false,
   ): Promise<void> {
+    // TODO: change this in the future so it checks for wallet balance against the mint price
     if (isSponsored) return;
 
     const solBalance = await this.umi.rpc.getBalance(walletAddress);
-    const isSolPayment = splToken.splTokenAddress == SOL_ADDRESS;
+    const isSolPayment = splToken.address == SOL_ADDRESS;
 
     let tokenBalance = 0;
     if (!isSolPayment) {
       const tokenAccount = await getAssociatedTokenAddress(
-        new PublicKey(splToken.splTokenAddress),
+        new PublicKey(splToken.address),
         new PublicKey(walletAddress.toString()),
       );
 
@@ -1425,8 +1407,8 @@ export class CandyMachineService {
       mintPrice,
       Number(solBalance.basisPoints),
       tokenBalance,
-      splToken.tokenSymbol,
-      splToken.tokenDecimals,
+      splToken.symbol,
+      splToken.decimals,
       numberOfItems,
       isSolPayment,
       tokenStandard,
@@ -1502,7 +1484,7 @@ export class CandyMachineService {
     walletAddress: UmiPublicKey,
     userId: number | undefined,
   ): Promise<void> {
-    if (numberOfRedemptions == 0) {
+    if (numberOfRedemptions === 0) {
       throw new UnauthorizedException('Unauthorized to use this coupon');
     }
 
@@ -1515,15 +1497,10 @@ export class CandyMachineService {
 
       const itemsMinted = isPublicMint
         ? await this.countWalletItemsMintedQuery(
-            candyMachineAddress.toString(),
             walletAddress.toString(),
             couponId,
           )
-        : await this.countUserItemsMintedQuery(
-            candyMachineAddress.toString(),
-            userId,
-            couponId,
-          );
+        : await this.countUserItemsMintedQuery(userId, couponId);
 
       if (itemsMinted + numberOfItems > numberOfRedemptions) {
         throw new UnauthorizedException('Mint limit reached!');

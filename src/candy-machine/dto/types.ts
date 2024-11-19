@@ -101,9 +101,9 @@ export type CandyMachineMintData = {
   lookupTable: string;
   mintPrice: number;
   splToken: {
-    splTokenAddress: string;
-    tokenDecimals: number;
-    tokenSymbol: string;
+    address: string;
+    decimals: number;
+    symbol: string;
   };
   tokenStandard: TokenStandard;
   numberOfRedemptions: number;
