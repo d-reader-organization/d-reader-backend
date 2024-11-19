@@ -75,7 +75,6 @@ export class CreatorController {
   }
 
   /* Search all creators */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
   @Get('search')
   async searchAll(
     @Query() query: SearchCreatorParams,

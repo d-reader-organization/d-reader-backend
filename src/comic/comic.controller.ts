@@ -93,7 +93,6 @@ export class ComicController {
   }
 
   /* Search all comics */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
   @Get('search')
   async searchAll(
     @Query() query: SearchComicParams,

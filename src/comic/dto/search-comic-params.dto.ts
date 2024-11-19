@@ -5,7 +5,7 @@ import { SortOrder } from '../../types/sort-order';
 export class SearchComicParams extends Pagination {
   @IsOptional()
   @IsString()
-  titleSubstring?: string;
+  titleSubstring: string;
 
   @IsEnum(SortOrder)
   @IsOptional()
