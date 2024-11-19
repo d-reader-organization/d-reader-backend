@@ -3,7 +3,6 @@ import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
 
 export class SearchComicParams extends Pagination {
-  @IsOptional()
   @IsString()
   titleSubstring: string;
 
