@@ -44,6 +44,11 @@ import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { AdminGuard } from '../guards/roles.guard';
 import { CacheInterceptor } from '../interceptors/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
+import { SearchCreatorParams } from './dto/search-creator-params.dto';
+import {
+  SearchCreatorDto,
+  toSearchCreatorDtoArray,
+} from './dto/search-creator.dto';
 
 @ApiTags('Creator')
 @Controller('creator')
@@ -67,6 +72,16 @@ export class CreatorController {
   async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
     return toCreatorDtoArray(creators);
+  }
+
+  /* Search all creators */
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
+  @Get('search')
+  async searchAll(
+    @Query() query: SearchCreatorParams,
+  ): Promise<SearchCreatorDto[]> {
+    const creators = await this.creatorService.searchAll(query);
+    return toSearchCreatorDtoArray(creators);
   }
 
   /* Get specific creator by unique slug */
