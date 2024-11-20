@@ -14,7 +14,9 @@ export class CacheService {
     const cachedValue = await this.cacheManager.get<string>(key);
     if (cachedValue) {
       console.log(`Cache hit for ${key}`);
-      return JSON.parse(cachedValue as string);
+      return JSON.parse(cachedValue, (_, value) => {
+        return value?.type === 'Buffer' ? Buffer.from(value) : value;
+      });
     }
 
     console.log(`Cache miss for ${key}. Caching now...`);
