@@ -90,31 +90,35 @@ export class BlinkService {
   async getComicSignActionSpec(
     address: string,
   ): Promise<ActionSpecGetResponse> {
-    const asset = await this.prisma.collectibleComic.findFirst({
+    const collectibleComic = await this.prisma.collectibleComic.findUnique({
       where: { address },
       include: {
         metadata: true,
       },
     });
 
-    if (!asset) {
+    if (!collectibleComic) {
       throw new BadRequestException("Asset doesn't exists or unverified");
     }
 
-    const { metadata } = asset;
+    const { metadata } = collectibleComic;
 
     let actions: LinkedAction[];
     if (metadata.isSigned) {
-      actions = [{ label: `${asset.name} is already Signed 🎉`, href: '' }];
+      actions = [
+        { label: `${collectibleComic.name} is already Signed 🎉`, href: '' },
+      ];
     } else {
       const actionEndpoint = `${process.env.API_URL}/transaction/blink/comic-sign/${address}`;
-      actions = [{ label: `Sign ${asset.name} ✍️`, href: actionEndpoint }];
+      actions = [
+        { label: `Sign ${collectibleComic.name} ✍️`, href: actionEndpoint },
+      ];
     }
 
     const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
     return {
       icon: offChainMetadata.image,
-      title: `${asset.name}`,
+      title: `${collectibleComic.name}`,
       description: 'Get signature from the comic creator',
       label: 'Sign ✍️',
       links: { actions },
@@ -122,7 +126,7 @@ export class BlinkService {
   }
 
   async signComicAction(address: PublicKey, creator: PublicKey) {
-    const collectibleComic = await this.prisma.collectibleComic.findFirst({
+    const collectibleComic = await this.prisma.collectibleComic.findUnique({
       where: { address: address.toString() },
       include: { metadata: true },
     });
