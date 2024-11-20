@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Cache } from '@nestjs/cache-manager';
-import { PrismaService } from 'nestjs-prisma';
 
 @Injectable()
 export class CacheService {
-  constructor(
-    private cacheManager: Cache,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private cacheManager: Cache) {}
 
   async fetchAndCache<T>(
     key: string,
@@ -15,16 +11,15 @@ export class CacheService {
     ttl: number = 60,
     ...args: any[]
   ): Promise<T> {
-    const cachedValue = await this.cacheManager.get<T>(key);
+    const cachedValue = await this.cacheManager.get<string>(key);
     if (cachedValue) {
       console.log(`Cache hit for ${key}`);
-      return cachedValue;
+      return JSON.parse(cachedValue as string);
     }
     console.log(`Cache miss for ${key}. Caching now...`);
     try {
       const value = await callback.bind(this)(...args);
-      console.log(value);
-      await this.cacheManager.set(key, value, ttl * 1000);
+      await this.cacheManager.set(key, JSON.stringify(value), ttl * 1000);
       return value;
     } catch (error) {
       console.error(`Error while executing cache callback for ${key}:`, error);

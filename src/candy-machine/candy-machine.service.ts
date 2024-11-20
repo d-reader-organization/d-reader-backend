@@ -31,6 +31,7 @@ import {
   AUTHORITY_GROUP_LABEL,
   HOUR_SECONDS,
   MINUTE_SECONDS,
+  DAY_SECONDS,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
@@ -123,6 +124,7 @@ import { isEmpty, isNull } from 'lodash';
 import { CacheService } from '../cache/cache.service';
 import { getLookupTableAccounts } from '../utils/lookup-table';
 import { CachePath } from '../utils/cache';
+import { Cacheable } from 'src/cache/cache.decorator';
 
 @Injectable()
 export class CandyMachineService {
@@ -332,13 +334,7 @@ export class CandyMachineService {
       expiresAt,
       lookupTable,
       splToken,
-    } = await this.cacheService.fetchAndCache(
-      CachePath.candyMachineCouponData,
-      this.findCandyMachineCouponData,
-      10 * MINUTE_SECONDS,
-      couponId,
-      label,
-    );
+    } = await this.findCandyMachineCouponData(couponId, label);
 
     this.validateCouponDates(startsAt, expiresAt);
     this.validateTokenStandard(tokenStandard);
@@ -1009,6 +1005,7 @@ export class CandyMachineService {
     }
   }
 
+  @Cacheable(10 * MINUTE_SECONDS)
   private async findCandyMachineCouponData(
     couponId: number,
     label: string,
@@ -1030,7 +1027,11 @@ export class CandyMachineService {
       (item) => item.label === label,
     );
 
-    const supportedTokens = await this.prisma.splToken.findMany();
+    const supportedTokens = await this.cacheService.fetchAndCache(
+      CachePath.SupportedSplTokens,
+      this.prisma.splToken.findMany,
+      DAY_SECONDS,
+    );
     const splToken = supportedTokens.find(
       (token) => token.address == currencySetting.splTokenAddress,
     );
