@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   GlobalStatusDto,
@@ -8,6 +16,8 @@ import {
 import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { toSplTokenArray } from './dto/spl-token.dto';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
+import { DAY_SECONDS } from 'src/constants';
 
 @ApiTags('Settings')
 @Controller('settings')
@@ -37,6 +47,7 @@ export class SettingsController {
   }
 
   /** Get a list of supported SPL tokens */
+  @UseInterceptors(CacheInterceptor({ ttl: DAY_SECONDS }))
   @Get('spl-token/get')
   async getSupportedSplTokens() {
     const tokenList = await this.settingService.getSupportedSplTokens();
