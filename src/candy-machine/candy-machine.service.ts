@@ -905,7 +905,7 @@ export class CandyMachineService {
 
     let isEligible = !redemptionLimitReached;
     if (isEligible) {
-      isEligible = await this.findWalletWhitelisted(walletAddress, coupon.id);
+      isEligible = await this.findIfWalletWhitelisted(walletAddress, coupon.id);
     }
 
     return {
@@ -927,7 +927,7 @@ export class CandyMachineService {
     let isEligible = !redemptionLimitReached;
 
     if (isEligible) {
-      isEligible = await this.findUserWhitelisted(userId, coupon.id);
+      isEligible = await this.findIfUserWhitelisted(userId, coupon.id);
     }
 
     return {
@@ -1430,23 +1430,35 @@ export class CandyMachineService {
           "Mint is limited to Users, make sure you're signed in!",
         );
       }
-      if (
-        couponType === CouponType.WhitelistedUser &&
-        !(await this.findUserWhitelisted(userId, couponId))
-      ) {
-        throw new UnauthorizedException('User is not eligible for this mint!');
+      if (couponType === CouponType.WhitelistedUser) {
+        const isWhitelisted = await this.findIfUserWhitelisted(
+          userId,
+          couponId,
+        );
+        if (!isWhitelisted) {
+          throw new UnauthorizedException(
+            'User is not eligible for this mint!',
+          );
+        }
       }
-    } else if (
-      couponType === CouponType.WhitelistedWallet &&
-      !(await this.findWalletWhitelisted(walletAddress, couponId))
-    ) {
-      throw new UnauthorizedException(
-        'Wallet selected is not eligible for this mint!',
+    } else if (couponType === CouponType.WhitelistedWallet) {
+      const isWhitelisted = await this.findIfWalletWhitelisted(
+        walletAddress,
+        couponId,
       );
+      if (!isWhitelisted) {
+        throw new UnauthorizedException(
+          'Wallet selected is not eligible for this mint!',
+        );
+      }
     }
   }
 
-  private async findWalletWhitelisted(walletAddress: string, couponId: number) {
+  @Cacheable(HOUR_SECONDS)
+  private async findIfWalletWhitelisted(
+    walletAddress: string,
+    couponId: number,
+  ) {
     const isWhitelisted = await this.prisma.wallet.findUnique({
       where: {
         address: walletAddress,
@@ -1456,7 +1468,8 @@ export class CandyMachineService {
     return !!isWhitelisted;
   }
 
-  private async findUserWhitelisted(userId: number, couponId: number) {
+  @Cacheable(HOUR_SECONDS)
+  private async findIfUserWhitelisted(userId: number, couponId: number) {
     const isWhitelisted = await this.prisma.user.findUnique({
       where: {
         id: userId,
