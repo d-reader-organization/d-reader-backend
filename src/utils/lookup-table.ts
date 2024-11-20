@@ -49,12 +49,12 @@ export async function createLookupTable(
   }
 }
 
-export async function getLookupTableAccounts(
+export async function getLookupTableInfo(
   connection: Connection,
   address: string,
-) {
+): Promise<Buffer> {
   const publicKey = new PublicKey(address);
-  const lookupTable = await connection.getAddressLookupTable(publicKey);
 
-  return lookupTable.value;
+  const info = await connection.getAccountInfo(publicKey);
+  return info.data;
 }

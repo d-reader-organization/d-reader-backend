@@ -122,7 +122,7 @@ import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-cor
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { isEmpty, isNull } from 'lodash';
 import { CacheService } from '../cache/cache.service';
-import { getLookupTableAccounts } from '../utils/lookup-table';
+import { getLookupTableInfo } from '../utils/lookup-table';
 import { CachePath } from '../utils/cache';
 import { Cacheable } from 'src/cache/cache.decorator';
 
@@ -384,13 +384,21 @@ export class CandyMachineService {
       const cacheKey = CachePath.lookupTableAccounts(
         lookupTableAddress.toString(),
       );
-      lookupTableAccounts = await this.cacheService.fetchAndCache(
+      const lookupTableInfo = await this.cacheService.fetchAndCache(
         cacheKey,
-        getLookupTableAccounts,
+        getLookupTableInfo,
         2 * HOUR_SECONDS,
         this.connection,
         lookupTableAddress,
       );
+
+      const lookupTableState =
+        AddressLookupTableAccount.deserialize(lookupTableInfo);
+      lookupTableAccounts = {
+        key: lookupTableAddress,
+        state: lookupTableState,
+        isActive: () => !!lookupTableState,
+      };
     }
 
     const mintInstructions = TransactionMessage.decompile(
