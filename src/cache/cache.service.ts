@@ -16,9 +16,10 @@ export class CacheService {
       console.log(`Cache hit for ${key}`);
       return JSON.parse(cachedValue as string);
     }
+
     console.log(`Cache miss for ${key}. Caching now...`);
     try {
-      const value = await callback.bind(this)(...args);
+      const value = await callback.apply(this, args);
       await this.cacheManager.set(key, JSON.stringify(value), ttl * 1000);
       return value;
     } catch (error) {
