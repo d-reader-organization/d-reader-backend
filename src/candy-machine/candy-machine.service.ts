@@ -388,6 +388,7 @@ export class CandyMachineService {
         cacheKey,
         getLookupTableAccounts,
         2 * HOUR_SECONDS,
+        this.connection,
         lookupTableAddress,
       );
     }
