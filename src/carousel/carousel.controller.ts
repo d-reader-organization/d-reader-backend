@@ -31,7 +31,7 @@ import { ApiFile } from 'src/decorators/api-file.decorator';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
-import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Carousel')
