@@ -10,7 +10,17 @@ import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { UserPayload } from '../auth/dto/authorization.dto';
 import { CacheService } from './cache.service';
 
-// 60 seconds
+/**
+ * Interceptor to manage caching of HTTP requests.
+ *
+ * This interceptor checks if the response for a request is already cached
+ * and returns the cached data if available. If not, it processes the request
+ * and caches the response for a specified time-to-live (TTL).
+ *
+ * @param {Object} options - Configuration options for the interceptor.
+ * @param {number} options.ttl - The time in seconds for which the response should be cached. Defaults to 60 seconds.
+ * @param {boolean} options.userScope - Indicates whether the cache should be user-specific. Defaults to false.
+ */
 export function CacheInterceptor({ ttl = 60, userScope = false }) {
   @Injectable()
   class CacheInterceptorMixin implements NestInterceptor {
