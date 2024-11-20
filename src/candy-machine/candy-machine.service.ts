@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -31,6 +30,8 @@ import {
   SOL_ADDRESS,
   AUTHORITY_GROUP_LABEL,
   HOUR_SECONDS,
+  MINUTE_SECONDS,
+  DAY_SECONDS,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
@@ -120,7 +121,10 @@ import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { isEmpty, isNull } from 'lodash';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { CacheService } from '../cache/cache.service';
+import { getLookupTableAccounts } from '../utils/lookup-table';
+import { CachePath } from '../utils/cache';
+import { Cacheable } from 'src/cache/cache.decorator';
 
 @Injectable()
 export class CandyMachineService {
@@ -133,7 +137,7 @@ export class CandyMachineService {
     private readonly heliusService: HeliusService,
     private readonly darkblockService: DarkblockService,
     private readonly nonceService: NonceService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly cacheService: CacheService,
   ) {
     this.metaplex = metaplex;
     this.umi = umi;
@@ -363,6 +367,7 @@ export class CandyMachineService {
     walletAddress: string,
     userId?: number,
   ) {
+    /** Deserialize transactions */
     const mintTransaction = VersionedTransaction.deserialize(
       Buffer.from(transactions[1], 'base64'),
     );
@@ -370,32 +375,21 @@ export class CandyMachineService {
       Buffer.from(transactions[0], 'base64'),
     );
 
+    /** Fetch lookup table and decompile mint transaction */
     let lookupTableAccounts: AddressLookupTableAccount;
     if (mintTransaction.message.addressTableLookups.length) {
       const lookupTableAddress =
         mintTransaction.message.addressTableLookups[0].accountKey;
 
-      const cacheKey = `lookupTable:${lookupTableAddress}`;
-      const cachedAccounts =
-        await this.cacheManager.get<AddressLookupTableAccount>(cacheKey);
-
-      if (cachedAccounts) {
-        lookupTableAccounts = cachedAccounts;
-      } else {
-        console.log('Caching lookup table accounts !');
-
-        const lookupTable =
-          await this.metaplex.connection.getAddressLookupTable(
-            lookupTableAddress,
-          );
-
-        lookupTableAccounts = lookupTable.value;
-        await this.cacheManager.set(
-          cacheKey,
-          lookupTableAccounts,
-          2 * HOUR_SECONDS,
-        );
-      }
+      const cacheKey = CachePath.lookupTableAccounts(
+        lookupTableAddress.toString(),
+      );
+      lookupTableAccounts = await this.cacheService.fetchAndCache(
+        cacheKey,
+        getLookupTableAccounts,
+        2 * HOUR_SECONDS,
+        lookupTableAddress,
+      );
     }
 
     const mintInstructions = TransactionMessage.decompile(
@@ -422,26 +416,26 @@ export class CandyMachineService {
     const label =
       ixData.group.__option == 'Some' ? ixData.group.value : undefined;
 
-    const splTokenAddress = SOL_ADDRESS;
-
+    /** Fetch coupon details and run assertions */
     const { coupon, ...currencySetting } =
       await this.prisma.candyMachineCouponCurrencySetting.findUnique({
         where: { label_candyMachineAddress: { label, candyMachineAddress } },
         include: { coupon: true },
       });
 
-    if (
-      coupon.type == CouponType.RegisteredUser ||
-      coupon.type == CouponType.WhitelistedUser
-    ) {
-      if (!userId) {
-        throw new UnauthorizedException(
-          'Only registered users are eligible for this coupon !',
-        );
-      }
+    const publicMintTypes: CouponType[] = [
+      CouponType.PublicUser,
+      CouponType.WhitelistedWallet,
+    ];
+
+    const isPublicMint = publicMintTypes.includes(coupon.type);
+    if (!isPublicMint && !userId) {
+      throw new UnauthorizedException(
+        'Only registered users are eligible for this coupon !',
+      );
     }
 
-    const { mintPrice } = currencySetting;
+    const { mintPrice, splTokenAddress } = currencySetting;
     const assetAccounts: PublicKey[] = [];
 
     mintInstructions.instructions.forEach((instruction) => {
@@ -488,18 +482,9 @@ export class CandyMachineService {
       }
     }
 
-    if (coupon.numberOfRedemptions) {
-      const itemsAlreadyClaimed = await this.countWalletItemsMintedQuery(
-        minterAddress,
-        coupon.id,
-      );
-
-      if (itemsAlreadyClaimed + numberOfItems > coupon.numberOfRedemptions) {
-        throw new BadRequestException("You've already redeemed coupon");
-      }
-    }
-
+    /** sign and send mint transaction */
     const umiMintTransaction = decodeUmiTransaction(transactions[1]);
+
     let signedMintTransaction = umiMintTransaction;
     if (coupon.id == 51 && splTokenAddress === SOL_ADDRESS) {
       signedMintTransaction = umiMintTransaction;
@@ -529,7 +514,7 @@ export class CandyMachineService {
       numberOfItems,
       status: TransactionStatus.Processing,
       transactionSignature,
-      price: mintPrice, // Should this be numberOfItems*mintPrice ?
+      price: mintPrice,
       timestamp: new Date(),
       splTokenAddress,
     };
@@ -540,10 +525,7 @@ export class CandyMachineService {
       };
     }
 
-    await this.prisma.candyMachineReceipt.create({
-      data: receiptData,
-    });
-
+    await this.prisma.candyMachineReceipt.create({ data: receiptData });
     return signature;
   }
 
@@ -570,37 +552,32 @@ export class CandyMachineService {
       (coupon) => coupon.type === CouponType.PublicUser,
     );
 
-    const coupons: CandyMachineCouponWithStats[] = await Promise.all(
-      candyMachine.coupons.map(
-        async (coupon): Promise<CandyMachineCouponWithStats> => {
-          const { isEligible, itemsMinted } =
-            await this.getCandyMachineCouponStats(
-              coupon,
-              walletAddress,
-              userId,
-            );
+    const coupons: CandyMachineCouponWithStats[] = [];
+    for await (const coupon of candyMachine.coupons) {
+      const { isEligible, itemsMinted } = await this.getCandyMachineCouponStats(
+        coupon,
+        walletAddress,
+        userId,
+      );
 
-          const discount = findCandyMachineCouponDiscount(
-            coupon,
-            defaultCoupon,
-          );
-          return {
-            ...coupon,
-            discount,
-            prices: coupon.currencySettings.map((price) => ({
-              label: price.label,
-              mintPrice: Number(price.mintPrice),
-              usdcEquivalent: price.usdcEquivalent,
-              splTokenAddress: price.splTokenAddress,
-            })),
-            stats: {
-              isEligible,
-              itemsMinted,
-            },
-          };
+      const discount = findCandyMachineCouponDiscount(coupon, defaultCoupon);
+
+      const couponData = {
+        ...coupon,
+        discount,
+        prices: coupon.currencySettings.map((price) => ({
+          label: price.label,
+          mintPrice: Number(price.mintPrice),
+          usdcEquivalent: price.usdcEquivalent,
+          splTokenAddress: price.splTokenAddress,
+        })),
+        stats: {
+          isEligible,
+          itemsMinted,
         },
-      ),
-    );
+      };
+      coupons.push(couponData);
+    }
 
     return { ...candyMachine, coupons };
   }
@@ -1028,6 +1005,7 @@ export class CandyMachineService {
     }
   }
 
+  @Cacheable(10 * MINUTE_SECONDS)
   private async findCandyMachineCouponData(
     couponId: number,
     label: string,
@@ -1049,7 +1027,11 @@ export class CandyMachineService {
       (item) => item.label === label,
     );
 
-    const supportedTokens = await this.prisma.splToken.findMany();
+    const supportedTokens = await this.cacheService.fetchAndCache(
+      CachePath.SupportedSplTokens,
+      this.prisma.splToken.findMany,
+      DAY_SECONDS,
+    );
     const splToken = supportedTokens.find(
       (token) => token.address == currencySetting.splTokenAddress,
     );

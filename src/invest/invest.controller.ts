@@ -15,7 +15,7 @@ import { UserAuth } from 'src/guards/user-auth.guard';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import { toProjectDto, toProjectDtoArray } from './dto/project.dto';
 import { toUserInterestedReceiptDtoArray } from './dto/userInterestedReceipt.dto';
-import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 
 @ApiTags('Invest')
