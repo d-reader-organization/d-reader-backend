@@ -42,7 +42,7 @@ import {
 } from './dto/raw-creator.dto';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { AdminGuard } from '../guards/roles.guard';
-import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 import { SearchCreatorParams } from './dto/search-creator-params.dto';
 import {
@@ -75,7 +75,6 @@ export class CreatorController {
   }
 
   /* Search all creators */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
   @Get('search')
   async searchAll(
     @Query() query: SearchCreatorParams,

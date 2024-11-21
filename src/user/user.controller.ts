@@ -38,7 +38,7 @@ import {
   toUserPrivacyConsentDtoArray,
 } from './dto/user-consent.dto';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
-import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { memoizeThrottle } from 'src/utils/lodash';
 
 @ApiTags('User')

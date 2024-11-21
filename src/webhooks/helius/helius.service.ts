@@ -796,6 +796,7 @@ export class HeliusService {
       const isMintInstruction =
         instruction.programId.toString() ===
         MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
+
       if (isMintInstruction) {
         const assetAddress = instruction.accounts.at(7);
         assetAccounts.push(assetAddress);
@@ -804,11 +805,8 @@ export class HeliusService {
 
     let comicIssueAssets: IndexCoreAssetReturnType[];
     try {
-      const assets = await Promise.all(
-        assetAccounts.map((account) => getAsset(account)),
-      );
       comicIssueAssets = await this.indexCoreAssets(
-        assets,
+        assetAccounts,
         candyMachineAddress,
         collectionAddress,
         receipt.id,
@@ -1529,14 +1527,15 @@ export class HeliusService {
    * Indexes core assets by fetching off-chain metadata and creating/updating records in the database.
    */
   async indexCoreAssets(
-    assets: DAS.GetAssetResponse[],
+    assetAccounts: string[],
     candMachineAddress: string,
     collectionAddress: string,
     receiptId: number,
   ) {
     const digitalAssets: IndexCoreAssetReturnType[] = [];
 
-    for (const asset of assets) {
+    for await (const assetAddress of assetAccounts) {
+      const asset = await getAsset(assetAddress);
       if (!asset) continue;
 
       const uri = asset.content.json_uri;
@@ -1548,7 +1547,6 @@ export class HeliusService {
       const isUsed = findUsedTrait(offChainMetadata);
       const isSigned = findSignedTrait(offChainMetadata);
       const rarity = findRarityTrait(offChainMetadata);
-      const assetAddress = publicKey;
 
       const digitalAsset = await this.prisma.collectibleComic.upsert({
         where: {

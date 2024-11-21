@@ -7,7 +7,7 @@ import { UserEntity } from './decorators/user.decorator';
 import { CreatorEntity } from './decorators/creator.decorator';
 import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { CacheInterceptor } from './cache/cache.interceptor';
 import { LOOSE_THROTTLER_CONFIG } from './constants';
 
 @ApiTags('App')

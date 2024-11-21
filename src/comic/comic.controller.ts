@@ -42,7 +42,7 @@ import {
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
-import { CacheInterceptor } from '../interceptors/cache.interceptor';
+import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 import { SearchComicParams } from './dto/search-comic-params.dto';
 import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
@@ -93,7 +93,6 @@ export class ComicController {
   }
 
   /* Search all comics */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1) }))
   @Get('search')
   async searchAll(
     @Query() query: SearchComicParams,
