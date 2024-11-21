@@ -59,7 +59,7 @@ export class HeliusController {
 
   /* Receive data from webhooks */
   @UseGuards(WebhookGuard)
-  // @SkipThrottle(SKIP_THROTTLERS_CONFIG)
+  @SkipThrottle(SKIP_THROTTLERS_CONFIG)
   @Post('handle')
   async handle(@Body() enrichedTransactions: EnrichedTransaction[]) {
     await this.heliusService.handleWebhookEvent(enrichedTransactions);
