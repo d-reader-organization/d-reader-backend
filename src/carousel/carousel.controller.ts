@@ -32,7 +32,8 @@ import { AdminGuard } from 'src/guards/roles.guard';
 import { UpdateCarouselSlideDto } from './dto/update-carousel-slide.dto';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 import { CacheInterceptor } from 'src/interceptors/cache.interceptor';
-import { minutes } from '@nestjs/throttler';
+import { minutes, SkipThrottle } from '@nestjs/throttler';
+import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
 
 @ApiTags('Carousel')
 @Controller('carousel')
@@ -76,6 +77,7 @@ export class CarouselController {
   }
 
   /* Get specific carousel slide by unique id */
+  @SkipThrottle(SKIP_THROTTLERS_CONFIG)
   @Get('slides/get/:id')
   async findOne(@Param('id') id: string): Promise<CarouselSlideDto> {
     const carouselSlide = await this.carouselService.findOne(+id);
