@@ -7,6 +7,7 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import { MIN_COMPUTE_PRICE_IX } from '../constants';
+import { Connection } from '@solana/web3.js';
 
 export async function createLookupTable(
   metaplex: Metaplex,
@@ -46,4 +47,14 @@ export async function createLookupTable(
   } catch (e) {
     console.error('Create Lookup Table failed :', e);
   }
+}
+
+export async function getLookupTableInfo(
+  connection: Connection,
+  address: string,
+): Promise<Buffer> {
+  const publicKey = new PublicKey(address);
+
+  const info = await connection.getAccountInfo(publicKey);
+  return info.data;
 }
