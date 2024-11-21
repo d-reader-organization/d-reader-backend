@@ -21,7 +21,13 @@ import { CacheService } from './cache.service';
  * @param {number} options.ttl - The time in seconds for which the response should be cached. Defaults to 60 seconds.
  * @param {boolean} options.userScope - Indicates whether the cache should be user-specific. Defaults to false.
  */
-export function CacheInterceptor({ ttl = 60, userScope = false }) {
+export function CacheInterceptor({
+  ttl = 60,
+  userScope = false,
+}: {
+  ttl: number;
+  userScope?: boolean;
+}) {
   @Injectable()
   class CacheInterceptorMixin implements NestInterceptor {
     constructor(readonly cacheService: CacheService) {}
