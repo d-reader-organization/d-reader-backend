@@ -43,25 +43,25 @@ export const CONFIG: Config = {
     {
       name: 'short',
       ttl: 1000, // 1 second
-      limit: 6,
+      limit: 1000*6,
       ignoreUserAgents: [],
     },
     {
       name: 'default',
       ttl: 10000, // 10 seconds
-      limit: 60,
+      limit: 1000*60,
       ignoreUserAgents: [],
     },
     {
       name: 'medium',
       ttl: 30000, // 30 seconds
-      limit: 120,
+      limit: 1000*120,
       ignoreUserAgents: [],
     },
     {
       name: 'long',
       ttl: 60000, // 60 seconds
-      limit: 180,
+      limit: 1000*180,
       ignoreUserAgents: [],
     },
   ],
