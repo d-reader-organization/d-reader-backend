@@ -1,7 +1,7 @@
 servers:
   web:
     hosts:
-      - 18.212.232.185
+      - 52.90.126.198
 
 env:
   clear:
