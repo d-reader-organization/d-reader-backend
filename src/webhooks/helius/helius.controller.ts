@@ -19,8 +19,8 @@ import { UpdateHeliusWebhookDto } from './dto/update-helius-webhook.dto';
 import { HeliusService } from './helius.service';
 import { AdminGuard } from '../../guards/roles.guard';
 import { WebhookGuard } from '../../guards/webhook.guard';
-// import { SkipThrottle } from '@nestjs/throttler';
-// import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
+import { SkipThrottle } from '@nestjs/throttler';
+import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
 
 @ApiTags('Helius')
 @Controller('helius')
