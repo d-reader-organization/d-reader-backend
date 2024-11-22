@@ -1,156 +1,99 @@
-import { PublicKey, Transaction } from '@solana/web3.js';
 import {
   createNoopSigner,
   generateSigner,
   some,
   transactionBuilder,
-  Umi,
   PublicKey as UmiPublicKey,
   AddressLookupTableInput,
   publicKey,
-  KeypairSigner,
+  BlockhashWithExpiryBlockHeight,
 } from '@metaplex-foundation/umi';
 import {
-  CandyMachine as CoreCandyMachine,
-  fetchCandyGuard,
   DefaultGuardSetMintArgs,
   DefaultGuardSet,
-  fetchCandyMachine,
   mintV1 as CoreMintV1,
+  CandyGuardAccountData,
 } from '@metaplex-foundation/mpl-core-candy-machine';
+import { setComputeUnitLimit } from '@metaplex-foundation/mpl-toolbox';
 import {
-  fetchAddressLookupTable,
-  setComputeUnitLimit,
-  setComputeUnitPrice,
-} from '@metaplex-foundation/mpl-toolbox';
-import {
-  getIdentitySignature,
+  getAuthorizationSignerUmiPublicKey,
+  getAuthorizationSignerUmiSignature,
   getIdentityUmiSignature,
-  getThirdPartyLegacySignature,
-  getThirdPartySigner,
   getTreasuryPublicKey,
+  umi,
 } from '../../utils/metaplex';
 import { encodeUmiTransaction } from '../../utils/transactions';
-import { createMemoInstruction } from '@solana/spl-memo';
-import { toWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 
 export async function constructMultipleMintTransaction(
-  umi: Umi,
   candyMachineAddress: UmiPublicKey,
+  collectionAddress: UmiPublicKey,
+  candyGuard: CandyGuardAccountData<DefaultGuardSet>,
   minter: UmiPublicKey,
   label: string,
   numberOfItems: number,
-  lookupTableAddress?: string,
+  blockHash: BlockhashWithExpiryBlockHeight,
+  lookupTable?: AddressLookupTableInput,
   isSponsored = false,
-  computePrice?: number,
-): Promise<string[]> {
+): Promise<string> {
   try {
-    const transactions: string[] = [];
-    const lookupTable = await fetchLookupTable(umi, lookupTableAddress);
-    const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
-    const signer = createNoopSigner(minter);
-    const mintArgs = await getMintArgs(umi, candyMachine, label);
+    const mintArgs = getMintArgs(candyMachineAddress, candyGuard, label);
 
-    const builder = createTransactionBuilder(umi, numberOfItems, computePrice);
-    const { assetSigners, builder: mintBuilder } =
-      addMintBuildersAndGenerateSigners(
-        umi,
-        numberOfItems,
-        builder,
-        candyMachine,
-        signer,
-        label,
-        mintArgs,
-        isSponsored,
-      );
-
-    const mintTransaction = await buildAndSignTransaction(
-      mintBuilder,
-      umi,
-      signer,
+    const mintTransaction = await getAuthorizedMintTransaction(
+      candyMachineAddress,
+      collectionAddress,
+      minter,
+      numberOfItems,
+      label,
+      mintArgs,
+      blockHash,
       lookupTable,
       isSponsored,
     );
-
-    const authorizationTx = await createAuthorizationTransaction(
-      umi,
-      minter,
-      assetSigners,
-      isSponsored,
-    );
-    transactions.push(authorizationTx);
 
     const encodedMintTransaction = encodeUmiTransaction(
       mintTransaction,
       'base64',
     );
-    transactions.push(encodedMintTransaction);
 
-    return transactions;
+    return encodedMintTransaction;
   } catch (e) {
     console.error('Error construction mint transaction', e);
   }
 }
 
-async function fetchLookupTable(
-  umi: Umi,
-  address?: string,
-): Promise<AddressLookupTableInput | undefined> {
-  if (!address) return undefined;
-  return fetchAddressLookupTable(umi, publicKey(address), {
-    commitment: 'confirmed',
-  });
-}
-
-function createTransactionBuilder(
-  umi: Umi,
+async function getAuthorizedMintTransaction(
+  candyMachine: UmiPublicKey,
+  collection: UmiPublicKey,
+  minter: UmiPublicKey,
   numberOfItems: number,
-  computePrice?: number,
-): ReturnType<typeof transactionBuilder> {
+  label: string,
+  mintArgs: Partial<DefaultGuardSetMintArgs>,
+  blockHash: BlockhashWithExpiryBlockHeight,
+  lookupTable?: AddressLookupTableInput,
+  isSponsored = false,
+) {
+  const identityPublicKey = getTreasuryPublicKey();
+  const authorizationSigner = getAuthorizationSignerUmiPublicKey();
+  const signer = createNoopSigner(minter);
   const CORE_MINT_COMPUTE_UNITS = 160000;
+
+  const payer = isSponsored
+    ? createNoopSigner(publicKey(identityPublicKey))
+    : signer;
+
   let builder = transactionBuilder().add(
     setComputeUnitLimit(umi, {
       units: CORE_MINT_COMPUTE_UNITS * numberOfItems,
     }),
   );
 
-  if (computePrice) {
-    builder = builder.add(
-      setComputeUnitPrice(umi, { microLamports: computePrice }),
-    );
-  }
-
-  return builder;
-}
-
-function addMintBuildersAndGenerateSigners(
-  umi: Umi,
-  numberOfItems: number,
-  builder: ReturnType<typeof transactionBuilder>,
-  candyMachine: CoreCandyMachine,
-  signer: ReturnType<typeof createNoopSigner>,
-  label: string,
-  mintArgs: Awaited<ReturnType<typeof getMintArgs>>,
-  isSponsored = false,
-): {
-  assetSigners: KeypairSigner[];
-  builder: ReturnType<typeof transactionBuilder>;
-} {
-  const identityPublicKey = getTreasuryPublicKey();
-  const payer = isSponsored
-    ? createNoopSigner(publicKey(identityPublicKey))
-    : signer;
-  const assetSigners: KeypairSigner[] = [];
-
   for (let i = 0; i < numberOfItems; i++) {
     const asset = generateSigner(umi);
-    assetSigners.push(asset);
-
     builder = builder.add(
       CoreMintV1(umi, {
-        candyMachine: candyMachine.publicKey,
+        candyMachine,
         minter: signer,
-        collection: candyMachine.collectionMint,
+        collection,
         asset,
         group: some(label),
         payer,
@@ -159,77 +102,35 @@ function addMintBuildersAndGenerateSigners(
     );
   }
 
-  return { assetSigners, builder };
-}
-
-async function buildAndSignTransaction(
-  builder: ReturnType<typeof transactionBuilder>,
-  umi: Umi,
-  signer: ReturnType<typeof createNoopSigner>,
-  lookupTable?: AddressLookupTableInput,
-  isSponsored = false,
-) {
-  const identityPublicKey = getTreasuryPublicKey();
-  const payer = isSponsored
-    ? createNoopSigner(publicKey(identityPublicKey))
-    : signer;
-
   const transaction = await builder
+    .setBlockhash(blockHash)
+    .addRemainingAccounts({
+      pubkey: authorizationSigner,
+      isSigner: true,
+      isWritable: false,
+    })
     .setAddressLookupTables(lookupTable ? [lookupTable] : [])
     .buildAndSign({ ...umi, payer });
 
-  return isSponsored ? getIdentityUmiSignature(transaction) : transaction;
-}
-
-async function createAuthorizationTransaction(
-  umi: Umi,
-  minter: UmiPublicKey,
-  assetSigners: KeypairSigner[],
-  isSponsored = false,
-): Promise<string> {
-  const thirdPartySigner = getThirdPartySigner();
-  const minterPublicKey = new PublicKey(minter.toString());
-  const feePayer = isSponsored ? getTreasuryPublicKey() : minterPublicKey;
-
-  const authorizationMemo = createMemoInstruction('Authorized Mint!', [
-    thirdPartySigner,
-    minterPublicKey,
-    ...assetSigners.map((signer) => new PublicKey(signer.publicKey)),
-  ]);
-
-  const latestBlockHash = await umi.rpc.getLatestBlockhash({
-    commitment: 'confirmed',
-  });
-  const memoTx = new Transaction({
-    feePayer,
-    ...latestBlockHash,
-  }).add(authorizationMemo);
-
-  const signedMemoTx = getThirdPartyLegacySignature(memoTx);
-  signedMemoTx.partialSign(
-    ...assetSigners.map((signer) => toWeb3JsKeypair(signer)),
+  const authorizedTransaction = await getAuthorizationSignerUmiSignature(
+    transaction,
   );
-
-  const transaction = isSponsored
-    ? getIdentitySignature(signedMemoTx)
-    : signedMemoTx;
-  return transaction
-    .serialize({ requireAllSignatures: false })
-    .toString('base64');
+  return isSponsored
+    ? getIdentityUmiSignature(authorizedTransaction)
+    : authorizedTransaction;
 }
 
-async function getMintArgs(
-  umi: Umi,
-  candyMachine: CoreCandyMachine,
+function getMintArgs(
+  candyMachineAddress: UmiPublicKey,
+  candyGuard: CandyGuardAccountData<DefaultGuardSet>,
   label: string,
 ) {
-  const candyGuard = await fetchCandyGuard(umi, candyMachine.mintAuthority);
   const defaultGuards = candyGuard.guards;
   const group = candyGuard.groups.find((group) => group.label == label);
 
   if (!group) {
     throw new Error(
-      `Group with label ${label} does not exist on Candy Machine ${candyMachine.publicKey.toString()}`,
+      `Group with label ${label} does not exist on Candy Machine ${candyMachineAddress.toString()}`,
     );
   }
 

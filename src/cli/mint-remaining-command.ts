@@ -74,7 +74,7 @@ export class MintRemainingCommand extends CommandRunner {
     }
     const CORE_MINT_COMPUTE_BUDGET = 800000;
     // Todo: use chunking to do 5 mint in 1 tx
-    const encodedTransactions = await getTransactionWithPriorityFee(
+    const mintTransaction = await getTransactionWithPriorityFee(
       constructMultipleMintTransaction,
       CORE_MINT_COMPUTE_BUDGET,
       this.umi,
@@ -86,25 +86,17 @@ export class MintRemainingCommand extends CommandRunner {
       false,
     );
 
-    const signedTransactions: string[] = [];
-
-    for (const transaction of encodedTransactions) {
-      const decodedTransaction = decodeUmiTransaction(transaction);
-      const signedTransaction = await getIdentityUmiSignature(
-        decodedTransaction,
-      );
-
-      const encodedTransaction = encodeUmiTransaction(
-        signedTransaction,
-        'base64',
-      );
-      signedTransactions.push(encodedTransaction);
-    }
+    const decodedTransaction = decodeUmiTransaction(mintTransaction);
+    const signedTransaction = await getIdentityUmiSignature(decodedTransaction);
+    const encodedMintTransaction = encodeUmiTransaction(
+      signedTransaction,
+      'base64',
+    );
 
     log(cb('⛏️  Minting'));
     const signature =
       await this.candyMachineService.validateAndSendMintTransaction(
-        signedTransactions,
+        [encodedMintTransaction],
         authority.toString(),
       );
 

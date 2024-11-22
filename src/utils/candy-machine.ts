@@ -49,6 +49,8 @@ import { ComicRarity } from 'dreader-comic-verse';
 import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
+import { Connection } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 export type JsonMetadataCreators = JsonMetadata['properties']['creators'];
 
@@ -349,6 +351,16 @@ export async function insertCoreItems(
     });
   }
   return itemMetadatas;
+}
+
+export async function getCandyGuardAccount(
+  connection: Connection,
+  address: string,
+) {
+  const publicKey = new PublicKey(address);
+
+  const account = await connection.getAccountInfo(publicKey);
+  return account.data;
 }
 
 export function calculateMissingSOL(missingFunds: number): number {

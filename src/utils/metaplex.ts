@@ -14,12 +14,14 @@ import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { fromWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 import {
   createSignerFromKeypair,
+  publicKey,
   keypairIdentity as umiKeypairIdentity,
   Transaction as UmiTransaction,
 } from '@metaplex-foundation/umi';
 import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { irysUploader } from '@metaplex-foundation/umi-uploader-irys';
+import { VersionedTransaction } from '@solana/web3.js';
 
 export type MetadataFile = {
   type?: string;
@@ -55,14 +57,29 @@ export const getThirdPartySigner = () => {
  * @param {Transaction} transaction - The transaction to sign.
  * @returns {Transaction} The signed transaction.
  */
-export const getThirdPartyLegacySignature = (transaction: Transaction) => {
+export const getThirdPartyLegacySignature = (
+  transaction: Transaction | VersionedTransaction,
+) => {
   const signer = getThirdPartySignerKeypair();
-  transaction.partialSign(signer);
+  if ('partialSign' in transaction) {
+    transaction.partialSign(signer);
+  } else {
+    // Handle VersionedTransaction differently
+    transaction.sign([signer]);
+  }
   return transaction;
 };
 
 /**
- * Signs a UMI transaction with the third-party signer.
+ * Returns the public key of the third-party signer.
+ * @returns {PublicKey} The public key of the third-party signer.
+ */
+export const getThirdPartyUmiSigner = () => {
+  return publicKey(getThirdPartySignerKeypair().publicKey);
+};
+
+/**
+ * Signs a UMI transaction with the authorization signer.
  * @param {UmiTransaction} transaction - The UMI transaction to sign.
  * @returns {Promise<UmiTransaction>} The signed UMI transaction.
  */
@@ -75,11 +92,60 @@ export const getThirdPartyUmiSignature = async (
 };
 
 /**
+ * Retrieves the authorization signer keypair from encrypted environment variables.
+ * @returns {Keypair} The authorization signer keypair.
+ */
+const getAuthorizationSignerKeypair = () => {
+  const authorizationSigner = AES.decrypt(
+    process.env.AUTHORIZATION_SIGNER_PRIVATE_KEY,
+    process.env.AUTHORIZATION_SIGNER_SECRET,
+  );
+  const authorizationKeypair = Keypair.fromSecretKey(
+    Buffer.from(JSON.parse(authorizationSigner.toString(Utf8))),
+  );
+  return authorizationKeypair;
+};
+
+/**
+ * Returns the public key of the authorization signer.
+ * @returns {PublicKey} The public key of the authorization signer.
+ */
+export const getAuthorizationSigner = () => {
+  return getAuthorizationSignerKeypair().publicKey;
+};
+
+/**
+ * Returns the public key of the authorization signer.
+ * @returns {PublicKey} The public key of the authorization signer.
+ */
+export const getAuthorizationSignerUmiPublicKey = () => {
+  return publicKey(getAuthorizationSignerKeypair().publicKey);
+};
+
+/**
+ * Signs a UMI transaction with the authorization signer.
+ * @param {UmiTransaction} transaction - The UMI transaction to sign.
+ * @returns {Promise<UmiTransaction>} The signed UMI transaction.
+ */
+export const getAuthorizationSignerUmiSignature = async (
+  transaction: UmiTransaction,
+) => {
+  const authorizationKeypair = fromWeb3JsKeypair(
+    getAuthorizationSignerKeypair(),
+  );
+  const authorizationSigner = createSignerFromKeypair(
+    umi,
+    authorizationKeypair,
+  );
+  return authorizationSigner.signTransaction(transaction);
+};
+
+/**
  * Signs a UMI transaction with the identity (treasury) signer.
  * @param {UmiTransaction} transaction - The UMI transaction to sign.
  * @returns {UmiTransaction} The signed UMI transaction.
  */
-export const getIdentityUmiSignature = (transaction: UmiTransaction) => {
+export const getIdentityUmiSignature = async (transaction: UmiTransaction) => {
   const treasuryKeypair = fromWeb3JsKeypair(getTreasuryKeypair());
   const treasurySigner = createSignerFromKeypair(umi, treasuryKeypair);
   return treasurySigner.signTransaction(transaction);

@@ -154,7 +154,7 @@ export class TransactionController {
     const { couponId, label } = query;
     const numberOfItems = query.numberOfItems ? +query.numberOfItems : 1;
 
-    return await this.candyMachineService.createMintTransaction(
+    const transaction = await this.candyMachineService.createMintTransaction(
       minterAddress,
       candyMachineAddress,
       label,
@@ -162,6 +162,7 @@ export class TransactionController {
       numberOfItems,
       user ? user.id : null,
     );
+    return [transaction];
   }
 
   @UseInterceptors(MutexInterceptor(MINT_MUTEX_IDENTIFIER, { id: 'param' }))
