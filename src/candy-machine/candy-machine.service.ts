@@ -83,6 +83,7 @@ import {
   some,
   lamports as umiLamports,
   createBigInt,
+  AddressLookupTableInput,
 } from '@metaplex-foundation/umi';
 import {
   fetchCandyMachine,
@@ -97,14 +98,19 @@ import {
   TokenPayment,
   SolPayment,
   MPL_CORE_CANDY_GUARD_PROGRAM_ID,
+  getCandyGuardAccountDataSerializer,
+  CandyGuardAccountData,
+  GuardSetArgs,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
   insertCoreItems,
   generatePropertyName,
   validateBalanceForMint,
+  getCandyGuardAccount,
 } from '../utils/candy-machine';
 import {
   findAssociatedTokenPda,
+  getAddressLookupTableAccountDataSerializer,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
 import { base58 } from '@metaplex-foundation/umi/serializers';
@@ -113,7 +119,7 @@ import {
   deleteLegacyCandyMachine,
 } from './instructions/delete-candy-machine';
 import { NonceService } from '../nonce/nonce.service';
-import { getAssetsByGroup, getTransactionWithPriorityFee } from '../utils/das';
+import { getAssetsByGroup } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
@@ -125,6 +131,7 @@ import { CacheService } from '../cache/cache.service';
 import { getLookupTableInfo } from '../utils/lookup-table';
 import { CachePath } from '../utils/cache';
 import { Cacheable } from 'src/cache/cache.decorator';
+import { AddressLookupTableState } from '@solana/web3.js';
 
 @Injectable()
 export class CandyMachineService {
@@ -290,26 +297,36 @@ export class CandyMachineService {
     numberOfItems?: number,
     userId?: number,
   ) {
-    const { lookupTable, isSponsored } = await this.prepareMintTransaction(
+    const {
+      lookupTableAddress,
+      isSponsored,
+      collectionAddress,
+      mintAuthority,
+    } = await this.prepareMintTransaction(
       walletAddress,
-      candyMachineAddress,
       label,
       couponId,
       numberOfItems,
       userId,
     );
-    const CORE_MINT_COMPUTE_BUDGET = 800000;
 
-    const transactions = await getTransactionWithPriorityFee(
-      constructMultipleMintTransaction,
-      CORE_MINT_COMPUTE_BUDGET,
+    const CORE_MINT_COMPUTE_BUDGET = 800000;
+    const lookupTableInput = await this.fetchUmiLookupTableInput(
+      lookupTableAddress,
+    );
+    const candyGuard = await this.fetchAndCacheCandyGuard(mintAuthority);
+
+    const transactions = await constructMultipleMintTransaction(
       this.umi,
       publicKey(candyMachineAddress),
+      publicKey(collectionAddress),
+      candyGuard,
       walletAddress,
       label,
       numberOfItems ?? 1,
-      lookupTable,
+      lookupTableInput,
       isSponsored,
+      CORE_MINT_COMPUTE_BUDGET,
     );
 
     return transactions;
@@ -318,12 +335,16 @@ export class CandyMachineService {
   /* Validate if mint transaction should be constructed and partially prepare it */
   async prepareMintTransaction(
     walletAddress: UmiPublicKey,
-    candyMachineAddress: UmiPublicKey,
     label: string,
     couponId: number,
     numberOfItems: number,
     userId?: number,
-  ): Promise<{ lookupTable: string | undefined; isSponsored: boolean }> {
+  ): Promise<{
+    lookupTableAddress: string | undefined;
+    isSponsored: boolean;
+    collectionAddress: string;
+    mintAuthority: string;
+  }> {
     const {
       mintPrice,
       tokenStandard,
@@ -332,8 +353,10 @@ export class CandyMachineService {
       numberOfRedemptions,
       startsAt,
       expiresAt,
-      lookupTable,
+      lookupTableAddress,
       splToken,
+      collectionAddress,
+      mintAuthority,
     } = await this.findCandyMachineCouponData(couponId, label);
 
     this.validateCouponDates(startsAt, expiresAt);
@@ -353,13 +376,17 @@ export class CandyMachineService {
       numberOfRedemptions,
       numberOfItems,
       couponType,
-      candyMachineAddress,
       couponId,
       walletAddress,
       userId,
     );
 
-    return { lookupTable, isSponsored };
+    return {
+      lookupTableAddress,
+      isSponsored,
+      collectionAddress,
+      mintAuthority,
+    };
   }
 
   async validateAndSendMintTransaction(
@@ -381,24 +408,9 @@ export class CandyMachineService {
       const lookupTableAddress =
         mintTransaction.message.addressTableLookups[0].accountKey;
 
-      const cacheKey = CachePath.lookupTableAccounts(
+      lookupTableAccounts = await this.fetchAndDeserializeLookuptable(
         lookupTableAddress.toString(),
       );
-      const lookupTableInfo = await this.cacheService.fetchAndCache(
-        cacheKey,
-        getLookupTableInfo,
-        2 * HOUR_SECONDS,
-        this.connection,
-        lookupTableAddress,
-      );
-
-      const lookupTableState =
-        AddressLookupTableAccount.deserialize(lookupTableInfo);
-      lookupTableAccounts = {
-        key: lookupTableAddress,
-        state: lookupTableState,
-        isActive: () => !!lookupTableState,
-      };
     }
 
     const mintInstructions = TransactionMessage.decompile(
@@ -1046,9 +1058,11 @@ export class CandyMachineService {
     );
 
     return {
+      collectionAddress: candyMachine.collectionAddress,
+      mintAuthority: candyMachine.mintAuthorityAddress,
       couponType: candyMachineCoupon.type,
       isSponsored: candyMachineCoupon.isSponsored,
-      lookupTable: candyMachine.lookupTable,
+      lookupTableAddress: candyMachine.lookupTable,
       mintPrice: Number(currencySetting.mintPrice),
       splToken: {
         address: currencySetting.splTokenAddress,
@@ -1483,7 +1497,6 @@ export class CandyMachineService {
     numberOfRedemptions: number | undefined,
     numberOfItems: number,
     couponType: CouponType,
-    candyMachineAddress: UmiPublicKey,
     couponId: number,
     walletAddress: UmiPublicKey,
     userId: number | undefined,
@@ -1510,6 +1523,89 @@ export class CandyMachineService {
         throw new UnauthorizedException('Mint limit reached!');
       }
     }
+  }
+
+  private async fetchAndDeserializeLookuptable(address: string): Promise<{
+    key: PublicKey;
+    state: AddressLookupTableState;
+    isActive: () => boolean;
+  }> {
+    const lookupTableCacheKey = CachePath.lookupTableAccounts(address);
+    const lookupTableInfo = await this.cacheService.fetchAndCache(
+      lookupTableCacheKey,
+      getLookupTableInfo,
+      2 * HOUR_SECONDS,
+      this.connection,
+      address,
+    );
+
+    const lookupTableState =
+      AddressLookupTableAccount.deserialize(lookupTableInfo);
+    const lookupTableAccounts = {
+      key: new PublicKey(address),
+      state: lookupTableState,
+      isActive: () => !!lookupTableState,
+    };
+
+    return lookupTableAccounts;
+  }
+
+  /**
+   * Retrieves the UMI lookup table input for a specified address.
+   * Checks the cache if the data is not found.
+   *
+   * @param {string | undefined} address - The address to fetch the lookup table input for.
+   * @returns {Promise<AddressLookupTableInput | undefined>} - The lookup table input or undefined if not found.
+   */
+  private async fetchUmiLookupTableInput(
+    address: string | undefined,
+  ): Promise<AddressLookupTableInput | undefined> {
+    if (!address) return;
+
+    const lookupTableCacheKey = CachePath.lookupTableAccounts(address);
+    const lookupTableBuffer = await this.cacheService.fetchAndCache(
+      lookupTableCacheKey,
+      getLookupTableInfo,
+      2 * HOUR_SECONDS,
+      this.connection,
+      address,
+    );
+    const lookupTable =
+      getAddressLookupTableAccountDataSerializer().deserialize(
+        lookupTableBuffer,
+      )[0];
+    const lookupTableInput: AddressLookupTableInput = {
+      addresses: lookupTable.addresses,
+      publicKey: publicKey(address),
+    };
+    return lookupTableInput;
+  }
+
+  /**
+   * Fetches and caches the candy guard data for a specified address.
+   * Checks the cache if the data is not found.
+   *
+   * @param {string} address - The address of the candy guard to fetch.
+   * @returns {Promise<CandyGuardAccountData<DefaultGuardSet>>} - The candy guard data or undefined if not found.
+   */
+  private async fetchAndCacheCandyGuard(
+    address: string,
+  ): Promise<CandyGuardAccountData<DefaultGuardSet>> {
+    const cacheKey = CachePath.candyGuard(address);
+    const candyGuardBuffer = await this.cacheService.fetchAndCache(
+      cacheKey,
+      getCandyGuardAccount,
+      2 * HOUR_SECONDS,
+      this.connection,
+      address,
+    );
+
+    const candyGuard: CandyGuardAccountData<DefaultGuardSet> =
+      getCandyGuardAccountDataSerializer<GuardSetArgs, DefaultGuardSet>(
+        this.umi,
+      ).deserialize(candyGuardBuffer)[0];
+
+    return candyGuard;
   }
 
   private async fetchCollectionHolders(collectionAddress: string) {

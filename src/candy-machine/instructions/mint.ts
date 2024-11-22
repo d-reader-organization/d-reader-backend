@@ -11,15 +11,12 @@ import {
   KeypairSigner,
 } from '@metaplex-foundation/umi';
 import {
-  CandyMachine as CoreCandyMachine,
-  fetchCandyGuard,
   DefaultGuardSetMintArgs,
   DefaultGuardSet,
-  fetchCandyMachine,
   mintV1 as CoreMintV1,
+  CandyGuardAccountData,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
-  fetchAddressLookupTable,
   setComputeUnitLimit,
   setComputeUnitPrice,
 } from '@metaplex-foundation/mpl-toolbox';
@@ -37,19 +34,19 @@ import { toWeb3JsKeypair } from '@metaplex-foundation/umi-web3js-adapters';
 export async function constructMultipleMintTransaction(
   umi: Umi,
   candyMachineAddress: UmiPublicKey,
+  collectionAddress: UmiPublicKey,
+  candyGuard: CandyGuardAccountData<DefaultGuardSet>,
   minter: UmiPublicKey,
   label: string,
   numberOfItems: number,
-  lookupTableAddress?: string,
+  lookupTable?: AddressLookupTableInput,
   isSponsored = false,
   computePrice?: number,
 ): Promise<string[]> {
   try {
     const transactions: string[] = [];
-    const lookupTable = await fetchLookupTable(umi, lookupTableAddress);
-    const candyMachine = await fetchCandyMachine(umi, candyMachineAddress);
     const signer = createNoopSigner(minter);
-    const mintArgs = await getMintArgs(umi, candyMachine, label);
+    const mintArgs = await getMintArgs(candyMachineAddress, candyGuard, label);
 
     const builder = createTransactionBuilder(umi, numberOfItems, computePrice);
     const { assetSigners, builder: mintBuilder } =
@@ -57,7 +54,8 @@ export async function constructMultipleMintTransaction(
         umi,
         numberOfItems,
         builder,
-        candyMachine,
+        candyMachineAddress,
+        collectionAddress,
         signer,
         label,
         mintArgs,
@@ -92,16 +90,6 @@ export async function constructMultipleMintTransaction(
   }
 }
 
-async function fetchLookupTable(
-  umi: Umi,
-  address?: string,
-): Promise<AddressLookupTableInput | undefined> {
-  if (!address) return undefined;
-  return fetchAddressLookupTable(umi, publicKey(address), {
-    commitment: 'confirmed',
-  });
-}
-
 function createTransactionBuilder(
   umi: Umi,
   numberOfItems: number,
@@ -127,7 +115,8 @@ function addMintBuildersAndGenerateSigners(
   umi: Umi,
   numberOfItems: number,
   builder: ReturnType<typeof transactionBuilder>,
-  candyMachine: CoreCandyMachine,
+  candyMachine: UmiPublicKey,
+  collection: UmiPublicKey,
   signer: ReturnType<typeof createNoopSigner>,
   label: string,
   mintArgs: Awaited<ReturnType<typeof getMintArgs>>,
@@ -148,9 +137,9 @@ function addMintBuildersAndGenerateSigners(
 
     builder = builder.add(
       CoreMintV1(umi, {
-        candyMachine: candyMachine.publicKey,
+        candyMachine,
         minter: signer,
-        collection: candyMachine.collectionMint,
+        collection,
         asset,
         group: some(label),
         payer,
@@ -219,17 +208,16 @@ async function createAuthorizationTransaction(
 }
 
 async function getMintArgs(
-  umi: Umi,
-  candyMachine: CoreCandyMachine,
+  candyMachineAddress: UmiPublicKey,
+  candyGuard: CandyGuardAccountData<DefaultGuardSet>,
   label: string,
 ) {
-  const candyGuard = await fetchCandyGuard(umi, candyMachine.mintAuthority);
   const defaultGuards = candyGuard.guards;
   const group = candyGuard.groups.find((group) => group.label == label);
 
   if (!group) {
     throw new Error(
-      `Group with label ${label} does not exist on Candy Machine ${candyMachine.publicKey.toString()}`,
+      `Group with label ${label} does not exist on Candy Machine ${candyMachineAddress.toString()}`,
     );
   }
 

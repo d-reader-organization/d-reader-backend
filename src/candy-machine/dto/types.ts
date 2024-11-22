@@ -96,9 +96,11 @@ export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
 };
 
 export type CandyMachineMintData = {
+  collectionAddress: string;
+  mintAuthority: string;
   couponType: CouponType;
   isSponsored: boolean;
-  lookupTable: string;
+  lookupTableAddress: string;
   mintPrice: number;
   splToken: {
     address: string;
