@@ -73,6 +73,8 @@ import { UpdateCMGroupPriceCommand } from './update-cm-group-price-command';
 import { UpdateCMGroupPriceQuestions } from './update-cm-group-price-questions';
 import { VaultTransferCommand } from './vault-transfer-command';
 import { VaultTransferQuestions } from './vault-transfer-questions';
+import { CacheModule } from '../cache/cache.module';
+import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -94,6 +96,8 @@ import { VaultTransferQuestions } from './vault-transfer-questions';
     s3Module,
     MailModule,
     WebSocketModule,
+    CacheMangerModule.register({ isGlobal: true }),
+    CacheModule,
   ],
   providers: [
     BundlrWithdrawCommand,

@@ -70,28 +70,23 @@ export class MintOneCommand extends CommandRunner {
       return;
     }
 
-    const encodedTransactions =
+    const encodedTransaction =
       await this.candyMachineService.createMintTransaction(
         publicKey(keypair.publicKey.toString()),
         publicKey(options.candyMachineAddress.toString()),
         coupon.currencySettings.at(-1).label,
         coupon.id,
       );
-    const transactions = encodedTransactions.map((encodedTransaction) => {
-      const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
-      const transaction = VersionedTransaction.deserialize(transactionBuffer);
-      transaction.sign([keypair]);
-      return transaction;
-    });
+    const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
+    const transaction = VersionedTransaction.deserialize(transactionBuffer);
+    transaction.sign([keypair]);
     try {
       log(cb('⛏️  Minting'));
-      for (const transaction of transactions) {
-        const signature = await connection.sendRawTransaction(
-          transaction.serialize(),
-          { skipPreflight: true },
-        );
-        log(`✍️  Signature: ${cuy(signature)}`);
-      }
+      const signature = await connection.sendRawTransaction(
+        transaction.serialize(),
+        { skipPreflight: true },
+      );
+      log(`✍️  Signature: ${cuy(signature)}`);
       log('✅ Minted successfully');
     } catch (e) {
       logErr(
