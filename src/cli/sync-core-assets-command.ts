@@ -37,14 +37,6 @@ export class SyncCoreAssetCommand extends CommandRunner {
 
   syncCoreAsset = async (options: Options) => {
     log('\n🏗️  Syncing...');
-    const candyMachine = await this.prisma.candyMachine.findFirst({
-      where: { collectionAddress: options.collection },
-    });
-
-    if (!candyMachine) {
-      throw Error("Collection doesn't exists in database");
-    }
-
     const limit = 200;
     let page = 1;
     let data = await getAssetsByGroup(options.collection, page, limit);
@@ -69,7 +61,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
 
       console.log(`Syncing ${unsyncedNfts.length} assets...!`);
       const promises = unsyncedNfts.map((asset) =>
-        this.indexCoreAsset(asset, candyMachine.address),
+        this.indexCoreAsset(asset, options.collection),
       );
       await Promise.all(promises);
 
@@ -80,10 +72,28 @@ export class SyncCoreAssetCommand extends CommandRunner {
     }
   };
 
-  async indexCoreAsset(
-    asset: DAS.GetAssetResponse,
-    candyMachineAddress: string,
-  ) {
+  async indexCoreAsset(asset: DAS.GetAssetResponse, collectionAddress: string) {
+    const candyMachineReceipt = await this.prisma.candyMachineReceipt.findFirst(
+      {
+        where: { collectibleComics: { some: { address: asset.id } } },
+      },
+    );
+
+    const doesReceiptExists = !!candyMachineReceipt;
+    let candyMachineAddress: string;
+
+    if (doesReceiptExists) {
+      candyMachineAddress = candyMachineReceipt.candyMachineAddress;
+    } else {
+      const candyMachine = await this.prisma.candyMachine.findFirst({
+        where: { collectionAddress },
+      });
+
+      if (!candyMachine) {
+        throw Error("Collection doesn't exists in database");
+      }
+    }
+
     const walletAddress = asset.ownership.owner;
     const { digitalAsset } = await this.heliusService.reIndexAsset(
       asset,
@@ -91,10 +101,6 @@ export class SyncCoreAssetCommand extends CommandRunner {
     );
 
     const owner = digitalAsset.owner;
-    const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst({
-      where: { collectibleComics: { some: { address: asset.id } } },
-    });
-
     /** If receipt doesn't exists for a asset, it might be hard to get the actual signauture with all asset created in batch but we can create multiple receipts for all those assets here */
     if (!doesReceiptExists) {
       try {
@@ -170,7 +176,9 @@ export class SyncCoreAssetCommand extends CommandRunner {
         );
       }
     } catch (e) {
-      console.error(`Failed to sync candymachine ${candyMachineAddress}`, e);
+      console.error(
+        `Failed to sync candymachine ${candyMachineAddress}, Maybe it's a minted out collection`,
+      );
     }
   }
 }
