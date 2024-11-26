@@ -2,8 +2,7 @@ import {
   DefaultCandyGuardSettings,
   MetaplexFile,
 } from '@metaplex-foundation/js';
-import { ComicRarity as PrismaComicRarity, User, Wallet } from '@prisma/client';
-import { ComicRarity } from 'dreader-comic-verse';
+import { ComicRarity, User, Wallet } from '@prisma/client';
 
 export type PickByType<T, V> = {
   [P in keyof T as T[P] extends V | undefined ? P : never]: T[P];
@@ -16,7 +15,7 @@ export type CoverFiles = {
   unusedUnsigned: MetaplexFile;
 };
 
-export type RarityCoverFiles = { [rarity in PrismaComicRarity]: CoverFiles };
+export type RarityCoverFiles = { [rarity in ComicRarity]: CoverFiles };
 export type ItemMetadata = {
   uri: string;
   isUsed: boolean;

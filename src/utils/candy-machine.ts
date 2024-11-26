@@ -25,7 +25,7 @@ import { MetaplexFile } from '@metaplex-foundation/js';
 import { ComicIssueCMInput } from 'src/comic-issue/dto/types';
 import { RarityCoverFiles } from 'src/types/shared';
 import { pRateLimit } from 'p-ratelimit';
-import { TokenStandard } from '@prisma/client';
+import { ComicRarity, TokenStandard } from '@prisma/client';
 import { getIrysUri, getThirdPartySigner } from './metaplex';
 import { getTransactionWithPriorityFee } from './das';
 import { constructInsertItemsTransaction } from '../candy-machine/instructions/insert-items';
@@ -38,14 +38,12 @@ import {
   ATTRIBUTE_COMBINATIONS,
   D_PUBLISHER_SYMBOL,
   D_READER_FRONTEND_URL,
-  RARITY_MAP,
   RARITY_TRAIT,
   SIGNED_TRAIT,
   USED_TRAIT,
   getRarityShareTable,
 } from '../constants';
 import { CoverFiles, ItemMetadata } from '../types/shared';
-import { ComicRarity } from 'dreader-comic-verse';
 import { AddCandyMachineCouponParamsWithLabels } from 'src/candy-machine/dto/types';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { DigitalAssetJsonMetadata } from 'src/digital-asset/dto/types';
@@ -91,7 +89,7 @@ export async function uploadMetadata(
     attributes: [
       {
         trait_type: RARITY_TRAIT,
-        value: ComicRarity[rarity].toString(),
+        value: rarity,
       },
       {
         trait_type: USED_TRAIT,
@@ -161,11 +159,8 @@ export async function uploadItemMetadata(
   royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
   darkblockId: string,
-  comicIssueSupply: number,
-  onChainName: string,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
-  const items: { uri: string; name: string }[] = [];
   // TODO: rarityShares is not reliable, we should pull this info from the database
   const rarityShares = getRarityShareTable(numberOfRarities);
   const itemMetadatas: ItemMetadata[] = [];
@@ -179,41 +174,12 @@ export async function uploadItemMetadata(
       royaltyWallets,
       rarityCoverFiles[rarity],
       darkblockId,
-      RARITY_MAP[rarity],
+      rarity,
     );
     itemMetadatas.push(...itemMetadata);
   }
 
-  const unusedUnsignedMetadatas = itemMetadatas.filter(
-    (item) => !item.isUsed && !item.isSigned,
-  );
-
-  let supplyLeft = comicIssueSupply;
-  let index = 0,
-    nameIndex = 0;
-
-  for (const data of unusedUnsignedMetadatas) {
-    let supply: number;
-    const { value } = rarityShares[index];
-    if (index == rarityShares.length - 1) {
-      supply = supplyLeft;
-    } else {
-      supply = Math.floor((comicIssueSupply * value) / 100);
-      supplyLeft -= supply;
-    }
-    const indexArray = Array.from(Array(supply).keys());
-    const itemsInserted = indexArray.map(() => {
-      nameIndex++;
-      return {
-        uri: data.uri,
-        name: `${onChainName} #${nameIndex}`,
-      };
-    });
-
-    items.push(...itemsInserted);
-    index++;
-  }
-  return { items, itemMetadatas };
+  return itemMetadatas;
 }
 
 export function toUmiGroups(
@@ -294,26 +260,44 @@ export function toUmiGroups(
 export async function insertCoreItems(
   umi: Umi,
   candyMachinePubkey: UmiPublicKey,
-  comicIssue: ComicIssueCMInput,
-  comicName: string,
-  royaltyWallets: RoyaltyWalletDto[],
-  statelessCovers: MetaplexFile[],
-  darkblockId: string,
-  supply: number,
+  itemMetadatas: ItemMetadata[],
   onChainName: string,
-  rarityCoverFiles?: RarityCoverFiles,
+  comicIssueSupply: number,
+  currentSupply: number,
+  numberOfRarities: number,
 ) {
-  const { items, itemMetadatas } = await uploadItemMetadata(
-    umi,
-    comicIssue,
-    comicName,
-    royaltyWallets,
-    statelessCovers.length,
-    darkblockId,
-    supply,
-    onChainName,
-    rarityCoverFiles,
+  const items: { uri: string; name: string }[] = [];
+  const rarityShares = getRarityShareTable(numberOfRarities);
+
+  const unusedUnsignedMetadatas = itemMetadatas.filter(
+    (item) => !item.isUsed && !item.isSigned,
   );
+
+  let supplyLeft = comicIssueSupply;
+  let rarityIndex = 0,
+    nameIndex = currentSupply;
+
+  for (const data of unusedUnsignedMetadatas) {
+    let supply: number;
+    const { value } = rarityShares.find((share) => share.rarity == data.rarity);
+    if (rarityIndex == rarityShares.length - 1) {
+      supply = supplyLeft;
+    } else {
+      supply = Math.floor((comicIssueSupply * value) / 100);
+      supplyLeft -= supply;
+    }
+    const indexArray = Array.from(Array(supply).keys());
+    const itemsInserted = indexArray.map(() => {
+      nameIndex++;
+      return {
+        uri: data.uri,
+        name: `${onChainName} #${nameIndex}`,
+      };
+    });
+
+    items.push(...itemsInserted);
+    rarityIndex++;
+  }
 
   const INSERT_CHUNK_SIZE = 8;
   const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
@@ -350,7 +334,6 @@ export async function insertCoreItems(
       });
     });
   }
-  return itemMetadatas;
 }
 
 export async function getCandyGuardAccount(
