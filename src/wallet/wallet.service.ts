@@ -108,12 +108,13 @@ export class WalletService {
     const collections = await this.prisma.collectibleComicCollection.findMany(
       {},
     );
+
     const assets = coreAssets.filter((asset) => {
       const group = asset.grouping.find(
         (group) => group?.group_key == 'collection',
       );
       return collections.find(
-        (collection) => group.group_value === collection.address,
+        (collection) => group?.group_value === collection.address,
       );
     });
 
@@ -121,28 +122,37 @@ export class WalletService {
       const group = asset.grouping.find(
         (group) => group?.group_key == 'collection',
       );
+      if (!group) continue;
 
-      // Considering that there is only one core candymachine for one core collection
-      const candyMachine = await this.prisma.candyMachine.findFirst({
-        where: { collectionAddress: group.group_value },
-      });
+      const candyMachineReceipt =
+        await this.prisma.candyMachineReceipt.findFirst({
+          where: {
+            collectibleComics: { some: { address: asset.id } },
+          },
+        });
 
-      if (!candyMachine) {
-        console.log(`Candy machine not found for ${group.group_value}`);
-        continue;
+      let candyMachineAddress: string;
+      const doesReceiptExists = !!candyMachineReceipt;
+
+      if (doesReceiptExists) {
+        candyMachineAddress = candyMachineReceipt.candyMachineAddress;
+      } else {
+        // Considering that there is only one core candymachine for one core collection
+        const candyMachine = await this.prisma.candyMachine.findFirst({
+          where: { collectionAddress: group.group_value },
+        });
+
+        if (!candyMachine) {
+          console.log(`Candy machine not found for ${group.group_value}`);
+          continue;
+        }
+
+        candyMachineAddress = candyMachine.address;
       }
 
       const indexedAsset = await this.heliusService.reIndexAsset(
         asset,
-        candyMachine.address,
-      );
-
-      const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
-        {
-          where: {
-            collectibleComics: { some: { address: indexedAsset.address } },
-          },
-        },
+        candyMachineAddress,
       );
 
       if (!doesReceiptExists) {
@@ -152,7 +162,7 @@ export class WalletService {
 
         const coupon = await this.prisma.candyMachineCoupon.findFirst({
           where: {
-            candyMachineAddress: candyMachine.address,
+            candyMachineAddress,
             type: CouponType.PublicUser,
             currencySettings: {
               some: {
@@ -164,7 +174,7 @@ export class WalletService {
 
         const receiptData: Prisma.CandyMachineReceiptCreateInput = {
           collectibleComics: { connect: { address: indexedAsset.address } },
-          candyMachine: { connect: { address: candyMachine.address } },
+          candyMachine: { connect: { address: candyMachineAddress } },
           buyer: {
             connectOrCreate: {
               where: { address: ownerAddress },
