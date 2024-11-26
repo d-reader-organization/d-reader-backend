@@ -53,12 +53,11 @@ import {
   validateComicIssueCMInput,
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
-import { RarityCoverFiles } from '../types/shared';
+import { ItemMetadata, RarityCoverFiles } from '../types/shared';
 import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import {
   TokenStandard,
-  ComicRarity as PrismaComicRarity,
   CouponType,
   TransactionStatus,
   Prisma,
@@ -72,7 +71,6 @@ import {
   AddCandyMachineCouponParamsWithLabels,
   CandyMachineMintData,
 } from './dto/types';
-import { ComicRarity } from 'dreader-comic-verse';
 import { createCoreCandyMachine } from './instructions/initialize-candy-machine';
 import { createCoreCollection } from './instructions/create-collection';
 import {
@@ -108,6 +106,7 @@ import {
   generatePropertyName,
   validateBalanceForMint,
   getCandyGuardAccount,
+  uploadItemMetadata,
 } from '../utils/candy-machine';
 import {
   findAssociatedTokenPda,
@@ -166,7 +165,7 @@ export class CandyMachineService {
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
 
-    const { collectionAddress, darkblockId } =
+    const { collectionAddress, darkblockId, currentSupply } =
       await this.getOrCreateComicIssueCollection(
         comicIssue,
         createCandyMachineParams.assetOnChainName,
@@ -219,7 +218,7 @@ export class CandyMachineService {
         collectionAddress: candyMachine.collectionMint.toString(),
         authorityPda: findCandyMachineAuthorityPda(umi, {
           candyMachine: candyMachine.publicKey,
-        }).toString(),
+        })[0].toString(),
         itemsAvailable: Number(candyMachine.data.itemsAvailable),
         itemsMinted: Number(candyMachine.itemsRedeemed),
         itemsRemaining: Number(candyMachine.data.itemsAvailable),
@@ -243,34 +242,50 @@ export class CandyMachineService {
     });
 
     try {
-      const itemMetadatas = await insertCoreItems(
+      const numberOfRarities = statelessCovers.length;
+      let itemMetadatas: ItemMetadata[];
+      if (currentSupply) {
+        itemMetadatas = await this.prisma.collectibleComicMetadata.findMany({
+          where: { collectionAddress },
+        });
+      } else {
+        itemMetadatas = await uploadItemMetadata(
+          this.umi,
+          comicIssue,
+          comicName,
+          royaltyWallets,
+          numberOfRarities,
+          darkblockId,
+          rarityCoverFiles,
+        );
+
+        const metadataCreateData = itemMetadatas.map((item) => {
+          return {
+            uri: item.uri,
+            isUsed: item.isUsed,
+            isSigned: item.isSigned,
+            rarity: item.rarity,
+            collectionName: assetOnChainName,
+            collectionAddress,
+          };
+        });
+
+        await this.prisma.collectibleComicMetadata.createMany({
+          data: metadataCreateData,
+          skipDuplicates: true,
+        });
+      }
+
+      await insertCoreItems(
         this.umi,
         candyMachine.publicKey,
-        comicIssue,
-        comicName,
-        royaltyWallets,
-        statelessCovers,
-        darkblockId,
-        supply,
+        itemMetadatas,
         assetOnChainName,
-        rarityCoverFiles,
+        supply,
+        currentSupply,
+        numberOfRarities,
       );
 
-      const metadataCreateData = itemMetadatas.map((item) => {
-        return {
-          uri: item.uri,
-          isUsed: item.isUsed,
-          isSigned: item.isSigned,
-          rarity: PrismaComicRarity[ComicRarity[item.rarity].toString()],
-          collectionName: assetOnChainName,
-          collectionAddress: collectionAddress.toString(),
-        };
-      });
-
-      await this.prisma.collectibleComicMetadata.createMany({
-        data: metadataCreateData,
-        skipDuplicates: true,
-      });
       const updatedCandyMachine = await fetchCandyMachine(
         umi,
         candyMachinePubkey,
@@ -1194,8 +1209,11 @@ export class CandyMachineService {
     royaltyWallets: RoyaltyWalletDto[],
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
-    tokenStandard?: TokenStandard,
-  ) {
+  ): Promise<{
+    collectionAddress: string;
+    darkblockId: string;
+    currentSupply: number;
+  }> {
     const {
       pdf,
       id: comicIssueId,
@@ -1211,18 +1229,22 @@ export class CandyMachineService {
     // if Collection NFT already exists - use it, otherwise create a fresh one
     const collectionAsset =
       await this.prisma.collectibleComicCollection.findUnique({
-        where: {
-          comicIssueId,
-          candyMachines: { some: { standard: tokenStandard } },
-        },
+        where: { comicIssueId },
       });
 
     let darkblockId = '';
 
     if (collectionAsset) {
+      const {
+        _sum: { supply: currentSupply = 0 },
+      } = await this.prisma.candyMachine.aggregate({
+        where: { collectionAddress: collectionAsset.address },
+        _sum: { supply: true },
+      });
       return {
         collectionAddress: collectionAsset.address,
         darkblockId: collectionAsset.darkblockId || '',
+        currentSupply,
       };
     }
 
@@ -1287,14 +1309,14 @@ export class CandyMachineService {
       await this.nonceService.updateNonce(new PublicKey(nonceArgs.address));
     }
 
-    const collectionAddress = new PublicKey(collection.publicKey);
+    const collectionAddress = collection.publicKey.toString();
     await this.prisma.collectibleComicCollection.create({
       data: {
         name: onChainName,
         comicIssue: { connect: { id: comicIssue.id } },
         digitalAsset: {
           create: {
-            address: collectionAddress.toBase58(),
+            address: collectionAddress,
             royaltyWallets: {
               create: royaltyWallets,
             },
@@ -1313,7 +1335,7 @@ export class CandyMachineService {
       },
     });
 
-    return { collectionAddress, darkblockId };
+    return { collectionAddress, darkblockId, currentSupply: 0 };
   }
 
   // Create labels for each currency setting in coupon

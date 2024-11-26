@@ -18,6 +18,8 @@ import {
 } from '../utils/transactions';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
+import { fetchAddressLookupTable } from '@metaplex-foundation/mpl-toolbox';
+import { fetchCandyGuard } from '@metaplex-foundation/mpl-core-candy-machine';
 
 interface Options {
   candyMachineAddress: PublicKey;
@@ -69,20 +71,34 @@ export class MintRemainingCommand extends CommandRunner {
     const candyMachine = await this.prisma.candyMachine.findUnique({
       where: { address: candyMachineAddress.toString() },
     });
+    const lookupTableInput = await fetchAddressLookupTable(
+      this.umi,
+      publicKey(candyMachine.lookupTable),
+    );
+    const candyGuard = await fetchCandyGuard(
+      this.umi,
+      publicKey(candyMachine.mintAuthorityAddress),
+    );
+    const latestBlockhash = await this.umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+
     if (candyMachine.standard !== TokenStandard.Core) {
       throw new Error('Only Core mint is supported');
     }
+
     const CORE_MINT_COMPUTE_BUDGET = 800000;
-    // Todo: use chunking to do 5 mint in 1 tx
     const mintTransaction = await getTransactionWithPriorityFee(
       constructMultipleMintTransaction,
       CORE_MINT_COMPUTE_BUDGET,
-      this.umi,
       publicKey(candyMachineAddress),
-      authority,
+      publicKey(candyMachine.collectionAddress),
+      candyGuard,
+      publicKey(authority),
       AUTHORITY_GROUP_LABEL,
       numberOfItems,
-      candyMachine.lookupTable,
+      latestBlockhash,
+      lookupTableInput,
       false,
     );
 
