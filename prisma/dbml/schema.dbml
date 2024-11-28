@@ -107,6 +107,7 @@ Table Comic {
   creator Creator [not null]
   creatorId Int [not null]
   collaborators ComicCollaborator [not null]
+  isFreeToRead Boolean [not null, default: true]
 }
 
 Table UserComic {

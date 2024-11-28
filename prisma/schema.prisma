@@ -132,6 +132,7 @@ model Comic {
   creator       Creator             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
   collaborators ComicCollaborator[]
+  isFreeToRead  Boolean             @default(true)
 }
 
 model UserComic {
@@ -764,7 +765,7 @@ model UserInterestedReceipt {
   user                 User     @relation(fields: [userId], references: [id])
   expressedAmount      Int      @default(0)
 
-  @@unique([projectSlug,userId])
+  @@unique([projectSlug, userId])
 }
 
 // TODO: remove or change the way referrals work
