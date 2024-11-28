@@ -75,6 +75,7 @@ import { VaultTransferCommand } from './vault-transfer-command';
 import { VaultTransferQuestions } from './vault-transfer-questions';
 import { CacheModule } from '../cache/cache.module';
 import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
+import { DigitalAssetService } from '../digital-asset/digital-asset.service';
 
 @Module({
   imports: [
@@ -162,6 +163,7 @@ import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
     SyncMintReceptsCommand,
     VaultTransferCommand,
     VaultTransferQuestions,
+    DigitalAssetService,
   ],
 })
 export class CLIModule {}
