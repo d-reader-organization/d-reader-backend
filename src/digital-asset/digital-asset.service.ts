@@ -21,7 +21,7 @@ import {
   fetchCollection,
   fetchAsset,
 } from '@metaplex-foundation/mpl-core';
-import { getIrysUri, umi } from '../utils/metaplex';
+import { getConnection, getIrysUri, umi } from '../utils/metaplex';
 import {
   findAssociatedTokenPda,
   setComputeUnitPrice,
@@ -51,7 +51,19 @@ import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
 import { DigitalAssetJsonMetadata } from './dto/types';
 import { AssetType } from '../types/assetType';
-import { kebabCase } from 'lodash';
+import { isEmpty, kebabCase } from 'lodash';
+import { DAS } from 'helius-sdk';
+import {
+  CandyMachine,
+  CandyMachineReceipt,
+  TokenStandard,
+} from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { getAssetsByGroup } from '../utils/das';
+import { Connection } from '@solana/web3.js';
+import { AddressLookupTableAccount } from '@solana/web3.js';
+import { TransactionMessage } from '@solana/web3.js';
+import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -59,12 +71,15 @@ const getS3Folder = (address: string, assetType: AssetType) =>
 @Injectable()
 export class DigitalAssetService {
   private readonly umi: Umi;
+  private readonly connection: Connection;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly helius: HeliusService,
     private readonly s3: s3Service,
   ) {
     this.umi = umi;
+    this.connection = getConnection();
   }
 
   async findAll(query: DigitalAssetFilterParams) {
@@ -733,5 +748,223 @@ export class DigitalAssetService {
     const uri = await this.umi.uploader.uploadJson(jsonMetadata);
 
     return getIrysUri(uri);
+  }
+
+  // TODO: sync other digital assets besides collectible comics
+  @Cron(CronExpression.EVERY_WEEK)
+  protected async syncAllAssets() {
+    console.log('Starting Cron job to sync all the assets !');
+
+    await this.syncCollectibleComicMintReceipts();
+    await this.findAndSyncAllCollectibleComicCollections();
+
+    console.log('All assets are synced !');
+  }
+
+  async findAndSyncAllCollectibleComicCollections() {
+    console.log('Starting to sync collectible comics');
+
+    const collections = await this.prisma.collectibleComicCollection.findMany({
+      where: { candyMachines: { some: { standard: TokenStandard.Core } } },
+    });
+
+    for await (const collection of collections) {
+      await this.fetchAssetsAndSync(collection.address);
+    }
+  }
+
+  async fetchAssetsAndSync(collectionAddress: string) {
+    const limit = 1000;
+    let page = 1;
+    let data = await getAssetsByGroup(collectionAddress, page, limit);
+
+    const syncedAssets = await this.prisma.collectibleComic.findMany({
+      where: { metadata: { collectionAddress } },
+      include: { digitalAsset: true },
+    });
+
+    let syncedItems = 0;
+    while (!isEmpty(data)) {
+      const unsyncedNfts = data.filter((asset) => {
+        const dbAsset = syncedAssets.find((item) => item.address === asset.id);
+        if (!dbAsset) {
+          this.helius.subscribeTo(asset.id);
+        }
+        return !(
+          dbAsset &&
+          dbAsset.digitalAsset.ownerAddress == asset.ownership.owner &&
+          dbAsset.uri === asset.content.json_uri
+        );
+      });
+
+      console.log(`Syncing ${unsyncedNfts.length} assets...!`);
+      const promises = unsyncedNfts.map((asset) =>
+        this.syncDigitalAssets(asset, collectionAddress),
+      );
+      await Promise.all(promises);
+
+      page++;
+      data = await getAssetsByGroup(collectionAddress, page, limit);
+      syncedItems += unsyncedNfts.length;
+      console.log(`Synced ${syncedItems} items`);
+    }
+  }
+
+  async syncDigitalAssets(
+    asset: DAS.GetAssetResponse,
+    collectionAddress: string,
+  ) {
+    const candyMachineReceipt = await this.prisma.candyMachineReceipt.findFirst(
+      {
+        where: { collectibleComics: { some: { address: asset.id } } },
+      },
+    );
+
+    const doesReceiptExists = !!candyMachineReceipt;
+    let candyMachineAddress: string;
+
+    if (doesReceiptExists) {
+      candyMachineAddress = candyMachineReceipt.candyMachineAddress;
+    } else {
+      const candyMachine = await this.prisma.candyMachine.findFirst({
+        where: { collectionAddress },
+      });
+
+      if (!candyMachine) {
+        throw Error("Collection doesn't exists in database");
+      }
+    }
+    await this.helius.reIndexAsset(asset, candyMachineAddress);
+  }
+
+  async syncCollectibleComicMintReceipts() {
+    console.log('Starting to sync mint receipts');
+
+    const receipts = await this.prisma.candyMachineReceipt.findMany({
+      where: {
+        OR: [
+          { status: 'Processing' },
+          {
+            status: 'Processing',
+            collectibleComics: {
+              none: {},
+            },
+          },
+        ],
+      },
+      include: { candyMachine: true },
+    });
+
+    for await (const receipt of receipts) {
+      await this.fetchAndIndexFromReceiptTransaction(receipt);
+    }
+  }
+
+  async fetchAndIndexFromReceiptTransaction(
+    receipt: CandyMachineReceipt & { candyMachine: CandyMachine },
+  ) {
+    try {
+      const { transactionSignature, candyMachineAddress, id, candyMachine } =
+        receipt;
+
+      const transactionStatus = await this.connection.getSignatureStatuses(
+        [transactionSignature],
+        {
+          searchTransactionHistory: true,
+        },
+      );
+
+      if (!transactionStatus || !transactionStatus?.value[0]) {
+        await this.prisma.candyMachineReceipt.update({
+          where: { id: receipt.id },
+          data: { status: 'Failed' },
+        });
+        return;
+      }
+
+      const isTransactionConfirmed =
+        transactionStatus.value[0] &&
+        (transactionStatus.value[0].confirmationStatus === 'confirmed' ||
+          transactionStatus.value[0].confirmationStatus === 'finalized');
+      if (isTransactionConfirmed) {
+        console.log('Syncing receipt :', id);
+
+        const response = await this.connection.getTransaction(
+          transactionSignature,
+          { maxSupportedTransactionVersion: 0 },
+        );
+
+        if (response.meta.err) {
+          return this.prisma.candyMachineReceipt.update({
+            where: { id },
+            data: { status: 'Failed' },
+          });
+        } else {
+          const transactionMessage = response.transaction.message;
+          let lookupTableAccounts: AddressLookupTableAccount;
+
+          if (transactionMessage.addressTableLookups.length) {
+            const lookupTableAddress =
+              transactionMessage.addressTableLookups[0].accountKey;
+
+            const lookupTable = await this.connection.getAddressLookupTable(
+              lookupTableAddress,
+            );
+            lookupTableAccounts = lookupTable.value;
+          }
+
+          const decompiledTransaction = TransactionMessage.decompile(
+            response.transaction.message,
+            { addressLookupTableAccounts: [lookupTableAccounts] },
+          );
+
+          const reIndexAsset = this.indexAssetsFromTransaction(
+            decompiledTransaction,
+            candyMachineAddress,
+            candyMachine.collectionAddress,
+            id,
+          );
+
+          const updatedReceipt = this.prisma.candyMachineReceipt.update({
+            where: { id: receipt.id },
+            data: { status: 'Confirmed' },
+          });
+          return Promise.all([reIndexAsset, updatedReceipt]);
+        }
+      }
+    } catch (e) {
+      console.error('Error syncing receipt ', receipt.id, e);
+    }
+  }
+
+  async indexAssetsFromTransaction(
+    transaction: TransactionMessage,
+    candyMachineAddress: string,
+    collectionAddress: string,
+    receiptId: number,
+  ) {
+    const assetAccounts: string[] = [];
+
+    transaction.instructions.forEach((instruction) => {
+      const isMintInstruction =
+        instruction.programId.toString() ===
+        MPL_CORE_CANDY_GUARD_PROGRAM_ID.toString();
+
+      if (isMintInstruction) {
+        const { pubkey } = instruction.keys.at(7);
+        assetAccounts.push(pubkey.toString());
+      }
+    });
+
+    try {
+      await this.helius.indexCoreAssets(
+        assetAccounts,
+        candyMachineAddress,
+        collectionAddress,
+        receiptId,
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 }

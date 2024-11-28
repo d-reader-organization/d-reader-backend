@@ -1464,8 +1464,7 @@ export class HeliusService {
       update: {
         digitalAsset: {
           update: {
-            // TODO: this should fetch the info on when the owner changed from chain
-            ownerChangedAt: new Date(0),
+            ownerChangedAt: new Date(),
             owner: {
               connectOrCreate: {
                 where: { address: walletAddress },
