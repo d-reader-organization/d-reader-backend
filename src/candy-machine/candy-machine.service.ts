@@ -123,7 +123,7 @@ import { getAssetsByGroup } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
-import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
+import { decodeUmiTransaction } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { isEmpty, isNull } from 'lodash';
@@ -132,12 +132,14 @@ import { getLookupTableInfo } from '../utils/lookup-table';
 import { CachePath } from '../utils/cache';
 import { Cacheable } from '../cache/cache.decorator';
 import { AddressLookupTableState } from '@solana/web3.js';
+import { WorkerPool } from '../worker-pool/workerPool.service';
 
 @Injectable()
 export class CandyMachineService {
   private readonly metaplex: Metaplex;
   private readonly umi: Umi;
   private readonly connection: Connection;
+  private readonly workerPool: WorkerPool;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -149,6 +151,7 @@ export class CandyMachineService {
     this.metaplex = metaplex;
     this.umi = umi;
     this.connection = getConnection();
+    this.workerPool = WorkerPool.getInstance();
   }
 
   /* Create Candy Machine for Comic Issue */
@@ -498,15 +501,15 @@ export class CandyMachineService {
     const numberOfItems = assetAccounts.length;
     const authorizationSigner = getAuthorizationSigner();
     const mintMessageBytes = mintTransaction.message.serialize();
-    const signautres = mintTransaction.signatures;
+    const signatures = mintTransaction.signatures;
     /** Verify signature for authorized signer */
-    if (
-      !verifySignature(
-        mintMessageBytes,
-        signautres,
-        authorizationSigner.toBytes(),
-      )
-    ) {
+    const isVerified = this.workerPool.performTask({
+      messageBytes: mintMessageBytes,
+      signatures,
+      publicKey: authorizationSigner.toBytes(),
+    });
+
+    if (!isVerified) {
       throw new UnauthorizedException('Unverified Transaction');
     }
 
