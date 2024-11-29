@@ -40,12 +40,11 @@ import {
   toRawComicDtoArray,
 } from './dto/raw-comic.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
-import { BasicComicParams } from './dto/basic-comic-params.dto';
-import { BasicComicDto, toBasicComicDtoArray } from './dto/basic-comic.dto';
 import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 import { SearchComicParams } from './dto/search-comic-params.dto';
 import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
+import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -83,15 +82,6 @@ export class ComicController {
     return toRawComicDtoArray(comics);
   }
 
-  /* Get all basic comics */
-  @Get('get-basic')
-  async findAllBasic(
-    @Query() query: BasicComicParams,
-  ): Promise<BasicComicDto[]> {
-    const comics = await this.comicService.findAllBasic(query);
-    return toBasicComicDtoArray(comics);
-  }
-
   /* Search all comics */
   @Get('search')
   async searchAll(
@@ -102,13 +92,13 @@ export class ComicController {
   }
 
   /* Get specific comic by unique slug */
-  @UserAuth()
+  @OptionalUserAuth()
   @Get('get/:slug')
   async findOne(
     @Param('slug') slug: string,
-    @UserEntity() user: UserPayload,
+    @UserEntity() user?: UserPayload,
   ): Promise<ComicDto> {
-    const comic = await this.comicService.findOne(slug, user.id);
+    const comic = await this.comicService.findOne(slug, user?.id);
     return toComicDto(comic);
   }
 

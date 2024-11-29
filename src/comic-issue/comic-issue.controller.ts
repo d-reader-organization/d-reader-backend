@@ -148,16 +148,16 @@ export class ComicIssueController {
   }
 
   /* Get specific comic issue by unique id or unique collection slug */
-  @UserAuth()
+  @OptionalUserAuth()
   @Get('get/:id')
   async findOne(
     @Param('id') id: string,
-    @UserEntity() user: UserPayload,
+    @UserEntity() user?: UserPayload,
   ): Promise<ComicIssueDto> {
     const processedId = processComicIssueIdString(id);
     const comicIssue = await this.comicIssueService.findOne({
       where: processedId,
-      userId: user.id,
+      userId: user?.id,
     });
     return toComicIssueDto(comicIssue);
   }
@@ -187,25 +187,13 @@ export class ComicIssueController {
   }
 
   /* Get specific comic issue's pages */
-  @UserAuth()
+  @OptionalUserAuth()
   @Get('get/:id/pages')
   async getPages(
     @Param('id') id: string,
-    @UserEntity() user: UserPayload,
-  ): Promise<ComicPageDto[]> {
-    const pages = await this.comicIssueService.getPages(+id, user.id);
-    return toComicPageDtoArray(pages);
-  }
-
-  @OptionalUserAuth()
-  @Get('get/:id/preview-pages')
-  async getPreviewPages(
-    @Param('id') id: string,
     @UserEntity() user?: UserPayload,
   ): Promise<ComicPageDto[]> {
-    const userId = user ? user.id : undefined;
-
-    const pages = await this.comicIssueService.getPreviewPages(+id, userId);
+    const pages = await this.comicIssueService.getPages(+id, user?.id);
     return toComicPageDtoArray(pages);
   }
 

@@ -43,7 +43,7 @@ AVG(userComic.rating) as "averageRating",
 (select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc."viewedAt" is not null) ucResult) as "viewersCount",
 (select COUNT(*) from (select * from "UserComic" uc where uc."comicSlug" = comic.slug and uc."favouritedAt" is not null) ucResult) as "favouritesCount",
 (select COUNT(*) from "UserComicIssue" uci inner join "ComicIssue" ci  on ci.id = uci."comicIssueId" where ci."comicSlug" = comic.slug and uci."readAt" is not null) as "readersCount",
-(select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug) issuesResult) as "issuesCount"
+(select COUNT(*) from (select * from "ComicIssue" comicIssue where comicissue."comicSlug" = comic.slug and comicIssue."publishedAt" < NOW() and comicIssue."verifiedAt" IS NOT NULL) issuesResult) as "issuesCount"
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
 inner join "Genre" genre on genre.slug = "comicToGenre"."B"
