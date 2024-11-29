@@ -26,6 +26,10 @@ export class ComicParams extends Pagination {
 
   @IsOptional()
   @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
   titleSubstring?: string;
 
   @IsOptional()

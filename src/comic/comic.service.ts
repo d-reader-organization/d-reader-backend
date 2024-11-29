@@ -22,7 +22,6 @@ import { isEqual, isNil, sortBy } from 'lodash';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
-import { BasicComicParams } from './dto/basic-comic-params.dto';
 import { ComicStatusProperty } from './dto/types';
 import { ComicInput } from './dto/comic.dto';
 import { SearchComicParams } from './dto/search-comic-params.dto';
@@ -109,23 +108,8 @@ export class ComicService {
     return normalizedComics;
   }
 
-  async findAllBasic(params: BasicComicParams) {
-    const { creatorSlug, titleSubstring, sortOrder } = params;
-
-    const comics = this.prisma.comic.findMany({
-      include: { genres: true, creator: true },
-      where: {
-        creator: { slug: creatorSlug },
-        title: { contains: titleSubstring, mode: 'insensitive' },
-      },
-      orderBy: { title: sortOrder },
-    });
-
-    return comics;
-  }
-
   async searchAll(params: SearchComicParams): Promise<SearchComic[]> {
-    const { titleSubstring, sortOrder } = params;
+    const { search, sortOrder } = params;
 
     const comics = await this.prisma.comic.findMany({
       select: {
@@ -134,7 +118,7 @@ export class ComicService {
         title: true,
       },
       where: {
-        title: { contains: titleSubstring, mode: 'insensitive' },
+        title: { contains: search, mode: 'insensitive' },
       },
       orderBy: { title: sortOrder },
       skip: params.skip,

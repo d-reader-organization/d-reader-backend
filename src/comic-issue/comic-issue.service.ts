@@ -54,7 +54,6 @@ import { CreateCandyMachineParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
-import { BasicComicIssueParams } from './dto/basic-comic-issue-params.dto';
 import { ComicIssueStatusProperty } from './dto/types';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 
@@ -340,29 +339,6 @@ export class ComicIssueService {
         totalPagesCount,
       },
     };
-  }
-
-  async findAllBasic(query: BasicComicIssueParams) {
-    const { creatorSlug, comicSlug, titleSubstring, sortOrder } = query;
-    const comicIssues = await this.prisma.comicIssue.findMany({
-      where: {
-        comic: {
-          slug: comicSlug,
-          creator: {
-            slug: creatorSlug,
-          },
-        },
-        title: {
-          contains: titleSubstring,
-          mode: 'insensitive',
-        },
-      },
-      orderBy: {
-        title: sortOrder,
-      },
-    });
-
-    return comicIssues;
   }
 
   async findOne({

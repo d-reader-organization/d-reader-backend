@@ -132,7 +132,7 @@ export class CreatorService {
   }
 
   async searchAll({
-    nameSubstring,
+    search,
     skip,
     take,
     sortOrder,
@@ -145,7 +145,7 @@ export class CreatorService {
         slug: true,
       },
       where: {
-        name: { contains: nameSubstring, mode: 'insensitive' },
+        name: { contains: search, mode: 'insensitive' },
       },
       orderBy: { name: sortOrder },
       skip,
@@ -197,8 +197,8 @@ export class CreatorService {
 
   async findAllRaw(query: RawCreatorFilterParams) {
     let where: Prisma.CreatorWhereInput;
-    if (query.nameSubstring) {
-      where = { name: { contains: query.nameSubstring, mode: 'insensitive' } };
+    if (query.search) {
+      where = { name: { contains: query.search, mode: 'insensitive' } };
     }
     return await this.prisma.creator.findMany({
       where,

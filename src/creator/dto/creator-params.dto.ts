@@ -19,6 +19,10 @@ export class CreatorFilterParams extends Pagination {
   nameSubstring?: string;
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @IsArray()
   @ApiProperty({ type: String })
   @Type(() => String)

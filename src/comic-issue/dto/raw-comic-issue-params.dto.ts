@@ -26,7 +26,7 @@ export class RawComicIssueParams extends Pagination {
 
   @IsOptional()
   @IsString()
-  titleSubstring?: string;
+  search?: string;
 
   @IsOptional()
   @IsArray()

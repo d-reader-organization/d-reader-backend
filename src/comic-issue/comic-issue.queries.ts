@@ -17,9 +17,10 @@ const getQueryFilters = (
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
 } => {
-  const titleCondition = !!query.titleSubstring
+  const titleSubstring = query.search || query.titleSubstring;
+  const titleCondition = !!titleSubstring
     ? Prisma.sql`AND comicIssue."title" ILIKE '%' || ${
-        query.titleSubstring ?? ''
+        titleSubstring ?? ''
       } || '%'`
     : Prisma.empty;
   const comicSlugCondition = !!query.comicSlug

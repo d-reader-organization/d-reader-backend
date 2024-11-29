@@ -30,6 +30,10 @@ export class ComicIssueParams extends Pagination {
   comicSlug?: string;
 
   @IsOptional()
+  @IsKebabCase()
+  search?: string;
+
+  @IsOptional()
   @IsString()
   titleSubstring?: string;
 

@@ -15,10 +15,9 @@ const getQueryFilters = (
   sortColumn: Prisma.Sql;
   filterCondition: Prisma.Sql;
 } => {
-  const nameCondition = !!query.nameSubstring
-    ? Prisma.sql`AND creator."name" ILIKE '%' || ${
-        query.nameSubstring ?? ''
-      } || '%'`
+  const nameSubstring = query.search || query.nameSubstring;
+  const nameCondition = !!nameSubstring
+    ? Prisma.sql`AND creator."name" ILIKE '%' || ${nameSubstring ?? ''} || '%'`
     : Prisma.empty;
 
   const sortOrder = getSortOrder(query.sortOrder);
