@@ -60,7 +60,7 @@ export class DarkblockService {
     }
   }
 
-  // TODO v2: Correctly Hash file with SHA256
+  // TODO: Correctly Hash file with SHA256
   async addCollectionDarkblock(
     fileKey: string,
     fileHash: string,

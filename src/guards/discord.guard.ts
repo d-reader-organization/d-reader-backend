@@ -2,7 +2,7 @@ import { GuildMemberRoleManager, Interaction } from 'discord.js';
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { InteractionType } from 'discord.js';
 
-/* TODO move to .env as DISCORD_DREADER_ROLE_ID */
+/* TODO: move to .env as DISCORD_DREADER_ROLE_ID */
 const dReaderRoleId = '1034919555853725828';
 const allowedUserIds = [
   '221378024157741056',
