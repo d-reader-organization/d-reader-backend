@@ -428,8 +428,7 @@ export class MailService {
         context: {
           name: creator.name,
           apiUrl,
-          // TODO: keep the line below commented until we deploy a new web app
-          // shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
+          shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
         },
       });
     } catch (e) {
