@@ -40,6 +40,8 @@ import {
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { EmailPayload } from '../auth/dto/authorization.dto';
 import { SearchCreatorParams } from './dto/search-creator-params.dto';
+import { CacheService } from '../cache/cache.service';
+import { CachePath } from '../utils/cache';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -53,6 +55,7 @@ export class CreatorService {
     private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly discordService: DiscordService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -519,6 +522,7 @@ export class CreatorService {
 
     this.discordService.creatorStatusUpdated(updatedCreator, property);
     if (updatedCreator.verifiedAt) {
+      await this.cacheService.deleteByPattern(CachePath.CREATOR_GET_MANY);
       this.mailService.creatorVerified(updatedCreator);
     }
   }

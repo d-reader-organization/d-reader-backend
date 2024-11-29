@@ -42,6 +42,15 @@ export class CacheService {
     await this.cacheManager.del(key);
   }
 
+  async deleteByPattern(pattern: string): Promise<void> {
+    const keys = await this.cacheManager.store.keys();
+    const matchingKeys = keys.filter((key) => key.includes(pattern));
+
+    for (const key of matchingKeys) {
+      await this.delete(key);
+    }
+  }
+
   async reset(): Promise<void> {
     await this.cacheManager.reset();
   }

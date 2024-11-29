@@ -25,6 +25,8 @@ import { MailService } from '../mail/mail.service';
 import { ComicStatusProperty } from './dto/types';
 import { ComicInput } from './dto/comic.dto';
 import { SearchComicParams } from './dto/search-comic-params.dto';
+import { CacheService } from '../cache/cache.service';
+import { CachePath } from '../utils/cache';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -37,6 +39,7 @@ export class ComicService {
     private readonly userComicService: UserComicService,
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -406,11 +409,14 @@ export class ComicService {
 
   async publish(slug: string) {
     try {
-      return await this.prisma.comic.update({
+      const updatedComic = await this.prisma.comic.update({
         where: { slug },
         // where: { slug, publishedAt: null },
         data: { publishedAt: new Date() },
       });
+
+      await this.cacheService.deleteByPattern(CachePath.COMIC_GET_MANY);
+      return updatedComic;
     } catch {
       throw new NotFoundException(
         `Comic ${slug} does not exist or is already published`,
@@ -420,10 +426,13 @@ export class ComicService {
 
   async unpublish(slug: string) {
     try {
-      return await this.prisma.comic.update({
+      const updatedComic = await this.prisma.comic.update({
         where: { slug },
         data: { publishedAt: null },
       });
+
+      await this.cacheService.deleteByPattern(CachePath.COMIC_GET_MANY);
+      return updatedComic;
     } catch {
       throw new NotFoundException(`Comic ${slug} does not exist`);
     }
@@ -437,24 +446,24 @@ export class ComicService {
     property: ComicStatusProperty;
   }): Promise<string | void> {
     const comic = await this.prisma.comic.findUnique({ where: { slug } });
-
-    if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
-    }
+    if (!comic) throw new NotFoundException(`Comic ${slug} does not exist`);
 
     const updatedComic = await this.prisma.comic.update({
-      data: {
-        [property]: !!comic[property] ? null : new Date(),
-      },
+      data: { [property]: comic[property] ? null : new Date() },
       where: { slug },
       include: { creator: true },
     });
 
     this.discordService.comicStatusUpdated(updatedComic, property);
-    if (property === 'verifiedAt' && updatedComic.verifiedAt) {
-      this.mailService.comicVerifed(updatedComic);
-    } else if (property === 'publishedAt' && updatedComic.publishedAt) {
-      this.mailService.comicPublished(updatedComic);
+
+    if (['verifiedAt', 'publishedAt'].includes(property)) {
+      await this.cacheService.deleteByPattern(CachePath.COMIC_GET_MANY);
+
+      if (property === 'verifiedAt' && updatedComic.verifiedAt) {
+        this.mailService.comicVerifed(updatedComic);
+      } else if (property === 'publishedAt' && updatedComic.publishedAt) {
+        this.mailService.comicPublished(updatedComic);
+      }
     }
   }
 
