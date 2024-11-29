@@ -40,7 +40,6 @@ export function CacheInterceptor({
         .switchToHttp()
         .getRequest();
 
-      console.log('processing cache: ' + request.url);
       if (
         // TODO: standardize searches as 'searchString' or something like that
         request.url.includes('titleSubstring') ||

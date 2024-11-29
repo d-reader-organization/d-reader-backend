@@ -147,8 +147,9 @@ export class UserComicIssueService {
 
   async getAndUpdateUserStats(
     comicIssueId: number,
-    userId: number,
+    userId?: number,
   ): Promise<UserComicIssue> {
+    if (typeof userId !== 'number') return undefined;
     const userComicIssueStats = await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: {
@@ -174,10 +175,16 @@ export class UserComicIssueService {
     return userComicIssueStats;
   }
 
+  /** Can't read full pages if:
+   * - not registered (guest mode)
+   * - episode is gated and you have no access (e.g. own the NFT)
+   */
   async checkCanUserRead(
     comicIssueId: number,
-    userId: number,
+    userId?: number,
   ): Promise<boolean> {
+    if (typeof userId !== 'number') return false;
+
     const { collectibleComicCollection, ...comicIssue } =
       await this.prisma.comicIssue.findUnique({
         where: { id: comicIssueId },
@@ -207,28 +214,6 @@ export class UserComicIssueService {
         return true;
       }
     }
-
-    // if wallet does not own the issue, see if the user is whitelisted per comic issue basis
-    // if (!ownedUsedComicIssueNfts.length) {
-    //   const userComicIssue = await this.prisma.userComicIssue.findFirst({
-    //     where: { userId, comicIssueId, isWhitelisted: true },
-    //   });
-
-    //   // if user is not whitelisted per comic issue basis, see if it's whitelisted per comic basis
-    //   if (!userComicIssue) {
-    //     const userComic = await this.prisma.userComic.findFirst({
-    //       where: {
-    //         userId,
-    //         comic: { issues: { some: { id: comicIssueId } } },
-    //         isWhitelisted: true,
-    //       },
-    //     });
-
-    //     // if wallet is still not allowed to view the full content of the issue
-    //     // make sure to show only preview pages of the comic
-    //     if (!userComic) return true;
-    //   }
-    // }
 
     return false;
   }

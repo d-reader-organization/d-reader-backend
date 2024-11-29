@@ -370,7 +370,7 @@ export class ComicIssueService {
     userId,
   }: {
     where: Prisma.ComicIssueWhereInput;
-    userId: number;
+    userId?: number;
   }) {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where,
@@ -488,7 +488,7 @@ export class ComicIssueService {
     }));
   }
 
-  async getPages(comicIssueId: number, userId: number) {
+  async getPages(comicIssueId: number, userId?: number) {
     const canRead = await this.userComicIssueService.checkCanUserRead(
       comicIssueId,
       userId,
@@ -497,37 +497,22 @@ export class ComicIssueService {
     // fetch only previewable pages if user can't read the full comic issue
     const isPreviewable = canRead ? undefined : true;
 
-    const getPages = this.comicPageService.findAll(comicIssueId, isPreviewable);
-    const readComic = this.read(comicIssueId, userId);
-    const viewComic = this.userComicIssueService.getAndUpdateUserStats(
+    const pages = await this.comicPageService.findAll(
       comicIssueId,
-      userId,
+      isPreviewable,
     );
 
-    const [pages] = await Promise.all([getPages, readComic, viewComic]);
-    return pages;
-  }
-
-  async getPreviewPages(comicIssueId: number, userId?: number) {
-    const comicIssue = await this.prisma.comicIssue.findUnique({
-      where: { id: comicIssueId },
-    });
-    const getPages = this.comicPageService.findAll(
-      comicIssueId,
-      comicIssue.isFreeToRead ? undefined : true,
-    );
-
-    if (userId) {
-      const updateUserStats = this.userComicIssueService.getAndUpdateUserStats(
+    if (typeof userId === 'number') {
+      const readComic = this.read(comicIssueId, userId);
+      const viewComic = this.userComicIssueService.getAndUpdateUserStats(
         comicIssueId,
         userId,
       );
-      const [pages] = await Promise.all([getPages, updateUserStats]);
 
-      return pages;
+      await Promise.all([readComic, viewComic]);
     }
 
-    return await getPages;
+    return pages;
   }
 
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {

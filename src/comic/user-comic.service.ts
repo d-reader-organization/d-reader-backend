@@ -80,7 +80,7 @@ export class UserComicService {
   }
 
   getUserStats(slug: string, userId?: number): Promise<UserComic> {
-    if (!userId) return undefined;
+    if (typeof userId !== 'number') return undefined;
 
     return this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug: slug } },
