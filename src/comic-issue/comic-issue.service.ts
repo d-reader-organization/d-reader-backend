@@ -54,8 +54,9 @@ import { CreateCandyMachineParams } from '../candy-machine/dto/types';
 import { appendTimestamp } from '../utils/helpers';
 import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
-import { ComicIssueStatusProperty } from './dto/types';
+import { ComicIssueStatusProperty, SearchComicIssue } from './dto/types';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
+import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -339,6 +340,27 @@ export class ComicIssueService {
         totalPagesCount,
       },
     };
+  }
+
+  async searchAll(params: SearchComicIssueParams): Promise<SearchComicIssue[]> {
+    const { search, sortOrder } = params;
+
+    const comicIssues = await this.prisma.comicIssue.findMany({
+      select: {
+        statelessCovers: true,
+        number: true,
+        title: true,
+        id: true,
+      },
+      where: {
+        title: { contains: search, mode: 'insensitive' },
+      },
+      orderBy: { title: sortOrder },
+      skip: params.skip,
+      take: params.take,
+    });
+
+    return comicIssues;
   }
 
   async findOne({

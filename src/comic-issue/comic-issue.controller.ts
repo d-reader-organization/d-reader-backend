@@ -79,6 +79,11 @@ import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
+import {
+  SearchComicIssueDto,
+  toSearchComicIssuesDtoArray,
+} from './dto/search-comic-issue.dto';
+import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
@@ -131,6 +136,15 @@ export class ComicIssueController {
       +userId,
     );
     return toOwnedComicIssueDtoArray(comicIssues);
+  }
+
+  /* Search all comic issues */
+  @Get('search')
+  async searchAll(
+    @Query() query: SearchComicIssueParams,
+  ): Promise<SearchComicIssueDto[]> {
+    const comics = await this.comicIssueService.searchAll(query);
+    return toSearchComicIssuesDtoArray(comics);
   }
 
   /* Get specific comic issue by unique id or unique collection slug */

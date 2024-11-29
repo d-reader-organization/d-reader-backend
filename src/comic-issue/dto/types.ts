@@ -23,3 +23,7 @@ export type ComicIssueStatusProperty = keyof Pick<
   ComicIssue,
   'publishedAt' | 'verifiedAt'
 >;
+
+export type SearchComicIssue = Pick<ComicIssue, 'id' | 'title' | 'number'> & {
+  statelessCovers?: StatelessCover[];
+};
