@@ -97,7 +97,6 @@ export class AuctionHouseService {
     return auctionHouse;
   }
 
-  // TODO: Use throttle for finding auction house
   private throttledFindAuctionHouse = memoizeThrottle(
     async (splTokenAddress: string) => {
       const auctionHouse = await this.getAuctionHouse(splTokenAddress);

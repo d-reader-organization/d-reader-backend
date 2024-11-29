@@ -41,9 +41,9 @@ export function CacheInterceptor({
         .getRequest();
 
       if (
-        // TODO: standardize searches as 'searchString' or something like that
         request.url.includes('titleSubstring') ||
-        request.url.includes('nameSubstring')
+        request.url.includes('nameSubstring') ||
+        request.url.includes('search')
       ) {
         console.info('opting out of cache!');
         return next.handle();
