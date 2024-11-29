@@ -57,6 +57,8 @@ import { MailService } from '../mail/mail.service';
 import { ComicIssueStatusProperty, SearchComicIssue } from './dto/types';
 import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
+import { CacheService } from '../cache/cache.service';
+import { CachePath } from '../utils/cache';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -74,6 +76,7 @@ export class ComicIssueService {
     private readonly userComicIssueService: UserComicIssueService,
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
+    private readonly cacheService: CacheService,
   ) {
     this.metaplex = metaplex;
   }
@@ -569,6 +572,7 @@ export class ComicIssueService {
         oldIssue: comicIssue,
         updatedIssue: updatedComicIssue,
       });
+      await this.cacheService.delete(CachePath.COMIC_ISSUE_GET_PUBLIC(id));
       return updatedComicIssue;
     } catch {
       throw new NotFoundException(
@@ -879,10 +883,15 @@ export class ComicIssueService {
     });
 
     this.discordService.comicIssueStatusUpdated(updatedComicIssue, property);
-    if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
-      this.mailService.comicIssueVerified(updatedComicIssue);
-    } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
-      this.mailService.comicIssuePublished(updatedComicIssue);
+
+    if (['verifiedAt', 'publishedAt'].includes(property)) {
+      await this.cacheService.deleteByPattern(CachePath.COMIC_ISSUE_GET_MANY);
+
+      if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
+        this.mailService.comicIssueVerified(updatedComicIssue);
+      } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
+        this.mailService.comicIssuePublished(updatedComicIssue);
+      }
     }
   }
 

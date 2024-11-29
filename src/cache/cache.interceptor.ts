@@ -50,7 +50,7 @@ export function CacheInterceptor({
         // return next.handle().pipe(map((response) => response));
       }
 
-      let cacheKey = `cacheinterceptor:"${request.url}"`;
+      let cacheKey = request.url;
       if (userScope) cacheKey += `:${request.user.id}`;
 
       const data = await this.cacheService.get(cacheKey);

@@ -19,4 +19,10 @@ export class CacheController {
   async clearCache(@Param('key') key: string) {
     return await this.cacheService.delete(key);
   }
+
+  @AdminGuard()
+  @Patch('delete-by-pattern/:pattern')
+  async deleteByPattern(@Param('pattern') key: string) {
+    return await this.cacheService.deleteByPattern(key);
+  }
 }

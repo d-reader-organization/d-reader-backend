@@ -14,6 +14,8 @@ import { Genre } from '@prisma/client';
 import { GenreFilterParams } from './dto/genre-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
+import { CacheService } from '../cache/cache.service';
+import { CachePath } from '../utils/cache';
 
 const s3Folder = 'genres/';
 type GenreFileProperty = PickFields<Genre, 'icon'>;
@@ -23,6 +25,7 @@ export class GenreService {
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(
@@ -55,6 +58,7 @@ export class GenreService {
       data: { icon: iconKey },
     });
 
+    await this.cacheService.deleteByPattern(CachePath.GENRE_GET_MANY);
     return genre;
   }
 
@@ -84,6 +88,7 @@ export class GenreService {
         data: updateGenreDto,
       });
 
+      await this.cacheService.deleteByPattern(CachePath.GENRE_GET_MANY);
       return updatedGenre;
     } catch {
       throw new NotFoundException(`Genre ${slug} does not exist`);

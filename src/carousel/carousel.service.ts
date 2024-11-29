@@ -21,6 +21,8 @@ import {
 } from '../types/carousel';
 import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 import { TENSOR_TRADE_URL } from '../constants';
+import { CacheService } from '../cache/cache.service';
+import { CachePath } from '../utils/cache';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -30,6 +32,7 @@ export class CarouselService {
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(
@@ -63,7 +66,7 @@ export class CarouselService {
       console.error(e);
       throw new BadRequestException('Bad carousel slide data');
     }
-
+    await this.cacheService.deleteByPattern(CachePath.CAROUSEL_SLIDE_GET_MANY);
     return carouselSlide;
   }
 
@@ -124,6 +127,9 @@ export class CarouselService {
         data: updateCarouselSlideDto,
       });
 
+      await this.cacheService.deleteByPattern(
+        CachePath.CAROUSEL_SLIDE_GET_MANY,
+      );
       return updatedCarouselSlide;
     } catch {
       throw new NotFoundException(`Carousel slide with id ${id} not found`);
