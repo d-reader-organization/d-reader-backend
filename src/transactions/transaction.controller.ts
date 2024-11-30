@@ -165,7 +165,9 @@ export class TransactionController {
     return [transaction];
   }
 
-  @UseInterceptors(MutexInterceptor(MINT_MUTEX_IDENTIFIER, { id: 'param' }))
+  @UseInterceptors(
+    MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
+  )
   @OptionalUserAuth()
   @Post('/send-mint-transaction/:walletAddress')
   async sendMintTransaction(
