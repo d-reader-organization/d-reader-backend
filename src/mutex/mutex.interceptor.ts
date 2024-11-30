@@ -29,9 +29,9 @@ export function MutexInterceptor(
       context: ExecutionContext,
       next: CallHandler,
     ): Promise<Observable<any>> {
-      const request: Request & { user: Wallet } = context
+      const request = context
         .switchToHttp()
-        .getRequest();
+        .getRequest<Request & { user: Wallet }>();
 
       const data: { [key in string]: any } = {};
 
