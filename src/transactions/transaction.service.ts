@@ -81,7 +81,7 @@ export class TransactionService {
         where: { address: mint.toString() },
         include: {
           metadata: {
-            include: { collection: { include: { comicIssue: true } } },
+            include: { collection: true },
           },
           candyMachine: true,
           digitalAsset: { include: { owner: { select: { userId: true } } } },
@@ -90,7 +90,7 @@ export class TransactionService {
 
     const { ownerAddress, owner: user } = digitalAsset;
     if (candyMachine.standard === TokenStandard.Core) {
-      const { comicIssue } = metadata.collection;
+      const { collection } = metadata;
       if (newState == ComicStateArgs.Use && user.userId != userId) {
         throw new UnauthorizedException(
           `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
@@ -109,8 +109,8 @@ export class TransactionService {
           throw new Error('Comic is already signed');
         }
         if (
-          feePayer.toString() != comicIssue.creatorAddress &&
-          feePayer.toString() != comicIssue.creatorBackupAddress
+          feePayer.toString() != collection.creatorAddress &&
+          feePayer.toString() != collection.creatorBackupAddress
         ) {
           throw new Error('Only verified creator can sign a comic');
         }

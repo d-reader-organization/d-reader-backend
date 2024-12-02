@@ -61,7 +61,7 @@ Table Creator {
   website String [not null, default: '']
   twitter String [not null, default: '']
   instagram String [not null, default: '']
-  lynkfire String [not null, default: '']
+  linktree String [not null, default: '']
   discordId String [not null, default: '']
   tippingAddress String [not null, default: '']
   s3BucketSlug String [unique, not null]
@@ -118,7 +118,6 @@ Table UserComic {
   subscribedAt DateTime
   favouritedAt DateTime
   bookmarkedAt DateTime
-  whitelistedAt DateTime
   viewedAt DateTime
 
   indexes {
@@ -149,7 +148,6 @@ Table RoyaltyWallet {
 Table ComicIssue {
   id Int [pk, increment]
   number Int [not null]
-  sellerFeeBasisPoints Int [not null, default: 0]
   title String [not null]
   slug String [not null]
   description String [not null, default: '']
@@ -159,14 +157,11 @@ Table ComicIssue {
   isFullyUploaded Boolean [not null, default: false]
   releaseDate DateTime [not null]
   updatedAt DateTime [not null]
-  isSecondarySaleActive Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   featuredAt DateTime
   verifiedAt DateTime
   publishedAt DateTime
   popularizedAt DateTime
-  creatorAddress String [not null, default: '']
-  creatorBackupAddress String [not null, default: '']
   comicSlug String [not null]
   s3BucketSlug String [not null]
   comic Comic [not null]
@@ -348,6 +343,10 @@ Table CandyMachineReceipt {
 Table CollectibleComicCollection {
   address String [pk]
   name String [not null]
+  creatorAddress String [not null, default: '']
+  creatorBackupAddress String [not null, default: '']
+  sellerFeeBasisPoints Int [not null, default: 0]
+  isSecondarySaleActive Boolean [not null, default: false]
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
   candyMachines CandyMachine [not null]
@@ -406,9 +405,9 @@ Table UserComicIssue {
   rating Int
   subscribedAt DateTime
   favouritedAt DateTime
-  whitelistedAt DateTime
   viewedAt DateTime
   readAt DateTime
+  pageNumberLastRead Int
 
   indexes {
     (comicIssueId, userId) [pk]

@@ -78,7 +78,7 @@ export class CreatorDto {
   instagram: string;
 
   @IsOptionalUrl()
-  lynkfire: string;
+  linktree: string;
 
   @IsOptional()
   @Type(() => CreatorStatsDto)
@@ -116,7 +116,7 @@ export function toCreatorDto(creator: CreatorInput) {
     website: creator.website,
     twitter: creator.twitter,
     instagram: creator.instagram,
-    lynkfire: creator.lynkfire,
+    linktree: creator.linktree,
     stats: ifDefined(creator.stats, toCreatorStatsDto),
     myStats: creator.myStats
       ? { isFollowing: creator.myStats.isFollowing }

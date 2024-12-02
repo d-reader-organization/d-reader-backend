@@ -159,7 +159,16 @@ export class CandyMachineService {
     comicIssue: ComicIssueCMInput;
     createCandyMachineParams: CreateCandyMachineParams;
   }) {
-    validateComicIssueCMInput(comicIssue);
+    const {
+      supply,
+      assetOnChainName,
+      comicName,
+      coupons,
+      sellerFeeBasisPoints,
+      creatorAddress,
+    } = createCandyMachineParams;
+
+    validateComicIssueCMInput(comicIssue, creatorAddress);
     const royaltyWallets = comicIssue.royaltyWallets;
 
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
@@ -172,10 +181,10 @@ export class CandyMachineService {
         royaltyWallets,
         statelessCovers,
         statefulCovers,
+        sellerFeeBasisPoints,
+        creatorAddress,
       );
 
-    const { supply, assetOnChainName, comicName, coupons } =
-      createCandyMachineParams;
     const couponsWithLabel = this.getCouponsWithLabels(coupons);
 
     console.log('Create Core Candy Machine');
@@ -256,6 +265,7 @@ export class CandyMachineService {
           royaltyWallets,
           numberOfRarities,
           darkblockId,
+          sellerFeeBasisPoints,
           rarityCoverFiles,
         );
 
@@ -1208,19 +1218,14 @@ export class CandyMachineService {
     royaltyWallets: RoyaltyWalletDto[],
     statelessCovers: MetaplexFile[],
     statefulCovers: MetaplexFile[],
+    sellerFeeBasisPoints: number,
+    creatorAddress: string,
   ): Promise<{
     collectionAddress: string;
     darkblockId: string;
     currentSupply: number;
   }> {
-    const {
-      pdf,
-      id: comicIssueId,
-      description,
-      creatorAddress,
-      title,
-      sellerFeeBasisPoints,
-    } = comicIssue;
+    const { pdf, id: comicIssueId, description, title } = comicIssue;
 
     const cover = findDefaultCover(comicIssue.statelessCovers);
     const coverImage = await s3toMxFile(cover.image);

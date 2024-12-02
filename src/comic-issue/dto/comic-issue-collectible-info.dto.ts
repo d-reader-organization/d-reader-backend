@@ -1,5 +1,8 @@
 import { plainToInstance } from 'class-transformer';
-import { IsDate, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDate, IsOptional, IsString } from 'class-validator';
+import { IsNumberRange } from '../../decorators/IsNumberRange';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { divide } from 'lodash';
 
 export class ComicIssueCollectibleInfoDto {
   @IsString()
@@ -9,13 +12,25 @@ export class ComicIssueCollectibleInfoDto {
   @IsString()
   activeCandyMachineAddress?: string;
 
+  @IsNumberRange(0, 1)
+  sellerFee: number;
+
   @IsOptional()
   @IsDate()
   startsAt?: Date;
+
+  @IsBoolean()
+  isSecondarySaleActive: boolean;
+
+  @IsSolanaAddress()
+  creatorAddress: string;
 }
 
 export type ComicIssueCollectibleInfoInput = {
+  sellerFeeBasisPoints: number;
   collectionAddress: string;
+  isSecondarySaleActive: boolean;
+  creatorAddress: string;
   candyMachineAddress?: string;
   startsAt?: Date;
 };
@@ -23,9 +38,12 @@ export type ComicIssueCollectibleInfoInput = {
 export function toComicIssueCollectibleInfoDto(
   issue: ComicIssueCollectibleInfoInput,
 ) {
-  const plainComicIssueCollectibleInfoDto: ComicIssueCollectibleInfoInput = {
+  const plainComicIssueCollectibleInfoDto: ComicIssueCollectibleInfoDto = {
+    sellerFee: divide(issue.sellerFeeBasisPoints, 100),
+    isSecondarySaleActive: issue.isSecondarySaleActive,
+    creatorAddress: issue.creatorAddress,
     collectionAddress: issue.collectionAddress,
-    candyMachineAddress: issue.candyMachineAddress,
+    activeCandyMachineAddress: issue.candyMachineAddress,
     startsAt: issue.startsAt,
   };
 

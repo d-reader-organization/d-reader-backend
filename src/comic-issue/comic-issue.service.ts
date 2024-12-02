@@ -88,7 +88,6 @@ export class ComicIssueService {
       number,
       comicSlug,
       isFullyUploaded = true,
-      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
       collaborators = [],
       ...rest
     } = createComicIssueDto;
@@ -121,7 +120,6 @@ export class ComicIssueService {
           title,
           number,
           isFullyUploaded,
-          creatorBackupAddress,
           comic: { connect: { slug: comicSlug } },
           collaborators: { createMany: { data: collaborators } },
         },
@@ -286,6 +284,11 @@ export class ComicIssueService {
                 collectionAddress: issue.collectibleComicCollection.address,
                 candyMachineAddress: candyMachine.address,
                 startsAt: publicCoupon?.startsAt,
+                creatorAddress: issue.collectibleComicCollection.creatorAddress,
+                isSecondarySaleActive:
+                  issue.collectibleComicCollection.isSecondarySaleActive,
+                sellerFeeBasisPoints:
+                  issue.collectibleComicCollection.sellerFeeBasisPoints,
               },
             };
           },
@@ -331,6 +334,12 @@ export class ComicIssueService {
         ? {
             candyMachineAddress: activeCandyMachine?.address,
             collectionAddress: comicIssue.collectibleComicCollection.address,
+            sellerFeeBasisPoints:
+              comicIssue.collectibleComicCollection.sellerFeeBasisPoints,
+            creatorAddress:
+              comicIssue.collectibleComicCollection.creatorAddress,
+            isSecondarySaleActive:
+              comicIssue.collectibleComicCollection.isSecondarySaleActive,
           }
         : undefined,
       stats: {
@@ -519,12 +528,7 @@ export class ComicIssueService {
   async update(id: number, updateComicIssueDto: UpdateComicIssueDto) {
     await this.throwIfComicIsPublishedOnChain(id);
 
-    const {
-      number,
-      collaborators,
-      creatorBackupAddress = this.metaplex.identity().publicKey.toBase58(),
-      ...rest
-    } = updateComicIssueDto;
+    const { number, collaborators, ...rest } = updateComicIssueDto;
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id },
@@ -566,7 +570,7 @@ export class ComicIssueService {
         },
         where: { id },
         // where: { id, publishedAt: null },
-        data: { number, ...rest, creatorBackupAddress },
+        data: { number, ...rest },
       });
       this.discordService.comicIssueUpdated({
         oldIssue: comicIssue,
@@ -779,6 +783,8 @@ export class ComicIssueService {
       supply,
       tokenStandard,
       coupons,
+      sellerFeeBasisPoints,
+      creatorAddress,
       ...updatePayload
     } = publishOnChainDto;
 
@@ -786,13 +792,10 @@ export class ComicIssueService {
       throw new BadRequestException('Only core candy machine is supported');
     }
 
-    let creatorBackupAddress: string;
-
     const updatedComicIssue = await this.prisma.comicIssue.update({
       where: { id },
       data: {
         publishedAt: new Date(),
-        creatorBackupAddress,
         ...updatePayload,
       },
       include: {
@@ -808,6 +811,8 @@ export class ComicIssueService {
       assetOnChainName: onChainName,
       supply,
       coupons,
+      sellerFeeBasisPoints,
+      creatorAddress,
     };
 
     try {

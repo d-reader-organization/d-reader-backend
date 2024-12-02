@@ -324,7 +324,7 @@ export class WalletService {
         include: {
           wallets: true,
           referrals: { include: { wallets: true } },
-          // TODO rely on _count instead of wallets: true
+          // rely on _count instead of wallets: true
           // _count: { select: { wallets: true } },
         },
       });
