@@ -68,6 +68,7 @@ export async function uploadMetadata(
   isUsed: string,
   isSigned: string,
   rarity: ComicRarity,
+  sellerFeeBasisPoints: number,
   darkblockId?: string,
 ) {
   const creators: JsonMetadataCreators = royaltyWallets.map((item) => {
@@ -83,7 +84,7 @@ export async function uploadMetadata(
     name: comicIssue.title,
     symbol: D_PUBLISHER_SYMBOL,
     description: comicIssue.description,
-    seller_fee_basis_points: comicIssue.sellerFeeBasisPoints,
+    seller_fee_basis_points: sellerFeeBasisPoints,
     image: getIrysUri(image),
     external_url: D_READER_FRONTEND_URL,
     attributes: [
@@ -120,6 +121,7 @@ export async function uploadAllMetadata(
   royaltyWallets: RoyaltyWalletDto[],
   rarityCoverFiles: CoverFiles,
   darkblockId: string,
+  sellerFeeBasisPoints: number,
   rarity: ComicRarity,
 ) {
   const itemMetadata: ItemMetadata[] = [];
@@ -137,6 +139,7 @@ export async function uploadAllMetadata(
         isUsed.toString(),
         isSigned.toString(),
         rarity,
+        sellerFeeBasisPoints,
         darkblock,
       );
 
@@ -159,6 +162,7 @@ export async function uploadItemMetadata(
   royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
   darkblockId: string,
+  sellerFeeBasisPoints: number,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
   // TODO: rarityShares is not reliable, we should pull this info from the database
@@ -174,6 +178,7 @@ export async function uploadItemMetadata(
       royaltyWallets,
       rarityCoverFiles[rarity],
       darkblockId,
+      sellerFeeBasisPoints,
       rarity,
     );
     itemMetadatas.push(...itemMetadata);

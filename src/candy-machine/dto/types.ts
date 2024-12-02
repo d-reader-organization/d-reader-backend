@@ -68,6 +68,8 @@ export type CreateCandyMachineParams = {
   comicName: string;
   assetOnChainName: string;
   supply: number;
+  sellerFeeBasisPoints: number;
+  creatorAddress: string;
   coupons: AddCandyMachineCouponParams[];
 };
 

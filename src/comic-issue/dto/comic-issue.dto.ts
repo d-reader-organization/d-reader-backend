@@ -28,7 +28,6 @@ import {
   StatefulCover,
   Genre,
 } from '@prisma/client';
-import { divide } from 'lodash';
 import {
   ComicIssueCollaboratorDto,
   toComicIssueCollaboratorDtoArray,
@@ -38,7 +37,6 @@ import {
   toStatelessCoverDtoArray,
 } from './covers/stateless-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import {
   PartialCreatorDto,
   toPartialCreatorDto,
@@ -53,7 +51,6 @@ import {
 } from 'src/comic/dto/partial-comic.dto';
 import { ifDefined } from 'src/utils/lodash';
 import { With } from 'src/types/shared';
-import { IsNumberRange } from 'src/decorators/IsNumberRange';
 import {
   ComicIssueCollectibleInfoDto,
   ComicIssueCollectibleInfoInput,
@@ -66,9 +63,6 @@ export class ComicIssueDto {
 
   @IsPositive()
   number: number;
-
-  @IsNumberRange(0, 1)
-  sellerFee: number;
 
   @IsNotEmpty()
   title: string;
@@ -108,9 +102,6 @@ export class ComicIssueDto {
   @IsKebabCase()
   comicSlug: string;
 
-  @IsBoolean()
-  isSecondarySaleActive: boolean;
-
   @IsOptional()
   @Type(() => PartialCreatorDto)
   creator?: PartialCreatorDto;
@@ -135,13 +126,6 @@ export class ComicIssueDto {
   @IsOptional()
   @Type(() => ComicIssueCollectibleInfoDto)
   collectibleInfo?: ComicIssueCollectibleInfoDto;
-
-  @IsOptional()
-  @IsString()
-  activeCandyMachineAddress?: string;
-
-  @IsSolanaAddress()
-  creatorAddress: string;
 
   @IsOptional()
   @IsArray()
@@ -201,21 +185,17 @@ export function toComicIssueDto(issue: ComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    sellerFee: divide(issue.sellerFeeBasisPoints, 100),
     title: issue.title,
     slug: issue.slug,
     description: issue.description,
     flavorText: issue.flavorText,
     cover: getPublicUrl(findDefaultCover(issue.statelessCovers)?.image) || '',
     releaseDate: issue.releaseDate.toISOString(),
-    activeCandyMachineAddress: issue.activeCandyMachineAddress,
-    isSecondarySaleActive: issue.isSecondarySaleActive,
     isFreeToRead: issue.isFreeToRead,
     isFullyUploaded: issue.isFullyUploaded,
     isPublished: !!issue.publishedAt,
     isPopular: !!issue.popularizedAt,
     isVerified: !!issue.verifiedAt,
-    creatorAddress: issue.creatorAddress,
     creator: ifDefined(issue.comic?.creator, toPartialCreatorDto),
     comic: ifDefined(issue.comic, toPartialComicDto),
     genres: ifDefined(genres, toPartialGenreDtoArray),

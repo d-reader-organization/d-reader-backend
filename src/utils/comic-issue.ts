@@ -57,11 +57,10 @@ export const findCover = (covers: StatefulCover[], rarity: ComicRarity) => {
   );
 };
 
-export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
-  if (!isBasisPoints(comicIssue.sellerFeeBasisPoints)) {
-    throw new BadRequestException('Invalid seller fee value');
-  }
-
+export const validateComicIssueCMInput = (
+  comicIssue: ComicIssueCMInput,
+  creatorAddress: string,
+) => {
   if (!comicIssue?.statelessCovers || !comicIssue?.statefulCovers) {
     throw new BadRequestException('Missing necessary cover assets');
   }
@@ -71,12 +70,8 @@ export const validateComicIssueCMInput = (comicIssue: ComicIssueCMInput) => {
     throw new BadRequestException('Unsupported rarity count: ' + raritiesCount);
   }
 
-  if (!isSolanaAddress(comicIssue.creatorAddress)) {
+  if (!isSolanaAddress(creatorAddress)) {
     throw new BadRequestException('Missing valid creator address');
-  }
-
-  if (!isSolanaAddress(comicIssue.creatorBackupAddress)) {
-    throw new BadRequestException('Missing valid creator backup address');
   }
 };
 

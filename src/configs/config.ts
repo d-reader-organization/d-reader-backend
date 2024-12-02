@@ -38,31 +38,26 @@ export const CONFIG: Config = {
     clientId: process.env.GOOGLE_AUTH_CLIENT_ID ?? '',
     clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET ?? '',
   },
-  // TODO: we should set the ignoreUserAgents to ignore Discord and Helius webhooks
   throttlers: [
     {
       name: 'short',
       ttl: 1000, // 1 second
       limit: 1000 * 6,
-      ignoreUserAgents: [],
     },
     {
       name: 'default',
       ttl: 10000, // 10 seconds
       limit: 1000 * 60,
-      ignoreUserAgents: [],
     },
     {
       name: 'medium',
       ttl: 30000, // 30 seconds
       limit: 1000 * 120,
-      ignoreUserAgents: [],
     },
     {
       name: 'long',
       ttl: 60000, // 60 seconds
       limit: 1000 * 180,
-      ignoreUserAgents: [],
     },
   ],
 };

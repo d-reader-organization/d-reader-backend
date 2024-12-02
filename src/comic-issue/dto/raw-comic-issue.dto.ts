@@ -37,8 +37,6 @@ import {
   toStatefulCoverDtoArray,
 } from './covers/stateful-cover.dto';
 import { findDefaultCover } from 'src/utils/comic-issue';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import {
   RoyaltyWalletDto,
   toRoyaltyWalletDtoArray,
@@ -51,7 +49,6 @@ import {
 } from 'src/genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
 import { toComicIssueStatsDto } from './comic-issue-stats.dto';
-import { IsBasisPoints } from 'src/decorators/IsBasisPoints';
 import { ifDefined } from 'src/utils/lodash';
 
 export class RawComicIssueDto {
@@ -60,9 +57,6 @@ export class RawComicIssueDto {
 
   @IsPositive()
   number: number;
-
-  @IsBasisPoints()
-  sellerFeeBasisPoints: number;
 
   @IsNotEmpty()
   title: string;
@@ -117,17 +111,9 @@ export class RawComicIssueDto {
   @Type(() => RawComicIssueStatsDto)
   stats: RawComicIssueStatsDto;
 
-  @IsOptionalString()
-  @IsSolanaAddress()
-  creatorAddress: string;
-
   @IsOptional()
   @IsString()
   creatorSlug?: string;
-
-  @IsOptionalString()
-  @IsSolanaAddress()
-  creatorBackupAddress: string;
 
   @IsOptional()
   @IsArray()
@@ -185,7 +171,6 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     id: issue.id,
     comicSlug: issue.comicSlug,
     number: issue.number,
-    sellerFeeBasisPoints: issue.sellerFeeBasisPoints,
     isCollectible: !!issue.collection,
     title: issue.title,
     slug: issue.slug,
@@ -199,9 +184,7 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     publishedAt: issue.publishedAt,
     popularizedAt: issue.popularizedAt,
     verifiedAt: issue.verifiedAt,
-    creatorAddress: issue.creatorAddress,
     creatorSlug: issue.comic?.creator?.slug,
-    creatorBackupAddress: issue.creatorBackupAddress,
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
     statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
     statelessCovers: ifDefined(issue.statelessCovers, toStatelessCoverDtoArray),

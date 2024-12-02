@@ -79,7 +79,7 @@ model Creator {
   website         String        @default("")
   twitter         String        @default("")
   instagram       String        @default("")
-  lynkfire        String        @default("")
+  linktree        String        @default("")
   discordId       String        @default("")
   tippingAddress  String        @default("")
   s3BucketSlug    String        @unique
@@ -143,7 +143,6 @@ model UserComic {
   subscribedAt  DateTime?
   favouritedAt  DateTime?
   bookmarkedAt  DateTime?
-  whitelistedAt DateTime?
   viewedAt      DateTime?
 
   @@id([comicSlug, userId])
@@ -170,7 +169,6 @@ model RoyaltyWallet {
 model ComicIssue {
   id                         Int                         @id @default(autoincrement())
   number                     Int
-  sellerFeeBasisPoints       Int                         @default(0)
   title                      String
   slug                       String
   description                String                      @default("")
@@ -180,14 +178,11 @@ model ComicIssue {
   isFullyUploaded            Boolean                     @default(false)
   releaseDate                DateTime
   updatedAt                  DateTime                    @updatedAt
-  isSecondarySaleActive      Boolean                     @default(false)
   createdAt                  DateTime                    @default(now())
   featuredAt                 DateTime?
   verifiedAt                 DateTime?
   publishedAt                DateTime?
   popularizedAt              DateTime?
-  creatorAddress             String                      @default("")
-  creatorBackupAddress       String                      @default("")
   comicSlug                  String
   s3BucketSlug               String
   comic                      Comic                       @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
@@ -397,6 +392,10 @@ model CandyMachineReceipt {
 model CollectibleComicCollection {
   address       String                     @id
   name          String
+  creatorAddress             String                      @default("")
+  creatorBackupAddress       String                      @default("")
+  sellerFeeBasisPoints       Int                         @default(0)
+  isSecondarySaleActive      Boolean                     @default(false)
   comicIssue    ComicIssue                 @relation(fields: [comicIssueId], references: [id])
   comicIssueId  Int                        @unique
   candyMachines CandyMachine[]
@@ -459,9 +458,9 @@ model UserComicIssue {
   rating        Int?
   subscribedAt  DateTime?
   favouritedAt  DateTime?
-  whitelistedAt DateTime?
   viewedAt      DateTime?
   readAt        DateTime?
+  pageNumberLastRead Int?
 
   @@id([comicIssueId, userId])
 }
@@ -768,24 +767,12 @@ model UserInterestedReceipt {
 }
 
 // TODO: remove or change the way referrals work
-// TODO: remove creator.lynkfire, potentially add creator.linktree
 // TODO: comic.completedAt is missing a client-side toggle button (is comic series completed or not)
 // TODO: move statefulcovers from comicissues to statelesscovers (normalize statefulcovers)
 
-// TODO: remove userComic.whitelistedAt
-// TODO: remove userComicIssue.whitelistedAt
-// todo: add userComicIssue.pageNumberLastRead
-
-// TODO: move comicIssue.sellerFeeBasisPoints to collection.sellerFeeBasisPoints
-// TODO: move comicIssue.isSecondarySaleActive to collection.isSecondarySaleActive
-// TODO: move comicIssue.creatorAddress to collection.creatorAddress
-// TODO: move comicIssue.creatorBackupAddress to collection.creatorBackupAddress
-
 // TODO: change creator.popularizedAt so it's an algorithm instead of an admin flagging a creator
 // TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
-// TODO: change comic.popularizedAt so it's an algorithm instead of an admin flagging a comic
-
-// TODO: resolve all other TODOs in the app
+// TODO: change comicIssue.popularizedAt so it's an algorithm instead of an admin flagging a comic issue
 
 // TODO: GlobalStatus should be implemented on the client side
 

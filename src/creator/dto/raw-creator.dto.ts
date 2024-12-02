@@ -71,7 +71,7 @@ export class RawCreatorDto {
   instagram: string;
 
   @IsOptionalUrl()
-  lynkfire: string;
+  linktree: string;
 
   @IsArray()
   @Type(() => PartialGenreDto)
@@ -95,7 +95,7 @@ export function toRawCreatorDto(creator: Creator) {
     website: creator.website,
     twitter: creator.twitter,
     instagram: creator.instagram,
-    lynkfire: creator.lynkfire,
+    linktree: creator.linktree,
   };
 
   const creatorDto = plainToInstance(RawCreatorDto, plainRawCreatorDto);
