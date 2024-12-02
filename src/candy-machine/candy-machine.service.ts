@@ -787,7 +787,6 @@ export class CandyMachineService {
 
     const candyMachineAddress = candyMachineCoupon.candyMachineAddress;
 
-    // TODO: Maybe use a coupon priority or number for labels
     const couponTypeIteration = await this.prisma.candyMachineCoupon.count({
       where: {
         type: candyMachineCoupon.type,
@@ -1401,9 +1400,6 @@ export class CandyMachineService {
     splToken: CandyMachineMintData['splToken'],
     isSponsored = false,
   ): Promise<void> {
-    // TODO: change this in the future so it checks for wallet balance against the mint price
-    if (isSponsored) return;
-
     const solBalance = await this.umi.rpc.getBalance(walletAddress);
     const isSolPayment = splToken.address == SOL_ADDRESS;
 
@@ -1433,6 +1429,7 @@ export class CandyMachineService {
       splToken.decimals,
       numberOfItems,
       isSolPayment,
+      isSponsored,
       tokenStandard,
     );
   }

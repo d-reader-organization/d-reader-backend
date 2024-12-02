@@ -45,7 +45,6 @@ export async function createCoreCandyMachine(
   });
 
   const recentSlot = await umi.rpc.getSlot({ commitment: 'confirmed' });
-  // TODO: check if it requires more compute and why it fails with (Program fails to compelete) without skipPreflight
   let builder = setComputeUnitPrice(umi, {
     microLamports: MIN_COMPUTE_PRICE,
   }).add(createCmBuilder);
@@ -80,6 +79,7 @@ export async function createCoreCandyMachine(
     const latestBlockHash = await umi.rpc.getLatestBlockhash({
       commitment: 'confirmed',
     });
+    // it fails with (Program fails to compelete) without skipPreflight
     const { signature } = await builder.sendAndConfirm(umi, {
       send: { commitment: 'confirmed', skipPreflight: true },
     });

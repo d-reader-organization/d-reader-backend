@@ -216,6 +216,8 @@ export const TENSOR_TRADE_URL = 'https://www.tensor.trade/trade';
 
 export const CMA_PROGRAM_ID = 'CMAGAKJ67e9hRZgfC5SFTbZH8MgEmtqazKXjmkaJjWTJ';
 export const TCOMP_PROGRAM_ID = 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp';
+export const TSWAP_PROGRAM_ID = 'TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN';
+
 export const D_READER_AUCTION = 'DCoAH';
 
 export const UPDATE_CORE_V1_DISCRIMINANT = 15;

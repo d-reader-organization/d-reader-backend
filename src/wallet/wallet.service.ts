@@ -46,7 +46,6 @@ export class WalletService {
     }
   }
 
-  // TODO: this command should also give it's best to update UNKNOWN's, price and CM.
   async syncWallet(address: string) {
     const compeleteAssets = await this.prisma.collectibleComic
       .findMany({
