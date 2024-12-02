@@ -122,7 +122,6 @@ export class TransactionController {
       couponId,
     );
 
-    //todo: blink supports only single transaction
     return toActionResponseDto(transaction.at(-1));
   }
 

@@ -25,7 +25,7 @@ import {
   ListingFilterParams,
   ListingSortTag,
 } from './dto/listing-fliter-params.dto';
-import { isBoolean, isEqual, sortBy } from 'lodash';
+import { isBoolean, isEmpty, isEqual, sortBy } from 'lodash';
 import { InstantBuyArgs } from './dto/types/instant-buy-args';
 import {
   getIdentityUmiSignature,
@@ -41,6 +41,7 @@ import {
   RARITY_PRECEDENCE,
   TCOMP_PROGRAM_ID,
   TENSOR_MAINNET_API_ENDPOINT,
+  TSWAP_PROGRAM_ID,
 } from '../constants';
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
@@ -69,6 +70,7 @@ import { InitializePrintEditionSaleParams } from './dto/initialize-edition-sale-
 import { createBuyPrintEditionTransaction } from './instructions/buy-edition';
 import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 import { RepriceListingParams } from './dto/reprice-listing-params.dto';
+import { ProgramSource } from '../types/shared';
 
 @Injectable()
 export class AuctionHouseService {
@@ -270,26 +272,26 @@ export class AuctionHouseService {
   async bid(bidParams: BidParams) {
     const { bidderAddress, assetAddress, price } = bidParams;
 
-    const { auctionHouse, listingConfig, ...listing } =
-      await this.prisma.listing.findUnique({
-        where: {
-          assetAddress_closedAt: {
-            assetAddress,
-            closedAt: new Date(0),
-          },
+    const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
+      where: {
+        assetAddress_closedAt: {
+          assetAddress,
+          closedAt: new Date(0),
         },
-        include: {
-          auctionHouse: true,
-          listingConfig: true,
-        },
-      });
+      },
+      include: {
+        auctionHouse: true,
+        listingConfig: true,
+      },
+    });
 
     if (!listing) {
       throw new NotFoundException('Asset is not listed for auction');
     }
 
-    const isTimedAuction = !!listingConfig;
+    const isTimedAuction = !isEmpty(listing.listingConfig);
     if (isTimedAuction) {
+      const listingConfig = listing.listingConfig;
       const highestBid = listingConfig.highestBidId
         ? await this.prisma.bid.findUnique({
             where: { id: listingConfig.highestBidId },
@@ -318,7 +320,7 @@ export class AuctionHouseService {
 
     const { auctionHouse, ...listing } = await this.prisma.listing.findUnique({
       where: { id: listingId },
-      include: { auctionHouse: true },
+      include: { auctionHouse: true, listingConfig: true },
     });
     const bid = await this.prisma.bid.findUnique({ where: { id: bidId } });
 
@@ -334,6 +336,9 @@ export class AuctionHouseService {
 
     const { address, treasuryMint } = auctionHouse;
     const { assetAddress, sellerAddress } = listing;
+
+    const { collectionAddress } = await this.getBasicAssetData(assetAddress);
+    const isTimedAuction = !isEmpty(listing.listingConfig);
     const { bidderAddress } = bid;
 
     const transaction = await getTransactionWithPriorityFee(
@@ -345,6 +350,8 @@ export class AuctionHouseService {
       sellerAddress,
       bidderAddress,
       treasuryMint,
+      isTimedAuction,
+      collectionAddress,
     );
     return transaction;
   }
@@ -726,9 +733,9 @@ export class AuctionHouseService {
       select: { price: true },
     });
 
-    const getSupply = this.prisma.candyMachine.findFirst({
+    const getSupply = this.prisma.candyMachine.aggregate({
       where: { collection: { comicIssueId } },
-      select: { supply: true },
+      _sum: { supply: true },
     });
 
     const [totalVolume, itemsListed, cheapestItem, candyMachineSupply] =
@@ -742,7 +749,7 @@ export class AuctionHouseService {
       totalVolume,
       itemsListed: itemsListed || 0,
       floorPrice: cheapestItem?.price ? Number(cheapestItem.price) : 0,
-      supply: candyMachineSupply?.supply || 0,
+      supply: candyMachineSupply?._sum.supply || 0,
     };
   }
 
@@ -799,9 +806,28 @@ export class AuctionHouseService {
 
   async syncTensorListings(listings: TENSOR_LISTING_RESPONSE[]) {
     for await (const listing of listings) {
+      const isTensor =
+        listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP';
+      if (!isTensor) {
+        console.log(
+          `Listing for ${listing.mint} is not fron ${ProgramSource.T_COMP} or ${ProgramSource.T_SWAP}`,
+        );
+        continue;
+      }
+
       const collectibleComic = await this.prisma.collectibleComic.findUnique({
         where: { address: listing.mint.onchainId },
       });
+
+      const source =
+        listing.tx.source === 'TENSORSWAP'
+          ? ProgramSource.T_SWAP
+          : ProgramSource.T_COMP;
+      const auctionHouseAddress =
+        listing.tx.source === 'TENSORSWAP'
+          ? TSWAP_PROGRAM_ID
+          : TCOMP_PROGRAM_ID;
+
       await this.prisma.listing.upsert({
         where: {
           assetAddress_closedAt: {
@@ -814,24 +840,18 @@ export class AuctionHouseService {
           sellerAddress: listing.tx.sellerId,
           createdAt: new Date(),
           signature: listing.tx.txId,
-          source:
-            listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
-              ? Source.TENSOR
-              : Source.MAGIC_EDEN,
+          source,
         },
         create: {
           auctionHouse: {
-            // TODO: This should be conditional to add either TSWAP or TCOMP address as per the source
-            connect: { address: TCOMP_PROGRAM_ID },
+            // TODO: Check if you need actual auction house address for creating the buy order ?
+            connect: { address: auctionHouseAddress },
           },
           price: +listing.tx.grossAmount,
           sellerAddress: listing.tx.sellerId,
           createdAt: new Date(),
           signature: listing.tx.txId,
-          source:
-            listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP'
-              ? Source.TENSOR
-              : Source.MAGIC_EDEN,
+          source,
           closedAt: new Date(0),
           digitalAsset: {
             connect: { address: collectibleComic.address },

@@ -27,6 +27,7 @@ export async function createExecuteSaleTransaction(
   bidderAddress: string,
   splTokenAddress: string,
   isTimedAuction: boolean,
+  collectionAddress: string,
   computePrice?: number,
 ) {
   const seller = publicKey(sellerAddress);
@@ -61,7 +62,6 @@ export async function createExecuteSaleTransaction(
     })[0];
   }
 
-  // TODO: Provide collection address
   const listingConfig = isTimedAuction
     ? findListingConfigPda(umi, { listing: listing[0] })
     : undefined;
@@ -72,6 +72,7 @@ export async function createExecuteSaleTransaction(
     seller,
     authority,
     escrowPaymentAccount,
+    collection: publicKey(collectionAddress),
     auctionHouse,
     auctionHouseAssetVault,
     auctionHouseFeeAccount,

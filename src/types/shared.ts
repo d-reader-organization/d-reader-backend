@@ -37,3 +37,10 @@ export type With<T extends any[]> = T extends [infer First, ...infer Rest]
   : object;
 
 export type Referee = User & { wallets: Wallet[] };
+
+export enum ProgramSource {
+  MAGIC_EDEN = 'Magic Eden',
+  T_SWAP = 'Tensor Swap',
+  T_COMP = 'Tensor Compressed',
+  UNKNOWN = 'UNKNOWN',
+}

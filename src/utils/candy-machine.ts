@@ -365,6 +365,7 @@ export function validateBalanceForMint(
   tokenDecimals: number,
   numberOfItems: number,
   isSolPayment: boolean,
+  isSponsored = false,
   tokenStandard?: TokenStandard,
 ): void {
   // MIN_MINT_PROTOCOL_FEE is the approx amount necessary to mint a single asset with price 0
@@ -375,7 +376,11 @@ export function validateBalanceForMint(
       : MIN_MINT_PROTOCOL_FEE;
 
   const totalMintPrice = numberOfItems * mintPrice;
-  const totalProtocolFeeRequired = numberOfItems * protocolFee;
+
+  // if it's sponsored mint, the protocol and transaction fee is paid for the user.
+  const totalProtocolFeeRequired = isSponsored
+    ? 0
+    : numberOfItems * protocolFee;
 
   const missingSolFunds = isSolPayment
     ? totalMintPrice + totalProtocolFeeRequired - solBalance
