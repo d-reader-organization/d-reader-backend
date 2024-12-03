@@ -385,18 +385,6 @@ Table CarouselSlide {
   location CarouselLocation [not null, default: 'HomePrimary']
 }
 
-Table Newsletter {
-  email String [pk]
-  subscribedAt DateTime [default: `now()`, not null]
-  updatedAt DateTime
-  ip String [not null, default: '']
-  country String [not null, default: '']
-  city String [not null, default: '']
-  browser String [not null, default: '']
-  device String [not null, default: '']
-  os String [not null, default: '']
-}
-
 Table UserComicIssue {
   comicIssue ComicIssue [not null]
   comicIssueId Int [not null]
