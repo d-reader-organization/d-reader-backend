@@ -375,7 +375,7 @@ export class CandyMachineService {
     console.log(`Transaction Construction Time (ms):`, Date.now() - mintStart);
     console.log(`Total Time (ms):`, Date.now() - queryStart);
 
-    return [transaction];
+    return transaction;
   }
 
   /* Validate if mint transaction should be constructed and partially prepare it */

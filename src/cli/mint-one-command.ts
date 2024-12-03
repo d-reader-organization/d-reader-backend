@@ -77,7 +77,7 @@ export class MintOneCommand extends CommandRunner {
         coupon.currencySettings.at(-1).label,
         coupon.id,
       );
-    const transactionBuffer = Buffer.from(encodedTransaction[0], 'base64');
+    const transactionBuffer = Buffer.from(encodedTransaction, 'base64');
     const transaction = VersionedTransaction.deserialize(transactionBuffer);
     transaction.sign([keypair]);
     try {
