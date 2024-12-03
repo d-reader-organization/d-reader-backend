@@ -31,6 +31,8 @@ env:
     - AWS_SECRET_ACCESS_KEY
     - AWS_BUCKET_NAME
     - AWS_BUCKET_REGION
+    # Cloudflare
+    - WORKER_API_KEY
     # Solana
     - TREASURY_PRIVATE_KEY
     - TREASURY_SECRET
