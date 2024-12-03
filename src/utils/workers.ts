@@ -15,7 +15,7 @@ export type ConstructMintTransactionRequestParams = {
 export async function constructMintTransactionOnWorker(
   data: ConstructMintTransactionRequestParams,
 ) {
-  const response = await axios.post<string>(
+  const response = await axios.post<{ transaction: string }>(
     `${process.env.WORKER_URL}/construct-mint`,
     data,
     {
@@ -25,6 +25,5 @@ export async function constructMintTransactionOnWorker(
       },
     },
   );
-
-  return response.data;
+  return response.data.transaction;
 }
