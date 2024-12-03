@@ -18,7 +18,6 @@ import {
   MetaplexFile,
 } from '@metaplex-foundation/js';
 import { s3toMxFile } from '../utils/files';
-import { constructMultipleMintTransaction } from './instructions';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineReceiptParams } from './dto/candy-machine-receipt-params.dto';
 import {
@@ -132,6 +131,7 @@ import { getLookupTableInfo } from '../utils/lookup-table';
 import { CachePath } from '../utils/cache';
 import { Cacheable } from '../cache/cache.decorator';
 import { AddressLookupTableState } from '@solana/web3.js';
+import { constructMintTransactionOnWorker } from '../utils/workers';
 
 @Injectable()
 export class CandyMachineService {
@@ -340,32 +340,42 @@ export class CandyMachineService {
     console.log(`Aggregate Query Time (ms):`, Date.now() - queryStart);
 
     const mintStart = Date.now();
-    const lookupTableInput = await this.fetchUmiLookupTableInput(
+
+    const lookupTableCacheKey =
+      CachePath.lookupTableAccounts(lookupTableAddress);
+    const lookupTableBuffer = await this.cacheService.fetchAndCache(
+      lookupTableCacheKey,
+      getLookupTableInfo,
+      2 * HOUR_SECONDS,
+      this.connection,
       lookupTableAddress,
     );
-    const candyGuard = await this.fetchAndCacheCandyGuard(mintAuthority);
-    const blockHash = await this.cacheService.fetchAndCache(
-      CachePath.LatestBlockhash,
-      this.umi.rpc.getLatestBlockhash,
-      5,
-      'Confirmed',
+
+    const cacheKey = CachePath.candyGuard(mintAuthority);
+    const candyGuardBuffer = await this.cacheService.fetchAndCache(
+      cacheKey,
+      getCandyGuardAccount,
+      2 * HOUR_SECONDS,
+      this.connection,
+      mintAuthority,
     );
 
-    const transaction = await constructMultipleMintTransaction(
-      publicKey(candyMachineAddress),
-      publicKey(collectionAddress),
-      candyGuard,
-      walletAddress,
+    const transaction = await constructMintTransactionOnWorker({
+      candyMachineAddress,
+      collectionAddress,
+      candyGuardBufferString: candyGuardBuffer.toString('base64'),
+      lookupTableAddress,
+      lookupTableBufferString: lookupTableBuffer.toString('base64'),
+      minter: walletAddress,
       label,
-      numberOfItems ?? 1,
-      blockHash,
-      lookupTableInput,
+      numberOfItems,
       isSponsored,
-    );
+    });
+
     console.log(`Transaction Construction Time (ms):`, Date.now() - mintStart);
     console.log(`Total Time (ms):`, Date.now() - queryStart);
 
-    return transaction;
+    return [transaction];
   }
 
   /* Validate if mint transaction should be constructed and partially prepare it */
