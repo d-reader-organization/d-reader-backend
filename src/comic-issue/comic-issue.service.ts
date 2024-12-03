@@ -329,7 +329,6 @@ export class ComicIssueService {
 
     return {
       ...comicIssue,
-      activeCandyMachineAddress: activeCandyMachine?.address,
       collectibleInfo: isCollectible
         ? {
             candyMachineAddress: activeCandyMachine?.address,
@@ -381,7 +380,7 @@ export class ComicIssueService {
   }: {
     where: Prisma.ComicIssueWhereInput;
     userId?: number;
-  }) {
+  }): Promise<ComicIssueInput> {
     const comicIssue = await this.prisma.comicIssue.findFirst({
       where,
       include: {
@@ -415,12 +414,24 @@ export class ComicIssueService {
       throw new NotFoundException(`Comic issue with id ${id} does not exist`);
     }
 
+    const isCollectible = !isNull(comicIssue.collectibleComicCollection);
+
     return {
       ...comicIssue,
       stats,
       myStats: { ...myStats, canRead },
-      activeCandyMachineAddress: activeCandyMachine?.address,
-      collectionAddress: comicIssue.collectibleComicCollection?.address,
+      collectibleInfo: isCollectible
+        ? {
+            candyMachineAddress: activeCandyMachine?.address,
+            collectionAddress: comicIssue.collectibleComicCollection.address,
+            sellerFeeBasisPoints:
+              comicIssue.collectibleComicCollection.sellerFeeBasisPoints,
+            creatorAddress:
+              comicIssue.collectibleComicCollection.creatorAddress,
+            isSecondarySaleActive:
+              comicIssue.collectibleComicCollection.isSecondarySaleActive,
+          }
+        : undefined,
     };
   }
 
