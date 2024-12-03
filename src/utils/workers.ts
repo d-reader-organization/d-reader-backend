@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-export const BASE_URL = 'https://workers.dreader.io';
-
 export type ConstructMintTransactionRequestParams = {
   candyMachineAddress: string;
   collectionAddress: string;
@@ -18,7 +16,7 @@ export async function constructMintTransactionOnWorker(
   data: ConstructMintTransactionRequestParams,
 ) {
   const response = await axios.post<string>(
-    `${BASE_URL}/construct-mint`,
+    `${process.env.WORKER_URL}/construct-mint`,
     data,
     {
       headers: {
