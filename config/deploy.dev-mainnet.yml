@@ -10,5 +10,5 @@ env:
     API_URL: https://api-dev-mainnet.dreader.io
     D_READER_URL: https://dev-mainnet.dreader.app
     D_PUBLISHER_URL: https://dev-mainnet.dpublisher.app
-    WORKER_URL: dev.workers.dreader.io
+    WORKER_URL: https://dev.workers.dreader.io
     CDN_URL: 
