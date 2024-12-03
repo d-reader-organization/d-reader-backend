@@ -5,7 +5,6 @@ export const dPublisherUrl = config().client.dPublisherUrl;
 export const apiUrl = config().nest.apiUrl;
 
 export const D_READER_LINKS = {
-  newsletter: (email: string) => `${dReaderUrl}/newsletter/${email}`,
   emailVerification: (verificationToken: string) =>
     `${dReaderUrl}/verify-email/${verificationToken}`,
   resetPassword: (verificationToken: string) =>

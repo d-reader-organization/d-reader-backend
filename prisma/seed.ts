@@ -163,7 +163,6 @@ async function main() {
   await prisma.userComicIssue.deleteMany();
   await prisma.userCreator.deleteMany();
   await prisma.comic.deleteMany();
-  await prisma.newsletter.deleteMany();
   await prisma.creator.deleteMany();
   await prisma.wallet.deleteMany();
   await prisma.genre.deleteMany();

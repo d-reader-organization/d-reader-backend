@@ -438,18 +438,6 @@ enum CarouselLocation {
   HomeSecondary
 }
 
-model Newsletter {
-  email        String    @id
-  subscribedAt DateTime  @default(now())
-  updatedAt    DateTime? @updatedAt
-  ip           String    @default("")
-  country      String    @default("")
-  city         String    @default("")
-  browser      String    @default("")
-  device       String    @default("")
-  os           String    @default("")
-}
-
 model UserComicIssue {
   comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId  Int
@@ -775,8 +763,6 @@ model UserInterestedReceipt {
 // TODO: change comicIssue.popularizedAt so it's an algorithm instead of an admin flagging a comic issue
 
 // TODO: GlobalStatus should be implemented on the client side
-
-// TODO: entirely remove Newsletter
 
 // TODO: add errors.ts file for defining all error codes (or translations.ts or something of the sort)
 

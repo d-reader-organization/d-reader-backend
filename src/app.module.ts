@@ -15,7 +15,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SecurityConfig } from 'src/configs/config.interface';
 import { GenreModule } from './genre/genre.module';
-import { NewsletterModule } from './newsletter/newsletter.module';
 import { ThrottlerModule, ThrottlerOptions } from '@nestjs/throttler';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { CandyMachineModule } from './candy-machine/candy-machine.module';
@@ -92,7 +91,6 @@ import { CacheModule } from './cache/cache.module';
     MailModule,
     GenreModule,
     WebhooksModule,
-    NewsletterModule,
     CandyMachineModule,
     AuctionHouseModule,
     WebSocketModule,

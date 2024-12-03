@@ -19,8 +19,6 @@ const logError = (template: string, recipient: string, e: any) => {
   console.error('ERROR: ', e);
 };
 
-const SUBSCRIBE_TO_NEWSLETTER = 'subscribedToNewsletter';
-const UNSUBSCRIBED_FROM_NEWSLETTER = 'unsubscribedFromNewsletter';
 const USER_REGISTERED = 'userRegistered';
 const USER_SCHEDULED_FOR_DELETION = 'userScheduledForDeletion';
 const USER_DELETED = 'userDeleted';
@@ -50,38 +48,6 @@ export class MailService {
     private readonly mailerService: MailerService,
     private readonly authService: AuthService,
   ) {}
-
-  async subscribedToNewsletter(email: string) {
-    try {
-      await this.mailerService.sendMail({
-        to: email,
-        subject: '✅ Newsletter subscription',
-        template: SUBSCRIBE_TO_NEWSLETTER,
-        context: {
-          apiUrl,
-          actionUrl: D_READER_LINKS.newsletter(email),
-        },
-      });
-    } catch (e) {
-      logError(SUBSCRIBE_TO_NEWSLETTER, email, e);
-    }
-  }
-
-  async unsubscribedFromNewsletter(email: string) {
-    try {
-      await this.mailerService.sendMail({
-        to: email,
-        subject: '💀 Newsletter is no more!',
-        template: UNSUBSCRIBED_FROM_NEWSLETTER,
-        context: {
-          apiUrl,
-          actionUrl: D_READER_LINKS.newsletter(email),
-        },
-      });
-    } catch (e) {
-      logError(UNSUBSCRIBED_FROM_NEWSLETTER, email, e);
-    }
-  }
 
   async userRegistered(user: User) {
     const verificationToken = this.authService.generateEmailToken(
