@@ -67,7 +67,7 @@ export class CreatorController {
   }
 
   /* Get all creators */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
+  // @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @Get('get')
   async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
     const creators = await this.creatorService.findAll(query);
