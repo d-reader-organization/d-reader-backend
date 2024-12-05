@@ -49,6 +49,9 @@ export class ComicDto {
   @IsBoolean()
   isPopular: boolean;
 
+  @IsBoolean()
+  isFreeToRead: boolean;
+
   @IsUrl()
   cover: string;
 
@@ -119,6 +122,7 @@ export function toComicDto(comic: ComicInput) {
     isVerified: !!comic.verifiedAt,
     isPublished: !!comic.publishedAt,
     isPopular: !!comic.popularizedAt,
+    isFreeToRead: comic.isFreeToRead,
     cover: getPublicUrl(comic.cover),
     banner: getPublicUrl(comic.banner),
     logo: getPublicUrl(comic.logo),
