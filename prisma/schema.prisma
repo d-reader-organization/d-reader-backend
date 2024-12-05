@@ -42,6 +42,7 @@ model User {
   consents                       UserPrivacyConsent[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
   interestExpressed              UserInterestedReceipt[]
+  wheelRewardReceipts            WheelRewardReceipt[]
 }
 
 model Wallet {
@@ -135,15 +136,15 @@ model Comic {
 }
 
 model UserComic {
-  comic         Comic     @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
-  comicSlug     String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        Int
-  rating        Int?
-  subscribedAt  DateTime?
-  favouritedAt  DateTime?
-  bookmarkedAt  DateTime?
-  viewedAt      DateTime?
+  comic        Comic     @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  comicSlug    String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  rating       Int?
+  subscribedAt DateTime?
+  favouritedAt DateTime?
+  bookmarkedAt DateTime?
+  viewedAt     DateTime?
 
   @@id([comicSlug, userId])
 }
@@ -391,18 +392,18 @@ model CandyMachineReceipt {
 }
 
 model CollectibleComicCollection {
-  address       String                     @id
-  name          String
-  creatorAddress             String                      @default("")
-  creatorBackupAddress       String                      @default("")
-  sellerFeeBasisPoints       Int                         @default(0)
-  isSecondarySaleActive      Boolean                     @default(false)
-  comicIssue    ComicIssue                 @relation(fields: [comicIssueId], references: [id])
-  comicIssueId  Int                        @unique
-  candyMachines CandyMachine[]
-  darkblockId   String?
-  metadatas     CollectibleComicMetadata[]
-  digitalAsset  DigitalAsset               @relation(fields: [address], references: [address])
+  address               String                     @id
+  name                  String
+  creatorAddress        String                     @default("")
+  creatorBackupAddress  String                     @default("")
+  sellerFeeBasisPoints  Int                        @default(0)
+  isSecondarySaleActive Boolean                    @default(false)
+  comicIssue            ComicIssue                 @relation(fields: [comicIssueId], references: [id])
+  comicIssueId          Int                        @unique
+  candyMachines         CandyMachine[]
+  darkblockId           String?
+  metadatas             CollectibleComicMetadata[]
+  digitalAsset          DigitalAsset               @relation(fields: [address], references: [address])
 }
 
 model ComicPage {
@@ -440,15 +441,15 @@ enum CarouselLocation {
 }
 
 model UserComicIssue {
-  comicIssue    ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
-  comicIssueId  Int
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        Int
-  rating        Int?
-  subscribedAt  DateTime?
-  favouritedAt  DateTime?
-  viewedAt      DateTime?
-  readAt        DateTime?
+  comicIssue         ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  comicIssueId       Int
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             Int
+  rating             Int?
+  subscribedAt       DateTime?
+  favouritedAt       DateTime?
+  viewedAt           DateTime?
+  readAt             DateTime?
   pageNumberLastRead Int?
 
   @@id([comicIssueId, userId])
@@ -752,7 +753,59 @@ model UserInterestedReceipt {
   user                 User     @relation(fields: [userId], references: [id])
   expressedAmount      Int      @default(0)
 
-  @@unique([projectSlug,userId])
+  @@unique([projectSlug, userId])
+}
+
+enum WheelType {
+  Daily
+  Weekly
+  Monthly
+}
+
+enum WheelRewardType {
+  AssetFromVault
+  CnftDrop
+  CollectibleComic
+  PrintEdition
+  OneOfOne
+  Physicals
+}
+
+model Wheel {
+  id             Int           @id @default(autoincrement())
+  name           String
+  s3BucketSlug   String        @unique
+  description    String        @default("")
+  image          String        @default("")
+  type           WheelType
+  startsAt       DateTime
+  expiresAt      DateTime?
+  rewards        WheelReward[]
+  winProbability Int
+  isActive       Boolean       @default(true)
+}
+
+model WheelReward {
+  id           Int             @id @default(autoincrement())
+  name         String
+  description  String          @default("")
+  image        String          @default("")
+  type         WheelRewardType
+  wheel        Wheel           @relation(fields: [wheelId], references: [id])
+  wheelId      Int
+  supply       Int             @default(0)
+  weight       Int             @default(0)
+  assetAddress String?
+  externalLink String?
+}
+
+model WheelRewardReceipt {
+  id                   Int               @id @default(autoincrement())
+  descripton           String
+  transactionSignature String?
+  status               TransactionStatus
+  userId               Int
+  user                 User              @relation(fields: [userId], references: [id])
 }
 
 // TODO: remove or change the way referrals work
