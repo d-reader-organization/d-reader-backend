@@ -31,6 +31,7 @@ Table User {
   consents UserPrivacyConsent [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
   interestExpressed UserInterestedReceipt [not null]
+  wheelRewardReceipts WheelRewardReceipt [not null]
 }
 
 Table Wallet {
@@ -699,6 +700,43 @@ Table UserInterestedReceipt {
   }
 }
 
+Table Wheel {
+  id Int [pk, increment]
+  name String [not null]
+  s3BucketSlug String [unique, not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  type WheelType [not null]
+  startsAt DateTime [not null]
+  expiresAt DateTime
+  rewards WheelReward [not null]
+  winProbability Int [not null]
+  isActive Boolean [not null, default: true]
+}
+
+Table WheelReward {
+  id Int [pk, increment]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  type WheelRewardType [not null]
+  wheel Wheel [not null]
+  wheelId Int [not null]
+  supply Int [not null, default: 0]
+  weight Int [not null, default: 0]
+  assetAddress String
+  externalLink String
+}
+
+Table WheelRewardReceipt {
+  id Int [pk, increment]
+  descripton String [not null]
+  transactionSignature String
+  status TransactionStatus [not null]
+  userId Int [not null]
+  user User [not null]
+}
+
 Enum Role {
   Superadmin
   Admin
@@ -777,6 +815,20 @@ Enum DurableNonceStatus {
 Enum ConsentType {
   Marketing
   DataAnalytics
+}
+
+Enum WheelType {
+  Daily
+  Weekly
+}
+
+Enum WheelRewardType {
+  AssetFromVault
+  CnftDrop
+  CollectibleComic
+  PrintEdition
+  OneOfOne
+  Physicals
 }
 
 Ref: User.referrerId - User.id
@@ -892,3 +944,7 @@ Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 Ref: UserInterestedReceipt.walletAddress > Wallet.address
 
 Ref: UserInterestedReceipt.userId > User.id
+
+Ref: WheelReward.wheelId > Wheel.id
+
+Ref: WheelRewardReceipt.userId > User.id
