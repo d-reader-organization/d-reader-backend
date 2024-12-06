@@ -203,7 +203,7 @@ Accessible on http://server_ip:8080/dashboard/ (auth required).
 <details>
   <summary>Routers</summary>
 
-  - <http://54.91.186.17:8080/dashboard/#/http/routers> (dev-devnet)
+  - <http://52.90.126.198:8080/dashboard/#/http/routers> (dev-devnet)
   - <http://174.129.59.220:8080/dashboard/#/http/routers> (dev-mainnet)
   - <http://3.239.214.202:8080/dashboard/#/http/routers> (main-devnet)
   - <http://44.203.11.167:8080/dashboard/#/http/routers> (main-mainnet)
