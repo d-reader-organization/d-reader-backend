@@ -55,7 +55,7 @@ careful with commas!).
 
 Then run script that will update all sops files in repo with new key.
 ```sh
-./scripts/sops-keys-update.sh
+./config/scripts/sops-keys-update.sh
 ```
 
 ## Deployment
