@@ -202,7 +202,7 @@ Accessible on http://server_ip:8080/dashboard/ (auth required).
 <details>
   <summary>Dashboard</summary>
 
-  - <http://54.91.186.17:8080/dashboard/> (dev-devnet)
+  - <http://52.90.126.19:8080/dashboard/> (dev-devnet)
   - <http://174.129.59.220:8080/dashboard/> (dev-mainnet)
   - <http://3.239.214.202:8080/dashboard/> (main-devnet)
   - <http://44.203.11.167:8080/dashboard/> (main-mainnet)

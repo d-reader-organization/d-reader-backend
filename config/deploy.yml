@@ -114,10 +114,6 @@ traefik:
     traefik.http.routers.dashboard.service: api@internal
     traefik.http.routers.dashboard.middlewares: traefik-auth
     traefik.http.middlewares.traefik-auth.basicauth.users: admin:$apr1$MmIhxigx$PFHwq/Sm1an1Bzosw1sIL1
-    traefik.http.middlewares.test-ratelimit.ratelimit.average: 200
-    traefik.http.middlewares.test-ratelimit.ratelimit.burst: 500
-    traefik.http.middlewares.test-retry.retry.attempts: 3
-    traefik.http.middlewares.test-retry.retry.initialinterval: 250ms
     # command to generate new password: htpasswd -n admin
 
 healthcheck:
