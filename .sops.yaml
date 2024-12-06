@@ -10,25 +10,29 @@ creation_rules:
     age: >-
       age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
       age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn,
-      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d
+      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d,
+      age1ptdj3gc96fyzc56ufsr0jvp6306nz6jt6y9rt6s89h8ntwpfzy9qvs22q5
 
   - path_regex: dev-mainnet\.enc
     age: >-
       age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
       age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn,
-      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d
-
+      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d,
+      age1ptdj3gc96fyzc56ufsr0jvp6306nz6jt6y9rt6s89h8ntwpfzy9qvs22q5
+                  
   - path_regex: main-mainnet\.enc
     age: >-
       age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
       age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn,
-      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d
+      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d,
+      age1ptdj3gc96fyzc56ufsr0jvp6306nz6jt6y9rt6s89h8ntwpfzy9qvs22q5
 
   - path_regex: monitoring\.enc
     age: >-
       age1lsrgw3f8jjzepm9te47su2n755at8hd7xx492p9h8j9jnlht5yzqw6hym7,
       age1mmc0rf8n6km2a5mygd457czjw9uf5t4x58yfflkta346zpylkupsjzydpn,
-      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d
+      age198srfgr6ej5j55d84tr633ykqmxe69st462t0y9ywmdqf8semg3sc3vj9d,
+      age1ptdj3gc96fyzc56ufsr0jvp6306nz6jt6y9rt6s89h8ntwpfzy9qvs22q5
 
 # gh-actions  1ls..ym7
 # bartol      mmc..dpn
