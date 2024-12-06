@@ -48,6 +48,16 @@ EDITOR="code --wait" sops config/env/dev-devnet.enc.env
 Edit `env:` in `config/deploy.yml` if secrets were removed or new ones were
 added.
 
+### How to add or remove access to env files for user
+
+Add age key in list for all environments that user should have access (be
+careful with commas!).
+
+Then run script that will update all sops files in repo with new key.
+```sh
+./scripts/sops-keys-update.sh
+```
+
 ## Deployment
 
 ### How to deploy from local machine
