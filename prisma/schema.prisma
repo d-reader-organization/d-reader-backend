@@ -797,6 +797,7 @@ model WheelReward {
   weight       Int             @default(0)
   assetAddress String?
   externalLink String?
+  isActive       Boolean       @default(true)
 }
 
 model WheelRewardReceipt {

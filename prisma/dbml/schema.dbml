@@ -727,6 +727,7 @@ Table WheelReward {
   weight Int [not null, default: 0]
   assetAddress String
   externalLink String
+  isActive Boolean [not null, default: true]
 }
 
 Table WheelRewardReceipt {
@@ -821,6 +822,7 @@ Enum ConsentType {
 Enum WheelType {
   Daily
   Weekly
+  Monthly
 }
 
 Enum WheelRewardType {
