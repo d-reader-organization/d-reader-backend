@@ -736,6 +736,11 @@ Table WheelRewardReceipt {
   status TransactionStatus [not null]
   userId Int [not null]
   user User [not null]
+  timestamp DateTime [not null]
+
+  indexes {
+    (userId, timestamp) [unique]
+  }
 }
 
 Enum Role {
@@ -831,6 +836,7 @@ Enum WheelRewardType {
   PrintEdition
   OneOfOne
   Physicals
+  None
 }
 
 Ref: User.referrerId - User.id

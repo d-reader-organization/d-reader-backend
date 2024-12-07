@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
-IsDate,
+  IsDate,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -31,17 +31,19 @@ export class CreateWheelBodyDto {
   expiresAt?: Date;
 
   @IsEnum(WheelType)
-  type: WheelType
+  type: WheelType;
 
   @IsNumber()
-  winProbability:  number;
+  winProbability: number;
 }
 
-  
 export class CreateWheelFilesDto {
-    @ApiProperty({ type: 'string', format: 'binary' })
-    @Transform(({ value }) => value[0])
-    image: Express.Multer.File | null;
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  image: Express.Multer.File | null;
 }
-  
-export class CreateWheelDto extends IntersectionType(CreateWheelBodyDto,CreateWheelFilesDto) {}
+
+export class CreateWheelDto extends IntersectionType(
+  CreateWheelBodyDto,
+  CreateWheelFilesDto,
+) {}

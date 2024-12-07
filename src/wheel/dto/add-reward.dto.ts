@@ -20,13 +20,13 @@ export class AddRewardBodyDto {
   description?: string;
 
   @IsEnum(WheelRewardType)
-  type: WheelRewardType
+  type: WheelRewardType;
 
   @IsNumber()
-  supply: number
+  supply: number;
 
   @IsNumber()
-  weight: number
+  weight: number;
 
   @IsOptional()
   @IsString()
@@ -37,13 +37,16 @@ export class AddRewardBodyDto {
   externalLink?: string;
 
   @IsNumber()
-  winProbability:  number;
+  winProbability: number;
 }
 
 export class AddRewardFilesDto {
-    @ApiProperty({ type: 'string', format: 'binary' })
-    @Transform(({ value }) => value[0])
-    image: Express.Multer.File | null;
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  image: Express.Multer.File | null;
 }
-  
-export class AddRewardDto extends IntersectionType(AddRewardBodyDto,AddRewardFilesDto) {}
+
+export class AddRewardDto extends IntersectionType(
+  AddRewardBodyDto,
+  AddRewardFilesDto,
+) {}
