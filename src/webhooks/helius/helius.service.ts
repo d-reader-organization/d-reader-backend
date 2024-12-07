@@ -1419,7 +1419,9 @@ export class HeliusService {
    */
   async reIndexAsset(asset: DAS.GetAssetResponse, candMachineAddress: string) {
     const updateAuthority = asset.authorities.find((authority) =>
-      authority.scopes.find((scope) => scope == Scope.METADATA),
+      authority.scopes.find(
+        (scope) => scope == Scope.METADATA || scope == Scope.FULL,
+      ),
     );
     const { group_value: collection } = asset.grouping.find(
       (group) => group.group_key == 'collection',
