@@ -41,6 +41,7 @@ import { MutexModule } from './mutex/mutex.module';
 import { InvestModule } from './invest/invest.module';
 import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 import { CacheModule } from './cache/cache.module';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
@@ -109,6 +110,7 @@ import { CacheModule } from './cache/cache.module';
     MutexModule,
     InvestModule,
     CacheModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [

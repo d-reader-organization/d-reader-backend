@@ -43,3 +43,6 @@ lerna-debug.log*
 devServiceAccount.json
 mainServiceAccount.json
 .cursorignore
+
+#redis
+dump.rdb
