@@ -104,64 +104,174 @@ export class WalletService {
   }
 
   async syncCoreAssets(coreAssets: DAS.GetAssetResponse[]) {
-    const collections = await this.prisma.collectibleComicCollection.findMany(
-      {},
-    );
-
-    const assets = coreAssets.filter((asset) => {
-      const group = asset.grouping.find(
-        (group) => group?.group_key == 'collection',
+    try {
+      const collections = await this.prisma.collectibleComicCollection.findMany(
+        {},
       );
-      return collections.find(
-        (collection) => group?.group_value === collection.address,
-      );
-    });
 
-    for await (const asset of assets) {
-      const group = asset.grouping.find(
-        (group) => group?.group_key == 'collection',
-      );
-      if (!group) continue;
+      const assets = coreAssets.filter((asset) => {
+        const group = asset.grouping.find(
+          (group) => group?.group_key == 'collection',
+        );
+        return collections.find(
+          (collection) => group?.group_value === collection.address,
+        );
+      });
 
-      const candyMachineReceipt =
-        await this.prisma.candyMachineReceipt.findFirst({
-          where: {
-            collectibleComics: { some: { address: asset.id } },
-          },
-        });
+      for await (const asset of assets) {
+        const group = asset.grouping.find(
+          (group) => group?.group_key == 'collection',
+        );
+        if (!group) continue;
 
-      let candyMachineAddress: string;
-      const doesReceiptExists = !!candyMachineReceipt;
+        const candyMachineReceipt =
+          await this.prisma.candyMachineReceipt.findFirst({
+            where: {
+              collectibleComics: { some: { address: asset.id } },
+            },
+          });
 
-      if (doesReceiptExists) {
-        candyMachineAddress = candyMachineReceipt.candyMachineAddress;
-      } else {
-        // Considering that there is only one core candymachine for one core collection
-        const candyMachine = await this.prisma.candyMachine.findFirst({
-          where: { collectionAddress: group.group_value },
-        });
+        let candyMachineAddress: string;
+        const doesReceiptExists = !!candyMachineReceipt;
 
-        if (!candyMachine) {
-          console.log(`Candy machine not found for ${group.group_value}`);
-          continue;
+        if (doesReceiptExists) {
+          candyMachineAddress = candyMachineReceipt.candyMachineAddress;
+        } else {
+          // Considering that there is only one core candymachine for one core collection
+          const candyMachine = await this.prisma.candyMachine.findFirst({
+            where: { collectionAddress: group.group_value },
+          });
+
+          if (!candyMachine) {
+            console.log(`Candy machine not found for ${group.group_value}`);
+            continue;
+          }
+
+          candyMachineAddress = candyMachine.address;
         }
 
-        candyMachineAddress = candyMachine.address;
+        const indexedAsset = await this.heliusService.reIndexAsset(
+          asset,
+          candyMachineAddress,
+        );
+
+        if (!doesReceiptExists) {
+          const UNKNOWN = 'UNKNOWN';
+          const { owner, ownerAddress } = indexedAsset.digitalAsset;
+          const userId: number = owner?.userId;
+
+          const coupon = await this.prisma.candyMachineCoupon.findFirst({
+            where: {
+              candyMachineAddress,
+              type: CouponType.PublicUser,
+              currencySettings: {
+                some: {
+                  splTokenAddress: WRAPPED_SOL_MINT.toString(),
+                },
+              },
+            },
+          });
+
+          const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+            collectibleComics: { connect: { address: indexedAsset.address } },
+            candyMachine: { connect: { address: candyMachineAddress } },
+            buyer: {
+              connectOrCreate: {
+                where: { address: ownerAddress },
+                create: { address: ownerAddress },
+              },
+            },
+            status: TransactionStatus.Confirmed,
+            numberOfItems: 1,
+            price: 0,
+            timestamp: new Date(),
+            description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
+            splTokenAddress: UNKNOWN,
+            transactionSignature: UNKNOWN,
+            couponId: coupon.id,
+          };
+
+          if (userId) {
+            receiptData.user = { connect: { id: userId } };
+          }
+
+          await this.prisma.candyMachineReceipt.create({
+            data: receiptData,
+          });
+        }
+
+        this.heliusService.subscribeTo(asset.id);
       }
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
-      const indexedAsset = await this.heliusService.reIndexAsset(
-        asset,
-        candyMachineAddress,
-      );
+  async syncLegacyAssets(
+    candyMachines: { address: string }[],
+    compeleteAssets: string[],
+    legacyAssets: DAS.GetAssetResponse[],
+  ) {
+    try {
+      const unsyncedLegacyAssets = (
+        await Promise.all(
+          legacyAssets.map(async (asset) => {
+            const candyMachineAddress = findOurCandyMachine(
+              this.metaplex,
+              candyMachines,
+              asset.creators,
+            );
+            if (candyMachineAddress) {
+              const updateAuthority =
+                asset.authorities?.find((authority) =>
+                  authority.scopes.find((scope) => scope == Scope.METADATA),
+                ) ??
+                asset.authorities.find((authority) =>
+                  authority.scopes.find((scope) => scope == Scope.FULL),
+                );
 
-      if (!doesReceiptExists) {
-        const UNKNOWN = 'UNKNOWN';
-        const { owner, ownerAddress } = indexedAsset.digitalAsset;
-        const userId: number = owner?.userId;
+              const collection = asset.grouping.find(
+                (group) => group?.group_key == 'collection',
+              );
+              const isIndexed = await doesWalletIndexCorrectly(
+                asset.id,
+                asset.content.json_uri,
+                updateAuthority?.address ??
+                  this.metaplex.identity().publicKey.toString(),
+                candyMachineAddress,
+                collection.group_value,
+                asset.creators,
+                compeleteAssets,
+              );
+              if (!isIndexed) {
+                return asset;
+              }
+            }
+          }),
+        )
+      ).filter(Boolean);
+
+      for await (const asset of unsyncedLegacyAssets) {
+        const candyMachine = findOurCandyMachine(
+          this.metaplex,
+          candyMachines,
+          asset.creators,
+        );
+
+        const indexedAsset = await this.heliusService.reIndexAsset(
+          asset,
+          candyMachine,
+        );
+        const doesReceiptExists =
+          await this.prisma.candyMachineReceipt.findFirst({
+            where: {
+              collectibleComics: { some: { address: indexedAsset.address } },
+            },
+          });
 
         const coupon = await this.prisma.candyMachineCoupon.findFirst({
           where: {
-            candyMachineAddress,
+            candyMachineAddress: candyMachine,
             type: CouponType.PublicUser,
             currencySettings: {
               some: {
@@ -171,147 +281,44 @@ export class WalletService {
           },
         });
 
-        const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          collectibleComics: { connect: { address: indexedAsset.address } },
-          candyMachine: { connect: { address: candyMachineAddress } },
-          buyer: {
-            connectOrCreate: {
-              where: { address: ownerAddress },
-              create: { address: ownerAddress },
+        if (!doesReceiptExists) {
+          const UNKNOWN = 'UNKNOWN';
+          const { owner, ownerAddress } = indexedAsset.digitalAsset;
+          const userId: number = owner?.userId;
+
+          const receiptData: Prisma.CandyMachineReceiptCreateInput = {
+            collectibleComics: { connect: { address: indexedAsset.address } },
+            candyMachine: { connect: { address: candyMachine } },
+            buyer: {
+              connectOrCreate: {
+                where: { address: ownerAddress },
+                create: { address: ownerAddress },
+              },
             },
-          },
-          status: TransactionStatus.Confirmed,
-          numberOfItems: 1,
-          price: 0,
-          timestamp: new Date(),
-          description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
-          splTokenAddress: UNKNOWN,
-          transactionSignature: UNKNOWN,
-          couponId: coupon.id,
-        };
+            status: TransactionStatus.Confirmed,
+            numberOfItems: 1,
+            price: 0,
+            timestamp: new Date(),
+            description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
+            splTokenAddress: UNKNOWN,
+            transactionSignature: UNKNOWN,
+            // assiging public coupon to the receipt for unknown receipts
+            couponId: coupon.id,
+          };
 
-        if (userId) {
-          receiptData.user = { connect: { id: userId } };
-        }
-
-        await this.prisma.candyMachineReceipt.create({
-          data: receiptData,
-        });
-      }
-
-      this.heliusService.subscribeTo(asset.id);
-    }
-  }
-
-  async syncLegacyAssets(
-    candyMachines: { address: string }[],
-    compeleteAssets: string[],
-    legacyAssets: DAS.GetAssetResponse[],
-  ) {
-    const unsyncedLegacyAssets = (
-      await Promise.all(
-        legacyAssets.map(async (asset) => {
-          const candyMachineAddress = findOurCandyMachine(
-            this.metaplex,
-            candyMachines,
-            asset.creators,
-          );
-          if (candyMachineAddress) {
-            const updateAuthority =
-              asset.authorities?.find((authority) =>
-                authority.scopes.find((scope) => scope == Scope.METADATA),
-              ) ??
-              asset.authorities.find((authority) =>
-                authority.scopes.find((scope) => scope == Scope.FULL),
-              );
-
-            const collection = asset.grouping.find(
-              (group) => group?.group_key == 'collection',
-            );
-            const isIndexed = await doesWalletIndexCorrectly(
-              asset.id,
-              asset.content.json_uri,
-              updateAuthority?.address ??
-                this.metaplex.identity().publicKey.toString(),
-              candyMachineAddress,
-              collection.group_value,
-              asset.creators,
-              compeleteAssets,
-            );
-            if (!isIndexed) {
-              return asset;
-            }
+          if (userId) {
+            receiptData.user = { connect: { id: userId } };
           }
-        }),
-      )
-    ).filter(Boolean);
 
-    for await (const asset of unsyncedLegacyAssets) {
-      const candyMachine = findOurCandyMachine(
-        this.metaplex,
-        candyMachines,
-        asset.creators,
-      );
-
-      const indexedAsset = await this.heliusService.reIndexAsset(
-        asset,
-        candyMachine,
-      );
-      const doesReceiptExists = await this.prisma.candyMachineReceipt.findFirst(
-        {
-          where: {
-            collectibleComics: { some: { address: indexedAsset.address } },
-          },
-        },
-      );
-
-      const coupon = await this.prisma.candyMachineCoupon.findFirst({
-        where: {
-          candyMachineAddress: candyMachine,
-          type: CouponType.PublicUser,
-          currencySettings: {
-            some: {
-              splTokenAddress: WRAPPED_SOL_MINT.toString(),
-            },
-          },
-        },
-      });
-
-      if (!doesReceiptExists) {
-        const UNKNOWN = 'UNKNOWN';
-        const { owner, ownerAddress } = indexedAsset.digitalAsset;
-        const userId: number = owner?.userId;
-
-        const receiptData: Prisma.CandyMachineReceiptCreateInput = {
-          collectibleComics: { connect: { address: indexedAsset.address } },
-          candyMachine: { connect: { address: candyMachine } },
-          buyer: {
-            connectOrCreate: {
-              where: { address: ownerAddress },
-              create: { address: ownerAddress },
-            },
-          },
-          status: TransactionStatus.Confirmed,
-          numberOfItems: 1,
-          price: 0,
-          timestamp: new Date(),
-          description: `${indexedAsset.address} minted ${asset.content.metadata.name} for ${UNKNOWN} SOL.`,
-          splTokenAddress: UNKNOWN,
-          transactionSignature: UNKNOWN,
-          // assiging public coupon to the receipt for unknown receipts
-          couponId: coupon.id,
-        };
-
-        if (userId) {
-          receiptData.user = { connect: { id: userId } };
+          await this.prisma.candyMachineReceipt.create({
+            data: receiptData,
+          });
         }
 
-        await this.prisma.candyMachineReceipt.create({
-          data: receiptData,
-        });
+        this.heliusService.subscribeTo(asset.id);
       }
-
-      this.heliusService.subscribeTo(asset.id);
+    } catch (e) {
+      console.error(e);
     }
   }
 
