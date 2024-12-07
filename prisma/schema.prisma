@@ -769,6 +769,7 @@ enum WheelRewardType {
   PrintEdition
   OneOfOne
   Physicals
+  None
 }
 
 model Wheel {
@@ -807,6 +808,8 @@ model WheelRewardReceipt {
   status               TransactionStatus
   userId               Int
   user                 User              @relation(fields: [userId], references: [id])
+  timestamp            DateTime
+  @@unique([userId,timestamp])
 }
 
 // TODO: remove or change the way referrals work
