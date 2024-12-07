@@ -143,4 +143,8 @@ export class WebSocketGateway {
       assetDto,
     );
   }
+
+  async emitMintTransactionResponse(jobId: string, transaction: string) {
+    return this.server.sockets.emit(`mint-transaction/${jobId}`, [transaction]);
+  }
 }
