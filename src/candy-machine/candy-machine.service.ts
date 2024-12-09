@@ -38,7 +38,7 @@ import {
 } from '../utils/helpers';
 import {
   MetadataFile,
-  getAuthorizationSigner,
+  // getAuthorizationSigner,
   getConnection,
   getThirdPartySigner,
   getThirdPartyUmiSignature,
@@ -122,7 +122,7 @@ import { getAssetsByGroup } from '../utils/das';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
 import { AddCandyMachineCouponDto } from './dto/add-candy-machine-coupon.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
-import { decodeUmiTransaction, verifySignature } from '../utils/transactions';
+import { decodeUmiTransaction } from '../utils/transactions';
 import { getMintV1InstructionDataSerializer } from '@metaplex-foundation/mpl-core-candy-machine/dist/src/generated/instructions/mintV1';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { isEmpty, isNull } from 'lodash';
@@ -521,19 +521,22 @@ export class CandyMachineService {
     });
 
     const numberOfItems = assetAccounts.length;
-    const authorizationSigner = getAuthorizationSigner();
-    const mintMessageBytes = mintTransaction.message.serialize();
-    const signautres = mintTransaction.signatures;
+    //todo: uncomment this later
+
+    // const authorizationSigner = getAuthorizationSigner();
+    // const mintMessageBytes = mintTransaction.message.serialize();
+    // const signautres = mintTransaction.signatures;
+
     /** Verify signature for authorized signer */
-    if (
-      !verifySignature(
-        mintMessageBytes,
-        signautres,
-        authorizationSigner.toBytes(),
-      )
-    ) {
-      throw new UnauthorizedException('Unverified Transaction');
-    }
+    // if (
+    //   !verifySignature(
+    //     mintMessageBytes,
+    //     signautres,
+    //     authorizationSigner.toBytes(),
+    //   )
+    // ) {
+    //   throw new UnauthorizedException('Unverified Transaction');
+    // }
 
     /** sign and send mint transaction */
     const umiMintTransaction = decodeUmiTransaction(transaction);

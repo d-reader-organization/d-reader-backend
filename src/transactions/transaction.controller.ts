@@ -52,8 +52,8 @@ import {
 import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
 import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
-import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
-import { MINT_MUTEX_IDENTIFIER, SOL_ADDRESS } from 'src/constants';
+// import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
+import { SOL_ADDRESS } from 'src/constants';
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
@@ -164,9 +164,10 @@ export class TransactionController {
     return [transaction];
   }
 
-  @UseInterceptors(
-    MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
-  )
+  // todo: uncomment this later
+  // @UseInterceptors(
+  //   MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
+  // )
   @OptionalUserAuth()
   @Post('/send-mint-transaction/:walletAddress')
   async sendMintTransaction(
