@@ -367,7 +367,7 @@ export class CandyMachineService {
       candyMachineAddress,
       collectionAddress,
       candyGuardBufferString: candyGuardBuffer.toString('base64'),
-      lookupTableAddress,
+      lookupTableAddress: lookupTableAddress ?? undefined,
       lookupTableBufferString: lookupTableBuffer
         ? lookupTableBuffer.toString('base64')
         : undefined,
