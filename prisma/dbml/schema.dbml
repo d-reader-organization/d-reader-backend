@@ -632,6 +632,7 @@ Table PrintEditionCollection {
   isNSFW Boolean [not null, default: false]
   verifiedAt DateTime
   publishedAt DateTime
+  isSponsored Boolean [not null, default: false]
   printEditionSaleConfig PrintEditionSaleConfig
 }
 
@@ -717,17 +718,14 @@ Table Wheel {
 
 Table WheelReward {
   id Int [pk, increment]
-  name String [not null]
-  description String [not null, default: '']
-  image String [not null, default: '']
+  typeId String [not null]
   type WheelRewardType [not null]
   wheel Wheel [not null]
   wheelId Int [not null]
   supply Int [not null, default: 0]
   weight Int [not null, default: 0]
-  assetAddress String
-  externalLink String
   isActive Boolean [not null, default: true]
+  externalLink String
 }
 
 Table WheelRewardReceipt {
@@ -742,6 +740,23 @@ Table WheelRewardReceipt {
   indexes {
     (userId, timestamp) [unique]
   }
+}
+
+Table CoverDrop {
+  id Int [pk, increment]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  collectionAddress String [not null]
+  rarity CoverRarity [not null]
+}
+
+Table PhysicalDrop {
+  id Int [pk, increment]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  claimFormLink String [not null]
 }
 
 Enum Role {
@@ -831,13 +846,16 @@ Enum WheelType {
 }
 
 Enum WheelRewardType {
-  AssetFromVault
   CnftDrop
   CollectibleComic
   PrintEdition
   OneOfOne
   Physicals
   None
+}
+
+Enum CoverRarity {
+  Legendary
 }
 
 Ref: User.referrerId - User.id

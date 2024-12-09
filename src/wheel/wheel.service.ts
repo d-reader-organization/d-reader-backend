@@ -8,15 +8,24 @@ import { validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
 import { addHours, subHours } from 'date-fns';
 import { WheelReward, WheelRewardType } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
+import { DigitalAssetService } from '../digital-asset/digital-asset.service';
+import { Connection } from '@solana/web3.js';
+import { getConnection, getTreasuryPublicKey } from '../utils/metaplex';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
 @Injectable()
 export class WheelService {
+  private readonly connection: Connection;
   constructor(
     private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
+    private readonly digitalAssetService: DigitalAssetService,
     private readonly s3: s3Service,
-  ) {}
+  ) {
+    this.connection = getConnection();
+  }
 
   async create(createWheelDto: CreateWheelDto) {
     const { name, startsAt, expiresAt, winProbability, image } = createWheelDto;
@@ -40,18 +49,9 @@ export class WheelService {
   }
 
   async addReward(wheelId: number, addRewardDto: AddRewardDto) {
-    const { image } = addRewardDto;
-
-    const wheel = await this.prisma.wheel.findUnique({
-      where: { id: wheelId },
-    });
-    const s3Folder = getS3Folder(wheel.s3BucketSlug);
-    const imageKey = await this.s3.uploadFile(image, { s3Folder });
-
     const reward = await this.prisma.wheelReward.create({
       data: {
         ...addRewardDto,
-        image: imageKey,
         wheel: {
           connect: { id: wheelId },
         },
@@ -77,7 +77,7 @@ export class WheelService {
     });
     return wheel;
   }
-  async spin(wheelId: number, userId: number) {
+  async spin(wheelId: number, userId: number, walletAddress: string) {
     const wheel = await this.prisma.wheel.findUnique({
       where: { id: wheelId },
       include: { rewards: true },
@@ -162,13 +162,81 @@ export class WheelService {
       return WheelRewardType.None;
     }
 
-    switch(selectedReward.type){
-      case WheelRewardType.CnftDrop: return;
+    //todo: create reward receipt
+    const typeId = selectedReward.typeId;
+    switch (selectedReward.type) {
+      case WheelRewardType.CnftDrop:
+        return this.mintCoverDrop(typeId, walletAddress);
+      case WheelRewardType.Physicals:
+        return this.sendPhysicalClaimEmail(typeId, userId);
+      case WheelRewardType.PrintEdition:
+        return this.mintPrintEdition(typeId, walletAddress);
+      case WheelRewardType.OneOfOne:
+        return this.transferOneOfOne(typeId, walletAddress);
+      case WheelRewardType.CollectibleComic:
+        return this.transferCollectibleComic(typeId, walletAddress);
+      default:
+        return WheelRewardType.None;
     }
+  }
 
-    /**
-     *
-     * perform actions based on reward won
-     */
+  async mintCoverDrop(id: string, winnerAddress: string) {
+    const dropData = await this.prisma.coverDrop.findUnique({
+      where: { id: +id },
+    });
+    //todo: mint a cnft
+  }
+
+  async sendPhysicalClaimEmail(id: string, userId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const physicalDrop = await this.prisma.physicalDrop.findUnique({
+      where: { id: +id },
+    });
+    await this.mailService.claimPhysicalDrop(physicalDrop, user);
+    return physicalDrop;
+  }
+
+  async mintPrintEdition(collectionAddress: string, winnerAddress: string) {
+    const transaction =
+      await this.digitalAssetService.createBuyPrintEditionTransaction({
+        masterEditionAddress: collectionAddress,
+        buyer: winnerAddress,
+      });
+    const signature = await this.connection.sendEncodedTransaction(
+      transaction,
+      { skipPreflight: true },
+    );
+    const printEdition = await this.prisma.printEdition.findUnique({
+      where: { address: collectionAddress },
+    });
+    return printEdition;
+  }
+
+  async transferOneOfOne(collectionAddress: string, winnerAddress: string) {
+    const treasuryAddress = getTreasuryPublicKey();
+    const oneOfOne = await this.prisma.oneOfOne.findFirst({
+      where: {
+        collectionAddress,
+        digitalAsset: { ownerAddress: treasuryAddress.toString() },
+      },
+    });
+    //todo: transfer to winnerAddress
+    return oneOfOne;
+  }
+
+  async transferCollectibleComic(
+    collectionAddress: string,
+    winnerAddress: string,
+  ) {
+    const treasuryAddress = getTreasuryPublicKey();
+    //todo: should we specify a certain rarity and metadata ?
+    const collectibleComic = await this.prisma.collectibleComic.findFirst({
+      where: {
+        candyMachine: { collectionAddress },
+        digitalAsset: { ownerAddress: treasuryAddress.toString() },
+      },
+    });
+    //todo: transfer to winnerAddress
+    return collectibleComic;
   }
 }

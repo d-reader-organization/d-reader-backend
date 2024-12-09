@@ -8,6 +8,13 @@ export function TransformStringToNumber(options?: TransformOptions) {
   );
 }
 
+export function TransformNumberToString(options?: TransformOptions) {
+  return Transform(
+    ({ value }) => (typeof value === 'number' ? value.toString() : value),
+    options,
+  );
+}
+
 export function TransformStringToBoolean(options?: TransformOptions) {
   return Transform(({ value, key }) => {
     if (typeof value === 'string') {
