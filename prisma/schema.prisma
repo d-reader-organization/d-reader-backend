@@ -688,6 +688,7 @@ model PrintEditionCollection {
   isNSFW                 Boolean                 @default(false)
   verifiedAt             DateTime?
   publishedAt            DateTime?
+  isSponsored            Boolean                 @default(false)
   printEditionSaleConfig PrintEditionSaleConfig?
 }
 
@@ -762,12 +763,12 @@ enum WheelType {
 }
 
 enum WheelRewardType {
-  AssetFromVault
   CnftDrop
   CollectibleComic
   PrintEdition
   OneOfOne
   Physicals
+  Fungibles
   None
 }
 
@@ -776,7 +777,7 @@ model Wheel {
   name           String
   s3BucketSlug   String        @unique
   description    String        @default("")
-  image          String        @default("")
+  
   type           WheelType
   startsAt       DateTime
   expiresAt      DateTime?
@@ -787,28 +788,39 @@ model Wheel {
 
 model WheelReward {
   id           Int             @id @default(autoincrement())
-  name         String
-  description  String          @default("")
-  image        String          @default("")
+  name              String
+  description       String      @default("")
+  image          String        @default("")
+  typeId       String
   type         WheelRewardType
   wheel        Wheel           @relation(fields: [wheelId], references: [id])
   wheelId      Int
-  supply       Int             @default(0)
   weight       Int             @default(0)
-  assetAddress String?
-  externalLink String?
-  isActive       Boolean       @default(true)
+  digitalDrops  DigitalDrop[]
+  physicalDrops  PhysicalDrop[]
+  isActive     Boolean         @default(true)
 }
 
-model WheelRewardReceipt {
-  id                   Int               @id @default(autoincrement())
-  descripton           String
-  transactionSignature String?
-  status               TransactionStatus
+
+model DigitalDrop {
+  id                Int         @id @default(autoincrement())
+  image             String      @default("")
+  address           String
+  userId               Int
+  amount               Int      //1 for collectibles 
+  user                 User              @relation(fields: [userId], references: [id])
+  claimedAt?         DateTime
+}
+
+model PhysicalDrop {
+  id            Int    @id @default(autoincrement())
+  name          String
+  description   String @default("")
+  image         String @default("")
+  claimLink String
   userId               Int
   user                 User              @relation(fields: [userId], references: [id])
-  timestamp            DateTime
-  @@unique([userId,timestamp])
+  claimedAt?         DateTime
 }
 
 // TODO: remove or change the way referrals work
