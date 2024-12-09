@@ -341,15 +341,18 @@ export class CandyMachineService {
 
     const mintStart = Date.now();
 
-    const lookupTableCacheKey =
-      CachePath.lookupTableAccounts(lookupTableAddress);
-    const lookupTableBuffer = await this.cacheService.fetchAndCache(
-      lookupTableCacheKey,
-      getLookupTableInfo,
-      2 * HOUR_SECONDS,
-      this.connection,
-      lookupTableAddress,
-    );
+    let lookupTableBuffer: Buffer = undefined;
+    if (lookupTableAddress) {
+      const lookupTableCacheKey =
+        CachePath.lookupTableAccounts(lookupTableAddress);
+      lookupTableBuffer = await this.cacheService.fetchAndCache(
+        lookupTableCacheKey,
+        getLookupTableInfo,
+        2 * HOUR_SECONDS,
+        this.connection,
+        lookupTableAddress,
+      );
+    }
 
     const cacheKey = CachePath.candyGuard(mintAuthority);
     const candyGuardBuffer = await this.cacheService.fetchAndCache(
@@ -365,7 +368,9 @@ export class CandyMachineService {
       collectionAddress,
       candyGuardBufferString: candyGuardBuffer.toString('base64'),
       lookupTableAddress,
-      lookupTableBufferString: lookupTableBuffer.toString('base64'),
+      lookupTableBufferString: lookupTableBuffer
+        ? lookupTableBuffer.toString('base64')
+        : undefined,
       minter: walletAddress,
       label,
       numberOfItems,
