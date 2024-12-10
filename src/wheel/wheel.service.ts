@@ -7,17 +7,40 @@ import { isNull, kebabCase } from 'lodash';
 import { validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
 import { addHours, subHours } from 'date-fns';
-import { WheelReward, WheelRewardType } from '@prisma/client';
+import { Drop, WheelReward, WheelRewardType } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
 import { Connection } from '@solana/web3.js';
-import { getConnection, getTreasuryPublicKey } from '../utils/metaplex';
+import {
+  getConnection,
+  getIdentityUmiSignature,
+  getTreasuryPublicKey,
+  getTreasuryUmiPublicKey,
+  initUmi,
+} from '../utils/metaplex';
+import {
+  setComputeUnitPrice,
+  transferTokens,
+  transferSol,
+  findAssociatedTokenPda,
+} from '@metaplex-foundation/mpl-toolbox';
+import {
+  createNoopSigner,
+  lamports,
+  publicKey,
+  TransactionBuilder,
+  Umi,
+} from '@metaplex-foundation/umi';
+import { MIN_COMPUTE_PRICE, SOL_ADDRESS } from 'src/constants';
+import { base58 } from '@metaplex-foundation/umi/serializers';
+import { transfer } from '@metaplex-foundation/mpl-core';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
 @Injectable()
 export class WheelService {
   private readonly connection: Connection;
+  private readonly umi: Umi;
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
@@ -25,6 +48,7 @@ export class WheelService {
     private readonly s3: s3Service,
   ) {
     this.connection = getConnection();
+    this.umi = initUmi();
   }
 
   async create(createWheelDto: CreateWheelDto) {
@@ -49,9 +73,15 @@ export class WheelService {
   }
 
   async addReward(wheelId: number, addRewardDto: AddRewardDto) {
+    const wheel = await this.prisma.wheel.findUnique({where:{id:wheelId}});
+
+    const s3Folder = getS3Folder(wheel.s3BucketSlug);
+    const image = await this.s3.uploadFile(addRewardDto.image, { s3Folder });
+    
     const reward = await this.prisma.wheelReward.create({
       data: {
         ...addRewardDto,
+        image,
         wheel: {
           connect: { id: wheelId },
         },
@@ -61,12 +91,12 @@ export class WheelService {
     return reward;
   }
 
-  async removeReward(rewardId: number) {
-    await this.prisma.wheelReward.update({
-      where: { id: rewardId },
-      data: { isActive: false },
-    });
-  }
+  // async removeReward(rewardId: number) {
+  //   await this.prisma.wheelReward.update({
+  //     where: { id: rewardId },
+  //     data: { isActive: false },
+  //   });
+  // }
 
   async update() {}
   async updateReward() {}
@@ -80,7 +110,9 @@ export class WheelService {
   async spin(wheelId: number, userId: number, walletAddress: string) {
     const wheel = await this.prisma.wheel.findUnique({
       where: { id: wheelId },
-      include: { rewards: true },
+      include: {
+        rewards: { include: { drops: { where: { isActive: true } } } },
+      },
     });
     const now = new Date();
     if (!wheel.isActive || wheel.startsAt > now) {
@@ -93,12 +125,12 @@ export class WheelService {
 
     const twentyFourHoursAgo = subHours(now, 24);
     const userLastWheelReceipt = await this.prisma.wheelRewardReceipt.findFirst(
-      { where: { timestamp: { gte: twentyFourHoursAgo }, userId } },
+      { where: { createdAt: { gte: twentyFourHoursAgo }, userId } },
     );
     const isInCoolDownPeriod = !isNull(userLastWheelReceipt);
 
     if (isInCoolDownPeriod) {
-      const nextSpinDate = addHours(userLastWheelReceipt.timestamp, 24);
+      const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
       const timeDiff = nextSpinDate.getTime() - now.getTime();
       const hours = Math.floor(timeDiff / (1000 * 60 * 60));
       const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
@@ -117,126 +149,265 @@ export class WheelService {
       );
     }
 
-    const winningSpin = Math.random() * 100;
+    const winningSpin = Math.floor(1 + Math.random() * 100);
     if (winningSpin > 50) {
-      return WheelRewardType.None;
+      return this.createReceiptForNoReward(wheelId, userId);
     }
 
     const availableRewards = wheel.rewards.filter(
-      (reward) => reward.supply > 0,
+      (reward) => reward.drops.length > 0,
     );
-    const rewardPool: WheelReward[] = [];
+    const dropPool: { drop: Drop; rewardType: WheelRewardType }[] = [];
+    //todo: check this algo
     availableRewards.forEach((reward) => {
       // Multiply supply by weight for its contribution
-      const weightedCount = reward.supply * reward.weight;
-      for (let i = 0; i < weightedCount; i++) {
-        rewardPool.push(reward);
-      }
+      reward.drops.forEach((drop) => {
+        for (let i = 0; i < reward.weight; i++) {
+          dropPool.push({ drop, rewardType: reward.type });
+        }
+      });
     });
 
-    // select a reward on random.
-    const selectedReward =
-      rewardPool[Math.floor(Math.random() * rewardPool.length)];
-    const winningReward = await this.prisma.$transaction(async (tx) => {
-      const reward = await tx.wheelReward.findUnique({
-        where: { id: selectedReward.id },
+    // select a drop on random.
+    const { drop: selectedDrop, rewardType } =
+      dropPool[Math.floor(Math.random() * dropPool.length)];
+
+    const winningDrop = await this.prisma.$transaction(async (tx) => {
+      const drop = await tx.drop.findUnique({
+        where: { id: selectedDrop.id },
       });
 
-      if (reward.supply <= 0) {
+      if (!drop.isActive) {
         return undefined;
       }
 
-      const updatedReward = await tx.wheelReward.update({
-        where: { id: selectedReward.id },
-        data: {
-          supply: {
-            decrement: 1,
-          },
-        },
+      const winningDrop = await tx.drop.update({
+        where: { id: selectedDrop.id },
+        data: { isActive: false },
       });
 
-      return updatedReward;
+      return winningDrop;
     });
 
-    if (!winningReward) {
-      return WheelRewardType.None;
+    if (!winningDrop) {
+      return this.createReceiptForNoReward(wheelId, userId);
     }
 
-    //todo: create reward receipt
-    const typeId = selectedReward.typeId;
-    switch (selectedReward.type) {
-      case WheelRewardType.CnftDrop:
-        return this.mintCoverDrop(typeId, walletAddress);
+    switch (rewardType) {
       case WheelRewardType.Physicals:
-        return this.sendPhysicalClaimEmail(typeId, userId);
-      case WheelRewardType.PrintEdition:
-        return this.mintPrintEdition(typeId, walletAddress);
-      case WheelRewardType.OneOfOne:
-        return this.transferOneOfOne(typeId, walletAddress);
-      case WheelRewardType.CollectibleComic:
-        return this.transferCollectibleComic(typeId, walletAddress);
+        return this.sendPhysicalClaimEmail(winningDrop, userId);
+      case WheelRewardType.PrintEdition ||
+        WheelRewardType.OneOfOne ||
+        WheelRewardType.CollectibleComic:
+        return this.transferCollectibleFromVault(
+          winningDrop,
+          walletAddress,
+          userId,
+          rewardType,
+        );
+      case WheelRewardType.Fungibles:
+        return this.transferFungibleFromVault(
+          winningDrop,
+          walletAddress,
+          userId,
+        );
       default:
         return WheelRewardType.None;
     }
   }
 
-  async mintCoverDrop(id: string, winnerAddress: string) {
-    const dropData = await this.prisma.coverDrop.findUnique({
-      where: { id: +id },
+  async createReceiptForNoReward(wheelId: number, userId: number) {
+    const noReward = await this.prisma.wheelReward.findFirst({
+      where: { wheelId, type: WheelRewardType.None },
     });
-    //todo: mint a cnft
-  }
-
-  async sendPhysicalClaimEmail(id: string, userId: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const physicalDrop = await this.prisma.physicalDrop.findUnique({
-      where: { id: +id },
-    });
-    await this.mailService.claimPhysicalDrop(physicalDrop, user);
-    return physicalDrop;
-  }
-
-  async mintPrintEdition(collectionAddress: string, winnerAddress: string) {
-    const transaction =
-      await this.digitalAssetService.createBuyPrintEditionTransaction({
-        masterEditionAddress: collectionAddress,
-        buyer: winnerAddress,
-      });
-    const signature = await this.connection.sendEncodedTransaction(
-      transaction,
-      { skipPreflight: true },
-    );
-    const printEdition = await this.prisma.printEdition.findUnique({
-      where: { address: collectionAddress },
-    });
-    return printEdition;
-  }
-
-  async transferOneOfOne(collectionAddress: string, winnerAddress: string) {
-    const treasuryAddress = getTreasuryPublicKey();
-    const oneOfOne = await this.prisma.oneOfOne.findFirst({
-      where: {
-        collectionAddress,
-        digitalAsset: { ownerAddress: treasuryAddress.toString() },
+    const receipt = await this.prisma.wheelRewardReceipt.create({
+      data: {
+        user: { connect: { id: userId } },
+        createdAt: new Date(),
+        reward: { connect: { id: noReward.id } },
       },
     });
-    //todo: transfer to winnerAddress
-    return oneOfOne;
+
+    return receipt;
   }
 
-  async transferCollectibleComic(
-    collectionAddress: string,
-    winnerAddress: string,
+  async sendPhysicalClaimEmail(winningDrop: Drop, userId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const physicalItem = await this.prisma.physicalItem.findUnique({
+      where: { id: winningDrop.itemId },
+    });
+    await this.mailService.claimPhysicalDrop(physicalItem, user);
+    const receipt = await this.prisma.wheelRewardReceipt.create({
+      data: {
+        dropId: winningDrop.id,
+        user: { connect: { id: userId } },
+        createdAt: new Date(),
+        reward: { connect: { id: winningDrop.rewardId } },
+      },
+    });
+
+    return receipt;
+  }
+
+  async transferFungibleFromVault(
+    winningDrop: Drop,
+    walletAddress: string,
+    userId: number,
+  ) {
+    const splToken = await this.prisma.splToken.findUnique({
+      where: { address: winningDrop.itemId },
+    });
+    const amount = winningDrop.amount;
+
+    const isSol = splToken.address === SOL_ADDRESS;
+
+    let builder = setComputeUnitPrice(this.umi, {
+      microLamports: MIN_COMPUTE_PRICE,
+    });
+    const treasuryPublicKey = getTreasuryUmiPublicKey();
+    const signer = createNoopSigner(treasuryPublicKey);
+    const destination = publicKey(walletAddress);
+
+    let transferBuilder: TransactionBuilder;
+
+    //todo: check if amount needs to be in smallest unit or not .
+    if (isSol) {
+      transferBuilder = transferSol(this.umi, {
+        source: signer,
+        destination,
+        amount: lamports(amount),
+      });
+    } else {
+      const mint = publicKey(splToken.address);
+      const destinationAta = findAssociatedTokenPda(this.umi, {
+        mint,
+        owner: destination,
+      });
+      transferBuilder = transferTokens(this.umi, {
+        source: treasuryPublicKey,
+        destination: destinationAta,
+        amount,
+      });
+    }
+
+    builder = builder.add(transferBuilder);
+    const transaction = await builder.buildAndSign({
+      ...this.umi,
+      payer: signer,
+    });
+    const signedTransaction = await getIdentityUmiSignature(transaction);
+
+    const latestBlockHash = await this.umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
+      skipPreflight: true,
+    });
+    const transactionSignature = base58.deserialize(signature)[0];
+
+    await this.umi.rpc.confirmTransaction(signature, {
+      commitment: 'confirmed',
+      strategy: { type: 'blockhash', ...latestBlockHash },
+    });
+    const receipt = await this.prisma.wheelRewardReceipt.create({
+      data: {
+        transactionSignature,
+        dropId: winningDrop.id,
+        wallet: { connect: { address: walletAddress } },
+        user: { connect: { id: userId } },
+        createdAt: new Date(),
+        claimedAt: new Date(),
+        reward: { connect: { id: winningDrop.rewardId } },
+      },
+    });
+
+    return receipt;
+  }
+
+  async transferCollectibleFromVault(
+    winningDrop: Drop,
+    walletAddress: string,
+    userId: number,
+    rewardType: WheelRewardType,
   ) {
     const treasuryAddress = getTreasuryPublicKey();
-    //todo: should we specify a certain rarity and metadata ?
-    const collectibleComic = await this.prisma.collectibleComic.findFirst({
-      where: {
-        candyMachine: { collectionAddress },
-        digitalAsset: { ownerAddress: treasuryAddress.toString() },
+    let ownerAddress: string;
+    let collectionAddress: string;
+
+    /** assetAddress */
+    const address = winningDrop.itemId;
+    if (rewardType == WheelRewardType.CollectibleComic) {
+      const collectibleComic = await this.prisma.collectibleComic.findUnique({
+        where: { address },
+        include: {
+          candyMachine: { include: { collection: true } },
+          digitalAsset: true,
+        },
+      });
+      collectionAddress = collectibleComic.candyMachine.collectionAddress;
+      ownerAddress = collectibleComic.digitalAsset.ownerAddress;
+    } else if (rewardType == WheelRewardType.PrintEdition) {
+      const printEdition = await this.prisma.printEdition.findUnique({
+        where: { address },
+        include: { digitalAsset: true },
+      });
+      collectionAddress = printEdition.collectionAddress;
+      ownerAddress = printEdition.digitalAsset.ownerAddress;
+    } else {
+      const oneOfOne = await this.prisma.oneOfOne.findUnique({
+        where: { address },
+        include: { digitalAsset: true },
+      });
+      collectionAddress = oneOfOne.collectionAddress;
+      ownerAddress = oneOfOne.digitalAsset.ownerAddress;
+    }
+
+    let builder = setComputeUnitPrice(this.umi, {
+      microLamports: MIN_COMPUTE_PRICE,
+    });
+    builder = builder.add(
+      transfer(this.umi, {
+        asset: {
+          publicKey: publicKey(address),
+          owner: publicKey(treasuryAddress),
+        },
+        collection: { publicKey: publicKey(collectionAddress) },
+        newOwner: publicKey(walletAddress),
+      }),
+    );
+
+    const treasuryPublicKey = getTreasuryUmiPublicKey();
+    const signer = createNoopSigner(treasuryPublicKey);
+    const transaction = await builder.buildAndSign({
+      ...this.umi,
+      payer: signer,
+    });
+    const signedTransaction = await getIdentityUmiSignature(transaction);
+
+    const latestBlockHash = await this.umi.rpc.getLatestBlockhash({
+      commitment: 'confirmed',
+    });
+    const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
+      skipPreflight: true,
+    });
+    const transactionSignature = base58.deserialize(signature)[0];
+
+    await this.umi.rpc.confirmTransaction(signature, {
+      commitment: 'confirmed',
+      strategy: { type: 'blockhash', ...latestBlockHash },
+    });
+    const receipt = await this.prisma.wheelRewardReceipt.create({
+      data: {
+        transactionSignature,
+        dropId: winningDrop.id,
+        wallet: { connect: { address: walletAddress } },
+        user: { connect: { id: userId } },
+        createdAt: new Date(),
+        claimedAt: new Date(),
+        reward: { connect: { id: winningDrop.rewardId } },
       },
     });
-    //todo: transfer to winnerAddress
-    return collectibleComic;
+
+    return receipt;
   }
 }

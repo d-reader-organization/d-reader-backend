@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Comic, ComicIssue, Creator, PhysicalDrop, User } from '@prisma/client';
+import { Comic, ComicIssue, Creator, PhysicalItem, User } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import {
   D_READER_LINKS,
@@ -483,8 +483,8 @@ export class MailService {
     }
   }
 
-  async claimPhysicalDrop(physical: PhysicalDrop, user: User) {
-    const { name, description, image, claimFormLink } = physical;
+  async claimPhysicalDrop(physical: PhysicalItem, user: User) {
+    const { name, description, image } = physical;
     try {
       await this.mailerService.sendMail({
         to: user.email,
@@ -494,7 +494,6 @@ export class MailService {
           name,
           description,
           image,
-          claimFormLink,
           apiUrl,
         },
       });

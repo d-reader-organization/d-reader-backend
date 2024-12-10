@@ -31,7 +31,7 @@ Table User {
   consents UserPrivacyConsent [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
   interestExpressed UserInterestedReceipt [not null]
-  wheelRewardReceipts WheelRewardReceipt [not null]
+  wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
 Table Wallet {
@@ -45,6 +45,7 @@ Table Wallet {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
   digitalAssets DigitalAsset [not null]
   interestExpressed UserInterestedReceipt [not null]
+  wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
 Table Creator {
@@ -717,45 +718,49 @@ Table Wheel {
 
 Table WheelReward {
   id Int [pk, increment]
-  typeId String [not null]
-  type WheelRewardType [not null]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
   wheel Wheel [not null]
   wheelId Int [not null]
-  supply Int [not null, default: 0]
   weight Int [not null, default: 0]
+  drops Drop [not null]
+  type WheelRewardType [not null]
+  receipts WheelRewardReceipt [not null]
+}
+
+Table Drop {
+  id Int [pk, increment]
+  itemId String [not null]
+  amount Int [not null]
+  rewardId Int [not null]
+  reward WheelReward [not null]
   isActive Boolean [not null, default: true]
-  externalLink String
+
+  indexes {
+    (rewardId, itemId) [unique]
+  }
 }
 
 Table WheelRewardReceipt {
   id Int [pk, increment]
-  descripton String [not null]
-  transactionSignature String
-  status TransactionStatus [not null]
-  userId Int [not null]
+  rewardId Int [not null]
+  reward WheelReward [not null]
   user User [not null]
-  timestamp DateTime [not null]
-
-  indexes {
-    (userId, timestamp) [unique]
-  }
+  userId Int [not null]
+  wallet Wallet
+  walletAddress String
+  transactionSignature String
+  dropId Int
+  claimedAt DateTime
+  createdAt DateTime [not null]
 }
 
-Table CoverDrop {
-  id Int [pk, increment]
+Table PhysicalItem {
+  id String [pk]
   name String [not null]
   description String [not null, default: '']
   image String [not null, default: '']
-  collectionAddress String [not null]
-  rarity CoverRarity [not null]
-}
-
-Table PhysicalDrop {
-  id Int [pk, increment]
-  name String [not null]
-  description String [not null, default: '']
-  image String [not null, default: '']
-  claimFormLink String [not null]
 }
 
 Enum Role {
@@ -845,16 +850,12 @@ Enum WheelType {
 }
 
 Enum WheelRewardType {
-  CnftDrop
   CollectibleComic
   PrintEdition
   OneOfOne
   Physicals
+  Fungibles
   None
-}
-
-Enum CoverRarity {
-  Legendary
 }
 
 Ref: User.referrerId - User.id
@@ -973,4 +974,10 @@ Ref: UserInterestedReceipt.userId > User.id
 
 Ref: WheelReward.wheelId > Wheel.id
 
+Ref: Drop.rewardId > WheelReward.id
+
+Ref: WheelRewardReceipt.rewardId > WheelReward.id
+
 Ref: WheelRewardReceipt.userId > User.id
+
+Ref: WheelRewardReceipt.walletAddress > Wallet.address
