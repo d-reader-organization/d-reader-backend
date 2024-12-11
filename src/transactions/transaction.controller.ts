@@ -59,6 +59,7 @@ import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initiali
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
 import { InvestService } from 'src/invest/invest.service';
 import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
+import { GlobalThrottlerInterceptor } from 'src/interceptor/global-throttler-interceptor';
 
 @ApiTags('Transaction')
 @Controller('transaction')
@@ -142,6 +143,7 @@ export class TransactionController {
     return toActionResponseDto(transaction);
   }
 
+  @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000 }))
   @OptionalUserAuth()
   @Get('/mint')
   async constructMintTransaction(
