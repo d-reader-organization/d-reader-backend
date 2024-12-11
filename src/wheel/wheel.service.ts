@@ -7,12 +7,9 @@ import { isNull, kebabCase } from 'lodash';
 import { validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
 import { addHours, subHours } from 'date-fns';
-import { Drop, WheelReward, WheelRewardType } from '@prisma/client';
+import { Drop, WheelRewardType } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
-import { DigitalAssetService } from '../digital-asset/digital-asset.service';
-import { Connection } from '@solana/web3.js';
 import {
-  getConnection,
   getIdentityUmiSignature,
   getTreasuryPublicKey,
   getTreasuryUmiPublicKey,
@@ -34,20 +31,19 @@ import {
 import { MIN_COMPUTE_PRICE, SOL_ADDRESS } from 'src/constants';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import { transfer } from '@metaplex-foundation/mpl-core';
+import { AddDropsDto } from './dto/add-drops.dto';
+import { RemoveDropsDto } from './dto/remove-drops.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
 @Injectable()
 export class WheelService {
-  private readonly connection: Connection;
   private readonly umi: Umi;
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
-    private readonly digitalAssetService: DigitalAssetService,
     private readonly s3: s3Service,
   ) {
-    this.connection = getConnection();
     this.umi = initUmi();
   }
 
@@ -73,33 +69,67 @@ export class WheelService {
   }
 
   async addReward(wheelId: number, addRewardDto: AddRewardDto) {
-    const wheel = await this.prisma.wheel.findUnique({where:{id:wheelId}});
+    const wheel = await this.prisma.wheel.findUnique({
+      where: { id: wheelId },
+    });
 
     const s3Folder = getS3Folder(wheel.s3BucketSlug);
     const image = await this.s3.uploadFile(addRewardDto.image, { s3Folder });
-    
+    const dropsData = addRewardDto.drops.map((drop) => ({
+      amount: drop.amount,
+      itemId: drop.itemId,
+    }));
+
     const reward = await this.prisma.wheelReward.create({
       data: {
         ...addRewardDto,
         image,
-        wheel: {
-          connect: { id: wheelId },
-        },
+        wheel: { connect: { id: wheelId } },
+        drops: { createMany: { data: dropsData } },
       },
     });
 
     return reward;
   }
 
-  // async removeReward(rewardId: number) {
-  //   await this.prisma.wheelReward.update({
-  //     where: { id: rewardId },
-  //     data: { isActive: false },
-  //   });
-  // }
+  async addDrops(rewardId: number, addDropsDto: AddDropsDto) {
+    const reward = await this.prisma.wheelReward.findUnique({
+      where: { id: rewardId },
+    });
+    if (!reward) {
+      throw new BadRequestException(
+        `Reward with id ${rewardId} does not exists`,
+      );
+    }
+
+    const dropsData = addDropsDto.drops.map((drop) => ({
+      amount: drop.amount,
+      itemId: drop.itemId,
+      rewardId,
+    }));
+
+    await this.prisma.drop.createMany({
+      data: dropsData,
+    });
+  }
+
+  async removeDrops(rewardId: number, removeDropsDto: RemoveDropsDto) {
+    const reward = await this.prisma.wheelReward.findUnique({
+      where: { id: rewardId },
+    });
+    if (!reward) {
+      throw new BadRequestException(
+        `Reward with id ${rewardId} does not exists`,
+      );
+    }
+
+    const dropsToDelete = removeDropsDto.drops;
+    await this.prisma.drop.deleteMany({ where: { id: { in: dropsToDelete } } });
+  }
 
   async update() {}
   async updateReward() {}
+
   async get(id: number) {
     const wheel = await this.prisma.wheel.findUnique({
       where: { id },
@@ -107,7 +137,20 @@ export class WheelService {
     });
     return wheel;
   }
-  async spin(wheelId: number, userId: number, walletAddress: string) {
+
+  async spin(wheelId: number, userId: number) {
+    const lastConnectedWallet = await this.prisma.wallet.findFirst({
+      where: { userId },
+      orderBy: { connectedAt: 'desc' },
+    });
+
+    if (!lastConnectedWallet) {
+      throw new BadRequestException(
+        'Please connect wallet to be able to claim digital rewards !',
+      );
+    }
+
+    const walletAddress = lastConnectedWallet.address;
     const wheel = await this.prisma.wheel.findUnique({
       where: { id: wheelId },
       include: {
@@ -324,6 +367,7 @@ export class WheelService {
     return receipt;
   }
 
+  //todo: return none and delete drop if owner is not treasury
   async transferCollectibleFromVault(
     winningDrop: Drop,
     walletAddress: string,
