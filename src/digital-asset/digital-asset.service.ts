@@ -641,6 +641,7 @@ export class DigitalAssetService {
     }
   }
 
+  //todo: handle sponsored eiditons sale
   async createBuyPrintEditionTransaction(printEditionDto: PrintEditionParams) {
     /* Mints a pint edition */
     const { buyer, masterEditionAddress } = printEditionDto;
