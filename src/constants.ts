@@ -269,3 +269,6 @@ export const LOOSE_THROTTLER_CONFIG: Record<
   if (!throttler.limit) return acc;
   return { ...acc, [throttler.name]: { limit: 300, ttl: 60 } };
 }, {});
+
+export const CREATE_MINT_TRANSACTION_PATH = '/transaction/mint';
+export const GLOBAL_RATE_LIMIT = 800;
