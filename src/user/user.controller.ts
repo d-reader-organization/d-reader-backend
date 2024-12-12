@@ -191,8 +191,7 @@ export class UserController {
   @Get('sync-wallets/:id')
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   syncWallet(@Param('id') id: string) {
-    return;
-    // TODO: return this.throttledSyncWallets(+id);
+    return this.throttledSyncWallets(+id);
   }
 
   /* Pseudo delete genre */

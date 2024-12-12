@@ -50,7 +50,6 @@ export class WalletController {
   @Get('sync/:address')
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   syncWallet(@Param('address') address: string) {
-    return;
-    // TODO: return this.walletService.syncWallet(address);
+    return this.walletService.syncWallet(address);
   }
 }
