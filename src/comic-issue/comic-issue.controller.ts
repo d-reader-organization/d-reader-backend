@@ -109,7 +109,7 @@ export class ComicIssueController {
   }
 
   /* Get all comic issues */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('get')
   async findAll(@Query() query: ComicIssueParams): Promise<ComicIssueDto[]> {
     const comicIssues = await this.comicIssueService.findAll(query);
@@ -162,7 +162,7 @@ export class ComicIssueController {
     return toComicIssueDto(comicIssue);
   }
 
-  @UseInterceptors(CacheInterceptor({ ttl: 60 * 30 }))
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('get-public/:id')
   async findOnePublic(@Param('id') id: string): Promise<ComicIssueDto> {
     const processedId = processComicIssueIdString(id);

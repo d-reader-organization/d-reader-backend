@@ -61,7 +61,7 @@ export class CarouselController {
   }
 
   /* Get all carousel slides */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(15) }))
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('slides/get')
   async findAll(@Query() query: GetCarouselSlidesParams) {
     const carouselSlides = await this.carouselService.findAll(query);
