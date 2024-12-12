@@ -79,27 +79,6 @@ export class TransactionController {
     private readonly investService: InvestService,
   ) {}
 
-  /** @deprecated */
-  @OptionalUserAuth()
-  @Throttle(STRICT_THROTTLER_CONFIG)
-  @Get('/mint-one')
-  async constructMintOneTransaction(
-    @Query() query: MintParams,
-    @UserEntity() user?: UserPayload,
-  ) {
-    const minterAddress = publicKey(query.minterAddress);
-    const candyMachineAddress = publicKey(query.candyMachineAddress);
-
-    return await this.candyMachineService.createMintTransaction(
-      minterAddress,
-      candyMachineAddress,
-      query.label,
-      query.couponId,
-      1,
-      user ? user.id : null,
-    );
-  }
-
   @UserAuth()
   @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/express-interest')
@@ -119,21 +98,23 @@ export class TransactionController {
   }
 
   /* For blink clients to make request for mint transaction */
-  @Throttle(STRICT_THROTTLER_CONFIG)
-  @Post('/blink/mint/:candyMachine')
-  async constructBlinkMintTransaction(
-    @Param('couponId') couponId: number,
-    @Body() actionPayload: ActionPayloadDto,
-  ) {
-    const account = publicKey(actionPayload.account);
 
-    const transaction = await this.blinkService.mintComicAction(
-      account,
-      couponId,
-    );
+  // todo: Uncomment this
+  // @Throttle(STRICT_THROTTLER_CONFIG)
+  // @Post('/blink/mint/:candyMachine')
+  // async constructBlinkMintTransaction(
+  //   @Param('couponId') couponId: number,
+  //   @Body() actionPayload: ActionPayloadDto,
+  // ) {
+  //   const account = publicKey(actionPayload.account);
 
-    return toActionResponseDto(transaction.at(-1));
-  }
+  //   const transaction = await this.blinkService.mintComicAction(
+  //     account,
+  //     couponId,
+  //   );
+
+  //   return toActionResponseDto(transaction.at(-1));
+  // }
 
   /* For blink clients to make request for comic sign transaction */
   @Throttle(STRICT_THROTTLER_CONFIG)
