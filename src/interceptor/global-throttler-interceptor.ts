@@ -12,7 +12,7 @@ import { CacheService } from 'src/cache/cache.service';
 import { CachePath } from 'src/utils/cache';
 
 export function GlobalThrottlerInterceptor({
-  cooldown = 1000,
+  cooldown = 1000, // in miliseconds
   limit,
 }: {
   limit: number;
