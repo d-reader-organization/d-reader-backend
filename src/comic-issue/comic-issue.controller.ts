@@ -162,7 +162,7 @@ export class ComicIssueController {
     return toComicIssueDto(comicIssue);
   }
 
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
+  @UseInterceptors(CacheInterceptor({ ttl: 60 * 30 }))
   @Get('get-public/:id')
   async findOnePublic(@Param('id') id: string): Promise<ComicIssueDto> {
     const processedId = processComicIssueIdString(id);
