@@ -189,8 +189,10 @@ export class UserController {
   @UserOwnerAuth()
   @Throttle({ long: { ttl: minutes(3), limit: 3 } })
   @Get('sync-wallets/:id')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   syncWallet(@Param('id') id: string) {
-    return this.throttledSyncWallets(+id);
+    return;
+    // TODO: return this.throttledSyncWallets(+id);
   }
 
   /* Pseudo delete genre */

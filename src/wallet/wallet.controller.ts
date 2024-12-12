@@ -48,7 +48,9 @@ export class WalletController {
 
   @Throttle({ long: { ttl: minutes(3), limit: 3 } })
   @Get('sync/:address')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   syncWallet(@Param('address') address: string) {
-    return this.walletService.syncWallet(address);
+    return;
+    // TODO: return this.walletService.syncWallet(address);
   }
 }

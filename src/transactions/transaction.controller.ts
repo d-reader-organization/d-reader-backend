@@ -60,6 +60,7 @@ import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-p
 import { InvestService } from 'src/invest/invest.service';
 import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
 import { GlobalThrottlerInterceptor } from 'src/interceptor/global-throttler-interceptor';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Transaction')
 @Controller('transaction')
@@ -143,7 +144,13 @@ export class TransactionController {
     return toActionResponseDto(transaction);
   }
 
+  // 500 global requests per second
   @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000, limit: 500 }))
+  @Throttle({
+    short: { limit: 3 },
+    default: { limit: 10 },
+    medium: { limit: 15 },
+  })
   @OptionalUserAuth()
   @Get('/mint')
   async constructMintTransaction(
