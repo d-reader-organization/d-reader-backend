@@ -22,7 +22,12 @@ import { validateAndFormatParams } from '../utils/validate-params';
 import { MultipleBuyParams } from '../auction-house/dto/instant-buy-params.dto';
 import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiExcludeEndpoint,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import { TransferTokensParams } from './dto/transfer-tokens-params.dto';
 import { UserAuth } from '../guards/user-auth.guard';
@@ -179,6 +184,7 @@ export class TransactionController {
   // )
   @OptionalUserAuth()
   @Throttle(STRICT_THROTTLER_CONFIG)
+  @ApiExcludeEndpoint()
   @Post('/send-mint-transaction/:walletAddress')
   async sendMintTransaction(
     @Param('walletAddress') walletAddress: string,
