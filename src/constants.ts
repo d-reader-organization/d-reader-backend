@@ -256,12 +256,14 @@ export const BUY_EDITION_DISCRIMINATOR = [30, 208, 80, 182, 61, 221, 252, 249];
 
 export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';
 
+/** This SkipThrottle config finds all throttler groups and constructs a 'skip' config for them */
 export const SKIP_THROTTLERS_CONFIG: Record<string, boolean> =
   CONFIG.throttlers.reduce<Record<string, boolean>>((acc, throttler) => {
     if (!throttler.name) return acc;
     return { ...acc, [throttler.name]: true };
   }, {});
 
+/** This Throttle config overrides all throttler groups to enable 300 requests per 60 seconds */
 export const LOOSE_THROTTLER_CONFIG: Record<
   string,
   { ttl: number; limit: number }
