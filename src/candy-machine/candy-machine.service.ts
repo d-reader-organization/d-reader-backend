@@ -636,6 +636,16 @@ export class CandyMachineService {
       coupons.push(couponData);
     }
 
+    //todo: remove this after mint
+    const SOLID_CM = 'ADV8VpfCGCnNZ15DrK4APSAmx6NwHwDmHgZCBP3PWPME';
+    if (candyMachine.address == SOLID_CM) {
+      return {
+        ...candyMachine,
+        supply: candyMachine.supply + 126,
+        itemsMinted: candyMachine.itemsMinted + 126,
+        coupons,
+      };
+    }
     return { ...candyMachine, coupons };
   }
 
