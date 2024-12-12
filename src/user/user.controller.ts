@@ -183,7 +183,7 @@ export class UserController {
 
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
-    3 * 60 * 1000, // 3 minutes
+    minutes(3),
   );
 
   @UserOwnerAuth()

@@ -71,6 +71,7 @@ import { createBuyPrintEditionTransaction } from './instructions/buy-edition';
 import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 import { RepriceListingParams } from './dto/reprice-listing-params.dto';
 import { ProgramSource } from '../types/shared';
+import { hours } from '@nestjs/throttler';
 
 @Injectable()
 export class AuctionHouseService {
@@ -104,7 +105,7 @@ export class AuctionHouseService {
       const auctionHouse = await this.getAuctionHouse(splTokenAddress);
       return auctionHouse;
     },
-    24 * 60 * 60 * 1000, // 24 hours
+    hours(24),
   );
 
   private async getBasicAssetData(address: string) {

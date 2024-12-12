@@ -28,9 +28,6 @@ import {
   MIN_COMPUTE_PRICE,
   SOL_ADDRESS,
   AUTHORITY_GROUP_LABEL,
-  HOUR_SECONDS,
-  MINUTE_SECONDS,
-  DAY_SECONDS,
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
@@ -132,6 +129,7 @@ import { CachePath } from '../utils/cache';
 import { Cacheable } from '../cache/cache.decorator';
 import { AddressLookupTableState } from '@solana/web3.js';
 import { constructMintTransactionOnWorker } from '../utils/workers';
+import { days, hours, minutes } from '@nestjs/throttler';
 
 @Injectable()
 export class CandyMachineService {
@@ -348,7 +346,7 @@ export class CandyMachineService {
       lookupTableBuffer = await this.cacheService.fetchAndCache(
         lookupTableCacheKey,
         getLookupTableInfo,
-        2 * HOUR_SECONDS,
+        hours(2),
         this.connection,
         lookupTableAddress,
       );
@@ -358,7 +356,7 @@ export class CandyMachineService {
     const candyGuardBuffer = await this.cacheService.fetchAndCache(
       cacheKey,
       getCandyGuardAccount,
-      2 * HOUR_SECONDS,
+      hours(2),
       this.connection,
       mintAuthority,
     );
@@ -1063,7 +1061,7 @@ export class CandyMachineService {
     }
   }
 
-  @Cacheable(10 * MINUTE_SECONDS)
+  @Cacheable(minutes(10))
   private async findCandyMachineCouponData(
     couponId: number,
     label: string,
@@ -1088,7 +1086,7 @@ export class CandyMachineService {
     const supportedTokens = await this.cacheService.fetchAndCache(
       CachePath.SupportedSplTokens,
       this.prisma.splToken.findMany,
-      DAY_SECONDS,
+      days(1),
     );
     const splToken = supportedTokens.find(
       (token) => token.address == currencySetting.splTokenAddress,
@@ -1505,7 +1503,7 @@ export class CandyMachineService {
     }
   }
 
-  @Cacheable(HOUR_SECONDS)
+  @Cacheable(hours(1))
   private async findIfWalletWhitelisted(
     walletAddress: string,
     couponId: number,
@@ -1519,7 +1517,7 @@ export class CandyMachineService {
     return !!isWhitelisted;
   }
 
-  @Cacheable(HOUR_SECONDS)
+  @Cacheable(hours(1))
   private async findIfUserWhitelisted(userId: number, couponId: number) {
     const isWhitelisted = await this.prisma.user.findUnique({
       where: {
@@ -1571,7 +1569,7 @@ export class CandyMachineService {
     const lookupTableInfo = await this.cacheService.fetchAndCache(
       lookupTableCacheKey,
       getLookupTableInfo,
-      2 * HOUR_SECONDS,
+      hours(2),
       this.connection,
       address,
     );
@@ -1603,7 +1601,7 @@ export class CandyMachineService {
     const lookupTableBuffer = await this.cacheService.fetchAndCache(
       lookupTableCacheKey,
       getLookupTableInfo,
-      2 * HOUR_SECONDS,
+      hours(2),
       this.connection,
       address,
     );
@@ -1632,7 +1630,7 @@ export class CandyMachineService {
     const candyGuardBuffer = await this.cacheService.fetchAndCache(
       cacheKey,
       getCandyGuardAccount,
-      2 * HOUR_SECONDS,
+      hours(2),
       this.connection,
       address,
     );
