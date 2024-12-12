@@ -7,14 +7,15 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
-import { GLOBAL_MINT_RATE_LIMIT } from 'src/constants';
 import { GlobalRateLimitExceededException } from 'src/utils/http-exception';
 import { CacheService } from 'src/cache/cache.service';
 import { CachePath } from 'src/utils/cache';
 
 export function GlobalThrottlerInterceptor({
   cooldown = 1000,
+  limit,
 }: {
+  limit: number;
   cooldown: number;
 }) {
   @Injectable()
@@ -31,7 +32,7 @@ export function GlobalThrottlerInterceptor({
       const key = CachePath.GLOBAL_RATE_LIMIT(path);
       const count = (await this.cacheService.get<number>(key)) || 0;
 
-      if (count > GLOBAL_MINT_RATE_LIMIT) {
+      if (count > limit) {
         throw new GlobalRateLimitExceededException();
       }
 

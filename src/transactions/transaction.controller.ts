@@ -143,7 +143,7 @@ export class TransactionController {
     return toActionResponseDto(transaction);
   }
 
-  @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000 }))
+  @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000, limit: 500 }))
   @OptionalUserAuth()
   @Get('/mint')
   async constructMintTransaction(
