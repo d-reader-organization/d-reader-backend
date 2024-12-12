@@ -53,7 +53,7 @@ import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-
 import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
 // import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
-import { SOL_ADDRESS } from 'src/constants';
+import { SOL_ADDRESS, STRICT_THROTTLER_CONFIG } from 'src/constants';
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
@@ -76,6 +76,7 @@ export class TransactionController {
 
   /** @deprecated */
   @OptionalUserAuth()
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/mint-one')
   async constructMintOneTransaction(
     @Query() query: MintParams,
@@ -95,6 +96,7 @@ export class TransactionController {
   }
 
   @UserAuth()
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/express-interest')
   async constructExpressInterestTransaction(
     @Query() query: ExpressInterestTransactionParams,
@@ -112,6 +114,7 @@ export class TransactionController {
   }
 
   /* For blink clients to make request for mint transaction */
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('/blink/mint/:candyMachine')
   async constructBlinkMintTransaction(
     @Param('couponId') couponId: number,
@@ -128,6 +131,7 @@ export class TransactionController {
   }
 
   /* For blink clients to make request for comic sign transaction */
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('/blink/comic-sign/:address')
   async constructBlinkComicSignTransaction(
     @Param('address') address: string,
@@ -146,11 +150,7 @@ export class TransactionController {
 
   // 500 global requests per second
   @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000, limit: 500 }))
-  @Throttle({
-    short: { limit: 3 },
-    default: { limit: 10 },
-    medium: { limit: 15 },
-  })
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @OptionalUserAuth()
   @Get('/mint')
   async constructMintTransaction(
@@ -178,6 +178,7 @@ export class TransactionController {
   //   MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
   // )
   @OptionalUserAuth()
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('/send-mint-transaction/:walletAddress')
   async sendMintTransaction(
     @Param('walletAddress') walletAddress: string,
@@ -191,6 +192,7 @@ export class TransactionController {
     );
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/sign-comic')
   async constructSignComicTransaction(@Query() query: SignComicParams) {
     const publicKey = new PublicKey(query.signerAddress);
@@ -203,6 +205,7 @@ export class TransactionController {
     );
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/tip-creator')
   async constructTipCreatorTransaction(@Query() query: TransferTokensParams) {
     const senderAddress = new PublicKey(query.senderAddress);
@@ -224,6 +227,7 @@ export class TransactionController {
 
   /* deprecated */
   @UserAuth()
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/use-comic-issue-nft')
   async constructUseComicTransaction(
     @Query() query: UseComicParams,
@@ -241,6 +245,7 @@ export class TransactionController {
   }
 
   @UserAuth()
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/use-comic-issue-asset')
   async constructUseComicAssetTransaction(
     @Query() query: UseComicParams,
@@ -257,6 +262,7 @@ export class TransactionController {
     );
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/init-edition-sale')
   async constructInitializeEditionSaleTransaction(
     @Query() initializeEditionSaleParams: InitializePrintEditionSaleParams,
@@ -269,6 +275,7 @@ export class TransactionController {
     });
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/buy-print-edition')
   async constructBuyPrintEditionTransaction(
     @Query() buyPrintEditionParams: BuyPrintEditionParams,
@@ -276,11 +283,13 @@ export class TransactionController {
     return this.auctionHouseService.buyPrintEdition(buyPrintEditionParams);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/list')
   async constructListTransaction(@Query() listParams: ListParams) {
     return await this.auctionHouseService.list(listParams);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/timed-auction-list')
   async constructTimedAuctionListTransaction(
     @Query() timedAuctionListParams: TimedAuctionListParams,
@@ -290,6 +299,7 @@ export class TransactionController {
     );
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/reprice')
   async constructRepriceListingTransaction(
     @Query() repriceListingParams: RepriceListingParams,
@@ -297,11 +307,13 @@ export class TransactionController {
     return await this.auctionHouseService.repriceListing(repriceListingParams);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/bid')
   async constructBidTransaction(@Query() bidParams: BidParams) {
     return await this.auctionHouseService.bid(bidParams);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/direct-buy')
   @ApiQuery({
     name: 'query',
@@ -316,11 +328,13 @@ export class TransactionController {
     return await this.auctionHouseService.multipleBuys(params);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/cancel-bid/:bidId')
   async constructCancelBidTransaction(@Param('bidId') bidId: string) {
     return await this.auctionHouseService.cancelBid(+bidId);
   }
 
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/cancel-listing/:listingId')
   async createCancelListingTransaction(@Param('listingId') listingId: string) {
     return await this.auctionHouseService.cancelListing(+listingId);
@@ -328,6 +342,7 @@ export class TransactionController {
 
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('mint/print-edition-collection')
   async createPrintEditionCollectionTransaction(
     @ApiFilesWithBody({
@@ -344,6 +359,7 @@ export class TransactionController {
 
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('mint/one-of-one')
   async createOneOfOneTransaction(
     @ApiFilesWithBody({
@@ -360,6 +376,7 @@ export class TransactionController {
 
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(AnyFilesInterceptor({}))
+  @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('mint/one-of-one-collection')
   async createOneOfOneCollectionTransaction(
     @ApiFilesWithBody({

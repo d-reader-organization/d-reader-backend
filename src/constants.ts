@@ -263,11 +263,20 @@ export const SKIP_THROTTLERS_CONFIG: Record<string, boolean> =
     return { ...acc, [throttler.name]: true };
   }, {});
 
-/** This Throttle config overrides all throttler groups to enable 300 requests per 60 seconds */
-export const LOOSE_THROTTLER_CONFIG: Record<
-  string,
-  { ttl: number; limit: number }
-> = CONFIG.throttlers.reduce((acc, throttler) => {
-  if (!throttler.limit) return acc;
-  return { ...acc, [throttler.name]: { limit: 300, ttl: 60 } };
-}, {});
+type ThrottlerConfigOptions = Record<string, { ttl?: number; limit: number }>;
+
+/** This Throttle config overrides all throttler groups to decrease request limits */
+export const STRICT_THROTTLER_CONFIG: ThrottlerConfigOptions = {
+  short: { limit: 3 },
+  default: { limit: 10 },
+  medium: { limit: 15 },
+  long: { limit: 30 },
+};
+
+/** This Throttle config overrides all throttler groups to increase request limits */
+export const LOOSE_THROTTLER_CONFIG: ThrottlerConfigOptions = {
+  short: { limit: 12 },
+  default: { limit: 60 },
+  medium: { limit: 120 },
+  long: { limit: 240 },
+};
