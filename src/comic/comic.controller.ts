@@ -67,7 +67,7 @@ export class ComicController {
   }
 
   /* Get all comics */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
+  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('get')
   async findAll(@Query() query: ComicParams): Promise<ComicDto[]> {
     const comics = await this.comicService.findAll(query);

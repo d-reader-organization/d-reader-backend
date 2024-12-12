@@ -17,7 +17,7 @@ import { SettingsService } from './settings.service';
 import { CreateGlobalStatusDto } from './dto/create-global-status.dto';
 import { toSplTokenArray } from './dto/spl-token.dto';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
-import { DAY_SECONDS } from 'src/constants';
+import { hours } from '@nestjs/throttler';
 
 @ApiTags('Settings')
 @Controller('settings')
@@ -47,7 +47,7 @@ export class SettingsController {
   }
 
   /** Get a list of supported SPL tokens */
-  @UseInterceptors(CacheInterceptor({ ttl: DAY_SECONDS }))
+  @UseInterceptors(CacheInterceptor({ ttl: hours(12) }))
   @Get('spl-token/get')
   async getSupportedSplTokens() {
     const tokenList = await this.settingService.getSupportedSplTokens();

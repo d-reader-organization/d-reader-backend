@@ -1,5 +1,5 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { seconds, Throttle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import { UserAuth } from './guards/user-auth.guard';
 import { CreatorAuth } from './guards/creator-auth.guard';
@@ -16,7 +16,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   /* Hello World test endpoint */
-  @UseInterceptors(CacheInterceptor({ ttl: 15 })) // 15 sec cache
+  @UseInterceptors(CacheInterceptor({ ttl: seconds(15) }))
   @Get('hello')
   get(): string {
     return this.appService.get();
@@ -24,7 +24,7 @@ export class AppController {
 
   /* User authenticated Hello World test endpoint */
   @UserAuth()
-  @UseInterceptors(CacheInterceptor({ ttl: 15, userScope: true })) // 15 sec cache
+  @UseInterceptors(CacheInterceptor({ ttl: seconds(15), userScope: true }))
   @Get('hello-authenticated-user')
   getUserAuth(@UserEntity() user: UserPayload): string {
     return this.appService.getAuth(user.id);

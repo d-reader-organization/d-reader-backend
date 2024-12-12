@@ -18,11 +18,11 @@ import { CacheService } from './cache.service';
  * and caches the response for a specified time-to-live (TTL).
  *
  * @param {Object} options - Configuration options for the interceptor.
- * @param {number} options.ttl - The time in seconds for which the response should be cached. Defaults to 60 seconds.
+ * @param {number} options.ttl - The time in miliseconds for which the response should be cached. Defaults to 60000 ms.
  * @param {boolean} options.userScope - Indicates whether the cache should be user-specific. Defaults to false.
  */
 export function CacheInterceptor({
-  ttl = 60,
+  ttl = 60000,
   userScope = false,
 }: {
   ttl: number;
@@ -64,11 +64,7 @@ export function CacheInterceptor({
 
       return next.handle().pipe(
         map(async (response) => {
-          await this.cacheService.set(
-            cacheKey,
-            JSON.stringify(response),
-            ttl * 1000,
-          );
+          await this.cacheService.set(cacheKey, JSON.stringify(response), ttl);
           return response;
         }),
         catchError((error) => {
