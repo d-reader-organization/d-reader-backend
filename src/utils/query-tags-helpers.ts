@@ -42,7 +42,7 @@ export const filterCreatorBy = (tag: CreatorFilterTag): Prisma.Sql => {
 };
 
 export const getSortOrder = (sortOrder?: SortOrder): Prisma.Sql =>
-  sortOrder === SortOrder.ASC ? Prisma.sql`asc` : Prisma.sql`desc`;
+  sortOrder === SortOrder.DESC ? Prisma.sql`desc` : Prisma.sql`asc`;
 
 export const sortComicBy = (tag: ComicSortTag): Prisma.Sql => {
   switch (tag) {
