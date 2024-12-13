@@ -1,11 +1,12 @@
 import { Prisma } from '@prisma/client';
-import { CreatorFilterParams } from './dto/creator-params.dto';
+import { CreatorFilterParams, CreatorSortTag } from './dto/creator-params.dto';
 import {
   filterCreatorBy,
   getSortOrder,
   havingGenreSlugsCondition,
   sortCreatorBy,
 } from '../utils/query-tags-helpers';
+import { SortOrder } from 'src/types/sort-order';
 
 const getQueryFilters = (
   query: CreatorFilterParams,
@@ -20,7 +21,11 @@ const getQueryFilters = (
     ? Prisma.sql`AND creator."name" ILIKE '%' || ${nameSubstring ?? ''} || '%'`
     : Prisma.empty;
 
-  const sortOrder = getSortOrder(query.sortOrder);
+  const sortOrder = getSortOrder(
+    query.sortOrder ?? query.sortTag === CreatorSortTag.Name
+      ? SortOrder.ASC
+      : SortOrder.DESC,
+  );
   const sortColumn = sortCreatorBy(query.sortTag);
   const filterCondition = filterCreatorBy(query.filterTag);
   return {
