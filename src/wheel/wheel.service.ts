@@ -28,7 +28,12 @@ import {
   TransactionBuilder,
   Umi,
 } from '@metaplex-foundation/umi';
-import { MIN_COMPUTE_PRICE, SOL_ADDRESS } from 'src/constants';
+import {
+  HOUR_SECONDS,
+  MIN_COMPUTE_PRICE,
+  MINUTE_SECONDS,
+  SOL_ADDRESS,
+} from 'src/constants';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import { transfer } from '@metaplex-foundation/mpl-core';
 import { AddDropsDto } from './dto/add-drops.dto';
@@ -61,7 +66,9 @@ export class WheelService {
     const s3BucketSlug = appendTimestamp(slug);
     const s3Folder = getS3Folder(s3BucketSlug);
 
-    const imageKey = await this.s3.uploadFile(image, { s3Folder });
+    const imageKey = image
+      ? await this.s3.uploadFile(image, { s3Folder })
+      : undefined;
     const wheel = await this.prisma.wheel.create({
       data: { ...createWheelDto, image: imageKey, s3BucketSlug },
     });
@@ -74,8 +81,10 @@ export class WheelService {
     });
 
     const s3Folder = getS3Folder(wheel.s3BucketSlug);
-    const image = await this.s3.uploadFile(addRewardDto.image, { s3Folder });
-    const dropsData = addRewardDto.drops.map((drop) => ({
+    const image = addRewardDto.image
+      ? await this.s3.uploadFile(addRewardDto.image, { s3Folder })
+      : undefined;
+    const dropsData = addRewardDto.drops?.map((drop) => ({
       amount: drop.amount,
       itemId: drop.itemId,
     }));
@@ -85,7 +94,7 @@ export class WheelService {
         ...addRewardDto,
         image,
         wheel: { connect: { id: wheelId } },
-        drops: { createMany: { data: dropsData } },
+        drops: { createMany: { data: dropsData || [] } },
       },
     });
 
@@ -162,7 +171,7 @@ export class WheelService {
       throw new BadRequestException('Wheel is not active !');
     }
 
-    if (wheel.expiresAt <= now) {
+    if (wheel.expiresAt && wheel.expiresAt <= now) {
       throw new BadRequestException('Wheel has been expired !');
     }
 
@@ -175,35 +184,42 @@ export class WheelService {
     if (isInCoolDownPeriod) {
       const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
       const timeDiff = nextSpinDate.getTime() - now.getTime();
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+      const hours = Math.floor(timeDiff / (HOUR_SECONDS * 1000));
+      const minutes = Math.floor(
+        (timeDiff % (1000 * HOUR_SECONDS)) / (1000 * MINUTE_SECONDS),
+      );
+      const seconds = Math.floor((timeDiff % (1000 * MINUTE_SECONDS)) / 1000);
 
-      let formattedCoolDown = '';
+      const cooldownMessage = [];
       if (hours > 0) {
-        formattedCoolDown = `${hours} hour${hours > 1 ? 's' : ''}`;
-      } else if (minutes > 0) {
-        formattedCoolDown = `${minutes} minute${minutes > 1 ? 's' : ''}`;
-      } else {
-        formattedCoolDown = `${seconds} second${seconds > 1 ? 's' : ''}`;
+        cooldownMessage.push(`${hours} hour${hours > 1 ? 's' : ''}`);
       }
+      if (minutes > 0) {
+        cooldownMessage.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+      }
+      if (seconds > 0) {
+        cooldownMessage.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
+      }
+
       throw new BadRequestException(
-        `You don't have any spin left, spin again in ${formattedCoolDown}`,
+        `You don't have any spin left, spin again in ${cooldownMessage.join(
+          ' ',
+        )}`,
       );
     }
 
     const winningSpin = Math.floor(1 + Math.random() * 100);
-    if (winningSpin > 50) {
+    if (winningSpin > wheel.winProbability) {
       return this.createReceiptForNoReward(wheelId, userId);
     }
 
     const availableRewards = wheel.rewards.filter(
       (reward) => reward.drops.length > 0,
     );
+
     const dropPool: { drop: Drop; rewardType: WheelRewardType }[] = [];
-    //todo: check this algo
     availableRewards.forEach((reward) => {
-      // Multiply supply by weight for its contribution
+      // Multiply by weight for its contribution
       reward.drops.forEach((drop) => {
         for (let i = 0; i < reward.weight; i++) {
           dropPool.push({ drop, rewardType: reward.type });
@@ -212,9 +228,13 @@ export class WheelService {
     });
 
     // select a drop on random.
-    const { drop: selectedDrop, rewardType } =
+    const randomlySelectedDrop =
       dropPool[Math.floor(Math.random() * dropPool.length)];
+    if (!randomlySelectedDrop) {
+      return WheelRewardType.None;
+    }
 
+    const { drop: selectedDrop, rewardType } = randomlySelectedDrop;
     const winningDrop = await this.prisma.$transaction(async (tx) => {
       const drop = await tx.drop.findUnique({
         where: { id: selectedDrop.id },
@@ -255,7 +275,7 @@ export class WheelService {
           userId,
         );
       default:
-        return WheelRewardType.None;
+        return this.createReceiptForNoReward(wheelId, userId);
     }
   }
 
