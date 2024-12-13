@@ -92,6 +92,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
       if (!candyMachine) {
         throw Error("Collection doesn't exists in database");
       }
+      candyMachineAddress = candyMachine.address;
     }
 
     const walletAddress = asset.ownership.owner;
