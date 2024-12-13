@@ -183,12 +183,13 @@ export class UserController {
 
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
-    3 * 60 * 1000, // 3 minutes
+    minutes(3),
   );
 
   @UserOwnerAuth()
   @Throttle({ long: { ttl: minutes(3), limit: 3 } })
   @Get('sync-wallets/:id')
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   syncWallet(@Param('id') id: string) {
     return this.throttledSyncWallets(+id);
   }

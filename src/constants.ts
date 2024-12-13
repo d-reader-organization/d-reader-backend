@@ -130,9 +130,6 @@ export const getRarityShareTable = (numberOfCovers: number) => {
 };
 
 export const BOT_TAX = 10000;
-export const MINUTE_SECONDS = 60;
-export const HOUR_SECONDS = MINUTE_SECONDS * MINUTE_SECONDS;
-export const DAY_SECONDS = 24 * HOUR_SECONDS;
 export const FREEZE_NFT_DAYS = 1;
 
 export const ATTRIBUTE_COMBINATIONS = [
@@ -256,16 +253,27 @@ export const BUY_EDITION_DISCRIMINATOR = [30, 208, 80, 182, 61, 221, 252, 249];
 
 export const MINT_MUTEX_IDENTIFIER = 'Mint-Collectible-Comic';
 
+/** This SkipThrottle config finds all throttler groups and constructs a 'skip' config for them */
 export const SKIP_THROTTLERS_CONFIG: Record<string, boolean> =
   CONFIG.throttlers.reduce<Record<string, boolean>>((acc, throttler) => {
     if (!throttler.name) return acc;
     return { ...acc, [throttler.name]: true };
   }, {});
 
-export const LOOSE_THROTTLER_CONFIG: Record<
-  string,
-  { ttl: number; limit: number }
-> = CONFIG.throttlers.reduce((acc, throttler) => {
-  if (!throttler.limit) return acc;
-  return { ...acc, [throttler.name]: { limit: 300, ttl: 60 } };
-}, {});
+type ThrottlerConfigOptions = Record<string, { ttl?: number; limit: number }>;
+
+/** This Throttle config overrides all throttler groups to decrease request limits */
+export const STRICT_THROTTLER_CONFIG: ThrottlerConfigOptions = {
+  short: { limit: 3 },
+  default: { limit: 10 },
+  medium: { limit: 15 },
+  long: { limit: 30 },
+};
+
+/** This Throttle config overrides all throttler groups to increase request limits */
+export const LOOSE_THROTTLER_CONFIG: ThrottlerConfigOptions = {
+  short: { limit: 12 },
+  default: { limit: 60 },
+  medium: { limit: 120 },
+  long: { limit: 240 },
+};

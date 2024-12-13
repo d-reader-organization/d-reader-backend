@@ -8,7 +8,7 @@ export class CacheService {
   async fetchAndCache<T>(
     key: string,
     callback: (...args: any[]) => Promise<T>,
-    ttl: number = 60,
+    ttl = 60000, // default 60000 miliseconds
     ...args: any[]
   ): Promise<T> {
     const cachedValue = await this.cacheManager.get<string>(key);
@@ -22,7 +22,7 @@ export class CacheService {
     console.log(`Cache miss for ${key}. Caching now...`);
     try {
       const value = await callback.apply(this, args);
-      await this.cacheManager.set(key, JSON.stringify(value), ttl * 1000);
+      await this.cacheManager.set(key, JSON.stringify(value), ttl);
       return value;
     } catch (error) {
       console.error(`Error while executing cache callback for ${key}:`, error);

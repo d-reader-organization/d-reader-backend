@@ -9,4 +9,5 @@ export const CachePath = Object.freeze({
   GENRE_GET_MANY: '/genre/get?',
   CAROUSEL_SLIDE_GET_MANY: '/carousel/slides/get?',
   COMIC_ISSUE_GET_PUBLIC: (id: number) => `/comic-issue/get-public/${id}`,
+  GLOBAL_RATE_LIMIT: (path: string) => `global-rate-limit:${path}`,
 });

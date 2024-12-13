@@ -42,22 +42,22 @@ export const CONFIG: Config = {
     {
       name: 'short',
       ttl: 1000, // 1 second
-      limit: 1000 * 6,
+      limit: 6,
     },
     {
       name: 'default',
       ttl: 10000, // 10 seconds
-      limit: 1000 * 60,
+      limit: 30,
     },
     {
       name: 'medium',
       ttl: 30000, // 30 seconds
-      limit: 1000 * 120,
+      limit: 60,
     },
     {
       name: 'long',
       ttl: 60000, // 60 seconds
-      limit: 1000 * 180,
+      limit: 120,
     },
   ],
 };
