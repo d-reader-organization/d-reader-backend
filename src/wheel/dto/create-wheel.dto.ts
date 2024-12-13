@@ -31,6 +31,7 @@ export class CreateWheelBodyDto {
   expiresAt?: Date;
 
   @IsEnum(WheelType)
+  @ApiProperty({ enum: WheelType })
   type: WheelType;
 
   @IsNumber()
@@ -38,9 +39,10 @@ export class CreateWheelBodyDto {
 }
 
 export class CreateWheelFilesDto {
+  @IsOptional()
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
-  image: Express.Multer.File | null;
+  image?: Express.Multer.File | null;
 }
 
 export class CreateWheelDto extends IntersectionType(

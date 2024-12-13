@@ -5,11 +5,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { WheelRewardType } from '@prisma/client';
-import { TransformNumberToString } from 'src/utils/transform';
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { AddDropDto } from './add-drops.dto';
@@ -23,16 +24,12 @@ export class AddRewardBodyDto {
   @MaxLength(1024)
   description?: string;
 
-  @TransformNumberToString()
-  @IsString()
-  typeId: string;
-
   @IsEnum(WheelRewardType)
+  @ApiProperty({ enum: WheelRewardType })
   type: WheelRewardType;
 
-  @IsNumber()
-  supply: number;
-
+  @Max(20)
+  @Min(1)
   @IsNumber()
   weight: number;
 
@@ -40,13 +37,11 @@ export class AddRewardBodyDto {
   @IsString()
   externalLink?: string;
 
-  @IsNumber()
-  winProbability: number;
-
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AddDropDto)
-  drops: AddDropDto[];
+  drops?: AddDropDto[];
 }
 
 export class AddRewardFilesDto {
