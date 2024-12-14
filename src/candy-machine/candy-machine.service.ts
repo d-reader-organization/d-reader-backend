@@ -31,6 +31,7 @@ import {
 } from '../constants';
 import {
   findCandyMachineCouponDiscount,
+  findDefaultCouponPrice,
   getCouponLabel,
 } from '../utils/helpers';
 import {
@@ -130,6 +131,8 @@ import { Cacheable } from '../cache/cache.decorator';
 import { AddressLookupTableState } from '@solana/web3.js';
 import { constructMintTransactionOnWorker } from '../utils/workers';
 import { days, hours, minutes } from '@nestjs/throttler';
+import { Pagination } from 'src/types/pagination.dto';
+import { LaunchpadInput } from './dto/launchpad.dto';
 
 @Injectable()
 export class CandyMachineService {
@@ -913,6 +916,45 @@ export class CandyMachineService {
         e,
       );
     }
+  }
+
+  async findLaunchpads(query: Pagination): Promise<LaunchpadInput[]> {
+    const launchpads = await this.prisma.candyMachineCoupon.findMany({
+      where: {
+        OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
+        type: CouponType.PublicUser,
+        candyMachine: { itemsRemaining: { gt: 0 } },
+      },
+      include: {
+        currencySettings: true,
+        candyMachine: {
+          include: {
+            collection: {
+              include: {
+                comicIssue: {
+                  include: {
+                    statelessCovers: { where: { isDefault: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { startsAt: 'asc' },
+      skip: query.skip,
+      take: query.take,
+    });
+
+    return launchpads.map(({ candyMachine, ...launchpad }) => ({
+      issueTitle: candyMachine.collection.comicIssue.title,
+      itemsMinted: candyMachine.itemsMinted,
+      supply: candyMachine.supply,
+      price: findDefaultCouponPrice(launchpad.currencySettings),
+      startsAt: launchpad.startsAt,
+      cover:
+        candyMachine.collection.comicIssue.statelessCovers?.[0]?.image || '',
+    }));
   }
 
   private countUserItemsMintedQuery = async (

@@ -17,6 +17,8 @@ import { UserPayload } from '../auth/dto/authorization.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { AddUserWhiteListDto } from './dto/add-user-whitelist.dto';
 import { AddCandyMachineCouponCurrencySettingDto } from './dto/add-coupon-currency-setting.dto';
+import { Pagination } from '../types/pagination.dto';
+import { toLaunchpadDtoArray } from './dto/launchpad.dto';
 
 @ApiTags('Candy Machine')
 @Controller('candy-machine')
@@ -40,6 +42,12 @@ export class CandyMachineController {
     const userId = user ? user.id : null;
     const candyMachine = await this.candyMachineService.find(query, userId);
     return toCandyMachineDto(candyMachine);
+  }
+
+  @Get('get/launchpads')
+  async findLaunchpads(@Query() query: Pagination) {
+    const launchpads = await this.candyMachineService.findLaunchpads(query);
+    return toLaunchpadDtoArray(launchpads);
   }
 
   @AdminGuard()

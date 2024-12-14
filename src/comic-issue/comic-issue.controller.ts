@@ -75,7 +75,6 @@ import {
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { processComicIssueIdString } from '../utils/comic-issue';
-import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
@@ -176,14 +175,6 @@ export class ComicIssueController {
   async findOneRaw(@Param('id') id: string): Promise<RawComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOneRaw(+id);
     return toRawComicIssueDto(comicIssue);
-  }
-
-  @Get('get-upcoming-collectibles')
-  async findManyUpcoming(
-    @Query() query: UpcomingCollectibleIssueParams,
-  ): Promise<ComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findManyUpcoming(query);
-    return toComicIssueDtoArray(comicIssues);
   }
 
   /* Get specific comic issue's pages */

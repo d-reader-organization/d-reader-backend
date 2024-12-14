@@ -24,7 +24,6 @@ import {
   CollectibleComicCollection,
   TokenStandard,
   CandyMachine,
-  CouponType,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -55,7 +54,6 @@ import { appendTimestamp } from '../utils/helpers';
 import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
 import { ComicIssueStatusProperty, SearchComicIssue } from './dto/types';
-import { UpcomingCollectibleIssueParams } from './dto/upcoming-collectible-issue-params.dto';
 import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
@@ -232,74 +230,6 @@ export class ComicIssueService {
     });
 
     return normalizedComicIssues;
-  }
-
-  async findManyUpcoming(
-    query: UpcomingCollectibleIssueParams,
-  ): Promise<ComicIssueInput[]> {
-    try {
-      const now = new Date();
-      const comicIssues = await this.prisma.comicIssue.findMany({
-        where: {
-          collectibleComicCollection: {
-            candyMachines: {
-              some: {
-                coupons: {
-                  some: {
-                    type: CouponType.PublicUser,
-                    startsAt: {
-                      gt: now,
-                      not: null,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        include: {
-          collectibleComicCollection: {
-            include: {
-              candyMachines: {
-                include: {
-                  coupons: { where: { type: CouponType.PublicUser } },
-                },
-              },
-            },
-          },
-        },
-        skip: query.skip,
-        take: query.take,
-      });
-
-      return comicIssues.flatMap((issue) => {
-        return issue.collectibleComicCollection.candyMachines.map(
-          (candyMachine): ComicIssueInput => {
-            const publicCoupon = candyMachine.coupons.find(
-              (coupon) => coupon.type == CouponType.PublicUser,
-            );
-            return {
-              ...issue,
-              collectibleInfo: {
-                collectionAddress: issue.collectibleComicCollection.address,
-                candyMachineAddress: candyMachine.address,
-                startsAt: publicCoupon?.startsAt,
-                creatorAddress: issue.collectibleComicCollection.creatorAddress,
-                isSecondarySaleActive:
-                  issue.collectibleComicCollection.isSecondarySaleActive,
-                sellerFeeBasisPoints:
-                  issue.collectibleComicCollection.sellerFeeBasisPoints,
-              },
-            };
-          },
-        );
-      });
-    } catch (e) {
-      console.error('Failed to fetch upcoming collectible issue: ', e);
-      throw new BadRequestException(
-        'Failed to fetch upcoming collectible issue',
-      );
-    }
   }
 
   async findOnePublic(
