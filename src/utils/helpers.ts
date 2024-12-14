@@ -5,7 +5,7 @@ import {
   ParsedAccountData,
   TransactionInstruction,
 } from '@solana/web3.js';
-import { HIGH_VALUE, LOW_VALUE } from '../constants';
+import { HIGH_VALUE, LOW_VALUE, SOL_ADDRESS } from '../constants';
 import {
   CandyMachineCoupon,
   CandyMachineCouponCurrencySetting,
@@ -192,6 +192,17 @@ export function findCandyMachineCouponDiscount(
 
   return discount;
 }
+
+export const findDefaultCouponPrice = (
+  currencies: CandyMachineCouponCurrencySetting[],
+) => {
+  const solSetting = currencies.find(
+    (currency) => currency.splTokenAddress == SOL_ADDRESS,
+  );
+
+  const mintPrice = Number(solSetting.mintPrice);
+  return toSol(mintPrice);
+};
 
 /**
  * There should not be more than 10 coupons of same type and more than 100 currencies in a coupon to avoid conflicts.
