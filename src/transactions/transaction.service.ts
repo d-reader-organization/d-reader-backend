@@ -14,7 +14,11 @@ import {
 } from '../candy-machine/instructions';
 import { RARITY_MAP } from '../constants';
 import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { TokenStandard } from '@prisma/client';
 import {
   Umi,
@@ -106,13 +110,15 @@ export class TransactionService {
       let signer: UmiPublicKey;
       if (newState === ComicStateArgs.Sign) {
         if (isSigned) {
-          throw new Error('Comic is already signed');
+          throw new BadRequestException('Comic is already signed');
         }
         if (
           feePayer.toString() != collection.creatorAddress &&
           feePayer.toString() != collection.creatorBackupAddress
         ) {
-          throw new Error('Only verified creator can sign a comic');
+          throw new BadRequestException(
+            'Only verified creator can sign a comic',
+          );
         }
         isSigned = true;
         signer = publicKey(feePayer);

@@ -413,7 +413,12 @@ export class CandyMachineService {
 
     this.validateCouponDates(startsAt, expiresAt);
     this.validateTokenStandard(tokenStandard);
-    this.validateMintEligibility(couponType, userId, walletAddress, couponId);
+    await this.validateMintEligibility(
+      couponType,
+      userId,
+      walletAddress,
+      couponId,
+    );
 
     await this.validateWalletBalance(
       walletAddress,
@@ -1228,7 +1233,9 @@ export class CandyMachineService {
     );
 
     if (existingGroup) {
-      throw new Error(`A group with label ${label} already exists`);
+      throw new BadRequestException(
+        `A group with label ${label} already exists`,
+      );
     }
 
     const group: CoreGuardGroup<DefaultGuardSet> = {
