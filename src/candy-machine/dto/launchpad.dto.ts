@@ -4,6 +4,9 @@ import { getPublicUrl } from 'src/aws/s3client';
 
 export class LaunchpadDto {
   @IsString()
+  id: string;
+
+  @IsString()
   issueTitle: string;
 
   @IsNumber()
@@ -24,6 +27,7 @@ export class LaunchpadDto {
 }
 
 export type LaunchpadInput = {
+  id: string;
   issueTitle: string;
   price: number;
   itemsMinted: number;
@@ -34,6 +38,7 @@ export type LaunchpadInput = {
 
 export function toLaunchpadDto(input: LaunchpadInput) {
   const plainLaunchpadDto: LaunchpadDto = {
+    id: input.id,
     issueTitle: input.issueTitle,
     price: input.price,
     minted: Math.ceil((input.itemsMinted * 100) / input.supply),

@@ -951,14 +951,14 @@ export class CandyMachineService {
       take: query.take,
     });
 
-    return launchpads.map(({ candyMachine, ...launchpad }) => ({
-      issueTitle: candyMachine.collection.comicIssue.title,
-      itemsMinted: candyMachine.itemsMinted,
-      supply: candyMachine.supply,
+    return launchpads.map(({ candyMachine: { collection: { comicIssue }, itemsMinted, supply }, ...launchpad }) => ({
+      id: `${comicIssue.slug}_${comicIssue.comicSlug}`,
+      issueTitle: comicIssue.title,
+      itemsMinted,
+      supply,
       price: findDefaultCouponPrice(launchpad.currencySettings),
       startsAt: launchpad.startsAt,
-      cover:
-        candyMachine.collection.comicIssue.statelessCovers?.[0]?.image || '',
+      cover: comicIssue.statelessCovers?.[0]?.image || '',
     }));
   }
 
