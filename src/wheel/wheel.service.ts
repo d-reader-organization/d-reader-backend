@@ -245,9 +245,13 @@ export class WheelService {
       }
 
       const winningDrop = await tx.drop.update({
-        where: { id: selectedDrop.id },
+        where: { id: selectedDrop.id, isActive: true },
         data: { isActive: false },
       });
+
+      if (!winningDrop) {
+        return undefined;
+      }
 
       return winningDrop;
     });
