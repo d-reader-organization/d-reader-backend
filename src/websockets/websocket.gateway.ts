@@ -32,25 +32,12 @@ export class WebSocketGateway {
     },
   ) {
     const receiptDto = await toCollectibleComicMintEventDto(data);
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-minted`,
-      receiptDto,
-    );
-  }
-
-  async handleWalletCollectibleComicMinted(data: {
-    receipt: CandyMachineReceiptInput;
-    comicIssueAssets: IndexCoreAssetReturnType[];
-  }) {
-    const receiptDto = await toCollectibleComicMintEventDto(data);
-    return this.server.sockets.emit(
-      `wallet/${data.receipt.buyerAddress}/item-minted`,
-      receiptDto,
-    );
+    return this.server
+      .to(receiptDto.buyer.address)
+      .emit(`comic-issue/${comicIssueId}/item-minted`, receiptDto);
   }
 
   /* Legacy websocket events */
-
   handleLegacyCollectibleComicMintRejected(comicIssueId: number) {
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-mint-rejected`,
