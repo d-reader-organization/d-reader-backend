@@ -23,6 +23,7 @@ import {
   umi,
 } from '../../utils/metaplex';
 import { encodeUmiTransaction } from '../../utils/transactions';
+import { BadRequestException } from '@nestjs/common';
 
 export async function constructMultipleMintTransaction(
   candyMachineAddress: UmiPublicKey,
@@ -129,9 +130,7 @@ function getMintArgs(
   const group = candyGuard.groups.find((group) => group.label == label);
 
   if (!group) {
-    throw new Error(
-      `Group with label ${label} does not exist on Candy Machine ${candyMachineAddress.toString()}`,
-    );
+    throw new BadRequestException(`label ${label} does not exist`);
   }
 
   // remove null to overwrite default guards with only specified guards in group
