@@ -8,6 +8,9 @@ import { UserEntity } from 'src/decorators/user.decorator';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { AddRewardDto } from './dto/add-reward.dto';
 import { AddDropsDto } from './dto/add-drops.dto';
+import { toWheelDto } from './dto/wheel.dto';
+import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
+import { toRewardDto } from './dto/rewards.dto';
 
 @ApiTags('Wheel')
 @Controller('wheel')
@@ -18,13 +21,23 @@ export class WheelController {
   @Post('create')
   async create(@Body() createWheelDto: CreateWheelDto) {
     const wheel = await this.wheel.create(createWheelDto);
-    return wheel;
+    return toWheelDto(wheel);
+  }
+
+  @AdminGuard()
+  @Patch('update/:id')
+  async update(
+    @Param('id') id: number,
+    @Body() updateWheelDto: UpdateWheelDto,
+  ) {
+    const wheel = await this.wheel.update(id, updateWheelDto);
+    return toWheelDto(wheel);
   }
 
   @Get('get/:id')
   async findOne(@Param('id') id: string) {
     const wheel = await this.wheel.get(+id);
-    return wheel;
+    return toWheelDto(wheel);
   }
 
   @UserAuth()
@@ -38,6 +51,16 @@ export class WheelController {
   @Patch('add/reward/:id')
   async addReward(@Param('id') id: string, @Body() addRewardDto: AddRewardDto) {
     return await this.wheel.addReward(+id, addRewardDto);
+  }
+
+  @AdminGuard()
+  @Patch('update/reward/:id')
+  async updateReward(
+    @Param('id') id: number,
+    @Body() updateRewardDto: UpdateRewardDto,
+  ) {
+    const reward = await this.wheel.updateReward(id, updateRewardDto);
+    return toRewardDto(reward);
   }
 
   @AdminGuard()
