@@ -263,6 +263,7 @@ Table CandyMachine {
   items CollectibleComic [not null]
   receipts CandyMachineReceipt [not null]
   standard TokenStandard [not null, default: 'Core']
+  isFeatured Boolean [not null, default: true]
 }
 
 Table CandyMachineCoupon {

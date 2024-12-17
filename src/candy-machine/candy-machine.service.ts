@@ -918,7 +918,7 @@ export class CandyMachineService {
       where: {
         OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
         type: CouponType.PublicUser,
-        candyMachine: { itemsRemaining: { gt: 0 } },
+        candyMachine: { itemsRemaining: { gt: 0 }, isFeatured: true },
       },
       include: {
         currencySettings: true,

@@ -299,6 +299,7 @@ model CandyMachine {
   items                CollectibleComic[]
   receipts             CandyMachineReceipt[]
   standard             TokenStandard              @default(Core)
+  isFeatured           Boolean                    @default(true)
 }
 
 enum TokenStandard {
