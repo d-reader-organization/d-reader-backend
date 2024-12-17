@@ -938,7 +938,9 @@ export class CandyMachineService {
               include: {
                 comicIssue: {
                   include: {
-                    statelessCovers: { where: { isDefault: true } },
+                    comic: {
+                      select: { banner: true },
+                    },
                   },
                 },
               },
@@ -966,7 +968,7 @@ export class CandyMachineService {
         supply,
         price: findDefaultCouponPrice(launchpad.currencySettings),
         startsAt: launchpad.startsAt,
-        cover: comicIssue.statelessCovers?.[0]?.image || '',
+        banner: comicIssue.comic.banner,
       }),
     );
   }

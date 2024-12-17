@@ -49,6 +49,7 @@ import {
   SearchCreatorDto,
   toSearchCreatorDtoArray,
 } from './dto/search-creator.dto';
+import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
 @ApiTags('Creator')
 @Controller('creator')
@@ -68,9 +69,16 @@ export class CreatorController {
 
   /* Get all creators */
   // @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
+  @OptionalUserAuth()
   @Get('get')
-  async findAll(@Query() query: CreatorFilterParams): Promise<CreatorDto[]> {
-    const creators = await this.creatorService.findAll(query);
+  async findAll(
+    @Query() query: CreatorFilterParams,
+    @UserEntity() user?: UserPayload,
+  ): Promise<CreatorDto[]> {
+    const creators = await this.creatorService.findAll({
+      query,
+      userId: user?.id,
+    });
     return toCreatorDtoArray(creators);
   }
 
@@ -84,13 +92,13 @@ export class CreatorController {
   }
 
   /* Get specific creator by unique slug */
-  @UserAuth()
+  @OptionalUserAuth()
   @Get('get/:slug')
   async findOne(
-    @UserEntity() user: UserPayload,
     @Param('slug') slug: string,
+    @UserEntity() user?: UserPayload,
   ): Promise<CreatorDto> {
-    const creator = await this.creatorService.findOne(slug, user.id);
+    const creator = await this.creatorService.findOne(slug, user?.id);
     return toCreatorDto(creator);
   }
 
