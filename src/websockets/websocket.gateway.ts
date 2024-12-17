@@ -32,8 +32,17 @@ export class WebSocketGateway {
     @MessageBody() data: { walletAddress: string },
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(data.walletAddress);
+    await client.join(data.walletAddress);
     console.log(`Socket ${client.id} joined room: ${data.walletAddress}`);
+  }
+
+  @SubscribeMessage('leave-room')
+  async handleLeaveRoom(
+    @MessageBody() data: { walletAddress: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    await client.leave(data.walletAddress);
+    console.log(`Socket ${client.id} left room: ${data.walletAddress}`);
   }
 
   async handleWalletCollectibleComicMinted(data: {
