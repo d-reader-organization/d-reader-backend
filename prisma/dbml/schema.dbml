@@ -357,6 +357,7 @@ Table CollectibleComicCollection {
   darkblockId String
   metadatas CollectibleComicMetadata [not null]
   digitalAsset DigitalAsset [not null]
+  tensorCollectionID String
 }
 
 Table ComicPage {

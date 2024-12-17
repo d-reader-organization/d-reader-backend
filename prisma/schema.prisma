@@ -406,6 +406,7 @@ model CollectibleComicCollection {
   darkblockId           String?
   metadatas             CollectibleComicMetadata[]
   digitalAsset          DigitalAsset               @relation(fields: [address], references: [address])
+  tensorCollectionID  String? 
 }
 
 model ComicPage {

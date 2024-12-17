@@ -982,7 +982,7 @@ export class HeliusService {
   /**
    * Handles the listing of core assets by updating or creating listings in the database.
    */
-  private async handleCoreListing(assetInfo: TENSOR_ASSET) {
+  async handleCoreListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
     const collectibleComic = await this.prisma.collectibleComic.update({
