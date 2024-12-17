@@ -32,7 +32,7 @@ export type LaunchpadInput = {
   price: number;
   itemsMinted: number;
   supply: number;
-  cover: string;
+  banner: string;
   startsAt?: Date;
 };
 
@@ -42,7 +42,7 @@ export function toLaunchpadDto(input: LaunchpadInput) {
     issueTitle: input.issueTitle,
     price: input.price,
     minted: Math.ceil((input.itemsMinted * 100) / input.supply),
-    image: getPublicUrl(input.cover),
+    image: getPublicUrl(input.banner),
     supply: input.supply,
     startsAt: input.startsAt,
   };
