@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
   WebSocketGateway as WebSocketGatewayDecorator,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
@@ -24,17 +27,25 @@ export class WebSocketGateway {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
   }
 
-  async handleCollectibleComicMinted(
-    comicIssueId: number,
-    data: {
-      receipt: CandyMachineReceiptInput;
-      comicIssueAssets: IndexCoreAssetReturnType[];
-    },
+  @SubscribeMessage('join-room')
+  async handleJoinRoom(
+    @MessageBody() data: { walletAddress: string },
+    @ConnectedSocket() client: Socket,
   ) {
+    client.join(data.walletAddress);
+    console.log(`Socket ${client.id} joined room: ${data.walletAddress}`);
+  }
+
+  async handleWalletCollectibleComicMinted(data: {
+    receipt: CandyMachineReceiptInput;
+    comicIssueAssets: IndexCoreAssetReturnType[];
+  }) {
     const receiptDto = await toCollectibleComicMintEventDto(data);
+    const walletAddress = data.receipt.buyerAddress;
+
     return this.server
-      .to(receiptDto.buyer.address)
-      .emit(`comic-issue/${comicIssueId}/item-minted`, receiptDto);
+      .to(walletAddress)
+      .emit(`wallet/${walletAddress}/item-minted`, receiptDto);
   }
 
   /* Legacy websocket events */

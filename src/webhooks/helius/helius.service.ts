@@ -788,8 +788,7 @@ export class HeliusService {
     const receipt = await this.prisma.candyMachineReceipt.findFirst({
       where: { transactionSignature: enrichedTransaction.signature },
     });
-    let comicIssueId: number = undefined,
-      userId: number = undefined;
+    let userId: number = undefined;
 
     const assetAccounts: string[] = [];
     enrichedTransaction.instructions.forEach((instruction) => {
@@ -811,8 +810,6 @@ export class HeliusService {
         collectionAddress,
         receipt.id,
       );
-
-      comicIssueId = comicIssueAssets[0].metadata.collection.comicIssueId;
       userId = comicIssueAssets[0].digitalAsset.owner?.userId;
     } catch (e) {
       console.error(e);
@@ -859,10 +856,6 @@ export class HeliusService {
         this.removeSubscription(candyMachine.publicKey.toString());
       }
 
-      this.websocketGateway.handleCollectibleComicMinted(comicIssueId, {
-        receipt: updatedReceipt,
-        comicIssueAssets,
-      });
       this.websocketGateway.handleWalletCollectibleComicMinted({
         receipt: updatedReceipt,
         comicIssueAssets,
