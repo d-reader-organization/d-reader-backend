@@ -58,7 +58,11 @@ import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-
 import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
 // import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
-import { SOL_ADDRESS, STRICT_THROTTLER_CONFIG } from 'src/constants';
+import {
+  MINT_MUTEX_IDENTIFIER,
+  SOL_ADDRESS,
+  STRICT_THROTTLER_CONFIG,
+} from 'src/constants';
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
@@ -66,6 +70,7 @@ import { InvestService } from 'src/invest/invest.service';
 import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
 import { GlobalThrottlerInterceptor } from 'src/interceptor/global-throttler-interceptor';
 import { Throttle } from '@nestjs/throttler';
+import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
 
 @ApiTags('Transaction')
 @Controller('transaction')
@@ -99,22 +104,21 @@ export class TransactionController {
 
   /* For blink clients to make request for mint transaction */
 
-  // todo: Uncomment this
-  // @Throttle(STRICT_THROTTLER_CONFIG)
-  // @Post('/blink/mint/:candyMachine')
-  // async constructBlinkMintTransaction(
-  //   @Param('couponId') couponId: number,
-  //   @Body() actionPayload: ActionPayloadDto,
-  // ) {
-  //   const account = publicKey(actionPayload.account);
+  @Throttle(STRICT_THROTTLER_CONFIG)
+  @Post('/blink/mint/:candyMachine')
+  async constructBlinkMintTransaction(
+    @Param('couponId') couponId: number,
+    @Body() actionPayload: ActionPayloadDto,
+  ) {
+    const account = publicKey(actionPayload.account);
 
-  //   const transaction = await this.blinkService.mintComicAction(
-  //     account,
-  //     couponId,
-  //   );
+    const transaction = await this.blinkService.mintComicAction(
+      account,
+      couponId,
+    );
 
-  //   return toActionResponseDto(transaction.at(-1));
-  // }
+    return toActionResponseDto(transaction.at(-1));
+  }
 
   /* For blink clients to make request for comic sign transaction */
   @Throttle(STRICT_THROTTLER_CONFIG)
@@ -159,10 +163,9 @@ export class TransactionController {
     return [transaction];
   }
 
-  // todo: uncomment this later
-  // @UseInterceptors(
-  //   MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
-  // )
+  @UseInterceptors(
+    MutexInterceptor(MINT_MUTEX_IDENTIFIER, { walletAddress: 'param' }),
+  )
   @OptionalUserAuth()
   @Throttle(STRICT_THROTTLER_CONFIG)
   @ApiExcludeEndpoint()
