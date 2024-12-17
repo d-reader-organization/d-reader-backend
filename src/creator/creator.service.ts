@@ -125,13 +125,16 @@ export class CreatorService {
         getCreatorGenresQuery(creator.id, query.genreSlugs),
       );
       if (!!genresResult.length) {
-        const [stats, myStats] = await Promise.all([
+        const [totalVolume, myStats] = await Promise.all([
           this.userCreatorService.getTotalCreatorVolume(creator.slug),
           this.userCreatorService.getUserStats(creator.slug, userId),
         ]);
         filteredCreators.push({
           ...creator,
-          stats,
+          stats: {
+            totalVolume,
+            followersCount: Number(creator.followersCount),
+          },
           myStats,
         });
       }
