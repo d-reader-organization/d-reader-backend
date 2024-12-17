@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ConnectedSocket,
+  MessageBody,
+  SubscribeMessage,
   WebSocketGateway as WebSocketGatewayDecorator,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
@@ -24,18 +27,22 @@ export class WebSocketGateway {
     this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
   }
 
-  async handleCollectibleComicMinted(
-    comicIssueId: number,
-    data: {
-      receipt: CandyMachineReceiptInput;
-      comicIssueAssets: IndexCoreAssetReturnType[];
-    },
+  @SubscribeMessage('join-room')
+  async handleJoinRoom(
+    @MessageBody() data: { walletAddress: string },
+    @ConnectedSocket() client: Socket,
   ) {
-    const receiptDto = await toCollectibleComicMintEventDto(data);
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-minted`,
-      receiptDto,
-    );
+    await client.join(data.walletAddress);
+    console.log(`Socket ${client.id} joined room: ${data.walletAddress}`);
+  }
+
+  @SubscribeMessage('leave-room')
+  async handleLeaveRoom(
+    @MessageBody() data: { walletAddress: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    await client.leave(data.walletAddress);
+    console.log(`Socket ${client.id} left room: ${data.walletAddress}`);
   }
 
   async handleWalletCollectibleComicMinted(data: {
@@ -43,14 +50,14 @@ export class WebSocketGateway {
     comicIssueAssets: IndexCoreAssetReturnType[];
   }) {
     const receiptDto = await toCollectibleComicMintEventDto(data);
-    return this.server.sockets.emit(
-      `wallet/${data.receipt.buyerAddress}/item-minted`,
-      receiptDto,
-    );
+    const walletAddress = data.receipt.buyerAddress;
+
+    return this.server
+      .to(walletAddress)
+      .emit(`wallet/${walletAddress}/item-minted`, receiptDto);
   }
 
   /* Legacy websocket events */
-
   handleLegacyCollectibleComicMintRejected(comicIssueId: number) {
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-mint-rejected`,
