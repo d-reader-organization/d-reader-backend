@@ -132,6 +132,10 @@ export class CreatorService {
         filteredCreators.push({
           ...creator,
           stats: {
+            // TODO comicIssuesCount and comicsCount are hotfix cause of mobile app
+            // Will be fixed in next release on mobile
+            comicIssuesCount: 0,
+            comicsCount: 0,
             totalVolume,
             followersCount: Number(creator.followersCount),
           },
