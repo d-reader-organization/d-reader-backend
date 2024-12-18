@@ -768,7 +768,9 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletLegacyAssetUsed(collectibleComic);
+        await this.websocketGateway.handleWalletLegacyAssetUsed(
+          collectibleComic,
+        );
       }
     } catch (e) {
       console.error(`Error changing core comic state`, e);
@@ -856,7 +858,7 @@ export class HeliusService {
         this.removeSubscription(candyMachine.publicKey.toString());
       }
 
-      this.websocketGateway.handleWalletCollectibleComicMinted({
+      await this.websocketGateway.handleWalletCollectibleComicMinted({
         receipt: updatedReceipt,
         comicIssueAssets,
       });
@@ -965,11 +967,11 @@ export class HeliusService {
         digitalAsset: { ...digitalAsset, collectibleComic },
       };
 
-      this.websocketGateway.handleLegacyAssetSold(
+      await this.websocketGateway.handleLegacyAssetSold(
         collection.comicIssueId,
         listingInput,
       );
-      this.websocketGateway.handleWalletLegacyAssetBought(
+      await this.websocketGateway.handleWalletLegacyAssetBought(
         digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1051,11 +1053,11 @@ export class HeliusService {
       ...assetListing,
       digitalAsset: { ...digitalAsset, collectibleComic },
     };
-    this.websocketGateway.handleLegacyAssetListed(
+    await this.websocketGateway.handleLegacyAssetListed(
       collection.comicIssueId,
       listingInput,
     );
-    this.websocketGateway.handleWalletLegacyAssetListed(
+    await this.websocketGateway.handleWalletLegacyAssetListed(
       digitalAsset.ownerAddress,
       collectibleComic,
     );
@@ -1120,7 +1122,9 @@ export class HeliusService {
             },
           },
         });
-        this.websocketGateway.handleWalletLegacyAssetUsed(collectibleComic);
+        await this.websocketGateway.handleWalletLegacyAssetUsed(
+          collectibleComic,
+        );
       }
     } catch (e) {
       console.error('Failed to handle comic state update', e);
@@ -1167,14 +1171,17 @@ export class HeliusService {
 
       const comicIssueId =
         listing.digitalAsset.collectibleComic.metadata.collection.comicIssueId;
-      this.websocketGateway.handleLegacyAssetDelisted(comicIssueId, listing);
+      await this.websocketGateway.handleLegacyAssetDelisted(
+        comicIssueId,
+        listing,
+      );
 
       const collectibleComic: AssetInput = {
         ...listing.digitalAsset.collectibleComic,
         digitalAsset: listing.digitalAsset,
       };
 
-      this.websocketGateway.handleWalletLegacyAssetDelisted(
+      await this.websocketGateway.handleWalletLegacyAssetDelisted(
         listing.digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1259,8 +1266,11 @@ export class HeliusService {
         digitalAsset: { ...digitalAsset, collectibleComic },
       };
 
-      this.websocketGateway.handleLegacyAssetListed(comicIssueId, listingInput);
-      this.websocketGateway.handleWalletLegacyAssetListed(
+      await this.websocketGateway.handleLegacyAssetListed(
+        comicIssueId,
+        listingInput,
+      );
+      await this.websocketGateway.handleWalletLegacyAssetListed(
         digitalAsset.ownerAddress,
         collectibleComic,
       );
@@ -1342,11 +1352,11 @@ export class HeliusService {
         });
       }
 
-      this.websocketGateway.handleWalletLegacyAssetReceived(
+      await this.websocketGateway.handleWalletLegacyAssetReceived(
         ownerAddress,
         collectibleComic,
       );
-      this.websocketGateway.handleWalletLegacyAssetSent(
+      await this.websocketGateway.handleWalletLegacyAssetSent(
         previousOwner,
         collectibleComic,
       );
