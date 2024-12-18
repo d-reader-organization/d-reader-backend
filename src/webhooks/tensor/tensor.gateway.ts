@@ -1,8 +1,9 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import * as WebSocket from 'ws';
-import { HeliusService } from './helius/helius.service';
-import { TENSOR_ASSET } from './helius/dto/types';
+import { HeliusService } from '../helius/helius.service';
+import { TENSOR_ASSET } from '../helius/dto/types';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
@@ -66,6 +67,8 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  //Every 1 minutes to not close socket connection
+  @Cron('*/1 * * * *')
   sendPing() {
     this.socket.send(JSON.stringify({ event: 'ping', payload: {} }));
   }
