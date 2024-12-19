@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Comic, ComicIssue, Creator, User } from '@prisma/client';
+import { Comic, ComicIssue, Creator, PhysicalItem, User } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import {
   D_READER_LINKS,
@@ -41,6 +41,7 @@ const COMIC_SERIES_VERIFIED = 'comicSeriesVerified';
 const COMIC_SERIES_PUBLISHED = 'comicSeriesPublished';
 const COMIC_ISSUE_VERIFIED = 'comicIssueVerified';
 const COMIC_ISSUE_PUBLISHED = 'comicIssuePublished';
+const CLAIM_PHYISCAL_DROP = 'claimPhysicalDrop';
 
 @Injectable()
 export class MailService {
@@ -479,6 +480,25 @@ export class MailService {
       });
     } catch (e) {
       logError(COMIC_ISSUE_PUBLISHED, creator.email, e);
+    }
+  }
+
+  async claimPhysicalDrop(physical: PhysicalItem, user: User) {
+    const { name, description, image } = physical;
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: `Congratulations 🎉, You've won ${name} in the dReader's Spin The Wheel.`,
+        template: CLAIM_PHYISCAL_DROP, // todo: Change this to physical drop template
+        context: {
+          name,
+          description,
+          image,
+          apiUrl,
+        },
+      });
+    } catch (e) {
+      logError(CLAIM_PHYISCAL_DROP, user.email, e);
     }
   }
 }
