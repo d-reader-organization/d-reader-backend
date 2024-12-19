@@ -6,7 +6,7 @@ import {
   havingGenreSlugsCondition,
   sortCreatorBy,
 } from '../utils/query-tags-helpers';
-import { SortOrder } from 'src/types/sort-order';
+import { SortOrder } from '../types/sort-order';
 
 const getQueryFilters = (
   query: CreatorFilterParams,
