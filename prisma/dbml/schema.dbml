@@ -31,6 +31,7 @@ Table User {
   consents UserPrivacyConsent [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
   interestExpressed UserInterestedReceipt [not null]
+  wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
 Table Wallet {
@@ -44,6 +45,7 @@ Table Wallet {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
   digitalAssets DigitalAsset [not null]
   interestExpressed UserInterestedReceipt [not null]
+  wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
 Table Creator {
@@ -631,6 +633,7 @@ Table PrintEditionCollection {
   isNSFW Boolean [not null, default: false]
   verifiedAt DateTime
   publishedAt DateTime
+  isSponsored Boolean [not null, default: false]
   printEditionSaleConfig PrintEditionSaleConfig
 }
 
@@ -698,6 +701,67 @@ Table UserInterestedReceipt {
   indexes {
     (projectSlug, userId) [unique]
   }
+}
+
+Table Wheel {
+  id Int [pk, increment]
+  name String [not null]
+  s3BucketSlug String [unique, not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  type WheelType [not null]
+  startsAt DateTime [not null]
+  expiresAt DateTime
+  rewards WheelReward [not null]
+  winProbability Int [not null]
+  isActive Boolean [not null, default: true]
+}
+
+Table WheelReward {
+  id Int [pk, increment]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
+  wheel Wheel [not null]
+  wheelId Int [not null]
+  weight Int [not null, default: 0]
+  drops RewardDrop [not null]
+  type WheelRewardType [not null]
+  receipts WheelRewardReceipt [not null]
+}
+
+Table RewardDrop {
+  id Int [pk, increment]
+  itemId String [not null]
+  amount Int [not null]
+  rewardId Int [not null]
+  reward WheelReward [not null]
+  isActive Boolean [not null, default: true]
+
+  indexes {
+    (rewardId, itemId) [unique]
+  }
+}
+
+Table WheelRewardReceipt {
+  id Int [pk, increment]
+  rewardId Int [not null]
+  reward WheelReward [not null]
+  user User [not null]
+  userId Int [not null]
+  wallet Wallet
+  walletAddress String
+  transactionSignature String
+  dropId Int
+  claimedAt DateTime
+  createdAt DateTime [not null]
+}
+
+Table PhysicalItem {
+  id String [pk]
+  name String [not null]
+  description String [not null, default: '']
+  image String [not null, default: '']
 }
 
 Enum Role {
@@ -778,6 +842,21 @@ Enum DurableNonceStatus {
 Enum ConsentType {
   Marketing
   DataAnalytics
+}
+
+Enum WheelType {
+  Daily
+  Weekly
+  Monthly
+}
+
+Enum WheelRewardType {
+  CollectibleComic
+  PrintEdition
+  OneOfOne
+  Physicals
+  Fungibles
+  None
 }
 
 Ref: User.referrerId - User.id
@@ -893,3 +972,13 @@ Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 Ref: UserInterestedReceipt.walletAddress > Wallet.address
 
 Ref: UserInterestedReceipt.userId > User.id
+
+Ref: WheelReward.wheelId > Wheel.id
+
+Ref: RewardDrop.rewardId > WheelReward.id
+
+Ref: WheelRewardReceipt.rewardId > WheelReward.id
+
+Ref: WheelRewardReceipt.userId > User.id
+
+Ref: WheelRewardReceipt.walletAddress > Wallet.address

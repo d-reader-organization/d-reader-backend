@@ -174,6 +174,11 @@ export const getTreasuryPublicKey = () => {
   return getTreasuryKeypair().publicKey;
 };
 
+export const getTreasuryUmiPublicKey = () => {
+  const legacyPublicKey = getTreasuryPublicKey();
+  return publicKey(legacyPublicKey);
+};
+
 /**
  * Signs a legacy transaction with the identity (treasury) signer.
  * @param {Transaction} transaction - The transaction to sign.
