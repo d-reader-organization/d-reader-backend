@@ -6,7 +6,12 @@ import { appendTimestamp } from '../utils/helpers';
 import { isNull, kebabCase } from 'lodash';
 import { validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
-import { addHours, subHours } from 'date-fns';
+import {
+  addHours,
+  hoursToMilliseconds,
+  minutesToMilliseconds,
+  subHours,
+} from 'date-fns';
 import { RewardDrop, WheelRewardType } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 import {
@@ -28,12 +33,7 @@ import {
   TransactionBuilder,
   Umi,
 } from '@metaplex-foundation/umi';
-import {
-  HOUR_SECONDS,
-  MIN_COMPUTE_PRICE,
-  MINUTE_SECONDS,
-  SOL_ADDRESS,
-} from 'src/constants';
+import { MIN_COMPUTE_PRICE, SOL_ADDRESS } from 'src/constants';
 import { base58 } from '@metaplex-foundation/umi/serializers';
 import { transfer } from '@metaplex-foundation/mpl-core';
 import { AddDropsDto } from './dto/add-drops.dto';
@@ -234,13 +234,14 @@ export class WheelService {
     const isInCoolDownPeriod = !isNull(userLastWheelReceipt);
 
     if (isInCoolDownPeriod) {
+      const hourInMs = hoursToMilliseconds(1);
+      const minuteInMs = minutesToMilliseconds(1);
+
       const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
       const timeDiff = nextSpinDate.getTime() - now.getTime();
-      const hours = Math.floor(timeDiff / (HOUR_SECONDS * 1000));
-      const minutes = Math.floor(
-        (timeDiff % (1000 * HOUR_SECONDS)) / (1000 * MINUTE_SECONDS),
-      );
-      const seconds = Math.floor((timeDiff % (1000 * MINUTE_SECONDS)) / 1000);
+      const hours = Math.floor(timeDiff / hourInMs);
+      const minutes = Math.floor((timeDiff % hourInMs) / (1000 * minuteInMs));
+      const seconds = Math.floor((timeDiff % (1000 * minuteInMs)) / 1000);
 
       const cooldownMessage = [];
       if (hours > 0) {
