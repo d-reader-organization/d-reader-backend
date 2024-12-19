@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
-import { getPublicUrl } from 'src/aws/s3client';
+import { getPublicUrl } from '../../aws/s3client';
 
 export class LaunchpadDto {
   @IsString()

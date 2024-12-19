@@ -71,8 +71,20 @@ export class WheelService {
     const imageKey = image
       ? await this.s3.uploadFile(image, { s3Folder })
       : undefined;
+
     const wheel = await this.prisma.wheel.create({
-      data: { ...createWheelDto, image: imageKey, s3BucketSlug },
+      data: {
+        ...createWheelDto,
+        image: imageKey,
+        s3BucketSlug,
+        rewards: {
+          create: {
+            name: 'Nothing',
+            description: 'Rugged ! try your luck in your next spin.',
+            type: 'None',
+          },
+        },
+      },
     });
     return wheel;
   }
@@ -240,8 +252,8 @@ export class WheelService {
       const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
       const timeDiff = nextSpinDate.getTime() - now.getTime();
       const hours = Math.floor(timeDiff / hourInMs);
-      const minutes = Math.floor((timeDiff % hourInMs) / (1000 * minuteInMs));
-      const seconds = Math.floor((timeDiff % (1000 * minuteInMs)) / 1000);
+      const minutes = Math.floor((timeDiff % hourInMs) / minuteInMs);
+      const seconds = Math.floor((timeDiff % minuteInMs) / 1000);
 
       const cooldownMessage = [];
       if (hours > 0) {
@@ -283,8 +295,9 @@ export class WheelService {
     // select a drop on random.
     const randomlySelectedDrop =
       dropPool[Math.floor(Math.random() * dropPool.length)];
+
     if (!randomlySelectedDrop) {
-      return WheelRewardType.None;
+      return this.createReceiptForNoReward(wheelId, userId);
     }
 
     const { drop: selectedDrop, rewardType } = randomlySelectedDrop;
@@ -316,9 +329,9 @@ export class WheelService {
     switch (rewardType) {
       case WheelRewardType.Physicals:
         return this.sendPhysicalClaimEmail(winningDrop, userId);
-      case WheelRewardType.PrintEdition ||
-        WheelRewardType.OneOfOne ||
-        WheelRewardType.CollectibleComic:
+      case WheelRewardType.PrintEdition:
+      case WheelRewardType.OneOfOne:
+      case WheelRewardType.CollectibleComic:
         return this.transferCollectibleFromVault(
           wheelId,
           winningDrop,
@@ -391,7 +404,6 @@ export class WheelService {
 
     let transferBuilder: TransactionBuilder;
 
-    //todo: check if amount needs to be in smallest unit or not .
     if (isSol) {
       transferBuilder = transferSol(this.umi, {
         source: signer,
