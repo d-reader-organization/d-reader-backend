@@ -633,7 +633,6 @@ Table PrintEditionCollection {
   isNSFW Boolean [not null, default: false]
   verifiedAt DateTime
   publishedAt DateTime
-  isSponsored Boolean [not null, default: false]
   printEditionSaleConfig PrintEditionSaleConfig
 }
 

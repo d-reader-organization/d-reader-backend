@@ -690,7 +690,6 @@ model PrintEditionCollection {
   isNSFW                 Boolean                 @default(false)
   verifiedAt             DateTime?
   publishedAt            DateTime?
-  isSponsored            Boolean                 @default(false)
   printEditionSaleConfig PrintEditionSaleConfig?
 }
 
