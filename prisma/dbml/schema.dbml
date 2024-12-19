@@ -725,12 +725,12 @@ Table WheelReward {
   wheel Wheel [not null]
   wheelId Int [not null]
   weight Int [not null, default: 0]
-  drops Drop [not null]
+  drops RewardDrop [not null]
   type WheelRewardType [not null]
   receipts WheelRewardReceipt [not null]
 }
 
-Table Drop {
+Table RewardDrop {
   id Int [pk, increment]
   itemId String [not null]
   amount Int [not null]
@@ -975,7 +975,7 @@ Ref: UserInterestedReceipt.userId > User.id
 
 Ref: WheelReward.wheelId > Wheel.id
 
-Ref: Drop.rewardId > WheelReward.id
+Ref: RewardDrop.rewardId > WheelReward.id
 
 Ref: WheelRewardReceipt.rewardId > WheelReward.id
 

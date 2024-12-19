@@ -795,12 +795,12 @@ model WheelReward {
   wheel       Wheel                @relation(fields: [wheelId], references: [id])
   wheelId     Int
   weight      Int                  @default(0)
-  drops       Drop[]
+  drops       RewardDrop[]
   type        WheelRewardType
   receipts    WheelRewardReceipt[]
 }
 
-model Drop {
+model RewardDrop {
   id       Int         @id @default(autoincrement())
   itemId   String
   amount   Int

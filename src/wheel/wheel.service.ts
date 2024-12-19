@@ -7,7 +7,7 @@ import { isNull, kebabCase } from 'lodash';
 import { validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
 import { addHours, subHours } from 'date-fns';
-import { Drop, WheelRewardType } from '@prisma/client';
+import { RewardDrop, WheelRewardType } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 import {
   getIdentityUmiSignature,
@@ -119,7 +119,7 @@ export class WheelService {
       rewardId,
     }));
 
-    await this.prisma.drop.createMany({
+    await this.prisma.rewardDrop.createMany({
       data: dropsData,
     });
   }
@@ -135,7 +135,9 @@ export class WheelService {
     }
 
     const dropsToDelete = removeDropsDto.drops;
-    await this.prisma.drop.deleteMany({ where: { id: { in: dropsToDelete } } });
+    await this.prisma.rewardDrop.deleteMany({
+      where: { id: { in: dropsToDelete } },
+    });
   }
 
   async update(id: number, updateWheelDto: UpdateWheelDto) {
@@ -267,7 +269,7 @@ export class WheelService {
       (reward) => reward.drops.length > 0,
     );
 
-    const dropPool: { drop: Drop; rewardType: WheelRewardType }[] = [];
+    const dropPool: { drop: RewardDrop; rewardType: WheelRewardType }[] = [];
     availableRewards.forEach((reward) => {
       // Multiply by weight for its contribution
       reward.drops.forEach((drop) => {
@@ -286,7 +288,7 @@ export class WheelService {
 
     const { drop: selectedDrop, rewardType } = randomlySelectedDrop;
     const winningDrop = await this.prisma.$transaction(async (tx) => {
-      const drop = await tx.drop.findUnique({
+      const drop = await tx.rewardDrop.findUnique({
         where: { id: selectedDrop.id },
       });
 
@@ -294,7 +296,7 @@ export class WheelService {
         return undefined;
       }
 
-      const winningDrop = await tx.drop.update({
+      const winningDrop = await tx.rewardDrop.update({
         where: { id: selectedDrop.id, isActive: true },
         data: { isActive: false },
       });
@@ -349,7 +351,7 @@ export class WheelService {
     return receipt;
   }
 
-  async sendPhysicalClaimEmail(winningDrop: Drop, userId: number) {
+  async sendPhysicalClaimEmail(winningDrop: RewardDrop, userId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const physicalItem = await this.prisma.physicalItem.findUnique({
       where: { id: winningDrop.itemId },
@@ -368,7 +370,7 @@ export class WheelService {
   }
 
   async transferFungibleFromVault(
-    winningDrop: Drop,
+    winningDrop: RewardDrop,
     walletAddress: string,
     userId: number,
   ) {
@@ -444,7 +446,7 @@ export class WheelService {
 
   async transferCollectibleFromVault(
     wheelId: number,
-    winningDrop: Drop,
+    winningDrop: RewardDrop,
     walletAddress: string,
     userId: number,
     rewardType: WheelRewardType,

@@ -489,7 +489,7 @@ export class MailService {
       await this.mailerService.sendMail({
         to: user.email,
         subject: `Congratulations 🎉, You've won ${name} in the dReader's Spin The Wheel.`,
-        template: CLAIM_PHYISCAL_DROP, // todo: Change this to physical drop tempelate
+        template: CLAIM_PHYISCAL_DROP, // todo: Change this to physical drop template
         context: {
           name,
           description,
