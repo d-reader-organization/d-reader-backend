@@ -10,9 +10,11 @@ import {
   addHours,
   hoursToMilliseconds,
   minutesToMilliseconds,
+  subDays,
   subHours,
+  subMonths,
 } from 'date-fns';
-import { RewardDrop, WheelRewardType } from '@prisma/client';
+import { RewardDrop, WheelRewardType, WheelType } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 import {
   getIdentityUmiSignature,
@@ -239,23 +241,39 @@ export class WheelService {
       throw new BadRequestException('Wheel has been expired !');
     }
 
-    const twentyFourHoursAgo = subHours(now, 24);
+    let lastEligibleSpinDate: Date;
+    switch (wheel.type) {
+      case WheelType.Daily:
+        lastEligibleSpinDate = subHours(now, 24);
+        break;
+      case WheelType.Weekly:
+        lastEligibleSpinDate = subDays(now, 7);
+        break;
+      default:
+        lastEligibleSpinDate = subMonths(now, 1);
+    }
+
     const userLastWheelReceipt = await this.prisma.wheelRewardReceipt.findFirst(
-      { where: { createdAt: { gte: twentyFourHoursAgo }, userId } },
+      { where: { createdAt: { gte: lastEligibleSpinDate }, userId } },
     );
     const isInCoolDownPeriod = !isNull(userLastWheelReceipt);
 
     if (isInCoolDownPeriod) {
+      const dayInMs = hoursToMilliseconds(24);
       const hourInMs = hoursToMilliseconds(1);
       const minuteInMs = minutesToMilliseconds(1);
 
       const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
       const timeDiff = nextSpinDate.getTime() - now.getTime();
+      const days = Math.floor(timeDiff / dayInMs);
       const hours = Math.floor(timeDiff / hourInMs);
       const minutes = Math.floor((timeDiff % hourInMs) / minuteInMs);
       const seconds = Math.floor((timeDiff % minuteInMs) / 1000);
 
       const cooldownMessage = [];
+      if (days > 0) {
+        cooldownMessage.push(`${days} day${days > 1 ? 's' : ''}`);
+      }
       if (hours > 0) {
         cooldownMessage.push(`${hours} hour${hours > 1 ? 's' : ''}`);
       }
