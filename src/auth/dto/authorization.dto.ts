@@ -16,7 +16,7 @@ export type UserPayload = {
   type: 'user';
   id: User['id'];
   email: User['email'];
-  name: User['name'];
+  username: User['username'];
   role: User['role'];
 };
 

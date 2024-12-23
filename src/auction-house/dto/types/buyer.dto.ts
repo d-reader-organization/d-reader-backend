@@ -10,8 +10,9 @@ import { WalletDto } from '../../../wallet/dto/wallet.dto';
 export class BuyerDto {
   id?: UserDto['id'];
   avatar?: UserDto['avatar'];
-  name?: UserDto['name'];
+  username?: UserDto['username'];
   address: WalletDto['address'];
+  displayName?: UserDto['displayName'];
 
   @IsOptional()
   @IsString()
@@ -26,7 +27,8 @@ export async function toBuyerDto(buyer: Buyer) {
   const plainBuyerDto: BuyerDto = {
     id: buyer.user?.id,
     avatar: getPublicUrl(buyer.user?.avatar),
-    name: buyer.user?.name,
+    username: buyer.user?.username,
+    displayName: buyer.user?.displayName,
     address: buyer.address,
     sns,
   };

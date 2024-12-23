@@ -662,7 +662,7 @@ export class CandyMachineService {
   async addWhitelistedUsersToCoupon(couponId: number, usernames: string[]) {
     const users = await this.prisma.user.findMany({
       where: {
-        name: { in: usernames },
+        username: { in: usernames },
         whitelistedCandyMachineCoupons: {
           none: { couponId },
         },

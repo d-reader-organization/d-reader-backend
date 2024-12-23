@@ -32,7 +32,10 @@ export class UserDto {
   referralsRemaining: number;
 
   @IsString()
-  name: string;
+  username: string;
+
+  @IsString()
+  displayName: string;
 
   @IsUrl()
   avatar: string;
@@ -62,7 +65,8 @@ export function toUserDto(user: UserInput) {
     isEmailVerified: !!user.emailVerifiedAt,
     hasBetaAccess: !!user.referredAt,
     referralsRemaining: user.referralsRemaining,
-    name: user.name,
+    username: user.username,
+    displayName: user.displayName,
     avatar: getPublicUrl(user.avatar),
     role: user.role,
     deviceTokens: user.devices?.map((device) => device.token) ?? [],

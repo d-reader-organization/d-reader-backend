@@ -62,7 +62,7 @@ export class MailService {
         subject: '🎉 Account created!',
         template: USER_REGISTERED,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
           actionUrl:
             !user.emailVerifiedAt &&
@@ -81,7 +81,7 @@ export class MailService {
         subject: '🫂 Account scheduled for deletion!',
         template: USER_SCHEDULED_FOR_DELETION,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
         },
       });
@@ -97,7 +97,7 @@ export class MailService {
         subject: '👋 Account deleted!',
         template: USER_DELETED,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
         },
       });
@@ -113,7 +113,7 @@ export class MailService {
         subject: '🔐 Password reset requested!',
         template: USER_PASSWORD_RESET_REQUESTED,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
           actionUrl: D_READER_LINKS.resetPassword(verificationToken),
         },
@@ -133,7 +133,7 @@ export class MailService {
         subject: '🔐 Password reset!',
         template: USER_PASSWORD_RESET,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
         },
       });
@@ -157,7 +157,7 @@ export class MailService {
         subject: '🕵️‍♂️ e-mail verification!',
         template: BUMP_USER_WITH_EMAIL_VERIFICATION,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
           actionUrl: D_READER_LINKS.emailVerification(verificationToken),
         },
@@ -182,7 +182,7 @@ export class MailService {
         subject: '🕵️‍♂️ e-mail verification!',
         template: USER_EMAIL_VERIFICATION_REQUESTED,
         context: {
-          name: user.name,
+          name: user.username,
           apiUrl,
           actionUrl: D_READER_LINKS.emailVerification(verificationToken),
         },
@@ -226,7 +226,7 @@ export class MailService {
         to: user.email,
         subject: '📧 Successfully changed email',
         template: USER_EMAIL_CHANGED,
-        context: { name: user.name, apiUrl },
+        context: { name: user.username, apiUrl },
       });
     } catch (e) {
       logError(USER_EMAIL_CHANGED, user.email, e);
