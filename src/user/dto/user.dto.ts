@@ -31,6 +31,10 @@ export class UserDto {
   @IsInt()
   referralsRemaining: number;
 
+  //TODO: for backward compatibility, remove this later
+  @IsString()
+  name: string;
+
   @IsString()
   username: string;
 
@@ -66,6 +70,7 @@ export function toUserDto(user: UserInput) {
     hasBetaAccess: !!user.referredAt,
     referralsRemaining: user.referralsRemaining,
     username: user.username,
+    name: user.username,
     displayName: user.displayName,
     avatar: getPublicUrl(user.avatar),
     role: user.role,

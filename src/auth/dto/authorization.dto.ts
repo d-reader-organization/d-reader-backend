@@ -12,11 +12,13 @@ export type BaseJwtPayload = {
   exp: number;
 };
 
+//TODO: for backward compatibility, remove this later
 export type UserPayload = {
   type: 'user';
   id: User['id'];
   email: User['email'];
-  username: User['username'];
+  name?: User['username'];
+  username?: User['username'];
   role: User['role'];
 };
 
