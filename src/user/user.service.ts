@@ -466,6 +466,18 @@ export class UserService {
     return user;
   }
 
+  async removeAvatar(id: number) {
+    const user = await this.findOne(id);
+    const updateUser = await this.prisma.user.update({
+      where: { id },
+      data: { avatar: '' },
+    });
+
+    const oldFileKey = user.avatar;
+    await this.s3.garbageCollectOldFiles([], [oldFileKey]);
+    return updateUser;
+  }
+
   async redeemReferral(referrerId: string, refereeId: number) {
     if (!referrerId) {
       throw new BadRequestException('Referrer name, or address undefined');
