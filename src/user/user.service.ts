@@ -63,7 +63,8 @@ export class UserService {
 
     let user = await this.prisma.user.create({
       data: {
-        name,
+        username: name,
+        displayName: name,
         email,
         password: hashedPassword,
         ...(!hashedPassword && { emailVerifiedAt: new Date() }), // no password = google register
@@ -209,7 +210,7 @@ export class UserService {
 
   async findByName(name: string) {
     const user = await this.prisma.user.findFirst({
-      where: { name: insensitive(name) },
+      where: { username: insensitive(name) },
     });
 
     if (!user) {
@@ -244,11 +245,13 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const { referrer, name, email } = updateUserDto;
+    const { referrer, username, displayName, email } = updateUserDto;
 
     const user = await this.findOne(id);
     const isEmailUpdated = email && user.email !== email;
-    const isNameUpdated = name && user.name !== name;
+    const isUserNameUpdated = username && user.username !== username;
+    const isDisplayNameUpdated =
+      displayName && user.displayName !== displayName;
 
     if (referrer) await this.redeemReferral(referrer, id);
 
@@ -264,12 +267,19 @@ export class UserService {
       this.mailService.requestUserEmailVerification(user);
     }
 
-    if (isNameUpdated) {
-      validateName(name);
-      await this.throwIfNameTaken(name);
+    if (isUserNameUpdated) {
+      validateName(username);
+      await this.throwIfNameTaken(username);
       await this.prisma.user.update({
         where: { id },
-        data: { name },
+        data: { username },
+      });
+    }
+
+    if (isDisplayNameUpdated) {
+      await this.prisma.user.update({
+        where: { id },
+        data: { displayName },
       });
     }
 
@@ -401,7 +411,7 @@ export class UserService {
 
   async throwIfNameTaken(name: string) {
     const user = await this.prisma.user.findFirst({
-      where: { name: insensitive(name) },
+      where: { username: insensitive(name) },
     });
 
     if (user) throw new BadRequestException(`${name} already taken`);
@@ -475,7 +485,7 @@ export class UserService {
       });
     } else {
       referrer = await this.prisma.user.findFirst({
-        where: { name: insensitive(referrerId) },
+        where: { username: insensitive(referrerId) },
         include: { referrals: { include: { wallets: true } }, wallets: true },
       });
     }
@@ -483,7 +493,9 @@ export class UserService {
     if (!referrer) {
       throw new BadRequestException(`User '${referrerId}' doesn't exist`);
     } else if (referrer.referralsRemaining == 0) {
-      throw new BadRequestException(`${referrer.name} has no referrals left`);
+      throw new BadRequestException(
+        `${referrer.username} has no referrals left`,
+      );
     } else if (referrer.id === refereeId) {
       throw new BadRequestException('Cannot refer yourself');
     }
@@ -494,7 +506,7 @@ export class UserService {
     });
 
     if (!!user.referredAt) {
-      throw new BadRequestException(`User '${user.name}' already referred`);
+      throw new BadRequestException(`User '${user.username}' already referred`);
     }
 
     const updatedUser = await this.prisma.user.update({

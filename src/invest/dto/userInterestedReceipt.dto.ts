@@ -37,7 +37,7 @@ export function toUserInterestedReceiptDto(
     walletAddress: receipt.walletAddress,
     transactionSignature: receipt.transactionSignature,
     timestamp: receipt.timestamp,
-    username: user.name,
+    username: user.username,
     expressedAmount: receipt.expressedAmount,
   };
 
