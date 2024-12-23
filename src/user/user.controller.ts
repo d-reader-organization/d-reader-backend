@@ -167,6 +167,14 @@ export class UserController {
     return toUserDto(updatedUser);
   }
 
+  /* Remove specific user's avatar */
+  @UserOwnerAuth()
+  @Patch('remove/:id/avatar')
+  async removeAvatar(@Param('id') id: string): Promise<UserDto> {
+    const updatedUser = await this.userService.removeAvatar(+id);
+    return toUserDto(updatedUser);
+  }
+
   /* Redeem a referral by user name, email, or id */
   @UserOwnerAuth()
   @Patch('redeem-referral/:referrer')
