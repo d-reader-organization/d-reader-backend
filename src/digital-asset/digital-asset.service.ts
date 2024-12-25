@@ -64,6 +64,7 @@ import { Connection } from '@solana/web3.js';
 import { AddressLookupTableAccount } from '@solana/web3.js';
 import { TransactionMessage } from '@solana/web3.js';
 import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -135,9 +136,7 @@ export class DigitalAssetService {
     });
 
     if (!asset) {
-      throw new NotFoundException(
-        `Asset with address ${address} does not exist`,
-      );
+      throw new NotFoundException(ERROR_MESSAGES.ASSET_NOT_FOUND(address));
     }
     return asset;
   }
@@ -230,9 +229,7 @@ export class DigitalAssetService {
     const isOneOfOneCollectionAlreadyExists = !!oneOfOneCollection;
 
     if (isOneOfOneCollectionAlreadyExists) {
-      throw new BadRequestException(
-        '1/1 Collection with this address already exists !',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.COLLECTION_ALREADY_EXISTS);
     }
 
     const collection = await fetchCollection(this.umi, address);
@@ -398,7 +395,7 @@ export class DigitalAssetService {
     const isOneOfOneAlreadyExists = !!oneOfOne;
 
     if (isOneOfOneAlreadyExists) {
-      throw new BadRequestException('1/1 with this address already exists !');
+      throw new BadRequestException(ERROR_MESSAGES.ONE_OF_ONE_ALREADY_EXISTS);
     }
 
     const asset = await fetchAsset(this.umi, address);
@@ -569,7 +566,7 @@ export class DigitalAssetService {
 
     if (isCollectionAlreadyExists) {
       throw new BadRequestException(
-        'Print Edition Collection with this address already exists !',
+        ERROR_MESSAGES.PRINT_EDITION_COLLECTION_ALREADY_EXISTS,
       );
     }
 
@@ -651,18 +648,17 @@ export class DigitalAssetService {
         include: { printEditionSaleConfig: true, digitalAsset: true },
       });
 
-    // Add checks for print edition
     if (!printEditionSaleConfig.isActive) {
-      throw new BadRequestException('Edition is not listed for sale');
+      throw new BadRequestException(ERROR_MESSAGES.EDITION_NOT_LISTED);
     }
 
     const now = new Date(Date.now());
     if (printEditionSaleConfig.startDate > now) {
-      throw new BadRequestException('Edition sale has not started');
+      throw new BadRequestException(ERROR_MESSAGES.EDITION_SALE_NOT_STARTED);
     }
 
     if (printEditionSaleConfig.endDate < now) {
-      throw new BadRequestException('Edition sale has ended');
+      throw new BadRequestException(ERROR_MESSAGES.EDITION_SALE_ENDED);
     }
 
     const currencyMint = publicKey(printEditionSaleConfig.currencyMint);
@@ -832,7 +828,7 @@ export class DigitalAssetService {
       });
 
       if (!candyMachine) {
-        throw Error("Collection doesn't exists in database");
+        throw Error(ERROR_MESSAGES.COLLECTION_DOES_NOT_EXIST);
       }
     }
     await this.helius.reIndexAsset(asset, candyMachineAddress);
@@ -934,7 +930,7 @@ export class DigitalAssetService {
         }
       }
     } catch (e) {
-      console.error('Error syncing receipt ', receipt.id, e);
+      console.error(ERROR_MESSAGES.ERROR_SYNCING_RECEIPT(receipt.id), e);
     }
   }
 

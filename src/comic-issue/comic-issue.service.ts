@@ -57,6 +57,7 @@ import { ComicIssueStatusProperty, SearchComicIssue } from './dto/types';
 import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -102,7 +103,7 @@ export class ComicIssueService {
     });
 
     if (!parentComic) {
-      throw new NotFoundException(`Comic ${comicSlug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(comicSlug));
     }
 
     // make sure creator of the comic issue owns the parent comic as well
@@ -126,7 +127,7 @@ export class ComicIssueService {
       return comicIssue;
     } catch (e) {
       console.error(e);
-      throw new BadRequestException('Bad comic issue data');
+      throw new BadRequestException(ERROR_MESSAGES.BAD_COMIC_ISSUE_DATA);
     }
   }
 
@@ -341,7 +342,9 @@ export class ComicIssueService {
     ]);
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
 
     const isCollectible = !isNull(comicIssue.collectibleComicCollection);
@@ -380,7 +383,9 @@ export class ComicIssueService {
     const [comicIssue, stats] = await Promise.all([findComicIssue, getStats]);
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
 
     return { ...comicIssue, stats };
@@ -475,7 +480,9 @@ export class ComicIssueService {
       where: { id },
     });
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
 
     const isNumberUpdated = !isNil(number) && comicIssue.number !== number;
@@ -542,7 +549,9 @@ export class ComicIssueService {
     });
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
 
     const newFileKeys: string[] = [];
@@ -560,7 +569,7 @@ export class ComicIssueService {
         const pdfSize = Math.ceil(pdf.size / (1024 * 1024));
 
         if (pdfSize > 100) {
-          throw new BadRequestException('Pdf size is more than 100 mb');
+          throw new BadRequestException(ERROR_MESSAGES.PDF_SIZE_EXCEEDS_LIMIT);
         }
 
         pdfKey = await this.s3.uploadFile(pdf, {
@@ -573,7 +582,7 @@ export class ComicIssueService {
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     const updatedComicIssue = await this.prisma.comicIssue.update({
@@ -608,7 +617,9 @@ export class ComicIssueService {
         },
       });
     } catch {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
 
     const s3Folder = getS3Folder(
@@ -631,7 +642,7 @@ export class ComicIssueService {
       return updatedComicIssue;
     } catch {
       await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
       // throw new BadRequestException(
       //   'Malformed file upload or comic issue already published',
       // );
@@ -645,7 +656,7 @@ export class ComicIssueService {
 
     if (comicIssue) {
       throw new BadRequestException(
-        `Comic already has episode number ${number}`,
+        ERROR_MESSAGES.COMIC_ALREADY_HAS_EPISODE(number),
       );
     }
   }
@@ -656,9 +667,7 @@ export class ComicIssueService {
     });
 
     if (collection)
-      throw new ForbiddenException(
-        'Comic issue published on-chain and cannot be edited',
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.COMIC_PUBLISHED_ON_CHAIN);
   }
 
   async throwIfSlugAndComicSlugTaken(slug: string, comicSlug: string) {
@@ -668,7 +677,7 @@ export class ComicIssueService {
 
     if (comicIssue) {
       throw new BadRequestException(
-        `Comic already has issue with slug ${slug}`,
+        ERROR_MESSAGES.COMIC_ALREADY_HAS_ISSUE_WITH_SLUG(slug),
       );
     }
   }
@@ -680,7 +689,7 @@ export class ComicIssueService {
 
     if (comicIssue) {
       throw new BadRequestException(
-        `Comic already has issue with title ${title}`,
+        ERROR_MESSAGES.COMIC_ALREADY_HAS_ISSUE_WITH_TITLE(title),
       );
     }
   }
@@ -696,24 +705,25 @@ export class ComicIssueService {
     });
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
     // else if (!!comicIssue.publishedAt) {
     // throw new BadRequestException('Comic issue already published');
     // }
     else if (!comicIssue.statelessCovers) {
-      throw new BadRequestException('Comic issue missing stateless covers');
+      throw new BadRequestException(ERROR_MESSAGES.MISSING_STATELESS_COVERS);
     } else if (!comicIssue.statefulCovers) {
-      throw new BadRequestException('Comic issue missing stateful covers');
+      throw new BadRequestException(ERROR_MESSAGES.MISSING_STATEFUL_COVERS);
     } else if (
       minSupply(comicIssue.statelessCovers.length) > publishOnChainDto.supply
     ) {
       throw new BadRequestException(
-        `Comic issue with ${
-          comicIssue.statelessCovers.length
-        } rarities must have atleast ${minSupply(
+        ERROR_MESSAGES.INSUFFICIENT_SUPPLY(
+          minSupply(comicIssue.statelessCovers.length),
           comicIssue.statelessCovers.length,
-        )} supply`,
+        ),
       );
     }
     validateWeb3PublishInfo(publishOnChainDto);
@@ -778,9 +788,13 @@ export class ComicIssueService {
     });
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     } else if (!!comicIssue.publishedAt) {
-      throw new BadRequestException('Comic already published');
+      throw new ForbiddenException(
+        ERROR_MESSAGES.PUBLISHED_COMIC_CANNOT_BE_DELETED,
+      );
     }
 
     return await this.prisma.comicIssue.update({
@@ -797,7 +811,9 @@ export class ComicIssueService {
         data: { publishedAt: null },
       });
     } catch {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
   }
 
@@ -812,7 +828,9 @@ export class ComicIssueService {
       where: { id },
     });
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     }
     const updatedComicIssue = await this.prisma.comicIssue.update({
       data: {
@@ -858,9 +876,13 @@ export class ComicIssueService {
     });
 
     if (!comicIssue) {
-      throw new NotFoundException(`Comic issue with id ${id} does not exist`);
+      throw new NotFoundException(
+        ERROR_MESSAGES.COMIC_ISSUE_DOES_NOT_EXIST(id),
+      );
     } else if (!!comicIssue.publishedAt) {
-      throw new ForbiddenException(`Published comic issue cannot be deleted`);
+      throw new ForbiddenException(
+        ERROR_MESSAGES.PUBLISHED_COMIC_CANNOT_BE_DELETED,
+      );
     }
 
     await this.prisma.comicIssue.delete({ where: { id } });

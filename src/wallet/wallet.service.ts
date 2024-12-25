@@ -20,6 +20,7 @@ import {
   getAsset,
   getAssetsByOwner,
 } from '../utils/das';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class WalletService {
@@ -42,7 +43,7 @@ export class WalletService {
 
       return updatedWallet;
     } catch {
-      throw new NotFoundException(`Wallet with address ${address} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.WALLET_NOT_FOUND(address));
     }
   }
 
@@ -355,9 +356,7 @@ export class WalletService {
         });
       }
     } catch (e) {
-      console.error(
-        `Error while making the user eligible for a referral bonus: ${e}`,
-      );
+      console.error(ERROR_MESSAGES.REFERRAL_BONUS_ERROR(e));
     }
   }
 
@@ -372,7 +371,7 @@ export class WalletService {
     });
 
     if (!wallet) {
-      throw new NotFoundException(`Wallet ${address} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.WALLET_NOT_FOUND(address));
     } else return wallet;
   }
 

@@ -27,6 +27,7 @@ import { ComicInput } from './dto/comic.dto';
 import { SearchComicParams } from './dto/search-comic-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -66,7 +67,7 @@ export class ComicService {
       return comic;
     } catch (e) {
       console.error(e);
-      throw new BadRequestException('Bad comic data');
+      throw new BadRequestException(ERROR_MESSAGES.BAD_COMIC_DATA);
     }
   }
 
@@ -157,7 +158,7 @@ export class ComicService {
     ]);
 
     if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
 
     return { ...comic, stats, myStats };
@@ -173,7 +174,7 @@ export class ComicService {
     const [comic, stats] = await Promise.all([findComic, getStats]);
 
     if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
 
     return { ...comic, stats };
@@ -297,7 +298,7 @@ export class ComicService {
       this.discordService.comicUpdated({ updatedComic, oldComic: comic });
       return updatedComic;
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
   }
 
@@ -307,7 +308,7 @@ export class ComicService {
     let comic = await this.prisma.comic.findUnique({ where: { slug } });
 
     if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
 
     const newFileKeys: string[] = [];
@@ -342,7 +343,7 @@ export class ComicService {
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     comic = await this.prisma.comic.update({
@@ -367,7 +368,7 @@ export class ComicService {
     try {
       comic = await this.prisma.comic.findUnique({ where: { slug } });
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
 
     const s3Folder = getS3Folder(comic.s3BucketSlug);
@@ -384,7 +385,7 @@ export class ComicService {
       });
     } catch {
       await this.s3.garbageCollectNewFile(newFileKey, oldFileKey);
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
@@ -396,7 +397,7 @@ export class ComicService {
       where: { title: insensitive(title) },
     });
 
-    if (comic) throw new BadRequestException(`${title} already taken`);
+    if (comic) throw new BadRequestException(ERROR_MESSAGES.TITLE_TAKEN(title));
   }
 
   async throwIfSlugTaken(slug: string) {
@@ -404,7 +405,7 @@ export class ComicService {
       where: { slug: insensitive(slug) },
     });
 
-    if (comic) throw new BadRequestException(`${slug} already taken`);
+    if (comic) throw new BadRequestException(ERROR_MESSAGES.SLUG_TAKEN(slug));
   }
 
   async publish(slug: string) {
@@ -434,7 +435,7 @@ export class ComicService {
       await this.cacheService.deleteByPattern(CachePath.COMIC_GET_MANY);
       return updatedComic;
     } catch {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     }
   }
 
@@ -446,7 +447,8 @@ export class ComicService {
     property: ComicStatusProperty;
   }): Promise<string | void> {
     const comic = await this.prisma.comic.findUnique({ where: { slug } });
-    if (!comic) throw new NotFoundException(`Comic ${slug} does not exist`);
+    if (!comic)
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
 
     const updatedComic = await this.prisma.comic.update({
       data: { [property]: comic[property] ? null : new Date() },
@@ -471,9 +473,11 @@ export class ComicService {
     const comic = await this.prisma.comic.findUnique({ where: { slug } });
 
     if (!comic) {
-      throw new NotFoundException(`Comic ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.COMIC_NOT_FOUND(slug));
     } else if (!!comic.publishedAt) {
-      throw new ForbiddenException(`Published comic cannot be deleted`);
+      throw new ForbiddenException(
+        ERROR_MESSAGES.PUBLISHED_COMIC_CANNOT_BE_DELETED,
+      );
     }
 
     await this.prisma.comic.delete({ where: { slug } });
