@@ -33,6 +33,7 @@ Table User {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
   interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
+  channel CreatorChannel
 }
 
 Table Wallet {
@@ -50,14 +51,8 @@ Table Wallet {
   wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
-Table Creator {
-  id Int [pk, increment]
-  email String [unique, not null]
-  name String [unique, not null]
-  slug String [unique, not null]
-  password String [not null]
-  role Role [not null, default: 'User']
-  avatar String [not null, default: '']
+Table CreatorChannel {
+  username String [unique, not null]
   banner String [not null, default: '']
   logo String [not null, default: '']
   description String [not null, default: '']
@@ -69,16 +64,12 @@ Table Creator {
   discordId String [not null, default: '']
   tippingAddress String [not null, default: '']
   s3BucketSlug String [unique, not null]
-  createdAt DateTime [default: `now()`, not null]
-  deletedAt DateTime
+  comics Comic [not null]
+  followers UserCreator [not null]
+  user User [not null]
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
-  lastLogin DateTime
-  lastActiveAt DateTime
-  emailVerifiedAt DateTime
-  comics Comic [not null]
-  userCreator UserCreator [not null]
 }
 
 Table Comic {
@@ -108,8 +99,8 @@ Table Comic {
   genres Genre [not null]
   issues ComicIssue [not null]
   users UserComic [not null]
-  creator Creator [not null]
-  creatorId Int [not null]
+  creator CreatorChannel [not null]
+  creatorUsername String [not null]
   collaborators ComicCollaborator [not null]
 }
 
@@ -408,14 +399,14 @@ Table UserComicIssue {
 }
 
 Table UserCreator {
-  creator Creator [not null]
-  creatorSlug String [not null]
+  creator CreatorChannel [not null]
+  creatorUsername String [not null]
   user User [not null]
   userId Int [not null]
   followedAt DateTime
 
   indexes {
-    (creatorSlug, userId) [pk]
+    (creatorUsername, userId) [pk]
   }
 }
 
@@ -777,6 +768,7 @@ Enum Role {
   Admin
   Tester
   User
+  Creator
 }
 
 Enum AudienceType {
@@ -871,7 +863,9 @@ Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
 
-Ref: Comic.creatorId > Creator.id [delete: Cascade]
+Ref: CreatorChannel.username - User.username
+
+Ref: Comic.creatorUsername > CreatorChannel.username [delete: Cascade]
 
 Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
@@ -927,7 +921,7 @@ Ref: UserComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: UserComicIssue.userId > User.id [delete: Cascade]
 
-Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
+Ref: UserCreator.creatorUsername > CreatorChannel.username [delete: Cascade]
 
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
