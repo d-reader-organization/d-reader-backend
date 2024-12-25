@@ -42,6 +42,7 @@ import { AddDropsDto } from './dto/add-drops.dto';
 import { RemoveDropsDto } from './dto/remove-drops.dto';
 import { WheelInput } from './dto/wheel.dto';
 import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -61,9 +62,7 @@ export class WheelService {
     validateWheelDate(startsAt, expiresAt);
 
     if (winProbability <= 0 && winProbability >= 100) {
-      throw new BadRequestException(
-        'Winning probability should be between 1-99',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.WINNING_PROBABILITY);
     }
 
     const slug = kebabCase(name);
@@ -95,6 +94,9 @@ export class WheelService {
     const wheel = await this.prisma.wheel.findUnique({
       where: { id: wheelId },
     });
+    if (!wheel) {
+      throw new BadRequestException(ERROR_MESSAGES.WHEEL_NOT_EXISTS(wheelId));
+    }
 
     const s3Folder = getS3Folder(wheel.s3BucketSlug);
     const image = addRewardDto.image
@@ -156,9 +158,8 @@ export class WheelService {
 
   async update(id: number, updateWheelDto: UpdateWheelDto) {
     const oldWheel = await this.prisma.wheel.findUnique({ where: { id } });
-
     if (!oldWheel) {
-      throw new BadRequestException(`Wheel with id ${id} doesn't exists`);
+      throw new BadRequestException(ERROR_MESSAGES.WHEEL_NOT_EXISTS(id));
     }
 
     const { s3BucketSlug } = oldWheel;
@@ -220,9 +221,7 @@ export class WheelService {
     });
 
     if (!lastConnectedWallet) {
-      throw new BadRequestException(
-        'Please connect wallet to be able to claim digital rewards !',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.CONNECT_WALLET);
     }
 
     const walletAddress = lastConnectedWallet.address;
@@ -234,11 +233,11 @@ export class WheelService {
     });
     const now = new Date();
     if (!wheel.isActive || wheel.startsAt > now) {
-      throw new BadRequestException('Wheel is not active !');
+      throw new BadRequestException(ERROR_MESSAGES.WHEEL_NOT_ACTIVE);
     }
 
     if (wheel.expiresAt && wheel.expiresAt <= now) {
-      throw new BadRequestException('Wheel has been expired !');
+      throw new BadRequestException(ERROR_MESSAGES.WHEEL_EXPIRED);
     }
 
     let lastEligibleSpinDate: Date;
@@ -285,9 +284,7 @@ export class WheelService {
       }
 
       throw new BadRequestException(
-        `You don't have any spin left, spin again in ${cooldownMessage.join(
-          ' ',
-        )}`,
+        ERROR_MESSAGES.NO_SPIN_LEFT(cooldownMessage.join(' ')),
       );
     }
 

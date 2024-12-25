@@ -42,6 +42,7 @@ import { EmailPayload } from '../auth/dto/authorization.dto';
 import { SearchCreatorParams } from './dto/search-creator-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -90,15 +91,14 @@ export class CreatorService {
     const { nameOrEmail, password } = loginDto;
 
     if (!nameOrEmail) {
-      throw new BadRequestException('Please provide email or username');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_OR_USERNAME_REQUIRED);
     }
 
     let creator: Creator;
     if (isEmail(nameOrEmail)) {
       creator = await this.findByEmail(nameOrEmail);
     } else {
-      // for now, creators can only log in via email
-      throw new BadRequestException('Incorrect email format');
+      throw new BadRequestException(ERROR_MESSAGES.INCORRECT_EMAIL_FORMAT);
     }
 
     await this.passwordService.validate(password, creator.password);
@@ -204,7 +204,7 @@ export class CreatorService {
     ]);
 
     if (!creator) {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(slug));
     }
 
     return { ...creator, stats, myStats };
@@ -299,9 +299,7 @@ export class CreatorService {
     ]);
 
     if (oldPassword === newPassword) {
-      throw new BadRequestException(
-        'New password must be different from current password',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.NEW_PASSWORD_DIFFERENT);
     }
 
     return await this.prisma.creator.update({
@@ -339,7 +337,7 @@ export class CreatorService {
     const creator = await this.findByEmail(email);
 
     if (!!creator.emailVerifiedAt) {
-      throw new BadRequestException('Email already verified');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED);
     }
 
     await this.mailService.requestCreatorEmailVerification(creator);
@@ -376,7 +374,8 @@ export class CreatorService {
       where: { name: insensitive(name) },
     });
 
-    if (creator) throw new BadRequestException(`${name} already taken`);
+    if (creator)
+      throw new BadRequestException(ERROR_MESSAGES.NAME_ALREADY_TAKEN(name));
   }
 
   async throwIfSlugTaken(slug: string) {
@@ -384,7 +383,8 @@ export class CreatorService {
       where: { slug: insensitive(slug) },
     });
 
-    if (creator) throw new BadRequestException(`${slug} already taken`);
+    if (creator)
+      throw new BadRequestException(ERROR_MESSAGES.SLUG_ALREADY_TAKEN(slug));
   }
 
   async throwIfEmailTaken(email: string) {
@@ -392,7 +392,8 @@ export class CreatorService {
       where: { email: insensitive(email) },
     });
 
-    if (creator) throw new BadRequestException(`${email} already taken`);
+    if (creator)
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_TAKEN(email));
   }
 
   async updateFiles(slug: string, creatorFilesDto: UpdateCreatorFilesDto) {
@@ -439,7 +440,7 @@ export class CreatorService {
       this.discordService.creatorFilesUpdated(creator.name, creatorFiles);
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     creator = await this.prisma.creator.update({

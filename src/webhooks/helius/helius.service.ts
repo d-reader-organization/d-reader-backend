@@ -87,6 +87,7 @@ import {
   getSellInstructionDataSerializer,
   getTimedAuctionSellInstructionDataSerializer,
 } from 'core-auctions';
+import { ERROR_MESSAGES } from '../../utils/errors';
 
 @Injectable()
 export class HeliusService {
@@ -136,7 +137,7 @@ export class HeliusService {
         accountAddresses: accountAddresses.concat(address),
       });
     } catch (e) {
-      console.error(`Failed to subscribe to address ${address}`);
+      console.error(ERROR_MESSAGES.SUBSCRIBE_FAILED(address));
     }
   }
 
@@ -327,7 +328,7 @@ export class HeliusService {
       });
       await this.removeSubscription(address);
     } catch (e) {
-      console.error(`Error handling burn for asset ${address}`);
+      console.error(ERROR_MESSAGES.BURN_ERROR(address));
     }
   }
 
@@ -694,9 +695,7 @@ export class HeliusService {
         });
       }
     } catch (e) {
-      console.error(
-        `Failed to index Core Asset ${address} While transfer event`,
-      );
+      console.error(ERROR_MESSAGES.ASSET_TRANSFER_FAILED(address));
     }
   }
 
@@ -722,7 +721,7 @@ export class HeliusService {
           await this.nonceService.updateNonce(new PublicKey(nonce.address));
         }
       } catch (e) {
-        console.error(`Fails to update nonce for ChangeCoreComicStateTx`);
+        console.error(ERROR_MESSAGES.NONCE_UPDATE_FAILED);
       }
 
       const updateSerializer = getUpdateV1InstructionDataSerializer();
@@ -773,7 +772,7 @@ export class HeliusService {
         );
       }
     } catch (e) {
-      console.error(`Error changing core comic state`, e);
+      console.error(ERROR_MESSAGES.COMIC_STATE_UPDATE_FAILED, e);
     }
   }
 
@@ -976,7 +975,7 @@ export class HeliusService {
         collectibleComic,
       );
     } catch (e) {
-      console.error('Error in buy core asset webhook', e);
+      console.error(ERROR_MESSAGES.BUY_ASSET_FAILED, e);
     }
   }
 
@@ -1186,7 +1185,7 @@ export class HeliusService {
         collectibleComic,
       );
     } catch (e) {
-      console.error('Failed to handle cancel listing', e);
+      console.error(ERROR_MESSAGES.CANCEL_LISTING_FAILED);
     }
   }
 
@@ -1275,7 +1274,7 @@ export class HeliusService {
         collectibleComic,
       );
     } catch (e) {
-      console.error('Failed to handle Asset listing', e);
+      console.error(ERROR_MESSAGES.LEGACY_ASSET_LISTING_FAILED);
     }
   }
 
@@ -1361,7 +1360,7 @@ export class HeliusService {
         collectibleComic,
       );
     } catch (e) {
-      console.error('Failed to handle Asset transfer', e);
+      console.error(ERROR_MESSAGES.LEGACY_ASSET_TRANSFER_FAILED);
     }
   }
 

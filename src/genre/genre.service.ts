@@ -16,6 +16,7 @@ import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const s3Folder = 'genres/';
 type GenreFileProperty = PickFields<Genre, 'icon'>;
@@ -39,7 +40,7 @@ export class GenreService {
       genre = await this.prisma.genre.create({ data: { ...rest, slug } });
     } catch (e) {
       console.error(e);
-      throw new BadRequestException('Bad genre data');
+      throw new BadRequestException(ERROR_MESSAGES.BAD_GENRE_DATA);
     }
 
     const { icon } = createGenreFilesDto;
@@ -50,7 +51,7 @@ export class GenreService {
         iconKey = await this.s3.uploadFile(icon, { s3Folder, fileName: slug });
     } catch {
       await this.prisma.genre.delete({ where: { slug } });
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     genre = await this.prisma.genre.update({
@@ -75,7 +76,7 @@ export class GenreService {
     const genre = await this.prisma.genre.findUnique({ where: { slug } });
 
     if (!genre) {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.GENRE_NOT_FOUND(slug));
     }
 
     return genre;
@@ -91,7 +92,7 @@ export class GenreService {
       await this.cacheService.deleteByPattern(CachePath.GENRE_GET_MANY);
       return updatedGenre;
     } catch {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.GENRE_NOT_FOUND(slug));
     }
   }
 
@@ -129,9 +130,9 @@ export class GenreService {
     });
 
     if (!genre) {
-      throw new NotFoundException(`Genre ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.GENRE_NOT_FOUND(slug));
     } else if (genre.comics.length > 0) {
-      throw new ForbiddenException("Cannot delete genre that's being used");
+      throw new ForbiddenException(ERROR_MESSAGES.CANNOT_DELETE_USED_GENRE);
     }
 
     await this.prisma.genre.delete({ where: { slug } });

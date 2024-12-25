@@ -6,6 +6,7 @@ import { ComicPage } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import imageSize from 'image-size';
 import { DiscordService } from '../discord/discord.service';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) => {
   return `comics/${comicSlug}/issues/${comicIssueSlug}/pages/`;
@@ -39,7 +40,7 @@ export class ComicPageService {
         try {
           imageKey = await this.s3.uploadFile(image, { s3Folder, fileName });
         } catch {
-          throw new BadRequestException('Malformed file upload');
+          throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
         }
         const { height, width } = imageSize(image.buffer);
         const comicPageData: Prisma.ComicPageCreateManyInput = {
@@ -93,7 +94,7 @@ export class ComicPageService {
     totalPagesSize = Math.ceil(totalPagesSize / (1024 * 1024));
 
     if (totalPagesSize > 100) {
-      throw new BadRequestException('Total size of pages exceeded 100 MB');
+      throw new BadRequestException(ERROR_MESSAGES.TOTAL_SIZE_EXCEEDED);
     }
 
     const oldComicPages = comicIssue.pages;
