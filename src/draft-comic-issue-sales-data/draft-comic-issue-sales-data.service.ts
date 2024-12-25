@@ -7,6 +7,7 @@ import {
 import { CreateDraftComicIssueSalesDataDto } from './dto/create-draft-comic-issue-sales-data.dto';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateDraftComicIssueSalesDataDto } from './dto/update-draft-comic-issue-sales-data.dto';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class DraftComicIssueSalesDataService {
@@ -19,7 +20,7 @@ export class DraftComicIssueSalesDataService {
 
     if (comicIssue) {
       throw new BadRequestException(
-        `There is pending request for comic issue with id ${comicIssueId}`,
+        ERROR_MESSAGES.PENDING_ISSUE_REQUEST(comicIssueId),
       );
     }
   }
@@ -36,7 +37,7 @@ export class DraftComicIssueSalesDataService {
       });
     } catch (error) {
       console.error(error);
-      throw new BadRequestException('Bad draft comic issue sales data');
+      throw new BadRequestException(ERROR_MESSAGES.BAD_DRAFT_ISSUE_DATA);
     }
   }
 
@@ -49,7 +50,7 @@ export class DraftComicIssueSalesDataService {
       });
     if (!draftComicIssueSalesData) {
       throw new NotFoundException(
-        `Draft comic issue sales data with id ${id} does not exist`,
+        ERROR_MESSAGES.ISSUE_DRAFT_SALE_DATA_NOT_FOUND(id),
       );
     }
 
@@ -70,9 +71,7 @@ export class DraftComicIssueSalesDataService {
     const draftComicIssueSalesData = await this.findOneOrThrow(id);
 
     if (!!draftComicIssueSalesData.verifiedAt) {
-      throw new ForbiddenException(
-        'Cannot update while your processing your data',
-      );
+      throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN_UPDATE);
     }
     return await this.prisma.draftComicIssueSalesData.update({
       data: updateDraftComicIssueSalesDataDto,

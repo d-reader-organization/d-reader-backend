@@ -26,6 +26,7 @@ import { getConnection, umi } from '../utils/metaplex';
 import { Connection } from '@solana/web3.js';
 import { isNull } from 'lodash';
 import { ProjectInput } from './dto/project.dto';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class InvestService {
@@ -44,7 +45,7 @@ export class InvestService {
     splTokenAddress: string,
   ) {
     if (splTokenAddress !== SOL_ADDRESS && splTokenAddress !== USDC_ADDRESS) {
-      throw new BadRequestException('Currency not supported!');
+      throw new BadRequestException(ERROR_MESSAGES.CURRENCY_NOT_SUPPORTED);
     }
 
     const isUserAlreadyInvested =
@@ -52,7 +53,7 @@ export class InvestService {
         where: { projectSlug_userId: { projectSlug, userId } },
       });
     if (isUserAlreadyInvested) {
-      throw new BadRequestException("You've already expressed interest!");
+      throw new BadRequestException(ERROR_MESSAGES.ALREADY_EXPRESSED_INTEREST);
     }
 
     const isSol = splTokenAddress === SOL_ADDRESS;
@@ -157,7 +158,7 @@ export class InvestService {
         },
       });
     } catch (e) {
-      console.error('Failed to send transaction to express interest', e);
+      console.error(ERROR_MESSAGES.TRANSACTION_FAILED, e);
     }
   }
 

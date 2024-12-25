@@ -8,6 +8,7 @@ import {
   apiUrl,
 } from '../utils/client-links';
 import { TWITTER_INTENT } from '../utils/twitter';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 // To consider:
 // send reports for critical backend errors to errors@dreader.io
@@ -121,7 +122,7 @@ export class MailService {
     } catch (e) {
       logError(USER_PASSWORD_RESET_REQUESTED, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "password reset requested" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset requested'),
       );
     }
   }
@@ -140,7 +141,7 @@ export class MailService {
     } catch (e) {
       logError(USER_PASSWORD_RESET, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "password reset" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset'),
       );
     }
   }
@@ -165,7 +166,7 @@ export class MailService {
     } catch (e) {
       logError(BUMP_USER_WITH_EMAIL_VERIFICATION, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "bump e-mail verification" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('bump e-mail verification'),
       );
     }
   }
@@ -190,7 +191,7 @@ export class MailService {
     } catch (e) {
       logError(USER_EMAIL_VERIFICATION_REQUESTED, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "e-mail verification" mail, check your email address',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('e-mail verification'),
       );
     }
   }
@@ -215,7 +216,7 @@ export class MailService {
     } catch (e) {
       logError(USER_EMAIL_CHANGE_REQUESTED, newEmail, e);
       throw new InternalServerErrorException(
-        'Unable to send "request email change" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('request email change'),
       );
     }
   }
@@ -231,7 +232,7 @@ export class MailService {
     } catch (e) {
       logError(USER_EMAIL_CHANGED, user.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "email email changed" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('email email changed'),
       );
     }
   }
@@ -311,7 +312,7 @@ export class MailService {
     } catch (e) {
       logError(CREATOR_PASSWORD_RESET_REQUESTED, creator.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "password reset requested" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset requested'),
       );
     }
   }
@@ -331,7 +332,7 @@ export class MailService {
     } catch (e) {
       logError(CREATOR_PASSWORD_RESET, creator.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "password reset" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset'),
       );
     }
   }
@@ -356,7 +357,7 @@ export class MailService {
     } catch (e) {
       logError(BUMP_CREATOR_WITH_EMAIL_VERIFICATION, creator.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "bump e-mail verification" email',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('bump e-mail verification'),
       );
     }
   }
@@ -381,7 +382,7 @@ export class MailService {
     } catch (e) {
       logError(CREATOR_EMAIL_VERIFICATION_REQUESTED, creator.email, e);
       throw new InternalServerErrorException(
-        'Unable to send "e-mail verification" mail, check your email address',
+        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('e-mail verification'),
       );
     }
   }

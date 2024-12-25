@@ -133,6 +133,7 @@ import { constructMintTransactionOnWorker } from '../utils/workers';
 import { days, hours, minutes } from '@nestjs/throttler';
 import { Pagination } from 'src/types/pagination.dto';
 import { LaunchpadInput } from './dto/launchpad.dto';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class CandyMachineService {
@@ -609,7 +610,7 @@ export class CandyMachineService {
 
     if (!candyMachine) {
       throw new NotFoundException(
-        `Candy Machine with address ${address} does not exist`,
+        ERROR_MESSAGES.CANDY_MACHINE_NOT_FOUND(address),
       );
     }
 
@@ -1466,10 +1467,10 @@ export class CandyMachineService {
   private validateCouponDates(startsAt?: Date, expiresAt?: Date): void {
     const currentDate = new Date();
     if (startsAt && startsAt > currentDate) {
-      throw new UnauthorizedException('Coupon is not active yet.');
+      throw new UnauthorizedException(ERROR_MESSAGES.COUPON_NOT_ACTIVE);
     }
     if (expiresAt && expiresAt < currentDate) {
-      throw new UnauthorizedException('Coupon is expired.');
+      throw new UnauthorizedException(ERROR_MESSAGES.COUPON_EXPIRED);
     }
   }
 
@@ -1535,9 +1536,7 @@ export class CandyMachineService {
 
     if (!isPublicMint) {
       if (!userId) {
-        throw new UnauthorizedException(
-          "Mint is limited to Users, make sure you're signed in!",
-        );
+        throw new UnauthorizedException(ERROR_MESSAGES.UNAUTHORIZED_COUPON);
       }
       if (couponType === CouponType.WhitelistedUser) {
         const isWhitelisted = await this.findIfUserWhitelisted(
@@ -1545,9 +1544,7 @@ export class CandyMachineService {
           couponId,
         );
         if (!isWhitelisted) {
-          throw new UnauthorizedException(
-            'User is not eligible for this mint!',
-          );
+          throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ELIGIBLE);
         }
       }
     } else if (couponType === CouponType.WhitelistedWallet) {
@@ -1556,9 +1553,7 @@ export class CandyMachineService {
         couponId,
       );
       if (!isWhitelisted) {
-        throw new UnauthorizedException(
-          'Wallet selected is not eligible for this mint!',
-        );
+        throw new UnauthorizedException(ERROR_MESSAGES.WALLET_NOT_ELIGIBLE);
       }
     }
   }

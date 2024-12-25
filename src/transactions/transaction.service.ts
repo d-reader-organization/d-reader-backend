@@ -33,6 +33,7 @@ import {
   findUsedTrait,
 } from '../utils/nft-metadata';
 import { NonceService } from '../nonce/nonce.service';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class TransactionService {
@@ -54,7 +55,7 @@ export class TransactionService {
     tokenAddress: PublicKey,
   ) {
     if (!tokenAddress.equals(WRAPPED_SOL_MINT)) {
-      throw new Error('Unsupported tipping currency !');
+      throw new Error(ERROR_MESSAGES.CURRENCY_NOT_SUPPORTED);
     }
 
     const instruction = SystemProgram.transfer({
@@ -96,9 +97,7 @@ export class TransactionService {
     if (candyMachine.standard === TokenStandard.Core) {
       const { collection } = metadata;
       if (newState == ComicStateArgs.Use && user.userId != userId) {
-        throw new UnauthorizedException(
-          `Unauthorized to unwrap the comic, make sure you've correct wallet connected to the app!`,
-        );
+        throw new UnauthorizedException(ERROR_MESSAGES.UNAUTHORIZED_UNWRAP);
       }
 
       // Fetch asset from onchain in case our database is out of sync
@@ -110,21 +109,23 @@ export class TransactionService {
       let signer: UmiPublicKey;
       if (newState === ComicStateArgs.Sign) {
         if (isSigned) {
-          throw new BadRequestException('Comic is already signed');
+          throw new BadRequestException(ERROR_MESSAGES.COMIC_ALREADY_SIGNED);
         }
         if (
           feePayer.toString() != collection.creatorAddress &&
           feePayer.toString() != collection.creatorBackupAddress
         ) {
           throw new BadRequestException(
-            'Only verified creator can sign a comic',
+            ERROR_MESSAGES.ONLY_VERIFIED_CREATOR_CAN_SIGN,
           );
         }
         isSigned = true;
         signer = publicKey(feePayer);
       } else {
         if (assetData.owner.toString() !== ownerAddress) {
-          throw new UnauthorizedException(`Unauthorized to change comic state`);
+          throw new UnauthorizedException(
+            ERROR_MESSAGES.UNAUTHORIZED_CHANGE_COMIC_STATE,
+          );
         }
         // Currently by default user is opted in to not sign unwrap tx and we sign it on behalf of user to unwrap the asset
         signer = umi.identity.publicKey;

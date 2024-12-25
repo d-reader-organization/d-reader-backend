@@ -34,6 +34,7 @@ import {
 } from '../auth/dto/authorization.dto';
 import { GetMeResult } from './types';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -122,9 +123,7 @@ export class UserService {
     }
 
     if (!user.password.length) {
-      throw new BadRequestException(
-        'This user is linked to a Google Account. Please use google sign in.',
-      );
+      throw new BadRequestException(ERROR_MESSAGES.GOOGLE_ACCOUNT_LINKED);
     }
 
     await this.passwordService.validate(password, user.password);
@@ -194,7 +193,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND(id));
     } else return user;
   }
 
@@ -364,7 +363,7 @@ export class UserService {
     const user = await this.findByEmail(email);
 
     if (!!user.emailVerifiedAt) {
-      throw new BadRequestException('Email already verified');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED);
     }
 
     await this.mailService.requestUserEmailVerification(user);
@@ -426,7 +425,10 @@ export class UserService {
       where: { username: insensitive(name) },
     });
 
-    if (user) throw new BadRequestException(`${name} already taken`);
+    if (user)
+      throw new BadRequestException(
+        ERROR_MESSAGES.USERNAME_ALREADY_TAKEN(name),
+      );
   }
 
   async throwIfEmailTaken(email: string) {
@@ -434,7 +436,8 @@ export class UserService {
       where: { email: insensitive(email) },
     });
 
-    if (user) throw new BadRequestException(`${email} already taken`);
+    if (user)
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_TAKEN(email));
   }
 
   async updateFile(
@@ -480,9 +483,11 @@ export class UserService {
 
   async redeemReferral(referrerId: string, refereeId: number) {
     if (!referrerId) {
-      throw new BadRequestException('Referrer name, or address undefined');
+      throw new BadRequestException(
+        ERROR_MESSAGES.REFERRER_NAME_OR_ADDRESS_UNDEFINED,
+      );
     } else if (!refereeId) {
-      throw new BadRequestException('Referee id missing');
+      throw new BadRequestException(ERROR_MESSAGES.REFEREE_ID_MISSING);
     }
 
     // if the search string is of type Solana address, search by address
@@ -530,7 +535,9 @@ export class UserService {
     });
 
     if (!!user.referredAt) {
-      throw new BadRequestException(`User '${user.username}' already referred`);
+      throw new BadRequestException(
+        ERROR_MESSAGES.USER_ALREADY_REFERRED(user.username),
+      );
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -565,7 +572,8 @@ export class UserService {
       }
     }
 
-    if (!userHasSaga) throw new BadRequestException('No SGT Token found');
+    if (!userHasSaga)
+      throw new BadRequestException(ERROR_MESSAGES.NO_SGT_TOKEN_FOUND);
   }
 
   async generateAvatar(id: number) {

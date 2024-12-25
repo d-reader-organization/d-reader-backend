@@ -23,6 +23,7 @@ import { GetCarouselSlidesParams } from './dto/carousel-slide-params.dto';
 import { TENSOR_TRADE_URL } from '../constants';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 const s3Folder = 'carousel/slides/';
 type CarouselSlideFileProperty = PickFields<CarouselSlide, 'image'>;
@@ -45,12 +46,11 @@ export class CarouselService {
     try {
       imageKey = await this.s3.uploadFile(image, { s3Folder });
     } catch {
-      throw new BadRequestException('Malformed file upload');
+      throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
     let carouselSlide: CarouselSlide;
     try {
-      // expires in 30 days by default
       const expiredAt =
         createCarouselSlideBodyDto.expiredAt ?? addDays(new Date(), 30);
 
@@ -64,7 +64,7 @@ export class CarouselService {
       });
     } catch (e) {
       console.error(e);
-      throw new BadRequestException('Bad carousel slide data');
+      throw new BadRequestException(ERROR_MESSAGES.BAD_CAROUSEL_SLIDE_DATA);
     }
     await this.cacheService.deleteByPattern(CachePath.CAROUSEL_SLIDE_GET_MANY);
     return carouselSlide;
@@ -114,7 +114,7 @@ export class CarouselService {
     });
 
     if (!carouselSlide) {
-      throw new NotFoundException(`Carousel slide with id ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.CAROUSEL_SLIDE_NOT_FOUND(id));
     }
 
     return carouselSlide;
@@ -132,7 +132,7 @@ export class CarouselService {
       );
       return updatedCarouselSlide;
     } catch {
-      throw new NotFoundException(`Carousel slide with id ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.CAROUSEL_SLIDE_NOT_FOUND(id));
     }
   }
 
@@ -167,7 +167,7 @@ export class CarouselService {
         data: { expiredAt: new Date() },
       });
     } catch {
-      throw new NotFoundException(`Carousel slide with id ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.CAROUSEL_SLIDE_NOT_FOUND(id));
     }
   }
 
