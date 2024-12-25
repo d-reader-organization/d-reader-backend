@@ -44,6 +44,7 @@ model User {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
   interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
+  channel                        CreatorChannel?
 }
 
 enum WalletProvider {
@@ -71,37 +72,28 @@ enum Role {
   Admin
   Tester
   User
+  Creator
 }
 
-model Creator {
-  id              Int           @id @default(autoincrement())
-  email           String        @unique
-  name            String        @unique
-  slug            String        @unique
-  password        String
-  role            Role          @default(User)
-  avatar          String        @default("")
-  banner          String        @default("")
-  logo            String        @default("")
-  description     String        @default("")
-  flavorText      String        @default("")
-  website         String        @default("")
-  twitter         String        @default("")
-  instagram       String        @default("")
-  linktree        String        @default("")
-  discordId       String        @default("")
-  tippingAddress  String        @default("")
-  s3BucketSlug    String        @unique
-  createdAt       DateTime      @default(now())
-  deletedAt       DateTime?
-  featuredAt      DateTime?
-  verifiedAt      DateTime?
-  popularizedAt   DateTime?
-  lastLogin       DateTime?
-  lastActiveAt    DateTime?
-  emailVerifiedAt DateTime?
-  comics          Comic[]
-  userCreator     UserCreator[]
+model CreatorChannel {
+  username       String        @unique
+  banner         String        @default("")
+  logo           String        @default("")
+  description    String        @default("")
+  flavorText     String        @default("")
+  website        String        @default("")
+  twitter        String        @default("")
+  instagram      String        @default("")
+  linktree       String        @default("")
+  discordId      String        @default("")
+  tippingAddress String        @default("")
+  s3BucketSlug   String        @unique
+  comics         Comic[]
+  followers      UserCreator[]
+  user           User          @relation(fields: [username], references: [username])
+  featuredAt     DateTime?
+  verifiedAt     DateTime?
+  popularizedAt  DateTime?
 }
 
 enum AudienceType {
@@ -112,35 +104,35 @@ enum AudienceType {
 }
 
 model Comic {
-  title         String
-  slug          String              @id
-  audienceType  AudienceType        @default(Everyone)
-  cover         String              @default("")
-  banner        String              @default("")
-  logo          String              @default("")
-  description   String              @default("")
-  flavorText    String              @default("")
-  website       String              @default("")
-  twitter       String              @default("")
-  discord       String              @default("")
-  telegram      String              @default("")
-  instagram     String              @default("")
-  tikTok        String              @default("")
-  youTube       String              @default("")
-  s3BucketSlug  String              @unique
-  updatedAt     DateTime            @updatedAt
-  createdAt     DateTime            @default(now())
-  featuredAt    DateTime?
-  verifiedAt    DateTime?
-  publishedAt   DateTime?
-  popularizedAt DateTime?
-  completedAt   DateTime?
-  genres        Genre[]
-  issues        ComicIssue[]
-  users         UserComic[]
-  creator       Creator             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId     Int
-  collaborators ComicCollaborator[]
+  title           String
+  slug            String              @id
+  audienceType    AudienceType        @default(Everyone)
+  cover           String              @default("")
+  banner          String              @default("")
+  logo            String              @default("")
+  description     String              @default("")
+  flavorText      String              @default("")
+  website         String              @default("")
+  twitter         String              @default("")
+  discord         String              @default("")
+  telegram        String              @default("")
+  instagram       String              @default("")
+  tikTok          String              @default("")
+  youTube         String              @default("")
+  s3BucketSlug    String              @unique
+  updatedAt       DateTime            @updatedAt
+  createdAt       DateTime            @default(now())
+  featuredAt      DateTime?
+  verifiedAt      DateTime?
+  publishedAt     DateTime?
+  popularizedAt   DateTime?
+  completedAt     DateTime?
+  genres          Genre[]
+  issues          ComicIssue[]
+  users           UserComic[]
+  creator         CreatorChannel      @relation(fields: [creatorUsername], references: [username], onDelete: Cascade)
+  creatorUsername String
+  collaborators   ComicCollaborator[]
 }
 
 model UserComic {
@@ -464,13 +456,13 @@ model UserComicIssue {
 }
 
 model UserCreator {
-  creator     Creator   @relation(fields: [creatorSlug], references: [slug], onDelete: Cascade)
-  creatorSlug String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  followedAt  DateTime?
+  creator         CreatorChannel @relation(fields: [creatorUsername], references: [username], onDelete: Cascade)
+  creatorUsername String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int
+  followedAt      DateTime?
 
-  @@id([creatorSlug, userId])
+  @@id([creatorUsername, userId])
 }
 
 model CollectibleComicMetadata {
