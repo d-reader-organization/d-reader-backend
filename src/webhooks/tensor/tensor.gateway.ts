@@ -43,7 +43,7 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
             parsedData.data.tx.tx.txType == 'ADJUST_PRICE'
           ) {
             const asset: TENSOR_ASSET = parsedData.tx.mint;
-            await this.heliusService.handleCoreListing(asset);
+            await this.heliusService.handleTensorListing(asset);
           }
         }
       } catch (e) {

@@ -291,6 +291,8 @@ export class HeliusService {
             await this.handleInitEditionSale(instruction);
           } else if (isEqual(discriminator[0], BUY_EDITION_DISCRIMINATOR)) {
             await this.handleBuyEdition(instruction);
+          } else if (instruction.programId == TCOMP_PROGRAM_ID) {
+            return this.handleTensorSecondary(transaction);
           } else {
             console.log(
               'Unhandled webhook',
@@ -867,26 +869,28 @@ export class HeliusService {
   }
 
   /**
-   * Handles secondary transactions by determining if the asset is being listed or bought.
+   * Handles tensor secondary transactions by determining if the asset is being listed or bought.
    */
-  private async handleCoreSecondary(transaction: EnrichedTransaction) {
+  private async handleTensorSecondary(transaction: EnrichedTransaction) {
     const instruction = transaction.instructions.at(-1);
     const coreProgramInstruction = instruction.innerInstructions.find(
       (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
     );
+    if(!coreProgramInstruction)return;
+    
     const mint = coreProgramInstruction.accounts.at(0);
     const assetInfo = await getAssetFromTensor(mint);
     if (assetInfo.listing && assetInfo.listing.seller) {
-      return this.handleCoreListing(assetInfo);
+      return this.handleTensorListing(assetInfo);
     } else {
-      return this.handleCoreBuying(transaction, assetInfo);
+      return this.handleTensorBuying(transaction, assetInfo);
     }
   }
 
   /**
    * Handles the buying of core assets by updating ownership and listing information.
    */
-  private async handleCoreBuying(
+  private async handleTensorBuying(
     transaction: EnrichedTransaction,
     assetInfo: TENSOR_ASSET,
   ) {
@@ -982,7 +986,7 @@ export class HeliusService {
   /**
    * Handles the listing of core assets by updating or creating listings in the database.
    */
-  async handleCoreListing(assetInfo: TENSOR_ASSET) {
+  async handleTensorListing(assetInfo: TENSOR_ASSET) {
     const { listing, onchainId: mint } = assetInfo;
 
     const collectibleComic = await this.prisma.collectibleComic.update({
