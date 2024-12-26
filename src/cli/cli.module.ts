@@ -52,8 +52,8 @@ import { SyncCollectionQuestions } from './sync-collection-questions';
 import { SyncCollectionCommand } from './sync-collection-command';
 import { DeleteCandyMachineCommand } from './delete-candy-machine-command';
 import { DeleteCandyMachineQuestions } from './delete-candy-machine-questions';
-import { SyncListingsCommand } from './sync-listings-command';
-import { SyncListingsQuestions } from './sync-listings-questions';
+import { SyncTensorListingsCommand } from './sync-tensor-listings-command';
+import { SyncTensorListingsQuestions } from './sync-tensor-listings-questions';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
 import { CreateNonceQuestions } from './create-nonce-questions';
 import { CreateNonceCommand } from './create-nonce-command';
@@ -144,8 +144,8 @@ import { SyncTensorCollectionIdCommand } from './sync-tensor-collection-id-comma
     SyncCollectionCommand,
     DeleteCandyMachineCommand,
     DeleteCandyMachineQuestions,
-    SyncListingsCommand,
-    SyncListingsQuestions,
+    SyncTensorListingsCommand,
+    SyncTensorListingsQuestions,
     AuctionHouseService,
     CreateNonceQuestions,
     CreateNonceCommand,

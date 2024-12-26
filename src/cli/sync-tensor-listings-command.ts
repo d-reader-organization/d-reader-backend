@@ -12,7 +12,7 @@ interface Options {
   name: 'sync-tensor-listings',
   description: 'sync the all the listings of a collection from Tensor',
 })
-export class SyncListingsCommand extends CommandRunner {
+export class SyncTensorListingsCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly auctionHouseService: AuctionHouseService,

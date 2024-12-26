@@ -2,7 +2,7 @@ import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
 @QuestionSet({ name: 'sync-listings' })
-export class SyncListingsQuestions {
+export class SyncTensorListingsQuestions {
   @Question({
     type: 'input',
     name: 'nftAddress',

@@ -56,6 +56,7 @@ import {
   MINT_CORE_V1_DISCRIMINATOR,
   TCOMP_PROGRAM_ID,
   TRANSFER_CORE_V1_DISCRIMINANT,
+  TRANSFER_LEGACY_DISCRIMINANT,
   UPDATE_CORE_V1_DISCRIMINANT,
 } from '../../constants';
 import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
@@ -77,7 +78,6 @@ import { NonceService } from '../../nonce/nonce.service';
 import { isEqual } from 'lodash';
 import { getAsset, getAssetFromTensor } from '../../utils/das';
 import { IndexCoreAssetReturnType, TENSOR_ASSET } from './dto/types';
-import { AssetInput } from '../../digital-asset/dto/digital-asset.dto';
 import { ListingInput } from '../../auction-house/dto/listing.dto';
 import {
   CORE_AUCTIONS_PROGRAM_ID,
@@ -88,6 +88,7 @@ import {
   getTimedAuctionSellInstructionDataSerializer,
 } from 'core-auctions';
 import { ERROR_MESSAGES } from '../../utils/errors';
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 
 @Injectable()
 export class HeliusService {
@@ -165,11 +166,10 @@ export class HeliusService {
       enrichedTransactions.map((transaction) => {
         switch (transaction.type) {
           case TransactionType.TRANSFER:
-            return this.handleLegacyCollectibleComicTransfer(transaction);
-          case TransactionType.NFT_LISTING:
-            return this.handleLegacyCollectibleComicListing(transaction);
-          case TransactionType.NFT_CANCEL_LISTING:
-            return this.handleCancelLegacyNftListing(transaction);
+            return this.handleLegacyCollectibleComicTransfer(
+              transaction.instructions.at(-1),
+              transaction.signature,
+            );
           case TransactionType.CHANGE_COMIC_STATE:
             return this.handleChangeLegacyCollectibleComicState(transaction);
           case TransactionType.NFT_MINT_REJECTED:
@@ -221,7 +221,7 @@ export class HeliusService {
           console.log('No handler for this instruction event');
           break;
 
-        case MPL_CORE_PROGRAM_ID.toString():
+        case MPL_CORE_PROGRAM_ID.toString(): {
           const discriminant = u8().deserialize(data.subarray(0, 1))[0];
           if (discriminant === TRANSFER_CORE_V1_DISCRIMINANT) {
             await this.handleAssetTransfer(instruction);
@@ -237,6 +237,24 @@ export class HeliusService {
             await this.handleAssetBurn(instruction);
           }
           break;
+        }
+
+        case MPL_TOKEN_METADATA_PROGRAM_ID.toString(): {
+          const discriminant = u8().deserialize(data.subarray(0, 1))[0];
+
+          if (discriminant === TRANSFER_LEGACY_DISCRIMINANT) {
+            await this.handleLegacyCollectibleComicTransfer(
+              instruction,
+              transaction.signature,
+            );
+          }
+          break;
+        }
+
+        case TCOMP_PROGRAM_ID: {
+          await this.handleTensorSecondary(transaction);
+          break;
+        }
 
         case CORE_AUCTIONS_PROGRAM_ID.toString():
           try {
@@ -291,8 +309,6 @@ export class HeliusService {
             await this.handleInitEditionSale(instruction);
           } else if (isEqual(discriminator[0], BUY_EDITION_DISCRIMINATOR)) {
             await this.handleBuyEdition(instruction);
-          } else if (instruction.programId == TCOMP_PROGRAM_ID) {
-            return this.handleTensorSecondary(transaction);
           } else {
             console.log(
               'Unhandled webhook',
@@ -876,8 +892,8 @@ export class HeliusService {
     const coreProgramInstruction = instruction.innerInstructions.find(
       (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
     );
-    if(!coreProgramInstruction)return;
-    
+    if (!coreProgramInstruction) return;
+
     const mint = coreProgramInstruction.accounts.at(0);
     const assetInfo = await getAssetFromTensor(mint);
     if (assetInfo.listing && assetInfo.listing.seller) {
@@ -1135,174 +1151,22 @@ export class HeliusService {
   }
 
   /**
-   * Handles the cancellation of NFT listings by updating the listing's closedAt timestamp.
-   */
-  private async handleCancelLegacyNftListing(transaction: EnrichedTransaction) {
-    try {
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved
-      const listing = await this.prisma.listing.update({
-        where: {
-          assetAddress_closedAt: {
-            assetAddress: mint,
-            closedAt: new Date(0),
-          },
-        },
-        include: {
-          digitalAsset: {
-            include: {
-              owner: { include: { user: true } },
-              collectibleComic: {
-                include: {
-                  metadata: {
-                    include: {
-                      collection: {
-                        include: {
-                          comicIssue: { include: { statefulCovers: true } },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        data: {
-          closedAt: new Date(transaction.timestamp * 1000),
-        },
-      });
-
-      const comicIssueId =
-        listing.digitalAsset.collectibleComic.metadata.collection.comicIssueId;
-      await this.websocketGateway.handleLegacyAssetDelisted(
-        comicIssueId,
-        listing,
-      );
-
-      const collectibleComic: AssetInput = {
-        ...listing.digitalAsset.collectibleComic,
-        digitalAsset: listing.digitalAsset,
-      };
-
-      await this.websocketGateway.handleWalletLegacyAssetDelisted(
-        listing.digitalAsset.ownerAddress,
-        collectibleComic,
-      );
-    } catch (e) {
-      console.error(ERROR_MESSAGES.CANCEL_LISTING_FAILED);
-    }
-  }
-
-  /**
-   * Handles legacy collectible comic listing events by updating or creating listings in the database.
-   */
-  private async handleLegacyCollectibleComicListing(
-    transaction: EnrichedTransaction,
-  ) {
-    try {
-      const mint = transaction.events.nft.nfts[0].mint; // only 1 token would be involved for a nft listing
-      const price = transaction.events.nft.amount;
-      const sellerAddress = transaction.feePayer;
-      const signature = transaction.signature;
-      const createdAt = new Date(transaction.timestamp * 1000);
-      const collectibleComic = await this.prisma.collectibleComic.update({
-        where: { address: mint },
-        include: {
-          metadata: {
-            include: {
-              collection: {
-                include: { comicIssue: { include: { statefulCovers: true } } },
-              },
-            },
-          },
-          digitalAsset: {
-            include: {
-              owner: { include: { user: true } },
-              listings: {
-                where: { assetAddress: mint, closedAt: new Date(0) },
-              },
-            },
-          },
-        },
-        data: {
-          digitalAsset: {
-            update: {
-              listings: {
-                upsert: {
-                  where: {
-                    assetAddress_closedAt: {
-                      assetAddress: mint,
-                      closedAt: new Date(0),
-                    },
-                  },
-                  update: {
-                    price,
-                    sellerAddress,
-                    signature,
-                    createdAt: new Date(),
-                    source: transaction.source,
-                  },
-                  create: {
-                    auctionHouse: {
-                      connect: { address: TCOMP_PROGRAM_ID },
-                    },
-                    price,
-                    sellerAddress,
-                    signature,
-                    createdAt,
-                    closedAt: new Date(0),
-                    source: transaction.source,
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const { digitalAsset, metadata } = collectibleComic;
-      const listing = digitalAsset.listings[0];
-      const comicIssueId = metadata.collection.comicIssueId;
-
-      const listingInput: ListingInput = {
-        ...listing,
-        digitalAsset: { ...digitalAsset, collectibleComic },
-      };
-
-      await this.websocketGateway.handleLegacyAssetListed(
-        comicIssueId,
-        listingInput,
-      );
-      await this.websocketGateway.handleWalletLegacyAssetListed(
-        digitalAsset.ownerAddress,
-        collectibleComic,
-      );
-    } catch (e) {
-      console.error(ERROR_MESSAGES.LEGACY_ASSET_LISTING_FAILED);
-    }
-  }
-
-  /**
    * Handles legacy collectible comic transfer events by updating ownership and notifying relevant parties.
    */
   private async handleLegacyCollectibleComicTransfer(
-    enrichedTransaction: EnrichedTransaction,
+    instruction: Instruction | InnerInstruction,
+    signature: string,
   ) {
     try {
-      const tokenTransfers = enrichedTransaction.tokenTransfers[0];
-      const address = tokenTransfers.mint;
-      const previousOwner = tokenTransfers.fromUserAccount;
-      const ownerAddress = tokenTransfers.toUserAccount;
+      const address = instruction.accounts.at(0);
+      const previousOwner = instruction.accounts.at(1);
+      const ownerAddress = instruction.accounts.at(2);
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
 
       await this.metaplex
         .rpc()
-        .confirmTransaction(
-          enrichedTransaction.signature,
-          { ...latestBlockhash },
-          'confirmed',
-        );
+        .confirmTransaction(signature, { ...latestBlockhash }, 'confirmed');
 
       const collectibleComic = await this.prisma.collectibleComic.update({
         where: { address },
@@ -1328,32 +1192,15 @@ export class HeliusService {
                   },
                   create: {
                     address: ownerAddress,
-                    createdAt: new Date(enrichedTransaction.timestamp * 1000),
+                    createdAt: new Date(),
                   },
                 },
               },
-              ownerChangedAt: new Date(enrichedTransaction.timestamp * 1000),
+              ownerChangedAt: new Date(),
             },
           },
         },
       });
-
-      const digitalAsset = collectibleComic.digitalAsset;
-      const listings = digitalAsset.listings;
-
-      if (listings && listings.length > 0) {
-        await this.prisma.listing.update({
-          where: {
-            assetAddress_closedAt: {
-              assetAddress: address,
-              closedAt: new Date(0),
-            },
-          },
-          data: {
-            closedAt: new Date(enrichedTransaction.timestamp * 1000),
-          },
-        });
-      }
 
       await this.websocketGateway.handleWalletLegacyAssetReceived(
         ownerAddress,
