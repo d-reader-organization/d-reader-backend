@@ -161,6 +161,20 @@ export async function getAssetFromTensor(address: string) {
   return response.data;
 }
 
+export async function getCollectionFromTensor(address: string) {
+  const options = {
+    method: 'GET',
+    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/collections/find_collection?filter==${address}`,
+    headers: {
+      accept: 'application/json',
+      'x-tensor-api-key': process.env.TENSOR_API_KEY,
+    },
+  };
+
+  const response = await axios.request(options);
+  return response.data;
+}
+
 export async function fetchTensorBuyTx(
   buyer: string,
   maxPrice: number,

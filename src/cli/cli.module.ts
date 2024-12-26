@@ -76,6 +76,7 @@ import { VaultTransferQuestions } from './vault-transfer-questions';
 import { CacheModule } from '../cache/cache.module';
 import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
+import { SyncTensorCollectionIdCommand } from './sync-tensor-collection-id-command';
 
 @Module({
   imports: [
@@ -164,6 +165,7 @@ import { DigitalAssetService } from '../digital-asset/digital-asset.service';
     VaultTransferCommand,
     VaultTransferQuestions,
     DigitalAssetService,
+    SyncTensorCollectionIdCommand,
   ],
 })
 export class CLIModule {}
