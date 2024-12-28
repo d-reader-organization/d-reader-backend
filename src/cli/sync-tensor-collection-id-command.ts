@@ -22,15 +22,17 @@ export class SyncTensorCollectionIdCommand extends CommandRunner {
 
     try {
       const collections = await this.prisma.collectibleComicCollection.findMany(
-        {where:{
-          candyMachines:{
-            some:{
-              standard: TokenStandard.Core
-            }
-          }
-        }},
+        {
+          where: {
+            candyMachines: {
+              some: {
+                standard: TokenStandard.Core,
+              },
+            },
+          },
+        },
       );
-  
+
       for await (const collection of collections) {
         const tensorCollection = await getCollectionFromTensor(
           collection.address,
