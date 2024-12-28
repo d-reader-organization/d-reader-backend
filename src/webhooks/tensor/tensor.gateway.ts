@@ -44,6 +44,8 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
           ) {
             const asset: TENSOR_ASSET = parsedData.tx.mint;
             await this.heliusService.handleTensorListing(asset);
+          } else if (parsedData.type == 'pong') {
+            console.log('Tensor socket: pong');
           }
         }
       } catch (e) {
@@ -70,7 +72,13 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
   //Every 1 minutes to not close socket connection
   @Cron('*/1 * * * *')
   sendPing() {
-    this.socket.send(JSON.stringify({ event: 'ping', payload: {} }));
+    console.log('Tensor socket: ping');
+    this.socket.send(
+      JSON.stringify({
+        event: 'ping',
+        payload: {},
+      }),
+    );
   }
 
   async listenToCollections() {
