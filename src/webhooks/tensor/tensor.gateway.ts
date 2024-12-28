@@ -16,22 +16,7 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.socket = new WebSocket('wss://api.mainnet.tensordev.io/ws', {
-      headers: {
-        'x-tensor-api-key': this.TENSOR_API_KEY,
-      },
-    });
-
-    this.socket.on('open', async () => {
-      console.log('Connected to Tensor WebSocket endpoint');
-      this.socket.send(
-        JSON.stringify({
-          event: 'ping',
-          payload: {},
-        }),
-      );
-      await this.listenToCollections();
-    });
+    this.openConnection();
 
     this.socket.on('message', async (data: WebSocket.Data) => {
       try {
@@ -54,11 +39,15 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
     });
 
     this.socket.on('error', (error) => {
-      console.error('Tesnor WebSocket Error:', error);
+      console.error('Tensor WebSocket Error:', error);
     });
 
     this.socket.on('close', () => {
-      console.log('Disconnected from Tensor WebSocket endpoint');
+      console.log(
+        'Disconnected from Tensor WebSocket endpoint, Connecting again ..!',
+      );
+      this.socket.close();
+      this.openConnection();
     });
   }
 
@@ -79,6 +68,25 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
         payload: {},
       }),
     );
+  }
+
+  openConnection() {
+    this.socket = new WebSocket('wss://api.mainnet.tensordev.io/ws', {
+      headers: {
+        'x-tensor-api-key': this.TENSOR_API_KEY,
+      },
+    });
+
+    this.socket.on('open', async () => {
+      console.log('Connected to Tensor WebSocket endpoint');
+      this.socket.send(
+        JSON.stringify({
+          event: 'ping',
+          payload: {},
+        }),
+      );
+      await this.listenToCollections();
+    });
   }
 
   async listenToCollections() {
