@@ -164,7 +164,7 @@ export async function getAssetFromTensor(address: string) {
 export async function getCollectionFromTensor(address: string) {
   const options = {
     method: 'GET',
-    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/collections/find_collection?filter==${address}`,
+    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/collections/find_collection?filter=${address}`,
     headers: {
       accept: 'application/json',
       'x-tensor-api-key': process.env.TENSOR_API_KEY,

@@ -54,7 +54,8 @@
     "sync-mint-receipts": "npx ts-node src/cli/main.ts sync-mint-receipts",
     "update-cm-group-price": "npx ts-node src/cli/main.ts update-cm-group-price",
     "vault-transfer": "npx ts-node src/cli/main.ts vault-transfer",
-    "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details"
+    "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details",
+    "sync-tensor-collection-id": "npx ts-node src/cli/main.ts sync-tensor-collection-id"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
