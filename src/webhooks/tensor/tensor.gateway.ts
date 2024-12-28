@@ -65,7 +65,7 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
             parsedData.type == 'newTransaction' &&
             parsedData.data.tx.tx.txType == 'ADJUST_PRICE'
           ) {
-            const asset: TENSOR_ASSET = parsedData.tx.mint;
+            const asset: TENSOR_ASSET = parsedData.data.tx.mint;
             await this.heliusService.handleTensorListing(asset);
           } else if (parsedData.type == 'pong') {
             console.log('Tensor socket: pong');
