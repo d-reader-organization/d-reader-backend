@@ -750,12 +750,12 @@ export class DigitalAssetService {
   // TODO: sync other digital assets besides collectible comics
   @Cron(CronExpression.EVERY_WEEK)
   protected async syncAllAssets() {
-    console.log('Starting Cron job to sync all the assets !');
+    console.log('Starting Cron job to sync all the assets!');
 
     await this.syncCollectibleComicMintReceipts();
     await this.findAndSyncAllCollectibleComicCollections();
 
-    console.log('All assets are synced !');
+    console.log('All assets are synced!');
   }
 
   async findAndSyncAllCollectibleComicCollections() {

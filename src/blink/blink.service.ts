@@ -137,7 +137,7 @@ export class BlinkService {
 
     const { metadata } = collectibleComic;
     if (metadata.isSigned) {
-      throw new BadRequestException('Comic is already signed !');
+      throw new BadRequestException('Comic is already signed!');
     }
 
     const collection = await this.prisma.collectibleComicCollection.findUnique({
@@ -150,7 +150,7 @@ export class BlinkService {
 
     if (collection.creatorBackupAddress !== creator.toString()) {
       throw new UnauthorizedException(
-        'Only the creator of the comic can sign !',
+        'Only the comic creator can sign its comics!',
       );
     }
 

@@ -627,7 +627,7 @@ export class AuctionHouseService {
       });
 
     if (!printEditionCollection) {
-      throw new BadRequestException('Print Edition Collection not found !');
+      throw new BadRequestException('Print Edition Collection not found!');
     }
 
     if (!printEditionCollection.verifiedAt) {
