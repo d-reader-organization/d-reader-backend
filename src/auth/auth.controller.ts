@@ -36,7 +36,7 @@ export class AuthController {
   // USER ENDPOINTS
   @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('user/validate-name/:name')
-  async validateUserName(@Param('name') name: string) {
+  async validateUsername(@Param('name') name: string) {
     validateName(name);
     return await this.userService.throwIfNameTaken(name);
   }
