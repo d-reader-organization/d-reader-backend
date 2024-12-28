@@ -5,20 +5,24 @@ import { isValidUsername } from '../decorators/IsValidUsername';
 import { naughtyWords } from './naughty-words';
 import { User, Wallet } from '@prisma/client';
 
-export function validateName(name: string) {
+export function findUsernameError(name: string) {
   if (typeof name !== 'string') {
-    throw new BadRequestException(`Bad name format: ${name || '<unknown>'}`);
+    return `Bad name format: ${name || '<unknown>'}`;
   } else if (!maxLength(name, USERNAME_MAX_SIZE)) {
-    throw new BadRequestException(`Max ${USERNAME_MAX_SIZE} characters`);
+    return `Name can have max ${USERNAME_MAX_SIZE} characters`;
   } else if (!minLength(name, USERNAME_MIN_SIZE)) {
-    throw new BadRequestException(`Min ${USERNAME_MIN_SIZE} characters`);
+    return `Name can have min ${USERNAME_MIN_SIZE} characters`;
   } else if (!isValidUsername(name)) {
-    throw new BadRequestException('Only have A-Z,0-9,_,- characters allowed');
+    return 'Name can only have A-Z, 0-9, underscore, and hypen characters';
   } else if (naughtyWords.includes(name.toLowerCase())) {
-    throw new BadRequestException(
-      'Naughty word detected. Please use another username or contact us if you think this is a mistake',
-    );
+    return 'Naughty word detected. Please use another name or contact us if you think this is a mistake';
   }
+}
+
+export function validateName(name: string) {
+  const usernameError = findUsernameError(name);
+  if (usernameError) throw new BadRequestException(usernameError);
+  return true;
 }
 
 export function validateCreatorName(name: string) {

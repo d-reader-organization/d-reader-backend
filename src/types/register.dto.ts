@@ -1,27 +1,18 @@
-import {
-  IsEmail,
-  IsStrongPassword,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-// import { IsValidUsername } from '../decorators/IsValidUsername';
+import { IsEmail, IsStrongPassword } from 'class-validator';
+import { IsValidUsername } from '../decorators/IsValidUsername';
 import { OmitType } from '@nestjs/swagger';
-import {
-  USERNAME_MIN_SIZE,
-  USERNAME_MAX_SIZE,
-  PASSWORD_OPTIONS,
-} from '../constants';
+import { PASSWORD_OPTIONS, PASSWORD_REQUIREMENTS_MESSAGE } from '../constants';
 
 export class RegisterDto {
-  // @IsValidUsername()
-  @MinLength(USERNAME_MIN_SIZE)
-  @MaxLength(USERNAME_MAX_SIZE)
+  @IsValidUsername()
   name: string;
 
   @IsEmail()
   email: string;
 
-  @IsStrongPassword(PASSWORD_OPTIONS)
+  @IsStrongPassword(PASSWORD_OPTIONS, {
+    message: PASSWORD_REQUIREMENTS_MESSAGE,
+  })
   password: string;
 }
 

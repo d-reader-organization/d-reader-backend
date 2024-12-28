@@ -57,6 +57,9 @@ export const USERNAME_VALIDATOR_REGEX = new RegExp(
   /^[a-zA-Z0-9-_čćžšđČĆŽŠĐ]+$/,
 );
 
+export const PASSWORD_REQUIREMENTS_MESSAGE =
+  '8 characters minimum. At least 1 lowercase, 1 uppercase and 1 number';
+
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
 export const PUBLIC_GROUP_LABEL = 'public';
 export const PUBLIC_GROUP_MINT_LIMIT = 2;

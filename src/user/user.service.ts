@@ -248,7 +248,7 @@ export class UserService {
 
     const user = await this.findOne(id);
     const isEmailUpdated = email && user.email !== email;
-    const isUserNameUpdated = username && user.username !== username;
+    const isUsernameUpdated = username && user.username !== username;
     const isDisplayNameUpdated =
       displayName && user.displayName !== displayName;
     //TODO: for backward compatibility, remove this later
@@ -268,7 +268,7 @@ export class UserService {
       this.mailService.requestUserEmailVerification(user);
     }
 
-    if (isUserNameUpdated) {
+    if (isUsernameUpdated) {
       validateName(username);
       await this.throwIfNameTaken(username);
       await this.prisma.user.update({
