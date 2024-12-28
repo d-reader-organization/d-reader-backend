@@ -2,7 +2,6 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import * as WebSocket from 'ws';
 import { HeliusService } from '../helius/helius.service';
-import { TENSOR_ASSET } from '../helius/dto/types';
 import { Cron } from '@nestjs/schedule';
 
 @Injectable()
@@ -59,14 +58,59 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
     this.socket.on('message', async (data: WebSocket.Data) => {
       try {
         const event_stringified = data?.toString();
+
         if (event_stringified !== '' && event_stringified !== null) {
           const parsedData = JSON.parse(event_stringified);
-          if (
-            parsedData.type == 'newTransaction' &&
-            parsedData.data.tx.tx.txType == 'ADJUST_PRICE'
-          ) {
-            const asset: TENSOR_ASSET = parsedData.data.tx.mint;
-            await this.heliusService.handleTensorListing(asset);
+          if (parsedData.type == 'newTransaction') {
+            const tx = parsedData.data.tx.tx;
+            const txId = tx.txId;
+
+            switch (tx.txType) {
+              case 'ADJUST_PRICE': {
+                const mint = tx.mintOnchainId;
+                const price = tx.grossAmount;
+                const seller = tx.sellerId;
+
+                await this.heliusService.handleTensorListing(
+                  seller,
+                  mint,
+                  price,
+                  txId,
+                );
+                break;
+              }
+              case 'DELIST': {
+                const mint = tx.mintOnchainId;
+                await this.heliusService.handleCancelTensorListing(mint);
+                break;
+              }
+              case 'LIST': {
+                const mint = tx.mintOnchainId;
+                const price = tx.grossAmount;
+                const seller = tx.sellerId;
+
+                await this.heliusService.handleTensorListing(
+                  seller,
+                  mint,
+                  price,
+                  txId,
+                );
+                break;
+              }
+              case 'SALE_BUY_NOW': {
+                const mint = tx.mintOnchainId;
+                const price = tx.grossAmount;
+                const buyerId = tx.buyerId;
+
+                await this.heliusService.handleTensorBuying(
+                  buyerId,
+                  mint,
+                  price,
+                  txId,
+                );
+                break;
+              }
+            }
           } else if (parsedData.type == 'pong') {
             console.log('Tensor socket: pong');
           }
