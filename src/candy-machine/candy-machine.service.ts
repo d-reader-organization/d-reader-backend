@@ -509,7 +509,7 @@ export class CandyMachineService {
     const isPublicMint = publicMintTypes.includes(coupon.type);
     if (!isPublicMint && !userId) {
       throw new UnauthorizedException(
-        'Only registered users are eligible for this coupon !',
+        'Only registered users are eligible for this coupon!',
       );
     }
 

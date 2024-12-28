@@ -21,7 +21,7 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     if (this.socket) {
-      this.close()
+      this.close();
       console.log('WebSocket connection closed');
     }
   }
@@ -84,12 +84,12 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
       console.log(
         'Disconnected from Tensor WebSocket endpoint, Connecting again ..!',
       );
-      this.close()
+      this.close();
       this.openConnection();
     });
   }
 
-  close(){
+  close() {
     this.socket.removeEventListener('message');
     this.socket.removeEventListener('error');
     this.socket.removeEventListener('close');

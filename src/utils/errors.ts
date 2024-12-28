@@ -51,14 +51,13 @@ export const ERROR_MESSAGES = {
   EMAIL_ALREADY_TAKEN: (email: string) => `${email} already taken`,
   ASSET_NOT_FOUND: (address: string) =>
     `Asset with address ${address} does not exist`,
-  COLLECTION_ALREADY_EXISTS:
-    '1/1 Collection with this address already exists !',
-  ONE_OF_ONE_ALREADY_EXISTS: '1/1 with this address already exists !',
+  COLLECTION_ALREADY_EXISTS: '1/1 Collection with this address already exists!',
+  ONE_OF_ONE_ALREADY_EXISTS: '1/1 with this address already exists!',
   EDITION_NOT_LISTED: 'Edition is not listed for sale',
   EDITION_SALE_NOT_STARTED: 'Edition sale has not started',
   EDITION_SALE_ENDED: 'Edition sale has ended',
   PRINT_EDITION_COLLECTION_ALREADY_EXISTS:
-    'Print Edition Collection with this address already exists !',
+    'Print Edition Collection with this address already exists!',
   COLLECTION_DOES_NOT_EXIST: "Collection doesn't exist in database",
   ERROR_SYNCING_RECEIPT: (id: number) => `Error syncing receipt ${id}`,
   PENDING_ISSUE_REQUEST: (comicIssueId: number) =>
@@ -109,9 +108,9 @@ export const ERROR_MESSAGES = {
   WINNING_PROBABILITY: 'Winning probability should be between 1-99',
   WHEEL_NOT_EXISTS: (id: number) => `Wheel with id ${id} doesn't exists`,
   REWARD_NOT_EXISTS: (id: number) => `Reward with id ${id} does not exists`,
-  CONNECT_WALLET: 'Please connect wallet to be able to claim digital rewards !',
-  WHEEL_NOT_ACTIVE: 'Wheel is not active !',
-  WHEEL_EXPIRED: 'Wheel has been expired !',
+  CONNECT_WALLET: 'Please connect wallet to be able to claim digital rewards!',
+  WHEEL_NOT_ACTIVE: 'Wheel is not active!',
+  WHEEL_EXPIRED: 'Wheel has been expired!',
   NO_SPIN_LEFT: (cooldownMessage: string) =>
     `You don't have any spin left, spin again in ${cooldownMessage}`,
 };
