@@ -17,6 +17,44 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit() {
     this.openConnection();
+  }
+
+  onModuleDestroy() {
+    if (this.socket) {
+      this.close()
+      console.log('WebSocket connection closed');
+    }
+  }
+
+  // Every 1 minutes to not close socket connection
+  @Cron('*/1 * * * *')
+  sendPing() {
+    console.log('Tensor socket: ping');
+    this.socket.send(
+      JSON.stringify({
+        event: 'ping',
+        payload: {},
+      }),
+    );
+  }
+
+  openConnection() {
+    this.socket = new WebSocket('wss://api.mainnet.tensordev.io/ws', {
+      headers: {
+        'x-tensor-api-key': this.TENSOR_API_KEY,
+      },
+    });
+
+    this.socket.on('open', async () => {
+      console.log('Connected to Tensor WebSocket endpoint');
+      this.socket.send(
+        JSON.stringify({
+          event: 'ping',
+          payload: {},
+        }),
+      );
+      await this.listenToCollections();
+    });
 
     this.socket.on('message', async (data: WebSocket.Data) => {
       try {
@@ -46,47 +84,16 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
       console.log(
         'Disconnected from Tensor WebSocket endpoint, Connecting again ..!',
       );
-      this.socket.close();
+      this.close()
       this.openConnection();
     });
   }
 
-  onModuleDestroy() {
-    if (this.socket) {
-      this.socket.close();
-      console.log('WebSocket connection closed');
-    }
-  }
-
-  //Every 1 minutes to not close socket connection
-  @Cron('*/1 * * * *')
-  sendPing() {
-    console.log('Tensor socket: ping');
-    this.socket.send(
-      JSON.stringify({
-        event: 'ping',
-        payload: {},
-      }),
-    );
-  }
-
-  openConnection() {
-    this.socket = new WebSocket('wss://api.mainnet.tensordev.io/ws', {
-      headers: {
-        'x-tensor-api-key': this.TENSOR_API_KEY,
-      },
-    });
-
-    this.socket.on('open', async () => {
-      console.log('Connected to Tensor WebSocket endpoint');
-      this.socket.send(
-        JSON.stringify({
-          event: 'ping',
-          payload: {},
-        }),
-      );
-      await this.listenToCollections();
-    });
+  close(){
+    this.socket.removeEventListener('message');
+    this.socket.removeEventListener('error');
+    this.socket.removeEventListener('close');
+    this.socket.close();
   }
 
   async listenToCollections() {
