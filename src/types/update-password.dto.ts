@@ -1,13 +1,11 @@
-import { IsString, IsStrongPassword } from 'class-validator';
-import { PASSWORD_OPTIONS, PASSWORD_REQUIREMENTS_MESSAGE } from '../constants';
+import { IsString } from 'class-validator';
+import { IsStrongPassword } from '../decorators/IsStrongPassword';
 
 export class UpdatePasswordDto {
   @IsString()
   oldPassword: string;
 
-  @IsStrongPassword(PASSWORD_OPTIONS, {
-    message: PASSWORD_REQUIREMENTS_MESSAGE,
-  })
+  @IsStrongPassword()
   newPassword: string;
 }
 
@@ -15,7 +13,7 @@ export class ResetPasswordDto {
   @IsString()
   verificationToken: string;
 
-  @IsStrongPassword(PASSWORD_OPTIONS)
+  @IsStrongPassword()
   newPassword: string;
 }
 

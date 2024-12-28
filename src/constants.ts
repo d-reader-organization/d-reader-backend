@@ -1,7 +1,6 @@
 import { ComicRarity } from 'dreader-comic-verse';
 import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
-import { IsStrongPasswordOptions } from 'class-validator';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
 import { CONFIG } from './configs/config';
 
@@ -53,12 +52,7 @@ export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
     ? '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj'
     : '9GfMG415sgpzGajfTZyt7qcDo6Xxoa97MyxTFuHuY7od',
 );
-export const USERNAME_VALIDATOR_REGEX = new RegExp(
-  /^[a-zA-Z0-9-_čćžšđČĆŽŠĐ]+$/,
-);
-
-export const PASSWORD_REQUIREMENTS_MESSAGE =
-  '8 characters minimum. At least 1 lowercase, 1 uppercase and 1 number';
+export const USERNAME_REGEX = new RegExp(/^[a-zA-Z0-9-_čćžšđČĆŽŠĐ]+$/);
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
 export const PUBLIC_GROUP_LABEL = 'public';
@@ -165,10 +159,11 @@ export const RARITY_MAP: { [key in PrismaComicRarity]: ComicRarity } = {
   [PrismaComicRarity.Legendary]: ComicRarity.Legendary,
 };
 
-export const PASSWORD_OPTIONS: IsStrongPasswordOptions = {
-  minSymbols: 0,
-  minLength: 8,
-};
+export const PASSWORD_MIN_SIZE = 8;
+// export const PASSWORD_REGEX = new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+export const PASSWORD_LOWERCASE_REGEX = new RegExp(/^(?=.*[a-z]).+$/);
+export const PASSWORD_UPPERCASE_REGEX = new RegExp(/^(?=.*[A-Z]).+$/);
+export const PASSWORD_DIGIT_REGEX = new RegExp(/^(?=.*\d).+$/);
 
 export const UNAUTHORIZED_MESSAGE = 'Authorization invalid or expired';
 

@@ -1,7 +1,7 @@
-import { IsEmail, IsStrongPassword } from 'class-validator';
-import { IsValidUsername } from '../decorators/IsValidUsername';
+import { IsEmail } from 'class-validator';
 import { OmitType } from '@nestjs/swagger';
-import { PASSWORD_OPTIONS, PASSWORD_REQUIREMENTS_MESSAGE } from '../constants';
+import { IsValidUsername } from '../decorators/IsValidUsername';
+import { IsStrongPassword } from '../decorators/IsStrongPassword';
 
 export class RegisterDto {
   @IsValidUsername()
@@ -10,9 +10,7 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @IsStrongPassword(PASSWORD_OPTIONS, {
-    message: PASSWORD_REQUIREMENTS_MESSAGE,
-  })
+  @IsStrongPassword()
   password: string;
 }
 
