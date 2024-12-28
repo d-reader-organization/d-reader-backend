@@ -150,7 +150,7 @@ export async function doesWalletIndexCorrectly(
 export async function getAssetFromTensor(address: string) {
   const options = {
     method: 'GET',
-    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/mint?mint=${address}`,
+    url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/mint?mints=${address}`,
     headers: {
       accept: 'application/json',
       'x-tensor-api-key': process.env.TENSOR_API_KEY,
