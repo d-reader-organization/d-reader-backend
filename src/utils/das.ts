@@ -158,7 +158,7 @@ export async function getAssetFromTensor(address: string) {
   };
 
   const response = await axios.request(options);
-  return response.data;
+  return isArray(response.data) ? response.data.at(-1) : response.data;
 }
 
 export async function getCollectionFromTensor(address: string) {
