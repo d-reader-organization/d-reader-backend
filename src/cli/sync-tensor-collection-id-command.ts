@@ -2,6 +2,7 @@ import { Command, CommandRunner } from 'nest-commander';
 import { log, logErr } from './chalk';
 import { PrismaService } from 'nestjs-prisma';
 import { getCollectionFromTensor } from '../utils/das';
+import { TokenStandard } from '@prisma/client';
 
 @Command({
   name: 'sync-tensor-collection-id',
@@ -19,21 +20,26 @@ export class SyncTensorCollectionIdCommand extends CommandRunner {
   syncTensorCollectionId = async () => {
     log('\n🏗️  Syncing tensor collection id...');
 
-    const collections = await this.prisma.collectibleComicCollection.findMany(
-      {},
-    );
-
-    for await (const collection of collections) {
-      const tensorCollection = await getCollectionFromTensor(
-        collection.address,
-      );
-      await this.prisma.collectibleComicCollection.update({
-        where: { address: collection.address },
-        data: { tensorCollectionID: tensorCollection.collId },
-      });
-    }
-
     try {
+      const collections = await this.prisma.collectibleComicCollection.findMany(
+        {where:{
+          candyMachines:{
+            some:{
+              standard: TokenStandard.Core
+            }
+          }
+        }},
+      );
+  
+      for await (const collection of collections) {
+        const tensorCollection = await getCollectionFromTensor(
+          collection.address,
+        );
+        await this.prisma.collectibleComicCollection.update({
+          where: { address: collection.address },
+          data: { tensorCollectionID: tensorCollection.collId },
+        });
+      }
     } catch (error) {
       logErr(`Error syncing collection ids from tensor: ${error}`);
     }
