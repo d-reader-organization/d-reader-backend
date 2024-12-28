@@ -76,9 +76,8 @@ import {
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { NonceService } from '../../nonce/nonce.service';
 import { isEqual } from 'lodash';
-import { getAsset, getAssetFromTensor } from '../../utils/das';
-import { IndexCoreAssetReturnType, TENSOR_ASSET } from './dto/types';
-import { ListingInput } from '../../auction-house/dto/listing.dto';
+import { getAsset } from '../../utils/das';
+import { IndexCoreAssetReturnType } from './dto/types';
 import {
   CORE_AUCTIONS_PROGRAM_ID,
   getBuyInstructionDataSerializer,
@@ -248,11 +247,6 @@ export class HeliusService {
               transaction.signature,
             );
           }
-          break;
-        }
-
-        case TCOMP_PROGRAM_ID: {
-          await this.handleTensorSecondary(transaction);
           break;
         }
 
@@ -885,68 +879,30 @@ export class HeliusService {
   }
 
   /**
-   * Handles tensor secondary transactions by determining if the asset is being listed or bought.
-   */
-  private async handleTensorSecondary(transaction: EnrichedTransaction) {
-    const instruction = transaction.instructions.at(-1);
-    const coreProgramInstruction = instruction.innerInstructions.find(
-      (ixs) => ixs.programId === MPL_CORE_PROGRAM_ID.toString(),
-    );
-    if (!coreProgramInstruction) return;
-
-    const mint = coreProgramInstruction.accounts.at(0);
-    const assetInfo = await getAssetFromTensor(mint);
-    if (assetInfo.listing && assetInfo.listing.seller) {
-      return this.handleTensorListing(assetInfo);
-    } else {
-      return this.handleTensorBuying(transaction, assetInfo);
-    }
-  }
-
-  /**
    * Handles the buying of core assets by updating ownership and listing information.
    */
-  private async handleTensorBuying(
-    transaction: EnrichedTransaction,
-    assetInfo: TENSOR_ASSET,
+  async handleTensorBuying(
+    buyer: string,
+    mint: string,
+    price: number,
+    signature: string,
   ) {
-    const mint = assetInfo.onchainId;
     try {
-      const collectibleComic = await this.prisma.collectibleComic.update({
+      await this.prisma.collectibleComic.update({
         where: { address: mint },
-        include: {
-          metadata: {
-            include: {
-              collection: {
-                include: { comicIssue: { include: { statefulCovers: true } } },
-              },
-            },
-          },
-          digitalAsset: {
-            include: {
-              listings: {
-                where: {
-                  assetAddress: mint,
-                  closedAt: new Date(transaction.timestamp * 1000),
-                },
-              },
-              owner: { include: { user: true } },
-            },
-          },
-        },
         data: {
           digitalAsset: {
             update: {
               owner: {
                 connectOrCreate: {
-                  where: { address: assetInfo.owner },
+                  where: { address: buyer },
                   create: {
-                    address: assetInfo.owner,
-                    createdAt: new Date(transaction.timestamp * 1000),
+                    address: buyer,
+                    createdAt: new Date(),
                   },
                 },
               },
-              ownerChangedAt: new Date(transaction.timestamp * 1000),
+              ownerChangedAt: new Date(),
               listings: {
                 update: {
                   where: {
@@ -956,17 +912,17 @@ export class HeliusService {
                     },
                   },
                   data: {
-                    closedAt: new Date(transaction.timestamp * 1000),
+                    closedAt: new Date(),
                     sale: {
                       create: {
-                        soldAt: new Date(transaction.timestamp * 1000),
+                        soldAt: new Date(),
                         auctionHouse: {
                           connect: {
                             address: TCOMP_PROGRAM_ID,
                           },
                         },
-                        signature: transaction.signature,
-                        price: assetInfo.listing.price,
+                        signature: signature,
+                        price: price,
                       },
                     },
                   },
@@ -976,54 +932,34 @@ export class HeliusService {
           },
         },
       });
-
-      const { digitalAsset, metadata } = collectibleComic;
-      const listing = digitalAsset.listings[0];
-      const collection = metadata.collection;
-
-      const listingInput: ListingInput = {
-        ...listing,
-        digitalAsset: { ...digitalAsset, collectibleComic },
-      };
-
-      await this.websocketGateway.handleLegacyAssetSold(
-        collection.comicIssueId,
-        listingInput,
-      );
-      await this.websocketGateway.handleWalletLegacyAssetBought(
-        digitalAsset.ownerAddress,
-        collectibleComic,
-      );
     } catch (e) {
       console.error(ERROR_MESSAGES.BUY_ASSET_FAILED, e);
     }
   }
 
+  async handleCancelTensorListing(mint: string) {
+    await this.prisma.listing.update({
+      where: {
+        assetAddress_closedAt: {
+          assetAddress: mint,
+          closedAt: new Date(0),
+        },
+      },
+      data: { closedAt: new Date() },
+    });
+  }
+
   /**
    * Handles the listing of core assets by updating or creating listings in the database.
    */
-  async handleTensorListing(assetInfo: TENSOR_ASSET) {
-    const { listing, onchainId: mint } = assetInfo;
-
-    const collectibleComic = await this.prisma.collectibleComic.update({
+  async handleTensorListing(
+    seller: string,
+    mint: string,
+    price: number,
+    signature: string,
+  ) {
+    await this.prisma.collectibleComic.update({
       where: { address: mint },
-      include: {
-        metadata: {
-          include: {
-            collection: {
-              include: { comicIssue: { include: { statefulCovers: true } } },
-            },
-          },
-        },
-        digitalAsset: {
-          include: {
-            owner: { include: { user: true } },
-            listings: {
-              where: { assetAddress: mint, closedAt: new Date(0) },
-            },
-          },
-        },
-      },
       data: {
         digitalAsset: {
           update: {
@@ -1036,17 +972,16 @@ export class HeliusService {
                   },
                 },
                 update: {
-                  price: listing.price,
-                  sellerAddress: listing.seller,
-                  signature: listing.txId,
+                  price,
+                  sellerAddress: seller,
+                  signature,
                   createdAt: new Date(),
-                  source:
-                    listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+                  source: Source.TENSOR,
                 },
                 create: {
-                  price: listing.price,
-                  sellerAddress: listing.seller,
-                  signature: listing.txId,
+                  price,
+                  sellerAddress: seller,
+                  signature,
                   createdAt: new Date(),
                   closedAt: new Date(0),
                   auctionHouse: {
@@ -1054,8 +989,7 @@ export class HeliusService {
                       address: TCOMP_PROGRAM_ID,
                     },
                   },
-                  source:
-                    listing.source === 'TCOMP' ? Source.TENSOR : Source.UNKNOWN,
+                  source: Source.TENSOR,
                 },
               },
             },
@@ -1063,23 +997,6 @@ export class HeliusService {
         },
       },
     });
-
-    const digitalAsset = collectibleComic.digitalAsset;
-    const assetListing = digitalAsset.listings[0];
-    const collection = collectibleComic.metadata.collection;
-
-    const listingInput: ListingInput = {
-      ...assetListing,
-      digitalAsset: { ...digitalAsset, collectibleComic },
-    };
-    await this.websocketGateway.handleLegacyAssetListed(
-      collection.comicIssueId,
-      listingInput,
-    );
-    await this.websocketGateway.handleWalletLegacyAssetListed(
-      digitalAsset.ownerAddress,
-      collectibleComic,
-    );
   }
 
   /**
