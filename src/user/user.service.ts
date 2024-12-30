@@ -555,27 +555,6 @@ export class UserService {
     return updatedUser;
   }
 
-  async validateSagaUser(id: number) {
-    const wallets = await this.prisma.wallet.findMany({
-      where: { user: { id } },
-    });
-
-    let userHasSaga = false;
-    for (const wallet of wallets) {
-      const walletHasSaga = await this.walletService.hasSagaGenesisToken(
-        wallet.address,
-      );
-
-      if (walletHasSaga) {
-        userHasSaga = true;
-        break;
-      }
-    }
-
-    if (!userHasSaga)
-      throw new BadRequestException(ERROR_MESSAGES.NO_SGT_TOKEN_FOUND);
-  }
-
   async generateAvatar(id: number) {
     const buffer = jdenticon.toPng(id, 500);
     const file: s3File = {

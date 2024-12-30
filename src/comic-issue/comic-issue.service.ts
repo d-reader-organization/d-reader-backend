@@ -667,7 +667,9 @@ export class ComicIssueService {
     });
 
     if (collection)
-      throw new ForbiddenException(ERROR_MESSAGES.COMIC_PUBLISHED_ON_CHAIN);
+      throw new ForbiddenException(
+        ERROR_MESSAGES.COMIC_ISSUE_PUBLISHED_ON_CHAIN,
+      );
   }
 
   async throwIfSlugAndComicSlugTaken(slug: string, comicSlug: string) {

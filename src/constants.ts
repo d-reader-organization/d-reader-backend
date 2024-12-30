@@ -45,8 +45,6 @@ export const BUNDLR_ADDRESS =
 
 export const USERNAME_MIN_SIZE = 3;
 export const USERNAME_MAX_SIZE = 20;
-export const SAGA_COLLECTION_ADDRESS =
-  '46pcSL5gmjBrPqGKFaLbbCmR6iVuLJbnQy13hAe7s6CC';
 export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
   process.env.SOLANA_CLUSTER === 'mainnet-beta'
     ? '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj'
