@@ -406,7 +406,7 @@ model CollectibleComicCollection {
   darkblockId           String?
   metadatas             CollectibleComicMetadata[]
   digitalAsset          DigitalAsset               @relation(fields: [address], references: [address])
-  tensorCollectionID  String? 
+  tensorCollectionID    String?
 }
 
 model ComicPage {
@@ -833,6 +833,7 @@ model PhysicalItem {
   image       String @default("")
 }
 
+// TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
 // TODO: remove or change the way referrals work
 // TODO: comic.completedAt is missing a client-side toggle button (is comic series completed or not)
 // TODO: move statefulcovers from comicissues to statelesscovers (normalize statefulcovers)
@@ -842,8 +843,6 @@ model PhysicalItem {
 // TODO: change comicIssue.popularizedAt so it's an algorithm instead of an admin flagging a comic issue
 
 // TODO: GlobalStatus should be implemented on the client side
-
-// TODO: add errors.ts file for defining all error codes (or translations.ts or something of the sort)
 
 // AFTER WE ADD MPC WALLETS
 // TODO: change creator.tippingAddress to creator.address

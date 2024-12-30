@@ -269,6 +269,9 @@ export class WheelService {
       const minutes = Math.floor((timeDiff % hourInMs) / minuteInMs);
       const seconds = Math.floor((timeDiff % minuteInMs) / 1000);
 
+      // TODO: use helper functions similar to the ones we have on frontend
+      // calculateRemaningSeconds() and formatTime()
+      // date-fns library also has helper functions to convert remaining time to a human readable format
       const cooldownMessage = [];
       if (days > 0) {
         cooldownMessage.push(`${days} day${days > 1 ? 's' : ''}`);

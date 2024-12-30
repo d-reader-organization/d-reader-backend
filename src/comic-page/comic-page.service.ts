@@ -94,7 +94,7 @@ export class ComicPageService {
     totalPagesSize = Math.ceil(totalPagesSize / (1024 * 1024));
 
     if (totalPagesSize > 100) {
-      throw new BadRequestException(ERROR_MESSAGES.TOTAL_SIZE_EXCEEDED);
+      throw new BadRequestException(ERROR_MESSAGES.TOTAL_PAGE_SIZE_EXCEEDED);
     }
 
     const oldComicPages = comicIssue.pages;

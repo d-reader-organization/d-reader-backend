@@ -1,13 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { PublicKey } from '@solana/web3.js';
 import { metaplex } from '../utils/metaplex';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import {
-  REFERRAL_REWARD_THRESHOLD,
-  SAGA_COLLECTION_ADDRESS,
-} from '../constants';
+import { REFERRAL_REWARD_THRESHOLD } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { CouponType, Prisma, TransactionStatus } from '@prisma/client';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -391,21 +387,5 @@ export class WalletService {
     });
 
     return nfts;
-  }
-
-  /** Check if wallet has SGT NFT */
-  async hasSagaGenesisToken(address: string) {
-    const nfts = await this.metaplex
-      .nfts()
-      .findAllByOwner({ owner: new PublicKey(address) });
-
-    const sagaToken = nfts.find(
-      (nft) =>
-        nft.collection &&
-        nft.collection.address.toString() === SAGA_COLLECTION_ADDRESS &&
-        nft.collection.verified,
-    );
-
-    return !!sagaToken;
   }
 }

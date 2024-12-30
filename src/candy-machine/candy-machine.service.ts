@@ -1548,6 +1548,9 @@ export class CandyMachineService {
         }
       }
     } else if (couponType === CouponType.WhitelistedWallet) {
+      // TODO: (potentially) don't just check if this specific wallet is whitelisted.
+      // check if this wallet is tied to a user, and if any of the users wallets are whitelisted
+      // in other words, if user has one wallet whitelisted, they should be able to mint with any of their wallets (and consume the whitelist)
       const isWhitelisted = await this.findIfWalletWhitelisted(
         walletAddress,
         couponId,

@@ -14,13 +14,14 @@ export class DraftComicIssueSalesDataService {
   constructor(private readonly prisma: PrismaService) {}
 
   async throwIfPendingRequest(comicIssueId: number) {
-    const comicIssue = await this.prisma.draftComicIssueSalesData.findFirst({
-      where: { comicIssueId },
-    });
+    const draftComicIssueSalesData =
+      await this.prisma.draftComicIssueSalesData.findFirst({
+        where: { comicIssueId },
+      });
 
-    if (comicIssue) {
+    if (draftComicIssueSalesData) {
       throw new BadRequestException(
-        ERROR_MESSAGES.PENDING_ISSUE_REQUEST(comicIssueId),
+        ERROR_MESSAGES.COMIC_ISSUE_SALE_ALREADY_REQUESTED,
       );
     }
   }
@@ -50,7 +51,7 @@ export class DraftComicIssueSalesDataService {
       });
     if (!draftComicIssueSalesData) {
       throw new NotFoundException(
-        ERROR_MESSAGES.ISSUE_DRAFT_SALE_DATA_NOT_FOUND(id),
+        ERROR_MESSAGES.COMIC_ISSUE_DRAFT_SALE_DATA_NOT_FOUND,
       );
     }
 
