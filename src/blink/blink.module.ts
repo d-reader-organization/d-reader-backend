@@ -8,7 +8,6 @@ import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { NonceService } from '../nonce/nonce.service';
-import { DarkblockService } from '../candy-machine/darkblock.service';
 import { TransactionService } from '../transactions/transaction.service';
 import { DiscordService } from '../discord/discord.service';
 import { MailService } from '../mail/mail.service';
@@ -21,7 +20,6 @@ import { WalletService } from '../wallet/wallet.service';
   controllers: [BlinkController],
   providers: [
     ComicIssueService,
-    DarkblockService,
     NonceService,
     HeliusService,
     UserComicIssueService,

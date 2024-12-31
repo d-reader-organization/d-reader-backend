@@ -40,7 +40,6 @@
     "bundlr-fund": "npx ts-node src/cli/main.ts bundlr-fund",
     "add-whitelisted-wallets": "npx ts-node src/cli/main.ts add-whitelisted-wallets",
     "fetch-candy-machine": "npx ts-node src/cli/main.ts fetch-candy-machine",
-    "add-collection-darkblock": "npx ts-node src/cli/main.ts add-collection-darkblock",
     "update-date": "npx ts-node src/cli/main.ts update-date",
     "delegate-creator": "npx ts-node src/cli/main.ts delegate-creator",
     "sync-collection": "npx ts-node src/cli/main.ts sync-collection",

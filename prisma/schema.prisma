@@ -403,7 +403,6 @@ model CollectibleComicCollection {
   comicIssue            ComicIssue                 @relation(fields: [comicIssueId], references: [id])
   comicIssueId          Int                        @unique
   candyMachines         CandyMachine[]
-  darkblockId           String?
   metadatas             CollectibleComicMetadata[]
   digitalAsset          DigitalAsset               @relation(fields: [address], references: [address])
   tensorCollectionID    String?

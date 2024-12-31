@@ -354,7 +354,6 @@ Table CollectibleComicCollection {
   comicIssue ComicIssue [not null]
   comicIssueId Int [unique, not null]
   candyMachines CandyMachine [not null]
-  darkblockId String
   metadatas CollectibleComicMetadata [not null]
   digitalAsset DigitalAsset [not null]
   tensorCollectionID String
