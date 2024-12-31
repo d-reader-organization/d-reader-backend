@@ -35,11 +35,10 @@ import {
   getCouponLabel,
 } from '../utils/helpers';
 import {
-  MetadataFile,
-  // getAuthorizationSigner,
   getConnection,
   getThirdPartySigner,
   getThirdPartyUmiSignature,
+  getTreasuryPublicKey,
   metaplex,
   umi,
   writeFiles,
@@ -1294,11 +1293,12 @@ export class CandyMachineService {
     statefulCovers: MetaplexFile[],
     sellerFeeBasisPoints: number,
     creatorAddress: string,
+    creatorBackupAddress = getTreasuryPublicKey().toString(),
   ): Promise<{
     collectionAddress: string;
     currentSupply: number;
   }> {
-    const { pdf, id: comicIssueId, description, title } = comicIssue;
+    const { id: comicIssueId, description, title } = comicIssue;
 
     const cover = findDefaultCover(comicIssue.statelessCovers);
     const coverImage = await s3toMxFile(cover.image);
@@ -1308,7 +1308,6 @@ export class CandyMachineService {
       await this.prisma.collectibleComicCollection.findUnique({
         where: { comicIssueId },
       });
-
 
     if (collectionAsset) {
       const {
@@ -1375,6 +1374,9 @@ export class CandyMachineService {
       data: {
         name: onChainName,
         comicIssue: { connect: { id: comicIssue.id } },
+        creatorAddress: creatorAddress,
+        creatorBackupAddress,
+        sellerFeeBasisPoints,
         digitalAsset: {
           create: {
             address: collectionAddress,

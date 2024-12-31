@@ -6,11 +6,7 @@ import { NonceService } from '../nonce/nonce.service';
 
 @Module({
   controllers: [CandyMachineController],
-  providers: [
-    CandyMachineService,
-    HeliusService,
-    NonceService,
-  ],
+  providers: [CandyMachineService, HeliusService, NonceService],
   exports: [CandyMachineService],
 })
 export class CandyMachineModule {}
