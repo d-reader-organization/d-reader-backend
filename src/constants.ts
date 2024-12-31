@@ -4,8 +4,6 @@ import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
 import { CONFIG } from './configs/config';
 
-export const DARKBLOCK_API = 'https://api.darkblock.io/v1';
-
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
 export const MAX_SYMBOL_LENGTH = 10;

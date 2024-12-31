@@ -21,7 +21,6 @@ import { SyncWalletCommand } from './sync-wallet-command';
 import { SyncWalletQuestions } from './sync-wallet-questions';
 import { AddWhitelistedWalletsCommand } from './add-whitelisted-wallets-command';
 import { AddWhitelistedWalletsQuestions } from './add-whitelisted-wallets-questions';
-import { DarkblockService } from '../candy-machine/darkblock.service';
 import { BundlrWithdrawCommand } from './bundlr-withdraw-command';
 import { MintRemainingCommand } from './mint-remaining-command';
 import { MintRemainingQuestions } from './mint-remaining-questions';
@@ -39,8 +38,6 @@ import config from '../configs/config';
 import { ComicIssueService } from '../comic-issue/comic-issue.service';
 import { ComicPageService } from '../comic-page/comic-page.service';
 import { UserComicIssueService } from '../comic-issue/user-comic-issue.service';
-import { AddCollectionDarkblockCommand } from './add-collection-darkblock-command';
-import { AddCollectionDarkblockQuestion } from './add-collection-darkblock-questions';
 import { UpdateDateCommand } from './update-date-command';
 import { UpdateDateQuestions } from './update-date-questions';
 import { TransactionService } from '../transactions/transaction.service';
@@ -129,12 +126,9 @@ import { SyncTensorCollectionIdCommand } from './sync-tensor-collection-id-comma
     MintRemainingQuestions,
     AddWhitelistedWalletsCommand,
     WalletService,
-    DarkblockService,
     UserService,
     FetchCandyMachineQuestions,
     FetchCandyMachineCommand,
-    AddCollectionDarkblockCommand,
-    AddCollectionDarkblockQuestion,
     UpdateDateCommand,
     UpdateDateQuestions,
     TransactionService,

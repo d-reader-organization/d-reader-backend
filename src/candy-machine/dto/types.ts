@@ -88,11 +88,6 @@ export interface CreateCandyMachineParamsWithLabels
   coupons: AddCandyMachineCouponParamsWithLabels[];
 }
 
-export type DarkblockTraits = {
-  name: string;
-  value: string;
-};
-
 export type CandyMachineCouponWithWhitelist = CandyMachineCoupon & {
   currencySettings: CandyMachineCouponCurrencySetting[];
 };

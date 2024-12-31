@@ -64,7 +64,6 @@ export class GenerateEnvironmentCommand extends CommandRunner {
     logEnv('SIGN_MESSAGE', signMessagePrompt);
     logEnv('HELIUS_API_KEY', options.heliusApiKey);
     logEnv('WEBHOOK_ID', 'REPLACE_THIS');
-    logEnv('DARKBLOCK_API', 'REPLACE_THIS');
 
     if (metaplex.cluster === ClusterEnum.MainnetBeta) {
       logErr(
@@ -78,12 +77,6 @@ export class GenerateEnvironmentCommand extends CommandRunner {
       `\n⚠️  Don't forget to run the ${cg(
         "'yarn sync-webhook'",
       )} command to create a new webhook`,
-    );
-
-    log(
-      `\n⚠️  To generate a Darkblock API key visit ${cg(
-        'https://darkblock.redoc.ly/apikey',
-      )}`,
     );
 
     log(cg('\n💻 Happy hacking! \n'));

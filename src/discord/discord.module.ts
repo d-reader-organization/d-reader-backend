@@ -12,7 +12,6 @@ import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CandyMachineService } from 'src/candy-machine/candy-machine.service';
 import { UserComicIssueService } from 'src/comic-issue/user-comic-issue.service';
 import { HeliusService } from 'src/webhooks/helius/helius.service';
-import { DarkblockService } from 'src/candy-machine/darkblock.service';
 import { CreatorService } from 'src/creator/creator.service';
 import { UserCreatorService } from 'src/creator/user-creator.service';
 import { PasswordService } from 'src/auth/password.service';
@@ -38,7 +37,6 @@ import { FirebaseService } from 'src/third-party/firebase/firebase.service';
     CandyMachineService,
     UserComicIssueService,
     HeliusService,
-    DarkblockService,
     CreatorService,
     UserCreatorService,
     PasswordService,

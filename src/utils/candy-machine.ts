@@ -69,7 +69,6 @@ export async function uploadMetadata(
   isSigned: string,
   rarity: ComicRarity,
   sellerFeeBasisPoints: number,
-  darkblockId?: string,
 ) {
   const creators: JsonMetadataCreators = royaltyWallets.map((item) => {
     return {
@@ -103,7 +102,7 @@ export async function uploadMetadata(
     ],
     properties: {
       creators,
-      files: darkblockId ? [{ type: 'Darkblock', uri: darkblockId }] : [],
+      files: [],
     },
     collection: {
       name: comicIssue.title,
@@ -120,7 +119,6 @@ export async function uploadAllMetadata(
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
   rarityCoverFiles: CoverFiles,
-  darkblockId: string,
   sellerFeeBasisPoints: number,
   rarity: ComicRarity,
 ) {
@@ -128,7 +126,6 @@ export async function uploadAllMetadata(
   await Promise.all(
     ATTRIBUTE_COMBINATIONS.map(async ([isUsed, isSigned]) => {
       const property = generatePropertyName(isUsed, isSigned);
-      const darkblock = isUsed ? darkblockId : undefined;
 
       const uri = await uploadMetadata(
         umi,
@@ -140,7 +137,6 @@ export async function uploadAllMetadata(
         isSigned.toString(),
         rarity,
         sellerFeeBasisPoints,
-        darkblock,
       );
 
       itemMetadata.push({
@@ -161,7 +157,6 @@ export async function uploadItemMetadata(
   comicName: string,
   royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
-  darkblockId: string,
   sellerFeeBasisPoints: number,
   rarityCoverFiles?: RarityCoverFiles,
 ) {
@@ -177,7 +172,6 @@ export async function uploadItemMetadata(
       comicName,
       royaltyWallets,
       rarityCoverFiles[rarity],
-      darkblockId,
       sellerFeeBasisPoints,
       rarity,
     );

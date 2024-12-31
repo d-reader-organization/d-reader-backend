@@ -10,7 +10,6 @@ import { WalletService } from '../wallet/wallet.service';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { NonceService } from 'src/nonce/nonce.service';
-import { DarkblockService } from 'src/candy-machine/darkblock.service';
 
 @Module({
   controllers: [WheelController],
@@ -24,7 +23,6 @@ import { DarkblockService } from 'src/candy-machine/darkblock.service';
     HeliusService,
     CandyMachineService,
     NonceService,
-    DarkblockService,
   ],
 })
 export class WheelModule {}

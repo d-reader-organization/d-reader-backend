@@ -51,7 +51,6 @@ import {
 } from '../utils/comic-issue';
 import { ComicIssueCMInput } from '../comic-issue/dto/types';
 import { ItemMetadata, RarityCoverFiles } from '../types/shared';
-import { DarkblockService } from './darkblock.service';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import {
   TokenStandard,
@@ -144,7 +143,6 @@ export class CandyMachineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
-    private readonly darkblockService: DarkblockService,
     private readonly nonceService: NonceService,
     private readonly cacheService: CacheService,
   ) {
@@ -176,7 +174,7 @@ export class CandyMachineService {
     const { statefulCovers, statelessCovers, rarityCoverFiles } =
       await this.getComicIssueCovers(comicIssue);
 
-    const { collectionAddress, darkblockId, currentSupply } =
+    const { collectionAddress, currentSupply } =
       await this.getOrCreateComicIssueCollection(
         comicIssue,
         createCandyMachineParams.assetOnChainName,
@@ -266,7 +264,6 @@ export class CandyMachineService {
           comicName,
           royaltyWallets,
           numberOfRarities,
-          darkblockId,
           sellerFeeBasisPoints,
           rarityCoverFiles,
         );
@@ -1299,7 +1296,6 @@ export class CandyMachineService {
     creatorAddress: string,
   ): Promise<{
     collectionAddress: string;
-    darkblockId: string;
     currentSupply: number;
   }> {
     const { pdf, id: comicIssueId, description, title } = comicIssue;
@@ -1313,7 +1309,6 @@ export class CandyMachineService {
         where: { comicIssueId },
       });
 
-    let darkblockId = '';
 
     if (collectionAsset) {
       const {
@@ -1324,21 +1319,7 @@ export class CandyMachineService {
       });
       return {
         collectionAddress: collectionAsset.address,
-        darkblockId: collectionAsset.darkblockId || '',
         currentSupply,
-      };
-    }
-
-    let darkblockMetadataFile: MetadataFile;
-    if (pdf) {
-      darkblockId = await this.darkblockService.mintDarkblock(
-        pdf,
-        description,
-        creatorAddress,
-      );
-      darkblockMetadataFile = {
-        type: 'Darkblock',
-        uri: darkblockId,
       };
     }
 
@@ -1360,7 +1341,6 @@ export class CandyMachineService {
           ],
           files: [
             ...writeFiles(coverImage, ...statefulCovers, ...statelessCovers),
-            ...(darkblockMetadataFile ? [darkblockMetadataFile] : []),
           ],
         },
       });
@@ -1416,7 +1396,7 @@ export class CandyMachineService {
       },
     });
 
-    return { collectionAddress, darkblockId, currentSupply: 0 };
+    return { collectionAddress, currentSupply: 0 };
   }
 
   // Create labels for each currency setting in coupon
