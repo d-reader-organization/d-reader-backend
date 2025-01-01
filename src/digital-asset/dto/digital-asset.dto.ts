@@ -24,11 +24,7 @@ import {
 } from '@prisma/client';
 import { divide, isNil } from 'lodash';
 import { getPublicUrl } from '../../aws/s3client';
-
-export class NftAttributeDto {
-  trait: string;
-  value: string;
-}
+import { AttributeDto } from './attribute.dto';
 
 export class AssetDto {
   @IsSolanaAddress()
@@ -72,9 +68,9 @@ export class AssetDto {
   comicIssueId: number;
 
   @IsArray()
-  @Type(() => NftAttributeDto)
-  @ApiProperty({ type: [NftAttributeDto] })
-  attributes: NftAttributeDto[];
+  @Type(() => AttributeDto)
+  @ApiProperty({ type: [AttributeDto] })
+  attributes: AttributeDto[];
 
   @IsBoolean()
   isListed: boolean;

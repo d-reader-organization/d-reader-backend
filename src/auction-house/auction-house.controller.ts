@@ -10,10 +10,11 @@ import { toCollectionStats } from './dto/collection-stats.dto';
 export class AuctionHouseController {
   constructor(private readonly auctionHouseService: AuctionHouseService) {}
 
-  @Get('/get/listed-items')
-  async findListedItems(@Query() query: ListingFilterParams) {
-    const listedItems = await this.auctionHouseService.findListedItems(query);
-    return await toListingDtoArray(listedItems);
+  @Get('/get/listings/collectible-comics')
+  async findCollectibleComicListings(@Query() query: ListingFilterParams) {
+    const listings =
+      await this.auctionHouseService.findCollectibleComicListings(query);
+    return await toListingDtoArray(listings);
   }
 
   @Get('/get/collection-stats/:comicIssueId')

@@ -72,6 +72,7 @@ import { BuyPrintEditionParams } from './dto/buy-print-edition-params';
 import { RepriceListingParams } from './dto/reprice-listing-params.dto';
 import { ProgramSource } from '../types/shared';
 import { hours } from '@nestjs/throttler';
+import { ListingInput } from './dto/listing.dto';
 
 @Injectable()
 export class AuctionHouseService {
@@ -754,11 +755,13 @@ export class AuctionHouseService {
     };
   }
 
-  async findListedItems(listingFilterParams: ListingFilterParams) {
+  async findCollectibleComicListings(
+    listingFilterParams: ListingFilterParams,
+  ): Promise<ListingInput[]> {
     const sortTag = listingFilterParams.sortTag ?? ListingSortTag.Price;
     const sortOrder = listingFilterParams.sortOrder ?? SortOrder.ASC;
 
-    const { comicIssueId, rarity, isSigned, isUsed, take, skip } =
+    const { collectionAddress, rarity, isSigned, isUsed, take, skip } =
       listingFilterParams;
 
     let listings = await this.prisma.listing.findMany({
@@ -770,7 +773,7 @@ export class AuctionHouseService {
         digitalAsset: {
           collectibleComic: {
             metadata: {
-              collection: { comicIssueId },
+              collection: { address: collectionAddress },
               rarity,
               isUsed,
               isSigned,
@@ -785,8 +788,19 @@ export class AuctionHouseService {
       include: {
         digitalAsset: {
           include: {
-            owner: { include: { user: true } },
-            collectibleComic: { include: { metadata: true } },
+            collectibleComic: {
+              include: {
+                metadata: {
+                  include: {
+                    collection: {
+                      include: {
+                        comicIssue: { include: { statefulCovers: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -802,7 +816,23 @@ export class AuctionHouseService {
         return sortOrder == SortOrder.DESC ? -rarityIndex : rarityIndex;
       });
     }
-    return listings;
+
+    const listingInput: ListingInput[] = listings.map((listing) => {
+      const digitalAsset = listing.digitalAsset;
+      const metadata = digitalAsset.collectibleComic.metadata;
+      return {
+        ...listing,
+        collectibleComic: {
+          ...digitalAsset.collectibleComic,
+          digitalAsset: { ownerAddress: digitalAsset.ownerAddress },
+          metadata,
+          sellerFeeBasisPoints: metadata.collection.sellerFeeBasisPoints,
+          statefulCovers: metadata.collection.comicIssue.statefulCovers,
+        },
+      };
+    });
+
+    return listingInput;
   }
 
   async syncTensorListings(listings: TENSOR_LISTING_RESPONSE[]) {

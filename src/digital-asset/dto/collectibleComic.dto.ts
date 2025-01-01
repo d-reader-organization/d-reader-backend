@@ -1,34 +1,22 @@
 import {
-  IsArray,
   IsBoolean,
   IsEnum,
   IsNumber,
+  IsOptional,
   IsString,
   IsUrl,
 } from 'class-validator';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { plainToInstance, Type } from 'class-transformer';
-import {
-  fetchOffChainMetadata,
-  findRarityTrait,
-  findSignedTrait,
-  findUsedTrait,
-} from '../../utils/nft-metadata';
+import { plainToInstance } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   CollectibleComic,
-  Listing,
   ComicRarity,
   StatefulCover,
   CollectibleComicMetadata,
 } from '@prisma/client';
-import { divide, isNil } from 'lodash';
+import { divide } from 'lodash';
 import { getPublicUrl } from '../../aws/s3client';
-
-export class CollectibleComicAttributesDto {
-  trait: string;
-  value: string;
-}
 
 export class CollectibleComicDto {
   @IsSolanaAddress()
@@ -42,9 +30,6 @@ export class CollectibleComicDto {
 
   @IsString()
   name: string;
-
-  @IsString()
-  description: string;
 
   @IsSolanaAddress()
   ownerAddress: string;
@@ -62,19 +47,16 @@ export class CollectibleComicDto {
   @ApiProperty({ enum: ComicRarity })
   rarity: ComicRarity;
 
+  @IsOptional()
   @IsString()
-  comicName: string;
+  comicName?: string;
 
+  @IsOptional()
   @IsString()
-  comicIssueName: string;
+  comicIssueName?: string;
 
   @IsNumber()
   comicIssueId: number;
-
-  @IsArray()
-  @Type(() => CollectibleComicAttributesDto)
-  @ApiProperty({ type: [CollectibleComicAttributesDto] })
-  attributes: CollectibleComicAttributesDto[];
 
   @IsBoolean()
   isListed: boolean;
@@ -82,14 +64,18 @@ export class CollectibleComicDto {
 
 export type WithMetadata = { metadata: CollectibleComicMetadata };
 export type WithDigitalAssetData = {
-  digitalAsset: { listing?: Listing[]; ownerAddress: string };
+  digitalAsset: { isListed?: boolean; ownerAddress: string };
 };
 export type WithStatefulCovers = { statefulCovers: StatefulCover[] };
+export type WithComicData = { comicIssueName?: string; comicName?: string };
+export type WithSellerFeeBasisPoints = { sellerFeeBasisPoints: number };
 
 export type CollectibleComicInput = CollectibleComic &
+  WithSellerFeeBasisPoints &
   WithMetadata &
   WithDigitalAssetData &
-  WithStatefulCovers;
+  WithStatefulCovers &
+  WithComicData;
 
 export async function toCollectibleComicDto(
   collectibleComicInput: CollectibleComicInput,
@@ -97,11 +83,9 @@ export async function toCollectibleComicDto(
   const { metadata, digitalAsset, statefulCovers, ...collectibleComic } =
     collectibleComicInput;
 
-  const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
-  const listings = digitalAsset.listing;
-  const isUsed = findUsedTrait(offChainMetadata);
-  const isSigned = findSignedTrait(offChainMetadata);
-  const rarity = findRarityTrait(offChainMetadata);
+  const isUsed = metadata.isUsed;
+  const isSigned = metadata.isSigned;
+  const rarity = metadata.rarity;
 
   const cover = statefulCovers.find(
     (c) =>
@@ -113,22 +97,17 @@ export async function toCollectibleComicDto(
     uri: collectibleComic.uri,
     image: getPublicUrl(cover.image),
     name: collectibleComic.name,
-    description: offChainMetadata.description,
     ownerAddress: digitalAsset.ownerAddress,
-    royalties: divide(offChainMetadata.seller_fee_basis_points, 100),
+    royalties: divide(collectibleComic.sellerFeeBasisPoints, 100),
     // candyMachineAddress: nft.candyMachineAddress,
     // collectionNftAddress: nft.collectionNftAddress,
     isUsed,
     isSigned,
     rarity,
-    comicName: offChainMetadata.collection.family,
-    comicIssueName: offChainMetadata.collection.name,
+    comicName: collectibleComic.comicName || undefined,
+    comicIssueName: collectibleComic.comicIssueName || undefined,
     comicIssueId: cover.comicIssueId,
-    attributes: offChainMetadata.attributes.map((a) => ({
-      trait: a.trait_type,
-      value: a.value,
-    })),
-    isListed: isNil(listings) ? null : listings.length > 0 ? true : false,
+    isListed: digitalAsset.isListed,
   };
 
   const collectibleComicDto = plainToInstance(

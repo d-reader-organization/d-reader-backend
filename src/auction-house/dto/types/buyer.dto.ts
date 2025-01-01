@@ -1,4 +1,4 @@
-import { User, Wallet } from '@prisma/client';
+import { User } from '@prisma/client';
 import { PublicKey } from '@solana/web3.js';
 import { plainToInstance } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
@@ -6,6 +6,7 @@ import { getPublicUrl } from '../../../aws/s3client';
 import { UserDto } from '../../../user/dto/user.dto';
 import { getOwnerDomain } from '../../../utils/sns';
 import { WalletDto } from '../../../wallet/dto/wallet.dto';
+import { ifDefined } from 'src/utils/lodash';
 
 export class BuyerDto {
   id?: UserDto['id'];
@@ -19,14 +20,14 @@ export class BuyerDto {
   sns?: string;
 }
 
-type Buyer = Wallet & { user?: User };
+type Buyer = { address: string } & { user?: User };
 
 export async function toBuyerDto(buyer: Buyer) {
   const sns = await getOwnerDomain(new PublicKey(buyer.address));
 
   const plainBuyerDto: BuyerDto = {
     id: buyer.user?.id,
-    avatar: getPublicUrl(buyer.user?.avatar),
+    avatar: ifDefined(buyer.user?.avatar, getPublicUrl),
     username: buyer.user?.username,
     displayName: buyer.user?.displayName,
     address: buyer.address,

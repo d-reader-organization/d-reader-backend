@@ -1,10 +1,7 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Pagination } from '../../types/pagination.dto';
 import { Transform } from 'class-transformer';
-import {
-  TransformStringToBoolean,
-  TransformStringToNumber,
-} from '../../utils/transform';
+import { TransformStringToBoolean } from '../../utils/transform';
 import { SortOrder } from '../../types/sort-order';
 import { ComicRarity } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
@@ -22,10 +19,8 @@ export class ListingFilterParams extends Pagination {
   })
   isSold?: boolean;
 
-  @Min(0)
-  @TransformStringToNumber()
-  @IsNumber()
-  comicIssueId: number;
+  @IsString()
+  collectionAddress: string;
 
   @IsEnum(SortOrder)
   @IsOptional()
