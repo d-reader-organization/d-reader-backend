@@ -36,7 +36,6 @@ import { CreatePrintEditionCollectionDto } from './dto/create-print-edition.dto'
 import { s3Service } from '../aws/s3.service';
 import { CreateOneOfOneDto } from './dto/create-one-of-one-dto';
 import { CreateOneOfOneCollectionDto } from './dto/create-one-of-one-collection-dto';
-import { AttributesDto } from '../auction-house/dto/listing.dto';
 import { PrintEditionParams } from './dto/print-edition-params.dto';
 import {
   buyEdition,
@@ -65,6 +64,7 @@ import { AddressLookupTableAccount } from '@solana/web3.js';
 import { TransactionMessage } from '@solana/web3.js';
 import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { AttributeDto } from './dto/attribute.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -713,7 +713,7 @@ export class DigitalAssetService {
     name: string,
     description: string,
     image: Express.Multer.File,
-    attributes: AttributesDto[],
+    attributes: AttributeDto[],
     tags: string[],
     genres: string[],
     creators: CoreCreator[],
@@ -729,7 +729,7 @@ export class DigitalAssetService {
       description,
       image: getIrysUri(imageUri),
       attributes: attributes.map((attribute) => ({
-        trait_type: attribute.trait_type,
+        trait_type: attribute.trait,
         value: attribute.value,
       })),
       tags,

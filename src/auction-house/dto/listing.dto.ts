@@ -1,174 +1,51 @@
 import { Type, plainToInstance } from 'class-transformer';
-import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-} from 'class-validator';
-import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import {
-  Pda,
-  associatedTokenProgram,
-  tokenProgram,
-} from '@metaplex-foundation/js';
-import { PublicKey } from '@solana/web3.js';
-import {
-  fetchOffChainMetadata,
-  findRarityTrait,
-  findSignedTrait,
-  findUsedTrait,
-} from '../../utils/nft-metadata';
-import { NftAttributeDto } from '../../digital-asset/dto/digital-asset.dto';
-import {
-  Listing,
-  Wallet,
-  ComicRarity,
-  User,
-  CollectibleComic,
-  DigitalAsset,
-} from '@prisma/client';
+import { IsDate, IsInt, IsPositive, IsString } from 'class-validator';
+import { Listing } from '@prisma/client';
 import { SellerDto, toSellerDto } from './types/seller.dto';
-import { ApiProperty } from '@nestjs/swagger';
-import { divide } from 'lodash';
+import {
+  CollectibleComicDto,
+  CollectibleComicInput,
+  toCollectibleComicDto,
+} from 'src/digital-asset/dto/collectibleComic.dto';
+import { SOL_ADDRESS } from 'src/constants';
 
 export class ListingDto {
   @IsPositive()
   id: number;
 
-  /* @deprecated */
-  @IsSolanaAddress()
-  nftAddress: string;
-
-  @IsSolanaAddress()
-  assetAddress: string;
-
-  @IsString()
-  name: string;
-
-  @IsString()
-  cover: string;
+  @Type(() => CollectibleComicDto)
+  collectibleComic: CollectibleComicDto;
 
   @Type(() => SellerDto)
   seller: SellerDto;
 
   @IsString()
-  tokenAddress: string;
+  splTokenAddress: string;
 
   @IsInt()
   price: number;
 
-  @IsArray()
-  @Type(() => NftAttributeDto)
-  @ApiProperty({ type: [NftAttributeDto] })
-  attributes: NftAttributeDto[];
-
-  @IsBoolean()
-  isUsed: boolean;
-
-  @IsBoolean()
-  isSigned: boolean;
-
-  @IsEnum(ComicRarity)
-  @ApiProperty({ enum: ComicRarity })
-  rarity: ComicRarity;
-
-  @IsNumber()
-  royalties: number;
-
-  // @IsString()
-  // description: string;
-
-  // @IsString()
-  // symbol: string;
-
-  // @IsDateString()
-  // createdAt: string;
-
-  // @IsString()
-  // collectionName: string;
-
-  // @IsString()
-  // externalUrl: string;
-
-  // @IsArray()
-  // @ArrayNotEmpty()
-  // @Type(() => CreatorsDto)
-  // creators: CreatorsDto[];
-
-  // @IsString()
-  // signature: string;
-}
-
-export class AttributesDto {
-  @IsString()
-  @IsOptional()
-  trait_type?: string;
-
-  @IsString()
-  @IsOptional()
-  value?: string;
-}
-
-export class CreatorsDto {
-  @IsString()
-  @IsOptional()
-  address?: string;
-
-  @IsNumber()
-  @IsOptional()
-  share?: number;
+  @IsDate()
+  createdAt: Date;
 }
 
 export type ListingInput = Listing & {
-  digitalAsset: DigitalAsset & { owner?: Wallet & { user?: User } } & {
-    collectibleComic: CollectibleComic;
-  };
+  collectibleComic: CollectibleComicInput;
 };
 
 export async function toListingDto(listing: ListingInput) {
-  const owner = listing.digitalAsset.owner;
-  const collectibleComic = listing.digitalAsset.collectibleComic;
-
-  const sellerAddress = new PublicKey(owner.address);
-  const [collectionMetadata, seller] = await Promise.all([
-    fetchOffChainMetadata(collectibleComic.uri),
-    toSellerDto(owner),
-  ]);
-  const tokenAddress = Pda.find(associatedTokenProgram.address, [
-    sellerAddress.toBuffer(),
-    tokenProgram.address.toBuffer(),
-    new PublicKey(collectibleComic.address).toBuffer(),
-  ]).toString();
+  const sellerAddress = listing.sellerAddress;
+  const seller = await toSellerDto({ address: sellerAddress });
 
   const plainListingDto: ListingDto = {
     id: listing.id,
-    nftAddress: listing.assetAddress,
-    assetAddress: listing.assetAddress,
-    name: collectibleComic.name,
-    cover: collectionMetadata.image,
+    collectibleComic: await toCollectibleComicDto(listing.collectibleComic),
     seller,
-    tokenAddress,
     price: Number(listing.price),
-    attributes: collectionMetadata.attributes.map((a) => ({
-      trait: a.trait_type,
-      value: a.value,
-    })),
-    isUsed: findUsedTrait(collectionMetadata),
-    isSigned: findSignedTrait(collectionMetadata),
-    rarity: findRarityTrait(collectionMetadata),
-    royalties: divide(collectionMetadata.seller_fee_basis_points, 100),
-    // description: collectionMetadata.description, // hide this in array?
-    // symbol: listing.symbol, // hide this in array?
-    // createdAt: listing.createdAt.toISOString(), // hide this in array?
-    // collectionName: collectionMetadata.collection.name, // hide this in array?
-    // externalUrl: collectionMetadata.external_url, // hide this in array?
-    // creators: collectionMetadata.properties.creators, // hide this in array?
-    // signature: listing.signature, // hide this in array?
+    splTokenAddress: SOL_ADDRESS, // TODO: replace this with auctionHouse.splTokenAddress
+    createdAt: listing.createdAt,
   };
+
   const listingDto = plainToInstance(ListingDto, plainListingDto);
   return listingDto;
 }

@@ -421,6 +421,7 @@ export class ComicIssueService {
             },
           },
         },
+        comic: { select: { title: true } },
         statelessCovers: true,
         statefulCovers: true,
       },
@@ -438,6 +439,10 @@ export class ComicIssueService {
             metadata,
             digitalAsset: comic.digitalAsset,
             statefulCovers: issue.statefulCovers,
+            sellerFeeBasisPoints:
+              issue.collectibleComicCollection.sellerFeeBasisPoints,
+            comicName: issue.comic.title,
+            comicIssueName: issue.title,
           })),
         ) || [],
       statelessCovers: issue.statelessCovers,

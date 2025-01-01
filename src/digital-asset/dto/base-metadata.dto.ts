@@ -7,10 +7,10 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { AttributesDto } from '../../auction-house/dto/listing.dto';
 import { RoyaltyWalletDto } from '../../comic-issue/dto/royalty-wallet.dto';
 import { MAX_CREATOR_LIMIT } from '../../constants';
 import { TransformStringToNumber } from '../../utils/transform';
+import { AttributeDto } from './attribute.dto';
 
 export class BaseMetadataDto {
   @IsString()
@@ -42,9 +42,9 @@ export class BaseMetadataDto {
     return attributesDtoArray;
   })
   @IsArray()
-  @ApiProperty({ type: AttributesDto })
-  @Type(() => AttributesDto)
-  attributes: AttributesDto[];
+  @ApiProperty({ type: AttributeDto })
+  @Type(() => AttributeDto)
+  attributes: AttributeDto[];
 
   @Transform(({ value }: { value: string[] }) => {
     const royaltyWalletDtoArray = value.map((item) => JSON.parse(item));
