@@ -433,14 +433,18 @@ export class AuctionHouseService {
     });
 
     if (standard === TokenStandard.Core) {
-      const { data } = await fetchTensorBuyTx(
+      const latestBlockhash =
+        await this.metaplex.connection.getLatestBlockhash();
+
+      const data = await fetchTensorBuyTx(
         buyerAddress,
         price,
         assetAddress,
         seller,
+        latestBlockhash.blockhash,
       );
 
-      const bufferTx = data.tcompBuyTx.txs.at(0).tx.data;
+      const bufferTx = data.txs.at(0).tx.data;
       const buyTx = base64.deserialize(bufferTx)[0];
       return buyTx;
     }

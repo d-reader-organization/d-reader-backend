@@ -4,10 +4,7 @@ import { fetchOffChainMetadata, findRarityTrait } from './nft-metadata';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
 import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import { clusterHeliusApiUrl } from './helius';
-import {
-  TENSOR_GRAPHQL_API_ENDPOINT,
-  TENSOR_MAINNET_API_ENDPOINT,
-} from '../constants';
+import { TENSOR_MAINNET_API_ENDPOINT } from '../constants';
 import axios, { AxiosError } from 'axios';
 import { Cluster } from '../types/cluster';
 import { PriorityLevel } from '../types/priorityLevel';
@@ -180,39 +177,20 @@ export async function fetchTensorBuyTx(
   maxPrice: number,
   mint: string,
   owner: string,
+  blockhash: string,
 ) {
   try {
-    const { data } = await axios.post(
-      TENSOR_GRAPHQL_API_ENDPOINT,
-      {
-        query: `query TcompBuyTx(
-          $buyer: String!
-          $maxPrice: Decimal!
-          $mint: String!
-          $owner: String!
-        ) {
-          tcompBuyTx(buyer: $buyer, maxPrice: $maxPrice, mint: $mint, owner: $owner) {
-            txs {
-              tx
-              lastValidBlockHeight
-            }
-          }
-        }`,
-        variables: {
-          buyer,
-          maxPrice: maxPrice.toString(),
-          mint,
-          owner,
-        },
+    const options = {
+      method: 'GET',
+      url: `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/tx/buy?buyer=${buyer}&mint=${mint}&owner=${owner}&maxPrice=${maxPrice}&blockhash=${blockhash}`,
+      headers: {
+        accept: 'application/json',
+        'x-tensor-api-key': process.env.TENSOR_API_KEY,
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-TENSOR-API-KEY': process.env.TENSOR_API_KEY ?? '',
-        },
-      },
-    );
-    return data;
+    };
+
+    const response = await axios.request(options);
+    return response.data;
   } catch (err: any) {
     if (err instanceof AxiosError) console.log(err.response?.data.errors);
     else console.error(err);
