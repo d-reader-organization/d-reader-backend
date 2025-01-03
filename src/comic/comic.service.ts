@@ -236,7 +236,7 @@ export class ComicService {
           userId,
           bookmarkedAt: { not: null },
         },
-        include: { comic: true },
+        include: { comic: { include: { creator: true } } },
         skip: query.skip,
         take: query.take,
       })
