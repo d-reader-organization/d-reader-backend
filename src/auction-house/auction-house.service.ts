@@ -41,7 +41,6 @@ import {
   RARITY_PRECEDENCE,
   TCOMP_PROGRAM_ID,
   TENSOR_MAINNET_API_ENDPOINT,
-  TSWAP_PROGRAM_ID,
 } from '../constants';
 import { TENSOR_LISTING_RESPONSE } from './dto/types/tensor-listing-response';
 import axios from 'axios';
@@ -839,60 +838,52 @@ export class AuctionHouseService {
     return listingInput;
   }
 
-  async syncTensorListings(listings: TENSOR_LISTING_RESPONSE[]) {
-    for await (const listing of listings) {
+  async syncTensorListings(items: TENSOR_LISTING_RESPONSE[]) {
+    for await (const item of items) {
+      const listing = item.listing;
+
       const isTensor =
-        listing.tx.source === 'TENSORSWAP' || listing.tx.source === 'TCOMP';
+        listing.source === 'TENSORSWAP' || listing.source === 'TCOMP';
       if (!isTensor) {
         console.log(
-          `Listing for ${listing.mint} is not fron ${ProgramSource.T_COMP} or ${ProgramSource.T_SWAP}`,
+          `Listing for ${item.mint} is not fron ${ProgramSource.T_COMP} or ${ProgramSource.T_SWAP}`,
         );
         continue;
       }
 
-      const collectibleComic = await this.prisma.collectibleComic.findUnique({
-        where: { address: listing.mint.onchainId },
-      });
-
-      const source =
-        listing.tx.source === 'TENSORSWAP'
-          ? ProgramSource.T_SWAP
-          : ProgramSource.T_COMP;
-      const auctionHouseAddress =
-        listing.tx.source === 'TENSORSWAP'
-          ? TSWAP_PROGRAM_ID
-          : TCOMP_PROGRAM_ID;
-
-      await this.prisma.listing.upsert({
-        where: {
-          assetAddress_closedAt: {
-            assetAddress: listing.mint.onchainId,
+      try {
+        await this.prisma.listing.upsert({
+          where: {
+            assetAddress_closedAt: {
+              assetAddress: item.mint,
+              closedAt: new Date(0),
+            },
+          },
+          update: {
+            price: +listing.price,
+            sellerAddress: listing.seller,
+            createdAt: new Date(),
+            signature: listing.txId,
+            source: Source.TENSOR,
+          },
+          create: {
+            auctionHouse: {
+              connect: { address: TCOMP_PROGRAM_ID },
+            },
+            price: +listing.price,
+            sellerAddress: listing.seller,
+            createdAt: new Date(),
+            signature: listing.txId,
+            source: Source.TENSOR,
             closedAt: new Date(0),
+            digitalAsset: {
+              connect: { address: item.mint },
+            },
           },
-        },
-        update: {
-          price: +listing.tx.grossAmount,
-          sellerAddress: listing.tx.sellerId,
-          createdAt: new Date(),
-          signature: listing.tx.txId,
-          source,
-        },
-        create: {
-          auctionHouse: {
-            // TODO: Check if you need actual auction house address for creating the buy order ?
-            connect: { address: auctionHouseAddress },
-          },
-          price: +listing.tx.grossAmount,
-          sellerAddress: listing.tx.sellerId,
-          createdAt: new Date(),
-          signature: listing.tx.txId,
-          source,
-          closedAt: new Date(0),
-          digitalAsset: {
-            connect: { address: collectibleComic.address },
-          },
-        },
-      });
+        });
+      } catch (e) {
+        console.log('Error while syncing the listings ', e);
+      }
     }
 
     // NOTE: Uncomment and use as per required.

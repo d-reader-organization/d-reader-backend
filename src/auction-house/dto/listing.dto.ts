@@ -6,8 +6,8 @@ import {
   CollectibleComicDto,
   CollectibleComicInput,
   toCollectibleComicDto,
-} from 'src/digital-asset/dto/collectibleComic.dto';
-import { SOL_ADDRESS } from 'src/constants';
+} from '../../digital-asset/dto/collectibleComic.dto';
+import { SOL_ADDRESS } from '../../constants';
 
 export class ListingDto {
   @IsPositive()

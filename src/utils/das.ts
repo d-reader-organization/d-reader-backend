@@ -197,6 +197,34 @@ export async function fetchTensorBuyTx(
   }
 }
 
+export async function fetchActiveTensorListings(
+  collectionId: string,
+  limit: number,
+  cursor?: string,
+) {
+  let url = `${TENSOR_MAINNET_API_ENDPOINT}/api/v1/mint/active_listings?collId=${collectionId}&sortBy=ListingPriceAsc&limit=${limit}&listingSources=TCOMP`;
+  if (cursor) {
+    url += `&cursor=${cursor}`;
+  }
+
+  try {
+    const options = {
+      method: 'GET',
+      url,
+      headers: {
+        accept: 'application/json',
+        'x-tensor-api-key': process.env.TENSOR_API_KEY,
+      },
+    };
+
+    const response = await axios.request(options);
+    return response.data;
+  } catch (err: any) {
+    if (err instanceof AxiosError) console.log(err.response?.data.errors);
+    else console.error(err);
+  }
+}
+
 export async function getPriorityFeeEstimate(
   priorityLevel: PriorityLevel,
   transaction: string,

@@ -1,20 +1,20 @@
 import { PublicKey } from '@solana/web3.js';
 import { QuestionSet, Question } from 'nest-commander';
 
-@QuestionSet({ name: 'sync-listings' })
+@QuestionSet({ name: 'sync-tensor-listings' })
 export class SyncTensorListingsQuestions {
   @Question({
     type: 'input',
-    name: 'nftAddress',
-    message: 'Address of any nft from collection to sync',
-    validate: async function (nft: string) {
-      if (nft && !PublicKey.isOnCurve(nft)) {
+    name: 'collectionAddress',
+    message: 'Address of collection to sync',
+    validate: async function (collectionAddress: string) {
+      if (collectionAddress && !PublicKey.isOnCurve(collectionAddress)) {
         return 'Address must be a solana address';
       }
-      return !!nft;
+      return !!collectionAddress;
     },
   })
-  parseNftAddresses(address: string): string {
+  parseCollectionAddresses(address: string): string {
     return address;
   }
 }

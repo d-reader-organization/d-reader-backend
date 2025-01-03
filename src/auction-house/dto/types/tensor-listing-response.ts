@@ -1,12 +1,10 @@
 export type TENSOR_LISTING_RESPONSE = {
-  mint: {
-    onchainId: string;
-  };
-  tx: {
-    sellerId: string;
-    grossAmount: string;
-    grossAmountUnit: string;
-    source: string;
+  mint: string;
+  listing: {
+    price: string;
     txId: string;
+    txAt: string;
+    seller: string;
+    source: string;
   };
 };
