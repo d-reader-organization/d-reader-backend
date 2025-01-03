@@ -6,7 +6,7 @@ import { getPublicUrl } from '../../../aws/s3client';
 import { UserDto } from '../../../user/dto/user.dto';
 import { getOwnerDomain } from '../../../utils/sns';
 import { WalletDto } from '../../../wallet/dto/wallet.dto';
-import { ifDefined } from 'src/utils/lodash';
+import { ifDefined } from '../../../utils/lodash';
 
 export class BuyerDto {
   id?: UserDto['id'];

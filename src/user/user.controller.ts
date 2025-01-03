@@ -39,7 +39,7 @@ import {
 } from './dto/user-consent.dto';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
-import { memoizeThrottle } from 'src/utils/lodash';
+import { memoizeThrottle } from '../utils/lodash';
 
 @ApiTags('User')
 @Controller('user')
