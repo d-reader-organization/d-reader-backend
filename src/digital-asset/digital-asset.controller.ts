@@ -3,6 +3,7 @@ import { DigitalAssetService } from './digital-asset.service';
 import { ApiTags } from '@nestjs/swagger';
 import { AssetDto, toAssetDto, toAssetDtoArray } from './dto/digital-asset.dto';
 import { DigitalAssetFilterParams } from './dto/digital-asset-params.dto';
+import { CollectibleComicRarityStatsDto, toCollectibleComicRarityStatsDtoArray } from './dto/collectible-comic-rarity-stats.dto';
 
 /* @deprecated */
 @ApiTags('NFTs')
@@ -35,6 +36,13 @@ export class DigitalAssetController {
   async findAll(@Query() query: DigitalAssetFilterParams): Promise<AssetDto[]> {
     const assets = await this.digitalAssetService.findAll(query);
     return toAssetDtoArray(assets);
+  }
+
+  /* Get collectible comic rarity stats */
+  @Get('get/collectible-comic/rarity-stats/:collectionAddress')
+  async findCollectibleComicRarityStats(@Param('collectionAddress') collectionAddress: string): Promise<CollectibleComicRarityStatsDto[]> {
+    const stats = await this.digitalAssetService.findCollectibleComicRarityStats(collectionAddress);
+    return toCollectibleComicRarityStatsDtoArray(stats);
   }
 
   /* Get specific Asset by unique on-chain address */
