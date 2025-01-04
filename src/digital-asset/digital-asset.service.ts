@@ -29,7 +29,6 @@ import {
 import {
   D_READER_FRONTEND_URL,
   D_READER_SYMBOL,
-  getRarityShareTable,
   MIN_COMPUTE_PRICE,
 } from '../constants';
 import { base64 } from '@metaplex-foundation/umi/serializers';
@@ -143,22 +142,39 @@ export class DigitalAssetService {
     return asset;
   }
 
-  async findCollectibleComicRarityStats(collectionAddress:string): Promise<CollectibleComicRarityStatsInput[]> {
+  async findCollectibleComicRarityStats(
+    collectionAddress: string,
+  ): Promise<CollectibleComicRarityStatsInput[]> {
     const statelessCovers = await this.prisma.statelessCover.findMany({
-      where:{comicIssue:{collectibleComicCollection:{address:collectionAddress}}}
+      where: {
+        comicIssue: {
+          collectibleComicCollection: { address: collectionAddress },
+        },
+      },
     });
 
-    const stats = await Promise.all(statelessCovers.map(async({rarity,image}) : Promise<CollectibleComicRarityStatsInput> =>{
-      const used = await this.prisma.collectibleComic.count({where:{metadata:{isUsed:true}}});
-      const signed = await this.prisma.collectibleComic.count({where:{metadata:{isSigned:true}}});
+    const stats = await Promise.all(
+      statelessCovers.map(
+        async ({
+          rarity,
+          image,
+        }): Promise<CollectibleComicRarityStatsInput> => {
+          const used = await this.prisma.collectibleComic.count({
+            where: { metadata: { isUsed: true, collectionAddress, rarity } },
+          });
+          const signed = await this.prisma.collectibleComic.count({
+            where: { metadata: { isSigned: true, collectionAddress, rarity } },
+          });
 
-      return {
-        used,
-        signed,
-        image,
-        rarity
-      }
-    }))
+          return {
+            used,
+            signed,
+            image,
+            rarity,
+          };
+        },
+      ),
+    );
 
     return stats;
   }
