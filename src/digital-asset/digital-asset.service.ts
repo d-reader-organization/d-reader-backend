@@ -95,6 +95,7 @@ export class DigitalAssetService {
           isBurned: false,
         },
         metadata: {
+          collectionAddress: query.collectionAddress,
           collection: {
             comicIssue: query.comicIssueId
               ? { id: query.comicIssueId ? +query.comicIssueId : undefined }
