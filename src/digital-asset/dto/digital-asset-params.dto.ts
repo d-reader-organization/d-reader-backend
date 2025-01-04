@@ -19,4 +19,8 @@ export class DigitalAssetFilterParams extends PartialType(Pagination) {
   @IsOptional()
   @IsString()
   comicIssueId?: string;
+
+  @IsOptional()
+  @IsString()
+  collectionAddress?: string;
 }
