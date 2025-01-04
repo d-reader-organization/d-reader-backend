@@ -65,6 +65,7 @@ import { TransactionMessage } from '@solana/web3.js';
 import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { AttributeDto } from './dto/attribute.dto';
+import { CollectibleComicRarityStatsInput } from './dto/collectible-comic-rarity-stats.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -139,6 +140,43 @@ export class DigitalAssetService {
       throw new NotFoundException(ERROR_MESSAGES.ASSET_NOT_FOUND(address));
     }
     return asset;
+  }
+
+  async findCollectibleComicRarityStats(
+    collectionAddress: string,
+  ): Promise<CollectibleComicRarityStatsInput[]> {
+    const statelessCovers = await this.prisma.statelessCover.findMany({
+      where: {
+        comicIssue: {
+          collectibleComicCollection: { address: collectionAddress },
+        },
+      },
+    });
+
+    const stats = await Promise.all(
+      statelessCovers.map(
+        async ({
+          rarity,
+          image,
+        }): Promise<CollectibleComicRarityStatsInput> => {
+          const used = await this.prisma.collectibleComic.count({
+            where: { metadata: { isUsed: true, collectionAddress, rarity } },
+          });
+          const signed = await this.prisma.collectibleComic.count({
+            where: { metadata: { isSigned: true, collectionAddress, rarity } },
+          });
+
+          return {
+            used,
+            signed,
+            image,
+            rarity,
+          };
+        },
+      ),
+    );
+
+    return stats;
   }
 
   async createOneOfOneCollectionTransaction(
