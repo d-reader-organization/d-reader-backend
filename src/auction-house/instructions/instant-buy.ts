@@ -31,10 +31,14 @@ export async function createInstantBuyTransaction(
   sellerAddress: string,
   splTokenAddress: string,
   bidPrice: number,
+  collectionAddress?: string,
   computePrice?: number,
 ) {
   const buyer = publicKey(buyerAddress);
   const seller = publicKey(sellerAddress);
+  const collection = collectionAddress
+    ? publicKey(collectionAddress)
+    : undefined;
 
   const auctionHouse = publicKey(auctionHouseAddress);
   const wallet = createNoopSigner(buyer);
@@ -110,6 +114,7 @@ export async function createInstantBuyTransaction(
     auctionHouseTreasury,
     asset,
     listing,
+    collection,
     sellerPaymentReceiptAccount,
     mplCoreProgram: MPL_CORE_PROGRAM_ID,
   };

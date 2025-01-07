@@ -388,6 +388,7 @@ export class AuctionHouseService {
 
     const { address: auctionHouseAddress, treasuryMint } = auctionHouse;
     const { price, sellerAddress } = listing;
+    const { collectionAddress } = await this.getBasicAssetData(assetAddress);
 
     const transaction = await getTransactionWithPriorityFee(
       createInstantBuyTransaction,
@@ -399,6 +400,7 @@ export class AuctionHouseService {
       sellerAddress,
       treasuryMint,
       Number(price),
+      collectionAddress,
     );
     return transaction;
   }
