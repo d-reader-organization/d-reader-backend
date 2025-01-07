@@ -464,7 +464,10 @@ export class HeliusService {
 
     const updateListing = this.prisma.listing.update({
       where: { assetAddress_closedAt: { assetAddress, closedAt: new Date(0) } },
-      data: { closedAt: new Date() },
+      data: {
+        closedAt: new Date(),
+        digitalAsset: { update: { ownerAddress: buyerAddress } },
+      },
     });
 
     const updateBid = this.prisma.bid.update({
