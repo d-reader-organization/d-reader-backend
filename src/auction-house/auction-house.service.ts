@@ -36,6 +36,7 @@ import {
 import { Scope, Source } from 'helius-sdk';
 import { SortOrder } from '../types/sort-order';
 import {
+  D_READER_AUCTION,
   LOCKED_COLLECTIONS,
   MIN_COMPUTE_PRICE,
   RARITY_PRECEDENCE,
@@ -783,7 +784,7 @@ export class AuctionHouseService {
             },
           },
         },
-        source: { in: [Source.METAPLEX, Source.TENSOR] },
+        source: { in: [Source.TENSOR, D_READER_AUCTION] },
       },
       orderBy: {
         price: sortTag == ListingSortTag.Price ? sortOrder : SortOrder.ASC,
