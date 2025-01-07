@@ -3,6 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import * as WebSocket from 'ws';
 import { HeliusService } from '../helius/helius.service';
 import { Cron } from '@nestjs/schedule';
+import { isEmpty } from 'lodash';
 
 @Injectable()
 export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
@@ -38,6 +39,13 @@ export class TensorSocketGateway implements OnModuleInit, OnModuleDestroy {
   }
 
   openConnection() {
+    if (isEmpty(this.TENSOR_API_KEY)) {
+      console.warn(
+        'Tensor api key is required to create socket connection with Tensor',
+      );
+      return;
+    }
+
     this.socket = new WebSocket('wss://api.mainnet.tensordev.io/ws', {
       headers: {
         'x-tensor-api-key': this.TENSOR_API_KEY,
