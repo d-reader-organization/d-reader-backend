@@ -208,7 +208,7 @@ export class BotGateway {
       await this.comicIssueService.toggleDate({ id: +value, property });
     } else if (key === DiscordKey.Creator) {
       await this.creatorService.toggleDate({
-        slug: value,
+        id: +value,
         property: 'verifiedAt',
       });
     }

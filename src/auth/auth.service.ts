@@ -16,7 +16,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from '../configs/config.interface';
 import { PasswordService } from './password.service';
-import { Creator, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { pick } from 'lodash';
 import { getOwnerDomain } from '../utils/sns';
 import { PublicKey } from '@solana/web3.js';
@@ -75,13 +75,6 @@ export class AuthService {
     return {
       accessToken: this.generateAccessToken({ ...user, type: 'user' }),
       refreshToken: this.generateRefreshToken({ ...user, type: 'user' }),
-    };
-  }
-
-  authorizeCreator(creator: Creator) {
-    return {
-      accessToken: this.generateAccessToken({ ...creator, type: 'creator' }),
-      refreshToken: this.generateRefreshToken({ ...creator, type: 'creator' }),
     };
   }
 
@@ -173,21 +166,12 @@ export class AuthService {
     //   throw new UnauthorizedException('Refresh and access token id mismatch');
     // }
 
-    if (jwtDto.type === 'user') {
-      const user = await this.prisma.user.update({
-        where: { id: jwtDto.id },
-        data: { lastLogin: new Date() },
-      });
+    const user = await this.prisma.user.update({
+      where: { id: jwtDto.id },
+      data: { lastLogin: new Date() },
+    });
 
-      return this.generateAccessToken({ ...user, type: 'user' });
-    } else if (jwtDto.type === 'creator') {
-      const creator = await this.prisma.creator.update({
-        where: { id: jwtDto.id },
-        data: { lastLogin: new Date() },
-      });
-
-      return this.generateAccessToken({ ...creator, type: 'creator' });
-    }
+    return this.generateAccessToken({ ...user, type: 'user' });
   }
 
   async validateJwt(jwtDto: JwtDto): Promise<JwtPayload> {
@@ -198,15 +182,8 @@ export class AuthService {
 
       if (!user) throw new NotFoundException('User not found');
       return { ...user, type: 'user' };
-    } else if (jwtDto.type === 'creator') {
-      const creator = await this.prisma.creator.findUnique({
-        where: { id: jwtDto.id },
-      });
-
-      if (!creator) throw new NotFoundException('Creator not found');
-      return { ...creator, type: 'creator' };
     } else {
-      throw new ForbiddenException('Authorization type unknown: ', jwtDto);
+      throw new ForbiddenException('Authorization type unknown: ', jwtDto.type);
     }
   }
 }

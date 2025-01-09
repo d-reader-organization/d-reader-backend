@@ -51,7 +51,7 @@ export const ERROR_MESSAGES = {
     'New password must be different from your current password.',
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
   EMAIL_NOT_VERIFIED: 'Your email address has not been verified',
-  CREATOR_NOT_FOUND: (slug: string) => `Creator ${slug} does not exist`,
+  CREATOR_NOT_FOUND: (id: number) => `Creator ${id} does not exist`,
   NAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
   SLUG_ALREADY_TAKEN: (slug: string) => `${slug} already taken`,
   EMAIL_ALREADY_TAKEN: (email: string) => `${email} already taken`,

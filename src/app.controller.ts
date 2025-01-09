@@ -2,10 +2,8 @@ import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { seconds, Throttle } from '@nestjs/throttler';
 import { AppService } from './app.service';
 import { UserAuth } from './guards/user-auth.guard';
-import { CreatorAuth } from './guards/creator-auth.guard';
 import { UserEntity } from './decorators/user.decorator';
-import { CreatorEntity } from './decorators/creator.decorator';
-import { CreatorPayload, UserPayload } from './auth/dto/authorization.dto';
+import { UserPayload } from './auth/dto/authorization.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { CacheInterceptor } from './cache/cache.interceptor';
 import { LOOSE_THROTTLER_CONFIG } from './constants';
@@ -28,13 +26,6 @@ export class AppController {
   @Get('hello-authenticated-user')
   getUserAuth(@UserEntity() user: UserPayload): string {
     return this.appService.getAuth(user.id);
-  }
-
-  /* Creator authenticated Hello World test endpoint */
-  @CreatorAuth()
-  @Get('hello-authenticated-creator')
-  getCreatorAuth(@CreatorEntity() creator: CreatorPayload): string {
-    return this.appService.getAuth(creator.id);
   }
 
   @Throttle(LOOSE_THROTTLER_CONFIG)

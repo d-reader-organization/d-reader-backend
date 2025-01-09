@@ -24,7 +24,7 @@ export class ComicUpdateGuard implements CanActivate {
 
     if (!creator) return false;
     if (!slug) return false;
-    if (creator.type !== 'creator') return false;
+    if (creator.role !== 'Creator') return false;
 
     const comic = await this.prisma.comic.findUnique({
       where: { slug },
