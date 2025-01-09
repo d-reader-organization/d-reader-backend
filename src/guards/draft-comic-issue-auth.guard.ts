@@ -27,7 +27,7 @@ export class DraftComicIssueSalesDataGuard implements CanActivate {
 
     if (!user) return false;
     if (!id && !comicIssueId) return false;
-    if (user.type !== 'creator') return false;
+    if (user.role !== 'Creator') return false;
 
     const checkForComicIssueOwner = async (id: number) => {
       const comicIssue = await this.prisma.comicIssue.findUnique({

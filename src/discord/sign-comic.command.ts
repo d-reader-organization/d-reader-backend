@@ -91,7 +91,7 @@ export class GetSignCommand {
     if (response.error) return { content: response.error, ephemeral: true };
 
     const { offChainMetadata, name } = response;
-    const creator = await this.prisma.creator.findFirst({
+    const creator = await this.prisma.creatorChannel.findFirst({
       where: {
         comics: {
           some: {
@@ -202,7 +202,7 @@ export class GetSignCommand {
     };
     let rarity: PrismaComicRarity;
     try {
-      const creator = await this.prisma.creator.findFirst({
+      const creator = await this.prisma.creatorChannel.findFirst({
         where: {
           discordId: creatorDiscordId,
           comics: {

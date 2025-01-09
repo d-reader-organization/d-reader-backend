@@ -24,7 +24,7 @@ export class ComicIssueOwnerAuthGuard implements CanActivate {
 
     if (!user) return false;
     if (!id) return false;
-    if (user.type !== 'creator') return false;
+    if (user.role !== 'Creator') return false;
 
     const comicIssue = await this.prisma.comicIssue.findUnique({
       where: { id: +id },

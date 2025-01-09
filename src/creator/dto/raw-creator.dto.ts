@@ -2,16 +2,13 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
-  IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsPositive,
   IsString,
   IsUrl,
   MaxLength,
 } from 'class-validator';
-import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { Creator } from '@prisma/client';
+import { CreatorChannel } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
@@ -22,32 +19,18 @@ export class RawCreatorDto {
   @IsPositive()
   id: number;
 
-  @IsEmail()
-  email: string;
-
   @IsNotEmpty()
   @MaxLength(54)
-  name: string;
-
-  @IsNotEmpty()
-  @IsKebabCase()
-  slug: string;
+  handle: string;
 
   @IsDateString()
   verifiedAt: string;
-
-  @IsOptional()
-  @IsDateString()
-  emailVerifiedAt?: string;
 
   @IsUrl()
   avatar: string;
 
   @IsUrl()
   banner: string;
-
-  @IsUrl()
-  logo: string;
 
   @IsString()
   @MaxLength(512)
@@ -78,17 +61,13 @@ export class RawCreatorDto {
   genres?: PartialGenreDto[];
 }
 
-export function toRawCreatorDto(creator: Creator) {
+export function toRawCreatorDto(creator: CreatorChannel) {
   const plainRawCreatorDto: RawCreatorDto = {
     id: creator.id,
-    email: creator.email,
-    name: creator.name,
-    slug: creator.slug,
+    handle: creator.handle,
     verifiedAt: creator.verifiedAt?.toISOString(),
-    emailVerifiedAt: creator.emailVerifiedAt?.toISOString(),
     avatar: getPublicUrl(creator.avatar),
     banner: getPublicUrl(creator.banner),
-    logo: getPublicUrl(creator.logo),
     description: creator.description,
     flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
@@ -102,6 +81,6 @@ export function toRawCreatorDto(creator: Creator) {
   return creatorDto;
 }
 
-export const toRawCreatorDtoArray = (creators: Creator[]) => {
+export const toRawCreatorDtoArray = (creators: CreatorChannel[]) => {
   return creators.map(toRawCreatorDto);
 };

@@ -34,6 +34,7 @@ Table User {
   interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
+  channelId Int [unique]
 }
 
 Table Wallet {
@@ -51,9 +52,10 @@ Table Wallet {
 }
 
 Table CreatorChannel {
-  username String [unique, not null]
+  id Int [pk, increment]
+  handle String [unique, not null]
   banner String [not null, default: '']
-  logo String [not null, default: '']
+  avatar String [not null, default: '']
   description String [not null, default: '']
   flavorText String [not null, default: '']
   website String [not null, default: '']
@@ -69,6 +71,8 @@ Table CreatorChannel {
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
+  deletedAt DateTime
+  createdAt DateTime
 }
 
 Table Comic {
@@ -99,7 +103,7 @@ Table Comic {
   issues ComicIssue [not null]
   users UserComic [not null]
   creator CreatorChannel [not null]
-  creatorUsername String [not null]
+  creatorId Int [not null]
   collaborators ComicCollaborator [not null]
 }
 
@@ -373,7 +377,7 @@ Table CarouselSlide {
   priority Int [not null]
   comicIssueId Int
   comicSlug String
-  creatorSlug String
+  creatorHandle String
   externalLink String
   publishedAt DateTime [default: `now()`, not null]
   expiredAt DateTime [not null]
@@ -399,13 +403,13 @@ Table UserComicIssue {
 
 Table UserCreator {
   creator CreatorChannel [not null]
-  creatorUsername String [not null]
+  creatorId Int [not null]
   user User [not null]
   userId Int [not null]
   followedAt DateTime
 
   indexes {
-    (creatorUsername, userId) [pk]
+    (creatorId, userId) [pk]
   }
 }
 
@@ -855,9 +859,9 @@ Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
 
-Ref: CreatorChannel.username - User.username
+Ref: CreatorChannel.id - User.channelId
 
-Ref: Comic.creatorUsername > CreatorChannel.username [delete: Cascade]
+Ref: Comic.creatorId > CreatorChannel.id [delete: Cascade]
 
 Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
@@ -913,7 +917,7 @@ Ref: UserComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: UserComicIssue.userId > User.id [delete: Cascade]
 
-Ref: UserCreator.creatorUsername > CreatorChannel.username [delete: Cascade]
+Ref: UserCreator.creatorId > CreatorChannel.id [delete: Cascade]
 
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
