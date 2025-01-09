@@ -205,7 +205,7 @@ export class AuctionHouseService {
 
     const treasuryMint = publicKey(treasuryMintAddress);
     const auctionHouseAddress = findAuctionHousePda(this.umi, {
-      authority: fromWeb3JsPublicKey(authority),
+      creator: fromWeb3JsPublicKey(authority),
       treasuryMint,
     });
 
