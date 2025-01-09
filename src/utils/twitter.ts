@@ -4,7 +4,7 @@ import {
   IssueSpotlightTweetArgs,
 } from '../types/twitter';
 import { isEmpty, kebabCase } from 'lodash';
-import { Comic, ComicIssue, Creator } from '@prisma/client';
+import { Comic, ComicIssue, CreatorChannel } from '@prisma/client';
 import { D_READER_LINKS } from './client-links';
 import { toOrdinal } from './lodash';
 import { D_READER_FRONTEND_URL } from '../constants';
@@ -47,14 +47,14 @@ export const TWITTER_INTENT = {
     return tweetText;
   },
   // Get Tweet content for sharing a newly verified creator
-  creatorVerified: (creator: Creator) => {
+  creatorVerified: (creator: CreatorChannel) => {
     const titleLine = `My creator account is now verified on @dReaderApp! 🔥\n\n`;
     const subtitleLine = 'Thrilled to join the dReader family! 🫂\n\n';
 
     const linkCTA = "I'll be publishing my stuff here! 👇\n";
 
     const tweetBody = encodeURIComponent(titleLine + subtitleLine + linkCTA);
-    const creatorLink = encodeURI(D_READER_LINKS.creator(creator.slug));
+    const creatorLink = encodeURI(D_READER_LINKS.creator(creator.handle));
 
     const tweetText = TWITTER_INTENT_PREFIX + tweetBody + creatorLink;
 
@@ -91,14 +91,16 @@ export const TWITTER_INTENT = {
     const {
       creatorTwitter,
       comicTitle,
-      creatorName,
+      creatorHandle,
       flavorText,
       previewPageCount,
     } = args;
 
     const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
-    const creatorHandle = removeTwitter(creatorTwitter);
-    const creatorTag = isEmpty(creatorHandle) ? creatorName : creatorHandle;
+    const creatorTwitterHandle = removeTwitter(creatorTwitter);
+    const creatorTag = isEmpty(creatorHandle)
+      ? creatorHandle
+      : creatorTwitterHandle;
 
     const titleLine = `Creator Spotlight Day!! ⚡`;
     const shoutOutLine = `Shoutout to @${creatorTag} and their comic series,${comicTitle}.`;

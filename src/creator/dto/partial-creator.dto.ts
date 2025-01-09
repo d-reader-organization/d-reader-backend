@@ -1,20 +1,18 @@
 import { PickType } from '@nestjs/swagger';
-import { CreatorDto } from './creator.dto';
-import { Creator } from '@prisma/client';
+import { CreatorChannelDto } from './creator.dto';
+import { CreatorChannel } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { plainToInstance } from 'class-transformer';
 
-export class PartialCreatorDto extends PickType(CreatorDto, [
-  'name',
-  'slug',
+export class PartialCreatorDto extends PickType(CreatorChannelDto, [
+  'handle',
   'isVerified',
   'avatar',
 ]) {}
 
-export function toPartialCreatorDto(creator: Creator) {
+export function toPartialCreatorDto(creator: CreatorChannel) {
   const plainCreatorDto: PartialCreatorDto = {
-    name: creator.name,
-    slug: creator.slug,
+    handle: creator.handle,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
   };
@@ -23,6 +21,6 @@ export function toPartialCreatorDto(creator: Creator) {
   return creatorDto;
 }
 
-export const toPartialCreatorDtoArray = (creators: Creator[]) => {
+export const toPartialCreatorDtoArray = (creators: CreatorChannel[]) => {
   return creators.map(toPartialCreatorDto);
 };

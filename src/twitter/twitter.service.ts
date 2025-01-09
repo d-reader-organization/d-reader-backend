@@ -31,7 +31,7 @@ export class TwitterService {
     const comic = await this.prisma.comic.findUnique({
       where: { slug: comicIssue.comicSlug },
     });
-    const creator = await this.prisma.creator.findUnique({
+    const creator = await this.prisma.creatorChannel.findUnique({
       where: { id: comic.creatorId },
     });
 
@@ -55,7 +55,7 @@ export class TwitterService {
       source: utmSource,
       creatorName: creatorTwitterHandle
         ? '@' + creatorTwitterHandle
-        : creator.name,
+        : creator.handle,
       coverArtistName: statelessCover.artistTwitterHandle
         ? '@' + statelessCover.artistTwitterHandle
         : statelessCover.artist,
@@ -87,7 +87,7 @@ export class TwitterService {
       comicTitle: comic.title,
       creatorTwitter: comic.creator.twitter,
       flavorText,
-      creatorName: comic.creator.name,
+      creatorHandle: comic.creator.handle,
       previewPageCount,
     });
   }
