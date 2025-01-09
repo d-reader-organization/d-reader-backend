@@ -39,7 +39,7 @@ export class CreateAuctionHouseCommand extends CommandRunner {
     const identityKey = metaplex.identity().publicKey;
     const authority = getTreasuryPublicKey();
     const auctionHouseAddress = findAuctionHousePda(umi, {
-      authority: publicKey(authority),
+      creator: publicKey(authority),
       treasuryMint: publicKey(WRAPPED_SOL_MINT),
     })[0];
     const auctionHouseAccount = await safeFetchAuctionHouse(

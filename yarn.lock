@@ -5963,10 +5963,10 @@ cookiejar@^2.1.4:
   resolved "https://registry.yarnpkg.com/cookiejar/-/cookiejar-2.1.4.tgz#ee669c1fea2cf42dc31585469d193fef0d65771b"
   integrity sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==
 
-core-auctions@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/core-auctions/-/core-auctions-0.6.0.tgz#c63b49916b490912f422eae6bfda0612f4db1023"
-  integrity sha512-UAhpuYpIpmULFlM2DbaMmgkp64OtGHRXlTVIN/e3761cA6KXZbq1bsr4Njq3nVJNyueipK9MpYgQtSV3QOLMdw==
+core-auctions@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/core-auctions/-/core-auctions-0.7.0.tgz#9fe6e39d26a203e72f2116c5ff6db5cb4273bee9"
+  integrity sha512-go60qDylhQY1Xv2lS8bRUQTIy5NYig4sguFCLy3s8hsBoXdHaYA5t1Z8Cw0oiYpjwUoBAVhjIc1WdDMW387JgA==
   dependencies:
     "@metaplex-foundation/mpl-core" "^1.0.2"
     "@metaplex-foundation/mpl-toolbox" "^0.9.4"

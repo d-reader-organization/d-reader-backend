@@ -33,7 +33,7 @@ export async function createAuctionHouse(
 
   const treasuryMint = publicKey(treasuryMintAddress);
   const auctionHouse = findAuctionHousePda(umi, {
-    authority,
+    creator: authority,
     treasuryMint: treasuryMint,
   })[0];
   const auctionHouseAssetVault = findAuctionHouseAssetVaultPda(umi, {
