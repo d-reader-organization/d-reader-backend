@@ -15,6 +15,6 @@ export type IssueSpotlightTweetArgs = {
   creatorTwitter: string;
   comicTitle: string;
   flavorText: string;
-  creatorName: string;
+  creatorHandle: string;
   previewPageCount: number;
 };

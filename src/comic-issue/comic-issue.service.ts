@@ -846,7 +846,7 @@ export class ComicIssueService {
       include: {
         comic: {
           include: {
-            creator: true,
+            creator: { include: { user: { select: { email: true } } } },
           },
         },
       },
@@ -857,10 +857,11 @@ export class ComicIssueService {
     if (['verifiedAt', 'publishedAt'].includes(property)) {
       await this.cacheService.deleteByPattern(CachePath.COMIC_ISSUE_GET_MANY);
 
+      const email = updatedComicIssue.comic.creator.user.email;
       if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
-        this.mailService.comicIssueVerified(updatedComicIssue);
+        this.mailService.comicIssueVerified(updatedComicIssue, email);
       } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
-        this.mailService.comicIssuePublished(updatedComicIssue);
+        this.mailService.comicIssuePublished(updatedComicIssue, email);
       }
     }
   }

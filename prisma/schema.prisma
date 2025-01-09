@@ -45,6 +45,7 @@ model User {
   interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
   channel                        CreatorChannel?
+  channelId                      Int?                                @unique
 }
 
 enum WalletProvider {
@@ -76,9 +77,10 @@ enum Role {
 }
 
 model CreatorChannel {
-  username       String        @unique
+  id             Int           @id @default(autoincrement())
+  handle         String        @unique
   banner         String        @default("")
-  logo           String        @default("")
+  avatar         String        @default("")
   description    String        @default("")
   flavorText     String        @default("")
   website        String        @default("")
@@ -90,10 +92,12 @@ model CreatorChannel {
   s3BucketSlug   String        @unique
   comics         Comic[]
   followers      UserCreator[]
-  user           User          @relation(fields: [username], references: [username])
+  user           User          @relation(fields: [id], references: [channelId])
   featuredAt     DateTime?
   verifiedAt     DateTime?
   popularizedAt  DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime?
 }
 
 enum AudienceType {
@@ -104,35 +108,35 @@ enum AudienceType {
 }
 
 model Comic {
-  title           String
-  slug            String              @id
-  audienceType    AudienceType        @default(Everyone)
-  cover           String              @default("")
-  banner          String              @default("")
-  logo            String              @default("")
-  description     String              @default("")
-  flavorText      String              @default("")
-  website         String              @default("")
-  twitter         String              @default("")
-  discord         String              @default("")
-  telegram        String              @default("")
-  instagram       String              @default("")
-  tikTok          String              @default("")
-  youTube         String              @default("")
-  s3BucketSlug    String              @unique
-  updatedAt       DateTime            @updatedAt
-  createdAt       DateTime            @default(now())
-  featuredAt      DateTime?
-  verifiedAt      DateTime?
-  publishedAt     DateTime?
-  popularizedAt   DateTime?
-  completedAt     DateTime?
-  genres          Genre[]
-  issues          ComicIssue[]
-  users           UserComic[]
-  creator         CreatorChannel      @relation(fields: [creatorUsername], references: [username], onDelete: Cascade)
-  creatorUsername String
-  collaborators   ComicCollaborator[]
+  title         String
+  slug          String              @id
+  audienceType  AudienceType        @default(Everyone)
+  cover         String              @default("")
+  banner        String              @default("")
+  logo          String              @default("")
+  description   String              @default("")
+  flavorText    String              @default("")
+  website       String              @default("")
+  twitter       String              @default("")
+  discord       String              @default("")
+  telegram      String              @default("")
+  instagram     String              @default("")
+  tikTok        String              @default("")
+  youTube       String              @default("")
+  s3BucketSlug  String              @unique
+  updatedAt     DateTime            @updatedAt
+  createdAt     DateTime            @default(now())
+  featuredAt    DateTime?
+  verifiedAt    DateTime?
+  publishedAt   DateTime?
+  popularizedAt DateTime?
+  completedAt   DateTime?
+  genres        Genre[]
+  issues        ComicIssue[]
+  users         UserComic[]
+  creator       CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId     Int
+  collaborators ComicCollaborator[]
 }
 
 model UserComic {
@@ -420,19 +424,19 @@ model ComicPage {
 }
 
 model CarouselSlide {
-  id           Int              @id @default(autoincrement())
-  image        String
+  id            Int              @id @default(autoincrement())
+  image         String
   // secondaryImage String      @default("")
-  title        String           @default("")
-  subtitle     String           @default("")
-  priority     Int
-  comicIssueId Int?
-  comicSlug    String?
-  creatorSlug  String?
-  externalLink String?
-  publishedAt  DateTime         @default(now())
-  expiredAt    DateTime
-  location     CarouselLocation @default(HomePrimary)
+  title         String           @default("")
+  subtitle      String           @default("")
+  priority      Int
+  comicIssueId  Int?
+  comicSlug     String?
+  creatorHandle String?
+  externalLink  String?
+  publishedAt   DateTime         @default(now())
+  expiredAt     DateTime
+  location      CarouselLocation @default(HomePrimary)
 }
 
 enum CarouselLocation {
@@ -456,13 +460,13 @@ model UserComicIssue {
 }
 
 model UserCreator {
-  creator         CreatorChannel @relation(fields: [creatorUsername], references: [username], onDelete: Cascade)
-  creatorUsername String
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          Int
-  followedAt      DateTime?
+  creator    CreatorChannel @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId  Int
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  followedAt DateTime?
 
-  @@id([creatorUsername, userId])
+  @@id([creatorId, userId])
 }
 
 model CollectibleComicMetadata {

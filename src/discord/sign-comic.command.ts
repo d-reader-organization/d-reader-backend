@@ -91,7 +91,7 @@ export class GetSignCommand {
     if (response.error) return { content: response.error, ephemeral: true };
 
     const { offChainMetadata, name } = response;
-    const creator = await this.prisma.creator.findFirst({
+    const creator = await this.prisma.creatorChannel.findFirst({
       where: {
         comics: {
           some: {
@@ -204,7 +204,7 @@ export class GetSignCommand {
     const isDiscordUser = !/^[a-zA-Z]+$/.test(user);
     const userMention = isDiscordUser ? `<@${user}>` : `**${user}**`;
     try {
-      const creator = await this.prisma.creator.findFirst({
+      const creator = await this.prisma.creatorChannel.findFirst({
         where: {
           discordId: creatorDiscordId,
           comics: {
