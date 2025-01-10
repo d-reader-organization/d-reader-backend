@@ -10,7 +10,7 @@ export const D_READER_LINKS = {
   resetPassword: (verificationToken: string) =>
     `${dReaderUrl}/reset-password/${verificationToken}`,
   login: `${dReaderUrl}/login`,
-  creator: (creatorSlug: string) => `${dReaderUrl}/creator/${creatorSlug}`,
+  creator: (creatorHandle: string) => `${dReaderUrl}/creator/${creatorHandle}`,
   comicIssue: (comicIssueId: number) =>
     `${dReaderUrl}/comic-issue/${comicIssueId}`,
   comic: (comicSlug: string) => `${dReaderUrl}/comic/${comicSlug}`,

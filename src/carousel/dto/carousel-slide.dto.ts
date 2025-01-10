@@ -63,7 +63,7 @@ export class CarouselSlideDto {
 
   @IsOptional()
   @IsString()
-  creatorSlug?: string;
+  creatorHandle?: string;
 
   @IsOptional()
   @IsString()
@@ -89,7 +89,7 @@ export function toCarouselSlideDto(slide: CarouselWithTags) {
     location: slide.location,
     comicIssueId: slide.comicIssueId,
     comicSlug: slide.comicSlug,
-    creatorSlug: slide.creatorSlug,
+    creatorHandle: slide.creatorHandle,
     externalLink: slide.externalLink,
     tags: slide.tags,
   };

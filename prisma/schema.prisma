@@ -44,6 +44,8 @@ model User {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
   interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
+  channel                        CreatorChannel?
+  channelId                      Int?                                @unique
 }
 
 model Wallet {
@@ -65,37 +67,31 @@ enum Role {
   Admin
   Tester
   User
+  Creator
 }
 
-model Creator {
-  id              Int           @id @default(autoincrement())
-  email           String        @unique
-  name            String        @unique
-  slug            String        @unique
-  password        String
-  role            Role          @default(User)
-  avatar          String        @default("")
-  banner          String        @default("")
-  logo            String        @default("")
-  description     String        @default("")
-  flavorText      String        @default("")
-  website         String        @default("")
-  twitter         String        @default("")
-  instagram       String        @default("")
-  linktree        String        @default("")
-  discordId       String        @default("")
-  tippingAddress  String        @default("")
-  s3BucketSlug    String        @unique
+model CreatorChannel {
+  id             Int           @id @default(autoincrement())
+  handle         String        @unique
+  banner         String        @default("")
+  avatar         String        @default("")
+  description    String        @default("")
+  flavorText     String        @default("")
+  website        String        @default("")
+  twitter        String        @default("")
+  instagram      String        @default("")
+  linktree       String        @default("")
+  discordId      String        @default("")
+  tippingAddress String        @default("")
+  s3BucketSlug   String        @unique
+  comics         Comic[]
+  followers      UserCreator[]
+  user           User          @relation(fields: [id], references: [channelId])
   createdAt       DateTime      @default(now())
-  deletedAt       DateTime?
-  featuredAt      DateTime?
-  verifiedAt      DateTime?
-  popularizedAt   DateTime?
-  lastLogin       DateTime?
-  lastActiveAt    DateTime?
-  emailVerifiedAt DateTime?
-  comics          Comic[]
-  userCreator     UserCreator[]
+  featuredAt     DateTime?
+  verifiedAt     DateTime?
+  popularizedAt  DateTime?
+  deletedAt      DateTime?
 }
 
 enum AudienceType {
@@ -132,7 +128,7 @@ model Comic {
   genres        Genre[]
   issues        ComicIssue[]
   users         UserComic[]
-  creator       Creator             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator       CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
   collaborators ComicCollaborator[]
 }
@@ -422,19 +418,19 @@ model ComicPage {
 }
 
 model CarouselSlide {
-  id           Int              @id @default(autoincrement())
-  image        String
+  id            Int              @id @default(autoincrement())
+  image         String
   // secondaryImage String      @default("")
-  title        String           @default("")
-  subtitle     String           @default("")
-  priority     Int
-  comicIssueId Int?
-  comicSlug    String?
-  creatorSlug  String?
-  externalLink String?
-  publishedAt  DateTime         @default(now())
-  expiredAt    DateTime
-  location     CarouselLocation @default(HomePrimary)
+  title         String           @default("")
+  subtitle      String           @default("")
+  priority      Int
+  comicIssueId  Int?
+  comicSlug     String?
+  creatorHandle String?
+  externalLink  String?
+  publishedAt   DateTime         @default(now())
+  expiredAt     DateTime
+  location      CarouselLocation @default(HomePrimary)
 }
 
 enum CarouselLocation {
@@ -458,13 +454,13 @@ model UserComicIssue {
 }
 
 model UserCreator {
-  creator     Creator   @relation(fields: [creatorSlug], references: [slug], onDelete: Cascade)
-  creatorSlug String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  followedAt  DateTime?
+  creator    CreatorChannel @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId  Int
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  followedAt DateTime?
 
-  @@id([creatorSlug, userId])
+  @@id([creatorId, userId])
 }
 
 model CollectibleComicMetadata {

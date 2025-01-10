@@ -98,7 +98,7 @@ export class CarouselService {
           });
         } else if (slide.comicSlug) {
           await this.handleComicCase({ slide, tags });
-        } else if (slide.creatorSlug) {
+        } else if (slide.creatorHandle) {
           await this.handleCreatorCase({ slide, tags });
         } else if (slide.comicIssueId) {
           await this.handleComicIssueCase({ slide, tags });
@@ -201,8 +201,8 @@ export class CarouselService {
     slide: CarouselSlide;
     tags: CarouselTag[];
   }) {
-    const creator = await this.prisma.creator.findFirst({
-      where: { slug: slide.creatorSlug },
+    const creator = await this.prisma.creatorChannel.findFirst({
+      where: { handle: slide.creatorHandle },
     });
     const isNew = !differenceInMonths(new Date(), creator.verifiedAt);
     if (isNew) {

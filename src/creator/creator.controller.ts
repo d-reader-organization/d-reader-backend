@@ -19,20 +19,18 @@ import {
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
-import { CreatorDto, toCreatorDto, toCreatorDtoArray } from './dto/creator.dto';
+import {
+  CreatorChannelDto,
+  toCreatorDto,
+  toCreatorDtoArray,
+} from './dto/creator.dto';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import { CreatorOwnerAuth } from 'src/guards/creator-owner.guard';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
-import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
-import {
-  RequestPasswordResetDto,
-  ResetPasswordDto,
-  UpdatePasswordDto,
-} from 'src/types/update-password.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { plainToInstance } from 'class-transformer';
 import {
@@ -42,8 +40,6 @@ import {
 } from './dto/raw-creator.dto';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
 import { AdminGuard } from '../guards/roles.guard';
-import { CacheInterceptor } from '../cache/cache.interceptor';
-import { minutes } from '@nestjs/throttler';
 import { SearchCreatorParams } from './dto/search-creator-params.dto';
 import {
   SearchCreatorDto,
@@ -59,14 +55,6 @@ export class CreatorController {
     private readonly userCreatorService: UserCreatorService,
   ) {}
 
-  /* Get creator data from auth token */
-  @CreatorAuth()
-  @Get('get/me')
-  async findMe(@CreatorEntity() creator: UserPayload): Promise<CreatorDto> {
-    const me = await this.creatorService.findMe(creator.id);
-    return toCreatorDto(me);
-  }
-
   /* Get all creators */
   // @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @OptionalUserAuth()
@@ -74,7 +62,7 @@ export class CreatorController {
   async findAll(
     @Query() query: CreatorFilterParams,
     @UserEntity() user?: UserPayload,
-  ): Promise<CreatorDto[]> {
+  ): Promise<CreatorChannelDto[]> {
     const creators = await this.creatorService.findAll({
       query,
       userId: user?.id,
@@ -93,12 +81,12 @@ export class CreatorController {
 
   /* Get specific creator by unique slug */
   @OptionalUserAuth()
-  @Get('get/:slug')
+  @Get('get/:id')
   async findOne(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UserEntity() user?: UserPayload,
-  ): Promise<CreatorDto> {
-    const creator = await this.creatorService.findOne(slug, user?.id);
+  ): Promise<CreatorChannelDto> {
+    const creator = await this.creatorService.findOne(+id, user?.id);
     return toCreatorDto(creator);
   }
 
@@ -114,9 +102,9 @@ export class CreatorController {
 
   /* Get specific creator in raw format by unique slug */
   @CreatorAuth()
-  @Get('get-raw/:slug')
-  async findOneRaw(@Param('slug') slug: string): Promise<RawCreatorDto> {
-    const creator = await this.creatorService.findOneRaw(slug);
+  @Get('get-raw/:id')
+  async findOneRaw(@Param('id') id: string): Promise<RawCreatorDto> {
+    const creator = await this.creatorService.findOneRaw(+id);
     return toRawCreatorDto(creator);
   }
 
@@ -134,59 +122,16 @@ export class CreatorController {
 
   /* Update specific creator */
   @CreatorOwnerAuth()
-  @Patch('update/:slug')
+  @Patch('update/:id')
   async update(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @Body() updateCreatorDto: UpdateCreatorDto,
-  ): Promise<CreatorDto> {
+  ): Promise<CreatorChannelDto> {
     const updatedCreator = await this.creatorService.update(
-      slug,
+      +id,
       updateCreatorDto,
     );
     return toCreatorDto(updatedCreator);
-  }
-
-  /* Update specific creator's password */
-  @CreatorOwnerAuth()
-  @Patch('update-password/:slug')
-  async updatePassword(
-    @Param('slug') slug: string,
-    @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
-    await this.creatorService.updatePassword(slug, updatePasswordDto);
-  }
-
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
-  @Patch('request-password-reset')
-  requestPasswordReset(
-    @Body() requestPasswordResetDto: RequestPasswordResetDto,
-  ) {
-    return this.creatorService.requestPasswordReset(
-      requestPasswordResetDto.nameOrEmail,
-    );
-  }
-
-  /* Reset specific creator's password */
-  @Patch('reset-password')
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    await this.creatorService.resetPassword(resetPasswordDto);
-  }
-
-  /* Verify your email address */
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(1), userScope: true }))
-  @CreatorOwnerAuth()
-  @Patch('request-email-verification')
-  async requestEmailVerification(@CreatorEntity() creator: CreatorPayload) {
-    return this.creatorService.requestEmailVerification(creator.email);
-  }
-
-  /* Verify an email address */
-  @Patch('verify-email/:verificationToken')
-  async verifyEmail(
-    @Param('verificationToken') verificationToken: string,
-  ): Promise<CreatorDto> {
-    const creator = await this.creatorService.verifyEmail(verificationToken);
-    return toCreatorDto(creator);
   }
 
   /* Update specific creator's files */
@@ -196,18 +141,17 @@ export class CreatorController {
     FileFieldsInterceptor([
       { name: 'avatar', maxCount: 1 },
       { name: 'banner', maxCount: 1 },
-      { name: 'logo', maxCount: 1 },
     ]),
   )
-  @Patch('update/:slug/files')
+  @Patch('update/:id/files')
   async updateFiles(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFiles({
       transform: (val) => plainToInstance(UpdateCreatorFilesDto, val),
     })
     files: UpdateCreatorFilesDto,
-  ): Promise<CreatorDto> {
-    const creator = await this.creatorService.updateFiles(slug, files);
+  ): Promise<CreatorChannelDto> {
+    const creator = await this.creatorService.updateFiles(+id, files);
     return toCreatorDto(creator);
   }
 
@@ -216,13 +160,13 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('avatar')
   @UseInterceptors(FileInterceptor('avatar'))
-  @Patch('update/:slug/avatar')
+  @Patch('update/:id/avatar')
   async updateAvatar(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() avatar: Express.Multer.File,
-  ): Promise<CreatorDto> {
+  ): Promise<CreatorChannelDto> {
     const updatedCreator = await this.creatorService.updateFile(
-      slug,
+      +id,
       avatar,
       'avatar',
     );
@@ -234,61 +178,43 @@ export class CreatorController {
   @ApiConsumes('multipart/form-data')
   @ApiFile('banner')
   @UseInterceptors(FileInterceptor('banner'))
-  @Patch('update/:slug/banner')
+  @Patch('update/:id/banner')
   async updateBanner(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() banner: Express.Multer.File,
-  ): Promise<CreatorDto> {
+  ): Promise<CreatorChannelDto> {
     const updatedCreator = await this.creatorService.updateFile(
-      slug,
+      +id,
       banner,
       'banner',
     );
     return toCreatorDto(updatedCreator);
   }
 
-  /* Update specific creators logo file */
-  @CreatorOwnerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiFile('logo')
-  @UseInterceptors(FileInterceptor('logo'))
-  @Patch('update/:slug/logo')
-  async updateLogo(
-    @Param('slug') slug: string,
-    @UploadedFile() logo: Express.Multer.File,
-  ): Promise<CreatorDto> {
-    const updatedCreator = await this.creatorService.updateFile(
-      slug,
-      logo,
-      'logo',
-    );
-    return toCreatorDto(updatedCreator);
-  }
-
   /* Queue creator for deletion */
   @CreatorOwnerAuth()
-  @Patch('delete/:slug')
-  async pseudoDelete(@Param('slug') slug: string) {
-    await this.creatorService.pseudoDelete(slug);
+  @Patch('delete/:id')
+  async pseudoDelete(@Param('id') id: string) {
+    await this.creatorService.pseudoDelete(+id);
   }
 
   /* Remove creator for deletion queue */
   @CreatorOwnerAuth()
-  @Patch('recover/:slug')
-  async pseudoRecover(@Param('slug') slug: string) {
-    await this.creatorService.pseudoRecover(slug);
+  @Patch('recover/:id')
+  async pseudoRecover(@Param('id') id: string) {
+    await this.creatorService.pseudoRecover(+id);
   }
 
   /* Follow a creator */
   @UserAuth()
-  @Patch('follow/:slug')
-  async follow(@UserEntity() user: UserPayload, @Param('slug') slug: string) {
-    await this.userCreatorService.toggleDate(user.id, slug, 'followedAt');
+  @Patch('follow/:id')
+  async follow(@UserEntity() user: UserPayload, @Param('id') id: string) {
+    await this.userCreatorService.toggleDate(user.id, +id, 'followedAt');
   }
 
   @AdminGuard()
-  @Get('download-assets/:slug')
-  async downloadAssets(@Param('slug') slug: string) {
-    return await this.creatorService.dowloadAssets(slug);
+  @Get('download-assets/:id')
+  async downloadAssets(@Param('id') id: string) {
+    return await this.creatorService.dowloadAssets(+id);
   }
 }

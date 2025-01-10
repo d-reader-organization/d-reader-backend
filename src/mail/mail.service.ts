@@ -1,12 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Comic, ComicIssue, Creator, PhysicalItem, User } from '@prisma/client';
-import { AuthService } from '../auth/auth.service';
 import {
-  D_READER_LINKS,
-  D_PUBLISHER_LINKS,
-  apiUrl,
-} from '../utils/client-links';
+  Comic,
+  ComicIssue,
+  CreatorChannel,
+  PhysicalItem,
+  User,
+} from '@prisma/client';
+import { AuthService } from '../auth/auth.service';
+import { D_READER_LINKS, apiUrl } from '../utils/client-links';
 import { TWITTER_INTENT } from '../utils/twitter';
 import { ERROR_MESSAGES } from '../utils/errors';
 
@@ -27,14 +29,12 @@ const USER_PASSWORD_RESET = 'userPasswordReset';
 const USER_PASSWORD_RESET_REQUESTED = 'userPasswordResetRequested';
 const BUMP_USER_WITH_EMAIL_VERIFICATION = 'bumpUserWithEmailVerification';
 const USER_EMAIL_VERIFICATION_REQUESTED = 'userEmailVerificationRequested';
-const CREATOR_REGISTERED = 'creatorRegistered';
+// const CREATOR_REGISTERED = 'creatorRegistered';
 const CREATOR_SCHEDULED_FOR_DELETION = 'creatorScheduledForDeletion';
 const CREATOR_DELETED = 'creatorDeleted';
-const CREATOR_PASSWORD_RESET = 'creatorPasswordReset';
-const CREATOR_PASSWORD_RESET_REQUESTED = 'creatorPasswordResetRequested';
-const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
-const CREATOR_EMAIL_VERIFICATION_REQUESTED =
-  'creatorEmailVerificationRequested';
+// const BUMP_CREATOR_WITH_EMAIL_VERIFICATION = 'bumpCreatorWithEmailVerification';
+// const CREATOR_EMAIL_VERIFICATION_REQUESTED =
+//   'creatorEmailVerificationRequested';
 const CREATOR_VERIFIED = 'creatorVerified';
 const USER_EMAIL_CHANGE_REQUESTED = 'userEmailChangeRequested';
 const USER_EMAIL_CHANGED = 'userEmailChanged';
@@ -237,250 +237,140 @@ export class MailService {
     }
   }
 
-  async creatorRegistered(creator: Creator) {
-    const verificationToken = this.authService.generateEmailToken(
-      creator.id,
-      creator.email,
-    );
-
+  async creatorScheduledForDeletion(creator: CreatorChannel, email: string) {
     try {
       await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '🎉 Account created!',
-        template: CREATOR_REGISTERED,
-        context: {
-          name: creator.name,
-          apiUrl,
-          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
-        },
-      });
-    } catch (e) {
-      logError(CREATOR_REGISTERED, creator.email, e);
-    }
-  }
-
-  async creatorScheduledForDeletion(creator: Creator) {
-    try {
-      await this.mailerService.sendMail({
-        to: creator.email,
+        to: email,
         subject: '🫂 Account scheduled for deletion!',
         template: CREATOR_SCHEDULED_FOR_DELETION,
         context: {
-          name: creator.name,
+          name: creator.handle,
           apiUrl,
         },
       });
     } catch (e) {
-      logError(CREATOR_SCHEDULED_FOR_DELETION, creator.email, e);
+      logError(CREATOR_SCHEDULED_FOR_DELETION, email, e);
     }
   }
 
-  async creatorDeleted(creator: Creator) {
+  async creatorDeleted(creator: CreatorChannel, email: string) {
     try {
       await this.mailerService.sendMail({
-        to: creator.email,
+        to: email,
         subject: '👋 Account deleted!',
         template: CREATOR_DELETED,
         context: {
-          name: creator.name,
+          name: creator.handle,
           apiUrl,
         },
       });
     } catch (e) {
-      logError(CREATOR_DELETED, creator.email, e);
+      logError(CREATOR_DELETED, email, e);
     }
   }
 
-  async requestCreatorPasswordReset({
-    creator,
-    verificationToken,
-  }: {
-    creator: Creator;
-    verificationToken: string;
-  }) {
+  async creatorVerified(creator: CreatorChannel, email: string) {
     try {
       await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '🔐 Password reset requested!',
-        template: CREATOR_PASSWORD_RESET_REQUESTED,
-        context: {
-          name: creator.name,
-          apiUrl,
-          actionUrl: D_PUBLISHER_LINKS.resetPassword(verificationToken),
-        },
-      });
-    } catch (e) {
-      logError(CREATOR_PASSWORD_RESET_REQUESTED, creator.email, e);
-      throw new InternalServerErrorException(
-        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset requested'),
-      );
-    }
-  }
-
-  async creatorPasswordReset(creator: Creator) {
-    try {
-      await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '🔐 Password reset!',
-        template: CREATOR_PASSWORD_RESET,
-        context: {
-          name: creator.name,
-          apiUrl,
-          actionUrl: D_PUBLISHER_LINKS.login,
-        },
-      });
-    } catch (e) {
-      logError(CREATOR_PASSWORD_RESET, creator.email, e);
-      throw new InternalServerErrorException(
-        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('password reset'),
-      );
-    }
-  }
-
-  async bumpCreatorWithEmailVerification(creator: Creator) {
-    const verificationToken = this.authService.generateEmailToken(
-      creator.id,
-      creator.email,
-    );
-
-    try {
-      await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '🕵️‍♂️ e-mail verification!',
-        template: BUMP_CREATOR_WITH_EMAIL_VERIFICATION,
-        context: {
-          name: creator.name,
-          apiUrl,
-          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
-        },
-      });
-    } catch (e) {
-      logError(BUMP_CREATOR_WITH_EMAIL_VERIFICATION, creator.email, e);
-      throw new InternalServerErrorException(
-        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('bump e-mail verification'),
-      );
-    }
-  }
-
-  async requestCreatorEmailVerification(creator: Creator) {
-    const verificationToken = this.authService.generateEmailToken(
-      creator.id,
-      creator.email,
-    );
-
-    try {
-      await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '🕵️‍♂️ e-mail verification!',
-        template: CREATOR_EMAIL_VERIFICATION_REQUESTED,
-        context: {
-          name: creator.name,
-          apiUrl,
-          actionUrl: D_PUBLISHER_LINKS.emailVerification(verificationToken),
-        },
-      });
-    } catch (e) {
-      logError(CREATOR_EMAIL_VERIFICATION_REQUESTED, creator.email, e);
-      throw new InternalServerErrorException(
-        ERROR_MESSAGES.UNABLE_TO_SEND_MAIL('e-mail verification'),
-      );
-    }
-  }
-
-  async creatorVerified(creator: Creator) {
-    try {
-      await this.mailerService.sendMail({
-        to: creator.email,
-        subject: '✅ Account verified!',
+        to: email,
+        subject: '✅ Channel verified!',
         template: CREATOR_VERIFIED,
         context: {
-          name: creator.name,
+          name: creator.handle,
           apiUrl,
           shareOnTwitterLink: TWITTER_INTENT.creatorVerified(creator),
         },
       });
     } catch (e) {
-      logError(CREATOR_VERIFIED, creator.email, e);
+      logError(CREATOR_VERIFIED, email, e);
     }
   }
 
-  async comicVerifed(comic: Comic & { creator: Creator }) {
+  async comicVerifed(
+    comic: Comic & { creator: CreatorChannel },
+    email: string,
+  ) {
     try {
       await this.mailerService.sendMail({
-        to: comic.creator.email,
+        to: email,
         subject: '📗 Comic series verified',
         template: COMIC_SERIES_VERIFIED,
         context: {
           comicTitle: comic.title,
-          name: comic.creator.name,
+          name: comic.creator.handle,
           apiUrl,
         },
       });
     } catch (e) {
-      logError(COMIC_SERIES_VERIFIED, comic.creator.email, e);
+      logError(COMIC_SERIES_VERIFIED, email, e);
     }
   }
 
-  async comicPublished(comic: Comic & { creator: Creator }) {
+  async comicPublished(
+    comic: Comic & { creator: CreatorChannel },
+    email: string,
+  ) {
     try {
       await this.mailerService.sendMail({
-        to: comic.creator.email,
+        to: email,
         subject: '📗 Comic series published',
         template: COMIC_SERIES_PUBLISHED,
         context: {
           comicTitle: comic.title,
-          name: comic.creator.name,
+          name: comic.creator.handle,
           shareOnTwitterLink: TWITTER_INTENT.comicPublished(comic),
           apiUrl,
         },
       });
     } catch (e) {
-      logError(COMIC_SERIES_PUBLISHED, comic.creator.email, e);
+      logError(COMIC_SERIES_PUBLISHED, email, e);
     }
   }
 
   async comicIssueVerified(
-    comicIssue: ComicIssue & { comic: Comic & { creator: Creator } },
+    comicIssue: ComicIssue & { comic: Comic & { creator: CreatorChannel } },
+    email: string,
   ) {
     const {
       comic: { creator },
     } = comicIssue;
     try {
       await this.mailerService.sendMail({
-        to: creator.email,
+        to: email,
         subject: '📙 Comic episode verified',
         template: COMIC_ISSUE_VERIFIED,
         context: {
           comicIssueTitle: comicIssue.title,
-          name: creator.name,
+          name: creator.handle,
           apiUrl,
         },
       });
     } catch (e) {
-      logError(COMIC_ISSUE_VERIFIED, creator.email, e);
+      logError(COMIC_ISSUE_VERIFIED, email, e);
     }
   }
 
   async comicIssuePublished(
-    comicIssue: ComicIssue & { comic: Comic & { creator: Creator } },
+    comicIssue: ComicIssue & { comic: Comic & { creator: CreatorChannel } },
+    email: string,
   ) {
     const {
       comic: { creator },
     } = comicIssue;
     try {
       await this.mailerService.sendMail({
-        to: creator.email,
+        to: email,
         subject: '📙 Comic episode published',
         template: COMIC_ISSUE_PUBLISHED,
         context: {
           comicIssueTitle: comicIssue.title,
-          name: creator.name,
+          name: creator.handle,
           apiUrl,
           shareOnTwitterLink: TWITTER_INTENT.comicIssuePublished(comicIssue),
         },
       });
     } catch (e) {
-      logError(COMIC_ISSUE_PUBLISHED, creator.email, e);
+      logError(COMIC_ISSUE_PUBLISHED, email, e);
     }
   }
 

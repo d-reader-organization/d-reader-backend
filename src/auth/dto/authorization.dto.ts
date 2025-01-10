@@ -1,4 +1,4 @@
-import { User, Creator } from '@prisma/client';
+import { User } from '@prisma/client';
 
 export class Authorization {
   accessToken: string;
@@ -22,14 +22,6 @@ export type UserPayload = {
   role: User['role'];
 };
 
-export type CreatorPayload = {
-  type: 'creator';
-  id: Creator['id'];
-  email: Creator['email'];
-  name: Creator['name'];
-  role: Creator['role'];
-};
-
 export type GoogleUserPayload = {
   type: 'google';
   id?: string;
@@ -39,7 +31,7 @@ export type GoogleUserPayload = {
   family_name?: string;
 };
 
-export type JwtPayload = UserPayload | CreatorPayload;
+export type JwtPayload = UserPayload;
 export type JwtDto = JwtPayload & BaseJwtPayload;
 
 export type EmailPayload = {
