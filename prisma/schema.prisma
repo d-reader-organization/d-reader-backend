@@ -93,11 +93,11 @@ model CreatorChannel {
   comics         Comic[]
   followers      UserCreator[]
   user           User          @relation(fields: [id], references: [channelId])
+  createdAt       DateTime      @default(now())
   featuredAt     DateTime?
   verifiedAt     DateTime?
   popularizedAt  DateTime?
   deletedAt      DateTime?
-  createdAt      DateTime?
 }
 
 enum AudienceType {
