@@ -5,21 +5,28 @@ import { BadRequestException } from '@nestjs/common';
 export const validateAndFormatParams = (
   instantBuyParams: InstantBuyParams[],
 ): InstantBuyParams[] => {
-  let params: InstantBuyParams[];
+  let params: InstantBuyParams[] | InstantBuyParams;
+
   if (typeof instantBuyParams === 'string') {
-    const param: InstantBuyParams = JSON.parse(instantBuyParams);
-    validate(param);
-    return [param];
+    params = JSON.parse(instantBuyParams);
   } else {
-    params = instantBuyParams.map((val: any) => {
-      const params: InstantBuyParams =
-        typeof val === 'string' ? JSON.parse(val) : val;
-      validate(params);
-      return params;
-    });
+    params = instantBuyParams;
   }
 
-  return params;
+  if (Array.isArray(params)) {
+    const paramsArray = params.map((val: any) => {
+      const param: InstantBuyParams =
+        typeof val === 'string' ? JSON.parse(val) : val;
+      validate(param);
+      return param;
+    });
+
+    return paramsArray;
+  } else if (typeof params === 'object') {
+    validate(params);
+    return [params];
+  }
+  throw new BadRequestException('Invalid input format for instantBuyParams');
 };
 
 const validate = (param: InstantBuyParams) => {
