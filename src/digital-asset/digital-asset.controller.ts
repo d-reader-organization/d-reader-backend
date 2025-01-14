@@ -7,6 +7,10 @@ import {
   CollectibleComicRarityStatsDto,
   toCollectibleComicRarityStatsDtoArray,
 } from './dto/collectible-comic-rarity-stats.dto';
+import { UserAuth } from 'src/guards/user-auth.guard';
+import { UserEntity } from 'src/decorators/user.decorator';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
+import { DiscordService } from 'src/discord/discord.service';
 
 /* @deprecated */
 @ApiTags('NFTs')
@@ -32,7 +36,10 @@ export class NftController {
 @ApiTags('Assets')
 @Controller('asset')
 export class DigitalAssetController {
-  constructor(private readonly digitalAssetService: DigitalAssetService) {}
+  constructor(
+    private readonly digitalAssetService: DigitalAssetService,
+    private readonly discordService: DiscordService,
+  ) {}
 
   /* Get all Assets */
   @Get('get')
@@ -58,6 +65,15 @@ export class DigitalAssetController {
   async findOne(@Param('address') address: string): Promise<AssetDto> {
     const asset = await this.digitalAssetService.findOne(address);
     return toAssetDto(asset);
+  }
+
+  @UserAuth()
+  @Post('request-autograph/:address')
+  async requestAutograph(
+    @Param('address') address: string,
+    @UserEntity() user: UserPayload,
+  ) {
+    await this.discordService.requestAutograph(user, address);
   }
 
   @Post('create/print-edition-collection/:address')

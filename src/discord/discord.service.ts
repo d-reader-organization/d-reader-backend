@@ -1,8 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Comic, ComicIssue, Creator } from '@prisma/client';
 import { CREATOR_REGISTERED } from './templates/creatorRegistered';
 import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
-import { bold, MessagePayload, WebhookClient } from 'discord.js';
+import {
+  bold,
+  MessagePayload,
+  WebhookClient,
+  ButtonStyle,
+  APIMessageActionRowComponent,
+  APIButtonComponentWithCustomId,
+  APIActionRowComponent,
+  ComponentType,
+} from 'discord.js';
 import { CreatorFile } from './dto/types';
 import { CREATOR_PROFILE_UPDATED } from './templates/creatorProfileUpdated';
 import { COMIC_CREATED, COMIC_UPDATED } from './templates/comic';
@@ -13,6 +22,12 @@ import {
 import { D_READER_LINKS } from '../utils/client-links';
 import { COMIC_PAGES_UPSERT } from './templates/comicPages';
 import { CreatorStatusProperty } from 'src/creator/dto/types';
+import { PrismaService } from 'nestjs-prisma';
+import { ERROR_MESSAGES } from 'src/utils/errors';
+import { RequestSignatureMessagePayload } from './templates/requestSignatureMessagePayload';
+import { getPublicUrl } from '../aws/s3client';
+import { getDiscordUser } from 'src/utils/discord';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 
 const logError = (notificationType: string, e: any) => {
   console.error(`Failed to send notification for ${notificationType}`);
@@ -23,17 +38,113 @@ const logError = (notificationType: string, e: any) => {
 export class DiscordService {
   private readonly payload: MessagePayload;
   private readonly discord?: WebhookClient;
+  private readonly autographWebhook: WebhookClient;
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     if (!process.env.DISCORD_WEBHOOK_URL) {
       console.warn('DISCORD_WEBHOOK_URL is undefined');
       return;
     }
 
+    if (!process.env.AUTOGRAPH_WEBHOOK_URL) {
+      console.warn('AUTOGRAPH_WEBHOOK_URL is undefined');
+      return;
+    }
+
+    this.autographWebhook = new WebhookClient({
+      url: process.env.AUTOGRAPH_WEBHOOK_URL,
+    });
     this.discord = new WebhookClient({ url: process.env.DISCORD_WEBHOOK_URL });
     this.payload = new MessagePayload(
       this.discord.client,
       this.discord.options,
+    );
+  }
+
+  async requestAutograph(user: UserPayload, address: string) {
+    const asset = await this.prisma.collectibleComic.findUnique({
+      where: { address },
+      include: {
+        metadata: {
+          include: {
+            collection: {
+              include: {
+                comicIssue: {
+                  include: { statefulCovers: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const creator = await this.prisma.creator.findFirst({
+      where: {
+        comics: {
+          some: {
+            issues: {
+              some: {
+                collectibleComicCollection: {
+                  address: asset.metadata.collectionAddress,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!creator || !creator.discordId) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.ONLY_VERIFIED_CREATOR_CAN_SIGN,
+      );
+    }
+
+    let creatorUsername: string;
+    try {
+      const creatorDiscord = await getDiscordUser(creator.discordId);
+      creatorUsername = creatorDiscord.username;
+    } catch (e) {
+      throw new BadRequestException(ERROR_MESSAGES.SIGNING_NOT_ACTIVE);
+    }
+
+    const metadata = asset.metadata;
+    const rarity = metadata.rarity;
+
+    if (metadata.isSigned) {
+      throw new BadRequestException(ERROR_MESSAGES.COMIC_ALREADY_SIGNED);
+    }
+
+    const buttonComponent: APIButtonComponentWithCustomId = {
+      label: `Sign comic ✍🏼`,
+      custom_id: `${user.username};${address}}`,
+      style: ButtonStyle.Success,
+      type: ComponentType.Button,
+    };
+
+    const component: APIActionRowComponent<APIMessageActionRowComponent> = {
+      components: [buttonComponent],
+      type: ComponentType.ActionRow,
+    };
+
+    const statefulCovers = asset.metadata.collection.comicIssue.statefulCovers;
+    const cover = statefulCovers.find(
+      (cover) =>
+        cover.isSigned == metadata.isSigned &&
+        cover.isUsed == metadata.isUsed &&
+        cover.rarity == metadata.rarity,
+    );
+
+    await this.autographWebhook.send(
+      RequestSignatureMessagePayload({
+        payload: this.payload,
+        content: `**${user.username}** requested **${creatorUsername}** to sign their **${asset.name}**`,
+        imageUrl: getPublicUrl(cover.image),
+        nftName: asset.name,
+        rarity,
+        components: [component],
+      }),
     );
   }
 
