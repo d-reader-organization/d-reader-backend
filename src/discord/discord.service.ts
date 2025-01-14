@@ -99,9 +99,7 @@ export class DiscordService {
     });
 
     if (!creator || !creator.discordId) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.ONLY_VERIFIED_CREATOR_CAN_SIGN,
-      );
+      throw new BadRequestException(ERROR_MESSAGES.SIGNING_NOT_ACTIVE);
     }
 
     let creatorUsername: string;
