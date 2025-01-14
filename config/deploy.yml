@@ -44,8 +44,6 @@ env:
     # Helius
     - HELIUS_API_KEY
     - WEBHOOK_ID
-    # Darkblock
-    - DARKBLOCK_API_KEY
     # Tensor
     - TENSOR_API_KEY
     # Discord
@@ -53,6 +51,7 @@ env:
     - DISCORD_BOT_TOKEN
     - DISCORD_GUILD_ID
     - DISCORD_VERIFIED_CREATOR_ROLE_ID
+    - DISCORD_AUTOGRAPH_WEBHOOK_URL
     # Firebase
     - FIREBASE_PRIVATE_KEY
     - FIREBASE_CLIENT_EMAIL
