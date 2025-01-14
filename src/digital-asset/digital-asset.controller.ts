@@ -11,6 +11,8 @@ import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { DiscordService } from 'src/discord/discord.service';
+import { memoizeThrottle } from 'src/utils/lodash';
+import { hours } from '@nestjs/throttler';
 
 /* @deprecated */
 @ApiTags('NFTs')
@@ -67,13 +69,19 @@ export class DigitalAssetController {
     return toAssetDto(asset);
   }
 
+  private throttledRequestAutograph = memoizeThrottle(
+    async (address: string, username: string) =>
+      await this.discordService.requestAutograph(username, address),
+    hours(24),
+  );
+
   @UserAuth()
   @Post('request-autograph/:address')
   async requestAutograph(
     @Param('address') address: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.discordService.requestAutograph(user, address);
+    return await this.throttledRequestAutograph(address, user.username);
   }
 
   @Post('create/print-edition-collection/:address')
