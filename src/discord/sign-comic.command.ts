@@ -201,6 +201,7 @@ export class GetSignCommand {
       metadata: PrismaMetadata & { collection: CollectibleComicCollection };
     };
     let rarity: PrismaComicRarity;
+    const userMention = /^[a-zA-Z]+$/.test(user) ? `**${user}**` : `<@${user}>`;
     try {
       const creator = await this.prisma.creator.findFirst({
         where: {
@@ -311,7 +312,7 @@ export class GetSignCommand {
       await buttonInteraction.editReply('All Checks done ✅');
       await buttonInteraction.followUp(
         NFT_EMBEDDED_RESPONSE({
-          content: `<@${user}> got their comic signed! Amazing 🎉`,
+          content: `${userMention} got their comic signed! Amazing 🎉`,
           imageUrl: getPublicUrl(cover.image),
           nftName: asset.name,
           rarity: rarity.toString(),
@@ -333,12 +334,12 @@ export class GetSignCommand {
           await buttonInteraction.editReply('All Checks done ✅');
           await buttonInteraction.followUp(
             NFT_EMBEDDED_RESPONSE({
-              content: `<@${user}> got their comic signed! Amazing 🎉`,
+              content: `${userMention} got their comic signed! Amazing�`,
               imageUrl: getPublicUrl(cover.image),
               nftName: asset.name,
               rarity: rarity.toString(),
-              ephemeral: false,
               mentionedUsers: [user],
+              ephemeral: false,
             }),
           );
           return;

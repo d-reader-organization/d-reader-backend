@@ -80,6 +80,8 @@ export const ERROR_MESSAGES = {
   UNAUTHORIZED_UNWRAP: `Not authorized to unwrap the comic. Make sure your wallet is connected to the app!`,
   COMIC_ALREADY_SIGNED: 'Comic is already signed!',
   ONLY_VERIFIED_CREATOR_CAN_SIGN: 'Only the verified creator can sign a comic',
+  SIGNING_NOT_ACTIVE:
+    'Creator discord account verification is pending, Signing will begin soon !',
   UNAUTHORIZED_CHANGE_COMIC_STATE: 'Not authorized to change the comic state',
   USER_NOT_FOUND: (id: number) => `User with id ${id} not found`,
   USERNAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
