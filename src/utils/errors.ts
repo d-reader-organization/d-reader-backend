@@ -114,6 +114,7 @@ export const ERROR_MESSAGES = {
   REWARD_NOT_EXISTS: (id: number) => `Reward with id ${id} does not exists`,
   CONNECT_WALLET: 'Please connect your wallet to claim digital rewards!',
   WHEEL_NOT_ACTIVE: 'Wheel is not active!',
+  SPIN_FAILED: 'Failed to spin the wheel!',
   WHEEL_EXPIRED: 'Wheel has been expired!',
   NO_SPIN_LEFT: (cooldownMessage: string) =>
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
