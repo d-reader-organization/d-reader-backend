@@ -272,3 +272,5 @@ export const LOOSE_THROTTLER_CONFIG: ThrottlerConfigOptions = {
   medium: { limit: 120 },
   long: { limit: 240 },
 };
+
+export const DISCORD_AUTOGRAPH_CHANNEL_ID = '1179081739646275604';

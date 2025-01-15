@@ -15,13 +15,11 @@ export class DiscordConfigService implements DiscordOptionsFactory {
           GatewayIntentBits.Guilds,
           GatewayIntentBits.GuildMessages,
           GatewayIntentBits.MessageContent,
+          GatewayIntentBits.DirectMessages,
         ],
       },
       ...(process.env.DISCORD_WEBHOOK_URL && {
         webhook: { url: process.env.DISCORD_WEBHOOK_URL },
-      }),
-      ...(process.env.DISCORD_AUTOGRAPH_WEBHOOK_URL && {
-        webhook: { url: process.env.DISCORD_AUTOGRAPH_WEBHOOK_URL },
       }),
       registerCommandOptions: [
         {
