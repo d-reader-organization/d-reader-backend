@@ -11,6 +11,7 @@ import { AddDropsDto } from './dto/add-drops.dto';
 import { toWheelDto } from './dto/wheel.dto';
 import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
 import { toRewardDto } from './dto/rewards.dto';
+import { toWheelReceiptDto } from './dto/wheel-receipt.dto';
 
 @ApiTags('Wheel')
 @Controller('wheel')
@@ -44,7 +45,7 @@ export class WheelController {
   @Patch('spin/:id')
   async spin(@Param('id') id: string, @UserEntity() user: UserPayload) {
     const receipt = await this.wheel.spin(+id, user.id);
-    return receipt;
+    return toWheelReceiptDto(receipt);
   }
 
   @AdminGuard()

@@ -225,3 +225,10 @@ export function getCouponLabel(
 }
 
 export const PUBLIC_COUPON_LABEL = getCouponLabel(CouponType.PublicUser, 0, 0);
+
+export const getTokenPrice = (basePrice: number, decimals: number) => {
+  const denominator = Math.pow(10, decimals);
+  const price = parseFloat((basePrice / denominator).toFixed(3));
+
+  return price;
+};
