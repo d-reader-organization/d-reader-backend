@@ -10,9 +10,9 @@ import {
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
-import { DiscordService } from 'src/discord/discord.service';
 import { memoizeThrottle } from 'src/utils/lodash';
 import { hours } from '@nestjs/throttler';
+import { BotGateway } from 'src/discord/bot.gateway';
 
 /* @deprecated */
 @ApiTags('NFTs')
@@ -40,7 +40,7 @@ export class NftController {
 export class DigitalAssetController {
   constructor(
     private readonly digitalAssetService: DigitalAssetService,
-    private readonly discordService: DiscordService,
+    private readonly discordBotGateway: BotGateway,
   ) {}
 
   /* Get all Assets */
@@ -71,7 +71,7 @@ export class DigitalAssetController {
 
   private throttledRequestAutograph = memoizeThrottle(
     async (address: string, username: string) =>
-      await this.discordService.requestAutograph(username, address),
+      await this.discordBotGateway.requestAutograph(username, address),
     hours(24),
   );
 

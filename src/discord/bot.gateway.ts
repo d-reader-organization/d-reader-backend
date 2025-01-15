@@ -1,15 +1,22 @@
-import { EventParams, On } from '@discord-nestjs/core';
-import { Injectable, UseGuards } from '@nestjs/common';
+import { EventParams, InjectDiscordClient, On } from '@discord-nestjs/core';
+import { BadRequestException, Injectable, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
+  Client,
   ClientEvents,
   InteractionReplyOptions,
   Message,
   MessageActionRowComponentBuilder,
+  APIMessageActionRowComponent,
+  APIButtonComponentWithCustomId,
+  APIActionRowComponent,
+  ComponentType,
+  TextChannel,
+  MessagePayload,
 } from 'discord.js';
 import { ComicIssueService } from 'src/comic-issue/comic-issue.service';
 import { ComicService } from 'src/comic/comic.service';
@@ -17,7 +24,15 @@ import { CreatorService } from 'src/creator/creator.service';
 import { DiscordAdminRoleGuard } from 'src/guards/discord.guard';
 import { DISCORD_KEY_SEPARATOR } from './dto/constants';
 import { DiscordKey } from './dto/enums';
-import { SKIP_THROTTLERS_CONFIG } from 'src/constants';
+import {
+  DISCORD_AUTOGRAPH_CHANNEL_ID,
+  SKIP_THROTTLERS_CONFIG,
+} from 'src/constants';
+import { PrismaService } from 'nestjs-prisma';
+import { ERROR_MESSAGES } from 'src/utils/errors';
+import { RequestSignatureMessagePayload } from './templates/requestSignatureMessagePayload';
+import { getPublicUrl } from '../aws/s3client';
+import { getDiscordUser } from 'src/utils/discord';
 
 enum Action {
   publish = 'publish',
@@ -31,7 +46,103 @@ export class BotGateway {
     private readonly comicService: ComicService,
     private readonly comicIssueService: ComicIssueService,
     private readonly creatorService: CreatorService,
+    @InjectDiscordClient() private readonly client: Client,
+    private readonly prisma: PrismaService,
   ) {}
+
+  async requestAutograph(username: string, address: string) {
+    const channel = (await this.client.channels.fetch(
+      DISCORD_AUTOGRAPH_CHANNEL_ID,
+    )) as TextChannel;
+    const payload = new MessagePayload(channel, this.client.options);
+
+    const asset = await this.prisma.collectibleComic.findUnique({
+      where: { address },
+      include: {
+        metadata: {
+          include: {
+            collection: {
+              include: {
+                comicIssue: {
+                  include: { statefulCovers: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!asset) {
+      throw new BadRequestException(ERROR_MESSAGES.ASSET_NOT_FOUND(address));
+    }
+
+    const creator = await this.prisma.creator.findFirst({
+      where: {
+        comics: {
+          some: {
+            issues: {
+              some: {
+                collectibleComicCollection: {
+                  address: asset.metadata.collectionAddress,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!creator || !creator.discordId) {
+      throw new BadRequestException(ERROR_MESSAGES.SIGNING_NOT_ACTIVE);
+    }
+
+    let creatorUsername: string;
+    try {
+      const creatorDiscord = await getDiscordUser(creator.discordId);
+      creatorUsername = creatorDiscord.username;
+    } catch (e) {
+      throw new BadRequestException(ERROR_MESSAGES.SIGNING_NOT_ACTIVE);
+    }
+
+    const metadata = asset.metadata;
+    const rarity = metadata.rarity;
+
+    if (metadata.isSigned) {
+      throw new BadRequestException(ERROR_MESSAGES.COMIC_ALREADY_SIGNED);
+    }
+
+    const buttonComponent: APIButtonComponentWithCustomId = {
+      label: `Sign comic ✍🏼`,
+      custom_id: `${username};${address}}`,
+      style: ButtonStyle.Success,
+      type: ComponentType.Button,
+    };
+
+    const component: APIActionRowComponent<APIMessageActionRowComponent> = {
+      components: [buttonComponent],
+      type: ComponentType.ActionRow,
+    };
+
+    const statefulCovers = asset.metadata.collection.comicIssue.statefulCovers;
+    const cover = statefulCovers.find(
+      (cover) =>
+        cover.isSigned == metadata.isSigned &&
+        cover.isUsed == metadata.isUsed &&
+        cover.rarity == metadata.rarity,
+    );
+
+    await channel.send(
+      RequestSignatureMessagePayload({
+        payload,
+        content: `**${username}** requested **${creatorUsername}** to sign their **${asset.name}**`,
+        imageUrl: getPublicUrl(cover.image),
+        nftName: asset.name,
+        rarity,
+        components: [component],
+      }),
+    );
+  }
 
   @On('messageCreate')
   async onMessage(message: Message): Promise<void> {
