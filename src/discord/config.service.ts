@@ -20,6 +20,9 @@ export class DiscordConfigService implements DiscordOptionsFactory {
       ...(process.env.DISCORD_WEBHOOK_URL && {
         webhook: { url: process.env.DISCORD_WEBHOOK_URL },
       }),
+      ...(process.env.DISCORD_AUTOGRAPH_WEBHOOK_URL && {
+        webhook: { url: process.env.DISCORD_AUTOGRAPH_WEBHOOK_URL },
+      }),
       registerCommandOptions: [
         {
           forGuild: process.env.DISCORD_GUILD_ID,
