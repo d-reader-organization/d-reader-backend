@@ -114,7 +114,7 @@ export class BotGateway {
 
     const buttonComponent: APIButtonComponentWithCustomId = {
       label: `Sign comic ✍🏼`,
-      custom_id: `${username};${address}}`,
+      custom_id: `${username};${address}`,
       style: ButtonStyle.Success,
       type: ComponentType.Button,
     };
