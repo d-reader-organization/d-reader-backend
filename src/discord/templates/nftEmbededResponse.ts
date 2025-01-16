@@ -54,6 +54,6 @@ export const NFT_EMBEDDED_RESPONSE = ({
     ],
     components,
     ephemeral,
-    allowedMentions: { users: mentionedUsers },
+    allowedMentions: mentionedUsers ? { users: mentionedUsers } : undefined,
   };
 };

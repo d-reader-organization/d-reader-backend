@@ -201,7 +201,8 @@ export class GetSignCommand {
       metadata: PrismaMetadata & { collection: CollectibleComicCollection };
     };
     let rarity: PrismaComicRarity;
-    const userMention = /^[a-zA-Z]+$/.test(user) ? `**${user}**` : `<@${user}>`;
+    const isDiscordUser = !/^[a-zA-Z]+$/.test(user);
+    const userMention = isDiscordUser ? `<@${user}>` : `**${user}**`;
     try {
       const creator = await this.prisma.creator.findFirst({
         where: {
@@ -316,7 +317,7 @@ export class GetSignCommand {
           imageUrl: getPublicUrl(cover.image),
           nftName: asset.name,
           rarity: rarity.toString(),
-          mentionedUsers: [user],
+          mentionedUsers: isDiscordUser ? [user] : undefined,
           ephemeral: false,
         }),
       );
@@ -338,7 +339,7 @@ export class GetSignCommand {
               imageUrl: getPublicUrl(cover.image),
               nftName: asset.name,
               rarity: rarity.toString(),
-              mentionedUsers: [user],
+              mentionedUsers: isDiscordUser ? [user] : undefined,
               ephemeral: false,
             }),
           );
