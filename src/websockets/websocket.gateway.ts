@@ -14,7 +14,7 @@ import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
 import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
 import {
-  DAILY_DROP_REWARD_EVENT_NAME,
+  DAILY_DROP_WINNER_ANNOUNCEMENT,
   DAILY_DROPS_ROOM_ID,
 } from 'src/utils/websockets';
 import { RewardDto } from 'src/wheel/dto/rewards.dto';
@@ -56,7 +56,7 @@ export class WebSocketGateway {
   async handleDailyDropWinnerAnnouncement(reward: RewardDto) {
     return this.server
       .to(DAILY_DROPS_ROOM_ID)
-      .emit(DAILY_DROP_REWARD_EVENT_NAME, reward);
+      .emit(DAILY_DROP_WINNER_ANNOUNCEMENT, reward);
   }
 
   async handleWalletCollectibleComicMinted(data: {
