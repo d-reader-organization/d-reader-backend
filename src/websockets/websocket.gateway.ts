@@ -13,6 +13,12 @@ import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
 import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
+import {
+  DAILY_DROP_REWARD_EVENT_NAME,
+  DAILY_DROPS_ROOM_ID,
+} from 'src/utils/websockets';
+import { RewardDto } from 'src/wheel/dto/rewards.dto';
+import { RoomData } from './types';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -29,20 +35,28 @@ export class WebSocketGateway {
 
   @SubscribeMessage('join-room')
   async handleJoinRoom(
-    @MessageBody() data: { walletAddress: string },
+    @MessageBody() data: RoomData,
     @ConnectedSocket() client: Socket,
   ) {
-    await client.join(data.walletAddress);
-    console.log(`Socket ${client.id} joined room: ${data.walletAddress}`);
+    const roomId = data.roomId ?? data.walletAddress;
+    await client.join(roomId);
+    console.log(`Socket ${client.id} joined room: ${roomId}`);
   }
 
   @SubscribeMessage('leave-room')
   async handleLeaveRoom(
-    @MessageBody() data: { walletAddress: string },
+    @MessageBody() data: RoomData,
     @ConnectedSocket() client: Socket,
   ) {
-    await client.leave(data.walletAddress);
-    console.log(`Socket ${client.id} left room: ${data.walletAddress}`);
+    const roomId = data.roomId ?? data.walletAddress;
+    await client.leave(roomId);
+    console.log(`Socket ${client.id} left room: ${roomId}`);
+  }
+
+  async handleDailyDropWinnerAnnouncement(reward: RewardDto) {
+    return this.server
+      .to(DAILY_DROPS_ROOM_ID)
+      .emit(DAILY_DROP_REWARD_EVENT_NAME, reward);
   }
 
   async handleWalletCollectibleComicMinted(data: {
