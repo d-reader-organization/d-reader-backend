@@ -74,6 +74,14 @@ import { CacheModule } from '../cache/cache.module';
 import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
 import { SyncTensorCollectionIdCommand } from './sync-tensor-collection-id-command';
+import { TransferAuthorityToMultisigCommand } from './transfer-authority-to-multisig-command';
+import { TransferAuthorityToMultisigQuestions } from './transfer-authority-to-multisig-questions';
+import { CreateAddDelegateTransactionCommand } from './multisig/create-add-delegate-transaction-command';
+import { CreateAddDelegateTransactionQuestions } from './multisig/create-add-delegate-transaction-questions';
+import { CreateRemoveDelegateTransactionCommand } from './multisig/create-remove-delegate-transaction-command';
+import { CreateRemoveDelegateTransactionQuestions } from './multisig/create-remove-delegate-transaction-questions';
+import { CreateTransferAuthorityTransactionCommand } from './multisig/create-transfer-authority-transaction-command';
+import { CreateTransferAuthorityTransactionQuestions } from './multisig/create-transfer-authority-transaction-questions';
 
 @Module({
   imports: [
@@ -160,6 +168,14 @@ import { SyncTensorCollectionIdCommand } from './sync-tensor-collection-id-comma
     VaultTransferQuestions,
     DigitalAssetService,
     SyncTensorCollectionIdCommand,
+    TransferAuthorityToMultisigCommand,
+    TransferAuthorityToMultisigQuestions,
+    CreateAddDelegateTransactionCommand,
+    CreateAddDelegateTransactionQuestions,
+    CreateRemoveDelegateTransactionCommand,
+    CreateRemoveDelegateTransactionQuestions,
+    CreateTransferAuthorityTransactionCommand,
+    CreateTransferAuthorityTransactionQuestions,
   ],
 })
 export class CLIModule {}
