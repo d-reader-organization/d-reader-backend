@@ -6,6 +6,7 @@ import { ERROR_MESSAGES } from 'src/utils/errors';
 import { getOwnerDomain } from 'src/utils/sns';
 import { WalletService } from 'src/wallet/wallet.service';
 import { EventType, VerifiedPayload } from './types';
+import { WalletProvider } from '@prisma/client';
 
 @Injectable()
 export class PrivyService {
@@ -97,6 +98,7 @@ export class PrivyService {
       create: {
         address,
         userId,
+        provider: WalletProvider.Embedded,
         label: await getOwnerDomain(publicKey),
         connectedAt: new Date(),
       },
