@@ -9,6 +9,7 @@ import {
   IsDate,
   IsBoolean,
   IsNumber,
+  IsArray,
 } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
 import { RewardDto, toRewardDtoArray } from './rewards.dto';
@@ -41,6 +42,7 @@ export class WheelDto {
   expiresAt?: Date;
 
   @IsOptional()
+  @IsArray()
   @Type(() => RewardDto)
   rewards?: RewardDto[];
 

@@ -723,6 +723,7 @@ Table WheelReward {
   name String [not null]
   description String [not null, default: '']
   image String [not null, default: '']
+  icon String [not null, default: '']
   wheel Wheel [not null]
   wheelId Int [not null]
   weight Int [not null, default: 0]
@@ -860,8 +861,8 @@ Enum WheelRewardType {
   CollectibleComic
   PrintEdition
   OneOfOne
-  Physicals
-  Fungibles
+  Physical
+  Fungible
   None
 }
 
