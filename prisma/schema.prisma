@@ -46,12 +46,18 @@ model User {
   wheelRewardReceipt             WheelRewardReceipt[]
 }
 
+enum WalletProvider {
+  NonCustodial
+  Privy
+}
+
 model Wallet {
   address                        String                                @id
   label                          String                                @default("")
   userId                         Int?
   createdAt                      DateTime                              @default(now())
   connectedAt                    DateTime?
+  provider                       WalletProvider                        @default(NonCustodial)
   user                           User?                                 @relation(fields: [userId], references: [id])
   mintReceipts                   CandyMachineReceipt[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet[]

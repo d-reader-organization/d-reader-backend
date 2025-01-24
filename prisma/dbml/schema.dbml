@@ -41,6 +41,7 @@ Table Wallet {
   userId Int
   createdAt DateTime [default: `now()`, not null]
   connectedAt DateTime
+  provider WalletProvider [not null, default: 'NonCustodial']
   user User
   mintReceipts CandyMachineReceipt [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
@@ -762,6 +763,11 @@ Table PhysicalItem {
   name String [not null]
   description String [not null, default: '']
   image String [not null, default: '']
+}
+
+Enum WalletProvider {
+  NonCustodial
+  Privy
 }
 
 Enum Role {
