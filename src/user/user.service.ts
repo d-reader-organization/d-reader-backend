@@ -193,7 +193,9 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND(id));
+      throw new NotFoundException(
+        ERROR_MESSAGES.USER_NOT_FOUND({ key: 'id', value: id }),
+      );
     } else return user;
   }
 

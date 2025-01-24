@@ -1,19 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { EmailWithMetadata, PrivyClient, Wallet } from '@privy-io/server-auth';
+import { PrivyClient } from '@privy-io/server-auth';
 import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from 'nestjs-prisma';
+import { ERROR_MESSAGES } from 'src/utils/errors';
 import { getOwnerDomain } from 'src/utils/sns';
 import { WalletService } from 'src/wallet/wallet.service';
-
-type VerifiedPayload = {
-  type?: 'user.created' | 'user.authenticated' | 'user.wallet_created';
-  user?: {
-    linked_accounts?: (EmailWithMetadata & {
-      first_verified_at: Date | null; // have to add property like this because privy prop firstVerifiedAt is always undefined
-    })[];
-  };
-  wallet?: Wallet;
-};
+import { EventType, VerifiedPayload } from './types';
 
 @Injectable()
 export class PrivyService {
@@ -42,11 +34,11 @@ export class PrivyService {
     );
 
     if (
-      verifiedPayload.type === 'user.authenticated' ||
-      verifiedPayload.type === 'user.created'
+      verifiedPayload.type === EventType.userAuthenticated ||
+      verifiedPayload.type === EventType.userCreated
     ) {
       await this.processUserEmailVerification(verifiedPayload);
-    } else if (verifiedPayload.type === 'user.wallet_created') {
+    } else if (verifiedPayload.type === EventType.userWalletCreated) {
       await this.processUserWalletCreation(verifiedPayload);
     }
   }
@@ -56,7 +48,15 @@ export class PrivyService {
     const verifiedAt: Date =
       account.firstVerifiedAt ?? account.first_verified_at;
     if (!verifiedAt) {
-      throw new BadRequestException('Account is not verified yet');
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_NOT_VERIFIED);
+    }
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        email: account.address,
+      },
+    });
+    if (existingUser.emailVerifiedAt) {
+      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED);
     }
     const updatedUser = await this.prisma.user.update({
       where: {
@@ -75,14 +75,16 @@ export class PrivyService {
 
     const privyWallet = payload.wallet;
     if (!account || !privyWallet) {
-      throw new BadRequestException('Missing account or wallet');
+      throw new BadRequestException(ERROR_MESSAGES.PRIVY_NO_ACCOUNT_OR_WALLET);
     }
     const user = await this.prisma.user.findFirst({
       where: { email: account.address },
     });
 
     if (!user) {
-      throw new BadRequestException('No user with given email');
+      throw new BadRequestException(
+        ERROR_MESSAGES.USER_NOT_FOUND({ key: 'email', value: account.address }),
+      );
     }
     const userId = user.id;
     const address = privyWallet.address;
@@ -98,7 +100,7 @@ export class PrivyService {
         label: await getOwnerDomain(publicKey),
         connectedAt: new Date(),
       },
-      update: { userId, connectedAt: new Date() },
+      update: { userId },
       include: { user: true },
     });
   }
