@@ -22,6 +22,7 @@ import { mplCore } from '@metaplex-foundation/mpl-core';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-core-candy-machine';
 import { irysUploader } from '@metaplex-foundation/umi-uploader-irys';
 import { VersionedTransaction } from '@solana/web3.js';
+import { mplToolbox } from '@metaplex-foundation/mpl-toolbox';
 
 export type MetadataFile = {
   type?: string;
@@ -242,6 +243,7 @@ export function initUmi(customEndpoint?: string) {
     .use(mplTokenMetadata())
     .use(mplCore())
     .use(mplCandyMachine())
+    .use(mplToolbox())
     .use(irysUploader({}))
     .use(umiKeypairIdentity(fromWeb3JsKeypair(treasuryKeypair)));
 

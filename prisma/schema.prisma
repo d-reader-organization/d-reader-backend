@@ -774,8 +774,8 @@ enum WheelRewardType {
   CollectibleComic
   PrintEdition
   OneOfOne
-  Physicals
-  Fungibles
+  Physical
+  Fungible
   None
 }
 
@@ -798,6 +798,7 @@ model WheelReward {
   name        String
   description String               @default("")
   image       String               @default("")
+  icon        String               @default("")
   wheel       Wheel                @relation(fields: [wheelId], references: [id])
   wheelId     Int
   weight      Int                  @default(0)

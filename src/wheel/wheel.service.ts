@@ -2,9 +2,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateWheelDto } from './dto/create-wheel.dto';
 import { s3Service } from '../aws/s3.service';
-import { appendTimestamp, getTokenPrice } from '../utils/helpers';
-import { isNull, kebabCase } from 'lodash';
-import { validateWheelDate } from '../utils/wheel';
+import { appendTimestamp } from '../utils/helpers';
+import { isEqual, isNull, kebabCase } from 'lodash';
+import { validateWalletBalance, validateWheelDate } from '../utils/wheel';
 import { AddRewardDto } from './dto/add-reward.dto';
 import {
   addHours,
@@ -37,15 +37,14 @@ import {
 } from '@metaplex-foundation/umi';
 import { MIN_COMPUTE_PRICE, SOL_ADDRESS } from 'src/constants';
 import { base58 } from '@metaplex-foundation/umi/serializers';
-import { transfer } from '@metaplex-foundation/mpl-core';
+import { fetchAssetV1, transfer } from '@metaplex-foundation/mpl-core';
 import { AddDropsDto } from './dto/add-drops.dto';
 import { RemoveDropsDto } from './dto/remove-drops.dto';
 import { WheelInput } from './dto/wheel.dto';
 import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { WheelReceiptInput } from './dto/wheel-receipt.dto';
-import { AttributeInput } from 'src/digital-asset/dto/attribute.dto';
-import { AttributeEnum } from 'src/digital-asset/dto/types';
+import { WheelParams } from './dto/wheel-params.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -72,20 +71,19 @@ export class WheelService {
     const s3BucketSlug = appendTimestamp(slug);
     const s3Folder = getS3Folder(s3BucketSlug);
 
-    const imageKey = image
+    const uploadedImage = image
       ? await this.s3.uploadFile(image, { s3Folder })
       : undefined;
-
     const wheel = await this.prisma.wheel.create({
       data: {
         ...createWheelDto,
-        image: imageKey,
+        image: uploadedImage,
         s3BucketSlug,
         rewards: {
           create: {
-            name: 'Nothing',
+            name: WheelRewardType.None,
             description: 'Rugged ! try your luck in your next spin.',
-            type: 'None',
+            type: WheelRewardType.None,
           },
         },
       },
@@ -102,20 +100,25 @@ export class WheelService {
     }
 
     const s3Folder = getS3Folder(wheel.s3BucketSlug);
-    const image = addRewardDto.image
-      ? await this.s3.uploadFile(addRewardDto.image, { s3Folder })
+    const { image, icon, drops } = addRewardDto;
+
+    const uploadedImage = image
+      ? await this.s3.uploadFile(image, { s3Folder })
       : undefined;
-    const dropsData = addRewardDto.drops?.map((drop) => ({
-      amount: drop.amount,
-      itemId: drop.itemId,
-    }));
+    const uploadedIcon = icon
+      ? await this.s3.uploadFile(icon, { s3Folder })
+      : undefined;
+
+    const dropsData =
+      drops?.map(({ amount, itemId }) => ({ amount, itemId })) || [];
 
     const reward = await this.prisma.wheelReward.create({
       data: {
         ...addRewardDto,
-        image,
+        image: uploadedImage,
+        icon: uploadedIcon,
         wheel: { connect: { id: wheelId } },
-        drops: { createMany: { data: dropsData || [] } },
+        drops: { createMany: { data: dropsData } },
       },
     });
 
@@ -126,10 +129,9 @@ export class WheelService {
     const reward = await this.prisma.wheelReward.findUnique({
       where: { id: rewardId },
     });
+
     if (!reward) {
-      throw new BadRequestException(
-        `Reward with id ${rewardId} does not exists`,
-      );
+      throw new BadRequestException(ERROR_MESSAGES.REWARD_NOT_EXISTS(rewardId));
     }
 
     const dropsData = addDropsDto.drops.map((drop) => ({
@@ -148,9 +150,7 @@ export class WheelService {
       where: { id: rewardId },
     });
     if (!reward) {
-      throw new BadRequestException(
-        `Reward with id ${rewardId} does not exists`,
-      );
+      throw new BadRequestException(ERROR_MESSAGES.REWARD_NOT_EXISTS(rewardId));
     }
 
     const dropsToDelete = removeDropsDto.drops;
@@ -189,31 +189,38 @@ export class WheelService {
     });
 
     if (!oldReward) {
-      throw new BadRequestException(`Reward with id ${id} doesn't exists`);
+      throw new BadRequestException(ERROR_MESSAGES.REWARD_NOT_EXISTS(id));
     }
 
     const { s3BucketSlug } = oldReward.wheel;
     const s3Folder = getS3Folder(s3BucketSlug);
 
-    const imageKey = updateRewardDto.image
-      ? await this.s3.uploadFile(updateRewardDto.image, { s3Folder })
+    const { image, icon } = updateRewardDto;
+
+    const uploadedImage = image
+      ? await this.s3.uploadFile(image, { s3Folder })
+      : undefined;
+    const uploadedIcon = icon
+      ? await this.s3.uploadFile(icon, { s3Folder })
       : undefined;
 
     const reward = await this.prisma.wheelReward.update({
       where: { id },
       data: {
         ...updateRewardDto,
-        image: imageKey,
+        image: uploadedImage,
+        icon: uploadedIcon,
       },
     });
     return reward;
   }
 
-  async get(id: number): Promise<WheelInput> {
-    const wheel = await this.prisma.wheel.findUnique({
-      where: { id },
+  async get(params: WheelParams): Promise<WheelInput> {
+    const wheel = await this.prisma.wheel.findFirst({
+      where: { isActive: params.isActive || true },
       include: { rewards: true },
     });
+
     return wheel;
   }
 
@@ -348,19 +355,21 @@ export class WheelService {
     }
 
     switch (rewardType) {
-      case WheelRewardType.Physicals:
-        return this.sendPhysicalClaimEmail(winningDrop, userId);
+      case WheelRewardType.Physical:
+        return this.sendPhysicalClaimEmail(wheelId, winningDrop, userId);
       case WheelRewardType.PrintEdition:
       case WheelRewardType.OneOfOne:
       case WheelRewardType.CollectibleComic:
         return this.transferCollectibleFromVault(
+          wheelId,
           winningDrop,
           walletAddress,
           userId,
           rewardType,
         );
-      case WheelRewardType.Fungibles:
+      case WheelRewardType.Fungible:
         return this.transferFungibleFromVault(
+          wheelId,
           winningDrop,
           walletAddress,
           userId,
@@ -374,21 +383,19 @@ export class WheelService {
     const noReward = await this.prisma.wheelReward.findFirst({
       where: { wheelId, type: WheelRewardType.None },
     });
+
     const receipt = await this.prisma.wheelRewardReceipt.create({
       data: {
         user: { connect: { id: userId } },
         createdAt: new Date(),
         reward: { connect: { id: noReward.id } },
+        claimedAt: new Date(),
       },
     });
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      id: receipt.id,
-      image: noReward.image,
-      itemId: 'None',
-      description: noReward.description,
-      name: noReward.name,
+      itemId: WheelRewardType.None,
       amount: 0,
       type: WheelRewardType.None,
     };
@@ -396,11 +403,21 @@ export class WheelService {
     return receiptInput;
   }
 
-  async sendPhysicalClaimEmail(winningDrop: RewardDrop, userId: number) {
+  async sendPhysicalClaimEmail(
+    wheelId: number,
+    winningDrop: RewardDrop,
+    userId: number,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const physicalItem = await this.prisma.physicalItem.findUnique({
       where: { id: winningDrop.itemId },
     });
+
+    if (!physicalItem) {
+      console.log(`Physical drop Item not found`);
+      return this.createReceiptForNoReward(wheelId, userId);
+    }
+
     await this.mailService.claimPhysicalDrop(physicalItem, user);
     const receipt = await this.prisma.wheelRewardReceipt.create({
       data: {
@@ -413,19 +430,16 @@ export class WheelService {
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      id: receipt.id,
-      image: physicalItem.image,
       itemId: physicalItem.id,
-      description: physicalItem.description,
-      name: physicalItem.name,
       amount: winningDrop.amount,
-      type: WheelRewardType.Physicals,
+      type: WheelRewardType.Physical,
     };
 
     return receiptInput;
   }
 
   async transferFungibleFromVault(
+    wheelId: number,
     winningDrop: RewardDrop,
     walletAddress: string,
     userId: number,
@@ -433,8 +447,13 @@ export class WheelService {
     const splToken = await this.prisma.splToken.findUnique({
       where: { address: winningDrop.itemId },
     });
-    const amount = winningDrop.amount;
 
+    if (!splToken) {
+      console.log(`Spl token drop Item not found ${winningDrop.itemId}`);
+      return this.createReceiptForNoReward(wheelId, userId);
+    }
+
+    const amount = winningDrop.amount;
     const isSol = splToken.address === SOL_ADDRESS;
 
     let builder = setComputeUnitPrice(this.umi, {
@@ -444,8 +463,20 @@ export class WheelService {
     const signer = createNoopSigner(treasuryPublicKey);
     const destination = publicKey(walletAddress);
 
-    let transferBuilder: TransactionBuilder;
+    const isBalanceEnough = await validateWalletBalance(
+      this.umi,
+      walletAddress,
+      amount,
+      splToken.address,
+    );
+    if (!isBalanceEnough) {
+      console.log(
+        `Vault doesn't have enough balance for fungible drop ${splToken.address}`,
+      );
+      return this.createReceiptForNoReward(wheelId, userId);
+    }
 
+    let transferBuilder: TransactionBuilder;
     if (isSol) {
       transferBuilder = transferSol(this.umi, {
         source: signer,
@@ -498,30 +529,50 @@ export class WheelService {
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      id: receipt.id,
-      image: splToken.icon,
       itemId: splToken.address,
-      amount: getTokenPrice(amount, splToken.decimals),
-      currency: splToken.symbol,
-      name: splToken.name,
-      walletAddress,
-      type: WheelRewardType.Fungibles,
+      amount: winningDrop.amount,
+      type: WheelRewardType.Fungible,
     };
 
     return receiptInput;
   }
 
   async transferCollectibleFromVault(
+    wheelId: number,
     winningDrop: RewardDrop,
     walletAddress: string,
     userId: number,
     rewardType: WheelRewardType,
   ) {
     const treasuryAddress = getTreasuryPublicKey();
-    /** assetAddress */
     const address = winningDrop.itemId;
-    const { collectionAddress, image, attributes, name } =
-      await this.fetchCollectibleDetails(rewardType, address);
+    const asset = await fetchAssetV1(this.umi, publicKey(address));
+    const owner = asset.owner;
+    const vault = getTreasuryUmiPublicKey();
+
+    if (!isEqual(owner, vault)) {
+      const walletAddress = owner.toString();
+
+      await this.prisma.digitalAsset.update({
+        where: { address },
+        data: {
+          owner: {
+            connectOrCreate: {
+              where: { address: walletAddress },
+              create: { address: walletAddress },
+            },
+          },
+          ownerChangedAt: new Date(),
+        },
+      });
+
+      return this.createReceiptForNoReward(wheelId, userId);
+    }
+
+    const collectionAddress =
+      asset.updateAuthority.type === 'Collection'
+        ? asset.updateAuthority.address
+        : undefined;
 
     let builder = setComputeUnitPrice(this.umi, {
       microLamports: MIN_COMPUTE_PRICE,
@@ -532,7 +583,7 @@ export class WheelService {
           publicKey: publicKey(address),
           owner: publicKey(treasuryAddress),
         },
-        collection: { publicKey: publicKey(collectionAddress) },
+        collection: { publicKey: collectionAddress },
         newOwner: publicKey(walletAddress),
       }),
     );
@@ -551,12 +602,13 @@ export class WheelService {
     const signature = await this.umi.rpc.sendTransaction(signedTransaction, {
       skipPreflight: true,
     });
-    const transactionSignature = base58.deserialize(signature)[0];
 
+    const transactionSignature = base58.deserialize(signature)[0];
     await this.umi.rpc.confirmTransaction(signature, {
       commitment: 'confirmed',
       strategy: { type: 'blockhash', ...latestBlockHash },
     });
+
     const receipt = await this.prisma.wheelRewardReceipt.create({
       data: {
         transactionSignature,
@@ -568,126 +620,23 @@ export class WheelService {
         reward: { connect: { id: winningDrop.rewardId } },
       },
     });
+    await this.prisma.digitalAsset.update({
+      where: { address },
+      data: {
+        owner: {
+          connect: { address: walletAddress },
+        },
+        ownerChangedAt: new Date(),
+      },
+    });
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      id: receipt.id,
-      image: image,
       itemId: address,
       amount: winningDrop.amount,
-      name,
-      attributes,
-      walletAddress,
       type: rewardType,
     };
 
     return receiptInput;
-  }
-
-  async fetchCollectibleDetails(
-    rewardType: WheelRewardType,
-    address: string,
-  ): Promise<{
-    collectionAddress: string;
-    image: string;
-    name: string;
-    attributes: AttributeInput[];
-  }> {
-    switch (rewardType) {
-      case WheelRewardType.CollectibleComic: {
-        const collectible = await this.prisma.collectibleComic.findUnique({
-          where: { address },
-          include: { metadata: { include: { collection: true } } },
-        });
-
-        if (!collectible) {
-          throw new BadRequestException(ERROR_MESSAGES.SPIN_FAILED);
-        }
-
-        const { isSigned, isUsed, rarity } = collectible.metadata;
-        const collection = collectible.metadata.collection;
-
-        const cover = await this.prisma.statefulCover.findUnique({
-          where: {
-            comicIssueId_isSigned_isUsed_rarity: {
-              comicIssueId: collection.comicIssueId,
-              isSigned,
-              isUsed,
-              rarity,
-            },
-          },
-        });
-
-        const attributes = [
-          { trait: AttributeEnum.SIGNED, value: isSigned.toString() },
-          { trait: AttributeEnum.USED, value: isUsed.toString() },
-          { trait: AttributeEnum.RARITY, value: rarity.toString() },
-        ];
-
-        return {
-          collectionAddress: collection.address,
-          image: cover.image,
-          name: collectible.name,
-          attributes,
-        };
-      }
-      case WheelRewardType.PrintEdition: {
-        const collectible = await this.prisma.printEdition.findUnique({
-          where: { address },
-          include: {
-            printEditionCollection: true,
-            digitalAsset: { include: { traits: true, genres: true } },
-          },
-        });
-
-        const attributes: AttributeInput[] = [
-          { trait: AttributeEnum.NUMBER, value: collectible.number.toString() },
-        ];
-        const traits = collectible.digitalAsset.traits;
-        const genres = collectible.digitalAsset.genres;
-
-        traits?.forEach((trait) =>
-          attributes.push({ trait: trait.name, value: trait.value }),
-        );
-        genres?.forEach((genre) =>
-          attributes.push({ trait: genre.name, value: 'true' }),
-        );
-
-        return {
-          collectionAddress: collectible.collectionAddress,
-          image: collectible.printEditionCollection.image,
-          name: collectible.printEditionCollection.name,
-          attributes,
-        };
-      }
-      case WheelRewardType.OneOfOne: {
-        const collectible = await this.prisma.oneOfOne.findUnique({
-          where: { address },
-          include: {
-            digitalAsset: { include: { traits: true, genres: true } },
-          },
-        });
-
-        const attributes: AttributeInput[] = [];
-        const traits = collectible.digitalAsset.traits;
-        const genres = collectible.digitalAsset.genres;
-
-        traits?.forEach((trait) =>
-          attributes.push({ trait: trait.name, value: trait.value }),
-        );
-        genres?.forEach((genre) =>
-          attributes.push({ trait: genre.name, value: 'true' }),
-        );
-
-        return {
-          collectionAddress: collectible.collectionAddress,
-          image: collectible.image,
-          name: collectible.name,
-          attributes,
-        };
-      }
-      default:
-        return null;
-    }
   }
 }
