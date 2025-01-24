@@ -48,7 +48,7 @@ model User {
 
 enum WalletProvider {
   NonCustodial
-  Privy
+  Embedded
 }
 
 model Wallet {

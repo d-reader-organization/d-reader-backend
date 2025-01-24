@@ -767,7 +767,7 @@ Table PhysicalItem {
 
 Enum WalletProvider {
   NonCustodial
-  Privy
+  Embedded
 }
 
 Enum Role {
