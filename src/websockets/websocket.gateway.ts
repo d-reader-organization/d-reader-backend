@@ -10,7 +10,10 @@ import { Server, Socket } from 'socket.io';
 import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
-import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
+import {
+  AssetInput,
+  toAssetDto,
+} from '../digital-asset/dto/deprecated-digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
 import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
 import {

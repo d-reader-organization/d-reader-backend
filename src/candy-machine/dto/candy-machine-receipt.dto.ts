@@ -7,7 +7,7 @@ import {
   Wallet,
 } from '@prisma/client';
 import { BuyerDto, toBuyerDto } from '../../auction-house/dto/types/buyer.dto';
-import { AssetDto } from '../../digital-asset/dto/digital-asset.dto';
+import { AssetDto } from '../../digital-asset/dto/deprecated-digital-asset.dto';
 import { PickType } from '@nestjs/swagger';
 
 export class PartialAssetDto extends PickType(AssetDto, ['address', 'name']) {}

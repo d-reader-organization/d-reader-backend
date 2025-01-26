@@ -832,7 +832,7 @@ export class AuctionHouseService {
           ...digitalAsset.collectibleComic,
           digitalAsset: { ownerAddress: digitalAsset.ownerAddress },
           metadata,
-          sellerFeeBasisPoints: metadata.collection.sellerFeeBasisPoints,
+          collection: metadata.collection,
           statefulCovers: metadata.collection.comicIssue.statefulCovers,
         },
       };

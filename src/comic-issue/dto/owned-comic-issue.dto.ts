@@ -15,7 +15,7 @@ import {
   CollectibleComicDto,
   CollectibleComicInput,
   toCollectibleComicDtoArray,
-} from '../../digital-asset/dto/collectibleComic.dto';
+} from '../../digital-asset/dto/collectible-comic.dto';
 
 export class OwnedComicIssueDto {
   @IsPositive()

@@ -439,8 +439,7 @@ export class ComicIssueService {
             metadata,
             digitalAsset: comic.digitalAsset,
             statefulCovers: issue.statefulCovers,
-            sellerFeeBasisPoints:
-              issue.collectibleComicCollection.sellerFeeBasisPoints,
+            collection: issue.collectibleComicCollection,
             comicName: issue.comic.title,
             comicIssueName: issue.title,
           })),
