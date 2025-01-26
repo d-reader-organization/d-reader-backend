@@ -118,4 +118,5 @@ export const ERROR_MESSAGES = {
   WHEEL_EXPIRED: 'Wheel has been expired!',
   NO_SPIN_LEFT: (cooldownMessage: string) =>
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
+  INVALID_RESPONSE_BODY: 'Invalid response body',
 };

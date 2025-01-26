@@ -14,7 +14,13 @@ import {
   subHours,
   subMonths,
 } from 'date-fns';
-import { RewardDrop, WheelRewardType, WheelType } from '@prisma/client';
+import {
+  RewardDrop,
+  WheelReward,
+  WheelRewardReceipt,
+  WheelRewardType,
+  WheelType,
+} from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 import {
   getIdentityUmiSignature,
@@ -45,6 +51,7 @@ import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { WheelReceiptInput } from './dto/wheel-receipt.dto';
 import { WheelParams } from './dto/wheel-params.dto';
+import { DigitalAssetService } from '../digital-asset/digital-asset.service';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -55,6 +62,7 @@ export class WheelService {
     private readonly prisma: PrismaService,
     private readonly mailService: MailService,
     private readonly s3: s3Service,
+    private readonly digitalAssetService: DigitalAssetService,
   ) {
     this.umi = initUmi();
   }
@@ -395,9 +403,7 @@ export class WheelService {
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      itemId: WheelRewardType.None,
-      amount: 0,
-      type: WheelRewardType.None,
+      reward: noReward,
     };
 
     return receiptInput;
@@ -420,6 +426,7 @@ export class WheelService {
 
     await this.mailService.claimPhysicalDrop(physicalItem, user);
     const receipt = await this.prisma.wheelRewardReceipt.create({
+      include: { reward: true },
       data: {
         dropId: winningDrop.id,
         user: { connect: { id: userId } },
@@ -430,9 +437,11 @@ export class WheelService {
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      itemId: physicalItem.id,
-      amount: winningDrop.amount,
-      type: WheelRewardType.Physical,
+      reward: receipt.reward,
+      physicalDrop: {
+        ...winningDrop,
+        physical: physicalItem,
+      },
     };
 
     return receiptInput;
@@ -516,6 +525,7 @@ export class WheelService {
       strategy: { type: 'blockhash', ...latestBlockHash },
     });
     const receipt = await this.prisma.wheelRewardReceipt.create({
+      include: { reward: true },
       data: {
         transactionSignature,
         dropId: winningDrop.id,
@@ -529,9 +539,11 @@ export class WheelService {
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      itemId: splToken.address,
-      amount: winningDrop.amount,
-      type: WheelRewardType.Fungible,
+      reward: receipt.reward,
+      fungibleDrop: {
+        ...winningDrop,
+        fungible: splToken,
+      },
     };
 
     return receiptInput;
@@ -610,6 +622,7 @@ export class WheelService {
     });
 
     const receipt = await this.prisma.wheelRewardReceipt.create({
+      include: { reward: true },
       data: {
         transactionSignature,
         dropId: winningDrop.id,
@@ -630,13 +643,70 @@ export class WheelService {
       },
     });
 
+    if (rewardType == WheelRewardType.CollectibleComic) {
+      return this.createCollectibleComicDropReceipt(receipt, winningDrop);
+    } else if (rewardType == WheelRewardType.PrintEdition) {
+      return this.createPrintEditionDropReceipt(receipt, winningDrop);
+    } else {
+      return this.createOneOfOneDropReceipt(receipt, winningDrop);
+    }
+  }
+
+  async createCollectibleComicDropReceipt(
+    receipt: WheelRewardReceipt & { reward: WheelReward },
+    winningDrop: RewardDrop,
+  ) {
+    const collectibleComic =
+      await this.digitalAssetService.findOneCollectibleComic(
+        winningDrop.itemId,
+      );
+
     const receiptInput: WheelReceiptInput = {
       ...receipt,
-      itemId: address,
-      amount: winningDrop.amount,
-      type: rewardType,
+      reward: receipt.reward,
+      collectibleComicDrop: {
+        ...winningDrop,
+        collectibleComic,
+      },
     };
+    return receiptInput;
+  }
 
+  async createPrintEditionDropReceipt(
+    receipt: WheelRewardReceipt & { reward: WheelReward },
+    winningDrop: RewardDrop,
+  ) {
+    const printEdition = await this.digitalAssetService.findOnePrintEdition(
+      winningDrop.itemId,
+    );
+
+    const receiptInput: WheelReceiptInput = {
+      ...receipt,
+      reward: receipt.reward,
+      printEditionDrop: {
+        ...winningDrop,
+        printEdition,
+      },
+    };
+    return receiptInput;
+  }
+
+  async createOneOfOneDropReceipt(
+    receipt: WheelRewardReceipt & { reward: WheelReward },
+    winningDrop: RewardDrop,
+  ) {
+    const oneOfOne = await this.digitalAssetService.findSingleOneOfOne(
+      winningDrop.itemId,
+    );
+
+    const receiptInput: WheelReceiptInput = {
+      ...receipt,
+      reward: receipt.reward,
+      oneOfOneDrop: {
+        ...winningDrop,
+        oneOfOne,
+      },
+    };
     return receiptInput;
   }
 }

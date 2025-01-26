@@ -6,7 +6,7 @@ import {
   CollectibleComicDto,
   CollectibleComicInput,
   toCollectibleComicDto,
-} from '../../digital-asset/dto/collectibleComic.dto';
+} from '../../digital-asset/dto/collectible-comic.dto';
 import { SOL_ADDRESS } from '../../constants';
 
 export class ListingDto {

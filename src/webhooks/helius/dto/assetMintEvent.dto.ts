@@ -5,7 +5,7 @@ import {
 } from '../../../candy-machine/dto/candy-machine-receipt.dto';
 import { IndexCoreAssetReturnType } from './types';
 import { plainToInstance, Type } from 'class-transformer';
-import { AssetDto } from '../../../digital-asset/dto/digital-asset.dto';
+import { AssetDto } from '../../../digital-asset/dto/deprecated-digital-asset.dto';
 import { OmitType, PickType } from '@nestjs/swagger';
 import { toBuyerDto } from '../../../auction-house/dto/types/buyer.dto';
 import { getPublicUrl } from '../../../aws/s3client';
