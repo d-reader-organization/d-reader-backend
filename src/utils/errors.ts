@@ -50,6 +50,7 @@ export const ERROR_MESSAGES = {
   NEW_PASSWORD_DIFFERENT:
     'New password must be different from your current password.',
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
+  EMAIL_NOT_VERIFIED: 'Your email address has not been verified',
   CREATOR_NOT_FOUND: (slug: string) => `Creator ${slug} does not exist`,
   NAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
   SLUG_ALREADY_TAKEN: (slug: string) => `${slug} already taken`,
@@ -83,7 +84,13 @@ export const ERROR_MESSAGES = {
   SIGNING_NOT_ACTIVE:
     'Creator discord account verification is pending, Signing will begin soon !',
   UNAUTHORIZED_CHANGE_COMIC_STATE: 'Not authorized to change the comic state',
-  USER_NOT_FOUND: (id: number) => `User with id ${id} not found`,
+  USER_NOT_FOUND: ({
+    key,
+    value,
+  }: {
+    key: 'id' | 'email';
+    value: string | number;
+  }) => `User with ${key} ${value} not found`,
   USERNAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
   GOOGLE_ACCOUNT_LINKED:
     'This user is linked to a Google Account. Please use google sign in.',
@@ -118,5 +125,6 @@ export const ERROR_MESSAGES = {
   WHEEL_EXPIRED: 'Wheel has been expired!',
   NO_SPIN_LEFT: (cooldownMessage: string) =>
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
+  PRIVY_NO_ACCOUNT_OR_WALLET: 'Account or wallet not provided',
   INVALID_RESPONSE_BODY: 'Invalid response body',
 };
