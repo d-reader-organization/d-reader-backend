@@ -16,6 +16,10 @@ export class PrivyService {
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
   ) {
+    if (!process.env.PRIVY_APP_ID || !process.env.PRIVY_APP_SECRET) {
+      console.log(`missing privy app id and/or secret`);
+      return;
+    }
     this.privy = new PrivyClient(
       process.env.PRIVY_APP_ID as string,
       process.env.PRIVY_APP_SECRET as string,
