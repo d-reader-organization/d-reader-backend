@@ -65,7 +65,7 @@ export type AddCandyMachineCouponCurrencyParams = {
 };
 
 export type CreateCandyMachineParams = {
-  comicName: string;
+  comicTitle: string;
   assetOnChainName: string;
   supply: number;
   sellerFeeBasisPoints: number;

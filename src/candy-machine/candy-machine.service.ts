@@ -161,7 +161,7 @@ export class CandyMachineService {
     const {
       supply,
       assetOnChainName,
-      comicName,
+      comicTitle,
       coupons,
       sellerFeeBasisPoints,
       creatorAddress,
@@ -260,7 +260,7 @@ export class CandyMachineService {
         itemMetadatas = await uploadItemMetadata(
           this.umi,
           comicIssue,
-          comicName,
+          comicTitle,
           royaltyWallets,
           numberOfRarities,
           sellerFeeBasisPoints,
@@ -647,7 +647,7 @@ export class CandyMachineService {
   async findReceipts(query: CandyMachineReceiptParams) {
     const receipts = await this.prisma.candyMachineReceipt.findMany({
       where: { candyMachineAddress: query.candyMachineAddress },
-      include: { collectibleComics: true, buyer: { include: { user: true } } },
+      include: { collectibleComics: true, user: true },
       orderBy: { timestamp: 'desc' },
       skip: query.skip,
       take: query.take,

@@ -51,7 +51,7 @@ export class AssetDto {
   rarity: ComicRarity;
 
   @IsString()
-  comicName: string;
+  comicTitle: string;
 
   @IsString()
   comicIssueName: string;
@@ -95,7 +95,7 @@ export async function toAssetDto(asset: AssetInput) {
     isUsed,
     isSigned,
     rarity,
-    comicName: offChainMetadata.collection.family,
+    comicTitle: offChainMetadata.collection.family,
     comicIssueName: offChainMetadata.collection.name,
     comicIssueId: asset.metadata?.collection?.comicIssueId,
 

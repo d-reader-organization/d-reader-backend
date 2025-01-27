@@ -7,8 +7,9 @@ import { IndexCoreAssetReturnType } from './types';
 import { plainToInstance, Type } from 'class-transformer';
 import { AssetDto } from '../../../digital-asset/dto/deprecated-digital-asset.dto';
 import { OmitType, PickType } from '@nestjs/swagger';
-import { toBuyerDto } from '../../../auction-house/dto/types/buyer.dto';
 import { getPublicUrl } from '../../../aws/s3client';
+import { toBasicUserDto } from '../../../user/dto/basic-user-dto';
+import { ifDefined } from '../../../utils/lodash';
 
 export class PartialAssetMintDto extends PickType(AssetDto, [
   'address',
@@ -51,7 +52,8 @@ export async function toCollectibleComicMintEventDto(eventData: {
       name: receipt.collectibleComics[0].name,
     },
     assets,
-    buyer: await toBuyerDto(receipt.buyer),
+    buyer: ifDefined(receipt.user, toBasicUserDto),
+    buyerAddress: receipt.buyerAddress,
     candyMachineAddress: receipt.candyMachineAddress,
     price: Number(receipt.price),
     timestamp: receipt.timestamp.toISOString(),
