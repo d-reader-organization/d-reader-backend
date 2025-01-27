@@ -10,7 +10,10 @@ import { Server, Socket } from 'socket.io';
 import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
-import { AssetInput, toAssetDto } from '../digital-asset/dto/digital-asset.dto';
+import {
+  AssetInput,
+  toAssetDto,
+} from '../digital-asset/dto/deprecated-digital-asset.dto';
 import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
 import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
 import {
@@ -78,24 +81,25 @@ export class WebSocketGateway {
     );
   }
 
-  async handleLegacyAssetSold(comicIssueId: number, listing: ListingInput) {
-    const listingDto = await toListingDto(listing);
+  handleLegacyAssetSold(comicIssueId: number, listing: ListingInput) {
+    // TODO: find user based on the listing.sellerAddress
+    const listingDto = toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-sold`,
       listingDto,
     );
   }
 
-  async handleLegacyAssetListed(comicIssueId: number, listing: ListingInput) {
-    const listingDto = await toListingDto(listing);
+  handleLegacyAssetListed(comicIssueId: number, listing: ListingInput) {
+    const listingDto = toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-listed`,
       listingDto,
     );
   }
 
-  async handleLegacyAssetDelisted(comicIssueId: number, listing: ListingInput) {
-    const listingDto = await toListingDto(listing);
+  handleLegacyAssetDelisted(comicIssueId: number, listing: ListingInput) {
+    const listingDto = toListingDto(listing);
     return this.server.sockets.emit(
       `comic-issue/${comicIssueId}/item-delisted`,
       listingDto,
@@ -136,8 +140,8 @@ export class WebSocketGateway {
     );
   }
 
-  async handleWalletLegacyAssetSold(seller: string, listing: ListingInput) {
-    const listingDto = await toListingDto(listing);
+  handleWalletLegacyAssetSold(seller: string, listing: ListingInput) {
+    const listingDto = toListingDto(listing);
     return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
   }
 

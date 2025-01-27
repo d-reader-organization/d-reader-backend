@@ -15,7 +15,7 @@ import {
   CollectibleComicDto,
   CollectibleComicInput,
   toCollectibleComicDtoArray,
-} from '../../digital-asset/dto/collectibleComic.dto';
+} from '../../digital-asset/dto/collectible-comic.dto';
 
 export class OwnedComicIssueDto {
   @IsPositive()
@@ -50,7 +50,7 @@ export type OwnedComicIssueInput = ComicIssue &
   WithCollectibles &
   WithStatelessCovers;
 
-export async function toOwnedComicIssueDto(
+export function toOwnedComicIssueDto(
   ownedComicIssueInput: OwnedComicIssueInput,
 ) {
   const { collectibles, statelessCovers, ...comicIssue } = ownedComicIssueInput;
@@ -61,7 +61,7 @@ export async function toOwnedComicIssueDto(
     title: comicIssue.title,
     slug: comicIssue.slug,
     cover: getPublicUrl(findDefaultCover(statelessCovers).image) || '',
-    collectibles: await toCollectibleComicDtoArray(collectibles),
+    collectibles: toCollectibleComicDtoArray(collectibles),
     ownedCopiesCount: collectibles.length,
   };
 
@@ -70,5 +70,5 @@ export async function toOwnedComicIssueDto(
 }
 
 export const toOwnedComicIssueDtoArray = (issues: OwnedComicIssueInput[]) => {
-  return Promise.all(issues.map(toOwnedComicIssueDto));
+  return issues.map(toOwnedComicIssueDto);
 };

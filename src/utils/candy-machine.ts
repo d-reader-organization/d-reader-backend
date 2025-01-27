@@ -62,7 +62,7 @@ export function generatePropertyName(
 export async function uploadMetadata(
   umi: Umi,
   comicIssue: ComicIssueCMInput,
-  comicName: string,
+  comicTitle: string,
   royaltyWallets: RoyaltyWalletDto[],
   imageFile: MetaplexFile,
   isUsed: string,
@@ -106,7 +106,7 @@ export async function uploadMetadata(
     },
     collection: {
       name: comicIssue.title,
-      family: comicName,
+      family: comicTitle,
     },
   };
 
@@ -116,7 +116,7 @@ export async function uploadMetadata(
 export async function uploadAllMetadata(
   umi: Umi,
   comicIssue: ComicIssueCMInput,
-  comicName: string,
+  comicTitle: string,
   royaltyWallets: RoyaltyWalletDto[],
   rarityCoverFiles: CoverFiles,
   sellerFeeBasisPoints: number,
@@ -130,7 +130,7 @@ export async function uploadAllMetadata(
       const uri = await uploadMetadata(
         umi,
         comicIssue,
-        comicName,
+        comicTitle,
         royaltyWallets,
         rarityCoverFiles[property],
         isUsed.toString(),
@@ -154,7 +154,7 @@ export async function uploadAllMetadata(
 export async function uploadItemMetadata(
   umi: Umi,
   comicIssue: ComicIssueCMInput,
-  comicName: string,
+  comicTitle: string,
   royaltyWallets: RoyaltyWalletDto[],
   numberOfRarities: number,
   sellerFeeBasisPoints: number,
@@ -169,7 +169,7 @@ export async function uploadItemMetadata(
     const itemMetadata = await uploadAllMetadata(
       umi,
       comicIssue,
-      comicName,
+      comicTitle,
       royaltyWallets,
       rarityCoverFiles[rarity],
       sellerFeeBasisPoints,

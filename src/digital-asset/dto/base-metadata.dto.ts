@@ -10,7 +10,7 @@ import {
 import { RoyaltyWalletDto } from '../../comic-issue/dto/royalty-wallet.dto';
 import { MAX_CREATOR_LIMIT } from '../../constants';
 import { TransformStringToNumber } from '../../utils/transform';
-import { AttributeDto } from './attribute.dto';
+import { TraitDto } from './trait.dto';
 
 export class BaseMetadataDto {
   @IsString()
@@ -42,9 +42,9 @@ export class BaseMetadataDto {
     return attributesDtoArray;
   })
   @IsArray()
-  @ApiProperty({ type: AttributeDto })
-  @Type(() => AttributeDto)
-  attributes: AttributeDto[];
+  @ApiProperty({ type: TraitDto })
+  @Type(() => TraitDto)
+  traits: TraitDto[];
 
   @Transform(({ value }: { value: string[] }) => {
     const royaltyWalletDtoArray = value.map((item) => JSON.parse(item));

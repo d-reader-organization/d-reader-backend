@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DigitalAssetService } from './digital-asset.service';
-import {
-  DigitalAssetController,
-  NftController,
-} from './digital-asset.controller';
+import { DigitalAssetController } from './digital-asset.controller';
 import { HeliusService } from '../webhooks/helius/helius.service';
 import { NonceService } from '../nonce/nonce.service';
 import { BotGateway } from 'src/discord/bot.gateway';
@@ -25,7 +22,7 @@ import { WalletService } from 'src/wallet/wallet.service';
 
 @Module({
   imports: [DiscordModule.forFeature()],
-  controllers: [NftController, DigitalAssetController],
+  controllers: [DigitalAssetController],
   providers: [
     DigitalAssetService,
     HeliusService,

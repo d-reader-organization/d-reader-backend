@@ -1,13 +1,15 @@
 import { Type, plainToInstance } from 'class-transformer';
 import { IsDate, IsInt, IsPositive, IsString } from 'class-validator';
-import { Listing } from '@prisma/client';
-import { SellerDto, toSellerDto } from './types/seller.dto';
+import { Listing, User } from '@prisma/client';
 import {
   CollectibleComicDto,
   CollectibleComicInput,
   toCollectibleComicDto,
-} from '../../digital-asset/dto/collectibleComic.dto';
+} from '../../digital-asset/dto/collectible-comic.dto';
 import { SOL_ADDRESS } from '../../constants';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
+import { ifDefined } from '../../utils/lodash';
 
 export class ListingDto {
   @IsPositive()
@@ -16,8 +18,11 @@ export class ListingDto {
   @Type(() => CollectibleComicDto)
   collectibleComic: CollectibleComicDto;
 
-  @Type(() => SellerDto)
-  seller: SellerDto;
+  @Type(() => BasicUserDto)
+  seller?: BasicUserDto;
+
+  @IsSolanaAddress()
+  sellerAddress: string;
 
   @IsString()
   splTokenAddress: string;
@@ -31,16 +36,17 @@ export class ListingDto {
 
 export type ListingInput = Listing & {
   collectibleComic: CollectibleComicInput;
+  seller?: User;
 };
 
-export async function toListingDto(listing: ListingInput) {
+export function toListingDto(listing: ListingInput) {
   const sellerAddress = listing.sellerAddress;
-  const seller = await toSellerDto({ address: sellerAddress });
 
   const plainListingDto: ListingDto = {
     id: listing.id,
-    collectibleComic: await toCollectibleComicDto(listing.collectibleComic),
-    seller,
+    collectibleComic: toCollectibleComicDto(listing.collectibleComic),
+    seller: ifDefined(listing.seller, toBasicUserDto),
+    sellerAddress,
     price: Number(listing.price),
     splTokenAddress: SOL_ADDRESS, // TODO: replace this with auctionHouse.splTokenAddress
     createdAt: listing.createdAt,

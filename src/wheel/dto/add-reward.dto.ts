@@ -48,6 +48,10 @@ export class AddRewardFilesDto {
   @ApiProperty({ type: 'string', format: 'binary' })
   @Transform(({ value }) => value[0])
   image: Express.Multer.File | null;
+
+  @ApiProperty({ type: 'string', format: 'binary' })
+  @Transform(({ value }) => value[0])
+  icon: Express.Multer.File | null;
 }
 
 export class AddRewardDto extends IntersectionType(

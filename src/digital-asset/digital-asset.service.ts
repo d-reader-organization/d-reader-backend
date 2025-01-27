@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { DigitalAssetFilterParams } from './dto/digital-asset-params.dto';
+import { CollectibleComicFilterParams } from './dto/digital-asset-params.dto';
 import {
   createNoopSigner,
   generateSigner,
@@ -34,8 +34,8 @@ import {
 import { base64 } from '@metaplex-foundation/umi/serializers';
 import { CreatePrintEditionCollectionDto } from './dto/create-print-edition.dto';
 import { s3Service } from '../aws/s3.service';
-import { CreateOneOfOneDto } from './dto/create-one-of-one-dto';
-import { CreateOneOfOneCollectionDto } from './dto/create-one-of-one-collection-dto';
+import { CreateOneOfOneDto } from './dto/create-one-of-one.dto';
+import { CreateOneOfOneCollectionDto } from './dto/create-one-of-one-collection.dto';
 import { PrintEditionParams } from './dto/print-edition-params.dto';
 import {
   buyEdition,
@@ -47,7 +47,7 @@ import { HeliusService } from '../webhooks/helius/helius.service';
 import { fetchDigitalAssetOffChainMetadata } from '../utils/nft-metadata';
 import { imageUrlToS3File } from '../utils/files';
 import { RoyaltyWalletDto } from '../comic-issue/dto/royalty-wallet.dto';
-import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction-dto';
+import { DigitalAssetCreateTransactionDto } from './dto/digital-asset-transaction.dto';
 import { DigitalAssetJsonMetadata } from './dto/types';
 import { AssetType } from '../types/assetType';
 import { isEmpty, kebabCase } from 'lodash';
@@ -64,8 +64,12 @@ import { AddressLookupTableAccount } from '@solana/web3.js';
 import { TransactionMessage } from '@solana/web3.js';
 import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-candy-machine';
 import { ERROR_MESSAGES } from '../utils/errors';
-import { AttributeDto } from './dto/attribute.dto';
+import { TraitDto } from './dto/trait.dto';
 import { CollectibleComicRarityStatsInput } from './dto/collectible-comic-rarity-stats.dto';
+import { CollectibleComicInput } from './dto/collectible-comic.dto';
+import { PrintEditionInput } from './dto/print-edition.dto';
+import { OneOfOneInput } from './dto/one-of-one.dto';
+import { DigitalAssetInput } from './dto/digital-asset.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -84,7 +88,7 @@ export class DigitalAssetService {
     this.connection = getConnection();
   }
 
-  async findAll(query: DigitalAssetFilterParams) {
+  async findAll(query: CollectibleComicFilterParams) {
     const assets = await this.prisma.collectibleComic.findMany({
       where: {
         digitalAsset: {
@@ -120,27 +124,180 @@ export class DigitalAssetService {
     return assets;
   }
 
-  async findOne(address: string) {
-    const asset = await this.prisma.collectibleComic.findUnique({
+  async findAllCollectibleComics(
+    query: CollectibleComicFilterParams,
+  ): Promise<CollectibleComicInput[]> {
+    const collectibleComics = await this.prisma.collectibleComic.findMany({
+      where: {
+        digitalAsset: {
+          owner: {
+            address: query?.ownerAddress,
+            userId: query.userId ? +query.userId : undefined,
+          },
+          isBurned: false,
+        },
+        metadata: {
+          collectionAddress: query.collectionAddress,
+          collection: {
+            comicIssue: query.comicIssueId
+              ? { id: query.comicIssueId ? +query.comicIssueId : undefined }
+              : { comic: { slug: query.comicSlug } },
+          },
+        },
+      },
+      skip: query?.skip,
+      take: query?.take,
+      include: {
+        metadata: {
+          include: {
+            collection: {
+              include: {
+                comicIssue: {
+                  include: {
+                    statefulCovers: true,
+                    comic: { select: { title: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        digitalAsset: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return collectibleComics.map((collectibleComic) => {
+      const collection = collectibleComic.metadata.collection;
+      return {
+        ...collectibleComic,
+        collection,
+        statefulCovers: collection.comicIssue.statefulCovers,
+        comicIssueTitle: collection.comicIssue.title,
+        comicTitle: collection.comicIssue.comic.title,
+      };
+    });
+  }
+
+  async findOneCollectibleComic(
+    address: string,
+  ): Promise<CollectibleComicInput> {
+    const collectibleComic = await this.prisma.collectibleComic.findUnique({
       where: { address },
       include: {
         metadata: {
           include: {
             collection: {
-              include: { comicIssue: { include: { statefulCovers: true } } },
+              include: {
+                comicIssue: {
+                  include: {
+                    statefulCovers: true,
+                    comic: { select: { title: true } },
+                  },
+                },
+              },
             },
           },
         },
+        digitalAsset: true,
+      },
+    });
+
+    const collection = collectibleComic.metadata.collection;
+    return {
+      ...collectibleComic,
+      collection,
+      statefulCovers: collection.comicIssue.statefulCovers,
+      comicIssueTitle: collection.comicIssue.title,
+      comicTitle: collection.comicIssue.comic.title,
+    };
+  }
+
+  async findOnePrintEdition(address: string): Promise<PrintEditionInput> {
+    const printEdition = await this.prisma.printEdition.findUnique({
+      where: { address },
+      include: {
+        printEditionCollection: true,
         digitalAsset: {
-          include: { listings: { where: { closedAt: new Date(0) } } },
+          include: { tags: true, traits: true, genres: true },
         },
+      },
+    });
+
+    const { genres, tags, traits, ...digitalAsset } = printEdition.digitalAsset;
+
+    return {
+      ...printEdition,
+      digitalAsset,
+      genres,
+      tags,
+      traits,
+    };
+  }
+
+  async findSingleOneOfOne(address: string): Promise<OneOfOneInput> {
+    const oneOfOne = await this.prisma.oneOfOne.findUnique({
+      where: { address },
+      include: {
+        digitalAsset: {
+          include: { tags: true, traits: true, genres: true },
+        },
+      },
+    });
+
+    const { genres, tags, traits, ...digitalAsset } = oneOfOne.digitalAsset;
+
+    return {
+      ...oneOfOne,
+      digitalAsset,
+      genres,
+      tags,
+      traits,
+    };
+  }
+
+  async findOne(address: string): Promise<DigitalAssetInput> {
+    const asset = await this.prisma.digitalAsset.findUnique({
+      where: { address },
+      include: {
+        collectibleComic: {
+          include: {
+            metadata: {
+              include: {
+                collection: {
+                  include: {
+                    comicIssue: { include: { statefulCovers: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        printEdition: { include: { printEditionCollection: true } },
+        oneOfOne: true,
+        tags: true,
+        traits: true,
+        genres: true,
       },
     });
 
     if (!asset) {
       throw new NotFoundException(ERROR_MESSAGES.ASSET_NOT_FOUND(address));
     }
-    return asset;
+    return {
+      ...asset,
+      collectibleComic: asset.collectibleComic
+        ? {
+            ...asset.collectibleComic,
+            collection: asset.collectibleComic.metadata.collection,
+            statefulCovers:
+              asset.collectibleComic.metadata.collection.comicIssue
+                .statefulCovers,
+            comicIssueTitle:
+              asset.collectibleComic.metadata.collection.comicIssue.title,
+          }
+        : undefined,
+    };
   }
 
   async findCollectibleComicRarityStats(
@@ -187,7 +344,7 @@ export class DigitalAssetService {
     const {
       name,
       description,
-      attributes,
+      traits,
       authority,
       sellerFeeBasisPoints,
       image,
@@ -230,7 +387,7 @@ export class DigitalAssetService {
       name,
       description,
       image,
-      attributes,
+      traits,
       tags,
       genres,
       creators,
@@ -356,7 +513,7 @@ export class DigitalAssetService {
     const {
       name,
       description,
-      attributes,
+      traits,
       authority,
       sellerFeeBasisPoints,
       image,
@@ -390,7 +547,7 @@ export class DigitalAssetService {
       name,
       description,
       image,
-      attributes,
+      traits,
       tags,
       genres,
       creators,
@@ -524,7 +681,7 @@ export class DigitalAssetService {
       description,
       sellerFeeBasisPoints,
       authority,
-      attributes,
+      traits,
       tags,
       genres,
       image,
@@ -549,7 +706,7 @@ export class DigitalAssetService {
       name,
       description,
       image,
-      attributes,
+      traits,
       tags,
       genres,
       creators,
@@ -752,7 +909,7 @@ export class DigitalAssetService {
     name: string,
     description: string,
     image: Express.Multer.File,
-    attributes: AttributeDto[],
+    traits: TraitDto[],
     tags: string[],
     genres: string[],
     creators: CoreCreator[],
@@ -767,9 +924,9 @@ export class DigitalAssetService {
       symbol: D_READER_SYMBOL,
       description,
       image: getIrysUri(imageUri),
-      attributes: attributes.map((attribute) => ({
-        trait_type: attribute.trait,
-        value: attribute.value,
+      attributes: traits.map((trait) => ({
+        trait_type: trait.name,
+        value: trait.value,
       })),
       tags,
       genres,

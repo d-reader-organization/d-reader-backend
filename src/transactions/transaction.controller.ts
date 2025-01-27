@@ -48,13 +48,13 @@ import { ApiFilesWithBody } from '../decorators/api-file-body.decorator';
 import {
   CreateOneOfOneBodyDto,
   CreateOneOfOneDto,
-} from 'src/digital-asset/dto/create-one-of-one-dto';
+} from 'src/digital-asset/dto/create-one-of-one.dto';
 import {
   CreateOneOfOneCollectionBodyDto,
   CreateOneOfOneCollectionDto,
   CreateOneOfOneCollectionFilesDto,
-} from 'src/digital-asset/dto/create-one-of-one-collection-dto';
-import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction-dto';
+} from 'src/digital-asset/dto/create-one-of-one-collection.dto';
+import { DigitalAssetCreateTransactionDto } from 'src/digital-asset/dto/digital-asset-transaction.dto';
 import { publicKey } from '@metaplex-foundation/umi';
 import { SendMintTransactionBodyDto } from './dto/send-mint-transaction.dto';
 // import { MutexInterceptor } from 'src/mutex/mutex.interceptor';

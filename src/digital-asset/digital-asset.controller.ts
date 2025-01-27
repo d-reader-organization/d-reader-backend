@@ -1,8 +1,8 @@
 import { Controller, Get, Query, Param, Post } from '@nestjs/common';
 import { DigitalAssetService } from './digital-asset.service';
 import { ApiTags } from '@nestjs/swagger';
-import { AssetDto, toAssetDto, toAssetDtoArray } from './dto/digital-asset.dto';
-import { DigitalAssetFilterParams } from './dto/digital-asset-params.dto';
+import { DigitalAssetDto, toDigitalAssetDto } from './dto/digital-asset.dto';
+import { CollectibleComicFilterParams } from './dto/digital-asset-params.dto';
 import {
   CollectibleComicRarityStatsDto,
   toCollectibleComicRarityStatsDtoArray,
@@ -13,27 +13,11 @@ import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { memoizeThrottle } from 'src/utils/lodash';
 import { hours } from '@nestjs/throttler';
 import { BotGateway } from 'src/discord/bot.gateway';
-
-/* @deprecated */
-@ApiTags('NFTs')
-@Controller('nft')
-export class NftController {
-  constructor(private readonly nftService: DigitalAssetService) {}
-
-  /* Get all Assets */
-  @Get('get')
-  async findAll(@Query() query: DigitalAssetFilterParams): Promise<AssetDto[]> {
-    const assets = await this.nftService.findAll(query);
-    return toAssetDtoArray(assets);
-  }
-
-  /* Get specific NFT by unique on-chain address */
-  @Get('get/:address')
-  async findOne(@Param('address') address: string): Promise<AssetDto> {
-    const asset = await this.nftService.findOne(address);
-    return toAssetDto(asset);
-  }
-}
+import {
+  CollectibleComicDto,
+  toCollectibleComicDtoArray,
+} from './dto/collectible-comic.dto';
+import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
 
 @ApiTags('Assets')
 @Controller('asset')
@@ -43,11 +27,23 @@ export class DigitalAssetController {
     private readonly discordBotGateway: BotGateway,
   ) {}
 
-  /* Get all Assets */
+  /** @deprecated */
   @Get('get')
-  async findAll(@Query() query: DigitalAssetFilterParams): Promise<AssetDto[]> {
-    const assets = await this.digitalAssetService.findAll(query);
-    return toAssetDtoArray(assets);
+  async findAll(
+    @Query() query: CollectibleComicFilterParams,
+  ): Promise<AssetDto[]> {
+    const collectibleComics = await this.digitalAssetService.findAll(query);
+    return toAssetDtoArray(collectibleComics);
+  }
+
+  /* Get all Assets */
+  @Get('get/collectible-comics')
+  async findAllCollectibleComics(
+    @Query() query: CollectibleComicFilterParams,
+  ): Promise<CollectibleComicDto[]> {
+    const collectibleComics =
+      await this.digitalAssetService.findAllCollectibleComics(query);
+    return toCollectibleComicDtoArray(collectibleComics);
   }
 
   /* Get collectible comic rarity stats */
@@ -64,9 +60,9 @@ export class DigitalAssetController {
 
   /* Get specific Asset by unique on-chain address */
   @Get('get/:address')
-  async findOne(@Param('address') address: string): Promise<AssetDto> {
+  async findOne(@Param('address') address: string): Promise<DigitalAssetDto> {
     const asset = await this.digitalAssetService.findOne(address);
-    return toAssetDto(asset);
+    return toDigitalAssetDto(asset);
   }
 
   private throttledRequestAutograph = memoizeThrottle(

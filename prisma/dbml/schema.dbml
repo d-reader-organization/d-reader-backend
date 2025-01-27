@@ -41,6 +41,7 @@ Table Wallet {
   userId Int
   createdAt DateTime [default: `now()`, not null]
   connectedAt DateTime
+  provider WalletProvider [not null, default: 'NonCustodial']
   user User
   mintReceipts CandyMachineReceipt [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet [not null]
@@ -715,6 +716,7 @@ Table Wheel {
   rewards WheelReward [not null]
   winProbability Int [not null]
   isActive Boolean [not null, default: true]
+  receipts WheelRewardReceipt [not null]
 }
 
 Table WheelReward {
@@ -722,6 +724,7 @@ Table WheelReward {
   name String [not null]
   description String [not null, default: '']
   image String [not null, default: '']
+  icon String [not null, default: '']
   wheel Wheel [not null]
   wheelId Int [not null]
   weight Int [not null, default: 0]
@@ -745,6 +748,8 @@ Table RewardDrop {
 
 Table WheelRewardReceipt {
   id Int [pk, increment]
+  wheelId Int [not null]
+  wheel Wheel [not null]
   rewardId Int [not null]
   reward WheelReward [not null]
   user User [not null]
@@ -762,6 +767,11 @@ Table PhysicalItem {
   name String [not null]
   description String [not null, default: '']
   image String [not null, default: '']
+}
+
+Enum WalletProvider {
+  NonCustodial
+  Embedded
 }
 
 Enum Role {
@@ -854,8 +864,8 @@ Enum WheelRewardType {
   CollectibleComic
   PrintEdition
   OneOfOne
-  Physicals
-  Fungibles
+  Physical
+  Fungible
   None
 }
 
@@ -976,6 +986,8 @@ Ref: UserInterestedReceipt.userId > User.id
 Ref: WheelReward.wheelId > Wheel.id
 
 Ref: RewardDrop.rewardId > WheelReward.id
+
+Ref: WheelRewardReceipt.wheelId > Wheel.id
 
 Ref: WheelRewardReceipt.rewardId > WheelReward.id
 

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { WheelService } from './wheel.service';
 import { AdminGuard } from 'src/guards/roles.guard';
@@ -12,7 +20,10 @@ import { toWheelDto } from './dto/wheel.dto';
 import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
 import { toRewardDto } from './dto/rewards.dto';
 import { toWheelReceiptDto } from './dto/wheel-receipt.dto';
+import { WheelParams } from './dto/wheel-params.dto';
+import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
+// TODO: Handle images in form body in respected endpoints
 @ApiTags('Wheel')
 @Controller('wheel')
 export class WheelController {
@@ -35,9 +46,13 @@ export class WheelController {
     return toWheelDto(wheel);
   }
 
-  @Get('get/:id')
-  async findOne(@Param('id') id: string) {
-    const wheel = await this.wheel.get(+id);
+  @OptionalUserAuth()
+  @Get('get')
+  async findOne(
+    @Query() params: WheelParams,
+    @UserEntity() user?: UserPayload,
+  ) {
+    const wheel = await this.wheel.get(params, user);
     return toWheelDto(wheel);
   }
 

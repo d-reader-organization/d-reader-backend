@@ -439,10 +439,9 @@ export class ComicIssueService {
             metadata,
             digitalAsset: comic.digitalAsset,
             statefulCovers: issue.statefulCovers,
-            sellerFeeBasisPoints:
-              issue.collectibleComicCollection.sellerFeeBasisPoints,
-            comicName: issue.comic.title,
-            comicIssueName: issue.title,
+            collection: issue.collectibleComicCollection,
+            comicTitle: issue.comic.title,
+            comicIssueTitle: issue.title,
           })),
         ) || [],
       statelessCovers: issue.statelessCovers,
@@ -765,7 +764,7 @@ export class ComicIssueService {
     });
 
     const createCandyMachineParams: CreateCandyMachineParams = {
-      comicName: updatedComicIssue.comic.title,
+      comicTitle: updatedComicIssue.comic.title,
       assetOnChainName: onChainName,
       supply,
       coupons,

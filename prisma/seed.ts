@@ -282,7 +282,7 @@ async function main() {
         },
       });
     }
-    console.info('Added dummy user: ' + dummyUserData.name);
+    console.info('Added dummy user: ' + dummyUserData.username);
   }
 
   // SEED SUPPORTED SPL TOKENS

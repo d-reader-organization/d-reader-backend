@@ -34,10 +34,3 @@ export interface DigitalAssetJsonMetadata {
   };
   [key: string]: unknown;
 }
-
-export enum AttributeEnum {
-  SIGNED = 'signed',
-  USED = 'used',
-  RARITY = 'rarity',
-  NUMBER = 'number',
-}

@@ -20,7 +20,6 @@ export class CreateWheelBodyDto {
   @MaxLength(1024)
   description?: string;
 
-  @IsOptional()
   @IsDate()
   @TransformDateStringToDate()
   startsAt: Date;
