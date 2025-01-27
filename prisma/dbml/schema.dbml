@@ -716,6 +716,7 @@ Table Wheel {
   rewards WheelReward [not null]
   winProbability Int [not null]
   isActive Boolean [not null, default: true]
+  receipts WheelRewardReceipt [not null]
 }
 
 Table WheelReward {
@@ -747,6 +748,8 @@ Table RewardDrop {
 
 Table WheelRewardReceipt {
   id Int [pk, increment]
+  wheelId Int [not null]
+  wheel Wheel [not null]
   rewardId Int [not null]
   reward WheelReward [not null]
   user User [not null]
@@ -983,6 +986,8 @@ Ref: UserInterestedReceipt.userId > User.id
 Ref: WheelReward.wheelId > Wheel.id
 
 Ref: RewardDrop.rewardId > WheelReward.id
+
+Ref: WheelRewardReceipt.wheelId > Wheel.id
 
 Ref: WheelRewardReceipt.rewardId > WheelReward.id
 

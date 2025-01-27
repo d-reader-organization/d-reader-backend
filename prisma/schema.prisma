@@ -791,6 +791,7 @@ model Wheel {
   rewards        WheelReward[]
   winProbability Int
   isActive       Boolean       @default(true)
+  receipts       WheelRewardReceipt[]
 }
 
 model WheelReward {
@@ -820,6 +821,8 @@ model RewardDrop {
 
 model WheelRewardReceipt {
   id                   Int         @id @default(autoincrement())
+  wheelId              Int
+  wheel                Wheel       @relation(fields: [wheelId], references: [id])
   rewardId             Int
   reward               WheelReward @relation(fields: [rewardId], references: [id])
   user                 User        @relation(fields: [userId], references: [id])
