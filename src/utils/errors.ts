@@ -126,4 +126,5 @@ export const ERROR_MESSAGES = {
   NO_SPIN_LEFT: (cooldownMessage: string) =>
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
   PRIVY_NO_ACCOUNT_OR_WALLET: 'Account or wallet not provided',
+  INVALID_RESPONSE_BODY: 'Invalid response body',
 };

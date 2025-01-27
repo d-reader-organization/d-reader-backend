@@ -846,7 +846,7 @@ export class HeliusService {
         where: { id: receipt.id },
         include: {
           collectibleComics: true,
-          buyer: { include: { user: true } },
+          user: true,
         },
         data: receiptData,
       });

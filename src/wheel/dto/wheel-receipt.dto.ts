@@ -1,87 +1,129 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WheelRewardReceipt, WheelRewardType } from '@prisma/client';
-import { plainToInstance, Transform, Type } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
+import { IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import { RewardDto, toRewardDto } from './rewards.dto';
 import {
-  IsInt,
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsArray,
-  IsNumber,
-} from 'class-validator';
-import { getPublicUrl } from 'src/aws/s3client';
-import {
-  AttributeDto,
-  AttributeInput,
-  toAttributeDtoArray,
-} from 'src/digital-asset/dto/attribute.dto';
+  CollectibleComicDropDto,
+  CollectibleComicDropInput,
+  FungibleDropDto,
+  FungibleDropInput,
+  OneOfOneDropDto,
+  OneOfOneDropInput,
+  PhysicalDropDto,
+  PhysicalDropInput,
+  PrintEditionDropDto,
+  PrintEditionDropInput,
+  toCollectibleComicDropDto,
+  toFungibleDropDto,
+  toOneOfOneDropDto,
+  toPhysicalDropDto,
+  toPrintEditionDropDto,
+} from './drop.dto';
+import { WheelReward, WheelRewardReceipt } from '@prisma/client';
 import { ifDefined } from 'src/utils/lodash';
+import { NotFoundException } from '@nestjs/common';
+import { ERROR_MESSAGES } from 'src/utils/errors';
 
 export class WheelReceiptDto {
-  @IsInt()
+  @IsNumber()
   id: number;
 
-  @IsString()
-  name: string;
-
-  @IsNumber()
-  amount: number;
-
-  @IsString()
-  image: string;
-
-  @IsString()
   @IsOptional()
-  currency?: string;
-
-  @IsString()
-  itemId: string;
-
-  @IsString()
-  @IsOptional()
-  walletAddress?: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @IsEnum(WheelRewardType)
-  rewardType: WheelRewardType;
+  @Type(() => CollectibleComicDropDto)
+  @ApiProperty({ type: CollectibleComicDropDto })
+  collectibleComicDrop?: CollectibleComicDropDto;
 
   @IsOptional()
-  @Transform(({ value }: { value: string[] }) => {
-    const attributesDtoArray = value.map((item) => JSON.parse(item));
-    return attributesDtoArray;
-  })
-  @IsArray()
-  @ApiProperty({ type: AttributeDto })
-  @Type(() => AttributeDto)
-  attributes?: AttributeDto[];
+  @Type(() => PrintEditionDropDto)
+  @ApiProperty({ type: PrintEditionDropDto })
+  printEditionDrop?: PrintEditionDropDto;
+
+  @IsOptional()
+  @Type(() => OneOfOneDropDto)
+  @ApiProperty({ type: OneOfOneDropDto })
+  oneOfOneDrop?: OneOfOneDropDto;
+
+  @IsOptional()
+  @Type(() => FungibleDropDto)
+  @ApiProperty({ type: FungibleDropDto })
+  fungibleDrop?: FungibleDropDto;
+
+  @IsOptional()
+  @Type(() => PhysicalDropDto)
+  @ApiProperty({ type: PhysicalDropDto })
+  physicalDrop?: PhysicalDropDto;
+
+  @Type(() => RewardDto)
+  @ApiProperty({ type: RewardDto })
+  reward: RewardDto;
+
+  @IsBoolean()
+  isClaimed: boolean;
 }
 
-export type WheelReceiptInput = WheelRewardReceipt & {
-  itemId: string;
-  image: string;
-  name: string;
-  amount: number;
-  type: WheelRewardType;
-  currency?: string;
-  description?: string;
-  attributes?: AttributeInput[];
+type WithCollectibleComicDrop = {
+  collectibleComicDrop?: CollectibleComicDropInput;
 };
+type WithOneOfOneDrop = { oneOfOneDrop?: OneOfOneDropInput };
+type WithPrintEditionDrop = { printEditionDrop?: PrintEditionDropInput };
+type WithPhysicalDrop = { physicalDrop?: PhysicalDropInput };
+type WithFungibleDrop = { fungibleDrop?: FungibleDropInput };
+type WithRewardDetails = { reward: WheelReward };
 
-export function toWheelReceiptDto(input: WheelReceiptInput) {
+export type WheelReceiptInput = WheelRewardReceipt &
+  WithRewardDetails &
+  WithCollectibleComicDrop &
+  WithFungibleDrop &
+  WithOneOfOneDrop &
+  WithPhysicalDrop &
+  WithPrintEditionDrop;
+
+export async function toWheelReceiptDto(input: WheelReceiptInput) {
+  const isValidInput = validateReceiptInput(input);
+  if (!isValidInput) {
+    throw new NotFoundException(ERROR_MESSAGES.INVALID_RESPONSE_BODY);
+  }
+
   const plainWheelReceiptDto: WheelReceiptDto = {
     id: input.id,
-    name: input.name,
-    image: input.image ? getPublicUrl(input.image) : undefined,
-    rewardType: input.type,
-    itemId: input.itemId,
-    amount: input.amount,
-    currency: input.currency,
-    description: input.description,
-    attributes: ifDefined(input.attributes, toAttributeDtoArray),
+    isClaimed: !!input.claimedAt,
+    reward: toRewardDto(input.reward),
+    collectibleComicDrop: ifDefined(
+      input.collectibleComicDrop,
+      toCollectibleComicDropDto,
+    ),
+    oneOfOneDrop: ifDefined(input.oneOfOneDrop, toOneOfOneDropDto),
+    printEditionDrop: ifDefined(input.printEditionDrop, toPrintEditionDropDto),
+    physicalDrop: ifDefined(input.physicalDrop, toPhysicalDropDto),
+    fungibleDrop: ifDefined(input.fungibleDrop, toFungibleDropDto),
   };
 
-  return plainToInstance(WheelReceiptDto, plainWheelReceiptDto);
+  const wheelReceiptDto = plainToInstance(
+    WheelReceiptDto,
+    plainWheelReceiptDto,
+  );
+  return wheelReceiptDto;
+}
+
+function validateReceiptInput(input: WheelReceiptInput) {
+  if (input.reward.type == 'None') return true;
+
+  const {
+    collectibleComicDrop,
+    printEditionDrop,
+    physicalDrop,
+    oneOfOneDrop,
+    fungibleDrop,
+  } = input;
+  if (
+    !collectibleComicDrop &&
+    !printEditionDrop &&
+    !physicalDrop &&
+    !oneOfOneDrop &&
+    !fungibleDrop
+  ) {
+    return false;
+  }
+
+  return true;
 }

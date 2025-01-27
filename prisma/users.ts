@@ -13,7 +13,8 @@ export const usersToSeed = async (): Promise<
   Prisma.UserCreateManyArgs['data']
 > => [
   {
-    name: 'superadmin',
+    username: 'superadmin',
+    displayName: 'superadmin',
     email: 'superadmin@dreader.io',
     password: await hashPassword('superadmin'),
     emailVerifiedAt: new Date(),
@@ -21,7 +22,8 @@ export const usersToSeed = async (): Promise<
     referralsRemaining: 0,
   },
   {
-    name: 'admin',
+    username: 'admin',
+    displayName: 'admin',
     email: 'admin@dreader.io',
     password: await hashPassword('admin'),
     emailVerifiedAt: new Date(),
@@ -29,7 +31,8 @@ export const usersToSeed = async (): Promise<
     referralsRemaining: 0,
   },
   {
-    name: 'athar',
+    username: 'athar',
+    displayName: 'athar',
     email: 'athar.mohammad+local@dreader.io',
     password: await hashPassword('athar'),
     emailVerifiedAt: new Date(),
@@ -37,19 +40,22 @@ export const usersToSeed = async (): Promise<
     referralsRemaining: 0,
   },
   {
-    name: 'josip',
+    username: 'josip',
+    displayName: 'josip',
     email: 'josip.volarevic@dreader.io',
     password: await hashPassword('josip'),
     emailVerifiedAt: new Date(),
   },
   {
-    name: 'luka',
+    username: 'luka',
+    displayName: 'luka',
     email: 'luka.crnogorac@dreader.io',
     password: await hashPassword('luka'),
     emailVerifiedAt: new Date(),
   },
   {
-    name: 'testgoogleplay',
+    username: 'testgoogleplay',
+    displayName: 'testgoogleplay',
     email: 'test@google.play',
     password: await hashPassword('testgoogleplay'),
     emailVerifiedAt: new Date(),
@@ -58,7 +64,8 @@ export const usersToSeed = async (): Promise<
 
 const generateDummyUserData = (): Prisma.UserCreateArgs['data'] => {
   return {
-    name: faker.internet.userName(),
+    username: faker.internet.userName(),
+    displayName: faker.internet.displayName(),
     email: faker.internet.email(),
     password: faker.internet.password(),
     emailVerifiedAt: faker.date.past(),

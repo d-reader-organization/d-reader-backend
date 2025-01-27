@@ -274,3 +274,9 @@ export const LOOSE_THROTTLER_CONFIG: ThrottlerConfigOptions = {
 };
 
 export const DISCORD_AUTOGRAPH_CHANNEL_ID = '1179081739646275604';
+
+// NOT TO BE CHANGED
+export const COLLECTION_MANAGER_MULTISIG =
+  process.env.SOLANA_CLUSTER === 'devnet'
+    ? '5WXjY2qFMDg6hu2qgpHeQZwvKLLZsitXxtEYZeknA5Vu'
+    : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';

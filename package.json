@@ -54,7 +54,11 @@
     "update-cm-group-price": "npx ts-node src/cli/main.ts update-cm-group-price",
     "vault-transfer": "npx ts-node src/cli/main.ts vault-transfer",
     "fetch-collection-sale-details": "npx ts-node src/cli/main.ts fetch-collection-sale-details",
-    "sync-tensor-collection-id": "npx ts-node src/cli/main.ts sync-tensor-collection-id"
+    "sync-tensor-collection-id": "npx ts-node src/cli/main.ts sync-tensor-collection-id",
+    "transfer-authority-to-multisig": "npx ts-node src/cli/main.ts transfer-authority-to-multisig",
+    "create-add-delegate-transaction": "npx ts-node src/cli/main.ts create-add-delegate-transaction",
+    "create-remove-delegate-transaction": "npx ts-node src/cli/main.ts create-remove-delegate-transaction",
+    "create-transfer-authority-transaction": "npx ts-node src/cli/main.ts create-transfer-authority-transaction"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -46,12 +46,18 @@ model User {
   wheelRewardReceipt             WheelRewardReceipt[]
 }
 
+enum WalletProvider {
+  NonCustodial
+  Embedded
+}
+
 model Wallet {
   address                        String                                @id
   label                          String                                @default("")
   userId                         Int?
   createdAt                      DateTime                              @default(now())
   connectedAt                    DateTime?
+  provider                       WalletProvider                        @default(NonCustodial)
   user                           User?                                 @relation(fields: [userId], references: [id])
   mintReceipts                   CandyMachineReceipt[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet[]
@@ -768,8 +774,8 @@ enum WheelRewardType {
   CollectibleComic
   PrintEdition
   OneOfOne
-  Physicals
-  Fungibles
+  Physical
+  Fungible
   None
 }
 
@@ -785,6 +791,7 @@ model Wheel {
   rewards        WheelReward[]
   winProbability Int
   isActive       Boolean       @default(true)
+  receipts       WheelRewardReceipt[]
 }
 
 model WheelReward {
@@ -792,6 +799,7 @@ model WheelReward {
   name        String
   description String               @default("")
   image       String               @default("")
+  icon        String               @default("")
   wheel       Wheel                @relation(fields: [wheelId], references: [id])
   wheelId     Int
   weight      Int                  @default(0)
@@ -813,6 +821,8 @@ model RewardDrop {
 
 model WheelRewardReceipt {
   id                   Int         @id @default(autoincrement())
+  wheelId              Int
+  wheel                Wheel       @relation(fields: [wheelId], references: [id])
   rewardId             Int
   reward               WheelReward @relation(fields: [rewardId], references: [id])
   user                 User        @relation(fields: [userId], references: [id])
