@@ -815,8 +815,6 @@ model RewardDrop {
   rewardId Int
   reward   WheelReward @relation(fields: [rewardId], references: [id])
   isActive Boolean     @default(true)
-
-  @@unique([rewardId, itemId])
 }
 
 model WheelRewardReceipt {

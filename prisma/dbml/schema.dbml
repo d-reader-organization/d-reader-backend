@@ -740,10 +740,6 @@ Table RewardDrop {
   rewardId Int [not null]
   reward WheelReward [not null]
   isActive Boolean [not null, default: true]
-
-  indexes {
-    (rewardId, itemId) [unique]
-  }
 }
 
 Table WheelRewardReceipt {

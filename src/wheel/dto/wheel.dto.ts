@@ -80,7 +80,10 @@ export async function toWheelDto(input: WheelInput) {
     id: input.id,
     name: input.name,
     description: input.description,
-    lastRewardNotification: toWheelRewardNotificationDto(input.notification),
+    lastRewardNotification: ifDefined(
+      input.notification,
+      toWheelRewardNotificationDto,
+    ),
     image: input.image ? getPublicUrl(input.image) : undefined,
     nextSpinAt: input.nextSpinAt,
     type: input.type,

@@ -1,5 +1,9 @@
 import { PrismaService } from 'nestjs-prisma';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateWheelDto } from './dto/create-wheel.dto';
 import { s3Service } from '../aws/s3.service';
 import { appendTimestamp } from '../utils/helpers';
@@ -231,6 +235,10 @@ export class WheelService {
       include: { rewards: true },
     });
 
+    if (!wheel) {
+      throw new NotFoundException(ERROR_MESSAGES.NO_ACTIVE_WHEELS_FOUND);
+    }
+
     const lastRewardNotification = await this.findLastWinnerNotification(
       wheel.id,
     );
@@ -239,16 +247,22 @@ export class WheelService {
     if (user) {
       const now = new Date();
       const lastEligibleSpinDate = subHours(now, 24);
-      const userLastReceipt = await this.prisma.wheelRewardReceipt.findFirst({
-        where: {
-          createdAt: { gte: lastEligibleSpinDate },
-          wheelId: wheel.id,
-          userId: user.id,
-        },
-      });
+      const userLastEligibleReceipt =
+        await this.prisma.wheelRewardReceipt.findFirst({
+          where: {
+            createdAt: { gte: lastEligibleSpinDate },
+            wheelId: wheel.id,
+            userId: user.id,
+          },
+        });
 
-      //TODO: Change this if wheel is of different type
-      nextSpinAt = addHours(userLastReceipt.createdAt, 24);
+      const isInCoolDownPeriod = !isNull(userLastEligibleReceipt);
+      if (isInCoolDownPeriod) {
+        //TODO: Change this if wheel is of different type
+        nextSpinAt = addHours(userLastEligibleReceipt.createdAt, 24);
+      } else {
+        nextSpinAt = new Date();
+      }
     }
 
     return { ...wheel, notification: lastRewardNotification, nextSpinAt };
@@ -292,14 +306,15 @@ export class WheelService {
         lastEligibleSpinDate = subMonths(now, 1);
     }
 
-    const userLastWheelReceipt = await this.prisma.wheelRewardReceipt.findFirst(
-      { where: { createdAt: { gte: lastEligibleSpinDate }, userId, wheelId } },
-    );
-    const isInCoolDownPeriod = !isNull(userLastWheelReceipt);
+    const userLastEligibleReceipt =
+      await this.prisma.wheelRewardReceipt.findFirst({
+        where: { createdAt: { gte: lastEligibleSpinDate }, userId, wheelId },
+      });
+    const isInCoolDownPeriod = !isNull(userLastEligibleReceipt);
 
     if (isInCoolDownPeriod) {
       const cooldownPeriod = this.getSpinCooldownPeriod(
-        userLastWheelReceipt.createdAt,
+        userLastEligibleReceipt.createdAt,
       );
 
       throw new BadRequestException(
