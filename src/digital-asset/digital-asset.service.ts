@@ -173,8 +173,8 @@ export class DigitalAssetService {
         ...collectibleComic,
         collection,
         statefulCovers: collection.comicIssue.statefulCovers,
-        comicIssueName: collection.comicIssue.title,
-        comicName: collection.comicIssue.comic.title,
+        comicIssueTitle: collection.comicIssue.title,
+        comicTitle: collection.comicIssue.comic.title,
       };
     });
   }
@@ -208,8 +208,8 @@ export class DigitalAssetService {
       ...collectibleComic,
       collection,
       statefulCovers: collection.comicIssue.statefulCovers,
-      comicIssueName: collection.comicIssue.title,
-      comicName: collection.comicIssue.comic.title,
+      comicIssueTitle: collection.comicIssue.title,
+      comicTitle: collection.comicIssue.comic.title,
     };
   }
 
@@ -293,7 +293,7 @@ export class DigitalAssetService {
             statefulCovers:
               asset.collectibleComic.metadata.collection.comicIssue
                 .statefulCovers,
-            comicIssueName:
+            comicIssueTitle:
               asset.collectibleComic.metadata.collection.comicIssue.title,
           }
         : undefined,

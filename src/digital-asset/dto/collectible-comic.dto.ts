@@ -40,11 +40,11 @@ export class CollectibleComicDto extends BaseDigitalAssetDto {
 
   @IsOptional()
   @IsString()
-  comicName?: string;
+  comicTitle?: string;
 
   @IsOptional()
   @IsString()
-  comicIssueName?: string;
+  comicIssueTitle?: string;
 }
 
 export type WithMetadata = { metadata: CollectibleComicMetadata };
@@ -53,7 +53,8 @@ export type WithDigitalAssetData = {
 };
 export type WithCollection = { collection: CollectibleComicCollection };
 export type WithStatefulCovers = { statefulCovers: StatefulCover[] };
-export type WithComicData = { comicIssueName?: string; comicName?: string };
+export type WithComicData = { comicIssueTitle?: string; comicTitle?: string };
+export type WithSellerFeeBasisPoints = { sellerFeeBasisPoints: number };
 
 export type CollectibleComicInput = CollectibleComic &
   WithCollection &
@@ -92,8 +93,8 @@ export function toCollectibleComicDto(
     isUsed,
     isSigned,
     rarity,
-    comicName: collectibleComic.comicName || undefined,
-    comicIssueName: collectibleComic.comicIssueName || undefined,
+    comicTitle: collectibleComic.comicTitle || undefined,
+    comicIssueTitle: collectibleComic.comicIssueTitle || undefined,
     comicIssueId: cover.comicIssueId,
     isListed: digitalAsset.isListed,
     type: DigitalAssetType.CollectibleComic,

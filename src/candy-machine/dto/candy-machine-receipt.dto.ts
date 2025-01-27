@@ -1,14 +1,11 @@
 import { IsArray, IsDateString, IsNumber, IsString } from 'class-validator';
 import { plainToInstance, Type } from 'class-transformer';
-import {
-  CandyMachineReceipt,
-  CollectibleComic,
-  User,
-  Wallet,
-} from '@prisma/client';
-import { BuyerDto, toBuyerDto } from '../../auction-house/dto/types/buyer.dto';
+import { CandyMachineReceipt, CollectibleComic, User } from '@prisma/client';
 import { AssetDto } from '../../digital-asset/dto/deprecated-digital-asset.dto';
 import { PickType } from '@nestjs/swagger';
+import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
+import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
+import { ifDefined } from 'src/utils/lodash';
 
 export class PartialAssetDto extends PickType(AssetDto, ['address', 'name']) {}
 
@@ -25,8 +22,11 @@ export class CandyMachineReceiptDto {
   @Type(() => PartialAssetDto)
   nft: PartialAssetDto;
 
-  @Type(() => BuyerDto)
-  buyer: BuyerDto;
+  @Type(() => BasicUserDto)
+  buyer?: BasicUserDto;
+
+  @IsSolanaAddress()
+  buyerAddress: string;
 
   @IsString()
   candyMachineAddress: string;
@@ -43,7 +43,7 @@ export class CandyMachineReceiptDto {
 
 export type CandyMachineReceiptInput = CandyMachineReceipt & {
   collectibleComics: CollectibleComic[];
-  buyer: Wallet & { user: User };
+  user: User;
 };
 
 export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
@@ -62,7 +62,8 @@ export async function toCMReceiptDto(receipt: CandyMachineReceiptInput) {
       name: receipt.collectibleComics[0].name,
     },
     assets,
-    buyer: await toBuyerDto(receipt.buyer),
+    buyer: ifDefined(receipt.user, toBasicUserDto),
+    buyerAddress: receipt.buyerAddress,
     candyMachineAddress: receipt.candyMachineAddress,
     price: Number(receipt.price),
     timestamp: receipt.timestamp.toISOString(),
