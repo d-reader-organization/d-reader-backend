@@ -52,6 +52,8 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { WheelReceiptInput } from './dto/wheel-receipt.dto';
 import { WheelParams } from './dto/wheel-params.dto';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
+import { WheelRewardNotificationInput } from './dto/wheel-reward-notification.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -223,13 +225,33 @@ export class WheelService {
     return reward;
   }
 
-  async get(params: WheelParams): Promise<WheelInput> {
+  async get(params: WheelParams, user?: UserPayload): Promise<WheelInput> {
     const wheel = await this.prisma.wheel.findFirst({
       where: { isActive: params.isActive || true },
       include: { rewards: true },
     });
 
-    return wheel;
+    const lastRewardNotification = await this.findLastWinnerNotification(
+      wheel.id,
+    );
+
+    let nextSpinAt: Date;
+    if (user) {
+      const now = new Date();
+      const lastEligibleSpinDate = subHours(now, 24);
+      const userLastReceipt = await this.prisma.wheelRewardReceipt.findFirst({
+        where: {
+          createdAt: { gte: lastEligibleSpinDate },
+          wheelId: wheel.id,
+          userId: user.id,
+        },
+      });
+
+      //TODO: Change this if wheel is of different type
+      nextSpinAt = addHours(userLastReceipt.createdAt, 24);
+    }
+
+    return { ...wheel, notification: lastRewardNotification, nextSpinAt };
   }
 
   async spin(wheelId: number, userId: number): Promise<WheelReceiptInput> {
@@ -271,41 +293,17 @@ export class WheelService {
     }
 
     const userLastWheelReceipt = await this.prisma.wheelRewardReceipt.findFirst(
-      { where: { createdAt: { gte: lastEligibleSpinDate }, userId } },
+      { where: { createdAt: { gte: lastEligibleSpinDate }, userId, wheelId } },
     );
     const isInCoolDownPeriod = !isNull(userLastWheelReceipt);
 
     if (isInCoolDownPeriod) {
-      const dayInMs = hoursToMilliseconds(24);
-      const hourInMs = hoursToMilliseconds(1);
-      const minuteInMs = minutesToMilliseconds(1);
-
-      const nextSpinDate = addHours(userLastWheelReceipt.createdAt, 24);
-      const timeDiff = nextSpinDate.getTime() - now.getTime();
-      const days = Math.floor(timeDiff / dayInMs);
-      const hours = Math.floor(timeDiff / hourInMs);
-      const minutes = Math.floor((timeDiff % hourInMs) / minuteInMs);
-      const seconds = Math.floor((timeDiff % minuteInMs) / 1000);
-
-      // TODO: use helper functions similar to the ones we have on frontend
-      // calculateRemaningSeconds() and formatTime()
-      // date-fns library also has helper functions to convert remaining time to a human readable format
-      const cooldownMessage = [];
-      if (days > 0) {
-        cooldownMessage.push(`${days} day${days > 1 ? 's' : ''}`);
-      }
-      if (hours > 0) {
-        cooldownMessage.push(`${hours} hour${hours > 1 ? 's' : ''}`);
-      }
-      if (minutes > 0) {
-        cooldownMessage.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
-      }
-      if (seconds > 0) {
-        cooldownMessage.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
-      }
+      const cooldownPeriod = this.getSpinCooldownPeriod(
+        userLastWheelReceipt.createdAt,
+      );
 
       throw new BadRequestException(
-        ERROR_MESSAGES.NO_SPIN_LEFT(cooldownMessage.join(' ')),
+        ERROR_MESSAGES.NO_SPIN_LEFT(cooldownPeriod.join(' ')),
       );
     }
 
@@ -387,6 +385,72 @@ export class WheelService {
     }
   }
 
+  async findLastWinnerNotification(
+    wheelId: number,
+  ): Promise<WheelRewardNotificationInput | null> {
+    const receipt = await this.prisma.wheelRewardReceipt.findFirst({
+      where: { wheelId, reward: { type: { not: WheelRewardType.None } } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reward: true,
+        user: true,
+      },
+    });
+
+    if (!receipt) {
+      return;
+    }
+
+    const dropName = this.findRewardDropNameByIdAndType(
+      receipt.dropId,
+      receipt.reward.type,
+    );
+
+    return { ...receipt, message: `You've won ${dropName}` };
+  }
+
+  async findRewardDropNameByIdAndType(id: number, type: WheelRewardType) {
+    const drop = await this.prisma.rewardDrop.findUnique({ where: { id } });
+
+    switch (type) {
+      case WheelRewardType.CollectibleComic: {
+        const collectibleComic = await this.prisma.collectibleComic.findUnique({
+          where: { address: drop.itemId },
+        });
+        return collectibleComic.name;
+      }
+
+      case WheelRewardType.PrintEdition: {
+        const printEdition = await this.prisma.printEdition.findUnique({
+          where: { address: drop.itemId },
+          include: { printEditionCollection: true },
+        });
+        return printEdition.printEditionCollection.name;
+      }
+
+      case WheelRewardType.OneOfOne: {
+        const oneOfOne = await this.prisma.oneOfOne.findUnique({
+          where: { address: drop.itemId },
+        });
+        return oneOfOne.name;
+      }
+
+      case WheelRewardType.Physical: {
+        const physical = await this.prisma.physicalItem.findUnique({
+          where: { id: drop.itemId },
+        });
+        return physical.name;
+      }
+
+      case WheelRewardType.Fungible: {
+        const fungible = await this.prisma.splToken.findUnique({
+          where: { address: drop.itemId },
+        });
+        return fungible.name;
+      }
+    }
+  }
+
   async createReceiptForNoReward(wheelId: number, userId: number) {
     const noReward = await this.prisma.wheelReward.findFirst({
       where: { wheelId, type: WheelRewardType.None },
@@ -397,6 +461,7 @@ export class WheelService {
         user: { connect: { id: userId } },
         createdAt: new Date(),
         reward: { connect: { id: noReward.id } },
+        wheel: { connect: { id: wheelId } },
         claimedAt: new Date(),
       },
     });
@@ -430,6 +495,7 @@ export class WheelService {
       data: {
         dropId: winningDrop.id,
         user: { connect: { id: userId } },
+        wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
         reward: { connect: { id: winningDrop.rewardId } },
       },
@@ -531,6 +597,7 @@ export class WheelService {
         dropId: winningDrop.id,
         wallet: { connect: { address: walletAddress } },
         user: { connect: { id: userId } },
+        wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
         claimedAt: new Date(),
         reward: { connect: { id: winningDrop.rewardId } },
@@ -628,6 +695,7 @@ export class WheelService {
         dropId: winningDrop.id,
         wallet: { connect: { address: walletAddress } },
         user: { connect: { id: userId } },
+        wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
         claimedAt: new Date(),
         reward: { connect: { id: winningDrop.rewardId } },
@@ -708,5 +776,38 @@ export class WheelService {
       },
     };
     return receiptInput;
+  }
+
+  getSpinCooldownPeriod(lastSpunAt: Date) {
+    const now = new Date();
+    const dayInMs = hoursToMilliseconds(24);
+    const hourInMs = hoursToMilliseconds(1);
+    const minuteInMs = minutesToMilliseconds(1);
+
+    const nextSpinDate = addHours(lastSpunAt, 24);
+    const timeDiff = nextSpinDate.getTime() - now.getTime();
+    const days = Math.floor(timeDiff / dayInMs);
+    const hours = Math.floor(timeDiff / hourInMs);
+    const minutes = Math.floor((timeDiff % hourInMs) / minuteInMs);
+    const seconds = Math.floor((timeDiff % minuteInMs) / 1000);
+
+    // TODO: use helper functions similar to the ones we have on frontend
+    // calculateRemaningSeconds() and formatTime()
+    // date-fns library also has helper functions to convert remaining time to a human readable format
+    const cooldownPeriod = [];
+    if (days > 0) {
+      cooldownPeriod.push(`${days} day${days > 1 ? 's' : ''}`);
+    }
+    if (hours > 0) {
+      cooldownPeriod.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+    }
+    if (minutes > 0) {
+      cooldownPeriod.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+    }
+    if (seconds > 0) {
+      cooldownPeriod.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
+    }
+
+    return cooldownPeriod;
   }
 }

@@ -21,6 +21,7 @@ import { UpdateRewardDto, UpdateWheelDto } from './dto/update.dto';
 import { toRewardDto } from './dto/rewards.dto';
 import { toWheelReceiptDto } from './dto/wheel-receipt.dto';
 import { WheelParams } from './dto/wheel-params.dto';
+import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 
 // TODO: Handle images in form body in respected endpoints
 @ApiTags('Wheel')
@@ -45,9 +46,13 @@ export class WheelController {
     return toWheelDto(wheel);
   }
 
+  @OptionalUserAuth()
   @Get('get')
-  async findOne(@Query() params: WheelParams) {
-    const wheel = await this.wheel.get(params);
+  async findOne(
+    @Query() params: WheelParams,
+    @UserEntity() user?: UserPayload,
+  ) {
+    const wheel = await this.wheel.get(params, user);
     return toWheelDto(wheel);
   }
 
