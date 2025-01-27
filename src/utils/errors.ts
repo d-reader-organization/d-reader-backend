@@ -118,6 +118,7 @@ export const ERROR_MESSAGES = {
   BUY_ASSET_FAILED: 'Error while core asset buying webhook event',
   WINNING_PROBABILITY: 'Winning probability should be between 1-99',
   WHEEL_NOT_EXISTS: (id: number) => `Wheel with id ${id} doesn't exists`,
+  NO_ACTIVE_WHEELS_FOUND: 'There are no active wheels',
   REWARD_NOT_EXISTS: (id: number) => `Reward with id ${id} does not exists`,
   CONNECT_WALLET: 'Please connect your wallet to claim digital rewards!',
   WHEEL_NOT_ACTIVE: 'Wheel is not active!',
