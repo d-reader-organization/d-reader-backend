@@ -44,7 +44,7 @@ export class CreateCarouselSlideBodyDto {
 
   @IsOptional()
   @IsString()
-  creatorSlug?: string;
+  creatorHandle?: string;
 
   @IsOptional()
   @IsString()

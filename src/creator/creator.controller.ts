@@ -79,7 +79,7 @@ export class CreatorController {
     return toSearchCreatorDtoArray(creators);
   }
 
-  /* Get specific creator by unique slug */
+  /* Get specific creator by unique id */
   @OptionalUserAuth()
   @Get('get/:id')
   async findOne(

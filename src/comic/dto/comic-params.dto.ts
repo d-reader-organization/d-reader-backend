@@ -22,7 +22,7 @@ export enum ComicSortTag {
 export class ComicParams extends Pagination {
   @IsOptional()
   @IsKebabCase()
-  creatorSlug?: string;
+  creatorId?: string;
 
   @IsOptional()
   @IsString()

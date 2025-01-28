@@ -34,11 +34,11 @@ const getQueryFilters = (
       }`
     : Prisma.empty;
 
-  const creatorCondition = !!query.creatorSlug
+  const creatorCondition = !!query.creatorId
     ? Prisma.sql`${andOrWhere(
         hasTitleFilter,
         hasComicSlugFilter,
-      )} creator."slug" = ${query.creatorSlug}`
+      )} creator."id" = ${query.creatorId}`
     : Prisma.empty;
 
   const sortOrder = getSortOrder(query.sortOrder);

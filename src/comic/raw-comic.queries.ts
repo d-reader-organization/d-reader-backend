@@ -19,8 +19,8 @@ const getQueryFilters = (
     ? Prisma.sql`WHERE comic."title" ILIKE '%' || ${query.search ?? ''} || '%'`
     : Prisma.empty;
   const andOrWhere = hasTitleFilter ? Prisma.sql`AND` : Prisma.sql`WHERE`;
-  const creatorCondition = !!query.creatorSlug
-    ? Prisma.sql`${andOrWhere} creator."slug" = ${query.creatorSlug}`
+  const creatorCondition = !!query.creatorId
+    ? Prisma.sql`${andOrWhere} creator."id" = ${query.creatorId}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortRawComicBy(query.sortTag);
