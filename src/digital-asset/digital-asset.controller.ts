@@ -7,12 +7,12 @@ import {
   CollectibleComicRarityStatsDto,
   toCollectibleComicRarityStatsDtoArray,
 } from './dto/collectible-comic-rarity-stats.dto';
-import { UserAuth } from 'src/guards/user-auth.guard';
-import { UserEntity } from 'src/decorators/user.decorator';
-import { UserPayload } from 'src/auth/dto/authorization.dto';
-import { memoizeThrottle } from 'src/utils/lodash';
+import { UserAuth } from '../guards/user-auth.guard';
+import { UserEntity } from '../decorators/user.decorator';
+import { UserPayload } from '../auth/dto/authorization.dto';
+import { memoizeThrottle } from '../utils/lodash';
 import { hours } from '@nestjs/throttler';
-import { BotGateway } from 'src/discord/bot.gateway';
+import { BotGateway } from '../discord/bot.gateway';
 import {
   CollectibleComicDto,
   toCollectibleComicDtoArray,
