@@ -163,7 +163,7 @@ async function main() {
   await prisma.userComicIssue.deleteMany();
   await prisma.userCreator.deleteMany();
   await prisma.comic.deleteMany();
-  await prisma.creator.deleteMany();
+  await prisma.creatorChannel.deleteMany();
   await prisma.wallet.deleteMany();
   await prisma.genre.deleteMany();
   await prisma.carouselSlide.deleteMany();
@@ -190,14 +190,14 @@ async function main() {
   await prisma.user.createMany({ data: await usersToSeed() });
   console.info('Added users');
 
-  // SEED CREATORS
-  const nxC = await prisma.creator.create({ data: await studioNx() });
-  const swC = await prisma.creator.create({ data: await swamplabs() });
-  const goC = await prisma.creator.create({ data: await gonneytoons() });
-  const saC = await prisma.creator.create({ data: await saucerpen() });
-  const mmC = await prisma.creator.create({ data: await madMuse() });
-  const tsC = await prisma.creator.create({ data: await tsukiverse() });
-  const llC = await prisma.creator.create({ data: await longwood() });
+  // SEED USERS WITH CREATOR CHANNELS
+  const nxC = await prisma.user.create({ data: await studioNx() });
+  const swC = await prisma.user.create({ data: await swamplabs() });
+  const goC = await prisma.user.create({ data: await gonneytoons() });
+  const saC = await prisma.user.create({ data: await saucerpen() });
+  const mmC = await prisma.user.create({ data: await madMuse() });
+  const tsC = await prisma.user.create({ data: await tsukiverse() });
+  const llC = await prisma.user.create({ data: await longwood() });
   console.info('Added creators');
 
   // SEED COMICS
