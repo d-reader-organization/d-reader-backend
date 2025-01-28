@@ -844,10 +844,7 @@ export class HeliusService {
       }
       const updatedReceipt = await this.prisma.candyMachineReceipt.update({
         where: { id: receipt.id },
-        include: {
-          collectibleComics: true,
-          user: true,
-        },
+        include: { user: true },
         data: receiptData,
       });
 
@@ -873,7 +870,7 @@ export class HeliusService {
       }
 
       await this.websocketGateway.handleWalletCollectibleComicMinted({
-        receipt: updatedReceipt,
+        ...updatedReceipt,
         comicIssueAssets,
       });
     } catch (e) {

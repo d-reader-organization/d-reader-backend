@@ -36,7 +36,7 @@ export class DigitalAssetController {
     return toAssetDtoArray(collectibleComics);
   }
 
-  /* Get all Assets */
+  /* Get all collectible comics */
   @Get('get/collectible-comics')
   async findAllCollectibleComics(
     @Query() query: CollectibleComicFilterParams,
