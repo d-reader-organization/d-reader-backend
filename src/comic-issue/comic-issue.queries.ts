@@ -26,8 +26,8 @@ const getQueryFilters = (
   const comicSlugCondition = !!query.comicSlug
     ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
     : Prisma.empty;
-  const creatorCondition = !!query.creatorSlug
-    ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
+  const creatorCondition = !!query.creatorId
+    ? Prisma.sql`AND creator."id" = ${query.creatorId}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortComicIssueBy(query.sortTag);
@@ -55,7 +55,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   comic."title" as "comicTitle",
   comic."audienceType" ,
   creator."name" as "creatorName",
-  creator.slug as "creatorSlug",
+  creator.id as "creatorId",
   creator."verifiedAt" as "creatorVerifiedAt",
   creator.avatar as "creatorAvatar",
   collection."address" as "collectionAddress",

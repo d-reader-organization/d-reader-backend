@@ -157,7 +157,7 @@ export class ComicIssueService {
           comicTitle: string;
           audienceType: AudienceType;
           creatorName: string;
-          creatorSlug: string;
+          creatorId: string;
           creatorVerifiedAt?: string;
           creatorAvatar?: string;
           genres?: Genre[];
@@ -178,7 +178,7 @@ export class ComicIssueService {
             audienceType: issue.audienceType,
             creator: {
               name: issue.creatorName,
-              slug: issue.creatorSlug,
+              id: issue.creatorId,
               isVerified: !!issue.verifiedAt,
               avatar: issue.creatorAvatar,
             },
