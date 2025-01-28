@@ -18,7 +18,7 @@ export enum RawComicSortTag {
 export class RawComicParams extends Pagination {
   @IsOptional()
   @IsKebabCase()
-  creatorSlug?: string;
+  creatorId?: string;
 
   @IsOptional()
   @IsString()

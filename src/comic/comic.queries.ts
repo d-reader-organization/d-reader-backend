@@ -20,8 +20,8 @@ const getQueryFilters = (
   const titleCondition = !!titleSubstring
     ? Prisma.sql`AND comic."title" ILIKE '%' || ${titleSubstring ?? ''} || '%'`
     : Prisma.empty;
-  const creatorCondition = !!query.creatorSlug
-    ? Prisma.sql`AND creator."slug" = ${query.creatorSlug}`
+  const creatorCondition = !!query.creatorId
+    ? Prisma.sql`AND creator."id" = ${query.creatorId}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortComicBy(query.sortTag);
@@ -53,7 +53,7 @@ AVG(userComic.rating) as "averageRating",
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
 inner join "Genre" genre on genre.slug = "comicToGenre"."B"
-inner join "Creator" creator on creator.id = comic."creatorId"
+inner join "CreatorChannel" creator on creator.id = comic."creatorId"
 left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "UserComic" userComic on userComic."comicSlug" = comic.slug
 where comic."verifiedAt" is not null and comic."publishedAt" < now()

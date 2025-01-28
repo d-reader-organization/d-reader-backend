@@ -18,11 +18,13 @@ const getQueryFilters = (
 } => {
   const nameSubstring = query.search || query.nameSubstring;
   const nameCondition = !!nameSubstring
-    ? Prisma.sql`AND creator."name" ILIKE '%' || ${nameSubstring ?? ''} || '%'`
+    ? Prisma.sql`AND creator."handle" ILIKE '%' || ${
+        nameSubstring ?? ''
+      } || '%'`
     : Prisma.empty;
 
   const sortOrder = getSortOrder(
-    query.sortOrder ?? query.sortTag === CreatorSortTag.Name
+    query.sortOrder ?? query.sortTag === CreatorSortTag.Handle
       ? SortOrder.ASC
       : SortOrder.DESC,
   );
@@ -41,9 +43,10 @@ export const getCreatorsQuery = (query: CreatorFilterParams) => {
     getQueryFilters(query);
   return Prisma.sql`select creator.*,
   SUM(case when userCreator."followedAt" is not null then 1 else 0 end)  as "followersCount"
-  from "Creator" creator
-  left join "UserCreator" userCreator on userCreator."creatorSlug" = creator.slug
-  where creator."deletedAt" is null and creator."verifiedAt" is not null and creator."emailVerifiedAt" is not null
+  from "CreatorChannel" creator
+  left join "UserCreator" userCreator on userCreator."creatorId" = creator.id
+  left join "User" u on u.id = creator."userId"
+  where creator."deletedAt" is null and creator."verifiedAt" is not null and u."emailVerifiedAt" is not null
   ${filterCondition}
   ${nameCondition}
   group by creator.id

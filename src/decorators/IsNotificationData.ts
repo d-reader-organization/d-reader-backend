@@ -3,7 +3,7 @@ import { ValidationOptions, buildMessage, ValidateBy } from 'class-validator';
 const notificationDataKeys = [
   'comicIssueId',
   'comicSlug',
-  'creatorSlug',
+  'creatorId',
   'digitalAssetAddress',
   'externalUrl',
 ];
