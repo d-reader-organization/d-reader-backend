@@ -45,7 +45,6 @@ model User {
   interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
   channel                        CreatorChannel?
-  channelId                      Int?                                @unique
 }
 
 enum WalletProvider {
@@ -92,8 +91,9 @@ model CreatorChannel {
   s3BucketSlug   String        @unique
   comics         Comic[]
   followers      UserCreator[]
-  user           User          @relation(fields: [id], references: [channelId])
-  createdAt       DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id])
+  userId         Int           @unique
+  createdAt      DateTime      @default(now())
   featuredAt     DateTime?
   verifiedAt     DateTime?
   popularizedAt  DateTime?
