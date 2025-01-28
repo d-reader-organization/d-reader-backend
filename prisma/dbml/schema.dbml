@@ -34,7 +34,6 @@ Table User {
   interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
-  channelId Int [unique]
 }
 
 Table Wallet {
@@ -69,11 +68,12 @@ Table CreatorChannel {
   comics Comic [not null]
   followers UserCreator [not null]
   user User [not null]
+  userId Int [unique, not null]
+  createdAt DateTime [default: `now()`, not null]
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
   deletedAt DateTime
-  createdAt DateTime
 }
 
 Table Comic {
@@ -867,7 +867,7 @@ Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
 
-Ref: CreatorChannel.id - User.channelId
+Ref: CreatorChannel.userId - User.id
 
 Ref: Comic.creatorId > CreatorChannel.id [delete: Cascade]
 

@@ -10,22 +10,10 @@ WHERE cs."creatorSlug" = cr."slug";
 -- AlterTable: Drop 'creatorSlug' column from "CarouselSlide"
 ALTER TABLE "CarouselSlide" DROP COLUMN "creatorSlug";
 
--- AlterTable: Add 'channelId' column to the "User" table
-ALTER TABLE "User" ADD COLUMN "channelId" INTEGER;
-
--- Migrate creators to the "User" table
-
--- Update the channelId for users with existing emails
-UPDATE "User" u
-SET "channelId" = cr.id, 
-"role"='Creator'
-FROM "Creator" cr
-WHERE u.email = cr.email;
-
 -- Insert new users, appending a random number to the name if it already exists
 INSERT INTO "User"(
   email, password, username, role, "deletedAt", "lastLogin", "lastActiveAt", 
-  "emailVerifiedAt", "createdAt", "displayName", "channelId", "referrerId", 
+  "emailVerifiedAt", "createdAt", "displayName", "referrerId", 
   "referCompeletedAt", "nonce"
 )
 SELECT 
@@ -45,7 +33,6 @@ SELECT
   cr."emailVerifiedAt", 
   cr."createdAt", 
   cr.name AS displayName,  -- Display name can remain the same as the creator's name
-  cr.id AS channelId,  -- Using 'id' for 'channelId'
   NULL AS referrerId,  -- referrerId set to NULL for now
   NULL AS referCompeletedAt,  -- referCompeletedAt set to NULL for now
   gen_random_uuid() AS nonce  -- Generating a new UUID for the nonce field
@@ -56,6 +43,20 @@ WHERE NOT EXISTS (
   WHERE u.email = cr.email
 );
 
+-- AlterTable: Add userId in Creator
+ALTER TABLE "Creator" ADD COLUMN "userId" INTEGER;
+
+-- Update user role to Creator for all creators
+UPDATE "User" u 
+SET role='Creator'
+FROM "Creator" cr 
+WHERE u.email=cr.email;
+
+-- Update the userId for creators with user emails
+UPDATE "Creator" cr
+SET "userId" = u.id
+FROM "User" u
+WHERE u.email = cr.email;
 
 -- AlterTable: Add 'creatorId' column to the "UserCreator" table
 ALTER TABLE "UserCreator" ADD COLUMN "creatorId" INTEGER;
@@ -65,9 +66,6 @@ UPDATE "UserCreator" uc
 SET "creatorId" = cr.id
 FROM "Creator" cr
 WHERE uc."creatorSlug" = cr."slug";
-
--- Create unique index on "channelId" in the "User" table
-CREATE UNIQUE INDEX "User_channelId_key" ON "User"("channelId");
 
 -- Drop old primary key and add a new one for "UserCreator" (composed of 'creatorId' and 'userId')
 ALTER TABLE "UserCreator" 
@@ -108,9 +106,9 @@ ALTER TABLE "Creator" RENAME TO "CreatorChannel";
 -- Create a unique index on "handle" in the "CreatorChannel" table
 CREATE UNIQUE INDEX "CreatorChannel_handle_key" ON "CreatorChannel"("handle");
 
--- Add foreign key constraint on "CreatorChannel" referencing "User.channelId"
-ALTER TABLE "CreatorChannel" ADD CONSTRAINT "CreatorChannel_id_fkey" 
-  FOREIGN KEY ("id") REFERENCES "User"("channelId") 
+-- Add foreign key constraint on "CreatorChannel" referencing "User.id"
+ALTER TABLE "CreatorChannel" ADD CONSTRAINT "CreatorChannel_userId_fkey" 
+  FOREIGN KEY ("userId") REFERENCES "User"("id") 
   ON DELETE RESTRICT 
   ON UPDATE CASCADE;
 ALTER INDEX "Creator_s3BucketSlug_key" RENAME TO "CreatorChannel_s3BucketSlug_key";
@@ -131,3 +129,8 @@ ALTER TABLE "Comic" ADD CONSTRAINT "Comic_creatorId_fkey"
   ON DELETE CASCADE 
   ON UPDATE CASCADE;
 
+-- Alter table: set "userId" not null
+ALTER TABLE "CreatorChannel" ALTER COLUMN "userId" SET NOT NULL;
+
+-- Create unique index on "channelId" in the "CreatorChannel" table
+CREATE UNIQUE INDEX "CreatorChannel_userId_key" ON "CreatorChannel"("userId");
