@@ -24,7 +24,7 @@ import {
   toPartialGenreDtoArray,
 } from '../../genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
-import { ifDefined } from 'src/utils/lodash';
+import { ifDefined } from '../../utils/lodash';
 
 export class ComicDto {
   @IsString()

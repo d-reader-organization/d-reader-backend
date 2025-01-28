@@ -5,7 +5,7 @@ import { AssetDto } from '../../digital-asset/dto/deprecated-digital-asset.dto';
 import { PickType } from '@nestjs/swagger';
 import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
 import { IsSolanaAddress } from '../../decorators/IsSolanaAddress';
-import { ifDefined } from 'src/utils/lodash';
+import { ifDefined } from '../../utils/lodash';
 
 export class PartialAssetDto extends PickType(AssetDto, ['address', 'name']) {}
 

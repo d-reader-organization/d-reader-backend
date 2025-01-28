@@ -19,7 +19,7 @@ import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMint
 import {
   DAILY_DROP_WINNER_ANNOUNCEMENT,
   DAILY_DROPS_ROOM_ID,
-} from 'src/utils/websockets';
+} from '../utils/websockets';
 import { RewardDto } from 'src/wheel/dto/rewards.dto';
 import { RoomData } from './types';
 

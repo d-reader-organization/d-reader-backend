@@ -1,8 +1,8 @@
 import { plainToInstance } from 'class-transformer';
 import { UserDto } from './user.dto';
 import { User } from '@prisma/client';
-import { ifDefined } from 'src/utils/lodash';
-import { getPublicUrl } from 'src/aws/s3client';
+import { ifDefined } from '../../utils/lodash';
+import { getPublicUrl } from '../../aws/s3client';
 
 export class BasicUserDto {
   id: UserDto['id'];
