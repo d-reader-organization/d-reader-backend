@@ -7,19 +7,20 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CandyMachineReceiptInput } from '../candy-machine/dto/candy-machine-receipt.dto';
 import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
 import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
 import {
   AssetInput,
   toAssetDto,
 } from '../digital-asset/dto/deprecated-digital-asset.dto';
-import { IndexCoreAssetReturnType } from 'src/webhooks/helius/dto/types';
-import { toCollectibleComicMintEventDto } from '../webhooks/helius/dto/assetMintEvent.dto';
+import {
+  CollectibleComicMintEventInput,
+  toCollectibleComicMintEventDto,
+} from '../webhooks/helius/dto/assetMintEvent.dto';
 import {
   DAILY_DROP_WINNER_ANNOUNCEMENT,
   DAILY_DROPS_ROOM_ID,
-} from '../utils/websockets';
+} from 'src/utils/websockets';
 import { RewardDto } from 'src/wheel/dto/rewards.dto';
 import { RoomData } from './types';
 
@@ -62,12 +63,11 @@ export class WebSocketGateway {
       .emit(DAILY_DROP_WINNER_ANNOUNCEMENT, reward);
   }
 
-  async handleWalletCollectibleComicMinted(data: {
-    receipt: CandyMachineReceiptInput;
-    comicIssueAssets: IndexCoreAssetReturnType[];
-  }) {
+  async handleWalletCollectibleComicMinted(
+    data: CollectibleComicMintEventInput,
+  ) {
     const receiptDto = await toCollectibleComicMintEventDto(data);
-    const walletAddress = data.receipt.buyerAddress;
+    const walletAddress = data.buyerAddress;
 
     return this.server
       .to(walletAddress)

@@ -1,10 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { CandyMachineService } from './candy-machine.service';
-import { CandyMachineReceiptParams } from '../candy-machine/dto/candy-machine-receipt-params.dto';
-import {
-  CandyMachineReceiptDto,
-  toCMReceiptDtoArray,
-} from '../candy-machine/dto/candy-machine-receipt.dto';
 import { toCandyMachineDto } from '../candy-machine/dto/candy-machine.dto';
 import { CandyMachineParams } from './dto/candy-machine-params.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -24,14 +19,6 @@ import { toLaunchpadDtoArray } from './dto/launchpad.dto';
 @Controller('candy-machine')
 export class CandyMachineController {
   constructor(private readonly candyMachineService: CandyMachineService) {}
-
-  @Get('get/receipts')
-  async findReceipts(
-    @Query() query: CandyMachineReceiptParams,
-  ): Promise<CandyMachineReceiptDto[]> {
-    const receipts = await this.candyMachineService.findReceipts(query);
-    return await toCMReceiptDtoArray(receipts);
-  }
 
   @OptionalUserAuth()
   @Get('get')

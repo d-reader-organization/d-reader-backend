@@ -1,17 +1,15 @@
-import { IsArray } from 'class-validator';
-import {
-  CandyMachineReceiptDto,
-  CandyMachineReceiptInput,
-} from '../../../candy-machine/dto/candy-machine-receipt.dto';
+import { IsArray, IsDateString, IsNumber, IsString } from 'class-validator';
 import { IndexCoreAssetReturnType } from './types';
 import { plainToInstance, Type } from 'class-transformer';
-import { AssetDto } from '../../../digital-asset/dto/deprecated-digital-asset.dto';
-import { OmitType, PickType } from '@nestjs/swagger';
+import { PickType } from '@nestjs/swagger';
 import { getPublicUrl } from '../../../aws/s3client';
-import { toBasicUserDto } from '../../../user/dto/basic-user-dto';
+import { BasicUserDto, toBasicUserDto } from '../../../user/dto/basic-user-dto';
 import { ifDefined } from '../../../utils/lodash';
+import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
+import { CollectibleComicDto } from 'src/digital-asset/dto/collectible-comic.dto';
+import { CandyMachineReceipt, User } from '@prisma/client';
 
-export class PartialAssetMintDto extends PickType(AssetDto, [
+export class PartialCollectibleComicDto extends PickType(CollectibleComicDto, [
   'address',
   'name',
   'image',
@@ -20,46 +18,64 @@ export class PartialAssetMintDto extends PickType(AssetDto, [
   'rarity',
 ]) {}
 
-export class AssetMintEventDto extends OmitType(CandyMachineReceiptDto, [
-  'assets',
-] as const) {
+export class CollectibleComicMintEventDto {
   @IsArray()
-  @Type(() => PartialAssetMintDto)
-  assets: PartialAssetMintDto[];
+  @Type(() => PartialCollectibleComicDto)
+  assets: PartialCollectibleComicDto[];
+
+  @Type(() => BasicUserDto)
+  buyer?: BasicUserDto;
+
+  @IsSolanaAddress()
+  buyerAddress: string;
+
+  @IsString()
+  candyMachineAddress: string;
+
+  @IsNumber()
+  price: number;
+
+  @IsDateString()
+  timestamp: string;
+
+  @IsString()
+  splTokenAddress: string;
 }
 
-export async function toCollectibleComicMintEventDto(eventData: {
-  receipt: CandyMachineReceiptInput;
+export type CollectibleComicMintEventInput = CandyMachineReceipt & {
+  user: User;
   comicIssueAssets: IndexCoreAssetReturnType[];
-}) {
-  const { receipt, comicIssueAssets } = eventData;
-  const assets: PartialAssetMintDto[] = comicIssueAssets.map((asset) => ({
-    address: asset.digitalAsset.address,
-    name: asset.name,
-    image: getPublicUrl(asset.image),
-    isSigned: asset.metadata.isSigned,
-    isUsed: asset.metadata.isUsed,
-    rarity: asset.metadata.rarity,
-  }));
+};
 
-  const plainAssetMintEventDto: AssetMintEventDto = {
-    nft: {
-      address: receipt.collectibleComics[0].address,
-      name: receipt.collectibleComics[0].name,
-    },
-    asset: {
-      address: receipt.collectibleComics[0].address,
-      name: receipt.collectibleComics[0].name,
-    },
+export async function toCollectibleComicMintEventDto(
+  eventData: CollectibleComicMintEventInput,
+) {
+  const { comicIssueAssets, user, ...data } = eventData;
+
+  const assets: PartialCollectibleComicDto[] = comicIssueAssets.map(
+    (asset) => ({
+      address: asset.digitalAsset.address,
+      name: asset.name,
+      image: getPublicUrl(asset.image),
+      isSigned: asset.metadata.isSigned,
+      isUsed: asset.metadata.isUsed,
+      rarity: asset.metadata.rarity,
+    }),
+  );
+
+  const plainCollectibleComicMintEventDto: CollectibleComicMintEventDto = {
     assets,
-    buyer: ifDefined(receipt.user, toBasicUserDto),
-    buyerAddress: receipt.buyerAddress,
-    candyMachineAddress: receipt.candyMachineAddress,
-    price: Number(receipt.price),
-    timestamp: receipt.timestamp.toISOString(),
-    splTokenAddress: receipt.splTokenAddress,
+    buyer: ifDefined(user, toBasicUserDto),
+    buyerAddress: data.buyerAddress,
+    candyMachineAddress: data.candyMachineAddress,
+    price: Number(data.price),
+    timestamp: data.timestamp.toISOString(),
+    splTokenAddress: data.splTokenAddress,
   };
 
-  const receiptDto = plainToInstance(AssetMintEventDto, plainAssetMintEventDto);
-  return receiptDto;
+  const collectibleComicMintEventDto = plainToInstance(
+    CollectibleComicMintEventDto,
+    plainCollectibleComicMintEventDto,
+  );
+  return collectibleComicMintEventDto;
 }
