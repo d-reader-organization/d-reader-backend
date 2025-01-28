@@ -37,7 +37,7 @@ export class DigitalAssetController {
   }
 
   /* Get all collectible comics */
-  @Get('get/collectible-comics')
+  @Get('get/collectible-comic')
   async findAllCollectibleComics(
     @Query() query: CollectibleComicFilterParams,
   ): Promise<CollectibleComicDto[]> {
