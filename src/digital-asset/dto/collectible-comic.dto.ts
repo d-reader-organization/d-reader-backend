@@ -53,7 +53,11 @@ export type WithDigitalAssetData = {
 };
 export type WithCollection = { collection: CollectibleComicCollection };
 export type WithStatefulCovers = { statefulCovers: StatefulCover[] };
-export type WithComicData = { comicIssueTitle?: string; comicTitle?: string };
+export type WithComicData = {
+  comicIssueTitle?: string;
+  comicTitle?: string;
+  description?: string;
+};
 export type WithSellerFeeBasisPoints = { sellerFeeBasisPoints: number };
 
 export type CollectibleComicInput = CollectibleComic &
