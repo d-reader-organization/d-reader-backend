@@ -210,6 +210,7 @@ export class DigitalAssetService {
       statefulCovers: collection.comicIssue.statefulCovers,
       comicIssueTitle: collection.comicIssue.title,
       comicTitle: collection.comicIssue.comic.title,
+      description: collection.comicIssue.description,
     };
   }
 
