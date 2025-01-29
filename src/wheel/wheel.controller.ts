@@ -11,7 +11,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { WheelService } from './wheel.service';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { CreateWheelDto } from './dto/create-wheel.dto';
-import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { AddRewardDto } from './dto/add-reward.dto';
@@ -22,6 +21,9 @@ import { toRewardDto } from './dto/rewards.dto';
 import { toWheelReceiptDto } from './dto/wheel-receipt.dto';
 import { WheelParams } from './dto/wheel-params.dto';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
+import { VerifiedUserAuthGuard } from 'src/guards/verified-user-auth.guard';
+import { WheelRewardHistoryParams } from './dto/wheel-history-params.dto';
+import { toWheelRewardHistoryDtoArray } from './dto/wheel-reward-history.dto';
 
 // TODO: Handle images in form body in respected endpoints
 @ApiTags('Wheel')
@@ -56,21 +58,27 @@ export class WheelController {
     return toWheelDto(wheel);
   }
 
-  @UserAuth()
+  @VerifiedUserAuthGuard()
   @Patch('spin/:id')
   async spin(@Param('id') id: string, @UserEntity() user: UserPayload) {
     const receipt = await this.wheel.spin(+id, user.id);
     return toWheelReceiptDto(receipt);
   }
 
+  @Get('get/reward-history')
+  async getWheelRewardHistory(params: WheelRewardHistoryParams) {
+    const rewardHistory = await this.wheel.findWheelRewardHistory(params);
+    return toWheelRewardHistoryDtoArray(rewardHistory);
+  }
+
   @AdminGuard()
-  @Patch('add/reward/:id')
+  @Patch('add/:id/reward')
   async addReward(@Param('id') id: string, @Body() addRewardDto: AddRewardDto) {
     return await this.wheel.addReward(+id, addRewardDto);
   }
 
   @AdminGuard()
-  @Patch('update/reward/:id')
+  @Patch('reward/update/:id')
   async updateReward(
     @Param('id') id: number,
     @Body() updateRewardDto: UpdateRewardDto,
@@ -80,11 +88,8 @@ export class WheelController {
   }
 
   @AdminGuard()
-  @Patch('add/drops/:rewardId')
-  async addDrops(
-    @Param('rewardId') rewardId: string,
-    @Body() addDropsDto: AddDropsDto,
-  ) {
-    return await this.wheel.addDrops(+rewardId, addDropsDto);
+  @Patch('reward/:id/add-drops')
+  async addDrops(@Param('id') id: string, @Body() addDropsDto: AddDropsDto) {
+    return await this.wheel.addDrops(+id, addDropsDto);
   }
 }

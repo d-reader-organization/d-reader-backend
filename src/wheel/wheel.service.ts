@@ -56,8 +56,9 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { WheelReceiptInput } from './dto/wheel-receipt.dto';
 import { WheelParams } from './dto/wheel-params.dto';
 import { DigitalAssetService } from '../digital-asset/digital-asset.service';
-import { WheelRewardNotificationInput } from './dto/wheel-reward-notification.dto';
+import { WheelRewardHistoryInput } from './dto/wheel-reward-history.dto';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
+import { WheelRewardHistoryParams } from './dto/wheel-history-params.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -239,10 +240,6 @@ export class WheelService {
       throw new NotFoundException(ERROR_MESSAGES.NO_ACTIVE_WHEELS_FOUND);
     }
 
-    const lastRewardNotification = await this.findLastWinnerNotification(
-      wheel.id,
-    );
-
     let nextSpinAt: Date;
     if (user) {
       const now = new Date();
@@ -265,7 +262,7 @@ export class WheelService {
       }
     }
 
-    return { ...wheel, notification: lastRewardNotification, nextSpinAt };
+    return { ...wheel, nextSpinAt };
   }
 
   async spin(wheelId: number, userId: number): Promise<WheelReceiptInput> {
@@ -400,70 +397,26 @@ export class WheelService {
     }
   }
 
-  async findLastWinnerNotification(
-    wheelId: number,
-  ): Promise<WheelRewardNotificationInput | null> {
-    const receipt = await this.prisma.wheelRewardReceipt.findFirst({
+  async findWheelRewardHistory(
+    params: WheelRewardHistoryParams,
+  ): Promise<WheelRewardHistoryInput[]> {
+    const { wheelId, skip, take } = params;
+
+    const receipts = await this.prisma.wheelRewardReceipt.findMany({
       where: { wheelId, reward: { type: { not: WheelRewardType.None } } },
       orderBy: { createdAt: 'desc' },
       include: {
         reward: true,
         user: true,
       },
+      take,
+      skip,
     });
 
-    if (!receipt) {
-      return;
-    }
-
-    const dropName = this.findRewardDropNameByIdAndType(
-      receipt.dropId,
-      receipt.reward.type,
-    );
-
-    return { ...receipt, message: `You've won ${dropName}` };
-  }
-
-  async findRewardDropNameByIdAndType(id: number, type: WheelRewardType) {
-    const drop = await this.prisma.rewardDrop.findUnique({ where: { id } });
-
-    switch (type) {
-      case WheelRewardType.CollectibleComic: {
-        const collectibleComic = await this.prisma.collectibleComic.findUnique({
-          where: { address: drop.itemId },
-        });
-        return collectibleComic.name;
-      }
-
-      case WheelRewardType.PrintEdition: {
-        const printEdition = await this.prisma.printEdition.findUnique({
-          where: { address: drop.itemId },
-          include: { printEditionCollection: true },
-        });
-        return printEdition.printEditionCollection.name;
-      }
-
-      case WheelRewardType.OneOfOne: {
-        const oneOfOne = await this.prisma.oneOfOne.findUnique({
-          where: { address: drop.itemId },
-        });
-        return oneOfOne.name;
-      }
-
-      case WheelRewardType.Physical: {
-        const physical = await this.prisma.physicalItem.findUnique({
-          where: { id: drop.itemId },
-        });
-        return physical.name;
-      }
-
-      case WheelRewardType.Fungible: {
-        const fungible = await this.prisma.splToken.findUnique({
-          where: { address: drop.itemId },
-        });
-        return fungible.name;
-      }
-    }
+    return receipts.map((receipt) => ({
+      ...receipt,
+      message: `You've won ${receipt.reward.type}`,
+    }));
   }
 
   async createReceiptForNoReward(wheelId: number, userId: number) {
