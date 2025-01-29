@@ -66,7 +66,7 @@ export class WheelController {
   }
 
   @Get('get/reward-history')
-  async getWheelRewardHistory(params: WheelRewardHistoryParams) {
+  async getWheelRewardHistory(@Query() params: WheelRewardHistoryParams) {
     const rewardHistory = await this.wheel.findWheelRewardHistory(params);
     return toWheelRewardHistoryDtoArray(rewardHistory);
   }

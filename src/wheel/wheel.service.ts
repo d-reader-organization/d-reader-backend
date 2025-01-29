@@ -282,6 +282,11 @@ export class WheelService {
         rewards: { include: { drops: { where: { isActive: true } } } },
       },
     });
+
+    if (!wheel) {
+      throw new BadRequestException(ERROR_MESSAGES.WHEEL_NOT_EXISTS(wheelId));
+    }
+
     const now = new Date();
     if (!wheel.isActive || wheel.startsAt > now) {
       throw new BadRequestException(ERROR_MESSAGES.WHEEL_NOT_ACTIVE);
@@ -403,7 +408,7 @@ export class WheelService {
     const { wheelId, skip, take } = params;
 
     const receipts = await this.prisma.wheelRewardReceipt.findMany({
-      where: { wheelId, reward: { type: { not: WheelRewardType.None } } },
+      where: { wheelId },
       orderBy: { createdAt: 'desc' },
       include: {
         reward: true,
