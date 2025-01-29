@@ -44,6 +44,10 @@ env:
     # Helius
     - HELIUS_API_KEY
     - WEBHOOK_ID
+    # Privy
+    - PRIVY_APP_ID
+    - PRIVY_APP_SECRET
+    - PRIVY_WEBHOOK_SIGNING_KEY
     # Tensor
     - TENSOR_API_KEY
     # Discord
