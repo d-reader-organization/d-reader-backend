@@ -420,8 +420,40 @@ export class WheelService {
 
     return receipts.map((receipt) => ({
       ...receipt,
-      message: `You've won ${receipt.reward.type}`,
+      message: this.constructWheelRewardMessages(
+        receipt.reward.type,
+        receipt.dropName,
+        receipt.amount,
+      ),
     }));
+  }
+
+  constructWheelRewardMessages(
+    rewardType: WheelRewardType,
+    dropName: string,
+    amount: number,
+  ) {
+    switch (rewardType) {
+      case WheelRewardType.None: {
+        return 'Nothing';
+      }
+      case WheelRewardType.CollectibleComic: {
+        return `${dropName} comic`;
+      }
+      case WheelRewardType.Physical: {
+        return dropName;
+      }
+      case WheelRewardType.Fungible: {
+        return `${amount} ${dropName}`;
+      }
+      case WheelRewardType.PrintEdition: {
+        return `${dropName} edition`;
+      }
+      case WheelRewardType.OneOfOne: {
+        return `${dropName} 1 of 1 cover`;
+      }
+      default: 'Nothing';
+    }
   }
 
   async createReceiptForNoReward(wheelId: number, userId: number) {
@@ -435,6 +467,7 @@ export class WheelService {
         createdAt: new Date(),
         reward: { connect: { id: noReward.id } },
         wheel: { connect: { id: wheelId } },
+        amount: 0,
         claimedAt: new Date(),
       },
     });
@@ -470,6 +503,8 @@ export class WheelService {
         user: { connect: { id: userId } },
         wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
+        dropName: physicalItem.name,
+        amount: winningDrop.amount,
         reward: { connect: { id: winningDrop.rewardId } },
       },
     });
@@ -573,6 +608,8 @@ export class WheelService {
         wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
         claimedAt: new Date(),
+        amount: winningDrop.amount,
+        dropName: splToken.symbol,
         reward: { connect: { id: winningDrop.rewardId } },
       },
     });
@@ -671,6 +708,8 @@ export class WheelService {
         wheel: { connect: { id: wheelId } },
         createdAt: new Date(),
         claimedAt: new Date(),
+        dropName: asset.name,
+        amount: winningDrop.amount,
         reward: { connect: { id: winningDrop.rewardId } },
       },
     });

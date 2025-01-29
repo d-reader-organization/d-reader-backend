@@ -754,6 +754,8 @@ Table WheelRewardReceipt {
   walletAddress String
   transactionSignature String
   dropId Int
+  dropName String [not null, default: '']
+  amount Int [not null]
   claimedAt DateTime
   createdAt DateTime [not null]
 }

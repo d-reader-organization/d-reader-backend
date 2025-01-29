@@ -829,6 +829,8 @@ model WheelRewardReceipt {
   walletAddress        String?
   transactionSignature String?
   dropId               Int?
+  dropName             String     @default("")
+  amount               Int        
   claimedAt            DateTime?
   createdAt            DateTime
 }
