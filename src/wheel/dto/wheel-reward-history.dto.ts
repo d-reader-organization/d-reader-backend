@@ -4,7 +4,7 @@ import { plainToInstance, Type } from 'class-transformer';
 import { WheelReward, WheelRewardReceipt } from '@prisma/client';
 import { toUserDto, UserDto, UserInput } from 'src/user/dto/user.dto';
 
-export class WheelRewardNotificationDto {
+export class WheelRewardHistoryDto {
   @IsNumber()
   id: number;
 
@@ -23,14 +23,14 @@ export class WheelRewardNotificationDto {
 
 type WithReward = { reward: WheelReward };
 type WithUser = { user: UserInput };
-export type WheelRewardNotificationInput = WheelRewardReceipt &
+type WithWheelHistoryMessage = { message: string };
+export type WheelRewardHistoryInput = WheelRewardReceipt &
   WithReward &
-  WithUser & { message: string };
+  WithUser &
+  WithWheelHistoryMessage;
 
-export function toWheelRewardNotificationDto(
-  input: WheelRewardNotificationInput,
-) {
-  const plainWheelRewardNotificationDto: WheelRewardNotificationDto = {
+export function toWheelRewardHistoryDto(input: WheelRewardHistoryInput) {
+  const plainWheelRewardHistoryDto: WheelRewardHistoryDto = {
     id: input.id,
     user: toUserDto(input.user),
     createdAt: input.createdAt,
@@ -38,9 +38,15 @@ export function toWheelRewardNotificationDto(
     message: input.message,
   };
 
-  const wheelRewardNotificationDto = plainToInstance(
-    WheelRewardNotificationDto,
-    plainWheelRewardNotificationDto,
+  const wheelRewardHistoryDto = plainToInstance(
+    WheelRewardHistoryDto,
+    plainWheelRewardHistoryDto,
   );
-  return wheelRewardNotificationDto;
+  return wheelRewardHistoryDto;
+}
+
+export function toWheelRewardHistoryDtoArray(
+  rewards: WheelRewardHistoryInput[],
+) {
+  return rewards.map(toWheelRewardHistoryDto);
 }

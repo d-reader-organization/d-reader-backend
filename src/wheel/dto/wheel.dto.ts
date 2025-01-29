@@ -14,11 +14,6 @@ import {
 import { getPublicUrl } from 'src/aws/s3client';
 import { RewardDto, toRewardDtoArray } from './rewards.dto';
 import { ifDefined } from 'src/utils/lodash';
-import {
-  toWheelRewardNotificationDto,
-  WheelRewardNotificationDto,
-  WheelRewardNotificationInput,
-} from './wheel-reward-notification.dto';
 
 export class WheelDto {
   @IsInt()
@@ -34,9 +29,6 @@ export class WheelDto {
   @IsOptional()
   @IsString()
   image?: string;
-
-  @Type(() => WheelRewardNotificationDto)
-  lastRewardNotification: WheelRewardNotificationDto;
 
   @IsOptional()
   @IsDate()
@@ -66,24 +58,14 @@ export class WheelDto {
 }
 
 type WithWheelRewards = { rewards?: WheelReward[] };
-type WithLastRewardNotification = {
-  notification?: WheelRewardNotificationInput;
-};
 type WithSpinEligibility = { nextSpinAt?: Date };
-export type WheelInput = Wheel &
-  WithLastRewardNotification &
-  WithWheelRewards &
-  WithSpinEligibility;
+export type WheelInput = Wheel & WithWheelRewards & WithSpinEligibility;
 
 export async function toWheelDto(input: WheelInput) {
   const plainRewardDto: WheelDto = {
     id: input.id,
     name: input.name,
     description: input.description,
-    lastRewardNotification: ifDefined(
-      input.notification,
-      toWheelRewardNotificationDto,
-    ),
     image: input.image ? getPublicUrl(input.image) : undefined,
     nextSpinAt: input.nextSpinAt,
     type: input.type,
