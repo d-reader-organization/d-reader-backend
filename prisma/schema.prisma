@@ -285,6 +285,7 @@ model CollectibleComic {
   receipt             CandyMachineReceipt?     @relation(fields: [receiptId], references: [id])
   receiptId           Int?
   digitalAsset        DigitalAsset             @relation(fields: [address], references: [address])
+  signatureRequest    SignatureRequest[]
 }
 
 model CandyMachine {
@@ -836,6 +837,21 @@ model PhysicalItem {
   name        String
   description String @default("")
   image       String @default("")
+}
+
+enum SignatureRequestStatus {
+  Approved
+  Pending
+  Rejected
+}
+
+model SignatureRequest {
+  id                      Int                    @id @default(autoincrement())
+  collectibleComicAddress String
+  collectibleComic        CollectibleComic       @relation(fields: [collectibleComicAddress], references: [address])
+  resolvedAt              DateTime?
+  status                  SignatureRequestStatus @default(Pending)
+  createdAt               DateTime               @default(now())
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
