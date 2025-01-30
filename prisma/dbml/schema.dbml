@@ -243,6 +243,7 @@ Table CollectibleComic {
   receipt CandyMachineReceipt
   receiptId Int
   digitalAsset DigitalAsset [not null]
+  signatureRequest SignatureRequest [not null]
 }
 
 Table CandyMachine {
@@ -765,6 +766,13 @@ Table PhysicalItem {
 Enum WalletProvider {
   NonCustodial
   Embedded
+Table SignatureRequest {
+  id Int [pk, increment]
+  collectibleComicAddress String [not null]
+  collectibleComic CollectibleComic [not null]
+  resolvedAt DateTime
+  status SignatureRequestStatus [not null, default: 'Pending']
+  createdAt DateTime [default: `now()`, not null]
 }
 
 Enum Role {
@@ -861,6 +869,12 @@ Enum WheelRewardType {
   Physical
   Fungible
   None
+}
+
+Enum SignatureRequestStatus {
+  Approved
+  Pending
+  Rejected
 }
 
 Ref: User.referrerId - User.id
@@ -990,3 +1004,5 @@ Ref: WheelRewardReceipt.rewardId > WheelReward.id
 Ref: WheelRewardReceipt.userId > User.id
 
 Ref: WheelRewardReceipt.walletAddress > Wallet.address
+
+Ref: SignatureRequest.collectibleComicAddress > CollectibleComic.address
