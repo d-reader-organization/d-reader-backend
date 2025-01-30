@@ -452,7 +452,8 @@ export class WheelService {
       case WheelRewardType.OneOfOne: {
         return `${dropName} 1 of 1 cover`;
       }
-      default: 'Nothing';
+      default:
+        'Nothing';
     }
   }
 

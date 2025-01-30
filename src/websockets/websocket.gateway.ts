@@ -7,22 +7,16 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ListingInput, toListingDto } from '../auction-house/dto/listing.dto';
-import { toWalletAssetDto } from '../wallet/dto/wallet-asset.dto';
-import {
-  AssetInput,
-  toAssetDto,
-} from '../digital-asset/dto/deprecated-digital-asset.dto';
 import {
   CollectibleComicMintEventInput,
   toCollectibleComicMintEventDto,
 } from '../webhooks/helius/dto/assetMintEvent.dto';
+import { RoomData } from './dto/types';
 import {
-  DAILY_DROP_WINNER_ANNOUNCEMENT,
-  DAILY_DROPS_ROOM_ID,
-} from 'src/utils/websockets';
-import { RewardDto } from 'src/wheel/dto/rewards.dto';
-import { RoomData } from './types';
+  ActivityNotificationInput,
+  toActivityNotificationDto,
+} from './dto/activity-notification.dto';
+import { WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from 'src/utils/websockets';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })
@@ -34,10 +28,13 @@ export class WebSocketGateway {
   // https://wanago.io/2021/01/25/api-nestjs-chat-websockets/
 
   handleWave() {
-    this.server.sockets.emit('wave', 'Hello world ' + Math.random().toFixed(4));
+    this.server.sockets.emit(
+      WEBSOCKET_EVENTS.WAVE,
+      'Hello world ' + Math.random().toFixed(4),
+    );
   }
 
-  @SubscribeMessage('join-room')
+  @SubscribeMessage(WEBSOCKET_EVENTS.JOIN_ROOM)
   async handleJoinRoom(
     @MessageBody() data: RoomData,
     @ConnectedSocket() client: Socket,
@@ -47,7 +44,7 @@ export class WebSocketGateway {
     console.log(`Socket ${client.id} joined room: ${roomId}`);
   }
 
-  @SubscribeMessage('leave-room')
+  @SubscribeMessage(WEBSOCKET_EVENTS.LEAVE_ROOM)
   async handleLeaveRoom(
     @MessageBody() data: RoomData,
     @ConnectedSocket() client: Socket,
@@ -57,12 +54,6 @@ export class WebSocketGateway {
     console.log(`Socket ${client.id} left room: ${roomId}`);
   }
 
-  async handleDailyDropWinnerAnnouncement(reward: RewardDto) {
-    return this.server
-      .to(DAILY_DROPS_ROOM_ID)
-      .emit(DAILY_DROP_WINNER_ANNOUNCEMENT, reward);
-  }
-
   async handleWalletCollectibleComicMinted(
     data: CollectibleComicMintEventInput,
   ) {
@@ -70,102 +61,15 @@ export class WebSocketGateway {
     const walletAddress = data.buyerAddress;
 
     return this.server
-      .to(walletAddress)
-      .emit(`wallet/${walletAddress}/item-minted`, receiptDto);
+      .to(WEBSOCKET_ROOMS.WALLET(walletAddress))
+      .emit(WEBSOCKET_EVENTS.WALLET_ITEM_MINTED(walletAddress), receiptDto);
   }
 
-  /* Legacy websocket events */
-  handleLegacyCollectibleComicMintRejected(comicIssueId: number) {
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-mint-rejected`,
-    );
-  }
+  handleActivityNotification(data: ActivityNotificationInput) {
+    const activityNotificationDto = toActivityNotificationDto(data);
 
-  handleLegacyAssetSold(comicIssueId: number, listing: ListingInput) {
-    // TODO: find user based on the listing.sellerAddress
-    const listingDto = toListingDto(listing);
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-sold`,
-      listingDto,
-    );
-  }
-
-  handleLegacyAssetListed(comicIssueId: number, listing: ListingInput) {
-    const listingDto = toListingDto(listing);
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-listed`,
-      listingDto,
-    );
-  }
-
-  handleLegacyAssetDelisted(comicIssueId: number, listing: ListingInput) {
-    const listingDto = toListingDto(listing);
-    return this.server.sockets.emit(
-      `comic-issue/${comicIssueId}/item-delisted`,
-      listingDto,
-    );
-  }
-
-  handleWalletLegacyCollectibleComicMintRejected(buyerAddress: string) {
-    return this.server.sockets.emit(
-      `wallet/${buyerAddress}/item-mint-rejected`,
-    );
-  }
-
-  async handleWalletLegacyAssetListed(owner: string, asset: AssetInput) {
-    const walletAssetDto = await toWalletAssetDto(asset);
-    const assetDto = toAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${owner}/item-listed`,
-      walletAssetDto,
-      assetDto,
-    );
-  }
-
-  async handleWalletLegacyAssetDelisted(owner: string, asset: AssetInput) {
-    const walletAssetDto = await toWalletAssetDto(asset);
-    const assetDto = toAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${owner}/item-delisted`,
-      walletAssetDto,
-      assetDto,
-    );
-  }
-
-  async handleWalletLegacyAssetBought(buyer: string, asset: AssetInput) {
-    const walletAssetDto = await toWalletAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${buyer}/item-bought`,
-      walletAssetDto,
-    );
-  }
-
-  handleWalletLegacyAssetSold(seller: string, listing: ListingInput) {
-    const listingDto = toListingDto(listing);
-    return this.server.sockets.emit(`wallet/${seller}/item-sold`, listingDto);
-  }
-
-  async handleWalletLegacyAssetReceived(receiver: string, asset: AssetInput) {
-    const walletAssetDto = await toWalletAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${receiver}/item-received`,
-      walletAssetDto,
-    );
-  }
-
-  async handleWalletLegacyAssetSent(sender: string, asset: AssetInput) {
-    const walletAssetDto = await toWalletAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${sender}/item-sent`,
-      walletAssetDto,
-    );
-  }
-
-  async handleWalletLegacyAssetUsed(asset: AssetInput) {
-    const assetDto = await toAssetDto(asset);
-    return this.server.sockets.emit(
-      `wallet/${assetDto.ownerAddress}/item-used`,
-      assetDto,
-    );
+    return this.server
+      .to(WEBSOCKET_ROOMS.ACTIVITY)
+      .emit(WEBSOCKET_EVENTS.ACTIVITY_NOTIFICATION, activityNotificationDto);
   }
 }

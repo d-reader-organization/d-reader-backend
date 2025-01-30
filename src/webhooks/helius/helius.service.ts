@@ -171,10 +171,6 @@ export class HeliusService {
             );
           case TransactionType.CHANGE_COMIC_STATE:
             return this.handleChangeLegacyCollectibleComicState(transaction);
-          case TransactionType.NFT_MINT_REJECTED:
-            return this.handleLegacyCollectibleComicMintRejectedEvent(
-              transaction,
-            );
           default:
             return this.handleUnknownWebhookEvent(transaction);
         }
@@ -751,7 +747,7 @@ export class HeliusService {
       if (uri) {
         const offChainMetadata = await fetchOffChainMetadata(uri);
         const assetData = await fetchAssetV1(this.umi, publicKey(mint));
-        const collectibleComic = await this.prisma.collectibleComic.update({
+        await this.prisma.collectibleComic.update({
           where: { address: mint },
           include: {
             digitalAsset: true,
@@ -782,9 +778,6 @@ export class HeliusService {
             },
           },
         });
-        await this.websocketGateway.handleWalletLegacyAssetUsed(
-          collectibleComic,
-        );
       }
     } catch (e) {
       console.error(ERROR_MESSAGES.COMIC_STATE_UPDATE_FAILED, e);
@@ -1028,7 +1021,7 @@ export class HeliusService {
         const mint = metadata.mintAddress.toString();
         const offChainMetadata = await fetchOffChainMetadata(metadata.uri);
 
-        const collectibleComic = await this.prisma.collectibleComic.update({
+        await this.prisma.collectibleComic.update({
           where: { address: mint },
           include: {
             digitalAsset: true,
@@ -1058,9 +1051,6 @@ export class HeliusService {
             },
           },
         });
-        await this.websocketGateway.handleWalletLegacyAssetUsed(
-          collectibleComic,
-        );
       }
     } catch (e) {
       console.error('Failed to handle comic state update', e);
@@ -1076,7 +1066,6 @@ export class HeliusService {
   ) {
     try {
       const address = instruction.accounts.at(0);
-      const previousOwner = instruction.accounts.at(1);
       const ownerAddress = instruction.accounts.at(2);
 
       const latestBlockhash = await this.metaplex.rpc().getLatestBlockhash();
@@ -1085,7 +1074,7 @@ export class HeliusService {
         .rpc()
         .confirmTransaction(signature, { ...latestBlockhash }, 'confirmed');
 
-      const collectibleComic = await this.prisma.collectibleComic.update({
+      await this.prisma.collectibleComic.update({
         where: { address },
         include: {
           digitalAsset: {
@@ -1118,43 +1107,8 @@ export class HeliusService {
           },
         },
       });
-
-      await this.websocketGateway.handleWalletLegacyAssetReceived(
-        ownerAddress,
-        collectibleComic,
-      );
-      await this.websocketGateway.handleWalletLegacyAssetSent(
-        previousOwner,
-        collectibleComic,
-      );
     } catch (e) {
       console.error(ERROR_MESSAGES.LEGACY_ASSET_TRANSFER_FAILED);
-    }
-  }
-
-  /**
-   * Handles rejected mint events by notifying the relevant parties of the rejection.
-   */
-  private async handleLegacyCollectibleComicMintRejectedEvent(
-    enrichedTransaction: EnrichedTransaction,
-  ) {
-    try {
-      const nftTransactionInfo = enrichedTransaction.events.nft;
-      const collectionNftAddress =
-        enrichedTransaction.instructions[3].accounts[13];
-      const collection = await this.prisma.collectibleComicCollection.findFirst(
-        {
-          where: { address: collectionNftAddress },
-        },
-      );
-      this.websocketGateway.handleLegacyCollectibleComicMintRejected(
-        collection.comicIssueId,
-      );
-      this.websocketGateway.handleWalletLegacyCollectibleComicMintRejected(
-        nftTransactionInfo.buyer,
-      );
-    } catch (e) {
-      console.error(e);
     }
   }
 
