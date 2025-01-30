@@ -1,34 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
-import { IsDate, IsEnum, IsString } from 'class-validator';
-import { getPublicUrl } from '../../aws/s3client';
-import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
-import {
-  constructActivityNotificationMessage,
-  getAdminActivityNotificationS3Folder,
-} from '../../utils/websockets';
+import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
+import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
+import { ifDefined } from 'src/utils/lodash';
 
 export enum ActivityType {
-  RateComic = 'rated comic',
-  LikeComic = 'liked comic',
-  BookmarkComic = 'bookmarked comic',
-  LikeComicIssue = 'liked comic issue',
-  RateComicIssue = 'rated comic issue',
-  FollowCreator = 'followed creator',
-  SpinWheel = 'spun wheel',
-  MintCollectible = 'minted collectible',
+  ComicRated = 'ComicRated',
+  ComicLiked = 'ComicLiked',
+  ComicBookmarked = 'ComicBookmarked',
+  ComicIssueLiked = 'ComicIssueLiked',
+  ComicIssueRated = 'ComicIssueRated',
+  CollectibleComicMinted = 'CollectibleComicMinted',
+  CreatorFollow = 'CreatorFollow',
+  WheelSpun = 'WheelSpun',
 }
 
 export class ActivityNotificationDto {
+  @IsOptional()
   @Type(() => BasicUserDto)
-  user: BasicUserDto;
+  user?: BasicUserDto;
 
   @IsString()
-  icon: string;
+  targetId: string;
 
   @IsString()
-  message: string;
+  targetTitle: string;
 
   @IsDate()
   createdAt: Date;
@@ -39,21 +36,21 @@ export class ActivityNotificationDto {
 }
 
 export type ActivityNotificationInput = {
-  user: User;
+  user?: User;
+  targetId: string;
+  targetTitle: string;
   type: ActivityType;
 };
 
 export function toActivityNotificationDto(input: ActivityNotificationInput) {
   const type = input.type;
-  const icon = getAdminActivityNotificationS3Folder(type, 'icon');
-  const message = constructActivityNotificationMessage(type);
 
   const plainActivityNotificationDto: ActivityNotificationDto = {
-    user: toBasicUserDto(input.user),
+    user: ifDefined(input.user, toBasicUserDto),
     type,
+    targetId: input.targetId,
+    targetTitle: input.targetTitle,
     createdAt: new Date(),
-    icon: getPublicUrl(icon),
-    message,
   };
 
   const activityNotificationDto: ActivityNotificationDto = plainToInstance(
