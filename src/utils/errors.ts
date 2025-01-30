@@ -128,4 +128,6 @@ export const ERROR_MESSAGES = {
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
   PRIVY_NO_ACCOUNT_OR_WALLET: 'Account or wallet not provided',
   INVALID_RESPONSE_BODY: 'Invalid response body',
+  SIGNATURE_REQUEST_PENDING: (address: string) =>
+    `signature request for comic ${address} is pending, wait for sometime before requesting again`,
 };

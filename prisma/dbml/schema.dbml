@@ -767,9 +767,13 @@ Table SignatureRequest {
   id Int [pk, increment]
   collectibleComicAddress String [not null]
   collectibleComic CollectibleComic [not null]
-  resolvedAt DateTime
+  resolvedAt DateTime [not null]
   status SignatureRequestStatus [not null, default: 'Pending']
   createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (collectibleComicAddress, resolvedAt) [unique]
+  }
 }
 
 Enum WalletProvider {
