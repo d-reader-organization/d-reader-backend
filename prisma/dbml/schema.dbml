@@ -763,9 +763,6 @@ Table PhysicalItem {
   image String [not null, default: '']
 }
 
-Enum WalletProvider {
-  NonCustodial
-  Embedded
 Table SignatureRequest {
   id Int [pk, increment]
   collectibleComicAddress String [not null]
@@ -773,6 +770,11 @@ Table SignatureRequest {
   resolvedAt DateTime
   status SignatureRequestStatus [not null, default: 'Pending']
   createdAt DateTime [default: `now()`, not null]
+}
+
+Enum WalletProvider {
+  NonCustodial
+  Embedded
 }
 
 Enum Role {
