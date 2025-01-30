@@ -849,9 +849,11 @@ model SignatureRequest {
   id                      Int                    @id @default(autoincrement())
   collectibleComicAddress String
   collectibleComic        CollectibleComic       @relation(fields: [collectibleComicAddress], references: [address])
-  resolvedAt              DateTime?
+  resolvedAt              DateTime
   status                  SignatureRequestStatus @default(Pending)
   createdAt               DateTime               @default(now())
+
+  @@unique([collectibleComicAddress, resolvedAt])
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
