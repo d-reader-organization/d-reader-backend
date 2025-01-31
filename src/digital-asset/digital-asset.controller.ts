@@ -16,11 +16,15 @@ import {
 } from './dto/collectible-comic.dto';
 import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
+import { BotGateway } from 'src/discord/bot.gateway';
 
 @ApiTags('Assets')
 @Controller('asset')
 export class DigitalAssetController {
-  constructor(private readonly digitalAssetService: DigitalAssetService) {}
+  constructor(
+    private readonly digitalAssetService: DigitalAssetService,
+    private readonly discordBotGateway: BotGateway,
+  ) {}
 
   /** @deprecated */
   @Get('get')
@@ -66,13 +70,11 @@ export class DigitalAssetController {
     @Param('address') address: string,
     @UserEntity() user: UserPayload,
   ) {
-    return await this.digitalAssetService.requestCollectibleComicSignature(
-      address,
-      user,
-    );
+    await this.digitalAssetService.requestCollectibleComicSignature(address);
+    await this.discordBotGateway.requestAutograph(user.username, address);
   }
 
-  // TODO: Add a CreatorAndAdmin guard 
+  // TODO: Add a CreatorAndAdmin guard
   @Get('get/autograph-requests')
   async getAutographRequests(
     params: AutographRequestFilterParams,
