@@ -70,8 +70,6 @@ import { CollectibleComicInput } from './dto/collectible-comic.dto';
 import { PrintEditionInput } from './dto/print-edition.dto';
 import { OneOfOneInput } from './dto/one-of-one.dto';
 import { DigitalAssetInput } from './dto/digital-asset.dto';
-import { BotGateway } from 'src/discord/bot.gateway';
-import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { addHours } from 'date-fns';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
 
@@ -87,7 +85,6 @@ export class DigitalAssetService {
     private readonly prisma: PrismaService,
     private readonly helius: HeliusService,
     private readonly s3: s3Service,
-    private readonly discordBotGateway: BotGateway,
   ) {
     this.umi = umi;
     this.connection = getConnection();
@@ -343,7 +340,7 @@ export class DigitalAssetService {
     return stats;
   }
 
-  async requestCollectibleComicSignature(address: string, user: UserPayload) {
+  async requestCollectibleComicSignature(address: string) {
     const request = await this.prisma.signatureRequest.findUnique({
       where: {
         collectibleComicAddress_resolvedAt: {
@@ -378,7 +375,6 @@ export class DigitalAssetService {
         resolvedAt: new Date(0),
       },
     });
-    await this.discordBotGateway.requestAutograph(user.username, address);
   }
 
   async findAutographRequests(query: AutographRequestFilterParams) {
