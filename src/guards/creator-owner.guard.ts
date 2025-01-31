@@ -28,12 +28,12 @@ export class CreatorOwnerGuard implements CanActivate {
 
     const creator = await this.prisma.creatorChannel.findUnique({
       where: { handle },
-      select: { id: true },
+      select: { userId: true },
     });
 
     if (!creator) {
       throw new NotFoundException(`Creator with handle ${handle} not found`);
-    } else if (creator.id === user.id) return true;
+    } else if (creator.userId === user.id) return true;
     else throw new ForbiddenException("You don't own this creator profile");
   }
 }
