@@ -33,8 +33,6 @@ export class UserAuthGuard extends AuthGuard('jwt') {
     const user = request.user;
 
     if (!user) return false;
-    if (user.type !== 'user') return false;
-
     return parentCanActivate;
   }
 }
