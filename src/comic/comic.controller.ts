@@ -238,7 +238,7 @@ export class ComicController {
   @UserAuth()
   @Patch('bookmark/:slug')
   async bookmark(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
-    await this.userComicService.toggleDate(user.id, slug, 'bookmarkedAt');
+    await this.userComicService.bookmark(user.id, slug);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -248,7 +248,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.userComicService.toggleDate(user.id, slug, 'favouritedAt');
+    await this.userComicService.favouritise(user.id, slug);
   }
 
   /* Publish comic */
