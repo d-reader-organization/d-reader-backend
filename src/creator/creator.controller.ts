@@ -46,6 +46,11 @@ import {
   toSearchCreatorDtoArray,
 } from './dto/search-creator.dto';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
+import { CreatorActivityFeedParams } from './dto/creator-activity-feed-params.dto';
+import {
+  CreatorActivityFeedDto,
+  toCreatorActivityFeedDtoArray,
+} from './dto/creator-activity-feed.dto';
 
 @ApiTags('Creator')
 @Controller('creator')
@@ -118,6 +123,15 @@ export class CreatorController {
       userId: +userId,
     });
     return toCreatorDtoArray(creators);
+  }
+
+  //TODO: Add guard
+  @Get('get-activity-feed')
+  async findCreatorActivityFeed(
+    @Query() query: CreatorActivityFeedParams,
+  ): Promise<CreatorActivityFeedDto[]> {
+    const feed = await this.creatorService.findCreatorActivityFeed(query);
+    return toCreatorActivityFeedDtoArray(feed);
   }
 
   /* Update specific creator */
