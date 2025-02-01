@@ -34,6 +34,7 @@ Table User {
   interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
+  creatorActivityFeeds CreatorActivityFeed [not null]
 }
 
 Table Wallet {
@@ -74,6 +75,7 @@ Table CreatorChannel {
   verifiedAt DateTime
   popularizedAt DateTime
   deletedAt DateTime
+  activityFeed CreatorActivityFeed [not null]
 }
 
 Table Comic {
@@ -776,6 +778,18 @@ Table SignatureRequest {
   }
 }
 
+Table CreatorActivityFeed {
+  id Int [pk, increment]
+  creatorId Int [not null]
+  creator CreatorChannel [not null]
+  targetId String [not null]
+  targetType ActivityTargetType [not null]
+  user User
+  userId Int
+  createdAt DateTime [default: `now()`, not null]
+  type CreatorActivityFeedType [not null]
+}
+
 Enum WalletProvider {
   NonCustodial
   Embedded
@@ -881,6 +895,26 @@ Enum SignatureRequestStatus {
   Approved
   Pending
   Rejected
+}
+
+Enum CreatorActivityFeedType {
+  ComicRated
+  ComicLiked
+  ComicBookmarked
+  ComicVerified
+  ComicPublished
+  ComicIssueLiked
+  ComicIssueRated
+  ComicIssueVerified
+  ComicIssuePublished
+  CreatorFollow
+  CreatorVerified
+}
+
+Enum ActivityTargetType {
+  Creator
+  Comic
+  ComicIssue
 }
 
 Ref: User.referrerId - User.id
@@ -1012,3 +1046,7 @@ Ref: WheelRewardReceipt.userId > User.id
 Ref: WheelRewardReceipt.walletAddress > Wallet.address
 
 Ref: SignatureRequest.collectibleComicAddress > CollectibleComic.address
+
+Ref: CreatorActivityFeed.creatorId > CreatorChannel.id
+
+Ref: CreatorActivityFeed.userId > User.id

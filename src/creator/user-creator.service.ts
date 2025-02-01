@@ -2,11 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/dto/types';
 import { UserCreatorMyStatsDto } from './dto/types';
-import { UserCreator } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  UserCreator,
+} from '@prisma/client';
 import { PickByType } from 'src/types/shared';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { CreatorInput } from './dto/creator.dto';
 import { isNull } from 'lodash';
+import { ERROR_MESSAGES } from 'src/utils/errors';
 
 @Injectable()
 export class UserCreatorService {
@@ -88,6 +93,31 @@ export class UserCreatorService {
 
     const isFollowing = !isNull(userCreator) ? !!userCreator.followedAt : false;
     return { isFollowing };
+  }
+
+  async follow(userId: number, creatorId: number) {
+    const userCreator = await this.toggleDate(userId, creatorId, 'followedAt');
+    const targetId = creatorId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type: CreatorActivityFeedType.CreatorFollow,
+          targetType: ActivityTargetType.Creator,
+          targetId,
+          user: { connect: { id: userId } },
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          targetId,
+          CreatorActivityFeedType.CreatorFollow,
+          e,
+        ),
+      );
+
+    return userCreator;
   }
 
   async toggleDate(

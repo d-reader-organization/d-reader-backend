@@ -45,6 +45,7 @@ model User {
   interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
   channel                        CreatorChannel?
+  creatorActivityFeeds           CreatorActivityFeed[]
 }
 
 enum WalletProvider {
@@ -98,6 +99,7 @@ model CreatorChannel {
   verifiedAt     DateTime?
   popularizedAt  DateTime?
   deletedAt      DateTime?
+  activityFeed  CreatorActivityFeed[]
 }
 
 enum AudienceType {
@@ -777,17 +779,17 @@ enum WheelRewardType {
 }
 
 model Wheel {
-  id             Int           @id @default(autoincrement())
+  id             Int                  @id @default(autoincrement())
   name           String
-  s3BucketSlug   String        @unique
-  description    String        @default("")
-  image          String        @default("")
+  s3BucketSlug   String               @unique
+  description    String               @default("")
+  image          String               @default("")
   type           WheelType
   startsAt       DateTime
   expiresAt      DateTime?
   rewards        WheelReward[]
   winProbability Int
-  isActive       Boolean       @default(true)
+  isActive       Boolean              @default(true)
   receipts       WheelRewardReceipt[]
 }
 
@@ -826,8 +828,8 @@ model WheelRewardReceipt {
   walletAddress        String?
   transactionSignature String?
   dropId               Int?
-  dropName             String     @default("")
-  amount               Int        
+  dropName             String      @default("")
+  amount               Int
   claimedAt            DateTime?
   createdAt            DateTime
 }
@@ -854,6 +856,38 @@ model SignatureRequest {
   createdAt               DateTime               @default(now())
 
   @@unique([collectibleComicAddress, resolvedAt])
+}
+
+enum CreatorActivityFeedType {
+  ComicRated
+  ComicLiked
+  ComicBookmarked
+  ComicVerified
+  ComicPublished
+  ComicIssueLiked
+  ComicIssueRated
+  ComicIssueVerified
+  ComicIssuePublished
+  CreatorFollow
+  CreatorVerified
+}
+
+enum ActivityTargetType {
+  Creator
+  Comic
+  ComicIssue
+}
+
+model CreatorActivityFeed {
+  id        Int                     @id @default(autoincrement())
+  creatorId Int
+  creator   CreatorChannel          @relation(fields: [creatorId], references: [id])
+  targetId  String
+  targetType ActivityTargetType
+  user      User?                    @relation(fields: [userId], references: [id])
+  userId    Int?
+  createdAt DateTime                @default(now())
+  type      CreatorActivityFeedType
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)

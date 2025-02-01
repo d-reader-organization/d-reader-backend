@@ -1,3 +1,5 @@
+import { CreatorActivityFeedType } from '@prisma/client';
+
 export const ERROR_MESSAGES = {
   CANDY_MACHINE_NOT_FOUND: (address: string) =>
     `Candy Machine with address ${address} does not exist`,
@@ -130,4 +132,9 @@ export const ERROR_MESSAGES = {
   INVALID_RESPONSE_BODY: 'Invalid response body',
   SIGNATURE_REQUEST_PENDING: (address: string) =>
     `signature request for comic ${address} is pending, wait for sometime before requesting again`,
+  FAILED_TO_INDEX_ACTIVITY: (
+    id: string,
+    type: CreatorActivityFeedType,
+    e: Error,
+  ) => `failed to index activity ${type} for id ${id} : ${e.toString()}`,
 };

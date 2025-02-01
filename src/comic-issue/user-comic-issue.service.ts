@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
-import { CouponType, UserComicIssue } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CouponType,
+  CreatorActivityFeedType,
+  UserComicIssue,
+} from '@prisma/client';
 import { ComicIssueStats } from '../comic/dto/types';
 import { ComicIssue } from '@prisma/client';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { ERROR_MESSAGES } from 'src/utils/errors';
 
 @Injectable()
 export class UserComicIssueService {
@@ -219,11 +225,72 @@ export class UserComicIssueService {
   }
 
   async rate(userId: number, comicIssueId: number, rating: number) {
-    return await this.prisma.userComicIssue.upsert({
+    const userComicIssue = await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: { userId, comicIssueId, rating },
       update: { rating },
+      include: {
+        comicIssue: { include: { comic: { select: { creatorId: true } } } },
+      },
     });
+
+    const creatorId = userComicIssue.comicIssue.comic.creatorId;
+    const targetId = comicIssueId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type: CreatorActivityFeedType.ComicIssueRated,
+          targetType: ActivityTargetType.ComicIssue,
+          targetId,
+          user: { connect: { id: userId } },
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          targetId,
+          CreatorActivityFeedType.ComicIssueRated,
+          e,
+        ),
+      );
+
+    return userComicIssue;
+  }
+
+  async favourite(userId: number, comicIssueId: number) {
+    const userComicIssue = await this.toggleDate(
+      userId,
+      comicIssueId,
+      'favouritedAt',
+    );
+    const comicIssue = await this.prisma.comicIssue.findUnique({
+      where: { id: comicIssueId },
+      include: { comic: { select: { creatorId: true } } },
+    });
+
+    const creatorId = comicIssue.comic.creatorId;
+    const targetId = comicIssueId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type: CreatorActivityFeedType.ComicIssueLiked,
+          targetType: ActivityTargetType.ComicIssue,
+          targetId,
+          user: { connect: { id: userId } },
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          targetId,
+          CreatorActivityFeedType.ComicIssueLiked,
+          e,
+        ),
+      );
+
+    return userComicIssue;
   }
 
   async toggleDate(

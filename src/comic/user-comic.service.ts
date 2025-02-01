@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { UserComic } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  UserComic,
+} from '@prisma/client';
 import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class UserComicService {
@@ -94,11 +99,87 @@ export class UserComicService {
   }
 
   async rate(userId: number, comicSlug: string, rating: number) {
-    return this.prisma.userComic.upsert({
+    const userComic = await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },
+      include: { comic: true },
     });
+
+    const creatorId = userComic.comic.creatorId;
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          targetId: comicSlug,
+          targetType: ActivityTargetType.Comic,
+          user: { connect: { id: userId } },
+          type: CreatorActivityFeedType.ComicRated,
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          comicSlug,
+          CreatorActivityFeedType.ComicRated,
+          e,
+        ),
+      );
+
+    return userComic;
+  }
+
+  async bookmark(userId: number, comicSlug: string) {
+    const userComic = await this.toggleDate(userId, comicSlug, 'bookmarkedAt');
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug: comicSlug },
+    });
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: comic.creatorId } },
+          targetType: ActivityTargetType.Comic,
+          targetId: comicSlug,
+          user: { connect: { id: userId } },
+          type: CreatorActivityFeedType.ComicBookmarked,
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          comicSlug,
+          CreatorActivityFeedType.ComicBookmarked,
+          e,
+        ),
+      );
+
+    return userComic;
+  }
+
+  async favouritise(userId: number, comicSlug: string) {
+    const userComic = await this.toggleDate(userId, comicSlug, 'favouritedAt');
+    const comic = await this.prisma.comic.findUnique({
+      where: { slug: comicSlug },
+    });
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: comic.creatorId } },
+          targetType: ActivityTargetType.Comic,
+          targetId: comicSlug,
+          user: { connect: { id: userId } },
+          type: CreatorActivityFeedType.ComicLiked,
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          comicSlug,
+          CreatorActivityFeedType.ComicLiked,
+          e,
+        ),
+      );
+
+    return userComic;
   }
 
   async toggleDate(
