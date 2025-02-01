@@ -8,7 +8,13 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateComicDto } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { UserComicService } from './user-comic.service';
-import { Comic, Genre, CreatorChannel } from '@prisma/client';
+import {
+  Comic,
+  Genre,
+  CreatorChannel,
+  CreatorActivityFeedType,
+  ActivityTargetType,
+} from '@prisma/client';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
@@ -439,6 +445,30 @@ export class ComicService {
     }
   }
 
+  indexComicStatusActivity(
+    creatorId: number,
+    comicSlug: string,
+    property: ComicStatusProperty,
+  ) {
+    const type =
+      property == 'publishedAt'
+        ? CreatorActivityFeedType.ComicPublished
+        : CreatorActivityFeedType.ComicVerified;
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type,
+          targetType: ActivityTargetType.Comic,
+          targetId: comicSlug,
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(comicSlug, type, e),
+      );
+  }
+
   async toggleDate({
     slug,
     property,
@@ -464,8 +494,18 @@ export class ComicService {
       const email = updatedComic.creator.user.email;
       if (property === 'verifiedAt' && updatedComic.verifiedAt) {
         this.mailService.comicVerifed(updatedComic, email);
+        this.indexComicStatusActivity(
+          updatedComic.creatorId,
+          slug,
+          'verifiedAt',
+        );
       } else if (property === 'publishedAt' && updatedComic.publishedAt) {
         this.mailService.comicPublished(updatedComic, email);
+        this.indexComicStatusActivity(
+          updatedComic.creatorId,
+          slug,
+          'publishedAt',
+        );
       }
     }
   }

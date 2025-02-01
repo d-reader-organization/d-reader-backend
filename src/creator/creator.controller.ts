@@ -209,7 +209,7 @@ export class CreatorController {
   @UserAuth()
   @Patch('follow/:id')
   async follow(@UserEntity() user: UserPayload, @Param('id') id: string) {
-    await this.userCreatorService.toggleDate(user.id, +id, 'followedAt');
+    await this.userCreatorService.follow(user.id, +id);
   }
 
   @AdminGuard()

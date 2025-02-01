@@ -8,7 +8,13 @@ import {
   UpdateCreatorDto,
   UpdateCreatorFilesDto,
 } from '../creator/dto/update-creator.dto';
-import { CreatorChannel, Genre, Prisma } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  CreatorChannel,
+  Genre,
+  Prisma,
+} from '@prisma/client';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
@@ -313,6 +319,27 @@ export class CreatorService {
     }
   }
 
+  indexCreatorStatusActivity(creatorId: number) {
+    const targetId = creatorId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type: CreatorActivityFeedType.CreatorVerified,
+          targetType: ActivityTargetType.Creator,
+          targetId,
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          targetId,
+          CreatorActivityFeedType.CreatorVerified,
+          e,
+        ),
+      );
+  }
+
   async toggleDate({
     id,
     property,
@@ -339,6 +366,7 @@ export class CreatorService {
       const email = creator.user.email;
       await this.cacheService.deleteByPattern(CachePath.CREATOR_GET_MANY);
       this.mailService.creatorVerified(updatedCreator, email);
+      this.indexCreatorStatusActivity(id);
     }
   }
 
