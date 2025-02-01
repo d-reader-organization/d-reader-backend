@@ -36,6 +36,9 @@ import { SearchCreatorParams } from './dto/search-creator-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { CreatorActivityFeedParams } from './dto/creator-activity-feed-params.dto';
+import { CreatorActivityFeedInput } from './dto/creator-activity-feed.dto';
+import { SortOrder } from 'src/types/sort-order';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -164,6 +167,64 @@ export class CreatorService {
     }
 
     return creator;
+  }
+
+  async findCreatorActivityFeed(
+    query: CreatorActivityFeedParams,
+  ): Promise<CreatorActivityFeedInput[]> {
+    const activities = await this.prisma.creatorActivityFeed.findMany({
+      where: { creatorId: query.creatorId, targetType: query.targetType },
+      include: { user: true },
+      skip: query.skip,
+      take: query.take,
+      orderBy: {
+        createdAt: query.sortOrder || SortOrder.ASC,
+      },
+    });
+
+    const feeds: CreatorActivityFeedInput[] = await Promise.all(
+      activities.map(async (activity) => {
+        return {
+          ...activity,
+          targetTitle: await this.findActivityTargetTitle(
+            activity.targetId,
+            activity.targetType,
+          ),
+        };
+      }),
+    );
+
+    return feeds;
+  }
+
+  async findActivityTargetTitle(
+    targetId: string,
+    targetType: ActivityTargetType,
+  ) {
+    const SOMEONE = 'Someone';
+
+    switch (targetType) {
+      case ActivityTargetType.Comic: {
+        const comic = await this.prisma.comic.findUnique({
+          where: { slug: targetId },
+        });
+        return comic.title;
+      }
+      case ActivityTargetType.ComicIssue: {
+        const comicIssue = await this.prisma.comicIssue.findUnique({
+          where: { id: +targetId },
+        });
+        return comicIssue.title;
+      }
+      case ActivityTargetType.Creator: {
+        const creator = await this.prisma.creatorChannel.findUnique({
+          where: { id: +targetId },
+        });
+        return creator.handle;
+      }
+      default:
+        return SOMEONE;
+    }
   }
 
   async update(id: number, updateCreatorDto: UpdateCreatorDto) {
