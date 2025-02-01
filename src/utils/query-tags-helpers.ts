@@ -124,10 +124,10 @@ export const sortCreatorBy = (tag: CreatorSortTag): Prisma.Sql => {
   switch (tag) {
     case CreatorSortTag.Followers:
       return Prisma.sql`"followersCount"`;
-    case CreatorSortTag.Name:
-      return Prisma.sql`creator."name"`;
+    case CreatorSortTag.Handle:
+      return Prisma.sql`creator."handle"`;
     default:
-      return Prisma.sql`creator."name"`;
+      return Prisma.sql`creator."handle"`;
   }
 };
 

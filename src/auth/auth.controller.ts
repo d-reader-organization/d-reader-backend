@@ -5,7 +5,7 @@ import { PasswordService } from './password.service';
 import { Throttle } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
 import {
-  validateCreatorName,
+  validateCreatorHandle,
   validateEmail,
   validateName,
 } from '../utils/user';
@@ -94,33 +94,10 @@ export class AuthController {
 
   // CREATOR ENDPOINTS
   @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Get('creator/validate-name/:name')
-  async validateCreatorName(@Param('name') name: string) {
-    validateCreatorName(name);
-    return await this.creatorService.throwIfNameTaken(name);
-  }
-
-  @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Get('creator/validate-email/:email')
-  async validateCreatorEmail(@Param('email') email: string) {
-    validateEmail(email);
-    return await this.creatorService.throwIfEmailTaken(email);
-  }
-
-  /* Register a new user */
-  @Post('creator/register')
-  async registerCreator(
-    @Body() registerDto: RegisterDto,
-  ): Promise<Authorization> {
-    const creator = await this.creatorService.register(registerDto);
-    return this.authService.authorizeCreator(creator);
-  }
-
-  /* Login as a user */
-  @Patch('creator/login')
-  async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
-    const creator = await this.creatorService.login(loginDto);
-    return this.authService.authorizeCreator(creator);
+  @Get('creator/validate-handle/:handle')
+  async validateCreatorName(@Param('handle') handle: string) {
+    validateCreatorHandle(handle);
+    return await this.creatorService.throwIfHandleTaken(handle);
   }
 
   // Should this be an authorized endpoint? How do refresh tokens actually work??

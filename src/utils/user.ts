@@ -52,12 +52,14 @@ export function validatePassword(password: string) {
   return true;
 }
 
-export function validateCreatorName(name: string) {
-  if (typeof name !== 'string') {
-    throw new BadRequestException(`Bad name format: ${name || '<unknown>'}`);
-  } else if (!maxLength(name, USERNAME_MAX_SIZE)) {
+export function validateCreatorHandle(handle: string) {
+  if (typeof handle !== 'string') {
+    throw new BadRequestException(
+      `Bad handle format: ${handle || '<unknown>'}`,
+    );
+  } else if (!maxLength(handle, USERNAME_MAX_SIZE)) {
     throw new BadRequestException(`Max ${USERNAME_MAX_SIZE} characters`);
-  } else if (!minLength(name, USERNAME_MIN_SIZE)) {
+  } else if (!minLength(handle, USERNAME_MIN_SIZE)) {
     throw new BadRequestException(`Min ${USERNAME_MIN_SIZE} characters`);
   }
 }

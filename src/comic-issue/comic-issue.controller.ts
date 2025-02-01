@@ -32,7 +32,7 @@ import {
   OwnedComicIssueDto,
   toOwnedComicIssueDtoArray,
 } from './dto/owned-comic-issue.dto';
-import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import {
@@ -48,7 +48,6 @@ import {
 } from 'src/comic-page/dto/create-comic-page.dto';
 import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicIssueOwnerAuth } from 'src/guards/comic-issue-owner.guard';
 import {
   CreateStatefulCoverBodyDto,
@@ -97,7 +96,7 @@ export class ComicIssueController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @CreatorEntity() creator: CreatorPayload,
+    @UserEntity() creator: UserPayload,
     @Body() createComicIssueDto: CreateComicIssueDto,
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.create(

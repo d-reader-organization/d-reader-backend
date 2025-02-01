@@ -70,6 +70,8 @@ import { CollectibleComicInput } from './dto/collectible-comic.dto';
 import { PrintEditionInput } from './dto/print-edition.dto';
 import { OneOfOneInput } from './dto/one-of-one.dto';
 import { DigitalAssetInput } from './dto/digital-asset.dto';
+import { addHours } from 'date-fns';
+import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -140,7 +142,7 @@ export class DigitalAssetService {
           collectionAddress: query.collectionAddress,
           collection: {
             comicIssue: query.comicIssueId
-              ? { id: query.comicIssueId ? +query.comicIssueId : undefined }
+              ? { id: +query.comicIssueId }
               : { comic: { slug: query.comicSlug } },
           },
         },
@@ -336,6 +338,97 @@ export class DigitalAssetService {
     );
 
     return stats;
+  }
+
+  async requestCollectibleComicSignature(address: string) {
+    const request = await this.prisma.signatureRequest.findUnique({
+      where: {
+        collectibleComicAddress_resolvedAt: {
+          collectibleComicAddress: address,
+          resolvedAt: new Date(0),
+        },
+      },
+    });
+
+    if (request) {
+      const now = new Date();
+      const lastRequested = request.createdAt;
+
+      const cooldownPeriod = addHours(lastRequested, 24);
+      if (cooldownPeriod > now) {
+        throw new BadRequestException(
+          ERROR_MESSAGES.SIGNATURE_REQUEST_PENDING(address),
+        );
+      }
+    }
+
+    await this.prisma.signatureRequest.upsert({
+      where: {
+        collectibleComicAddress_resolvedAt: {
+          collectibleComicAddress: address,
+          resolvedAt: new Date(0),
+        },
+      },
+      update: { createdAt: new Date() },
+      create: {
+        collectibleComic: { connect: { address } },
+        resolvedAt: new Date(0),
+      },
+    });
+  }
+
+  async findAutographRequests(query: AutographRequestFilterParams) {
+    const requests = await this.prisma.signatureRequest.findMany({
+      where: {
+        collectibleComic: {
+          metadata: {
+            isUsed: query?.isUsed,
+            isSigned: query?.isSigned,
+            rarity: query?.rarity,
+            collection: {
+              comicIssue: {
+                ...(query?.comicIssueId
+                  ? { id: query?.comicIssueId }
+                  : { comicSlug: query?.comicSlug }),
+                comic: {
+                  creatorId: query?.creatorId,
+                },
+              },
+            },
+          },
+        },
+      },
+      include: {
+        collectibleComic: {
+          include: {
+            metadata: {
+              include: {
+                collection: {
+                  include: {
+                    comicIssue: {
+                      include: { statefulCovers: true },
+                    },
+                  },
+                },
+              },
+            },
+            digitalAsset: true,
+          },
+        },
+      },
+      skip: query.skip,
+      take: query.take,
+    });
+
+    return requests.map(({ collectibleComic }) => {
+      const collection = collectibleComic.metadata.collection;
+      return {
+        ...collectibleComic,
+        collection,
+        statefulCovers: collection.comicIssue.statefulCovers,
+        comicIssueTitle: collection.comicIssue.title,
+      };
+    });
   }
 
   async createOneOfOneCollectionTransaction(

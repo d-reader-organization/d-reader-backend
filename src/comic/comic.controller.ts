@@ -19,7 +19,7 @@ import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
-import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import {
@@ -28,7 +28,6 @@ import {
 } from '@nestjs/platform-express';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
 import { CreateComicDto } from './dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
@@ -58,7 +57,7 @@ export class ComicController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @CreatorEntity() creator: CreatorPayload,
+    @UserEntity() creator: UserPayload,
     @Body() createComicDto: CreateComicDto,
   ): Promise<ComicDto> {
     const comic = await this.comicService.create(creator.id, createComicDto);
@@ -239,7 +238,7 @@ export class ComicController {
   @UserAuth()
   @Patch('bookmark/:slug')
   async bookmark(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
-    await this.userComicService.toggleDate(user.id, slug, 'bookmarkedAt');
+    await this.userComicService.bookmark(user.id, slug);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -249,7 +248,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.userComicService.toggleDate(user.id, slug, 'favouritedAt');
+    await this.userComicService.favouritise(user.id, slug);
   }
 
   /* Publish comic */

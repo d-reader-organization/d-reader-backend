@@ -24,6 +24,8 @@ import {
   CollectibleComicCollection,
   TokenStandard,
   CandyMachine,
+  CreatorActivityFeedType,
+  ActivityTargetType,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -157,7 +159,7 @@ export class ComicIssueService {
           comicTitle: string;
           audienceType: AudienceType;
           creatorName: string;
-          creatorSlug: string;
+          creatorId: string;
           creatorVerifiedAt?: string;
           creatorAvatar?: string;
           genres?: Genre[];
@@ -178,7 +180,7 @@ export class ComicIssueService {
             audienceType: issue.audienceType,
             creator: {
               name: issue.creatorName,
-              slug: issue.creatorSlug,
+              id: issue.creatorId,
               isVerified: !!issue.verifiedAt,
               avatar: issue.creatorAvatar,
             },
@@ -823,6 +825,29 @@ export class ComicIssueService {
     }
   }
 
+  indexComicIssueStatusActivity(
+    creatorId: number,
+    comicIssueId: number,
+    property: ComicIssueStatusProperty,
+  ) {
+    const type =
+      property == 'publishedAt'
+        ? CreatorActivityFeedType.ComicIssuePublished
+        : CreatorActivityFeedType.ComicIssueVerified;
+    const targetId = comicIssueId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type,
+          targetType: ActivityTargetType.Comic,
+          targetId,
+        },
+      })
+      .catch((e) => ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(targetId, type, e));
+  }
+
   async toggleDate({
     id,
     property,
@@ -846,7 +871,7 @@ export class ComicIssueService {
       include: {
         comic: {
           include: {
-            creator: true,
+            creator: { include: { user: { select: { email: true } } } },
           },
         },
       },
@@ -857,10 +882,21 @@ export class ComicIssueService {
     if (['verifiedAt', 'publishedAt'].includes(property)) {
       await this.cacheService.deleteByPattern(CachePath.COMIC_ISSUE_GET_MANY);
 
+      const email = updatedComicIssue.comic.creator.user.email;
       if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
-        this.mailService.comicIssueVerified(updatedComicIssue);
+        this.mailService.comicIssueVerified(updatedComicIssue, email);
+        this.indexComicIssueStatusActivity(
+          updatedComicIssue.comic.creatorId,
+          id,
+          'verifiedAt',
+        );
       } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
-        this.mailService.comicIssuePublished(updatedComicIssue);
+        this.mailService.comicIssuePublished(updatedComicIssue, email);
+        this.indexComicIssueStatusActivity(
+          updatedComicIssue.comic.creatorId,
+          id,
+          'publishedAt',
+        );
       }
     }
   }

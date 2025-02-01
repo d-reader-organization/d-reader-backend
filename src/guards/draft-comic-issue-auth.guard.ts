@@ -27,17 +27,19 @@ export class DraftComicIssueSalesDataGuard implements CanActivate {
 
     if (!user) return false;
     if (!id && !comicIssueId) return false;
-    if (user.type !== 'creator') return false;
+    if (user.role !== 'Creator') return false;
 
     const checkForComicIssueOwner = async (id: number) => {
       const comicIssue = await this.prisma.comicIssue.findUnique({
         where: { id },
-        select: { comic: { select: { creatorId: true } } },
+        select: {
+          comic: { select: { creator: { select: { userId: true } } } },
+        },
       });
 
       if (!comicIssue) {
         throw new NotFoundException(`Comic issue with id ${id} not found`);
-      } else if (comicIssue.comic.creatorId === user.id) return true;
+      } else if (comicIssue.comic.creator.userId === user.id) return true;
       else {
         throw new ForbiddenException("You don't own this comic issue");
       }

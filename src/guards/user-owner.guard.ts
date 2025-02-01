@@ -25,7 +25,6 @@ export class UserUpdateGuard implements CanActivate {
 
     if (!id) return true;
     if (!requestUser) return false;
-    if (requestUser.type !== 'user') return false;
 
     const user = await this.prisma.user.findUnique({
       where: { id: +id },

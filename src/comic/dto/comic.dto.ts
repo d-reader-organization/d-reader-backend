@@ -14,7 +14,7 @@ import { toUserComicDto, UserComicDto, UserComicInput } from './user-comic.dto';
 import { ComicStats } from 'src/comic/dto/types';
 import { ApiProperty } from '@nestjs/swagger';
 import { getPublicUrl } from '../../aws/s3client';
-import { Comic, Genre, Creator, AudienceType } from '@prisma/client';
+import { Comic, Genre, CreatorChannel, AudienceType } from '@prisma/client';
 import {
   PartialCreatorDto,
   toPartialCreatorDto,
@@ -102,7 +102,7 @@ export class ComicDto {
 }
 
 type WithGenres = { genres?: Genre[] };
-type WithCreator = { creator?: Creator };
+type WithCreator = { creator?: CreatorChannel };
 type WithStats = { stats?: Partial<ComicStats> };
 type WithMyStats = { myStats?: UserComicInput };
 

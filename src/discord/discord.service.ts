@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Comic, ComicIssue, Creator } from '@prisma/client';
+import { Comic, ComicIssue, CreatorChannel } from '@prisma/client';
 import { CREATOR_REGISTERED } from './templates/creatorRegistered';
 import { CREATOR_FILES_UPDATED } from './templates/creatorFilesUpdated';
 import { bold, MessagePayload, WebhookClient } from 'discord.js';
@@ -38,7 +38,7 @@ export class DiscordService {
     );
   }
 
-  async creatorRegistered(creator: Creator) {
+  async creatorRegistered(creator: CreatorChannel) {
     try {
       await this.discord?.send(CREATOR_REGISTERED(creator, this.payload));
     } catch (e) {
@@ -60,15 +60,15 @@ export class DiscordService {
     oldCreator,
     updatedCreator,
   }: {
-    oldCreator: Creator;
-    updatedCreator: Creator;
+    oldCreator: CreatorChannel;
+    updatedCreator: CreatorChannel;
   }) {
     try {
       await this.discord?.send(
         CREATOR_PROFILE_UPDATED({
           oldCreator,
           updatedCreator,
-          hyperlink: D_READER_LINKS.creator(updatedCreator.slug),
+          hyperlink: D_READER_LINKS.creator(updatedCreator.handle),
           payload: this.payload,
         }),
       );
@@ -162,12 +162,14 @@ export class DiscordService {
   }
 
   async creatorStatusUpdated(
-    creator: Creator,
+    creator: CreatorChannel,
     property: CreatorStatusProperty,
   ) {
     const status = !!creator[property];
     await this.discord?.send(
-      `🚨 Creator ${bold(creator.name)} status updated! ${property}: ${status}`,
+      `🚨 Creator ${bold(
+        creator.handle,
+      )} status updated! ${property}: ${status}`,
     );
   }
 
@@ -185,10 +187,10 @@ export class DiscordService {
     );
   }
 
-  async creatorEmailVerified(creator: Creator) {
+  async creatorEmailVerified(creator: CreatorChannel) {
     await this.discord?.send(
-      `📧 Creator ${bold(creator.name)} (${
-        creator.email
+      `📧 Creator ${bold(creator.handle)} (${
+        creator.handle
       }) has verified their email address!`,
     );
   }

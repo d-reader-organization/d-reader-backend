@@ -2,30 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/dto/types';
 import { UserCreatorMyStatsDto } from './dto/types';
-import { UserCreator } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  UserCreator,
+} from '@prisma/client';
 import { PickByType } from 'src/types/shared';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { CreatorInput } from './dto/creator.dto';
 import { isNull } from 'lodash';
+import { ERROR_MESSAGES } from 'src/utils/errors';
 
 @Injectable()
 export class UserCreatorService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCreatorStats(slug: string): Promise<CreatorStats> {
+  async getCreatorStats(id: number): Promise<CreatorStats> {
     const countFollowers = this.prisma.userCreator.count({
-      where: { creatorSlug: slug, followedAt: { not: null } },
+      where: { creatorId: id, followedAt: { not: null } },
     });
 
     const countComicIssues = this.prisma.comicIssue.count({
       where: {
-        comic: { creator: { slug } },
+        comic: { creator: { id } },
         publishedAt: { not: null },
         verifiedAt: { not: null },
       },
     });
 
-    const calculateTotalVolume = this.getTotalCreatorVolume(slug);
+    const calculateTotalVolume = this.getTotalCreatorVolume(id);
 
     const [followersCount, comicIssuesCount, totalVolume] = await Promise.all([
       countFollowers,
@@ -36,14 +41,14 @@ export class UserCreatorService {
     return { followersCount, comicIssuesCount, totalVolume };
   }
 
-  async getTotalCreatorVolume(slug: string) {
+  async getTotalCreatorVolume(id: number) {
     const getSecondaryVolume = this.prisma.auctionSale.aggregate({
       where: {
         listing: {
           digitalAsset: {
             collectibleComic: {
               metadata: {
-                collection: { comicIssue: { comic: { creator: { slug } } } },
+                collection: { comicIssue: { comic: { creator: { id } } } },
               },
             },
           },
@@ -57,7 +62,7 @@ export class UserCreatorService {
         collectibleComics: {
           every: {
             metadata: {
-              collection: { comicIssue: { comic: { creator: { slug } } } },
+              collection: { comicIssue: { comic: { creator: { id } } } },
             },
           },
         },
@@ -77,27 +82,52 @@ export class UserCreatorService {
   }
 
   async getUserStats(
-    creatorSlug: string,
+    id: number,
     userId?: number,
   ): Promise<UserCreatorMyStatsDto> {
     if (!userId) return undefined;
 
     const userCreator = await this.prisma.userCreator.findUnique({
-      where: { creatorSlug_userId: { userId, creatorSlug } },
+      where: { creatorId_userId: { userId, creatorId: id } },
     });
 
     const isFollowing = !isNull(userCreator) ? !!userCreator.followedAt : false;
     return { isFollowing };
   }
 
+  async follow(userId: number, creatorId: number) {
+    const userCreator = await this.toggleDate(userId, creatorId, 'followedAt');
+    const targetId = creatorId.toString();
+
+    this.prisma.creatorActivityFeed
+      .create({
+        data: {
+          creator: { connect: { id: creatorId } },
+          type: CreatorActivityFeedType.CreatorFollow,
+          targetType: ActivityTargetType.Creator,
+          targetId,
+          user: { connect: { id: userId } },
+        },
+      })
+      .catch((e) =>
+        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
+          targetId,
+          CreatorActivityFeedType.CreatorFollow,
+          e,
+        ),
+      );
+
+    return userCreator;
+  }
+
   async toggleDate(
     userId: number,
-    creatorSlug: string,
+    creatorId: number,
     property: keyof PickByType<UserCreator, Date>,
   ): Promise<UserCreator> {
     const userCreator = await this.prisma.userCreator.findUnique({
       where: {
-        creatorSlug_userId: { userId, creatorSlug },
+        creatorId_userId: { userId, creatorId },
       },
     });
 
@@ -105,8 +135,8 @@ export class UserCreatorService {
     const updatedDate = !!userCreator?.[property] ? null : new Date();
 
     return await this.prisma.userCreator.upsert({
-      where: { creatorSlug_userId: { userId, creatorSlug } },
-      create: { creatorSlug, userId, [property]: new Date() },
+      where: { creatorId_userId: { userId, creatorId } },
+      create: { creatorId, userId, [property]: new Date() },
       update: { [property]: updatedDate },
     });
   }
@@ -138,7 +168,7 @@ export class UserCreatorService {
       creators.map(async (creator) => {
         const followersCountQuery = this.prisma.userCreator.count({
           where: {
-            creatorSlug: creator.slug,
+            creatorId: creator.id,
             followedAt: {
               not: null,
             },
