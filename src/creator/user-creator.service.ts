@@ -11,11 +11,16 @@ import { PickByType } from 'src/types/shared';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { CreatorInput } from './dto/creator.dto';
 import { isNull } from 'lodash';
-import { ERROR_MESSAGES } from 'src/utils/errors';
+import { ERROR_MESSAGES } from '../utils/errors';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 @Injectable()
 export class UserCreatorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+  ) {}
 
   async getCreatorStats(id: number): Promise<CreatorStats> {
     const countFollowers = this.prisma.userCreator.count({
@@ -97,8 +102,12 @@ export class UserCreatorService {
 
   async follow(userId: number, creatorId: number) {
     const userCreator = await this.toggleDate(userId, creatorId, 'followedAt');
-    const targetId = creatorId.toString();
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: { id: creatorId },
+    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
+    const targetId = creatorId.toString();
     this.prisma.creatorActivityFeed
       .create({
         data: {
@@ -116,6 +125,13 @@ export class UserCreatorService {
           e,
         ),
       );
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.CreatorFollow,
+      targetId,
+      targetTitle: creator.handle,
+    });
 
     return userCreator;
   }
