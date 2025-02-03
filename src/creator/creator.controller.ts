@@ -126,7 +126,7 @@ export class CreatorController {
   }
 
   //TODO: Add guard
-  @Get('get-activity-feed')
+  @Get('activity-feed/get')
   async findCreatorActivityFeed(
     @Query() query: CreatorActivityFeedParams,
   ): Promise<CreatorActivityFeedDto[]> {
