@@ -39,6 +39,8 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { CreatorActivityFeedParams } from './dto/creator-activity-feed-params.dto';
 import { CreatorActivityFeedInput } from './dto/creator-activity-feed.dto';
 import { SortOrder } from 'src/types/sort-order';
+import { CreateCreatorChannelDto } from './dto/create-channel.dto';
+import { appendTimestamp } from 'src/utils/helpers';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -52,6 +54,29 @@ export class CreatorService {
     private readonly discordService: DiscordService,
     private readonly cacheService: CacheService,
   ) {}
+
+  async create(
+    userId: number,
+    createCreatorChannelDto: CreateCreatorChannelDto,
+  ) {
+    const { handle } = createCreatorChannelDto;
+    validateCreatorHandle(handle);
+    await this.throwIfHandleTaken(handle);
+
+    const creator = await this.prisma.creatorChannel.create({
+      data: {
+        ...createCreatorChannelDto,
+        handle,
+        user: {
+          connect: { id: userId },
+        },
+        s3BucketSlug: appendTimestamp(handle),
+      },
+    });
+
+    this.discordService.creatorRegistered(creator);
+    return creator;
+  }
 
   async findAll({
     query,

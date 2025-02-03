@@ -8,6 +8,7 @@ import {
   UploadedFile,
   Query,
   UploadedFiles,
+  Post,
 } from '@nestjs/common';
 import { ApiTags, ApiConsumes } from '@nestjs/swagger';
 import {
@@ -51,6 +52,7 @@ import {
   CreatorActivityFeedDto,
   toCreatorActivityFeedDtoArray,
 } from './dto/creator-activity-feed.dto';
+import { CreateCreatorChannelDto } from './dto/create-channel.dto';
 
 @ApiTags('Creator')
 @Controller('creator')
@@ -59,6 +61,19 @@ export class CreatorController {
     private readonly creatorService: CreatorService,
     private readonly userCreatorService: UserCreatorService,
   ) {}
+
+  @UserAuth()
+  @Post('create')
+  async createChannel(
+    @UserEntity() user: UserPayload,
+    @Body() createCreatorChannelDto: CreateCreatorChannelDto,
+  ) {
+    const creator = await this.creatorService.create(
+      user.id,
+      createCreatorChannelDto,
+    );
+    return toCreatorDto(creator);
+  }
 
   /* Get all creators */
   // @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
