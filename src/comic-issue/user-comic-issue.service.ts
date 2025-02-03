@@ -11,11 +11,16 @@ import { ComicIssueStats } from '../comic/dto/types';
 import { ComicIssue } from '@prisma/client';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
-import { ERROR_MESSAGES } from 'src/utils/errors';
+import { ERROR_MESSAGES } from '../utils/errors';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 @Injectable()
 export class UserComicIssueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+  ) {}
 
   async getComicIssueStats(comicIssueId: number): Promise<ComicIssueStats> {
     const issue = await this.prisma.comicIssue.findUnique({
@@ -230,11 +235,13 @@ export class UserComicIssueService {
       create: { userId, comicIssueId, rating },
       update: { rating },
       include: {
+        user: true,
         comicIssue: { include: { comic: { select: { creatorId: true } } } },
       },
     });
 
-    const creatorId = userComicIssue.comicIssue.comic.creatorId;
+    const { comicIssue, user } = userComicIssue;
+    const creatorId = comicIssue.comic.creatorId;
     const targetId = comicIssueId.toString();
 
     this.prisma.creatorActivityFeed
@@ -255,6 +262,13 @@ export class UserComicIssueService {
         ),
       );
 
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicIssueRated,
+      targetId,
+      targetTitle: comicIssue.title,
+    });
+
     return userComicIssue;
   }
 
@@ -268,6 +282,7 @@ export class UserComicIssueService {
       where: { id: comicIssueId },
       include: { comic: { select: { creatorId: true } } },
     });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     const creatorId = comicIssue.comic.creatorId;
     const targetId = comicIssueId.toString();
@@ -289,6 +304,13 @@ export class UserComicIssueService {
           e,
         ),
       );
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicIssueLiked,
+      targetId,
+      targetTitle: comicIssue.title,
+    });
 
     return userComicIssue;
   }

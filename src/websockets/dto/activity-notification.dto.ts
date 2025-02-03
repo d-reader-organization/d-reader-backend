@@ -5,7 +5,7 @@ import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
 import { ifDefined } from 'src/utils/lodash';
 
-export enum ActivityType {
+export enum ActivityNotificationType {
   ComicRated = 'ComicRated',
   ComicLiked = 'ComicLiked',
   ComicBookmarked = 'ComicBookmarked',
@@ -30,16 +30,16 @@ export class ActivityNotificationDto {
   @IsDate()
   createdAt: Date;
 
-  @ApiProperty({ enum: ActivityType })
-  @IsEnum(ActivityType)
-  type: ActivityType;
+  @ApiProperty({ enum: ActivityNotificationType })
+  @IsEnum(ActivityNotificationType)
+  type: ActivityNotificationType;
 }
 
 export type ActivityNotificationInput = {
   user?: User;
   targetId: string;
   targetTitle: string;
-  type: ActivityType;
+  type: ActivityNotificationType;
 };
 
 export function toActivityNotificationDto(input: ActivityNotificationInput) {

@@ -8,10 +8,15 @@ import {
 import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 @Injectable()
 export class UserComicService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+  ) {}
 
   async getComicStats(comicSlug: string): Promise<ComicStats> {
     const aggregate = this.prisma.userComic.aggregate({
@@ -99,14 +104,14 @@ export class UserComicService {
   }
 
   async rate(userId: number, comicSlug: string, rating: number) {
-    const userComic = await this.prisma.userComic.upsert({
+    const { user, comic, ...userComic } = await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },
-      include: { comic: true },
+      include: { comic: true, user: true },
     });
 
-    const creatorId = userComic.comic.creatorId;
+    const creatorId = comic.creatorId;
     this.prisma.creatorActivityFeed
       .create({
         data: {
@@ -125,6 +130,12 @@ export class UserComicService {
         ),
       );
 
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicRated,
+      targetId: comic.slug,
+      targetTitle: comic.title,
+    });
     return userComic;
   }
 
@@ -133,6 +144,7 @@ export class UserComicService {
     const comic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
     });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     this.prisma.creatorActivityFeed
       .create({
@@ -152,6 +164,13 @@ export class UserComicService {
         ),
       );
 
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicBookmarked,
+      targetId: comic.slug,
+      targetTitle: comic.title,
+    });
+
     return userComic;
   }
 
@@ -160,6 +179,7 @@ export class UserComicService {
     const comic = await this.prisma.comic.findUnique({
       where: { slug: comicSlug },
     });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     this.prisma.creatorActivityFeed
       .create({
@@ -178,6 +198,13 @@ export class UserComicService {
           e,
         ),
       );
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicLiked,
+      targetId: comic.slug,
+      targetTitle: comic.title,
+    });
 
     return userComic;
   }
