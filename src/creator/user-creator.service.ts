@@ -340,25 +340,33 @@ export class UserCreatorService {
         countViewers,
       ]);
 
-      this.prisma.comicIssueSnapshot.createMany({
-        data: [
-          {
-            comicIssueId,
-            type: ComicIssueSnapshotType.Like,
-            value: favouritesCount,
-          },
-          {
-            comicIssueId,
-            type: ComicIssueSnapshotType.Reader,
-            value: readersCount,
-          },
-          {
-            comicIssueId,
-            type: ComicIssueSnapshotType.View,
-            value: viewersCount,
-          },
-        ],
-      });
+      this.prisma.comicIssueSnapshot
+        .createMany({
+          data: [
+            {
+              comicIssueId,
+              type: ComicIssueSnapshotType.Like,
+              value: favouritesCount,
+            },
+            {
+              comicIssueId,
+              type: ComicIssueSnapshotType.Reader,
+              value: readersCount,
+            },
+            {
+              comicIssueId,
+              type: ComicIssueSnapshotType.View,
+              value: viewersCount,
+            },
+          ],
+        })
+        .catch((e) =>
+          ERROR_MESSAGES.FAILED_TO_TAKE_SNAPSHOT(
+            comicIssueId.toString(),
+            'comicIssue',
+            e,
+          ),
+        );
 
       likes += favouritesCount;
       readers += readersCount;
@@ -387,25 +395,30 @@ export class UserCreatorService {
         countBookmarks,
         countViewers,
       ]);
-      this.prisma.comicSnapshot.createMany({
-        data: [
-          {
-            comicSlug,
-            type: ComicSnapshotType.Like,
-            value: favouriteCount,
-          },
-          {
-            comicSlug,
-            type: ComicSnapshotType.Bookmark,
-            value: bookmarkCount,
-          },
-          {
-            comicSlug,
-            type: ComicSnapshotType.View,
-            value: viewerCount,
-          },
-        ],
-      });
+
+      this.prisma.comicSnapshot
+        .createMany({
+          data: [
+            {
+              comicSlug,
+              type: ComicSnapshotType.Like,
+              value: favouriteCount,
+            },
+            {
+              comicSlug,
+              type: ComicSnapshotType.Bookmark,
+              value: bookmarkCount,
+            },
+            {
+              comicSlug,
+              type: ComicSnapshotType.View,
+              value: viewerCount,
+            },
+          ],
+        })
+        .catch((e) =>
+          ERROR_MESSAGES.FAILED_TO_TAKE_SNAPSHOT(comicSlug, 'comic', e),
+        );
 
       likes += favouriteCount;
       bookmarks += bookmarkCount;
@@ -443,40 +456,48 @@ export class UserCreatorService {
           getPrimarySaleData,
         ]);
 
-      this.prisma.creatorSnapshot.createMany({
-        data: [
-          {
-            creatorId,
-            type: CreatorSnapshotType.Follower,
-            value: followerCount,
-          },
-          {
-            creatorId,
-            type: CreatorSnapshotType.Bookmark,
-            value: comicData.bookmarks,
-          },
-          {
-            creatorId,
-            type: CreatorSnapshotType.Like,
-            value: comicData.likes + comicIssueData.likes,
-          },
-          {
-            creatorId,
-            type: CreatorSnapshotType.Reader,
-            value: comicIssueData.readers,
-          },
-          {
-            creatorId,
-            type: CreatorSnapshotType.View,
-            value: comicData.views + comicIssueData.views,
-          },
-          {
-            creatorId,
-            type: CreatorSnapshotType.Sale,
-            value: primarySales,
-          },
-        ],
-      });
+      this.prisma.creatorSnapshot
+        .createMany({
+          data: [
+            {
+              creatorId,
+              type: CreatorSnapshotType.Follower,
+              value: followerCount,
+            },
+            {
+              creatorId,
+              type: CreatorSnapshotType.Bookmark,
+              value: comicData.bookmarks,
+            },
+            {
+              creatorId,
+              type: CreatorSnapshotType.Like,
+              value: comicData.likes + comicIssueData.likes,
+            },
+            {
+              creatorId,
+              type: CreatorSnapshotType.Reader,
+              value: comicIssueData.readers,
+            },
+            {
+              creatorId,
+              type: CreatorSnapshotType.View,
+              value: comicData.views + comicIssueData.views,
+            },
+            {
+              creatorId,
+              type: CreatorSnapshotType.Sale,
+              value: primarySales,
+            },
+          ],
+        })
+        .catch((e) =>
+          ERROR_MESSAGES.FAILED_TO_TAKE_SNAPSHOT(
+            creatorId.toString(),
+            'creator',
+            e,
+          ),
+        );
     }
   }
 }

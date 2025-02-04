@@ -137,4 +137,9 @@ export const ERROR_MESSAGES = {
     type: CreatorActivityFeedType,
     e: Error,
   ) => `failed to index activity ${type} for id ${id} : ${e.toString()}`,
+  FAILED_TO_TAKE_SNAPSHOT: (
+    id: string,
+    type: 'comicIssue' | 'comic' | 'creator',
+    e: Error,
+  ) => `failed to take snapshot for ${type} with id ${id} : ${e.toString()}`,
 };
