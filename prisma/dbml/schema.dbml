@@ -76,6 +76,7 @@ Table CreatorChannel {
   popularizedAt DateTime
   deletedAt DateTime
   activityFeed CreatorActivityFeed [not null]
+  snapshots CreatorSnapshot [not null]
 }
 
 Table Comic {
@@ -108,6 +109,7 @@ Table Comic {
   creator CreatorChannel [not null]
   creatorId Int [not null]
   collaborators ComicCollaborator [not null]
+  snapshots ComicSnapshot [not null]
 }
 
 Table UserComic {
@@ -172,6 +174,7 @@ Table ComicIssue {
   pages ComicPage [not null]
   users UserComicIssue [not null]
   collaborators ComicIssueCollaborator [not null]
+  snapshots ComicIssueSnapshot [not null]
 
   indexes {
     (number, comicSlug) [unique]
@@ -265,6 +268,7 @@ Table CandyMachine {
   items CollectibleComic [not null]
   receipts CandyMachineReceipt [not null]
   standard TokenStandard [not null, default: 'Core']
+  deletedAt DateTime
   isFeatured Boolean [not null, default: true]
 }
 
@@ -790,6 +794,33 @@ Table CreatorActivityFeed {
   type CreatorActivityFeedType [not null]
 }
 
+Table CreatorSnapshot {
+  id Int [pk, increment]
+  creatorId Int [not null]
+  creator CreatorChannel [not null]
+  value Int [not null]
+  type CreatorSnapshotType [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table ComicSnapshot {
+  id Int [pk, increment]
+  comicSlug String [not null]
+  comic Comic [not null]
+  value Int [not null]
+  type ComicSnapshotType [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table ComicIssueSnapshot {
+  id Int [pk, increment]
+  comicIssueId Int [not null]
+  comicIssue ComicIssue [not null]
+  value Int [not null]
+  type ComicIssueSnapshotType [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
 Enum WalletProvider {
   NonCustodial
   Embedded
@@ -915,6 +946,30 @@ Enum ActivityTargetType {
   Creator
   Comic
   ComicIssue
+}
+
+Enum CreatorSnapshotType {
+  Follower
+  Reader
+  View
+  Like
+  Bookmark
+  Sale
+  Royalty
+  Other
+}
+
+Enum ComicSnapshotType {
+  Reader
+  Like
+  Bookmark
+  View
+}
+
+Enum ComicIssueSnapshotType {
+  Reader
+  Like
+  View
 }
 
 Ref: User.referrerId - User.id
@@ -1050,3 +1105,9 @@ Ref: SignatureRequest.collectibleComicAddress > CollectibleComic.address
 Ref: CreatorActivityFeed.creatorId > CreatorChannel.id
 
 Ref: CreatorActivityFeed.userId > User.id
+
+Ref: CreatorSnapshot.creatorId > CreatorChannel.id [delete: Cascade]
+
+Ref: ComicSnapshot.comicSlug > Comic.slug [delete: Cascade]
+
+Ref: ComicIssueSnapshot.comicIssueId > ComicIssue.id [delete: Cascade]

@@ -18,6 +18,24 @@ export class UserComicService {
     private readonly websocketGateway: WebSocketGateway,
   ) {}
 
+  async getFavouriteCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, favouritedAt: { not: null } },
+    });
+  }
+
+  async getBookmarkCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, bookmarkedAt: { not: null } },
+    });
+  }
+
+  async getViewerCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, viewedAt: { not: null } },
+    });
+  }
+
   async getComicStats(comicSlug: string): Promise<ComicStats> {
     const aggregate = this.prisma.userComic.aggregate({
       where: { comicSlug, rating: { not: null } },
@@ -25,9 +43,7 @@ export class UserComicService {
       _count: true,
     });
 
-    const countFavourites = this.prisma.userComic.count({
-      where: { comicSlug, favouritedAt: { not: null } },
-    });
+    const countFavourites = this.getFavouriteCount(comicSlug);
 
     // const countBookmarks = this.prisma.userComic.count({
     //   where: { comicSlug, bookmarkedAt: { not: null } },
@@ -37,9 +53,7 @@ export class UserComicService {
     //   where: { comicSlug, subscribedAt: { not: null } },
     // });
 
-    const countViewers = this.prisma.userComic.count({
-      where: { comicSlug, viewedAt: { not: null } },
-    });
+    const countViewers = this.getViewerCount(comicSlug);
 
     const countIssues = this.prisma.comicIssue.count({
       where: {

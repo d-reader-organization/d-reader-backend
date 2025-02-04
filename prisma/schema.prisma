@@ -77,29 +77,30 @@ enum Role {
 }
 
 model CreatorChannel {
-  id             Int           @id @default(autoincrement())
-  handle         String        @unique
-  banner         String        @default("")
-  avatar         String        @default("")
-  description    String        @default("")
-  flavorText     String        @default("")
-  website        String        @default("")
-  twitter        String        @default("")
-  instagram      String        @default("")
-  linktree       String        @default("")
-  discordId      String        @default("")
-  tippingAddress String        @default("")
-  s3BucketSlug   String        @unique
+  id             Int                   @id @default(autoincrement())
+  handle         String                @unique
+  banner         String                @default("")
+  avatar         String                @default("")
+  description    String                @default("")
+  flavorText     String                @default("")
+  website        String                @default("")
+  twitter        String                @default("")
+  instagram      String                @default("")
+  linktree       String                @default("")
+  discordId      String                @default("")
+  tippingAddress String                @default("")
+  s3BucketSlug   String                @unique
   comics         Comic[]
   followers      UserCreator[]
-  user           User          @relation(fields: [userId], references: [id])
-  userId         Int           @unique
-  createdAt      DateTime      @default(now())
+  user           User                  @relation(fields: [userId], references: [id])
+  userId         Int                   @unique
+  createdAt      DateTime              @default(now())
   featuredAt     DateTime?
   verifiedAt     DateTime?
   popularizedAt  DateTime?
   deletedAt      DateTime?
-  activityFeed  CreatorActivityFeed[]
+  activityFeed   CreatorActivityFeed[]
+  snapshots      CreatorSnapshot[]
 }
 
 enum AudienceType {
@@ -139,6 +140,7 @@ model Comic {
   creator       CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId     Int
   collaborators ComicCollaborator[]
+  snapshots     ComicSnapshot[]
 }
 
 model UserComic {
@@ -199,6 +201,7 @@ model ComicIssue {
   pages                      ComicPage[]
   users                      UserComicIssue[]
   collaborators              ComicIssueCollaborator[]
+  snapshots                  ComicIssueSnapshot[]
 
   @@unique([number, comicSlug])
   @@unique([slug, comicSlug])
@@ -307,6 +310,7 @@ model CandyMachine {
   items                CollectibleComic[]
   receipts             CandyMachineReceipt[]
   standard             TokenStandard              @default(Core)
+  deletedAt            DateTime?
   isFeatured           Boolean                    @default(true)
 }
 
@@ -879,15 +883,66 @@ enum ActivityTargetType {
 }
 
 model CreatorActivityFeed {
-  id        Int                     @id @default(autoincrement())
-  creatorId Int
-  creator   CreatorChannel          @relation(fields: [creatorId], references: [id])
-  targetId  String
+  id         Int                     @id @default(autoincrement())
+  creatorId  Int
+  creator    CreatorChannel          @relation(fields: [creatorId], references: [id])
+  targetId   String
   targetType ActivityTargetType
-  user      User?                    @relation(fields: [userId], references: [id])
-  userId    Int?
-  createdAt DateTime                @default(now())
-  type      CreatorActivityFeedType
+  user       User?                   @relation(fields: [userId], references: [id])
+  userId     Int?
+  createdAt  DateTime                @default(now())
+  type       CreatorActivityFeedType
+}
+
+enum CreatorSnapshotType {
+  Follower
+  Reader
+  View
+  Like
+  Bookmark
+  Sale
+  Royalty
+  Other
+}
+
+model CreatorSnapshot {
+  id        Int                 @id @default(autoincrement())
+  creatorId Int
+  creator   CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  value     Int
+  type      CreatorSnapshotType
+  createdAt DateTime            @default(now())
+}
+
+enum ComicSnapshotType {
+  Reader
+  Like
+  Bookmark
+  View
+}
+
+model ComicSnapshot {
+  id        Int               @id @default(autoincrement())
+  comicSlug String
+  comic     Comic             @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
+  value     Int
+  type      ComicSnapshotType
+  createdAt DateTime          @default(now())
+}
+
+enum ComicIssueSnapshotType {
+  Reader
+  Like
+  View
+}
+
+model ComicIssueSnapshot {
+  id           Int                    @id @default(autoincrement())
+  comicIssueId Int
+  comicIssue   ComicIssue             @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
+  value        Int
+  type         ComicIssueSnapshotType
+  createdAt    DateTime               @default(now())
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
