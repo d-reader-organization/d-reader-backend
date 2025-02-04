@@ -22,6 +22,24 @@ export class UserComicIssueService {
     private readonly websocketGateway: WebSocketGateway,
   ) {}
 
+  async getFavouriteCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, favouritedAt: { not: null } },
+    });
+  }
+
+  async getReaderCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, readAt: { not: null } },
+    });
+  }
+
+  async getViewerCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, viewedAt: { not: null } },
+    });
+  }
+
   async getComicIssueStats(comicIssueId: number): Promise<ComicIssueStats> {
     const issue = await this.prisma.comicIssue.findUnique({
       where: { id: comicIssueId },
@@ -35,17 +53,9 @@ export class UserComicIssueService {
       _count: true,
     });
 
-    const countFavourites = this.prisma.userComicIssue.count({
-      where: { comicIssueId, favouritedAt: { not: null } },
-    });
-
-    const countReaders = this.prisma.userComicIssue.count({
-      where: { comicIssueId, readAt: { not: null } },
-    });
-
-    const countViewers = this.prisma.userComicIssue.count({
-      where: { comicIssueId, viewedAt: { not: null } },
-    });
+    const countFavourites = this.getFavouriteCount(comicIssueId);
+    const countReaders = this.getReaderCount(comicIssueId);
+    const countViewers = this.getViewerCount(comicIssueId);
 
     const countIssues = this.prisma.comicIssue.count({
       where: {
