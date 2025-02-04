@@ -218,10 +218,8 @@ export class UserCreatorService {
     );
   }
 
-  //TODO:
   async getPrimarySale(creatorId: number) {
-    // only index those candymachines that are not deleted or it has been 24 hours after deletion
-
+    // only index those candymachines that are not deleted or it has been less than 24 hours from deletion
     const now = new Date();
     const lastSnapshotDate = subHours(now, 24);
 
@@ -233,6 +231,7 @@ export class UserCreatorService {
         collection: { comicIssue: { comic: { creatorId } } },
       },
       select: {
+        address: true,
         coupons: {
           select: {
             currencySettings: { select: { label: true, usdcEquivalent: true } },
@@ -240,6 +239,31 @@ export class UserCreatorService {
         },
       },
     });
+
+    if (!candymachines || candymachines.length == 0) return 0;
+
+    const keys = candymachines.flatMap((candymachine) =>
+      candymachine.coupons.flatMap((coupon) =>
+        coupon.currencySettings.map((setting) => ({
+          label: setting.label,
+          usdcEquivalent: setting.usdcEquivalent,
+          candyMachineAddress: candymachine.address,
+        })),
+      ),
+    );
+
+    let sales = 0;
+    for await (const key of keys) {
+      const { candyMachineAddress, usdcEquivalent, label } = key;
+      const totalItemsMinted = await this.prisma.candyMachineReceipt.aggregate({
+        where: { candyMachineAddress, label },
+        _sum: { numberOfItems: true },
+      });
+
+      sales += usdcEquivalent * (totalItemsMinted?._sum?.numberOfItems || 0);
+    }
+
+    return sales;
   }
 
   async getIssueFavouriteCount(comicIssueId: number) {
@@ -391,7 +415,7 @@ export class UserCreatorService {
     return { likes, bookmarks, views };
   }
 
-  //TODO: Add revenue data
+  //TODO: Add royalties data
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async snapshot() {
     const creators = await this.prisma.creatorChannel.findMany({
@@ -409,12 +433,15 @@ export class UserCreatorService {
       });
       const getComicIssueData = this.getComicIssueData(creatorId);
       const getComicData = this.getComicData(creatorId);
+      const getPrimarySaleData = this.getPrimarySale(creatorId);
 
-      const [followerCount, comicData, comicIssueData] = await Promise.all([
-        countFollowers,
-        getComicData,
-        getComicIssueData,
-      ]);
+      const [followerCount, comicData, comicIssueData, primarySales] =
+        await Promise.all([
+          countFollowers,
+          getComicData,
+          getComicIssueData,
+          getPrimarySaleData,
+        ]);
 
       this.prisma.creatorSnapshot.createMany({
         data: [
@@ -442,6 +469,11 @@ export class UserCreatorService {
             creatorId,
             type: CreatorSnapshotType.View,
             value: comicData.views + comicIssueData.views,
+          },
+          {
+            creatorId,
+            type: CreatorSnapshotType.Sale,
+            value: primarySales,
           },
         ],
       });
