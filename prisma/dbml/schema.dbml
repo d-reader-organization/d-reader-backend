@@ -800,7 +800,7 @@ Table CreatorSnapshot {
   creator CreatorChannel [not null]
   value Int [not null]
   type CreatorSnapshotType [not null]
-  createdAt DateTime [default: `now()`, not null]
+  timestamp DateTime [not null]
 }
 
 Table ComicSnapshot {
@@ -809,7 +809,7 @@ Table ComicSnapshot {
   comic Comic [not null]
   value Int [not null]
   type ComicSnapshotType [not null]
-  createdAt DateTime [default: `now()`, not null]
+  timestamp DateTime [not null]
 }
 
 Table ComicIssueSnapshot {
@@ -818,7 +818,7 @@ Table ComicIssueSnapshot {
   comicIssue ComicIssue [not null]
   value Int [not null]
   type ComicIssueSnapshotType [not null]
-  createdAt DateTime [default: `now()`, not null]
+  timestamp DateTime [not null]
 }
 
 Enum WalletProvider {

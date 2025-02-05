@@ -18,7 +18,6 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { subHours } from 'date-fns';
 
 @Injectable()
 export class UserCreatorService {
@@ -218,15 +217,21 @@ export class UserCreatorService {
     );
   }
 
-  async getPrimarySale(creatorId: number) {
+  async getPrimarySale(creatorId: number, date?: Date) {
     // only index those candymachines that are not deleted or it has been less than 24 hours from deletion
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
+    const snapshotDate = date || new Date();
+    const snapshotMidnight = snapshotDate;
+    snapshotMidnight.setHours(0, 0, 0, 0);
+
+    const lastSnapshotMidnight = new Date(
+      snapshotDate.setDate(snapshotDate.getDate() - 1),
+    );
+    lastSnapshotMidnight.setHours(0, 0, 0, 0);
 
     const candymachines = await this.prisma.candyMachine.findMany({
       where: {
         deletedAt: {
-          not: { lt: lastSnapshotDate },
+          not: { lt: lastSnapshotMidnight },
         },
         collection: { comicIssue: { comic: { creatorId } } },
       },
@@ -256,7 +261,11 @@ export class UserCreatorService {
     for await (const key of keys) {
       const { candyMachineAddress, usdcEquivalent, label } = key;
       const totalItemsMinted = await this.prisma.candyMachineReceipt.aggregate({
-        where: { candyMachineAddress, label },
+        where: {
+          candyMachineAddress,
+          label,
+          timestamp: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+        },
         _sum: { numberOfItems: true },
       });
 
@@ -266,61 +275,85 @@ export class UserCreatorService {
     return sales;
   }
 
-  async getIssueFavouriteCount(comicIssueId: number) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getIssueFavouriteCount(
+    comicIssueId: number,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComicIssue.count({
-      where: { comicIssueId, favouritedAt: { gt: lastSnapshotDate } },
+      where: {
+        comicIssueId,
+        favouritedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getIssueReaderCount(comicIssueId: number) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getIssueReaderCount(
+    comicIssueId: number,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComicIssue.count({
-      where: { comicIssueId, readAt: { gt: lastSnapshotDate } },
+      where: {
+        comicIssueId,
+        readAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getIssueViewerCount(comicIssueId: number) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getIssueViewerCount(
+    comicIssueId: number,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComicIssue.count({
-      where: { comicIssueId, viewedAt: { gt: lastSnapshotDate } },
+      where: {
+        comicIssueId,
+        viewedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getComicFavouriteCount(comicSlug: string) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getComicFavouriteCount(
+    comicSlug: string,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComic.count({
-      where: { comicSlug, favouritedAt: { gt: lastSnapshotDate } },
+      where: {
+        comicSlug,
+        favouritedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getComicBookmarkCount(comicSlug: string) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getComicBookmarkCount(
+    comicSlug: string,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComic.count({
-      where: { comicSlug, bookmarkedAt: { gt: lastSnapshotDate } },
+      where: {
+        comicSlug,
+        bookmarkedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getComicViewerCount(comicSlug: string) {
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
-
+  async getComicViewerCount(
+    comicSlug: string,
+    snapshotMidnight: Date,
+    lastSnapshotMidnight: Date,
+  ) {
     return this.prisma.userComic.count({
-      where: { comicSlug, viewedAt: { gt: lastSnapshotDate } },
+      where: {
+        comicSlug,
+        viewedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+      },
     });
   }
 
-  async getComicIssueData(creatorId: number) {
+  async getComicIssueData(creatorId: number, date?: Date) {
     const issues = await this.prisma.comicIssue.findMany({
       where: { comic: { creatorId }, verifiedAt: { not: null } },
     });
@@ -328,11 +361,32 @@ export class UserCreatorService {
       readers = 0,
       views = 0;
 
+    const snapshotDate = date || new Date();
+    const snapshotMidnight = snapshotDate;
+    snapshotMidnight.setHours(0, 0, 0, 0);
+
+    const lastSnapshotMidnight = new Date(
+      snapshotDate.setDate(snapshotDate.getDate() - 1),
+    );
+    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+
     for await (const issue of issues) {
       const comicIssueId = issue.id;
-      const countFavourites = this.getIssueFavouriteCount(comicIssueId);
-      const countReaders = this.getIssueReaderCount(comicIssueId);
-      const countViewers = this.getIssueViewerCount(comicIssueId);
+      const countFavourites = this.getIssueFavouriteCount(
+        comicIssueId,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
+      const countReaders = this.getIssueReaderCount(
+        comicIssueId,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
+      const countViewers = this.getIssueViewerCount(
+        comicIssueId,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
 
       const [favouritesCount, readersCount, viewersCount] = await Promise.all([
         countFavourites,
@@ -347,16 +401,19 @@ export class UserCreatorService {
               comicIssueId,
               type: ComicIssueSnapshotType.Like,
               value: favouritesCount,
+              timestamp: snapshotMidnight,
             },
             {
               comicIssueId,
               type: ComicIssueSnapshotType.Reader,
               value: readersCount,
+              timestamp: snapshotMidnight,
             },
             {
               comicIssueId,
               type: ComicIssueSnapshotType.View,
               value: viewersCount,
+              timestamp: snapshotMidnight,
             },
           ],
         })
@@ -376,19 +433,41 @@ export class UserCreatorService {
     return { likes, readers, views };
   }
 
-  async getComicData(creatorId: number) {
+  async getComicData(creatorId: number, date?: Date) {
     const comics = await this.prisma.comic.findMany({
       where: { creatorId, verifiedAt: { not: null } },
     });
+
+    const snapshotDate = date || new Date();
+    const snapshotMidnight = snapshotDate;
+    snapshotMidnight.setHours(0, 0, 0, 0);
+
+    const lastSnapshotMidnight = new Date(
+      snapshotDate.setDate(snapshotDate.getDate() - 1),
+    );
+    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+
     let likes = 0,
       bookmarks = 0,
       views = 0;
 
     for await (const comic of comics) {
       const comicSlug = comic.slug;
-      const countFavourites = this.getComicFavouriteCount(comicSlug);
-      const countBookmarks = this.getComicBookmarkCount(comicSlug);
-      const countViewers = this.getComicViewerCount(comicSlug);
+      const countFavourites = this.getComicFavouriteCount(
+        comicSlug,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
+      const countBookmarks = this.getComicBookmarkCount(
+        comicSlug,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
+      const countViewers = this.getComicViewerCount(
+        comicSlug,
+        snapshotMidnight,
+        lastSnapshotMidnight,
+      );
 
       const [favouriteCount, bookmarkCount, viewerCount] = await Promise.all([
         countFavourites,
@@ -403,16 +482,19 @@ export class UserCreatorService {
               comicSlug,
               type: ComicSnapshotType.Like,
               value: favouriteCount,
+              timestamp: snapshotMidnight,
             },
             {
               comicSlug,
               type: ComicSnapshotType.Bookmark,
               value: bookmarkCount,
+              timestamp: snapshotMidnight,
             },
             {
               comicSlug,
               type: ComicSnapshotType.View,
               value: viewerCount,
+              timestamp: snapshotMidnight,
             },
           ],
         })
@@ -430,23 +512,33 @@ export class UserCreatorService {
 
   //TODO: Add royalties data
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async snapshot() {
+  async snapshot(date?: Date) {
     const creators = await this.prisma.creatorChannel.findMany({
       where: { verifiedAt: { not: null } },
     });
 
-    const now = new Date();
-    const lastSnapshotDate = subHours(now, 24);
+    const snapshotDate = date || new Date();
+    const snapshotMidnight = snapshotDate;
+    snapshotMidnight.setHours(0, 0, 0, 0);
+
+    const lastSnapshotMidnight = new Date(
+      snapshotDate.setDate(snapshotDate.getDate() - 1),
+    );
+    lastSnapshotMidnight.setHours(0, 0, 0, 0);
 
     for await (const creator of creators) {
       const creatorId = creator.id;
 
       const countFollowers = this.prisma.userCreator.count({
-        where: { creatorId: creator.id, followedAt: { gt: lastSnapshotDate } },
+        where: {
+          creatorId: creator.id,
+          followedAt: { gt: lastSnapshotMidnight, lte: snapshotMidnight },
+        },
       });
-      const getComicIssueData = this.getComicIssueData(creatorId);
-      const getComicData = this.getComicData(creatorId);
-      const getPrimarySaleData = this.getPrimarySale(creatorId);
+
+      const getComicIssueData = this.getComicIssueData(creatorId, date);
+      const getComicData = this.getComicData(creatorId, date);
+      const getPrimarySaleData = this.getPrimarySale(creatorId, date);
 
       const [followerCount, comicData, comicIssueData, primarySales] =
         await Promise.all([
@@ -463,31 +555,37 @@ export class UserCreatorService {
               creatorId,
               type: CreatorSnapshotType.Follower,
               value: followerCount,
+              timestamp: snapshotMidnight,
             },
             {
               creatorId,
               type: CreatorSnapshotType.Bookmark,
               value: comicData.bookmarks,
+              timestamp: snapshotMidnight,
             },
             {
               creatorId,
               type: CreatorSnapshotType.Like,
               value: comicData.likes + comicIssueData.likes,
+              timestamp: snapshotMidnight,
             },
             {
               creatorId,
               type: CreatorSnapshotType.Reader,
               value: comicIssueData.readers,
+              timestamp: snapshotMidnight,
             },
             {
               creatorId,
               type: CreatorSnapshotType.View,
               value: comicData.views + comicIssueData.views,
+              timestamp: snapshotMidnight,
             },
             {
               creatorId,
               type: CreatorSnapshotType.Sale,
               value: primarySales,
+              timestamp: snapshotMidnight,
             },
           ],
         })

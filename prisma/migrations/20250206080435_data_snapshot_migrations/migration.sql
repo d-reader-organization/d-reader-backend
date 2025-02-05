@@ -16,7 +16,7 @@ CREATE TABLE "CreatorSnapshot" (
     "creatorId" INTEGER NOT NULL,
     "value" INTEGER NOT NULL,
     "type" "CreatorSnapshotType" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "timestamp" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "CreatorSnapshot_pkey" PRIMARY KEY ("id")
 );
@@ -27,7 +27,7 @@ CREATE TABLE "ComicSnapshot" (
     "comicSlug" TEXT NOT NULL,
     "value" INTEGER NOT NULL,
     "type" "ComicSnapshotType" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "timestamp" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ComicSnapshot_pkey" PRIMARY KEY ("id")
 );
@@ -38,7 +38,7 @@ CREATE TABLE "ComicIssueSnapshot" (
     "comicIssueId" INTEGER NOT NULL,
     "value" INTEGER NOT NULL,
     "type" "ComicIssueSnapshotType" NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "timestamp" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ComicIssueSnapshot_pkey" PRIMARY KEY ("id")
 );
