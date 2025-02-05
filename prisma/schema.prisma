@@ -911,7 +911,7 @@ model CreatorSnapshot {
   creator   CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   value     Int
   type      CreatorSnapshotType
-  createdAt DateTime            @default(now())
+  timestamp    DateTime
 }
 
 enum ComicSnapshotType {
@@ -927,7 +927,7 @@ model ComicSnapshot {
   comic     Comic             @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   value     Int
   type      ComicSnapshotType
-  createdAt DateTime          @default(now())
+  timestamp    DateTime
 }
 
 enum ComicIssueSnapshotType {
@@ -942,7 +942,7 @@ model ComicIssueSnapshot {
   comicIssue   ComicIssue             @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   value        Int
   type         ComicIssueSnapshotType
-  createdAt    DateTime               @default(now())
+  timestamp    DateTime
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
