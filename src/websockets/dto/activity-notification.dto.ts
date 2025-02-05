@@ -2,12 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import { User } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
 import { IsDate, IsEnum, IsString } from 'class-validator';
-import { getPublicUrl } from 'src/aws/s3client';
-import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
+import { getPublicUrl } from '../../aws/s3client';
+import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
 import {
   constructActivityNotificationMessage,
   getAdminActivityNotificationS3Folder,
-} from 'src/utils/websockets';
+} from '../../utils/websockets';
 
 export enum ActivityType {
   RateComic = 'rated comic',
