@@ -54,8 +54,8 @@ import {
 } from './dto/creator-activity-feed.dto';
 import { CreateCreatorChannelDto } from './dto/create-channel.dto';
 
-@ApiTags('Creator')
-@Controller('creator')
+@ApiTags('CreatorChannel')
+@Controller('creator-channel')
 export class CreatorController {
   constructor(
     private readonly creatorService: CreatorService,
@@ -234,7 +234,7 @@ export class CreatorController {
     await this.creatorService.pseudoRecover(+id);
   }
 
-  /* Follow a creator */
+  /* Follow a creator channel*/
   @UserAuth()
   @Patch('follow/:id')
   async follow(@UserEntity() user: UserPayload, @Param('id') id: string) {
