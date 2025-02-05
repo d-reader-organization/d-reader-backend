@@ -16,7 +16,7 @@ import {
   ActivityNotificationInput,
   toActivityNotificationDto,
 } from './dto/activity-notification.dto';
-import { WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from 'src/utils/websockets';
+import { WEBSOCKET_EVENTS, WEBSOCKET_ROOMS } from '../utils/websockets';
 
 @Injectable()
 @WebSocketGatewayDecorator({ cors: true })

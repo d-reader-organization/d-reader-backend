@@ -5,8 +5,8 @@ import { PickType } from '@nestjs/swagger';
 import { getPublicUrl } from '../../../aws/s3client';
 import { BasicUserDto, toBasicUserDto } from '../../../user/dto/basic-user-dto';
 import { ifDefined } from '../../../utils/lodash';
-import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
-import { CollectibleComicDto } from 'src/digital-asset/dto/collectible-comic.dto';
+import { IsSolanaAddress } from '../../../decorators/IsSolanaAddress';
+import { CollectibleComicDto } from '../../../digital-asset/dto/collectible-comic.dto';
 import { CandyMachineReceipt, User } from '@prisma/client';
 
 export class PartialCollectibleComicDto extends PickType(CollectibleComicDto, [

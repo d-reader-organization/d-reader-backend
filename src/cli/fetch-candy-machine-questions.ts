@@ -14,7 +14,7 @@ export class FetchCandyMachineQuestions {
       return true;
     },
   })
-  parseCandyMachineAddress(candy_machine: string): string {
-    return candy_machine;
+  parseCandyMachineAddress(candyMachine: string): PublicKey {
+    return new PublicKey(candyMachine);
   }
 }

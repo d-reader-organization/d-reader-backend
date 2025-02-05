@@ -70,7 +70,7 @@ export class FetchCandyMachineCommand extends CommandRunner {
       });
     } catch (e) {
       logErr(
-        `Failed to fetch the candy machine on address ${options.candyMachineAddress.toBase58()}: ${e}`,
+        `Failed to fetch the candy machine on address ${options.candyMachineAddress.toString()}: ${e}`,
       );
     }
   }
