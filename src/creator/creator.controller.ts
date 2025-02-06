@@ -53,6 +53,7 @@ import {
   toCreatorActivityFeedDtoArray,
 } from './dto/creator-activity-feed.dto';
 import { CreateCreatorChannelDto } from './dto/create-channel.dto';
+import { TakeSnapshotParams } from './dto/take-snapshot-params.dto';
 
 @ApiTags('CreatorChannel')
 @Controller('creator-channel')
@@ -232,6 +233,12 @@ export class CreatorController {
   @Patch('recover/:id')
   async pseudoRecover(@Param('id') id: string) {
     await this.creatorService.pseudoRecover(+id);
+  }
+
+  @AdminGuard()
+  @Post('take-snapshot')
+  async takeSnapshot(@Query() query: TakeSnapshotParams) {
+    return await this.userCreatorService.snapshot(query.date);
   }
 
   /* Follow a creator channel*/

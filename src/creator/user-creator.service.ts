@@ -18,6 +18,7 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { startOfDay, subDays } from 'date-fns';
 
 @Injectable()
 export class UserCreatorService {
@@ -220,13 +221,8 @@ export class UserCreatorService {
   async getPrimarySale(creatorId: number, date?: Date) {
     // only index those candymachines that are not deleted or it has been less than 24 hours from deletion
     const snapshotDate = date || new Date();
-    const snapshotMidnight = snapshotDate;
-    snapshotMidnight.setHours(0, 0, 0, 0);
-
-    const lastSnapshotMidnight = new Date(
-      snapshotDate.setDate(snapshotDate.getDate() - 1),
-    );
-    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+    const snapshotMidnight = startOfDay(snapshotDate);
+    const lastSnapshotMidnight = subDays(snapshotMidnight, 1);
 
     const candymachines = await this.prisma.candyMachine.findMany({
       where: {
@@ -362,13 +358,8 @@ export class UserCreatorService {
       views = 0;
 
     const snapshotDate = date || new Date();
-    const snapshotMidnight = snapshotDate;
-    snapshotMidnight.setHours(0, 0, 0, 0);
-
-    const lastSnapshotMidnight = new Date(
-      snapshotDate.setDate(snapshotDate.getDate() - 1),
-    );
-    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+    const snapshotMidnight = startOfDay(snapshotDate);
+    const lastSnapshotMidnight = subDays(snapshotMidnight, 1);
 
     for await (const issue of issues) {
       const comicIssueId = issue.id;
@@ -439,13 +430,8 @@ export class UserCreatorService {
     });
 
     const snapshotDate = date || new Date();
-    const snapshotMidnight = snapshotDate;
-    snapshotMidnight.setHours(0, 0, 0, 0);
-
-    const lastSnapshotMidnight = new Date(
-      snapshotDate.setDate(snapshotDate.getDate() - 1),
-    );
-    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+    const snapshotMidnight = startOfDay(snapshotDate);
+    const lastSnapshotMidnight = subDays(snapshotMidnight, 1);
 
     let likes = 0,
       bookmarks = 0,
@@ -518,13 +504,8 @@ export class UserCreatorService {
     });
 
     const snapshotDate = date || new Date();
-    const snapshotMidnight = snapshotDate;
-    snapshotMidnight.setHours(0, 0, 0, 0);
-
-    const lastSnapshotMidnight = new Date(
-      snapshotDate.setDate(snapshotDate.getDate() - 1),
-    );
-    lastSnapshotMidnight.setHours(0, 0, 0, 0);
+    const snapshotMidnight = startOfDay(snapshotDate);
+    const lastSnapshotMidnight = subDays(snapshotMidnight, 1);
 
     for await (const creator of creators) {
       const creatorId = creator.id;
