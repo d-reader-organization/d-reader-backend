@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/dto/types';
-import { UserCreatorMyStatsDto } from './dto/types';
+import { RevenueSnapshot, UserCreatorMyStatsDto } from './dto/types';
 import {
   ActivityTargetType,
   ComicIssueSnapshotType,
@@ -19,6 +19,8 @@ import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { startOfDay, subDays } from 'date-fns';
+import { ChartParams } from './dto/chart-params.dto';
+import { RevenueChartInput } from './dto/revenue-chart.dto';
 
 @Injectable()
 export class UserCreatorService {
@@ -139,6 +141,85 @@ export class UserCreatorService {
     });
 
     return userCreator;
+  }
+
+  async getRevenueChartData(query: ChartParams): Promise<RevenueChartInput> {
+    const { creatorId, days } = query;
+
+    const now = new Date();
+    const startDate = subDays(now, days);
+
+    const snapshots = await this.prisma.creatorSnapshot.findMany({
+      where: {
+        creatorId,
+        timestamp: { gte: startDate },
+        type: {
+          in: [
+            CreatorSnapshotType.Sale,
+            CreatorSnapshotType.Royalty,
+            CreatorSnapshotType.Other,
+          ],
+        },
+      },
+    });
+
+    const getTotalSales = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Sale },
+      _sum: { value: true },
+    });
+
+    const getTotalRoyalties = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Royalty },
+      _sum: { value: true },
+    });
+
+    const getOthers = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Other },
+      _sum: { value: true },
+    });
+
+    const [sales, royalties, others] = await Promise.all([
+      getTotalSales,
+      getTotalRoyalties,
+      getOthers,
+    ]);
+
+    const chartMap = new Map<Date, RevenueSnapshot>();
+
+    snapshots.forEach(({ value, timestamp, type }) => {
+      if (!chartMap.has(timestamp)) {
+        chartMap.set(timestamp, {
+          date: timestamp,
+          sales: 0,
+          royalties: 0,
+          others: 0,
+        });
+      }
+
+      const item = chartMap.get(timestamp);
+      switch (type) {
+        case CreatorSnapshotType.Sale: {
+          item.sales = value;
+          break;
+        }
+        case CreatorSnapshotType.Royalty: {
+          item.royalties = value;
+          break;
+        }
+
+        case CreatorSnapshotType.Other: {
+          item.others = value;
+          break;
+        }
+      }
+    });
+
+    return {
+      totalRoyalties: royalties?._sum?.value || 0,
+      totalSales: sales?._sum?.value || 0,
+      others: others?._sum?.value || 0,
+      snapshots: Array.from(chartMap.values()),
+    };
   }
 
   async toggleDate(
