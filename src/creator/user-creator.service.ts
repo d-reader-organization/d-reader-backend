@@ -147,7 +147,8 @@ export class UserCreatorService {
     const { creatorId, days } = query;
 
     const now = new Date();
-    const startDate = subDays(now, days);
+    const numberOfDays = days || 30;
+    const startDate = subDays(now, numberOfDays);
 
     const snapshots = await this.prisma.creatorSnapshot.findMany({
       where: {
