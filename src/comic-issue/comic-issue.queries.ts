@@ -54,7 +54,7 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   return Prisma.sql`select comicIssue.*,
   comic."title" as "comicTitle",
   comic."audienceType",
-  u."displayName" as "creatorName",
+  "creatorChannel"."handle" as "creatorName",
   "creatorChannel".id as "creatorId",
   "creatorChannel"."verifiedAt" as "creatorVerifiedAt",
   "creatorChannel".avatar as "creatorAvatar",
@@ -99,7 +99,6 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   from "ComicIssue" comicIssue
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug"  
   inner join "CreatorChannel" "creatorChannel" on "creatorChannel".id = comic."creatorId"
-  inner join "User" u on u.id = "creatorChannel"."userId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
   left join "CollectibleComicCollection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
@@ -110,7 +109,7 @@ ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", u."displayName","creatorChannel".id, "creatorChannel"."verifiedAt", "creatorChannel".avatar, collection.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", "creatorChannel".id, "creatorChannel"."verifiedAt", "creatorChannel".avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
