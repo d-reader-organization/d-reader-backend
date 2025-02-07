@@ -57,6 +57,11 @@ import { TakeSnapshotParams } from './dto/take-snapshot-params.dto';
 import { ChartParams } from './dto/chart-params.dto';
 import { RevenueChartDto, toRevenueChartDto } from './dto/revenue-chart.dto';
 import { AudienceChartDto, toAudienceChartDto } from './dto/audience-chart.dto';
+import { SaleTransactionParams } from './dto/sale-transaction-params.dto';
+import {
+  SaleTransactionDto,
+  toSaleTransactionDtoArray,
+} from './dto/sale-transaction-history.dto';
 
 @ApiTags('CreatorChannel')
 @Controller('creator-channel')
@@ -169,6 +174,15 @@ export class CreatorController {
   ): Promise<AudienceChartDto> {
     const chart = await this.userCreatorService.getAudienceChartData(query);
     return toAudienceChartDto(chart);
+  }
+
+  //TODO: Add guard
+  @Get('sale-transaction/get')
+  async findSaleTransactions(
+    @Query() query: SaleTransactionParams,
+  ): Promise<SaleTransactionDto[]> {
+    const transactions = await this.creatorService.findSaleTransactions(query);
+    return toSaleTransactionDtoArray(transactions);
   }
 
   /* Update specific creator */
