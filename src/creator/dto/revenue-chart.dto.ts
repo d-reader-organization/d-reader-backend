@@ -1,20 +1,10 @@
+import { CreatorSnapshot } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
-import { IsArray, IsDate, IsNumber } from 'class-validator';
-import { RevenueSnapshot } from './types';
-
-export class RevenueSnapshotDto {
-  @IsDate()
-  date: Date;
-
-  @IsNumber()
-  sales: number;
-
-  @IsNumber()
-  royalties: number;
-
-  @IsNumber()
-  others: number;
-}
+import { IsArray, IsNumber } from 'class-validator';
+import {
+  CreatorSnapshotDto,
+  toCreatorSnapshotDtoArray,
+} from './creator-snapshot.dto';
 
 export class RevenueChartDto {
   @IsNumber()
@@ -27,15 +17,15 @@ export class RevenueChartDto {
   others: number;
 
   @IsArray()
-  @Type(() => RevenueSnapshotDto)
-  snapshots: RevenueSnapshotDto[];
+  @Type(() => CreatorSnapshotDto)
+  snapshots: CreatorSnapshotDto[];
 }
 
 export type RevenueChartInput = {
   totalSales: number;
   totalRoyalties: number;
   others: number;
-  snapshots: RevenueSnapshot[];
+  snapshots: CreatorSnapshot[];
 };
 
 export function toRevenueChartDto(input: RevenueChartInput) {
@@ -43,7 +33,7 @@ export function toRevenueChartDto(input: RevenueChartInput) {
     totalSales: input.totalSales,
     totalRoyalties: input.totalRoyalties,
     others: input.others,
-    snapshots: toRevenueSnapshotDtoArray(input.snapshots),
+    snapshots: toCreatorSnapshotDtoArray(input.snapshots),
   };
 
   const revenueChartDto = plainToInstance(
@@ -51,23 +41,4 @@ export function toRevenueChartDto(input: RevenueChartInput) {
     plainRevenueChartDto,
   );
   return revenueChartDto;
-}
-
-export function toRevenueSnapshotDto(input: RevenueSnapshot) {
-  const plainRevenueSnapshotDto: RevenueSnapshotDto = {
-    date: input.date,
-    sales: input.sales,
-    royalties: input.royalties,
-    others: input.others,
-  };
-
-  const revenueSnapshotDto: RevenueSnapshotDto = plainToInstance(
-    RevenueSnapshotDto,
-    plainRevenueSnapshotDto,
-  );
-  return revenueSnapshotDto;
-}
-
-export function toRevenueSnapshotDtoArray(inputs: RevenueSnapshot[]) {
-  return inputs.map(toRevenueSnapshotDto);
 }

@@ -15,10 +15,3 @@ export type CreatorStatusProperty = keyof Pick<CreatorChannel, 'verifiedAt'>;
 export type SearchCreator = Pick<CreatorChannel, 'avatar' | 'handle'> & {
   issuesCount: number;
 };
-
-export type RevenueSnapshot = {
-  date: Date;
-  sales: number;
-  royalties: number;
-  others: number;
-};

@@ -56,6 +56,7 @@ import { CreateCreatorChannelDto } from './dto/create-channel.dto';
 import { TakeSnapshotParams } from './dto/take-snapshot-params.dto';
 import { ChartParams } from './dto/chart-params.dto';
 import { RevenueChartDto, toRevenueChartDto } from './dto/revenue-chart.dto';
+import { AudienceChartDto, toAudienceChartDto } from './dto/audience-chart.dto';
 
 @ApiTags('CreatorChannel')
 @Controller('creator-channel')
@@ -159,6 +160,15 @@ export class CreatorController {
   ): Promise<RevenueChartDto> {
     const chart = await this.userCreatorService.getRevenueChartData(query);
     return toRevenueChartDto(chart);
+  }
+
+  //TODO: Add guard
+  @Get('chart/audience/get')
+  async findAudienceChart(
+    @Query() query: ChartParams,
+  ): Promise<AudienceChartDto> {
+    const chart = await this.userCreatorService.getAudienceChartData(query);
+    return toAudienceChartDto(chart);
   }
 
   /* Update specific creator */

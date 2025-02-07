@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { CreatorStats } from '../comic/dto/types';
-import { RevenueSnapshot, UserCreatorMyStatsDto } from './dto/types';
+import { UserCreatorMyStatsDto } from './dto/types';
 import {
   ActivityTargetType,
   ComicIssueSnapshotType,
@@ -21,6 +21,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { startOfDay, subDays } from 'date-fns';
 import { ChartParams } from './dto/chart-params.dto';
 import { RevenueChartInput } from './dto/revenue-chart.dto';
+import { AudienceChartInput } from './dto/audience-chart.dto';
 
 @Injectable()
 export class UserCreatorService {
@@ -143,6 +144,72 @@ export class UserCreatorService {
     return userCreator;
   }
 
+  async getAudienceChartData(query: ChartParams): Promise<AudienceChartInput> {
+    const { creatorId, days } = query;
+
+    const now = new Date();
+    const numberOfDays = days || 30;
+    const startDate = subDays(now, numberOfDays);
+
+    const snapshots = await this.prisma.creatorSnapshot.findMany({
+      where: {
+        creatorId,
+        timestamp: { gte: startDate },
+        type: {
+          in: [
+            CreatorSnapshotType.Like,
+            CreatorSnapshotType.Reader,
+            CreatorSnapshotType.View,
+            CreatorSnapshotType.Follower,
+            CreatorSnapshotType.Bookmark,
+          ],
+        },
+      },
+    });
+
+    const getTotalLikes = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Like },
+      _sum: { value: true },
+    });
+
+    const getTotalReaders = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Reader },
+      _sum: { value: true },
+    });
+
+    const getTotalViews = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.View },
+      _sum: { value: true },
+    });
+
+    const getTotalFollowers = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Follower },
+      _sum: { value: true },
+    });
+
+    const getTotalBookmarks = this.prisma.creatorSnapshot.aggregate({
+      where: { creatorId, type: CreatorSnapshotType.Bookmark },
+      _sum: { value: true },
+    });
+
+    const [likes, readers, views, followers, bookmarks] = await Promise.all([
+      getTotalLikes,
+      getTotalReaders,
+      getTotalViews,
+      getTotalFollowers,
+      getTotalBookmarks,
+    ]);
+
+    return {
+      totalLikes: likes?._sum?.value || 0,
+      totalReaders: readers?._sum?.value || 0,
+      totalViews: views?._sum?.value || 0,
+      totalBookmarks: bookmarks?._sum?.value || 0,
+      totalFollowers: followers?._sum?.value || 0,
+      snapshots,
+    };
+  }
+
   async getRevenueChartData(query: ChartParams): Promise<RevenueChartInput> {
     const { creatorId, days } = query;
 
@@ -185,41 +252,11 @@ export class UserCreatorService {
       getOthers,
     ]);
 
-    const chartMap = new Map<Date, RevenueSnapshot>();
-
-    snapshots.forEach(({ value, timestamp, type }) => {
-      if (!chartMap.has(timestamp)) {
-        chartMap.set(timestamp, {
-          date: timestamp,
-          sales: 0,
-          royalties: 0,
-          others: 0,
-        });
-      }
-
-      const item = chartMap.get(timestamp);
-      switch (type) {
-        case CreatorSnapshotType.Sale: {
-          item.sales = value;
-          break;
-        }
-        case CreatorSnapshotType.Royalty: {
-          item.royalties = value;
-          break;
-        }
-
-        case CreatorSnapshotType.Other: {
-          item.others = value;
-          break;
-        }
-      }
-    });
-
     return {
       totalRoyalties: royalties?._sum?.value || 0,
       totalSales: sales?._sum?.value || 0,
       others: others?._sum?.value || 0,
-      snapshots: Array.from(chartMap.values()),
+      snapshots,
     };
   }
 
