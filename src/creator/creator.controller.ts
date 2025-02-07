@@ -109,7 +109,7 @@ export class CreatorController {
     @Param('id') id: string,
     @UserEntity() user?: UserPayload,
   ): Promise<CreatorChannelDto> {
-    const creator = await this.creatorService.findOne(+id, user?.id);
+    const creator = await this.creatorService.findOne(id, user?.id);
     return toCreatorDto(creator);
   }
 

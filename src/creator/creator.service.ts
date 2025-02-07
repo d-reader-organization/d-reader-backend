@@ -41,6 +41,7 @@ import { CreatorActivityFeedInput } from './dto/creator-activity-feed.dto';
 import { SortOrder } from 'src/types/sort-order';
 import { CreateCreatorChannelDto } from './dto/create-channel.dto';
 import { appendTimestamp } from 'src/utils/helpers';
+import { processCreatorIdString } from 'src/utils/creator';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -152,18 +153,19 @@ export class CreatorService {
     );
   }
 
-  async findOne(id: number, userId?: number) {
-    const findCreator = this.prisma.creatorChannel.findUnique({
-      where: { id },
+  async findOne(id: string, userId?: number) {
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: processCreatorIdString(id),
     });
-    const getStats = this.userCreatorService.getCreatorStats(id);
-    const getMyStats = this.userCreatorService.getUserStats(id, userId);
 
-    const [creator, stats, myStats] = await Promise.all([
-      findCreator,
-      getStats,
-      getMyStats,
-    ]);
+    if (!creator) {
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
+    }
+
+    const getStats = this.userCreatorService.getCreatorStats(creator.id);
+    const getMyStats = this.userCreatorService.getUserStats(creator.id, userId);
+
+    const [stats, myStats] = await Promise.all([getStats, getMyStats]);
 
     if (!creator) {
       throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
