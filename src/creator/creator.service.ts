@@ -42,6 +42,12 @@ import { SortOrder } from 'src/types/sort-order';
 import { CreateCreatorChannelDto } from './dto/create-channel.dto';
 import { appendTimestamp } from 'src/utils/helpers';
 import { processCreatorIdString } from 'src/utils/creator';
+import { SaleTransactionParams } from './dto/sale-transaction-params.dto';
+import {
+  SaleProductType,
+  SaleSource,
+  SaleTransactionInput,
+} from './dto/sale-transaction-history.dto';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -252,6 +258,64 @@ export class CreatorService {
       default:
         return SOMEONE;
     }
+  }
+
+  // TODO: Add Secondary sales transactions
+  async findSaleTransactions(
+    query: SaleTransactionParams,
+  ): Promise<SaleTransactionInput[]> {
+    const { creatorId, take, skip } = query;
+
+    const candyMachines = await this.prisma.candyMachine.findMany({
+      where: { collection: { comicIssue: { comic: { creatorId } } } },
+      select: {
+        address: true,
+        coupons: {
+          select: {
+            id: true,
+            currencySettings: {
+              select: { label: true, splTokenAddress: true },
+            },
+          },
+        },
+      },
+    });
+
+    const filter = candyMachines.map((candyMachine) => candyMachine.address);
+    const primarySaleReceipts = await this.prisma.candyMachineReceipt.findMany({
+      where: { candyMachineAddress: { in: filter } },
+      include: { user: true },
+      take,
+      skip,
+    });
+
+    const transactions: SaleTransactionInput[] = primarySaleReceipts.map(
+      (receipt) => {
+        const candyMachine = candyMachines.find(
+          (candyMachine) => candyMachine.address == receipt.candyMachineAddress,
+        );
+        const coupon = candyMachine.coupons.find(
+          (coupon) => coupon.id == receipt.couponId,
+        );
+        const currency = coupon.currencySettings.find(
+          (setting) => setting.label == receipt.label,
+        );
+
+        return {
+          transaction: receipt.transactionSignature,
+          buyerAddress: receipt.buyerAddress,
+          amount: Number(receipt.price),
+          quantity: receipt.numberOfItems,
+          splTokenAddress: currency.splTokenAddress,
+          productType: SaleProductType.Comic,
+          source: SaleSource.Sale,
+          user: receipt.user || undefined,
+          date: receipt.timestamp,
+        };
+      },
+    );
+
+    return transactions;
   }
 
   async update(id: number, updateCreatorDto: UpdateCreatorDto) {
