@@ -27,7 +27,7 @@ const getQueryFilters = (
     ? Prisma.sql`AND comicIssue."comicSlug" = ${query.comicSlug}`
     : Prisma.empty;
   const creatorCondition = !!query.creatorId
-    ? Prisma.sql`AND creator."id" = ${query.creatorId}`
+    ? Prisma.sql`AND "creatorChannel"."id" = ${query.creatorId}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortComicIssueBy(query.sortTag);
@@ -53,11 +53,11 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
   } = getQueryFilters(query);
   return Prisma.sql`select comicIssue.*,
   comic."title" as "comicTitle",
-  comic."audienceType" ,
-  creator."name" as "creatorName",
-  creator.id as "creatorId",
-  creator."verifiedAt" as "creatorVerifiedAt",
-  creator.avatar as "creatorAvatar",
+  comic."audienceType",
+  u."displayName" as "creatorName",
+  "creatorChannel".id as "creatorId",
+  "creatorChannel"."verifiedAt" as "creatorVerifiedAt",
+  "creatorChannel".avatar as "creatorAvatar",
   collection."address" as "collectionAddress",
   json_agg(distinct genre.*) AS genres,
   json_agg(distinct "statelessCover".*) AS statelessCovers,
@@ -97,8 +97,9 @@ export const getComicIssuesQuery = (query: ComicIssueParams): Prisma.Sql => {
       where comicPage."comicIssueId" = comicIssue."id"
     ) AS "totalPagesCount"    
   from "ComicIssue" comicIssue
-  inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
-  inner join "Creator" creator on creator.id = comic."creatorId"
+  inner join "Comic" comic on comic.slug = comicIssue."comicSlug"  
+  inner join "CreatorChannel" "creatorChannel" on "creatorChannel".id = comic."creatorId"
+  inner join "User" u on u.id = "creatorChannel"."userId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
   left join "CollectibleComicCollection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
@@ -109,7 +110,7 @@ ${filterCondition}
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collection.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", u."displayName","creatorChannel".id, "creatorChannel"."verifiedAt", "creatorChannel".avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}
