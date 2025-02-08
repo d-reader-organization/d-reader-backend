@@ -29,10 +29,6 @@ export class ComicParams extends Pagination {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  titleSubstring?: string;
-
-  @IsOptional()
   @IsArray()
   @ApiProperty({ type: String })
   @Type(() => String)

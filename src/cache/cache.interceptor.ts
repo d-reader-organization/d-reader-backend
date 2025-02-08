@@ -40,11 +40,7 @@ export function CacheInterceptor({
         .switchToHttp()
         .getRequest();
 
-      if (
-        request.url.includes('titleSubstring') ||
-        request.url.includes('nameSubstring') ||
-        request.url.includes('search')
-      ) {
+      if (request.url.includes('search')) {
         console.info('opting out of cache!');
         return next.handle();
         // return next.handle().pipe(map((response) => response));
