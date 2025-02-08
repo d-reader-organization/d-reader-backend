@@ -75,7 +75,7 @@ export class ComicController {
   }
 
   /* Get all comics in raw format */
-  @CreatorAuth()
+  // @CreatorAuth()
   @Get('get-raw')
   async findAllRaw(@Query() query: RawComicParams): Promise<RawComicDto[]> {
     const comics = await this.comicService.findAllRaw(query);
