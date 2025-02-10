@@ -48,7 +48,7 @@ import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
 import { Metaplex } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
-import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
+import { PaginatedRawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/dto/types';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { CreateCandyMachineParams } from '../candy-machine/dto/types';
@@ -203,7 +203,9 @@ export class ComicIssueService {
     return response;
   }
 
-  async findAllRaw(query: RawComicIssueParams): Promise<RawComicIssueInput[]> {
+  async findAllRaw(
+    query: RawComicIssueParams,
+  ): Promise<PaginatedRawComicIssueInput> {
     const comicIssues = await this.prisma.$queryRaw<
       Array<
         ComicIssue & {
@@ -232,7 +234,18 @@ export class ComicIssueService {
       };
     });
 
-    return normalizedComicIssues;
+    const creatorId = query?.creatorId ? +query.creatorId : undefined;
+    const genreFilter = query.genreSlugs
+      ? { some: { slug: { in: query.genreSlugs } } }
+      : undefined;
+    const totalCount = await this.prisma.comicIssue.count({
+      where: {
+        comic: { creatorId, genres: genreFilter, slug: query?.comicSlug },
+        title: { contains: query?.search, mode: 'insensitive' },
+      },
+    });
+
+    return { totalCount, comicIssues: normalizedComicIssues };
   }
 
   async findOnePublic(

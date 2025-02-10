@@ -50,6 +50,7 @@ import {
 import { With } from 'src/types/shared';
 import { toComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ifDefined } from 'src/utils/lodash';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 export class RawComicIssueDto {
   @IsPositive()
@@ -199,4 +200,31 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
 
 export const toRawComicIssueDtoArray = (issues: RawComicIssueInput[]) => {
   return issues.map(toRawComicIssueDto);
+};
+
+export class PaginatedRawComicIssueDto extends PaginatedResponseDto {
+  @IsArray()
+  @Type(() => RawComicIssueDto)
+  @ApiProperty({ isArray: true })
+  comicIssues: RawComicIssueDto[];
+}
+
+export type PaginatedRawComicIssueInput = {
+  totalCount: number;
+  comicIssues: RawComicIssueInput[];
+};
+
+export const toPaginatedRawComicIssueDto = (
+  input: PaginatedRawComicIssueInput,
+) => {
+  const plainPaginatedRawComicIssueDto: PaginatedRawComicIssueDto = {
+    totalCount: input.totalCount,
+    comicIssues: toRawComicIssueDtoArray(input.comicIssues),
+  };
+
+  const paginatedRawComicIssueDto = plainToInstance(
+    PaginatedRawComicIssueDto,
+    plainPaginatedRawComicIssueDto,
+  );
+  return paginatedRawComicIssueDto;
 };

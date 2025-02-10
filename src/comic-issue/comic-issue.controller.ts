@@ -67,9 +67,10 @@ import {
 import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import {
+  PaginatedRawComicIssueDto,
   RawComicIssueDto,
+  toPaginatedRawComicIssueDto,
   toRawComicIssueDto,
-  toRawComicIssueDtoArray,
 } from './dto/raw-comic-issue.dto';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
@@ -119,9 +120,9 @@ export class ComicIssueController {
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicIssueParams,
-  ): Promise<RawComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllRaw(query);
-    return toRawComicIssueDtoArray(comicIssues);
+  ): Promise<PaginatedRawComicIssueDto> {
+    const data = await this.comicIssueService.findAllRaw(query);
+    return toPaginatedRawComicIssueDto(data);
   }
 
   @Get('get/by-owner/:userId')
