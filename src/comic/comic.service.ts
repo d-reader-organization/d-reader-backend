@@ -34,6 +34,7 @@ import { SearchComicParams } from './dto/search-comic-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { PaginatedRawComicInput } from './dto/raw-comic.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -96,7 +97,7 @@ export class ComicService {
     });
   }
 
-  async findAllRaw(query: RawComicParams) {
+  async findAllRaw(query: RawComicParams): Promise<PaginatedRawComicInput> {
     const comics = await this.prisma.$queryRaw<
       Array<Comic & { genres: Genre[] } & ComicStats>
     >(getRawComicsQuery(query));
@@ -115,7 +116,19 @@ export class ComicService {
       };
     });
 
-    return normalizedComics;
+    const creatorId = query?.creatorId ? +query.creatorId : undefined;
+    const genreFilter = query.genreSlugs
+      ? { some: { slug: { in: query.genreSlugs } } }
+      : undefined;
+    const totalCount = await this.prisma.comic.count({
+      where: {
+        creatorId,
+        title: { contains: query?.search, mode: 'insensitive' },
+        genres: genreFilter,
+      },
+    });
+
+    return { totalCount, comics: normalizedComics };
   }
 
   async searchAll(params: SearchComicParams): Promise<SearchComic[]> {

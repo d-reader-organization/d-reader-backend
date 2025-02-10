@@ -20,7 +20,7 @@ const getQueryFilters = (
     : Prisma.empty;
   const andOrWhere = hasTitleFilter ? Prisma.sql`AND` : Prisma.sql`WHERE`;
   const creatorCondition = !!query.creatorId
-    ? Prisma.sql`${andOrWhere} creator."id" = ${query.creatorId}`
+    ? Prisma.sql`${andOrWhere} creator."id" = ${+query.creatorId}`
     : Prisma.empty;
   const sortOrder = getSortOrder(query.sortOrder);
   const sortColumn = sortRawComicBy(query.sortTag);

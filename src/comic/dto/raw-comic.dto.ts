@@ -1,12 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsNumber,
-  IsString,
-  IsUrl,
-} from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsString, IsUrl } from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto, toComicStatsDto } from './comic-stats.dto';
@@ -20,6 +13,7 @@ import {
 } from 'src/genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
 import { ifDefined } from 'src/utils/lodash';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 export class RawComicDto {
   @IsString()
@@ -126,10 +120,7 @@ export const toRawComicDtoArray = (comics: RawComicInput[]) => {
   return comics.map(toRawComicDto);
 };
 
-export class PaginatedRawComicDto {
-  @IsNumber()
-  totalCount: number;
-
+export class PaginatedRawComicDto extends PaginatedResponseDto {
   @IsArray()
   @Type(() => RawComicDto)
   @ApiProperty({ isArray: true })

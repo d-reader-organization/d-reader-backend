@@ -34,9 +34,10 @@ import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { RawComicParams } from './dto/raw-comic-params.dto';
 import {
+  PaginatedRawComicDto,
   RawComicDto,
+  toPaginatedRawComicDto,
   toRawComicDto,
-  toRawComicDtoArray,
 } from './dto/raw-comic.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { CacheInterceptor } from '../cache/cache.interceptor';
@@ -74,11 +75,14 @@ export class ComicController {
   }
 
   /* Get all comics in raw format */
-  // @CreatorAuth()
+  // TODO: Update guard to only allow specific creator details
+  @CreatorAuth()
   @Get('get-raw')
-  async findAllRaw(@Query() query: RawComicParams): Promise<RawComicDto[]> {
-    const comics = await this.comicService.findAllRaw(query);
-    return toRawComicDtoArray(comics);
+  async findAllRaw(
+    @Query() query: RawComicParams,
+  ): Promise<PaginatedRawComicDto> {
+    const data = await this.comicService.findAllRaw(query);
+    return toPaginatedRawComicDto(data);
   }
 
   /* Search all comics */
