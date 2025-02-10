@@ -1,5 +1,12 @@
 import { plainToInstance, Type } from 'class-transformer';
-import { IsArray, IsDate, IsEnum, IsString, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsNumber,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { IsEmptyOrUrl } from 'src/decorators/IsEmptyOrUrl';
 import { ComicStatsDto, toComicStatsDto } from './comic-stats.dto';
@@ -117,4 +124,32 @@ export function toRawComicDto(comic: RawComicInput) {
 
 export const toRawComicDtoArray = (comics: RawComicInput[]) => {
   return comics.map(toRawComicDto);
+};
+
+export class PaginatedRawComicDto {
+  @IsNumber()
+  totalCount: number;
+
+  @IsArray()
+  @Type(() => RawComicDto)
+  @ApiProperty({ isArray: true })
+  comics: RawComicDto[];
+}
+
+export type PaginatedRawComicInput = {
+  totalCount: number;
+  comics: RawComicInput[];
+};
+
+export const toPaginatedRawComicDto = (input: PaginatedRawComicInput) => {
+  const plainPaginatedRawComicDto: PaginatedRawComicDto = {
+    totalCount: input.totalCount,
+    comics: toRawComicDtoArray(input.comics),
+  };
+
+  const paginatedRawComicDto = plainToInstance(
+    PaginatedRawComicDto,
+    plainPaginatedRawComicDto,
+  );
+  return paginatedRawComicDto;
 };
