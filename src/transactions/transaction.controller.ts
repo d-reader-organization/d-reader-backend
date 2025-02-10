@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseInterceptors,
@@ -202,7 +203,7 @@ export class TransactionController {
 
   @UserAuth()
   @Throttle(STRICT_THROTTLER_CONFIG)
-  @Get('/use-comic-issue-asset')
+  @Patch('/use-comic-issue-asset')
   async constructUseComicAssetTransaction(
     @Query() query: UseComicParams,
     @UserEntity() user: UserPayload,
