@@ -181,15 +181,22 @@ export const getTreasuryUmiPublicKey = () => {
 };
 
 /**
- * Signs a legacy transaction with the identity (treasury) signer.
- * @param {Transaction} transaction - The transaction to sign.
- * @returns {Transaction} The signed transaction.
+ * Signs a Solana/web3.js transaction with the identity (treasury) signer.
+ * @param {Transaction | VersionedTransaction} transaction - The transaction to sign.
+ * @returns {Transaction | VersionedTransaction} The signed transaction.
  */
-export const getIdentitySignature = (transaction: Transaction) => {
+export function getIdentitySignature<
+  T extends Transaction | VersionedTransaction,
+>(transaction: T): T {
   const signer = getTreasuryKeypair();
-  transaction.partialSign(signer);
+  if ('partialSign' in transaction) {
+    transaction.partialSign(signer);
+  } else {
+    // Handle VersionedTransaction differently
+    transaction.sign([signer]);
+  }
   return transaction;
-};
+}
 
 /**
  * Creates and returns a Solana connection based on the provided or default endpoint.

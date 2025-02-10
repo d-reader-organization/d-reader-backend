@@ -12,7 +12,6 @@ import { isNumberString } from 'class-validator';
 import { SOL_ADDRESS } from '../constants';
 import { toSol } from '../utils/helpers';
 import { TransactionService } from '../transactions/transaction.service';
-import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey } from '@solana/web3.js';
 import { fetchOffChainMetadata } from '../utils/nft-metadata';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -154,11 +153,7 @@ export class BlinkService {
       );
     }
 
-    return this.transactionService.createChangeComicStateTransaction(
-      address,
-      creator,
-      ComicStateArgs.Sign,
-    );
+    return this.transactionService.signComic(address.toString());
   }
 
   async mintComicAction(account: UmiPublicKey, couponId: number) {

@@ -35,10 +35,7 @@ import { NFT_EMBEDDED_RESPONSE } from './templates/nftEmbededResponse';
 import { UseGuards } from '@nestjs/common';
 import { IsSignButtonInteractionGuard } from '../guards/sign-button-interaction.guard';
 import { AUTH_TAG, pda } from '../candy-machine/instructions/pda';
-import {
-  PROGRAM_ID as COMIC_VERSE_ID,
-  ComicStateArgs,
-} from 'dreader-comic-verse';
+import { PROGRAM_ID as COMIC_VERSE_ID } from 'dreader-comic-verse';
 import {
   delegateAuthority,
   verifyMintCreator,
@@ -262,12 +259,7 @@ export class GetSignCommand {
       }
       const isCollectionLocked = LOCKED_COLLECTIONS.has(collection.address);
       if (!isCollectionLocked) {
-        const rawTransaction =
-          await this.transactionService.createChangeComicStateTransaction(
-            new PublicKey(address),
-            this.metaplex.identity().publicKey,
-            ComicStateArgs.Sign,
-          );
+        const rawTransaction = await this.transactionService.signComic(address);
 
         const transaction = VersionedTransaction.deserialize(
           Buffer.from(rawTransaction, 'base64'),

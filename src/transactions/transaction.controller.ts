@@ -10,7 +10,6 @@ import {
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { MintParams } from '../candy-machine/dto/mint-params.dto';
 import { AuctionHouseService } from '../auction-house/auction-house.service';
-import { SignComicParams } from './dto/sign-comic-params.dto';
 import { UseComicParams } from '../candy-machine/dto/use-comic-params.dto';
 import {
   ListParams,
@@ -20,7 +19,6 @@ import { BidParams } from '../auction-house/dto/bid-params.dto';
 import { SilentQuery } from '../decorators/silent-query.decorator';
 import { validateAndFormatParams } from '../utils/validate-params';
 import { MultipleBuyParams } from '../auction-house/dto/instant-buy-params.dto';
-import { ComicStateArgs } from 'dreader-comic-verse';
 import { PublicKey, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import {
   ApiConsumes,
@@ -121,22 +119,22 @@ export class TransactionController {
   }
 
   /* For blink clients to make request for comic sign transaction */
-  @Throttle(STRICT_THROTTLER_CONFIG)
-  @Post('/blink/comic-sign/:address')
-  async constructBlinkComicSignTransaction(
-    @Param('address') address: string,
-    @Body() actionPayload: ActionPayloadDto,
-  ) {
-    const assetAddress = new PublicKey(address);
-    const publicKey = new PublicKey(actionPayload.account);
+  // @Throttle(STRICT_THROTTLER_CONFIG)
+  // @Post('/blink/comic-sign/:address')
+  // async constructBlinkComicSignTransaction(
+  //   @Param('address') address: string,
+  //   @Body() actionPayload: ActionPayloadDto,
+  // ) {
+  //   const assetAddress = new PublicKey(address);
+  //   const publicKey = new PublicKey(actionPayload.account);
 
-    const transaction = await this.blinkService.signComicAction(
-      assetAddress,
-      publicKey,
-    );
+  //   const transaction = await this.blinkService.signComicAction(
+  //     assetAddress,
+  //     publicKey,
+  //   );
 
-    return toActionResponseDto(transaction);
-  }
+  //   return toActionResponseDto(transaction);
+  // }
 
   // 500 global requests per second
   @UseInterceptors(GlobalThrottlerInterceptor({ cooldown: 1000, limit: 500 }))
@@ -183,19 +181,6 @@ export class TransactionController {
   }
 
   @Throttle(STRICT_THROTTLER_CONFIG)
-  @Get('/sign-comic')
-  async constructSignComicTransaction(@Query() query: SignComicParams) {
-    const publicKey = new PublicKey(query.signerAddress);
-    const assetPubkey = new PublicKey(query.assetAddress);
-
-    return await this.transactionService.createChangeComicStateTransaction(
-      assetPubkey,
-      publicKey,
-      ComicStateArgs.Sign,
-    );
-  }
-
-  @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/tip-creator')
   async constructTipCreatorTransaction(@Query() query: TransferTokensParams) {
     const senderAddress = new PublicKey(query.senderAddress);
@@ -215,25 +200,6 @@ export class TransactionController {
     // Elusiv for private transaction if the user decided to do an anonymous tip
   }
 
-  /* deprecated */
-  @UserAuth()
-  @Throttle(STRICT_THROTTLER_CONFIG)
-  @Get('/use-comic-issue-nft')
-  async constructUseComicTransaction(
-    @Query() query: UseComicParams,
-    @UserEntity() user: UserPayload,
-  ) {
-    const publicKey = new PublicKey(query.ownerAddress);
-    const assetPubkey = new PublicKey(query.nftAddress ?? query.assetAddress);
-
-    return await this.transactionService.createChangeComicStateTransaction(
-      assetPubkey,
-      publicKey,
-      ComicStateArgs.Use,
-      user.id,
-    );
-  }
-
   @UserAuth()
   @Throttle(STRICT_THROTTLER_CONFIG)
   @Get('/use-comic-issue-asset')
@@ -241,13 +207,8 @@ export class TransactionController {
     @Query() query: UseComicParams,
     @UserEntity() user: UserPayload,
   ) {
-    const publicKey = new PublicKey(query.ownerAddress);
-    const nftPubKey = new PublicKey(query.assetAddress);
-
-    return await this.transactionService.createChangeComicStateTransaction(
-      nftPubKey,
-      publicKey,
-      ComicStateArgs.Use,
+    return await this.transactionService.unwrapComic(
+      query.assetAddress,
       user.id,
     );
   }

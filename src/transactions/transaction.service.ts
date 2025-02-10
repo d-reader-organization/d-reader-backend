@@ -5,14 +5,14 @@ import {
   SystemProgram,
   VersionedTransaction,
 } from '@solana/web3.js';
-import { ComicStateArgs } from 'dreader-comic-verse';
-import { metaplex, umi } from '../utils/metaplex';
-import { PrismaService } from 'nestjs-prisma';
 import {
-  constructChangeComicStateTransaction,
-  constructChangeCoreComicStateTransaction,
-} from '../candy-machine/instructions';
-import { RARITY_MAP } from '../constants';
+  getIdentitySignature,
+  getTreasuryUmiPublicKey,
+  metaplex,
+  umi,
+} from '../utils/metaplex';
+import { PrismaService } from 'nestjs-prisma';
+import { constructChangeCoreComicStateTransaction } from '../candy-machine/instructions';
 import { constructDelegateCreatorTransaction } from '../candy-machine/instructions/delegate-creator';
 import {
   BadRequestException,
@@ -20,11 +20,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TokenStandard } from '@prisma/client';
-import {
-  Umi,
-  publicKey,
-  PublicKey as UmiPublicKey,
-} from '@metaplex-foundation/umi';
+import { Umi, publicKey } from '@metaplex-foundation/umi';
 import { fetchAssetV1 } from '@metaplex-foundation/mpl-core';
 import {
   fetchOffChainMetadata,
@@ -75,122 +71,139 @@ export class TransactionService {
     return rawTransaction.toString('base64');
   }
 
-  async createChangeComicStateTransaction(
-    mint: PublicKey,
-    feePayer: PublicKey,
-    newState: ComicStateArgs,
-    userId?: number,
-  ): Promise<string | null> {
+  async signComic(assetAddress: string) {
+    const { candyMachine, metadata } =
+      await this.prisma.collectibleComic.findUnique({
+        where: { address: assetAddress },
+        include: {
+          metadata: { include: { collection: true } },
+          candyMachine: true,
+        },
+      });
+
+    if (candyMachine.standard !== TokenStandard.Core) {
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.UNAUTHORIZED_CHANGE_COMIC_STATE,
+      );
+    }
+
+    const assetData = await fetchAssetV1(umi, publicKey(assetAddress));
+    const offChainMetadata = await fetchOffChainMetadata(assetData.uri);
+    const isUsed = findUsedTrait(offChainMetadata);
+    const rarity = findRarityTrait(offChainMetadata);
+    const isSigned = findSignedTrait(offChainMetadata);
+
+    if (isSigned) {
+      throw new BadRequestException(ERROR_MESSAGES.COMIC_ALREADY_SIGNED);
+    }
+
+    const itemMetadata = await this.prisma.collectibleComicMetadata.findUnique({
+      where: {
+        isUsed_isSigned_rarity_collectionAddress: {
+          isUsed,
+          isSigned: true,
+          rarity,
+          collectionAddress: metadata.collectionAddress,
+        },
+      },
+    });
+
+    const transaction = await constructChangeCoreComicStateTransaction(
+      this.umi,
+      publicKey(metadata.collection.creatorAddress), // This will be backend identity for authorized creators
+      publicKey(metadata.collectionAddress),
+      publicKey(assetAddress),
+      itemMetadata.uri,
+    );
+
+    return transaction;
+  }
+
+  async unwrapComic(assetAddress: string, userId: number) {
     const { candyMachine, metadata, digitalAsset } =
       await this.prisma.collectibleComic.findUnique({
-        where: { address: mint.toString() },
+        where: { address: assetAddress },
         include: {
-          metadata: {
-            include: { collection: true },
-          },
+          metadata: { include: { collection: true } },
           candyMachine: true,
           digitalAsset: { include: { owner: { select: { userId: true } } } },
         },
       });
 
     const { ownerAddress, owner: user } = digitalAsset;
-    if (candyMachine.standard === TokenStandard.Core) {
-      const { collection } = metadata;
-      if (newState == ComicStateArgs.Use && user.userId != userId) {
-        throw new UnauthorizedException(ERROR_MESSAGES.UNAUTHORIZED_UNWRAP);
-      }
 
-      // Fetch asset from onchain in case our database is out of sync
-      const assetData = await fetchAssetV1(umi, publicKey(mint));
-      const offChainMetadata = await fetchOffChainMetadata(assetData.uri);
-      let isUsed = findUsedTrait(offChainMetadata);
-      let isSigned = findSignedTrait(offChainMetadata);
-
-      let signer: UmiPublicKey;
-      if (newState === ComicStateArgs.Sign) {
-        if (isSigned) {
-          throw new BadRequestException(ERROR_MESSAGES.COMIC_ALREADY_SIGNED);
-        }
-        if (
-          feePayer.toString() != collection.creatorAddress &&
-          feePayer.toString() != collection.creatorBackupAddress
-        ) {
-          throw new BadRequestException(
-            ERROR_MESSAGES.ONLY_VERIFIED_CREATOR_CAN_SIGN,
-          );
-        }
-        isSigned = true;
-        signer = publicKey(feePayer);
-      } else {
-        if (assetData.owner.toString() !== ownerAddress) {
-          throw new UnauthorizedException(
-            ERROR_MESSAGES.UNAUTHORIZED_CHANGE_COMIC_STATE,
-          );
-        }
-        // Currently by default user is opted in to not sign unwrap tx and we sign it on behalf of user to unwrap the asset
-        signer = umi.identity.publicKey;
-        isUsed = true;
-      }
-
-      const itemMetadata =
-        await this.prisma.collectibleComicMetadata.findUnique({
-          where: {
-            isUsed_isSigned_rarity_collectionAddress: {
-              isUsed,
-              isSigned,
-              rarity: findRarityTrait(offChainMetadata),
-              collectionAddress: metadata.collectionAddress,
-            },
-          },
-        });
-
-      const isUnwrap = newState === ComicStateArgs.Use;
-      const nonceArgs = isUnwrap
-        ? await this.nonceService.getNonce()
-        : undefined;
-
-      const transaction = await constructChangeCoreComicStateTransaction(
-        this.umi,
-        signer,
-        publicKey(metadata.collectionAddress),
-        publicKey(mint),
-        itemMetadata.uri,
-        nonceArgs,
+    if (candyMachine.standard !== TokenStandard.Core) {
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.UNAUTHORIZED_CHANGE_COMIC_STATE,
       );
-      if (isUnwrap) {
-        const decodedTransaction = VersionedTransaction.deserialize(
-          Buffer.from(transaction, 'base64'),
-        );
-
-        decodedTransaction.sign([this.metaplex.identity()]);
-        await this.prisma.collectibleComic.update({
-          where: { address: mint.toString() },
-          data: {
-            uri: itemMetadata.uri,
-          },
-        });
-        await this.metaplex.connection.sendTransaction(decodedTransaction);
-        return;
-      }
-
-      return transaction;
     }
 
-    const owner = new PublicKey(ownerAddress);
-    const collectionMintPubKey = new PublicKey(metadata.collectionAddress);
-    const candyMachinePubKey = new PublicKey(candyMachine.address);
-    const numberedRarity = RARITY_MAP[metadata.rarity];
+    // Fetch asset from onchain in case our database is out of sync
+    const assetData = await fetchAssetV1(umi, publicKey(assetAddress));
+    const offChainMetadata = await fetchOffChainMetadata(assetData.uri);
+    const rarity = findRarityTrait(offChainMetadata);
+    const isSigned = findSignedTrait(offChainMetadata);
 
-    return await constructChangeComicStateTransaction(
-      this.metaplex,
-      owner,
-      collectionMintPubKey,
-      candyMachinePubKey,
-      numberedRarity,
-      mint,
-      feePayer,
-      newState,
+    const itemMetadata = await this.prisma.collectibleComicMetadata.findUnique({
+      where: {
+        isUsed_isSigned_rarity_collectionAddress: {
+          isUsed: true,
+          isSigned,
+          rarity,
+          collectionAddress: metadata.collectionAddress,
+        },
+      },
+    });
+
+    if (user.userId != userId || assetData.owner.toString() !== ownerAddress) {
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.UNAUTHORIZED_CHANGE_COMIC_STATE,
+      );
+    }
+
+    const nonceArgs = await this.nonceService.getNonce();
+
+    const treasury = getTreasuryUmiPublicKey();
+    const transaction = await constructChangeCoreComicStateTransaction(
+      this.umi,
+      treasury,
+      publicKey(metadata.collectionAddress),
+      publicKey(assetAddress),
+      itemMetadata.uri,
+      nonceArgs,
     );
+
+    const decodedTransaction = VersionedTransaction.deserialize(
+      Buffer.from(transaction, 'base64'),
+    );
+
+    const signedTransaction = getIdentitySignature(decodedTransaction);
+    await this.prisma.collectibleComic.update({
+      where: { address: assetAddress },
+      data: { uri: itemMetadata.uri },
+    });
+
+    await this.metaplex.connection.sendTransaction(signedTransaction);
+
+    /**
+     * TODO: for legacy comic change state, assign backend identity as authority in the contract
+     **/
+
+    // const owner = new PublicKey(ownerAddress);
+    // const collectionMintPubKey = new PublicKey(metadata.collectionAddress);
+    // const candyMachinePubKey = new PublicKey(candyMachine.address);
+    // const numberedRarity = RARITY_MAP[metadata.rarity];
+
+    //   return await constructChangeComicStateTransaction(
+    //     this.metaplex,
+    //     owner,
+    //     collectionMintPubKey,
+    //     candyMachinePubKey,
+    //     numberedRarity,
+    //     mint,
+    //     feePayer,
+    //     newState,
+    //   );
   }
 
   async createDelegateCreatorTransaction(
