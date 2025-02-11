@@ -16,7 +16,6 @@ import { Role } from '@prisma/client';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Reflector } from '@nestjs/core';
 
-
 @Injectable()
 export class AdminOrCreatorOwnerGuard implements CanActivate {
   constructor(
@@ -55,11 +54,11 @@ export class AdminOrCreatorOwnerGuard implements CanActivate {
   }
 }
 
-/** 
+/**
  * Guard that checks if the user is either an Admin or the owner of a Creator profile.
- * 
+ *
  * For users with the 'Creator' role, the 'creatorId' must be provided in the query parameters.
- * 
+ *
  * @throws {NotFoundException} If 'creatorId' is not provided or if the Creator with the given ID is not found.
  * @throws {ForbiddenException} If the user does not own the Creator profile.
  */

@@ -66,6 +66,15 @@ export class CreatorService {
     userId: number,
     createCreatorChannelDto: CreateCreatorChannelDto,
   ) {
+    const isExists = await this.prisma.creatorChannel.findUnique({
+      where: { userId },
+    });
+    if (isExists) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.USER_ALREADY_HAS_CREATOR_CHANNEL,
+      );
+    }
+
     const { handle } = createCreatorChannelDto;
     validateCreatorHandle(handle);
     await this.throwIfHandleTaken(handle);
@@ -74,11 +83,13 @@ export class CreatorService {
       data: {
         ...createCreatorChannelDto,
         handle,
-        user: {
-          connect: { id: userId },
-        },
+        user: { connect: { id: userId } },
         s3BucketSlug: appendTimestamp(handle),
       },
+    });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: 'Creator' },
     });
 
     this.discordService.creatorRegistered(creator);
