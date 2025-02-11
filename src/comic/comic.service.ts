@@ -116,19 +116,18 @@ export class ComicService {
       };
     });
 
-    const creatorId = query?.creatorId ? +query.creatorId : undefined;
     const genreFilter = query.genreSlugs
       ? { some: { slug: { in: query.genreSlugs } } }
       : undefined;
-    const totalCount = await this.prisma.comic.count({
+    const totalItems = await this.prisma.comic.count({
       where: {
-        creatorId,
+        creatorId: query.creatorId,
         title: { contains: query?.search, mode: 'insensitive' },
         genres: genreFilter,
       },
     });
 
-    return { totalCount, comics: normalizedComics };
+    return { totalItems, comics: normalizedComics };
   }
 
   async searchAll(params: SearchComicParams): Promise<SearchComic[]> {

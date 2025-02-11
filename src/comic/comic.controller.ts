@@ -34,7 +34,6 @@ import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { RawComicParams } from './dto/raw-comic-params.dto';
 import {
-  PaginatedRawComicDto,
   RawComicDto,
   toPaginatedRawComicDto,
   toRawComicDto,
@@ -46,6 +45,7 @@ import { SearchComicParams } from './dto/search-comic-params.dto';
 import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
 import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -80,7 +80,7 @@ export class ComicController {
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicParams,
-  ): Promise<PaginatedRawComicDto> {
+  ): Promise<PaginatedResponseDto<RawComicDto>> {
     const data = await this.comicService.findAllRaw(query);
     return toPaginatedRawComicDto(data);
   }
