@@ -2,7 +2,6 @@ import {
   UnauthorizedException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -73,8 +72,8 @@ export class AuthService {
 
   authorizeUser(user: User) {
     return {
-      accessToken: this.generateAccessToken({ ...user, type: 'user' }),
-      refreshToken: this.generateRefreshToken({ ...user, type: 'user' }),
+      accessToken: this.generateAccessToken(user),
+      refreshToken: this.generateRefreshToken(user),
     };
   }
 
@@ -171,19 +170,15 @@ export class AuthService {
       data: { lastLogin: new Date() },
     });
 
-    return this.generateAccessToken({ ...user, type: 'user' });
+    return this.generateAccessToken(user);
   }
 
   async validateJwt(jwtDto: JwtDto): Promise<JwtPayload> {
-    if (jwtDto.type === 'user') {
-      const user = await this.prisma.user.findUnique({
-        where: { id: jwtDto.id },
-      });
+    const user = await this.prisma.user.findUnique({
+      where: { id: jwtDto.id },
+    });
 
-      if (!user) throw new NotFoundException('User not found');
-      return { ...user, type: 'user' };
-    } else {
-      throw new ForbiddenException('Authorization type unknown: ', jwtDto.type);
-    }
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 }
