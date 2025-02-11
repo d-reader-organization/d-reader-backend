@@ -116,7 +116,7 @@ export class ComicIssueController {
   }
 
   /* Get all comics issues in raw format */
-  @CreatorAuth()
+  // @CreatorAuth()
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicIssueParams,
