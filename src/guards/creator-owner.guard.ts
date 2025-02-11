@@ -20,19 +20,19 @@ export class CreatorOwnerGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const { user, params } = request;
-    const { handle } = params;
+    const { id } = params;
 
     if (!user) return false;
-    if (!handle) return false;
+    if (!id) return false;
     if (user.role !== 'Creator') return false;
 
     const creator = await this.prisma.creatorChannel.findUnique({
-      where: { handle },
+      where: { id: +id },
       select: { userId: true },
     });
 
     if (!creator) {
-      throw new NotFoundException(`Creator with handle ${handle} not found`);
+      throw new NotFoundException(`Creator with id ${id} not found`);
     } else if (creator.userId === user.id) return true;
     else throw new ForbiddenException("You don't own this creator profile");
   }
