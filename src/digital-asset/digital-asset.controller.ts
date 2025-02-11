@@ -17,6 +17,7 @@ import {
 import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
 import { BotGateway } from 'src/discord/bot.gateway';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
 @ApiTags('Assets')
 @Controller('asset')
@@ -74,7 +75,7 @@ export class DigitalAssetController {
     await this.discordBotGateway.requestAutograph(user.username, address);
   }
 
-  // TODO: Add a CreatorAndAdmin guard
+  @AdminOrCreatorOwner()
   @Get('get/autograph-requests')
   async getAutographRequests(
     params: AutographRequestFilterParams,

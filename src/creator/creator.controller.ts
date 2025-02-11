@@ -32,7 +32,6 @@ import { UserCreatorService } from './user-creator.service';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
-import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { plainToInstance } from 'class-transformer';
 import {
   RawCreatorDto,
@@ -62,6 +61,7 @@ import {
   SaleTransactionDto,
   toSaleTransactionDtoArray,
 } from './dto/sale-transaction-history.dto';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
 @ApiTags('CreatorChannel')
 @Controller('creator-channel')
@@ -120,7 +120,7 @@ export class CreatorController {
   }
 
   /* Get all creator in raw format*/
-  @CreatorAuth()
+  @AdminGuard()
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawCreatorFilterParams,
@@ -130,7 +130,7 @@ export class CreatorController {
   }
 
   /* Get specific creator in raw format by unique slug */
-  @CreatorAuth()
+  @CreatorOwnerAuth()
   @Get('get-raw/:id')
   async findOneRaw(@Param('id') id: string): Promise<RawCreatorDto> {
     const creator = await this.creatorService.findOneRaw(+id);
@@ -149,7 +149,7 @@ export class CreatorController {
     return toCreatorDtoArray(creators);
   }
 
-  //TODO: Add guard
+  @AdminOrCreatorOwner()
   @Get('activity-feed/get')
   async findCreatorActivityFeed(
     @Query() query: CreatorActivityFeedParams,
@@ -158,25 +158,30 @@ export class CreatorController {
     return toCreatorActivityFeedDtoArray(feed);
   }
 
-  //TODO: Add guard
-  @Get('chart/revenue/get')
+  @CreatorOwnerAuth()
+  @Get('get/:id/chart/revenue')
   async findRevenueChart(
+    @Param('id') id: string,
     @Query() query: ChartParams,
   ): Promise<RevenueChartDto> {
-    const chart = await this.userCreatorService.getRevenueChartData(query);
+    const chart = await this.userCreatorService.getRevenueChartData(+id, query);
     return toRevenueChartDto(chart);
   }
 
-  //TODO: Add guard
-  @Get('chart/audience/get')
+  @CreatorOwnerAuth()
+  @Get('get/:id/chart/audience')
   async findAudienceChart(
+    @Param('id') id: string,
     @Query() query: ChartParams,
   ): Promise<AudienceChartDto> {
-    const chart = await this.userCreatorService.getAudienceChartData(query);
+    const chart = await this.userCreatorService.getAudienceChartData(
+      +id,
+      query,
+    );
     return toAudienceChartDto(chart);
   }
 
-  //TODO: Add guard
+  @AdminOrCreatorOwner()
   @Get('sale-transaction/get')
   async findSaleTransactions(
     @Query() query: SaleTransactionParams,

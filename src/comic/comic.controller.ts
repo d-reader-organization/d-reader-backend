@@ -45,6 +45,7 @@ import { minutes } from '@nestjs/throttler';
 import { SearchComicParams } from './dto/search-comic-params.dto';
 import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -75,8 +76,7 @@ export class ComicController {
   }
 
   /* Get all comics in raw format */
-  // TODO: Update guard to only allow specific creator details
-  @CreatorAuth()
+  @AdminOrCreatorOwner()
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicParams,
@@ -106,7 +106,7 @@ export class ComicController {
   }
 
   /* Get specific comic in raw format by unique slug */
-  @CreatorAuth()
+  @ComicOwnerAuth()
   @Get('get-raw/:slug')
   async findOneRaw(@Param('slug') slug: string): Promise<RawComicDto> {
     const comic = await this.comicService.findOneRaw(slug);

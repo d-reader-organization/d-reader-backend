@@ -83,6 +83,7 @@ import {
   toSearchComicIssuesDtoArray,
 } from './dto/search-comic-issue.dto';
 import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
@@ -116,7 +117,7 @@ export class ComicIssueController {
   }
 
   /* Get all comics issues in raw format */
-  // @CreatorAuth()
+  @AdminOrCreatorOwner()
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicIssueParams,
@@ -170,7 +171,7 @@ export class ComicIssueController {
   }
 
   /* Get specific comic issue in raw format by unique id */
-  @CreatorAuth()
+  @ComicIssueOwnerAuth()
   @Get('get-raw/:id')
   async findOneRaw(@Param('id') id: string): Promise<RawComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOneRaw(+id);

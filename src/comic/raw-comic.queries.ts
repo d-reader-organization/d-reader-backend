@@ -45,7 +45,7 @@ AVG(userComic.rating) as "averageRating",
 FROM "Comic" comic
 inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comic.slug 
 inner join "Genre" genre on genre.slug = "comicToGenre"."B"
-inner join "Creator" creator on creator.id = comic."creatorId"
+inner join "CreatorChannel" creator on creator.id = comic."creatorId"
 left join "ComicIssue" comicIssue on comicissue."comicSlug" = comic.slug
 left join "UserComic" userComic on userComic."comicSlug" = comic.slug
 ${titleCondition}
