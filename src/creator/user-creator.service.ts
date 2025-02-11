@@ -144,8 +144,11 @@ export class UserCreatorService {
     return userCreator;
   }
 
-  async getAudienceChartData(query: ChartParams): Promise<AudienceChartInput> {
-    const { creatorId, days } = query;
+  async getAudienceChartData(
+    creatorId: number,
+    query: ChartParams,
+  ): Promise<AudienceChartInput> {
+    const { days } = query;
 
     const now = new Date();
     const numberOfDays = days || 30;
@@ -210,8 +213,11 @@ export class UserCreatorService {
     };
   }
 
-  async getRevenueChartData(query: ChartParams): Promise<RevenueChartInput> {
-    const { creatorId, days } = query;
+  async getRevenueChartData(
+    creatorId: number,
+    query: ChartParams,
+  ): Promise<RevenueChartInput> {
+    const { days } = query;
 
     const now = new Date();
     const numberOfDays = days || 30;

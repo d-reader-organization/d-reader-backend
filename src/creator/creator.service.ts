@@ -266,8 +266,11 @@ export class CreatorService {
   ): Promise<SaleTransactionInput[]> {
     const { creatorId, take, skip } = query;
 
+    const creatorFilter = creatorId
+      ? { comicIssue: { comic: { creatorId } } }
+      : undefined;
     const candyMachines = await this.prisma.candyMachine.findMany({
-      where: { collection: { comicIssue: { comic: { creatorId } } } },
+      where: { collection: creatorFilter },
       select: {
         address: true,
         coupons: {
