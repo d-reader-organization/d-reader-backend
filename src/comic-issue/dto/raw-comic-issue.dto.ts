@@ -202,28 +202,22 @@ export const toRawComicIssueDtoArray = (issues: RawComicIssueInput[]) => {
   return issues.map(toRawComicIssueDto);
 };
 
-export class PaginatedRawComicIssueDto extends PaginatedResponseDto {
-  @IsArray()
-  @Type(() => RawComicIssueDto)
-  @ApiProperty({ isArray: true })
-  comicIssues: RawComicIssueDto[];
-}
-
 export type PaginatedRawComicIssueInput = {
-  totalCount: number;
+  totalItems: number;
   comicIssues: RawComicIssueInput[];
 };
 
 export const toPaginatedRawComicIssueDto = (
   input: PaginatedRawComicIssueInput,
 ) => {
-  const plainPaginatedRawComicIssueDto: PaginatedRawComicIssueDto = {
-    totalCount: input.totalCount,
-    comicIssues: toRawComicIssueDtoArray(input.comicIssues),
-  };
+  const plainPaginatedRawComicIssueDto: PaginatedResponseDto<RawComicIssueDto> =
+    {
+      totalItems: input.totalItems,
+      data: toRawComicIssueDtoArray(input.comicIssues),
+    };
 
   const paginatedRawComicIssueDto = plainToInstance(
-    PaginatedRawComicIssueDto,
+    PaginatedResponseDto<RawComicIssueDto>,
     plainPaginatedRawComicIssueDto,
   );
   return paginatedRawComicIssueDto;

@@ -1,10 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
-import { IsKebabCase } from '../../decorators/IsKebabCase';
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  IsEnum,
+  IsNumber,
+} from 'class-validator';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
-import { TransformCsvToArray } from '../../utils/transform';
+import {
+  TransformCsvToArray,
+  TransformStringToNumber,
+} from '../../utils/transform';
 
 export enum RawComicSortTag {
   Title = 'title',
@@ -17,8 +25,9 @@ export enum RawComicSortTag {
 
 export class RawComicParams extends Pagination {
   @IsOptional()
-  @IsKebabCase()
-  creatorId?: string;
+  @TransformStringToNumber()
+  @IsNumber()
+  creatorId?: number;
 
   @IsOptional()
   @IsString()
