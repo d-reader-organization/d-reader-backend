@@ -295,7 +295,7 @@ export class ComicIssueController {
   @UserAuth()
   @Patch('favouritise/:id')
   async favouritise(@Param('id') id: string, @UserEntity() user: UserPayload) {
-    await this.userComicIssueService.toggleDate(user.id, +id, 'favouritedAt');
+    await this.userComicIssueService.favourite(user.id, +id);
   }
 
   /* Rate specific comic issue */

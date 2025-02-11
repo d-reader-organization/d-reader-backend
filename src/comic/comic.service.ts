@@ -35,6 +35,7 @@ import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { PaginatedRawComicInput } from './dto/raw-comic.dto';
+import { ActivityService } from '../activity/activity.service';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -48,6 +49,7 @@ export class ComicService {
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
+    private readonly activityService: ActivityService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -467,18 +469,12 @@ export class ComicService {
         ? CreatorActivityFeedType.ComicPublished
         : CreatorActivityFeedType.ComicVerified;
 
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: creatorId } },
-          type,
-          targetType: ActivityTargetType.Comic,
-          targetId: comicSlug,
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(comicSlug, type, e),
-      );
+    this.activityService.indexCreatorFeedActivity(
+      creatorId,
+      comicSlug,
+      ActivityTargetType.Comic,
+      type,
+    );
   }
 
   async toggleDate({
