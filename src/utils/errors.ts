@@ -54,6 +54,7 @@ export const ERROR_MESSAGES = {
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
   EMAIL_NOT_VERIFIED: 'Your email address has not been verified',
   CREATOR_NOT_FOUND: (id: number | string) => `Creator ${id} does not exist`,
+  USER_ALREADY_HAS_CREATOR_CHANNEL: `User already has a creator channel`,
   NAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
   SLUG_ALREADY_TAKEN: (slug: string) => `${slug} already taken`,
   EMAIL_ALREADY_TAKEN: (email: string) => `${email} already taken`,
