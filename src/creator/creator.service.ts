@@ -48,6 +48,7 @@ import {
   SaleSource,
   SaleTransactionInput,
 } from './dto/sale-transaction-history.dto';
+import { ActivityService } from '../activity/activity.service';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -60,6 +61,7 @@ export class CreatorService {
     private readonly mailService: MailService,
     private readonly discordService: DiscordService,
     private readonly cacheService: CacheService,
+    private readonly activityService: ActivityService,
   ) {}
 
   async create(
@@ -485,27 +487,6 @@ export class CreatorService {
     }
   }
 
-  indexCreatorStatusActivity(creatorId: number) {
-    const targetId = creatorId.toString();
-
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: creatorId } },
-          type: CreatorActivityFeedType.CreatorVerified,
-          targetType: ActivityTargetType.Creator,
-          targetId,
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
-          targetId,
-          CreatorActivityFeedType.CreatorVerified,
-          e,
-        ),
-      );
-  }
-
   async toggleDate({
     id,
     property,
@@ -530,9 +511,15 @@ export class CreatorService {
     this.discordService.creatorStatusUpdated(updatedCreator, property);
     if (updatedCreator.verifiedAt) {
       const email = creator.user.email;
+
       await this.cacheService.deleteByPattern(CachePath.CREATOR_GET_MANY);
       this.mailService.creatorVerified(updatedCreator, email);
-      this.indexCreatorStatusActivity(id);
+      this.activityService.indexCreatorFeedActivity(
+        id,
+        id.toString(),
+        ActivityTargetType.Creator,
+        CreatorActivityFeedType.CreatorVerified,
+      );
     }
   }
 

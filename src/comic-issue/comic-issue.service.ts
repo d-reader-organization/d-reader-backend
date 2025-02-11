@@ -45,8 +45,6 @@ import {
   validateWeb3PublishInfo,
 } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
-import { Metaplex } from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { PaginatedRawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/dto/types';
@@ -60,6 +58,7 @@ import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { ActivityService } from '../activity/activity.service';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -67,8 +66,6 @@ type ComicIssueFileProperty = PickFields<ComicIssue, 'pdf'>;
 
 @Injectable()
 export class ComicIssueService {
-  private readonly metaplex: Metaplex;
-
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
@@ -78,9 +75,8 @@ export class ComicIssueService {
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
-  ) {
-    this.metaplex = metaplex;
-  }
+    private readonly activityService: ActivityService,
+  ) {}
 
   async create(creatorId: number, createComicIssueDto: CreateComicIssueDto) {
     const {
@@ -850,18 +846,13 @@ export class ComicIssueService {
       property == 'publishedAt'
         ? CreatorActivityFeedType.ComicIssuePublished
         : CreatorActivityFeedType.ComicIssueVerified;
-    const targetId = comicIssueId.toString();
 
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: creatorId } },
-          type,
-          targetType: ActivityTargetType.Comic,
-          targetId,
-        },
-      })
-      .catch((e) => ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(targetId, type, e));
+    this.activityService.indexCreatorFeedActivity(
+      creatorId,
+      comicIssueId.toString(),
+      ActivityTargetType.Comic,
+      type,
+    );
   }
 
   async toggleDate({

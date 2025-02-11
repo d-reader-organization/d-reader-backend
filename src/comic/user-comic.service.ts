@@ -7,15 +7,16 @@ import {
 } from '@prisma/client';
 import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
-import { ERROR_MESSAGES } from '../utils/errors';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UserComicService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketGateway: WebSocketGateway,
+    private readonly activityService: ActivityService,
   ) {}
 
   async getFavouriteCount(comicSlug: string) {
@@ -125,25 +126,13 @@ export class UserComicService {
       include: { comic: true, user: true },
     });
 
-    const creatorId = comic.creatorId;
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: creatorId } },
-          targetId: comicSlug,
-          targetType: ActivityTargetType.Comic,
-          user: { connect: { id: userId } },
-          type: CreatorActivityFeedType.ComicRated,
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
-          comicSlug,
-          CreatorActivityFeedType.ComicRated,
-          e,
-        ),
-      );
-
+    this.activityService.indexCreatorFeedActivity(
+      comic.creatorId,
+      comicSlug,
+      ActivityTargetType.Comic,
+      CreatorActivityFeedType.ComicRated,
+      userId,
+    );
     this.websocketGateway.handleActivityNotification({
       user,
       type: ActivityNotificationType.ComicRated,
@@ -155,70 +144,56 @@ export class UserComicService {
 
   async bookmark(userId: number, comicSlug: string) {
     const userComic = await this.toggleDate(userId, comicSlug, 'bookmarkedAt');
-    const comic = await this.prisma.comic.findUnique({
-      where: { slug: comicSlug },
-    });
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: comic.creatorId } },
-          targetType: ActivityTargetType.Comic,
-          targetId: comicSlug,
-          user: { connect: { id: userId } },
-          type: CreatorActivityFeedType.ComicBookmarked,
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
-          comicSlug,
-          CreatorActivityFeedType.ComicBookmarked,
-          e,
-        ),
+    if (userComic.bookmarkedAt) {
+      const comic = await this.prisma.comic.findUnique({
+        where: { slug: comicSlug },
+      });
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      this.activityService.indexCreatorFeedActivity(
+        comic.creatorId,
+        comicSlug,
+        ActivityTargetType.Comic,
+        CreatorActivityFeedType.ComicBookmarked,
+        userId,
       );
 
-    this.websocketGateway.handleActivityNotification({
-      user,
-      type: ActivityNotificationType.ComicBookmarked,
-      targetId: comic.slug,
-      targetTitle: comic.title,
-    });
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ComicBookmarked,
+        targetId: comic.slug,
+        targetTitle: comic.title,
+      });
+    }
 
     return userComic;
   }
 
   async favouritise(userId: number, comicSlug: string) {
     const userComic = await this.toggleDate(userId, comicSlug, 'favouritedAt');
-    const comic = await this.prisma.comic.findUnique({
-      where: { slug: comicSlug },
-    });
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: comic.creatorId } },
-          targetType: ActivityTargetType.Comic,
-          targetId: comicSlug,
-          user: { connect: { id: userId } },
-          type: CreatorActivityFeedType.ComicLiked,
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
-          comicSlug,
-          CreatorActivityFeedType.ComicLiked,
-          e,
-        ),
+    if (userComic.favouritedAt) {
+      const comic = await this.prisma.comic.findUnique({
+        where: { slug: comicSlug },
+      });
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      await this.activityService.indexCreatorFeedActivity(
+        comic.creatorId,
+        comicSlug,
+        ActivityTargetType.Comic,
+        CreatorActivityFeedType.ComicLiked,
+        userId,
       );
 
-    this.websocketGateway.handleActivityNotification({
-      user,
-      type: ActivityNotificationType.ComicLiked,
-      targetId: comic.slug,
-      targetTitle: comic.title,
-    });
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ComicLiked,
+        targetId: comic.slug,
+        targetTitle: comic.title,
+      });
+    }
 
     return userComic;
   }
@@ -234,7 +209,6 @@ export class UserComicService {
 
     // if date is existing, remove it, otherwise add a new date
     const updatedDate = !!userComic?.[property] ? null : new Date();
-
     return await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, [property]: new Date() },

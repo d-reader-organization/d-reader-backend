@@ -22,12 +22,14 @@ import { startOfDay, subDays } from 'date-fns';
 import { ChartParams } from './dto/chart-params.dto';
 import { RevenueChartInput } from './dto/revenue-chart.dto';
 import { AudienceChartInput } from './dto/audience-chart.dto';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UserCreatorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly websocketGateway: WebSocketGateway,
+    private readonly activityService: ActivityService,
   ) {}
 
   async getCreatorStats(id: number): Promise<CreatorStats> {
@@ -113,34 +115,25 @@ export class UserCreatorService {
     const creator = await this.prisma.creatorChannel.findUnique({
       where: { id: creatorId },
     });
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    const targetId = creatorId.toString();
-    this.prisma.creatorActivityFeed
-      .create({
-        data: {
-          creator: { connect: { id: creatorId } },
-          type: CreatorActivityFeedType.CreatorFollow,
-          targetType: ActivityTargetType.Creator,
-          targetId,
-          user: { connect: { id: userId } },
-        },
-      })
-      .catch((e) =>
-        ERROR_MESSAGES.FAILED_TO_INDEX_ACTIVITY(
-          targetId,
-          CreatorActivityFeedType.CreatorFollow,
-          e,
-        ),
+    if (userCreator.followedAt) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+      const targetId = creatorId.toString();
+      this.activityService.indexCreatorFeedActivity(
+        creatorId,
+        targetId,
+        ActivityTargetType.Creator,
+        CreatorActivityFeedType.CreatorFollow,
+        userId,
       );
-
-    this.websocketGateway.handleActivityNotification({
-      user,
-      type: ActivityNotificationType.CreatorFollow,
-      targetId,
-      targetTitle: creator.handle,
-    });
-
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.CreatorFollow,
+        targetId,
+        targetTitle: creator.handle,
+      });
+    }
     return userCreator;
   }
 
