@@ -5,6 +5,7 @@ import { getPublicUrl } from 'src/aws/s3client';
 import { plainToInstance } from 'class-transformer';
 
 export class PartialCreatorDto extends PickType(CreatorChannelDto, [
+  'id',
   'handle',
   'displayName',
   'isVerified',
@@ -13,6 +14,7 @@ export class PartialCreatorDto extends PickType(CreatorChannelDto, [
 
 export function toPartialCreatorDto(creator: CreatorChannel) {
   const plainCreatorDto: PartialCreatorDto = {
+    id: creator.id,
     handle: creator.handle,
     displayName: creator.displayName,
     isVerified: !!creator.verifiedAt,
