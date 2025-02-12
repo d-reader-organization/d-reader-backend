@@ -63,8 +63,8 @@ import {
 } from './dto/sale-transaction-history.dto';
 import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
-@ApiTags('CreatorChannel')
-@Controller('creator-channel')
+@ApiTags('Creator')
+@Controller('creator')
 export class CreatorController {
   constructor(
     private readonly creatorService: CreatorService,
