@@ -18,13 +18,13 @@ const getQueryFilters = (
 } => {
   const nameSubstring = query.search || query.nameSubstring;
   const nameCondition = !!nameSubstring
-    ? Prisma.sql`AND creator."handle" ILIKE '%' || ${
+    ? Prisma.sql`AND creator."displayName" ILIKE '%' || ${
         nameSubstring ?? ''
       } || '%'`
     : Prisma.empty;
 
   const sortOrder = getSortOrder(
-    query.sortOrder ?? query.sortTag === CreatorSortTag.Handle
+    query.sortOrder ?? query.sortTag === CreatorSortTag.DisplayName
       ? SortOrder.ASC
       : SortOrder.DESC,
   );

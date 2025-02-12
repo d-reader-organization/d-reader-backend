@@ -79,10 +79,10 @@ enum Role {
 model CreatorChannel {
   id             Int                   @id @default(autoincrement())
   handle         String                @unique
+  displayName    String
   banner         String                @default("")
   avatar         String                @default("")
   description    String                @default("")
-  flavorText     String                @default("")
   website        String                @default("")
   twitter        String                @default("")
   instagram      String                @default("")

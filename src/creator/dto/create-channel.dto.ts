@@ -1,12 +1,20 @@
-import { MaxLength, IsString, IsOptional, IsNotEmpty } from 'class-validator';
+import {
+  MaxLength,
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  MinLength,
+} from 'class-validator';
+import { DISPLAY_NAME_MAX_SIZE, DISPLAY_NAME_MIN_SIZE } from 'src/constants';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 
 export class CreateCreatorChannelDto {
   @IsNotEmpty()
-  @MaxLength(48)
-  handle: string;
+  @MinLength(DISPLAY_NAME_MIN_SIZE)
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 
   @IsOptionalString()
   @IsSolanaAddress()
@@ -16,11 +24,6 @@ export class CreateCreatorChannelDto {
   @IsOptional()
   @MaxLength(512)
   description?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(128)
-  flavorText?: string;
 
   @IsOptionalUrl()
   website?: string;

@@ -115,7 +115,7 @@ export const getRawComicIssuesQuery = (
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."handle", creator."verifiedAt", creator.avatar, collection.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."handle", creator."displayName", creator."verifiedAt", creator.avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}

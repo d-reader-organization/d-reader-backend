@@ -11,6 +11,7 @@ export enum CreatorFilterTag {
 export enum CreatorSortTag {
   Followers = 'followers',
   Handle = 'handle',
+  DisplayName = 'displayName',
 }
 
 export class CreatorFilterParams extends Pagination {

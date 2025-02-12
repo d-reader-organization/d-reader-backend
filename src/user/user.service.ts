@@ -16,7 +16,7 @@ import {
   ResetPasswordDto,
   UpdatePasswordDto,
 } from '../types/update-password.dto';
-import { validateEmail, validateName } from '../utils/user';
+import { validateEmail, validateUserName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
@@ -53,7 +53,7 @@ export class UserService {
   async register(registerDto: RegisterDto) {
     const { name, email, password } = registerDto;
 
-    validateName(name);
+    validateUserName(name);
     validateEmail(email);
 
     const [hashedPassword] = await Promise.all([
@@ -271,7 +271,7 @@ export class UserService {
     }
 
     if (isUsernameUpdated) {
-      validateName(username);
+      validateUserName(username);
       await this.throwIfNameTaken(username);
       await this.prisma.user.update({
         where: { id },
@@ -281,7 +281,7 @@ export class UserService {
 
     //TODO: for backward compatibility, remove this later
     if (isNameUpdated) {
-      validateName(name);
+      validateUserName(name);
       await this.throwIfNameTaken(name);
       await this.prisma.user.update({
         where: { id },

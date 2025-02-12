@@ -21,7 +21,7 @@ import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { CreatorStats } from '../comic/dto/types';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
-import { validateCreatorHandle } from '../utils/user';
+import { validateUserName } from '../utils/user';
 import { MailService } from '../mail/mail.service';
 import { insensitive } from '../utils/lodash';
 import { DiscordService } from '../discord/discord.service';
@@ -49,6 +49,8 @@ import {
   SaleTransactionInput,
 } from './dto/sale-transaction-history.dto';
 import { ActivityService } from '../activity/activity.service';
+import { kebabCase, snakeCase } from 'lodash';
+import { USERNAME_MAX_SIZE } from 'src/constants';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -77,16 +79,15 @@ export class CreatorService {
       );
     }
 
-    const { handle } = createCreatorChannelDto;
-    validateCreatorHandle(handle);
-    await this.throwIfHandleTaken(handle);
+    const { displayName } = createCreatorChannelDto;
+    const handle = await this.createUniqueHandle(displayName);
 
     const creator = await this.prisma.creatorChannel.create({
       data: {
         ...createCreatorChannelDto,
         handle,
         user: { connect: { id: userId } },
-        s3BucketSlug: appendTimestamp(handle),
+        s3BucketSlug: appendTimestamp(kebabCase(displayName)),
       },
     });
     await this.prisma.user.update({
@@ -96,6 +97,45 @@ export class CreatorService {
 
     this.discordService.creatorRegistered(creator);
     return creator;
+  }
+
+  // Switch to pool based unique handle generation or explicit username on register
+  async createUniqueHandle(displayName: string) {
+    let handle = snakeCase(displayName);
+    if (handle.length > USERNAME_MAX_SIZE) {
+      handle = handle.slice(0, USERNAME_MAX_SIZE);
+    }
+
+    const isExists = await this.prisma.creatorChannel.findUnique({
+      where: { handle },
+    });
+    if (isExists) {
+      const maxHandleLength = USERNAME_MAX_SIZE - 4;
+      const maxSubstringLength = Math.min(maxHandleLength, handle.length);
+
+      const baseHandle = handle.slice(0, maxSubstringLength);
+      const existingHandles = await this.prisma.creatorChannel.findMany({
+        where: { handle: { startsWith: baseHandle } },
+        select: { handle: true },
+      });
+
+      const takenHandleNumbers = new Set<number>();
+      existingHandles.forEach((channel) => {
+        const lastSegment = channel.handle.split('_').at(-1);
+        if (!isNaN(+lastSegment)) {
+          takenHandleNumbers.add(+lastSegment);
+        }
+      });
+
+      for (let currentNumber = 1; currentNumber < 999; currentNumber++) {
+        if (!takenHandleNumbers.has(currentNumber)) {
+          handle = `${baseHandle}_${currentNumber}`;
+          break;
+        }
+      }
+    }
+
+    return handle;
   }
 
   async findAll({
@@ -147,9 +187,10 @@ export class CreatorService {
         avatar: true,
         id: true,
         handle: true,
+        displayName: true,
       },
       where: {
-        handle: { contains: search, mode: 'insensitive' },
+        displayName: { contains: search, mode: 'insensitive' },
       },
       orderBy: { handle: sortOrder },
       skip,
@@ -196,7 +237,7 @@ export class CreatorService {
   async findAllRaw(query: RawCreatorFilterParams) {
     let where: Prisma.CreatorChannelWhereInput;
     if (query.search) {
-      where = { handle: { contains: query.search, mode: 'insensitive' } };
+      where = { displayName: { contains: query.search, mode: 'insensitive' } };
     }
     return await this.prisma.creatorChannel.findMany({
       where,
@@ -205,8 +246,10 @@ export class CreatorService {
     });
   }
 
-  async findOneRaw(id: number) {
-    const creator = this.prisma.creatorChannel.findUnique({ where: { id } });
+  async findOneRaw(id: string) {
+    const creator = this.prisma.creatorChannel.findUnique({
+      where: processCreatorIdString(id),
+    });
 
     if (!creator) {
       throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
@@ -266,7 +309,7 @@ export class CreatorService {
         const creator = await this.prisma.creatorChannel.findUnique({
           where: { id: +targetId },
         });
-        return creator.handle;
+        return creator.displayName;
       }
       default:
         return SOMEONE;
@@ -343,7 +386,7 @@ export class CreatorService {
     const isHandleUpdated = handle && creator.handle !== handle;
 
     if (isHandleUpdated) {
-      validateCreatorHandle(handle);
+      validateUserName(handle);
       await this.throwIfHandleTaken(handle);
 
       await this.prisma.creatorChannel.update({
@@ -408,7 +451,10 @@ export class CreatorService {
         { type: 'banner', value: bannerKey },
         { type: 'avatar', value: avatarKey },
       ];
-      this.discordService.creatorFilesUpdated(creator.handle, creatorFiles);
+      this.discordService.creatorFilesUpdated(
+        creator.displayName,
+        creatorFiles,
+      );
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
@@ -453,7 +499,7 @@ export class CreatorService {
     }
 
     const creatorFiles: CreatorFile[] = [{ type: field, value: newFileKey }];
-    this.discordService.creatorFilesUpdated(creator.handle, creatorFiles);
+    this.discordService.creatorFilesUpdated(creator.displayName, creatorFiles);
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
 
     return creator;

@@ -1,15 +1,8 @@
 -- AlterTable: Add 'creatorHandle' column to the "CarouselSlide" table
-ALTER TABLE "CarouselSlide" ADD COLUMN "creatorHandle" TEXT;
+ALTER TABLE "CarouselSlide" RENAME COLUMN "creatorSlug" TO "creatorHandle";
 
--- Update 'creatorHandle' values using 'creatorSlug' and 'Creator' table
-UPDATE "CarouselSlide" cs
-SET "creatorHandle" = cr."name"
-FROM "Creator" cr
-WHERE cs."creatorSlug" = cr."slug";
-
--- AlterTable: Drop 'creatorSlug' column from "CarouselSlide"
-ALTER TABLE "CarouselSlide" DROP COLUMN "creatorSlug";
-
+UPDATE "CarouselSlide" 
+SET "creatorHandle" = LOWER(SUBSTRING(REGEXP_REPLACE("creatorHandle", '[-]', '_', 'g'), 1, 20));
 -- Insert new users, appending a random number to the name if it already exists
 INSERT INTO "User"(
   email, password, username, role, "deletedAt", "lastLogin", "lastActiveAt", 
@@ -21,10 +14,10 @@ SELECT
   cr.password, 
   -- Generate a unique username by checking if name exists and appending a random number
   CASE 
-    WHEN EXISTS (SELECT 1 FROM "User" u WHERE u.username = cr.name) THEN 
-      cr.name || '_' || FLOOR(random() * 1000)::int  -- Appending a random number to the name
+    WHEN EXISTS (SELECT 1 FROM "User" u WHERE u.username = cr.slug) THEN 
+      LOWER(SUBSTRING(REGEXP_REPLACE(cr.slug, '[-]', '_', 'g'), 1, 18)) || '_' || FLOOR(random() * 10)::int  -- Appending a random number to the name
     ELSE 
-      cr.name  -- Use the original name if it doesn't exist in the User table
+      LOWER(SUBSTRING(REGEXP_REPLACE(cr.slug, '[-]', '_', 'g'), 1, 20))  -- Use the original name if it doesn't exist in the User table
   END AS username,
   'Creator' AS role,
   cr."deletedAt", 
@@ -86,22 +79,27 @@ ALTER TABLE "Creator"
   DROP COLUMN "logo", 
   DROP COLUMN "role", 
   DROP COLUMN "email", 
+  DROP COLUMN "flavorText", 
   DROP COLUMN "password", 
   DROP COLUMN "lastActiveAt", 
   DROP COLUMN "lastLogin", 
   DROP COLUMN "emailVerifiedAt";
 
--- Drop the index associated with the 'slug' column
-DROP INDEX IF EXISTS "Creator_slug_key";
+-- Rename the 'slug' column to 'handle'
+ALTER TABLE "Creator" RENAME COLUMN "slug" TO "handle";
+UPDATE "Creator" SET "handle" = LOWER(SUBSTRING(REGEXP_REPLACE("handle", '[-]', '_', 'g'), 1, 20));
 
--- Drop the 'slug' column from the "Creator" table
-ALTER TABLE "Creator" DROP COLUMN "slug";
+-- DropIndex
+DROP INDEX "Creator_name_key";
 
--- Rename the 'name' column to 'handle'
-ALTER TABLE "Creator" RENAME COLUMN "name" TO "handle";
+-- Rename the 'name' column to 'displayName'
+ALTER TABLE "Creator" RENAME COLUMN "name" TO "displayName";
 
 -- Rename "Creator" table to "CreatorChannel"
 ALTER TABLE "Creator" RENAME TO "CreatorChannel";
+
+-- Drop the index associated with the 'slug' column
+DROP INDEX IF EXISTS "Creator_slug_key";
 
 -- Create a unique index on "handle" in the "CreatorChannel" table
 CREATE UNIQUE INDEX "CreatorChannel_handle_key" ON "CreatorChannel"("handle");

@@ -108,7 +108,7 @@ export class CreatorController {
     return toSearchCreatorDtoArray(creators);
   }
 
-  /* Get specific creator by unique id */
+  /* Get specific creator by unique id or handle */
   @OptionalUserAuth()
   @Get('get/:id')
   async findOne(
@@ -129,11 +129,11 @@ export class CreatorController {
     return toRawCreatorDtoArray(creator);
   }
 
-  /* Get specific creator in raw format by unique slug */
+  /* Get specific creator in raw format by unique id or handle */
   @CreatorOwnerAuth()
   @Get('get-raw/:id')
   async findOneRaw(@Param('id') id: string): Promise<RawCreatorDto> {
-    const creator = await this.creatorService.findOneRaw(+id);
+    const creator = await this.creatorService.findOneRaw(id);
     return toRawCreatorDto(creator);
   }
 

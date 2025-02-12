@@ -6,6 +6,7 @@ import { plainToInstance } from 'class-transformer';
 
 export class PartialCreatorDto extends PickType(CreatorChannelDto, [
   'handle',
+  'displayName',
   'isVerified',
   'avatar',
 ]) {}
@@ -13,6 +14,7 @@ export class PartialCreatorDto extends PickType(CreatorChannelDto, [
 export function toPartialCreatorDto(creator: CreatorChannel) {
   const plainCreatorDto: PartialCreatorDto = {
     handle: creator.handle,
+    displayName: creator.displayName,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
   };

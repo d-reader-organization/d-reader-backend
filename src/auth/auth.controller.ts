@@ -4,11 +4,7 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { Throttle } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
-import {
-  validateCreatorHandle,
-  validateEmail,
-  validateName,
-} from '../utils/user';
+import { validateEmail, validateUserName } from '../utils/user';
 import { LoginDto } from '../types/login.dto';
 import { GoogleRegisterDto, RegisterDto } from '../types/register.dto';
 import {
@@ -37,7 +33,7 @@ export class AuthController {
   @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('user/validate-name/:name')
   async validateUsername(@Param('name') name: string) {
-    validateName(name);
+    validateUserName(name);
     return await this.userService.throwIfNameTaken(name);
   }
 
@@ -95,17 +91,9 @@ export class AuthController {
   // CREATOR ENDPOINTS
   @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('creator/validate-handle/:handle')
-  async validateCreatorName(@Param('handle') handle: string) {
-    validateCreatorHandle(handle);
+  async validateCreatorHandle(@Param('handle') handle: string) {
+    validateUserName(handle);
     return await this.creatorService.throwIfHandleTaken(handle);
-  }
-
-  // Should this be an authorized endpoint? How do refresh tokens actually work??
-  /* Refresh access token */
-  @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Patch('creator/refresh-token/:refreshToken')
-  async reauthorizeCreator(@Param('refreshToken') refreshToken: string) {
-    return await this.authService.refreshAccessToken(refreshToken);
   }
 
   // WALLET ENDPOINTS
