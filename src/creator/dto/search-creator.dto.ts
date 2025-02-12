@@ -1,31 +1,31 @@
 import { plainToInstance } from 'class-transformer';
 import { IsNotEmpty, IsPositive, IsUrl, MaxLength } from 'class-validator';
-import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { getPublicUrl } from '../../aws/s3client';
 import { SearchCreator } from './types';
+import { DISPLAY_NAME_MAX_SIZE } from '../../constants';
 
 export class SearchCreatorDto {
   @IsNotEmpty()
   @MaxLength(54)
-  name: string;
-
-  @IsNotEmpty()
-  @IsKebabCase()
-  slug: string;
+  handle: string;
 
   @IsUrl()
   avatar: string;
 
   @IsPositive()
   issuesCount: number;
+
+  @IsNotEmpty()
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 }
 
 export function toSearchCreatorDto(creator: SearchCreator) {
   const plainCreatorDto: SearchCreatorDto = {
-    name: creator.name,
-    slug: creator.slug,
+    handle: creator.handle,
     avatar: getPublicUrl(creator.avatar),
     issuesCount: creator.issuesCount,
+    displayName: creator.displayName,
   };
 
   const creatorDto = plainToInstance(SearchCreatorDto, plainCreatorDto);

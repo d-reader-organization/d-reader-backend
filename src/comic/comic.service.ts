@@ -8,7 +8,13 @@ import { PrismaService } from 'nestjs-prisma';
 import { CreateComicDto } from '../comic/dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
 import { UserComicService } from './user-comic.service';
-import { Comic, Genre, Creator } from '@prisma/client';
+import {
+  Comic,
+  Genre,
+  CreatorChannel,
+  CreatorActivityFeedType,
+  ActivityTargetType,
+} from '@prisma/client';
 import { ComicParams } from './dto/comic-params.dto';
 import { s3Service } from '../aws/s3.service';
 import { PickFields } from '../types/shared';
@@ -28,6 +34,8 @@ import { SearchComicParams } from './dto/search-comic-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { PaginatedRawComicInput } from './dto/raw-comic.dto';
+import { ActivityService } from '../activity/activity.service';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<Comic, 'cover' | 'banner' | 'logo'>;
@@ -41,6 +49,7 @@ export class ComicService {
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
+    private readonly activityService: ActivityService,
   ) {}
 
   async create(creatorId: number, createComicDto: CreateComicDto) {
@@ -73,7 +82,7 @@ export class ComicService {
 
   async findAll(query: ComicParams) {
     const comics = await this.prisma.$queryRaw<
-      Array<Comic & { genres: Genre[]; creator: Creator } & ComicStats>
+      Array<Comic & { genres: Genre[]; creator: CreatorChannel } & ComicStats>
     >(getComicsQuery(query));
     return comics.map((comic) => {
       return {
@@ -90,7 +99,7 @@ export class ComicService {
     });
   }
 
-  async findAllRaw(query: RawComicParams) {
+  async findAllRaw(query: RawComicParams): Promise<PaginatedRawComicInput> {
     const comics = await this.prisma.$queryRaw<
       Array<Comic & { genres: Genre[] } & ComicStats>
     >(getRawComicsQuery(query));
@@ -109,7 +118,18 @@ export class ComicService {
       };
     });
 
-    return normalizedComics;
+    const genreFilter = query.genreSlugs
+      ? { some: { slug: { in: query.genreSlugs } } }
+      : undefined;
+    const totalItems = await this.prisma.comic.count({
+      where: {
+        creatorId: query.creatorId,
+        title: { contains: query?.search, mode: 'insensitive' },
+        genres: genreFilter,
+      },
+    });
+
+    return { totalItems, comics: normalizedComics };
   }
 
   async searchAll(params: SearchComicParams): Promise<SearchComic[]> {
@@ -439,6 +459,24 @@ export class ComicService {
     }
   }
 
+  indexComicStatusActivity(
+    creatorId: number,
+    comicSlug: string,
+    property: ComicStatusProperty,
+  ) {
+    const type =
+      property == 'publishedAt'
+        ? CreatorActivityFeedType.ComicPublished
+        : CreatorActivityFeedType.ComicVerified;
+
+    this.activityService.indexCreatorFeedActivity(
+      creatorId,
+      comicSlug,
+      ActivityTargetType.Comic,
+      type,
+    );
+  }
+
   async toggleDate({
     slug,
     property,
@@ -453,7 +491,7 @@ export class ComicService {
     const updatedComic = await this.prisma.comic.update({
       data: { [property]: comic[property] ? null : new Date() },
       where: { slug },
-      include: { creator: true },
+      include: { creator: { include: { user: { select: { email: true } } } } },
     });
 
     this.discordService.comicStatusUpdated(updatedComic, property);
@@ -461,10 +499,21 @@ export class ComicService {
     if (['verifiedAt', 'publishedAt'].includes(property)) {
       await this.cacheService.deleteByPattern(CachePath.COMIC_GET_MANY);
 
+      const email = updatedComic.creator.user.email;
       if (property === 'verifiedAt' && updatedComic.verifiedAt) {
-        this.mailService.comicVerifed(updatedComic);
+        this.mailService.comicVerifed(updatedComic, email);
+        this.indexComicStatusActivity(
+          updatedComic.creatorId,
+          slug,
+          'verifiedAt',
+        );
       } else if (property === 'publishedAt' && updatedComic.publishedAt) {
-        this.mailService.comicPublished(updatedComic);
+        this.mailService.comicPublished(updatedComic, email);
+        this.indexComicStatusActivity(
+          updatedComic.creatorId,
+          slug,
+          'publishedAt',
+        );
       }
     }
   }

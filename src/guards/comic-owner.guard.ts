@@ -19,21 +19,22 @@ export class ComicUpdateGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const { user: creator, params } = request;
+    const { user, params } = request;
     const { slug } = params;
 
-    if (!creator) return false;
+    if (!user) return false;
     if (!slug) return false;
-    if (creator.type !== 'creator') return false;
+    if (user.role == 'Admin') return true;
+    if (user.role !== 'Creator') return false;
 
     const comic = await this.prisma.comic.findUnique({
       where: { slug },
-      select: { creatorId: true },
+      select: { creator: { select: { userId: true } } },
     });
 
     if (!comic) {
       throw new NotFoundException(`Comic with slug ${slug} not found`);
-    } else if (comic.creatorId === creator.id) return true;
+    } else if (comic.creator.userId === user.id) return true;
     else throw new ForbiddenException("You don't own this comic");
   }
 }

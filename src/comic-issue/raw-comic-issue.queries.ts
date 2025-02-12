@@ -34,11 +34,11 @@ const getQueryFilters = (
       }`
     : Prisma.empty;
 
-  const creatorCondition = !!query.creatorSlug
+  const creatorCondition = !!query.creatorId
     ? Prisma.sql`${andOrWhere(
         hasTitleFilter,
         hasComicSlugFilter,
-      )} creator."slug" = ${query.creatorSlug}`
+      )} creator."id" = ${+query.creatorId}`
     : Prisma.empty;
 
   const sortOrder = getSortOrder(query.sortOrder);
@@ -106,7 +106,7 @@ export const getRawComicIssuesQuery = (
     ) as collection    
   from "ComicIssue" comicIssue
   inner join "Comic" comic on comic.slug = comicIssue."comicSlug" 
-  inner join "Creator" creator on creator.id = comic."creatorId"
+  inner join "CreatorChannel" creator on creator.id = comic."creatorId"
   left join "UserComicIssue" userComicIssue on usercomicissue."comicIssueId" = comicIssue.id  
   left join "CollectibleComicCollection" collection on collection."comicIssueId" = comicIssue.id 
   inner join "_ComicToGenre" "comicToGenre" on "comicToGenre"."A" = comicIssue."comicSlug"
@@ -115,7 +115,7 @@ export const getRawComicIssuesQuery = (
 ${titleCondition}
 ${comicSlugCondition}
 ${creatorCondition}
-GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."name", creator.slug , creator."verifiedAt", creator.avatar, collection.address
+GROUP BY comicIssue.id, comic."title", comic."audienceType", creator."handle", creator."displayName", creator."verifiedAt", creator.avatar, collection.address
 ${havingGenreSlugsCondition(query.genreSlugs)}
 ORDER BY ${sortColumn} ${sortOrder}
 OFFSET ${query.skip}

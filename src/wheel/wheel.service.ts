@@ -59,6 +59,8 @@ import { DigitalAssetService } from '../digital-asset/digital-asset.service';
 import { WheelRewardHistoryInput } from './dto/wheel-reward-history.dto';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { WheelRewardHistoryParams } from './dto/wheel-history-params.dto';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 
@@ -70,6 +72,7 @@ export class WheelService {
     private readonly mailService: MailService,
     private readonly s3: s3Service,
     private readonly digitalAssetService: DigitalAssetService,
+    private readonly websocketGateway: WebSocketGateway,
   ) {
     this.umi = initUmi();
   }
@@ -473,6 +476,14 @@ export class WheelService {
       },
     });
 
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: noReward.id.toString(),
+      targetTitle: noReward.name,
+    });
+
     const receiptInput: WheelReceiptInput = {
       ...receipt,
       reward: noReward,
@@ -510,6 +521,13 @@ export class WheelService {
       },
     });
 
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: winningDrop.rewardId.toString(),
+      targetTitle: physicalItem.name,
+    });
+
     const receiptInput: WheelReceiptInput = {
       ...receipt,
       reward: receipt.reward,
@@ -531,6 +549,7 @@ export class WheelService {
     const splToken = await this.prisma.splToken.findUnique({
       where: { address: winningDrop.itemId },
     });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!splToken) {
       console.log(`Spl token drop Item not found ${winningDrop.itemId}`);
@@ -613,6 +632,13 @@ export class WheelService {
         dropName: splToken.symbol,
         reward: { connect: { id: winningDrop.rewardId } },
       },
+    });
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: winningDrop.rewardId.toString(),
+      targetTitle: splToken.symbol,
     });
 
     const receiptInput: WheelReceiptInput = {
@@ -741,7 +767,16 @@ export class WheelService {
       await this.digitalAssetService.findOneCollectibleComic(
         winningDrop.itemId,
       );
+    const user = await this.prisma.user.findUnique({
+      where: { id: receipt.userId },
+    });
 
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: winningDrop.rewardId.toString(),
+      targetTitle: collectibleComic.name,
+    });
     const receiptInput: WheelReceiptInput = {
       ...receipt,
       reward: receipt.reward,
@@ -760,6 +795,16 @@ export class WheelService {
     const printEdition = await this.digitalAssetService.findOnePrintEdition(
       winningDrop.itemId,
     );
+    const user = await this.prisma.user.findUnique({
+      where: { id: receipt.userId },
+    });
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: winningDrop.rewardId.toString(),
+      targetTitle: printEdition.printEditionCollection.name,
+    });
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,
@@ -779,6 +824,16 @@ export class WheelService {
     const oneOfOne = await this.digitalAssetService.findSingleOneOfOne(
       winningDrop.itemId,
     );
+    const user = await this.prisma.user.findUnique({
+      where: { id: receipt.userId },
+    });
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.WheelSpun,
+      targetId: winningDrop.rewardId.toString(),
+      targetTitle: oneOfOne.name,
+    });
 
     const receiptInput: WheelReceiptInput = {
       ...receipt,

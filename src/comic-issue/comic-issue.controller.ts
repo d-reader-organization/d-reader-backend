@@ -32,7 +32,7 @@ import {
   OwnedComicIssueDto,
   toOwnedComicIssueDtoArray,
 } from './dto/owned-comic-issue.dto';
-import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import {
@@ -48,7 +48,6 @@ import {
 } from 'src/comic-page/dto/create-comic-page.dto';
 import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicIssueOwnerAuth } from 'src/guards/comic-issue-owner.guard';
 import {
   CreateStatefulCoverBodyDto,
@@ -69,8 +68,8 @@ import { ComicPageService } from 'src/comic-page/comic-page.service';
 import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import {
   RawComicIssueDto,
+  toPaginatedRawComicIssueDto,
   toRawComicIssueDto,
-  toRawComicIssueDtoArray,
 } from './dto/raw-comic-issue.dto';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
@@ -83,6 +82,8 @@ import {
   toSearchComicIssuesDtoArray,
 } from './dto/search-comic-issue.dto';
 import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 @ApiTags('Comic Issue')
 @Controller('comic-issue')
@@ -97,7 +98,7 @@ export class ComicIssueController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @CreatorEntity() creator: CreatorPayload,
+    @UserEntity() creator: UserPayload,
     @Body() createComicIssueDto: CreateComicIssueDto,
   ): Promise<ComicIssueDto> {
     const comicIssue = await this.comicIssueService.create(
@@ -116,13 +117,13 @@ export class ComicIssueController {
   }
 
   /* Get all comics issues in raw format */
-  // @CreatorAuth()
+  @AdminOrCreatorOwner()
   @Get('get-raw')
   async findAllRaw(
     @Query() query: RawComicIssueParams,
-  ): Promise<RawComicIssueDto[]> {
-    const comicIssues = await this.comicIssueService.findAllRaw(query);
-    return toRawComicIssueDtoArray(comicIssues);
+  ): Promise<PaginatedResponseDto<RawComicIssueDto>> {
+    const data = await this.comicIssueService.findAllRaw(query);
+    return toPaginatedRawComicIssueDto(data);
   }
 
   @Get('get/by-owner/:userId')
@@ -170,7 +171,7 @@ export class ComicIssueController {
   }
 
   /* Get specific comic issue in raw format by unique id */
-  @CreatorAuth()
+  @ComicIssueOwnerAuth()
   @Get('get-raw/:id')
   async findOneRaw(@Param('id') id: string): Promise<RawComicIssueDto> {
     const comicIssue = await this.comicIssueService.findOneRaw(+id);
@@ -294,7 +295,7 @@ export class ComicIssueController {
   @UserAuth()
   @Patch('favouritise/:id')
   async favouritise(@Param('id') id: string, @UserEntity() user: UserPayload) {
-    await this.userComicIssueService.toggleDate(user.id, +id, 'favouritedAt');
+    await this.userComicIssueService.favourite(user.id, +id);
   }
 
   /* Rate specific comic issue */

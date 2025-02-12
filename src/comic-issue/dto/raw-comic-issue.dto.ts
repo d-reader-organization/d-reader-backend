@@ -21,7 +21,7 @@ import {
   Genre,
   RoyaltyWallet,
   Comic,
-  Creator,
+  CreatorChannel,
   CollectibleComicCollection,
 } from '@prisma/client';
 import {
@@ -50,6 +50,7 @@ import {
 import { With } from 'src/types/shared';
 import { toComicIssueStatsDto } from './comic-issue-stats.dto';
 import { ifDefined } from 'src/utils/lodash';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 export class RawComicIssueDto {
   @IsPositive()
@@ -113,7 +114,7 @@ export class RawComicIssueDto {
 
   @IsOptional()
   @IsString()
-  creatorSlug?: string;
+  creatorHandle?: string;
 
   @IsOptional()
   @IsArray()
@@ -139,7 +140,7 @@ export class RawComicIssueDto {
   royaltyWallets?: RoyaltyWalletDto[];
 }
 
-type WithCreator = { creator?: Creator };
+type WithCreator = { creator?: CreatorChannel };
 type WithComic = { comic?: Comic & WithCreator & { genres?: Genre[] } };
 type WithGenres = { genres?: Genre[] };
 type WithStats = { stats: Partial<RawComicIssueStats> };
@@ -184,7 +185,7 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
     publishedAt: issue.publishedAt,
     popularizedAt: issue.popularizedAt,
     verifiedAt: issue.verifiedAt,
-    creatorSlug: issue.comic?.creator?.slug,
+    creatorHandle: issue.comic?.creator?.handle,
     collaborators: ifDefined(collaborators, toComicIssueCollaboratorDtoArray),
     statefulCovers: ifDefined(issue.statefulCovers, toStatefulCoverDtoArray),
     statelessCovers: ifDefined(issue.statelessCovers, toStatelessCoverDtoArray),
@@ -199,4 +200,25 @@ export function toRawComicIssueDto(issue: RawComicIssueInput) {
 
 export const toRawComicIssueDtoArray = (issues: RawComicIssueInput[]) => {
   return issues.map(toRawComicIssueDto);
+};
+
+export type PaginatedRawComicIssueInput = {
+  totalItems: number;
+  comicIssues: RawComicIssueInput[];
+};
+
+export const toPaginatedRawComicIssueDto = (
+  input: PaginatedRawComicIssueInput,
+) => {
+  const plainPaginatedRawComicIssueDto: PaginatedResponseDto<RawComicIssueDto> =
+    {
+      totalItems: input.totalItems,
+      data: toRawComicIssueDtoArray(input.comicIssues),
+    };
+
+  const paginatedRawComicIssueDto = plainToInstance(
+    PaginatedResponseDto<RawComicIssueDto>,
+    plainPaginatedRawComicIssueDto,
+  );
+  return paginatedRawComicIssueDto;
 };

@@ -4,7 +4,10 @@ import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
 import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
-import { TransformCsvToArray } from '../../utils/transform';
+import {
+  TransformCsvToArray,
+  TransformStringToNumber,
+} from '../../utils/transform';
 
 export enum ComicIssueFilterTag {
   Free = 'free',
@@ -22,8 +25,8 @@ export enum ComicIssueSortTag {
 
 export class ComicIssueParams extends Pagination {
   @IsOptional()
-  @IsKebabCase()
-  creatorSlug?: string;
+  @TransformStringToNumber()
+  creatorId?: number;
 
   @IsOptional()
   @IsString()

@@ -1,15 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { PickByType } from '../types/shared';
-import { CouponType, UserComicIssue } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CouponType,
+  CreatorActivityFeedType,
+  UserComicIssue,
+} from '@prisma/client';
 import { ComicIssueStats } from '../comic/dto/types';
 import { ComicIssue } from '@prisma/client';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UserComicIssueService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+    private readonly activityService: ActivityService,
+  ) {}
+
+  async getFavouriteCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, favouritedAt: { not: null } },
+    });
+  }
+
+  async getReaderCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, readAt: { not: null } },
+    });
+  }
+
+  async getViewerCount(comicIssueId: number) {
+    return this.prisma.userComicIssue.count({
+      where: { comicIssueId, viewedAt: { not: null } },
+    });
+  }
 
   async getComicIssueStats(comicIssueId: number): Promise<ComicIssueStats> {
     const issue = await this.prisma.comicIssue.findUnique({
@@ -24,17 +54,9 @@ export class UserComicIssueService {
       _count: true,
     });
 
-    const countFavourites = this.prisma.userComicIssue.count({
-      where: { comicIssueId, favouritedAt: { not: null } },
-    });
-
-    const countReaders = this.prisma.userComicIssue.count({
-      where: { comicIssueId, readAt: { not: null } },
-    });
-
-    const countViewers = this.prisma.userComicIssue.count({
-      where: { comicIssueId, viewedAt: { not: null } },
-    });
+    const countFavourites = this.getFavouriteCount(comicIssueId);
+    const countReaders = this.getReaderCount(comicIssueId);
+    const countViewers = this.getViewerCount(comicIssueId);
 
     const countIssues = this.prisma.comicIssue.count({
       where: {
@@ -219,11 +241,69 @@ export class UserComicIssueService {
   }
 
   async rate(userId: number, comicIssueId: number, rating: number) {
-    return await this.prisma.userComicIssue.upsert({
+    const userComicIssue = await this.prisma.userComicIssue.upsert({
       where: { comicIssueId_userId: { userId, comicIssueId } },
       create: { userId, comicIssueId, rating },
       update: { rating },
+      include: {
+        user: true,
+        comicIssue: { include: { comic: { select: { creatorId: true } } } },
+      },
     });
+
+    const { comicIssue, user } = userComicIssue;
+    const creatorId = comicIssue.comic.creatorId;
+    const targetId = comicIssueId.toString();
+
+    this.activityService.indexCreatorFeedActivity(
+      creatorId,
+      targetId,
+      ActivityTargetType.ComicIssue,
+      CreatorActivityFeedType.ComicIssueRated,
+      userId,
+    );
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicIssueRated,
+      targetId,
+      targetTitle: comicIssue.title,
+    });
+
+    return userComicIssue;
+  }
+
+  async favourite(userId: number, comicIssueId: number) {
+    const userComicIssue = await this.toggleDate(
+      userId,
+      comicIssueId,
+      'favouritedAt',
+    );
+
+    if (userComicIssue.favouritedAt) {
+      const comicIssue = await this.prisma.comicIssue.findUnique({
+        where: { id: comicIssueId },
+        include: { comic: { select: { creatorId: true } } },
+      });
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+      const targetId = comicIssueId.toString();
+      this.activityService.indexCreatorFeedActivity(
+        comicIssue.comic.creatorId,
+        targetId,
+        ActivityTargetType.ComicIssue,
+        CreatorActivityFeedType.ComicIssueLiked,
+        userId,
+      );
+
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ComicIssueLiked,
+        targetId,
+        targetTitle: comicIssue.title,
+      });
+    }
+
+    return userComicIssue;
   }
 
   async toggleDate(

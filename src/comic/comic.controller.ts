@@ -19,7 +19,7 @@ import { ComicParams } from './dto/comic-params.dto';
 import { UserComicService } from './user-comic.service';
 import { RateComicDto } from './dto/rate-comic.dto';
 import { AdminGuard } from 'src/guards/roles.guard';
-import { CreatorPayload, UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { UserEntity } from 'src/decorators/user.decorator';
 import {
@@ -28,7 +28,6 @@ import {
 } from '@nestjs/platform-express';
 import { plainToInstance } from 'class-transformer';
 import { ApiFile } from 'src/decorators/api-file.decorator';
-import { CreatorEntity } from 'src/decorators/creator.decorator';
 import { ComicOwnerAuth } from 'src/guards/comic-owner.guard';
 import { CreateComicDto } from './dto/create-comic.dto';
 import { UpdateComicDto, UpdateComicFilesDto } from './dto/update-comic.dto';
@@ -36,8 +35,8 @@ import { CreatorAuth } from 'src/guards/creator-auth.guard';
 import { RawComicParams } from './dto/raw-comic-params.dto';
 import {
   RawComicDto,
+  toPaginatedRawComicDto,
   toRawComicDto,
-  toRawComicDtoArray,
 } from './dto/raw-comic.dto';
 import { VerifiedUserAuthGuard } from '../guards/verified-user-auth.guard';
 import { CacheInterceptor } from '../cache/cache.interceptor';
@@ -45,6 +44,8 @@ import { minutes } from '@nestjs/throttler';
 import { SearchComicParams } from './dto/search-comic-params.dto';
 import { SearchComicDto, toSearchComicDtoArray } from './dto/search-comic.dto';
 import { OptionalUserAuth } from '../guards/optional-user-auth.guard';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 @ApiTags('Comic')
 @Controller('comic')
@@ -58,7 +59,7 @@ export class ComicController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @CreatorEntity() creator: CreatorPayload,
+    @UserEntity() creator: UserPayload,
     @Body() createComicDto: CreateComicDto,
   ): Promise<ComicDto> {
     const comic = await this.comicService.create(creator.id, createComicDto);
@@ -75,11 +76,13 @@ export class ComicController {
   }
 
   /* Get all comics in raw format */
-  // @CreatorAuth()
+  @AdminOrCreatorOwner()
   @Get('get-raw')
-  async findAllRaw(@Query() query: RawComicParams): Promise<RawComicDto[]> {
-    const comics = await this.comicService.findAllRaw(query);
-    return toRawComicDtoArray(comics);
+  async findAllRaw(
+    @Query() query: RawComicParams,
+  ): Promise<PaginatedResponseDto<RawComicDto>> {
+    const data = await this.comicService.findAllRaw(query);
+    return toPaginatedRawComicDto(data);
   }
 
   /* Search all comics */
@@ -103,7 +106,7 @@ export class ComicController {
   }
 
   /* Get specific comic in raw format by unique slug */
-  @CreatorAuth()
+  @ComicOwnerAuth()
   @Get('get-raw/:slug')
   async findOneRaw(@Param('slug') slug: string): Promise<RawComicDto> {
     const comic = await this.comicService.findOneRaw(slug);
@@ -239,7 +242,7 @@ export class ComicController {
   @UserAuth()
   @Patch('bookmark/:slug')
   async bookmark(@Param('slug') slug: string, @UserEntity() user: UserPayload) {
-    await this.userComicService.toggleDate(user.id, slug, 'bookmarkedAt');
+    await this.userComicService.bookmark(user.id, slug);
   }
 
   /* Favouritise/unfavouritise a specific comic */
@@ -249,7 +252,7 @@ export class ComicController {
     @Param('slug') slug: string,
     @UserEntity() user: UserPayload,
   ) {
-    await this.userComicService.toggleDate(user.id, slug, 'favouritedAt');
+    await this.userComicService.favouritise(user.id, slug);
   }
 
   /* Publish comic */

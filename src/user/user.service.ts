@@ -16,7 +16,7 @@ import {
   ResetPasswordDto,
   UpdatePasswordDto,
 } from '../types/update-password.dto';
-import { validateEmail, validateName } from '../utils/user';
+import { validateEmail, validateUserName } from '../utils/user';
 import { WalletService } from '../wallet/wallet.service';
 import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
@@ -53,7 +53,7 @@ export class UserService {
   async register(registerDto: RegisterDto) {
     const { name, email, password } = registerDto;
 
-    validateName(name);
+    validateUserName(name);
     validateEmail(email);
 
     const [hashedPassword] = await Promise.all([
@@ -246,15 +246,13 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const { referrer, username, displayName, email, name } = updateUserDto;
+    const { referrer, username, displayName, email } = updateUserDto;
 
     const user = await this.findOne(id);
     const isEmailUpdated = email && user.email !== email;
     const isUsernameUpdated = username && user.username !== username;
     const isDisplayNameUpdated =
       displayName && user.displayName !== displayName;
-    //TODO: for backward compatibility, remove this later
-    const isNameUpdated = name && user.username !== name;
 
     if (referrer) await this.redeemReferral(referrer, id);
 
@@ -271,21 +269,11 @@ export class UserService {
     }
 
     if (isUsernameUpdated) {
-      validateName(username);
+      validateUserName(username);
       await this.throwIfNameTaken(username);
       await this.prisma.user.update({
         where: { id },
         data: { username },
-      });
-    }
-
-    //TODO: for backward compatibility, remove this later
-    if (isNameUpdated) {
-      validateName(name);
-      await this.throwIfNameTaken(name);
-      await this.prisma.user.update({
-        where: { id },
-        data: { username: name },
       });
     }
 

@@ -2,8 +2,6 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPositive,
@@ -11,10 +9,9 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
-import { IsKebabCase } from 'src/decorators/IsKebabCase';
 import { CreatorStatsDto, toCreatorStatsDto } from './creator-stats.dto';
 import { CreatorStats } from 'src/comic/dto/types';
-import { Creator, Genre, Role } from '@prisma/client';
+import { CreatorChannel, Genre } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { UserCreatorMyStatsDto } from 'src/creator/dto/types';
@@ -23,26 +20,19 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { PartialGenreDto } from 'src/genre/dto/partial-genre.dto';
 import { ifDefined } from 'src/utils/lodash';
-import { ApiProperty } from '@nestjs/swagger';
+import { DISPLAY_NAME_MAX_SIZE } from 'src/constants';
 
-export class CreatorDto {
+export class CreatorChannelDto {
   @IsPositive()
   id: number;
 
-  @IsEmail()
-  email: string;
-
   @IsNotEmpty()
   @MaxLength(54)
-  name: string;
-
-  @IsEnum(Role)
-  @ApiProperty({ enum: Role })
-  role: Role;
+  handle: string;
 
   @IsNotEmpty()
-  @IsKebabCase()
-  slug: string;
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 
   @IsBoolean()
   isVerified: boolean;
@@ -53,16 +43,9 @@ export class CreatorDto {
   @IsUrl()
   banner: string;
 
-  @IsUrl()
-  logo: string;
-
   @IsString()
   @MaxLength(512)
   description: string;
-
-  @IsString()
-  @MaxLength(128)
-  flavorText: string;
 
   @IsSolanaAddress()
   @IsOptionalString()
@@ -93,25 +76,21 @@ export class CreatorDto {
   genres?: PartialGenreDto[];
 }
 
-export type CreatorInput = Creator & {
+export type CreatorInput = CreatorChannel & {
   stats?: CreatorStats;
   myStats?: UserCreatorMyStatsDto;
   genres?: Genre[];
 };
 
 export function toCreatorDto(creator: CreatorInput) {
-  const plainCreatorDto: CreatorDto = {
+  const plainCreatorDto: CreatorChannelDto = {
     id: creator.id,
-    email: creator.email,
-    name: creator.name,
-    role: creator.role,
-    slug: creator.slug,
+    handle: creator.handle,
+    displayName: creator.displayName,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
     banner: getPublicUrl(creator.banner),
-    logo: getPublicUrl(creator.logo),
     description: creator.description,
-    flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
     website: creator.website,
     twitter: creator.twitter,
@@ -123,7 +102,7 @@ export function toCreatorDto(creator: CreatorInput) {
       : undefined,
   };
 
-  const creatorDto = plainToInstance(CreatorDto, plainCreatorDto);
+  const creatorDto = plainToInstance(CreatorChannelDto, plainCreatorDto);
   return creatorDto;
 }
 

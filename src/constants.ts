@@ -43,12 +43,15 @@ export const BUNDLR_ADDRESS =
 
 export const USERNAME_MIN_SIZE = 3;
 export const USERNAME_MAX_SIZE = 20;
+export const DISPLAY_NAME_MAX_SIZE = 48;
+export const DISPLAY_NAME_MIN_SIZE = 3;
+
 export const AUCTION_HOUSE_LOOK_UP_TABLE = new PublicKey(
   process.env.SOLANA_CLUSTER === 'mainnet-beta'
     ? '9TzbC21XGK682N3eXntxV4cpSWVra2QzT4T8kb2m3AJj'
     : '9GfMG415sgpzGajfTZyt7qcDo6Xxoa97MyxTFuHuY7od',
 );
-export const USERNAME_REGEX = new RegExp(/^[a-zA-Z0-9-_čćžšđČĆŽŠĐ]+$/);
+export const USERNAME_REGEX = new RegExp(/^[a-zA-Z0-9_čćžšđČĆŽŠĐ]+$/);
 
 export const AUTHORITY_GROUP_LABEL = 'dAuth';
 export const PUBLIC_GROUP_LABEL = 'public';

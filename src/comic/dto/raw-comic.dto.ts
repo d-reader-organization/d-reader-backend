@@ -13,6 +13,7 @@ import {
 } from 'src/genre/dto/partial-genre.dto';
 import { With } from 'src/types/shared';
 import { ifDefined } from 'src/utils/lodash';
+import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 export class RawComicDto {
   @IsString()
@@ -117,4 +118,22 @@ export function toRawComicDto(comic: RawComicInput) {
 
 export const toRawComicDtoArray = (comics: RawComicInput[]) => {
   return comics.map(toRawComicDto);
+};
+
+export type PaginatedRawComicInput = {
+  totalItems: number;
+  comics: RawComicInput[];
+};
+
+export const toPaginatedRawComicDto = (input: PaginatedRawComicInput) => {
+  const plainPaginatedRawComicDto: PaginatedResponseDto<RawComicDto> = {
+    totalItems: input.totalItems,
+    data: toRawComicDtoArray(input.comics),
+  };
+
+  const paginatedRawComicDto = plainToInstance(
+    PaginatedResponseDto<RawComicDto>,
+    plainPaginatedRawComicDto,
+  );
+  return paginatedRawComicDto;
 };

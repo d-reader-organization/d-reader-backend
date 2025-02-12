@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsOptional, IsString, IsArray, IsEnum } from 'class-validator';
-import { IsKebabCase } from '../../decorators/IsKebabCase';
 import { Pagination } from '../../types/pagination.dto';
 import { SortOrder } from '../../types/sort-order';
-import { TransformCsvToArray } from '../../utils/transform';
+import {
+  TransformCsvToArray,
+  TransformStringToNumber,
+} from '../../utils/transform';
 
 export enum ComicFilterTag {
   Popular = 'popular',
@@ -21,8 +23,8 @@ export enum ComicSortTag {
 
 export class ComicParams extends Pagination {
   @IsOptional()
-  @IsKebabCase()
-  creatorSlug?: string;
+  @TransformStringToNumber()
+  creatorId?: number;
 
   @IsOptional()
   @IsString()

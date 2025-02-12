@@ -24,6 +24,8 @@ import {
   CollectibleComicCollection,
   TokenStandard,
   CandyMachine,
+  CreatorActivityFeedType,
+  ActivityTargetType,
 } from '@prisma/client';
 import { ComicIssueParams } from './dto/comic-issue-params.dto';
 import { CandyMachineService } from '../candy-machine/candy-machine.service';
@@ -43,10 +45,8 @@ import {
   validateWeb3PublishInfo,
 } from '../utils/comic-issue';
 import { OwnedComicIssueInput } from './dto/owned-comic-issue.dto';
-import { Metaplex } from '@metaplex-foundation/js';
-import { metaplex } from '../utils/metaplex';
 import { RawComicIssueParams } from './dto/raw-comic-issue-params.dto';
-import { RawComicIssueInput } from './dto/raw-comic-issue.dto';
+import { PaginatedRawComicIssueInput } from './dto/raw-comic-issue.dto';
 import { RawComicIssueStats } from '../comic/dto/types';
 import { getRawComicIssuesQuery } from './raw-comic-issue.queries';
 import { CreateCandyMachineParams } from '../candy-machine/dto/types';
@@ -58,6 +58,7 @@ import { SearchComicIssueParams } from './dto/search-comic-issue-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { ActivityService } from '../activity/activity.service';
 
 const getS3Folder = (comicSlug: string, comicIssueSlug: string) =>
   `comics/${comicSlug}/issues/${comicIssueSlug}/`;
@@ -65,8 +66,6 @@ type ComicIssueFileProperty = PickFields<ComicIssue, 'pdf'>;
 
 @Injectable()
 export class ComicIssueService {
-  private readonly metaplex: Metaplex;
-
   constructor(
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
@@ -76,9 +75,8 @@ export class ComicIssueService {
     private readonly discordService: DiscordService,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
-  ) {
-    this.metaplex = metaplex;
-  }
+    private readonly activityService: ActivityService,
+  ) {}
 
   async create(creatorId: number, createComicIssueDto: CreateComicIssueDto) {
     const {
@@ -157,7 +155,7 @@ export class ComicIssueService {
           comicTitle: string;
           audienceType: AudienceType;
           creatorName: string;
-          creatorSlug: string;
+          creatorId: string;
           creatorVerifiedAt?: string;
           creatorAvatar?: string;
           genres?: Genre[];
@@ -178,7 +176,7 @@ export class ComicIssueService {
             audienceType: issue.audienceType,
             creator: {
               name: issue.creatorName,
-              slug: issue.creatorSlug,
+              id: issue.creatorId,
               isVerified: !!issue.verifiedAt,
               avatar: issue.creatorAvatar,
             },
@@ -201,7 +199,9 @@ export class ComicIssueService {
     return response;
   }
 
-  async findAllRaw(query: RawComicIssueParams): Promise<RawComicIssueInput[]> {
+  async findAllRaw(
+    query: RawComicIssueParams,
+  ): Promise<PaginatedRawComicIssueInput> {
     const comicIssues = await this.prisma.$queryRaw<
       Array<
         ComicIssue & {
@@ -230,7 +230,21 @@ export class ComicIssueService {
       };
     });
 
-    return normalizedComicIssues;
+    const genreFilter = query.genreSlugs
+      ? { some: { slug: { in: query.genreSlugs } } }
+      : undefined;
+    const totalItems = await this.prisma.comicIssue.count({
+      where: {
+        comic: {
+          creatorId: query?.creatorId,
+          genres: genreFilter,
+          slug: query?.comicSlug,
+        },
+        title: { contains: query?.search, mode: 'insensitive' },
+      },
+    });
+
+    return { totalItems, comicIssues: normalizedComicIssues };
   }
 
   async findOnePublic(
@@ -823,6 +837,24 @@ export class ComicIssueService {
     }
   }
 
+  indexComicIssueStatusActivity(
+    creatorId: number,
+    comicIssueId: number,
+    property: ComicIssueStatusProperty,
+  ) {
+    const type =
+      property == 'publishedAt'
+        ? CreatorActivityFeedType.ComicIssuePublished
+        : CreatorActivityFeedType.ComicIssueVerified;
+
+    this.activityService.indexCreatorFeedActivity(
+      creatorId,
+      comicIssueId.toString(),
+      ActivityTargetType.Comic,
+      type,
+    );
+  }
+
   async toggleDate({
     id,
     property,
@@ -846,7 +878,7 @@ export class ComicIssueService {
       include: {
         comic: {
           include: {
-            creator: true,
+            creator: { include: { user: { select: { email: true } } } },
           },
         },
       },
@@ -857,10 +889,21 @@ export class ComicIssueService {
     if (['verifiedAt', 'publishedAt'].includes(property)) {
       await this.cacheService.deleteByPattern(CachePath.COMIC_ISSUE_GET_MANY);
 
+      const email = updatedComicIssue.comic.creator.user.email;
       if (property === 'verifiedAt' && updatedComicIssue.verifiedAt) {
-        this.mailService.comicIssueVerified(updatedComicIssue);
+        this.mailService.comicIssueVerified(updatedComicIssue, email);
+        this.indexComicIssueStatusActivity(
+          updatedComicIssue.comic.creatorId,
+          id,
+          'verifiedAt',
+        );
       } else if (property === 'publishedAt' && updatedComicIssue.publishedAt) {
-        this.mailService.comicIssuePublished(updatedComicIssue);
+        this.mailService.comicIssuePublished(updatedComicIssue, email);
+        this.indexComicIssueStatusActivity(
+          updatedComicIssue.comic.creatorId,
+          id,
+          'publishedAt',
+        );
       }
     }
   }
