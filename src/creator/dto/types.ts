@@ -12,6 +12,9 @@ export type UserCreatorMyStatsDto = {
 
 export type CreatorStatusProperty = keyof Pick<CreatorChannel, 'verifiedAt'>;
 
-export type SearchCreator = Pick<CreatorChannel, 'avatar' | 'handle'> & {
+export type SearchCreator = Pick<
+  CreatorChannel,
+  'avatar' | 'displayName' | 'handle'
+> & {
   issuesCount: number;
 };

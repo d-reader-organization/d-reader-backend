@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { IsNotEmpty, IsPositive, IsUrl, MaxLength } from 'class-validator';
 import { getPublicUrl } from '../../aws/s3client';
 import { SearchCreator } from './types';
+import { DISPLAY_NAME_MAX_SIZE } from '../../constants';
 
 export class SearchCreatorDto {
   @IsNotEmpty()
@@ -13,6 +14,10 @@ export class SearchCreatorDto {
 
   @IsPositive()
   issuesCount: number;
+
+  @IsNotEmpty()
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 }
 
 export function toSearchCreatorDto(creator: SearchCreator) {
@@ -20,6 +25,7 @@ export function toSearchCreatorDto(creator: SearchCreator) {
     handle: creator.handle,
     avatar: getPublicUrl(creator.avatar),
     issuesCount: creator.issuesCount,
+    displayName: creator.displayName,
   };
 
   const creatorDto = plainToInstance(SearchCreatorDto, plainCreatorDto);
