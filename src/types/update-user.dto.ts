@@ -11,10 +11,6 @@ import { IsValidUsername } from '../decorators/IsValidUsername';
 export class UpdateUserDto {
   @IsValidUsername()
   @IsOptional()
-  name?: string;
-
-  @IsValidUsername()
-  @IsOptional()
   username?: string;
 
   @MinLength(USERNAME_MIN_SIZE)
