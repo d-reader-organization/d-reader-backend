@@ -55,10 +55,10 @@ Table Wallet {
 Table CreatorChannel {
   id Int [pk, increment]
   handle String [unique, not null]
+  displayName String [not null]
   banner String [not null, default: '']
   avatar String [not null, default: '']
   description String [not null, default: '']
-  flavorText String [not null, default: '']
   website String [not null, default: '']
   twitter String [not null, default: '']
   instagram String [not null, default: '']

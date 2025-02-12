@@ -20,6 +20,7 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { PartialGenreDto } from 'src/genre/dto/partial-genre.dto';
 import { ifDefined } from 'src/utils/lodash';
+import { DISPLAY_NAME_MAX_SIZE } from 'src/constants';
 
 export class CreatorChannelDto {
   @IsPositive()
@@ -28,6 +29,10 @@ export class CreatorChannelDto {
   @IsNotEmpty()
   @MaxLength(54)
   handle: string;
+
+  @IsNotEmpty()
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 
   @IsBoolean()
   isVerified: boolean;
@@ -41,10 +46,6 @@ export class CreatorChannelDto {
   @IsString()
   @MaxLength(512)
   description: string;
-
-  @IsString()
-  @MaxLength(128)
-  flavorText: string;
 
   @IsSolanaAddress()
   @IsOptionalString()
@@ -85,11 +86,11 @@ export function toCreatorDto(creator: CreatorInput) {
   const plainCreatorDto: CreatorChannelDto = {
     id: creator.id,
     handle: creator.handle,
+    displayName: creator.displayName,
     isVerified: !!creator.verifiedAt,
     avatar: getPublicUrl(creator.avatar),
     banner: getPublicUrl(creator.banner),
     description: creator.description,
-    flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
     website: creator.website,
     twitter: creator.twitter,

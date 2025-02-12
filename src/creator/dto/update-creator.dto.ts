@@ -1,6 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { MaxLength, IsString, IsOptional, IsNotEmpty } from 'class-validator';
+import {
+  MaxLength,
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  MinLength,
+} from 'class-validator';
+import {
+  DISPLAY_NAME_MAX_SIZE,
+  DISPLAY_NAME_MIN_SIZE,
+  USERNAME_MAX_SIZE,
+  USERNAME_MIN_SIZE,
+} from 'src/constants';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
@@ -8,8 +20,14 @@ import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 export class UpdateCreatorDto {
   @IsOptional()
   @IsNotEmpty()
-  @MaxLength(48)
+  @MinLength(USERNAME_MIN_SIZE)
+  @MaxLength(USERNAME_MAX_SIZE)
   handle?: string;
+
+  @IsOptional()
+  @MinLength(DISPLAY_NAME_MIN_SIZE)
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName?: string;
 
   @IsOptionalString()
   @IsSolanaAddress()
