@@ -43,6 +43,7 @@ import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 import { CacheModule } from './cache/cache.module';
 import { WheelModule } from './wheel/wheel.module';
 import { PrivyModule } from './webhooks/privy/privy.module';
+import { ActivityModule } from './activity/activity.module';
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { PrivyModule } from './webhooks/privy/privy.module';
     CacheModule,
     WheelModule,
     PrivyModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [

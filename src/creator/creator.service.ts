@@ -8,28 +8,22 @@ import {
   UpdateCreatorDto,
   UpdateCreatorFilesDto,
 } from '../creator/dto/update-creator.dto';
-import { Creator, Genre, Prisma } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  CreatorChannel,
+  Genre,
+  Prisma,
+} from '@prisma/client';
 import { subDays } from 'date-fns';
 import { CreatorFilterParams } from './dto/creator-params.dto';
 import { UserCreatorService } from './user-creator.service';
 import { s3Service } from '../aws/s3.service';
 import { CreatorStats } from '../comic/dto/types';
 import { getCreatorGenresQuery, getCreatorsQuery } from './creator.queries';
-import { appendTimestamp, sleep } from '../utils/helpers';
-import { RegisterDto } from '../types/register.dto';
-import { PasswordService } from '../auth/password.service';
-import {
-  ResetPasswordDto,
-  UpdatePasswordDto,
-} from '../types/update-password.dto';
-import { validateCreatorName, validateEmail } from '../utils/user';
+import { validateUserName } from '../utils/user';
 import { MailService } from '../mail/mail.service';
-import { AuthService } from '../auth/auth.service';
-import { LoginDto } from '../types/login.dto';
 import { insensitive } from '../utils/lodash';
-import { isEmail } from 'class-validator';
-import { kebabCase } from 'lodash';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { DiscordService } from '../discord/discord.service';
 import { CreatorFile } from '../discord/dto/types';
 import {
@@ -38,11 +32,25 @@ import {
   CreatorStatusProperty,
 } from './dto/types';
 import { RawCreatorFilterParams } from './dto/raw-creator-params.dto';
-import { EmailPayload } from '../auth/dto/authorization.dto';
 import { SearchCreatorParams } from './dto/search-creator-params.dto';
 import { CacheService } from '../cache/cache.service';
 import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { CreatorActivityFeedParams } from './dto/creator-activity-feed-params.dto';
+import { CreatorActivityFeedInput } from './dto/creator-activity-feed.dto';
+import { SortOrder } from 'src/types/sort-order';
+import { CreateCreatorChannelDto } from './dto/create-channel.dto';
+import { appendTimestamp } from 'src/utils/helpers';
+import { processCreatorIdString } from 'src/utils/creator';
+import { SaleTransactionParams } from './dto/sale-transaction-params.dto';
+import {
+  SaleProductType,
+  SaleSource,
+  SaleTransactionInput,
+} from './dto/sale-transaction-history.dto';
+import { ActivityService } from '../activity/activity.service';
+import { kebabCase, snakeCase } from 'lodash';
+import { USERNAME_MAX_SIZE } from 'src/constants';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 
@@ -52,60 +60,82 @@ export class CreatorService {
     private readonly s3: s3Service,
     private readonly prisma: PrismaService,
     private readonly userCreatorService: UserCreatorService,
-    private readonly passwordService: PasswordService,
-    private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly discordService: DiscordService,
     private readonly cacheService: CacheService,
+    private readonly activityService: ActivityService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    const { name, email, password } = registerDto;
-    const slug = kebabCase(name);
+  async create(
+    userId: number,
+    createCreatorChannelDto: CreateCreatorChannelDto,
+  ) {
+    const isExists = await this.prisma.creatorChannel.findUnique({
+      where: { userId },
+    });
+    if (isExists) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.USER_ALREADY_HAS_CREATOR_CHANNEL,
+      );
+    }
 
-    validateCreatorName(name);
-    validateEmail(email);
+    const { displayName } = createCreatorChannelDto;
+    const handle = await this.createUniqueHandle(displayName);
 
-    const [hashedPassword] = await Promise.all([
-      this.passwordService.hash(password),
-      this.throwIfNameTaken(name),
-      this.throwIfSlugTaken(slug),
-      this.throwIfEmailTaken(email),
-    ]);
-
-    const creator = await this.prisma.creator.create({
+    const creator = await this.prisma.creatorChannel.create({
       data: {
-        name,
-        email,
-        password: hashedPassword,
-        slug,
-        s3BucketSlug: appendTimestamp(slug),
+        ...createCreatorChannelDto,
+        handle,
+        user: { connect: { id: userId } },
+        s3BucketSlug: appendTimestamp(kebabCase(displayName)),
       },
     });
-    this.mailService.creatorRegistered(creator);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { role: 'Creator' },
+    });
+
     this.discordService.creatorRegistered(creator);
     return creator;
   }
 
-  async login(loginDto: LoginDto) {
-    const { nameOrEmail, password } = loginDto;
-
-    if (!nameOrEmail) {
-      throw new BadRequestException(ERROR_MESSAGES.EMAIL_OR_USERNAME_REQUIRED);
+  // Switch to pool based unique handle generation or explicit username on register
+  async createUniqueHandle(displayName: string) {
+    let handle = snakeCase(displayName);
+    if (handle.length > USERNAME_MAX_SIZE) {
+      handle = handle.slice(0, USERNAME_MAX_SIZE);
     }
 
-    let creator: Creator;
-    if (isEmail(nameOrEmail)) {
-      creator = await this.findByEmail(nameOrEmail);
-    } else {
-      throw new BadRequestException(ERROR_MESSAGES.INCORRECT_EMAIL_FORMAT);
-    }
-
-    await this.passwordService.validate(password, creator.password);
-    return this.prisma.creator.update({
-      where: { id: creator.id },
-      data: { lastLogin: new Date() },
+    const isExists = await this.prisma.creatorChannel.findUnique({
+      where: { handle },
     });
+    if (isExists) {
+      const maxHandleLength = USERNAME_MAX_SIZE - 4;
+      const maxSubstringLength = Math.min(maxHandleLength, handle.length);
+
+      const baseHandle = handle.slice(0, maxSubstringLength);
+      const existingHandles = await this.prisma.creatorChannel.findMany({
+        where: { handle: { startsWith: baseHandle } },
+        select: { handle: true },
+      });
+
+      const takenHandleNumbers = new Set<number>();
+      existingHandles.forEach((channel) => {
+        const lastSegment = channel.handle.split('_').at(-1);
+        if (!isNaN(+lastSegment)) {
+          takenHandleNumbers.add(+lastSegment);
+        }
+      });
+
+      for (let currentNumber = 1; currentNumber < 999; currentNumber++) {
+        if (!takenHandleNumbers.has(currentNumber)) {
+          handle = `${baseHandle}_${currentNumber}`;
+          break;
+        }
+      }
+    }
+
+    return handle;
   }
 
   async findAll({
@@ -115,9 +145,9 @@ export class CreatorService {
     query: CreatorFilterParams;
     userId?: number;
   }) {
-    const creators = await this.prisma.$queryRaw<Array<Creator & CreatorStats>>(
-      getCreatorsQuery(query),
-    );
+    const creators = await this.prisma.$queryRaw<
+      Array<CreatorChannel & CreatorStats>
+    >(getCreatorsQuery(query));
     const filteredCreators = [];
 
     for (const creator of creators) {
@@ -126,8 +156,8 @@ export class CreatorService {
       );
       if (!!genresResult.length) {
         const [totalVolume, myStats] = await Promise.all([
-          this.userCreatorService.getTotalCreatorVolume(creator.slug),
-          this.userCreatorService.getUserStats(creator.slug, userId),
+          this.userCreatorService.getTotalCreatorVolume(creator.id),
+          this.userCreatorService.getUserStats(creator.id, userId),
         ]);
         filteredCreators.push({
           ...creator,
@@ -152,17 +182,17 @@ export class CreatorService {
     take,
     sortOrder,
   }: SearchCreatorParams): Promise<SearchCreator[]> {
-    const creators = await this.prisma.creator.findMany({
+    const creators = await this.prisma.creatorChannel.findMany({
       select: {
         avatar: true,
         id: true,
-        name: true,
-        slug: true,
+        handle: true,
+        displayName: true,
       },
       where: {
-        name: { contains: search, mode: 'insensitive' },
+        displayName: { contains: search, mode: 'insensitive' },
       },
-      orderBy: { name: sortOrder },
+      orderBy: { handle: sortOrder },
       skip,
       take,
     });
@@ -183,104 +213,193 @@ export class CreatorService {
     );
   }
 
-  async findMe(id: number) {
-    const creator = await this.prisma.creator.update({
-      where: { id },
-      data: { lastActiveAt: new Date() },
+  async findOne(id: string, userId?: number) {
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: processCreatorIdString(id),
     });
 
-    return creator;
-  }
+    if (!creator) {
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
+    }
 
-  async findOne(slug: string, userId?: number) {
-    const findCreator = this.prisma.creator.findUnique({ where: { slug } });
-    const getStats = this.userCreatorService.getCreatorStats(slug);
-    const getMyStats = this.userCreatorService.getUserStats(slug, userId);
+    const getStats = this.userCreatorService.getCreatorStats(creator.id);
+    const getMyStats = this.userCreatorService.getUserStats(creator.id, userId);
 
-    const [creator, stats, myStats] = await Promise.all([
-      findCreator,
-      getStats,
-      getMyStats,
-    ]);
+    const [stats, myStats] = await Promise.all([getStats, getMyStats]);
 
     if (!creator) {
-      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(slug));
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
     }
 
     return { ...creator, stats, myStats };
   }
 
   async findAllRaw(query: RawCreatorFilterParams) {
-    let where: Prisma.CreatorWhereInput;
+    let where: Prisma.CreatorChannelWhereInput;
     if (query.search) {
-      where = { name: { contains: query.search, mode: 'insensitive' } };
+      where = { displayName: { contains: query.search, mode: 'insensitive' } };
     }
-    return await this.prisma.creator.findMany({
+    return await this.prisma.creatorChannel.findMany({
       where,
       take: query.take,
       skip: query.skip,
     });
   }
 
-  async findOneRaw(slug: string) {
-    const creator = this.prisma.creator.findUnique({ where: { slug } });
+  async findOneRaw(id: string) {
+    const creator = this.prisma.creatorChannel.findUnique({
+      where: processCreatorIdString(id),
+    });
 
     if (!creator) {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
     }
 
     return creator;
   }
 
-  async findByEmail(email: string) {
-    const creator = await this.prisma.creator.findFirst({
-      where: { email: insensitive(email) },
+  async findCreatorActivityFeed(
+    query: CreatorActivityFeedParams,
+  ): Promise<CreatorActivityFeedInput[]> {
+    const activities = await this.prisma.creatorActivityFeed.findMany({
+      where: { creatorId: query.creatorId, targetType: query.targetType },
+      include: { user: true },
+      skip: query.skip,
+      take: query.take,
+      orderBy: {
+        createdAt: query.sortOrder || SortOrder.ASC,
+      },
     });
 
-    if (!creator) {
-      throw new NotFoundException(`Creator with email ${email} does not exist`);
-    } else return creator;
+    const feeds: CreatorActivityFeedInput[] = await Promise.all(
+      activities.map(async (activity) => {
+        return {
+          ...activity,
+          targetTitle: await this.findActivityTargetTitle(
+            activity.targetId,
+            activity.targetType,
+          ),
+        };
+      }),
+    );
+
+    return feeds;
   }
 
-  async update(slug: string, updateCreatorDto: UpdateCreatorDto) {
-    const { email, name, ...otherData } = updateCreatorDto;
-    const creator = await this.prisma.creator.findUnique({ where: { slug } });
+  async findActivityTargetTitle(
+    targetId: string,
+    targetType: ActivityTargetType,
+  ) {
+    const SOMEONE = 'Someone';
 
-    const isNameUpdated = name && creator.name !== name;
-    let creatorSlug = slug;
+    switch (targetType) {
+      case ActivityTargetType.Comic: {
+        const comic = await this.prisma.comic.findUnique({
+          where: { slug: targetId },
+        });
+        return comic.title;
+      }
+      case ActivityTargetType.ComicIssue: {
+        const comicIssue = await this.prisma.comicIssue.findUnique({
+          where: { id: +targetId },
+        });
+        return comicIssue.title;
+      }
+      case ActivityTargetType.Creator: {
+        const creator = await this.prisma.creatorChannel.findUnique({
+          where: { id: +targetId },
+        });
+        return creator.displayName;
+      }
+      default:
+        return SOMEONE;
+    }
+  }
 
-    if (isNameUpdated) {
-      validateCreatorName(name);
+  // TODO: Add Secondary sales transactions
+  async findSaleTransactions(
+    query: SaleTransactionParams,
+  ): Promise<SaleTransactionInput[]> {
+    const { creatorId, take, skip } = query;
 
-      const newSlug = kebabCase(name);
-      await Promise.all([
-        this.throwIfNameTaken(name),
-        this.throwIfSlugTaken(newSlug),
-      ]);
+    const creatorFilter = creatorId
+      ? { comicIssue: { comic: { creatorId } } }
+      : undefined;
+    const candyMachines = await this.prisma.candyMachine.findMany({
+      where: { collection: creatorFilter },
+      select: {
+        address: true,
+        coupons: {
+          select: {
+            id: true,
+            currencySettings: {
+              select: { label: true, splTokenAddress: true },
+            },
+          },
+        },
+      },
+    });
 
-      await this.prisma.creator.update({
-        where: { slug },
-        data: { name, slug: newSlug },
+    const filter = candyMachines.map((candyMachine) => candyMachine.address);
+    const primarySaleReceipts = await this.prisma.candyMachineReceipt.findMany({
+      where: { candyMachineAddress: { in: filter } },
+      include: { user: true },
+      take,
+      skip,
+    });
+
+    const transactions: SaleTransactionInput[] = primarySaleReceipts.map(
+      (receipt) => {
+        const candyMachine = candyMachines.find(
+          (candyMachine) => candyMachine.address == receipt.candyMachineAddress,
+        );
+        const coupon = candyMachine.coupons.find(
+          (coupon) => coupon.id == receipt.couponId,
+        );
+        const currency = coupon.currencySettings.find(
+          (setting) => setting.label == receipt.label,
+        );
+
+        return {
+          transaction: receipt.transactionSignature,
+          buyerAddress: receipt.buyerAddress,
+          amount: Number(receipt.price),
+          quantity: receipt.numberOfItems,
+          splTokenAddress: currency.splTokenAddress,
+          productType: SaleProductType.Comic,
+          source: SaleSource.Sale,
+          user: receipt.user || undefined,
+          date: receipt.timestamp,
+        };
+      },
+    );
+
+    return transactions;
+  }
+
+  async update(id: number, updateCreatorDto: UpdateCreatorDto) {
+    const { handle, ...otherData } = updateCreatorDto;
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: { id },
+    });
+
+    const isHandleUpdated = handle && creator.handle !== handle;
+
+    if (isHandleUpdated) {
+      validateUserName(handle);
+      await this.throwIfHandleTaken(handle);
+
+      await this.prisma.creatorChannel.update({
+        where: { id },
+        data: { handle },
       });
-      creatorSlug = newSlug;
     }
 
-    const isEmailUpdated = email && creator.email !== email;
-    if (isEmailUpdated) {
-      validateEmail(email);
-      await this.throwIfEmailTaken(email);
-      await this.prisma.creator.update({
-        where: { slug: creatorSlug },
-        data: { email, emailVerifiedAt: null },
-      });
-
-      this.mailService.requestCreatorEmailVerification(creator);
-    }
-
-    const updatedCreator = await this.prisma.creator.update({
-      where: { slug: creatorSlug },
+    const updatedCreator = await this.prisma.creatorChannel.update({
+      where: { id },
       data: otherData,
     });
+
     this.discordService.creatorProfileUpdated({
       oldCreator: creator,
       updatedCreator,
@@ -288,134 +407,30 @@ export class CreatorService {
     return updatedCreator;
   }
 
-  async updatePassword(slug: string, updatePasswordDto: UpdatePasswordDto) {
-    const { oldPassword, newPassword } = updatePasswordDto;
-
-    const creator = await this.findOne(slug);
-
-    const [hashedPassword] = await Promise.all([
-      this.passwordService.hash(newPassword),
-      this.passwordService.validate(oldPassword, creator.password),
-    ]);
-
-    if (oldPassword === newPassword) {
-      throw new BadRequestException(ERROR_MESSAGES.NEW_PASSWORD_DIFFERENT);
-    }
-
-    return await this.prisma.creator.update({
-      where: { slug },
-      data: { password: hashedPassword },
-    });
-  }
-
-  async requestPasswordReset(nameOrEmail: string) {
-    const creator = await this.findByEmail(nameOrEmail);
-    const verificationToken = this.authService.generateEmailToken(
-      creator.id,
-      creator.email,
-      '10min',
-    );
-    await this.mailService.requestCreatorPasswordReset({
-      creator,
-      verificationToken,
-    });
-  }
-
-  async resetPassword({ verificationToken, newPassword }: ResetPasswordDto) {
-    const payload = this.authService.verifyEmailToken(verificationToken);
-    const creator = await this.findMe(payload.id);
-
-    const hashedPassword = await this.passwordService.hash(newPassword);
-    await this.prisma.creator.update({
-      where: { id: creator.id },
-      data: { password: hashedPassword },
-    });
-    await this.mailService.creatorPasswordReset(creator);
-  }
-
-  async requestEmailVerification(email: string) {
-    const creator = await this.findByEmail(email);
-
-    if (!!creator.emailVerifiedAt) {
-      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED);
-    }
-
-    await this.mailService.requestCreatorEmailVerification(creator);
-  }
-
-  async verifyEmail(verificationToken: string) {
-    let payload: EmailPayload;
-
-    try {
-      payload = this.authService.verifyEmailToken(verificationToken);
-    } catch (e) {
-      // resend 'request email verification' email if token verification failed
-      this.requestEmailVerification(payload.email);
-      throw e;
-    }
-
-    const creator = await this.prisma.creator.findFirst({
-      where: { id: payload.id },
-    });
-
-    if (!!creator.emailVerifiedAt) {
-      throw new BadRequestException('Email already verified');
-    }
-
-    this.discordService.creatorEmailVerified(creator);
-    return await this.prisma.creator.update({
-      where: { id: payload.id },
-      data: { email: payload.email, emailVerifiedAt: new Date() },
-    });
-  }
-
-  async throwIfNameTaken(name: string) {
-    const creator = await this.prisma.creator.findFirst({
-      where: { name: insensitive(name) },
+  //TODO: Should user and creator's have unique usernames ?
+  async throwIfHandleTaken(handle: string) {
+    const creator = await this.prisma.creatorChannel.findFirst({
+      where: { handle: insensitive(handle) },
     });
 
     if (creator)
-      throw new BadRequestException(ERROR_MESSAGES.NAME_ALREADY_TAKEN(name));
+      throw new BadRequestException(ERROR_MESSAGES.NAME_ALREADY_TAKEN(handle));
   }
 
-  async throwIfSlugTaken(slug: string) {
-    const creator = await this.prisma.creator.findFirst({
-      where: { slug: insensitive(slug) },
+  async updateFiles(id: number, creatorFilesDto: UpdateCreatorFilesDto) {
+    const { banner, avatar } = creatorFilesDto;
+
+    let creator = await this.prisma.creatorChannel.findUnique({
+      where: { id },
     });
 
-    if (creator)
-      throw new BadRequestException(ERROR_MESSAGES.SLUG_ALREADY_TAKEN(slug));
-  }
-
-  async throwIfEmailTaken(email: string) {
-    const creator = await this.prisma.creator.findFirst({
-      where: { email: insensitive(email) },
-    });
-
-    if (creator)
-      throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_TAKEN(email));
-  }
-
-  async updateFiles(slug: string, creatorFilesDto: UpdateCreatorFilesDto) {
-    const { avatar, banner, logo } = creatorFilesDto;
-
-    let creator = await this.prisma.creator.findUnique({ where: { slug } });
-
-    let avatarKey: string, bannerKey: string, logoKey: string;
+    let avatarKey: string, bannerKey: string;
 
     const newFileKeys: string[] = [];
     const oldFileKeys: string[] = [];
 
     try {
       const s3Folder = getS3Folder(creator.s3BucketSlug);
-      if (avatar) {
-        avatarKey = await this.s3.uploadFile(avatar, {
-          s3Folder,
-          fileName: 'avatar',
-        });
-        newFileKeys.push(avatarKey);
-        oldFileKeys.push(creator.avatar);
-      }
       if (banner) {
         bannerKey = await this.s3.uploadFile(banner, {
           s3Folder,
@@ -424,28 +439,30 @@ export class CreatorService {
         newFileKeys.push(bannerKey);
         oldFileKeys.push(creator.banner);
       }
-      if (logo) {
-        logoKey = await this.s3.uploadFile(logo, {
+      if (avatar) {
+        avatarKey = await this.s3.uploadFile(avatar, {
           s3Folder,
-          fileName: 'logo',
+          fileName: 'avatar',
         });
-        newFileKeys.push(logoKey);
-        oldFileKeys.push(creator.logo);
+        newFileKeys.push(avatarKey);
+        oldFileKeys.push(creator.avatar);
       }
       const creatorFiles: CreatorFile[] = [
-        { type: 'avatar', value: avatarKey },
         { type: 'banner', value: bannerKey },
-        { type: 'logo', value: logoKey },
+        { type: 'avatar', value: avatarKey },
       ];
-      this.discordService.creatorFilesUpdated(creator.name, creatorFiles);
+      this.discordService.creatorFilesUpdated(
+        creator.displayName,
+        creatorFiles,
+      );
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
-    creator = await this.prisma.creator.update({
-      where: { slug },
-      data: { avatar: avatarKey, banner: bannerKey, logo: logoKey },
+    creator = await this.prisma.creatorChannel.update({
+      where: { id },
+      data: { banner: bannerKey, avatar: avatarKey },
     });
 
     await this.s3.garbageCollectOldFiles(newFileKeys, oldFileKeys);
@@ -453,15 +470,15 @@ export class CreatorService {
   }
 
   async updateFile(
-    slug: string,
+    id: number,
     file: Express.Multer.File,
     field: CreatorFileProperty,
   ) {
-    let creator: Creator;
+    let creator: CreatorChannel;
     try {
-      creator = await this.prisma.creator.findUnique({ where: { slug } });
+      creator = await this.prisma.creatorChannel.findUnique({ where: { id } });
     } catch {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(ERROR_MESSAGES.CREATOR_NOT_FOUND(id));
     }
 
     const s3Folder = getS3Folder(creator.s3BucketSlug);
@@ -472,8 +489,8 @@ export class CreatorService {
     });
 
     try {
-      creator = await this.prisma.creator.update({
-        where: { slug },
+      creator = await this.prisma.creatorChannel.update({
+        where: { id },
         data: { [file.fieldname]: newFileKey },
       });
     } catch {
@@ -482,107 +499,100 @@ export class CreatorService {
     }
 
     const creatorFiles: CreatorFile[] = [{ type: field, value: newFileKey }];
-    this.discordService.creatorFilesUpdated(creator.name, creatorFiles);
+    this.discordService.creatorFilesUpdated(creator.displayName, creatorFiles);
     await this.s3.garbageCollectOldFile(newFileKey, oldFileKey);
 
     return creator;
   }
 
-  async pseudoDelete(slug: string) {
+  async pseudoDelete(id: number) {
     // We should only allow account deletion if the creator has no published comics and comic issues?
     try {
-      const creator = await this.prisma.creator.update({
-        where: { slug },
+      const creator = await this.prisma.creatorChannel.update({
+        where: { id },
         data: { deletedAt: new Date() },
+        include: { user: { select: { email: true } } },
       });
-      this.mailService.creatorScheduledForDeletion(creator);
+
+      const email = creator.user.email;
+      this.mailService.creatorScheduledForDeletion(creator, email);
       return creator;
     } catch {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${id} does not exist`);
     }
   }
 
-  async pseudoRecover(slug: string) {
+  async pseudoRecover(id: number) {
     try {
-      return await this.prisma.creator.update({
-        where: { slug },
+      return await this.prisma.creatorChannel.update({
+        where: { id },
         data: { deletedAt: null },
       });
     } catch {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${id} does not exist`);
     }
   }
 
   async toggleDate({
-    slug,
+    id,
     property,
   }: {
-    slug: string;
+    id: number;
     property: CreatorStatusProperty;
   }): Promise<string | void> {
-    const creator = await this.prisma.creator.findFirst({
-      where: { slug },
+    const creator = await this.prisma.creatorChannel.findFirst({
+      where: { id },
+      include: { user: { select: { email: true } } },
     });
     if (!creator) {
-      throw new NotFoundException(`Creator ${slug} does not exist`);
+      throw new NotFoundException(`Creator ${id} does not exist`);
     }
-    const updatedCreator = await this.prisma.creator.update({
+    const updatedCreator = await this.prisma.creatorChannel.update({
       data: {
         [property]: !!creator[property] ? null : new Date(),
       },
-      where: { slug },
+      where: { id },
     });
 
     this.discordService.creatorStatusUpdated(updatedCreator, property);
     if (updatedCreator.verifiedAt) {
+      const email = creator.user.email;
+
       await this.cacheService.deleteByPattern(CachePath.CREATOR_GET_MANY);
-      this.mailService.creatorVerified(updatedCreator);
-    }
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_NOON)
-  protected async bumpNewCreatorsWithUnverifiedEmails() {
-    const newUnverifiedCreators = await this.prisma.creator.findMany({
-      where: {
-        AND: [
-          { emailVerifiedAt: null },
-          // created more than 3 days ago
-          { createdAt: { lte: subDays(new Date(), 3) } },
-          // created not longer than 4 days ago
-          { createdAt: { gte: subDays(new Date(), 4) } },
-        ],
-      },
-    });
-
-    for (const creator of newUnverifiedCreators) {
-      this.mailService.bumpCreatorWithEmailVerification(creator);
-      await sleep(10000); // sleep 10 seconds to prevent spam
+      this.mailService.creatorVerified(updatedCreator, email);
+      this.activityService.indexCreatorFeedActivity(
+        id,
+        id.toString(),
+        ActivityTargetType.Creator,
+        CreatorActivityFeedType.CreatorVerified,
+      );
     }
   }
 
   // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   protected async clearCreatorsQueuedForRemoval() {
-    const where = { where: { deletedAt: { lte: subDays(new Date(), 30) } } };
-    const creatorsToRemove = await this.prisma.creator.findMany(where);
+    const creatorsToRemove = await this.prisma.creatorChannel.findMany({
+      where: { deletedAt: { lte: subDays(new Date(), 30) } },
+      include: { user: { select: { email: true } } },
+    });
 
     for (const creator of creatorsToRemove) {
-      await this.mailService.creatorDeleted(creator);
+      const email = creator.user.email;
+      await this.mailService.creatorDeleted(creator, email);
 
-      await this.prisma.creator.delete({ where: { id: creator.id } });
+      await this.prisma.creatorChannel.delete({ where: { id: creator.id } });
 
       const s3Folder = getS3Folder(creator.s3BucketSlug);
       await this.s3.deleteFolder(s3Folder);
     }
   }
 
-  async dowloadAssets(slug: string) {
-    const creator = await this.prisma.creator.findUnique({ where: { slug } });
+  async dowloadAssets(id: number) {
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: { id },
+    });
 
-    const assets = this.s3.getAttachments([
-      creator.avatar,
-      creator.banner,
-      creator.logo,
-    ]);
+    const assets = this.s3.getAttachments([creator.banner, creator.avatar]);
     return assets;
   }
 }

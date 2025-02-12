@@ -20,7 +20,7 @@ import { toUserComicIssueDto, UserComicIssueDto } from './user-comic-issue.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ComicIssue,
-  Creator,
+  CreatorChannel,
   Comic,
   UserComicIssue,
   ComicIssueCollaborator,
@@ -151,7 +151,9 @@ export class ComicIssueDto {
   // royaltyWallets: RoyaltyWalletDto[];
 }
 
-type WithComic = { comic?: Comic & { creator?: Creator; genres?: Genre[] } };
+type WithComic = {
+  comic?: Comic & { creator?: CreatorChannel; genres?: Genre[] };
+};
 type WithGenres = { genres?: Genre[] };
 type WithStats = { stats?: ComicIssueStats };
 type WithMyStats = { myStats?: UserComicIssue & { canRead: boolean } };

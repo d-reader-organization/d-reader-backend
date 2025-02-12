@@ -2,43 +2,34 @@ import { plainToInstance, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
-  IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsPositive,
   IsString,
   IsUrl,
   MaxLength,
 } from 'class-validator';
-import { IsKebabCase } from 'src/decorators/IsKebabCase';
-import { Creator } from '@prisma/client';
+import { CreatorChannel } from '@prisma/client';
 import { getPublicUrl } from 'src/aws/s3client';
 import { IsOptionalUrl } from 'src/decorators/IsOptionalUrl';
 import { IsSolanaAddress } from 'src/decorators/IsSolanaAddress';
 import { IsOptionalString } from 'src/decorators/IsOptionalString';
 import { PartialGenreDto } from 'src/genre/dto/partial-genre.dto';
+import { DISPLAY_NAME_MAX_SIZE } from 'src/constants';
 
 export class RawCreatorDto {
   @IsPositive()
   id: number;
 
-  @IsEmail()
-  email: string;
-
   @IsNotEmpty()
   @MaxLength(54)
-  name: string;
+  handle: string;
 
   @IsNotEmpty()
-  @IsKebabCase()
-  slug: string;
+  @MaxLength(DISPLAY_NAME_MAX_SIZE)
+  displayName: string;
 
   @IsDateString()
   verifiedAt: string;
-
-  @IsOptional()
-  @IsDateString()
-  emailVerifiedAt?: string;
 
   @IsUrl()
   avatar: string;
@@ -46,16 +37,9 @@ export class RawCreatorDto {
   @IsUrl()
   banner: string;
 
-  @IsUrl()
-  logo: string;
-
   @IsString()
   @MaxLength(512)
   description: string;
-
-  @IsString()
-  @MaxLength(128)
-  flavorText: string;
 
   @IsSolanaAddress()
   @IsOptionalString()
@@ -78,19 +62,15 @@ export class RawCreatorDto {
   genres?: PartialGenreDto[];
 }
 
-export function toRawCreatorDto(creator: Creator) {
+export function toRawCreatorDto(creator: CreatorChannel) {
   const plainRawCreatorDto: RawCreatorDto = {
     id: creator.id,
-    email: creator.email,
-    name: creator.name,
-    slug: creator.slug,
+    handle: creator.handle,
+    displayName: creator.displayName,
     verifiedAt: creator.verifiedAt?.toISOString(),
-    emailVerifiedAt: creator.emailVerifiedAt?.toISOString(),
     avatar: getPublicUrl(creator.avatar),
     banner: getPublicUrl(creator.banner),
-    logo: getPublicUrl(creator.logo),
     description: creator.description,
-    flavorText: creator.flavorText,
     tippingAddress: creator.tippingAddress,
     website: creator.website,
     twitter: creator.twitter,
@@ -102,6 +82,6 @@ export function toRawCreatorDto(creator: Creator) {
   return creatorDto;
 }
 
-export const toRawCreatorDtoArray = (creators: Creator[]) => {
+export const toRawCreatorDtoArray = (creators: CreatorChannel[]) => {
   return creators.map(toRawCreatorDto);
 };

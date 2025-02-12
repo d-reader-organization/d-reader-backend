@@ -1,3 +1,5 @@
+import { CreatorActivityFeedType } from '@prisma/client';
+
 export const ERROR_MESSAGES = {
   CANDY_MACHINE_NOT_FOUND: (address: string) =>
     `Candy Machine with address ${address} does not exist`,
@@ -51,7 +53,8 @@ export const ERROR_MESSAGES = {
     'New password must be different from your current password.',
   EMAIL_ALREADY_VERIFIED: 'Email already verified',
   EMAIL_NOT_VERIFIED: 'Your email address has not been verified',
-  CREATOR_NOT_FOUND: (slug: string) => `Creator ${slug} does not exist`,
+  CREATOR_NOT_FOUND: (id: number | string) => `Creator ${id} does not exist`,
+  USER_ALREADY_HAS_CREATOR_CHANNEL: `User already has a creator channel`,
   NAME_ALREADY_TAKEN: (name: string) => `${name} already taken`,
   SLUG_ALREADY_TAKEN: (slug: string) => `${slug} already taken`,
   EMAIL_ALREADY_TAKEN: (email: string) => `${email} already taken`,
@@ -128,4 +131,16 @@ export const ERROR_MESSAGES = {
     `You have used all your available spins. Try again in ${cooldownMessage}.`,
   PRIVY_NO_ACCOUNT_OR_WALLET: 'Account or wallet not provided',
   INVALID_RESPONSE_BODY: 'Invalid response body',
+  SIGNATURE_REQUEST_PENDING: (address: string) =>
+    `signature request for comic ${address} is pending, wait for sometime before requesting again`,
+  FAILED_TO_INDEX_ACTIVITY: (
+    id: string,
+    type: CreatorActivityFeedType,
+    e: Error,
+  ) => `failed to index activity ${type} for id ${id} : ${e.toString()}`,
+  FAILED_TO_TAKE_SNAPSHOT: (
+    id: string,
+    type: 'comicIssue' | 'comic' | 'creator',
+    e: Error,
+  ) => `failed to take snapshot for ${type} with id ${id} : ${e.toString()}`,
 };

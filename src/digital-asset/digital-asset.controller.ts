@@ -10,14 +10,14 @@ import {
 import { UserAuth } from '../guards/user-auth.guard';
 import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
-import { memoizeThrottle } from '../utils/lodash';
-import { hours } from '@nestjs/throttler';
-import { BotGateway } from '../discord/bot.gateway';
 import {
   CollectibleComicDto,
   toCollectibleComicDtoArray,
 } from './dto/collectible-comic.dto';
 import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
+import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
+import { BotGateway } from 'src/discord/bot.gateway';
+import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 
 @ApiTags('Assets')
 @Controller('asset')
@@ -65,19 +65,24 @@ export class DigitalAssetController {
     return toDigitalAssetDto(asset);
   }
 
-  private throttledRequestAutograph = memoizeThrottle(
-    async (address: string, username: string) =>
-      await this.discordBotGateway.requestAutograph(username, address),
-    hours(24),
-  );
-
   @UserAuth()
   @Post('request-autograph/:address')
   async requestAutograph(
     @Param('address') address: string,
     @UserEntity() user: UserPayload,
   ) {
-    return await this.throttledRequestAutograph(address, user.username);
+    await this.digitalAssetService.requestCollectibleComicSignature(address);
+    await this.discordBotGateway.requestAutograph(user.username, address);
+  }
+
+  @AdminOrCreatorOwner()
+  @Get('get/autograph-requests')
+  async getAutographRequests(
+    params: AutographRequestFilterParams,
+  ): Promise<CollectibleComicDto[]> {
+    const collectibleComics =
+      await this.digitalAssetService.findAutographRequests(params);
+    return toCollectibleComicDtoArray(collectibleComics);
   }
 
   @Post('create/print-edition-collection/:address')

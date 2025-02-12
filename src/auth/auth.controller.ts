@@ -4,11 +4,7 @@ import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { Throttle } from '@nestjs/throttler';
 import { UserService } from '../user/user.service';
-import {
-  validateCreatorName,
-  validateEmail,
-  validateName,
-} from '../utils/user';
+import { validateEmail, validateUserName } from '../utils/user';
 import { LoginDto } from '../types/login.dto';
 import { GoogleRegisterDto, RegisterDto } from '../types/register.dto';
 import {
@@ -37,7 +33,7 @@ export class AuthController {
   @Throttle(LOOSE_THROTTLER_CONFIG)
   @Get('user/validate-name/:name')
   async validateUsername(@Param('name') name: string) {
-    validateName(name);
+    validateUserName(name);
     return await this.userService.throwIfNameTaken(name);
   }
 
@@ -94,41 +90,10 @@ export class AuthController {
 
   // CREATOR ENDPOINTS
   @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Get('creator/validate-name/:name')
-  async validateCreatorName(@Param('name') name: string) {
-    validateCreatorName(name);
-    return await this.creatorService.throwIfNameTaken(name);
-  }
-
-  @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Get('creator/validate-email/:email')
-  async validateCreatorEmail(@Param('email') email: string) {
-    validateEmail(email);
-    return await this.creatorService.throwIfEmailTaken(email);
-  }
-
-  /* Register a new user */
-  @Post('creator/register')
-  async registerCreator(
-    @Body() registerDto: RegisterDto,
-  ): Promise<Authorization> {
-    const creator = await this.creatorService.register(registerDto);
-    return this.authService.authorizeCreator(creator);
-  }
-
-  /* Login as a user */
-  @Patch('creator/login')
-  async loginCreator(@Body() loginDto: LoginDto): Promise<Authorization> {
-    const creator = await this.creatorService.login(loginDto);
-    return this.authService.authorizeCreator(creator);
-  }
-
-  // Should this be an authorized endpoint? How do refresh tokens actually work??
-  /* Refresh access token */
-  @Throttle(LOOSE_THROTTLER_CONFIG)
-  @Patch('creator/refresh-token/:refreshToken')
-  async reauthorizeCreator(@Param('refreshToken') refreshToken: string) {
-    return await this.authService.refreshAccessToken(refreshToken);
+  @Get('creator/validate-handle/:handle')
+  async validateCreatorHandle(@Param('handle') handle: string) {
+    validateUserName(handle);
+    return await this.creatorService.throwIfHandleTaken(handle);
   }
 
   // WALLET ENDPOINTS

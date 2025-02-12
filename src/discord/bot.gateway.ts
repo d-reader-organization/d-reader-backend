@@ -77,7 +77,7 @@ export class BotGateway {
       throw new BadRequestException(ERROR_MESSAGES.ASSET_NOT_FOUND(address));
     }
 
-    const creator = await this.prisma.creator.findFirst({
+    const creator = await this.prisma.creatorChannel.findFirst({
       where: {
         comics: {
           some: {
@@ -208,7 +208,7 @@ export class BotGateway {
       await this.comicIssueService.toggleDate({ id: +value, property });
     } else if (key === DiscordKey.Creator) {
       await this.creatorService.toggleDate({
-        slug: value,
+        id: +value,
         property: 'verifiedAt',
       });
     }

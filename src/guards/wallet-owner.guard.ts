@@ -25,7 +25,6 @@ export class WalletUpdateGuard implements CanActivate {
 
     if (!address) return true;
     if (!requestUser) return false;
-    if (requestUser.type !== 'user') return false;
 
     const wallet = await this.prisma.wallet.findUnique({
       where: { address },

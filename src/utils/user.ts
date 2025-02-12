@@ -14,19 +14,19 @@ import { User, Wallet } from '@prisma/client';
 
 export function findUsernameError(name: string) {
   if (typeof name !== 'string') {
-    return `Bad name format: ${name || '<unknown>'}`;
+    return `Bad Username format: ${name || '<unknown>'}`;
   } else if (!maxLength(name, USERNAME_MAX_SIZE)) {
-    return `Name can have max ${USERNAME_MAX_SIZE} characters`;
+    return `Username can have max ${USERNAME_MAX_SIZE} characters`;
   } else if (!minLength(name, USERNAME_MIN_SIZE)) {
-    return `Name must have atleast ${USERNAME_MIN_SIZE} characters`;
+    return `Username must have atleast ${USERNAME_MIN_SIZE} characters`;
   } else if (!USERNAME_REGEX.test(name)) {
-    return 'Name can only have A-Z, 0-9, underscore, and hypen characters';
+    return 'Username can only have A-Z, 0-9 and underscore characters';
   } else if (naughtyWords.includes(name.toLowerCase())) {
-    return 'Naughty word detected. Please use another name or contact us if you think this is a mistake';
+    return 'Naughty word detected. Please use another username or contact us if you think this is a mistake';
   }
 }
 
-export function validateName(name: string) {
+export function validateUserName(name: string) {
   const usernameError = findUsernameError(name);
   if (usernameError) throw new BadRequestException(usernameError);
   return true;
@@ -50,16 +50,6 @@ export function validatePassword(password: string) {
   const passwordError = findPasswordError(password);
   if (passwordError) throw new BadRequestException(passwordError);
   return true;
-}
-
-export function validateCreatorName(name: string) {
-  if (typeof name !== 'string') {
-    throw new BadRequestException(`Bad name format: ${name || '<unknown>'}`);
-  } else if (!maxLength(name, USERNAME_MAX_SIZE)) {
-    throw new BadRequestException(`Max ${USERNAME_MAX_SIZE} characters`);
-  } else if (!minLength(name, USERNAME_MIN_SIZE)) {
-    throw new BadRequestException(`Min ${USERNAME_MIN_SIZE} characters`);
-  }
 }
 
 export function validateEmail(email: string) {

@@ -29,9 +29,9 @@ export class CreatorAuthGuard extends AuthGuard('jwt') {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const creator = request.user;
-    if (!creator) return false;
-    if (creator.type !== 'creator') return false;
+    const user = request.user;
+    if (!user) return false;
+    if (user.role !== 'Creator') return false;
 
     return parentCanActivate;
   }

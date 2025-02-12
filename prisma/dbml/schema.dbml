@@ -33,6 +33,8 @@ Table User {
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
   interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
+  channel CreatorChannel
+  creatorActivityFeeds CreatorActivityFeed [not null]
 }
 
 Table Wallet {
@@ -50,18 +52,13 @@ Table Wallet {
   wheelRewardReceipt WheelRewardReceipt [not null]
 }
 
-Table Creator {
+Table CreatorChannel {
   id Int [pk, increment]
-  email String [unique, not null]
-  name String [unique, not null]
-  slug String [unique, not null]
-  password String [not null]
-  role Role [not null, default: 'User']
-  avatar String [not null, default: '']
+  handle String [unique, not null]
+  displayName String [not null]
   banner String [not null, default: '']
-  logo String [not null, default: '']
+  avatar String [not null, default: '']
   description String [not null, default: '']
-  flavorText String [not null, default: '']
   website String [not null, default: '']
   twitter String [not null, default: '']
   instagram String [not null, default: '']
@@ -69,16 +66,17 @@ Table Creator {
   discordId String [not null, default: '']
   tippingAddress String [not null, default: '']
   s3BucketSlug String [unique, not null]
+  comics Comic [not null]
+  followers UserCreator [not null]
+  user User [not null]
+  userId Int [unique, not null]
   createdAt DateTime [default: `now()`, not null]
-  deletedAt DateTime
   featuredAt DateTime
   verifiedAt DateTime
   popularizedAt DateTime
-  lastLogin DateTime
-  lastActiveAt DateTime
-  emailVerifiedAt DateTime
-  comics Comic [not null]
-  userCreator UserCreator [not null]
+  deletedAt DateTime
+  activityFeed CreatorActivityFeed [not null]
+  snapshots CreatorSnapshot [not null]
 }
 
 Table Comic {
@@ -108,9 +106,10 @@ Table Comic {
   genres Genre [not null]
   issues ComicIssue [not null]
   users UserComic [not null]
-  creator Creator [not null]
+  creator CreatorChannel [not null]
   creatorId Int [not null]
   collaborators ComicCollaborator [not null]
+  snapshots ComicSnapshot [not null]
 }
 
 Table UserComic {
@@ -175,6 +174,7 @@ Table ComicIssue {
   pages ComicPage [not null]
   users UserComicIssue [not null]
   collaborators ComicIssueCollaborator [not null]
+  snapshots ComicIssueSnapshot [not null]
 
   indexes {
     (number, comicSlug) [unique]
@@ -248,6 +248,7 @@ Table CollectibleComic {
   receipt CandyMachineReceipt
   receiptId Int
   digitalAsset DigitalAsset [not null]
+  signatureRequest SignatureRequest [not null]
 }
 
 Table CandyMachine {
@@ -267,6 +268,7 @@ Table CandyMachine {
   items CollectibleComic [not null]
   receipts CandyMachineReceipt [not null]
   standard TokenStandard [not null, default: 'Core']
+  deletedAt DateTime
   isFeatured Boolean [not null, default: true]
 }
 
@@ -383,7 +385,7 @@ Table CarouselSlide {
   priority Int [not null]
   comicIssueId Int
   comicSlug String
-  creatorSlug String
+  creatorHandle String
   externalLink String
   publishedAt DateTime [default: `now()`, not null]
   expiredAt DateTime [not null]
@@ -408,14 +410,14 @@ Table UserComicIssue {
 }
 
 Table UserCreator {
-  creator Creator [not null]
-  creatorSlug String [not null]
+  creator CreatorChannel [not null]
+  creatorId Int [not null]
   user User [not null]
   userId Int [not null]
   followedAt DateTime
 
   indexes {
-    (creatorSlug, userId) [pk]
+    (creatorId, userId) [pk]
   }
 }
 
@@ -767,6 +769,58 @@ Table PhysicalItem {
   image String [not null, default: '']
 }
 
+Table SignatureRequest {
+  id Int [pk, increment]
+  collectibleComicAddress String [not null]
+  collectibleComic CollectibleComic [not null]
+  resolvedAt DateTime [not null]
+  status SignatureRequestStatus [not null, default: 'Pending']
+  createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (collectibleComicAddress, resolvedAt) [unique]
+  }
+}
+
+Table CreatorActivityFeed {
+  id Int [pk, increment]
+  creatorId Int [not null]
+  creator CreatorChannel [not null]
+  targetId String [not null]
+  targetType ActivityTargetType [not null]
+  user User
+  userId Int
+  createdAt DateTime [default: `now()`, not null]
+  type CreatorActivityFeedType [not null]
+}
+
+Table CreatorSnapshot {
+  id Int [pk, increment]
+  creatorId Int [not null]
+  creator CreatorChannel [not null]
+  value Int [not null]
+  type CreatorSnapshotType [not null]
+  timestamp DateTime [not null]
+}
+
+Table ComicSnapshot {
+  id Int [pk, increment]
+  comicSlug String [not null]
+  comic Comic [not null]
+  value Int [not null]
+  type ComicSnapshotType [not null]
+  timestamp DateTime [not null]
+}
+
+Table ComicIssueSnapshot {
+  id Int [pk, increment]
+  comicIssueId Int [not null]
+  comicIssue ComicIssue [not null]
+  value Int [not null]
+  type ComicIssueSnapshotType [not null]
+  timestamp DateTime [not null]
+}
+
 Enum WalletProvider {
   NonCustodial
   Embedded
@@ -777,6 +831,7 @@ Enum Role {
   Admin
   Tester
   User
+  Creator
 }
 
 Enum AudienceType {
@@ -867,11 +922,63 @@ Enum WheelRewardType {
   None
 }
 
+Enum SignatureRequestStatus {
+  Approved
+  Pending
+  Rejected
+}
+
+Enum CreatorActivityFeedType {
+  ComicRated
+  ComicLiked
+  ComicBookmarked
+  ComicVerified
+  ComicPublished
+  ComicIssueLiked
+  ComicIssueRated
+  ComicIssueVerified
+  ComicIssuePublished
+  CreatorFollow
+  CreatorVerified
+}
+
+Enum ActivityTargetType {
+  Creator
+  Comic
+  ComicIssue
+}
+
+Enum CreatorSnapshotType {
+  Follower
+  Reader
+  View
+  Like
+  Bookmark
+  Sale
+  Royalty
+  Other
+}
+
+Enum ComicSnapshotType {
+  Reader
+  Like
+  Bookmark
+  View
+}
+
+Enum ComicIssueSnapshotType {
+  Reader
+  Like
+  View
+}
+
 Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
 
-Ref: Comic.creatorId > Creator.id [delete: Cascade]
+Ref: CreatorChannel.userId - User.id
+
+Ref: Comic.creatorId > CreatorChannel.id [delete: Cascade]
 
 Ref: UserComic.comicSlug > Comic.slug [delete: Cascade]
 
@@ -927,7 +1034,7 @@ Ref: UserComicIssue.comicIssueId > ComicIssue.id [delete: Cascade]
 
 Ref: UserComicIssue.userId > User.id [delete: Cascade]
 
-Ref: UserCreator.creatorSlug > Creator.slug [delete: Cascade]
+Ref: UserCreator.creatorId > CreatorChannel.id [delete: Cascade]
 
 Ref: UserCreator.userId > User.id [delete: Cascade]
 
@@ -992,3 +1099,15 @@ Ref: WheelRewardReceipt.rewardId > WheelReward.id
 Ref: WheelRewardReceipt.userId > User.id
 
 Ref: WheelRewardReceipt.walletAddress > Wallet.address
+
+Ref: SignatureRequest.collectibleComicAddress > CollectibleComic.address
+
+Ref: CreatorActivityFeed.creatorId > CreatorChannel.id
+
+Ref: CreatorActivityFeed.userId > User.id
+
+Ref: CreatorSnapshot.creatorId > CreatorChannel.id [delete: Cascade]
+
+Ref: ComicSnapshot.comicSlug > Comic.slug [delete: Cascade]
+
+Ref: ComicIssueSnapshot.comicIssueId > ComicIssue.id [delete: Cascade]

@@ -1,12 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { UserComic } from '@prisma/client';
+import {
+  ActivityTargetType,
+  CreatorActivityFeedType,
+  UserComic,
+} from '@prisma/client';
 import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class UserComicService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+    private readonly activityService: ActivityService,
+  ) {}
+
+  async getFavouriteCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, favouritedAt: { not: null } },
+    });
+  }
+
+  async getBookmarkCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, bookmarkedAt: { not: null } },
+    });
+  }
+
+  async getViewerCount(comicSlug: string) {
+    return this.prisma.userComic.count({
+      where: { comicSlug, viewedAt: { not: null } },
+    });
+  }
 
   async getComicStats(comicSlug: string): Promise<ComicStats> {
     const aggregate = this.prisma.userComic.aggregate({
@@ -15,9 +44,7 @@ export class UserComicService {
       _count: true,
     });
 
-    const countFavourites = this.prisma.userComic.count({
-      where: { comicSlug, favouritedAt: { not: null } },
-    });
+    const countFavourites = this.getFavouriteCount(comicSlug);
 
     // const countBookmarks = this.prisma.userComic.count({
     //   where: { comicSlug, bookmarkedAt: { not: null } },
@@ -27,9 +54,7 @@ export class UserComicService {
     //   where: { comicSlug, subscribedAt: { not: null } },
     // });
 
-    const countViewers = this.prisma.userComic.count({
-      where: { comicSlug, viewedAt: { not: null } },
-    });
+    const countViewers = this.getViewerCount(comicSlug);
 
     const countIssues = this.prisma.comicIssue.count({
       where: {
@@ -94,11 +119,83 @@ export class UserComicService {
   }
 
   async rate(userId: number, comicSlug: string, rating: number) {
-    return this.prisma.userComic.upsert({
+    const { user, comic, ...userComic } = await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, rating },
       update: { rating },
+      include: { comic: true, user: true },
     });
+
+    this.activityService.indexCreatorFeedActivity(
+      comic.creatorId,
+      comicSlug,
+      ActivityTargetType.Comic,
+      CreatorActivityFeedType.ComicRated,
+      userId,
+    );
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.ComicRated,
+      targetId: comic.slug,
+      targetTitle: comic.title,
+    });
+    return userComic;
+  }
+
+  async bookmark(userId: number, comicSlug: string) {
+    const userComic = await this.toggleDate(userId, comicSlug, 'bookmarkedAt');
+
+    if (userComic.bookmarkedAt) {
+      const comic = await this.prisma.comic.findUnique({
+        where: { slug: comicSlug },
+      });
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      this.activityService.indexCreatorFeedActivity(
+        comic.creatorId,
+        comicSlug,
+        ActivityTargetType.Comic,
+        CreatorActivityFeedType.ComicBookmarked,
+        userId,
+      );
+
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ComicBookmarked,
+        targetId: comic.slug,
+        targetTitle: comic.title,
+      });
+    }
+
+    return userComic;
+  }
+
+  async favouritise(userId: number, comicSlug: string) {
+    const userComic = await this.toggleDate(userId, comicSlug, 'favouritedAt');
+
+    if (userComic.favouritedAt) {
+      const comic = await this.prisma.comic.findUnique({
+        where: { slug: comicSlug },
+      });
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      await this.activityService.indexCreatorFeedActivity(
+        comic.creatorId,
+        comicSlug,
+        ActivityTargetType.Comic,
+        CreatorActivityFeedType.ComicLiked,
+        userId,
+      );
+
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ComicLiked,
+        targetId: comic.slug,
+        targetTitle: comic.title,
+      });
+    }
+
+    return userComic;
   }
 
   async toggleDate(
@@ -112,7 +209,6 @@ export class UserComicService {
 
     // if date is existing, remove it, otherwise add a new date
     const updatedDate = !!userComic?.[property] ? null : new Date();
-
     return await this.prisma.userComic.upsert({
       where: { comicSlug_userId: { userId, comicSlug } },
       create: { userId, comicSlug, [property]: new Date() },
