@@ -175,20 +175,6 @@ export class UserController {
     return toUserDto(updatedUser);
   }
 
-  /* Redeem a referral by user name, email, or id */
-  @UserOwnerAuth()
-  @Patch('redeem-referral/:referrer')
-  async redeemReferral(
-    @Param('referrer') referrer: string,
-    @UserEntity() user: UserPayload,
-  ) {
-    const updatedUser = await this.userService.redeemReferral(
-      referrer,
-      user.id,
-    );
-    return toUserDto(updatedUser);
-  }
-
   private throttledSyncWallets = memoizeThrottle(
     (id: number) => this.userService.syncWallets(id),
     minutes(3),

@@ -1,11 +1,12 @@
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { TransformStringToNumber } from 'src/utils/transform';
 
 export class ExpressInterestDto {
-  @IsString()
-  transaction: string;
-
   @TransformStringToNumber()
   @IsNumber()
   expressedAmount: number;
+
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

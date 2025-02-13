@@ -143,4 +143,8 @@ export const ERROR_MESSAGES = {
     type: 'comicIssue' | 'comic' | 'creator',
     e: Error,
   ) => `failed to take snapshot for ${type} with id ${id} : ${e.toString()}`,
+  FAILED_TO_EXPRESS_INTEREST: (slug: string) =>
+    `Failed to express interest for project ${slug}, try again!`,
+  PROJECT_NOT_FOUND: (slug: string) =>
+    `Project with slug ${slug} doesn't exists`,
 };

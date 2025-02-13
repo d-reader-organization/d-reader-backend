@@ -64,7 +64,6 @@ model Wallet {
   mintReceipts                   CandyMachineReceipt[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedWallet[]
   digitalAssets                  DigitalAsset[]
-  interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
 }
 
@@ -756,9 +755,6 @@ model DigitalAssetTrait {
 model UserInterestedReceipt {
   id                   Int      @id @default(autoincrement())
   projectSlug          String
-  walletAddress        String
-  wallet               Wallet   @relation(fields: [walletAddress], references: [address])
-  transactionSignature String   @unique
   timestamp            DateTime
   userId               Int
   user                 User     @relation(fields: [userId], references: [id])

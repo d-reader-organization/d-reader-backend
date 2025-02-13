@@ -7,8 +7,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { UpdateUserDto } from '../types/update-user.dto';
 import * as jdenticon from 'jdenticon';
 import { s3File, s3Service } from '../aws/s3.service';
-import { isSolanaAddress } from '../decorators/IsSolanaAddress';
-import { PickFields, Referee } from '../types/shared';
+import { PickFields } from '../types/shared';
 import { isEmail } from 'class-validator';
 import { RegisterDto } from '../types/register.dto';
 import { LoginDto } from '../types/login.dto';
@@ -22,7 +21,7 @@ import { PasswordService } from '../auth/password.service';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
 import { insensitive } from '../utils/lodash';
-import { ConsentType, User, UserPrivacyConsent, Wallet } from '@prisma/client';
+import { ConsentType, User, UserPrivacyConsent } from '@prisma/client';
 import { UserFilterParams } from './dto/user-params.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { sleep } from '../utils/helpers';
@@ -246,15 +245,13 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const { referrer, username, displayName, email } = updateUserDto;
+    const { username, displayName, email } = updateUserDto;
 
     const user = await this.findOne(id);
     const isEmailUpdated = email && user.email !== email;
     const isUsernameUpdated = username && user.username !== username;
     const isDisplayNameUpdated =
       displayName && user.displayName !== displayName;
-
-    if (referrer) await this.redeemReferral(referrer, id);
 
     if (isEmailUpdated) {
       validateEmail(email);
@@ -404,9 +401,6 @@ export class UserService {
       await this.mailService.userEmailChanged(updatedUser);
     }
 
-    await this.walletService.makeEligibleForReferralBonus(user.id);
-    await this.walletService.makeEligibleForReferralBonus(user.referrerId);
-
     return updatedUser;
   }
 
@@ -469,80 +463,6 @@ export class UserService {
     const oldFileKey = user.avatar;
     await this.s3.garbageCollectOldFiles([], [oldFileKey]);
     return updateUser;
-  }
-
-  async redeemReferral(referrerId: string, refereeId: number) {
-    if (!referrerId) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.REFERRER_NAME_OR_ADDRESS_UNDEFINED,
-      );
-    } else if (!refereeId) {
-      throw new BadRequestException(ERROR_MESSAGES.REFEREE_ID_MISSING);
-    }
-
-    // if the search string is of type Solana address, search by address
-    // if the search string is of type email, search by email
-    // if the search string is of type string, search by name
-    let referrer: { referrals: Referee[]; wallets: Wallet[] } & User;
-    if (isSolanaAddress(referrerId)) {
-      const wallet = await this.prisma.wallet.findUnique({
-        where: { address: referrerId },
-        include: {
-          user: {
-            include: {
-              referrals: { include: { wallets: true } },
-              wallets: true,
-            },
-          },
-        },
-      });
-      referrer = wallet.user;
-    } else if (isEmail(referrerId)) {
-      referrer = await this.prisma.user.findFirst({
-        where: { email: insensitive(referrerId) },
-        include: { referrals: { include: { wallets: true } }, wallets: true },
-      });
-    } else {
-      referrer = await this.prisma.user.findFirst({
-        where: { username: insensitive(referrerId) },
-        include: { referrals: { include: { wallets: true } }, wallets: true },
-      });
-    }
-
-    if (!referrer) {
-      throw new BadRequestException(`User '${referrerId}' doesn't exist`);
-    } else if (referrer.referralsRemaining == 0) {
-      throw new BadRequestException(
-        `${referrer.username} has no referrals left`,
-      );
-    } else if (referrer.id === refereeId) {
-      throw new BadRequestException('Cannot refer yourself');
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: refereeId },
-      include: { wallets: true },
-    });
-
-    if (!!user.referredAt) {
-      throw new BadRequestException(
-        ERROR_MESSAGES.USER_ALREADY_REFERRED(user.username),
-      );
-    }
-
-    const updatedUser = await this.prisma.user.update({
-      where: { id: refereeId },
-      data: {
-        referredAt: new Date(),
-        referrer: {
-          connect: { id: referrer.id },
-          update: { referralsRemaining: { decrement: 1 } },
-        },
-      },
-    });
-
-    await this.walletService.makeEligibleForReferralBonus(referrer.id);
-    return updatedUser;
   }
 
   async generateAvatar(id: number) {
@@ -625,18 +545,6 @@ export class UserService {
     input: CreateUserConsentDto & { userId: number },
   ): Promise<UserPrivacyConsent> {
     return this.prisma.userPrivacyConsent.create({ data: input });
-  }
-
-  /** make sure all verified users have at least 1 referral remaining each week */
-  @Cron(CronExpression.EVERY_WEEK)
-  protected async refillUserRemainingReferrals() {
-    await this.prisma.user.updateMany({
-      where: {
-        emailVerifiedAt: { not: null },
-        referralsRemaining: { lt: 2 },
-      },
-      data: { referralsRemaining: 2 },
-    });
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_NOON)
