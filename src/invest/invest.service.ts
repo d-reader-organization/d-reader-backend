@@ -69,7 +69,7 @@ export class InvestService {
     if (!referrer) {
       console.log(`'${referralCode}' doesn't exist`);
       return;
-    } else if (referrer.id === refereeId) {
+    } else if (referrer.id === refereeId || referrer.referralsRemaining == 0) {
       return;
     }
 
@@ -86,7 +86,10 @@ export class InvestService {
       where: { id: refereeId },
       data: {
         referredAt: new Date(),
-        referrer: { connect: { id: referrer.id } },
+        referrer: {
+          connect: { id: referrer.id },
+          update: { referralsRemaining: { decrement: 1 } },
+        },
       },
     });
 
