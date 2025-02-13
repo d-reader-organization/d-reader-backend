@@ -9,12 +9,6 @@ export class UserInterestedReceiptDto {
   @IsString()
   projectSlug: string;
 
-  @IsString()
-  walletAddress: string;
-
-  @IsString()
-  transactionSignature: string;
-
   @IsDate()
   timestamp: Date;
 
@@ -34,8 +28,6 @@ export function toUserInterestedReceiptDto(
   const plainUserInterestedReceiptDto: UserInterestedReceiptDto = {
     id: receipt.id,
     projectSlug: receipt.projectSlug,
-    walletAddress: receipt.walletAddress,
-    transactionSignature: receipt.transactionSignature,
     timestamp: receipt.timestamp,
     username: user.username,
     expressedAmount: receipt.expressedAmount,

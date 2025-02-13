@@ -3,7 +3,7 @@ import {
   Controller,
   Get,
   Param,
-  Post,
+  Patch,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -22,19 +22,20 @@ import { minutes } from '@nestjs/throttler';
 @Controller('invest')
 export class InvestController {
   constructor(private readonly investService: InvestService) {}
+
   @UserAuth()
-  @Post('/express-interest/:slug')
+  @Patch('/express-interest/:slug')
   async expressInterest(
     @Param('slug') slug: string,
     @Body() expressInterestDto: ExpressInterestDto,
     @UserEntity() user: UserPayload,
   ) {
-    const { transaction, expressedAmount } = expressInterestDto;
-    return this.investService.expressUserInterest(
-      transaction,
+    const { referralCode, expressedAmount } = expressInterestDto;
+    return await this.investService.expressUserInterest(
       slug,
       expressedAmount,
       user.id,
+      referralCode,
     );
   }
 

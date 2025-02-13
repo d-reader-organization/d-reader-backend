@@ -1,165 +1,82 @@
-import {
-  findAssociatedTokenPda,
-  setComputeUnitPrice,
-  transferSol,
-  transferTokens,
-} from '@metaplex-foundation/mpl-toolbox';
-import { encodeUmiTransaction } from '../utils/transactions';
-import { AddressLookupTableAccount } from '@solana/web3.js';
-import { TransactionMessage } from '@solana/web3.js';
-import { VersionedTransaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import {
-  FUNDS_DESTINATION_ADDRESS,
-  MIN_COMPUTE_PRICE,
-  SOL_ADDRESS,
-  USDC_ADDRESS,
-} from '../constants';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  publicKey,
-  createNoopSigner,
-  lamports,
-} from '@metaplex-foundation/umi';
-import { Umi } from '@metaplex-foundation/umi';
 import { PrismaService } from 'nestjs-prisma';
-import { getConnection, umi } from '../utils/metaplex';
-import { Connection } from '@solana/web3.js';
-import { isNull } from 'lodash';
 import { ProjectInput } from './dto/project.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { insensitive } from 'src/utils/lodash';
+import { PROJECT_SLUGS } from 'src/constants';
 
 @Injectable()
 export class InvestService {
-  private readonly connection: Connection;
-  private readonly umi: Umi;
-
-  constructor(private readonly prisma: PrismaService) {
-    this.umi = umi;
-    this.connection = getConnection();
-  }
-
-  async createExpressInterestTransaction(
-    walletAddress: string,
-    projectSlug: string,
-    userId: number,
-    splTokenAddress: string,
-  ) {
-    if (splTokenAddress !== SOL_ADDRESS && splTokenAddress !== USDC_ADDRESS) {
-      throw new BadRequestException(ERROR_MESSAGES.CURRENCY_NOT_SUPPORTED);
-    }
-
-    const isUserAlreadyInvested =
-      await this.prisma.userInterestedReceipt.findUnique({
-        where: { projectSlug_userId: { projectSlug, userId } },
-      });
-    if (isUserAlreadyInvested) {
-      throw new BadRequestException(ERROR_MESSAGES.ALREADY_EXPRESSED_INTEREST);
-    }
-
-    const isSol = splTokenAddress === SOL_ADDRESS;
-    const mint = publicKey(splTokenAddress);
-    const wallet = publicKey(walletAddress);
-
-    const solPrice = 0.005;
-    const usdcPrice = 1;
-
-    const signer = createNoopSigner(wallet);
-    const fundsTreasury = publicKey(FUNDS_DESTINATION_ADDRESS);
-
-    if (isSol) {
-      const amount = solPrice * LAMPORTS_PER_SOL;
-      const transferTransaction = await setComputeUnitPrice(this.umi, {
-        microLamports: MIN_COMPUTE_PRICE,
-      })
-        .add(
-          transferSol(this.umi, {
-            source: signer,
-            destination: fundsTreasury,
-            amount: lamports(amount),
-          }),
-        )
-        .buildAndSign({ ...this.umi, payer: signer });
-
-      return encodeUmiTransaction(transferTransaction);
-    } else {
-      const amount = usdcPrice * Math.pow(10, 6);
-      const source = findAssociatedTokenPda(this.umi, { mint, owner: wallet });
-      const destination = findAssociatedTokenPda(this.umi, {
-        mint,
-        owner: fundsTreasury,
-      });
-
-      const transferTransaction = await setComputeUnitPrice(this.umi, {
-        microLamports: MIN_COMPUTE_PRICE,
-      })
-        .add(transferTokens(this.umi, { source, destination, amount }))
-        .buildAndSign({ ...this.umi, payer: signer });
-      return encodeUmiTransaction(transferTransaction);
-    }
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async expressUserInterest(
-    expressInterestTransaction: string,
     projectSlug: string,
     expressedAmount: number,
     userId: number,
+    referralCode?: string,
   ) {
+    const isExists = PROJECT_SLUGS.includes(projectSlug);
+    if (!isExists) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.PROJECT_NOT_FOUND(projectSlug),
+      );
+    }
+
     try {
-      const transaction = VersionedTransaction.deserialize(
-        Buffer.from(expressInterestTransaction, 'base64'),
-      );
-
-      let lookupTableAccounts: AddressLookupTableAccount;
-      if (transaction.message.addressTableLookups.length) {
-        const lookupTableAddress =
-          transaction.message.addressTableLookups[0].accountKey;
-
-        const lookupTable = await this.connection.getAddressLookupTable(
-          lookupTableAddress,
-        );
-        lookupTableAccounts = lookupTable.value;
-      }
-
-      const instructions = TransactionMessage.decompile(transaction.message, {
-        addressLookupTableAccounts: lookupTableAccounts
-          ? [lookupTableAccounts]
-          : [],
-      });
-
-      const baseInstruction = instructions.instructions.at(-1);
-      const address = baseInstruction.keys[0].pubkey.toString();
-
-      const latestBlockhash = await this.connection.getLatestBlockhash({
-        commitment: 'confirmed',
-      });
-      const transactionSignature = await this.connection.sendTransaction(
-        transaction,
-      );
-      await this.connection.confirmTransaction({
-        ...latestBlockhash,
-        signature: transactionSignature,
-      });
-
-      await this.prisma.userInterestedReceipt.create({
-        data: {
-          transactionSignature,
+      await this.prisma.userInterestedReceipt.upsert({
+        where: { projectSlug_userId: { projectSlug, userId } },
+        update: {
+          expressedAmount: Math.min(1000, expressedAmount),
+        },
+        create: {
           projectSlug,
           timestamp: new Date(),
           expressedAmount: Math.min(1000, expressedAmount),
-          wallet: {
-            connectOrCreate: {
-              where: { address },
-              create: { address },
-            },
-          },
           user: {
             connect: { id: userId },
           },
         },
       });
+      await this.redeemReferral(userId, referralCode);
     } catch (e) {
-      console.error(ERROR_MESSAGES.TRANSACTION_FAILED, e);
+      throw new BadRequestException(
+        ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(projectSlug),
+      );
     }
+  }
+
+  async redeemReferral(refereeId: number, referralCode?: string) {
+    if (!referralCode) return;
+
+    const referrer = await this.prisma.user.findFirst({
+      where: { username: insensitive(referralCode) },
+    });
+
+    if (!referrer) {
+      console.log(`'${referralCode}' doesn't exist`);
+      return;
+    } else if (referrer.id === refereeId) {
+      return;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: refereeId },
+      include: { wallets: true },
+    });
+
+    if (!!user.referredAt) {
+      return;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: refereeId },
+      data: {
+        referredAt: new Date(),
+        referrer: { connect: { id: referrer.id } },
+      },
+    });
+
+    return updatedUser;
   }
 
   async findAllInvestProjects(): Promise<ProjectInput[]> {
@@ -199,7 +116,7 @@ export class InvestService {
       slug: projectSlug,
       countOfUserExpressedInterest: data?._count?.id || 0,
       expectedPledgedAmount: data?._sum?.expressedAmount || 0,
-      isUserInterested: !isNull(query),
+      expressedAmount: query.expressedAmount,
     };
   }
 

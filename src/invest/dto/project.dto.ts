@@ -1,11 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import {
-  IsBoolean,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class ProjectDto {
   @IsString()
@@ -20,22 +14,22 @@ export class ProjectDto {
   expectedPledgedAmount?: number;
 
   @IsOptional()
-  @IsBoolean()
-  isUserInterested?: boolean;
+  @IsNumber()
+  expressedAmount?: number;
 }
 
 export type ProjectInput = {
   slug: string;
   countOfUserExpressedInterest: number;
   expectedPledgedAmount?: number;
-  isUserInterested?: boolean;
+  expressedAmount?: number;
 };
 
 export function toProjectDto(projectInput: ProjectInput) {
   const plainProjectDto: ProjectDto = {
     slug: projectInput.slug,
     countOfUserExpressedInterest: projectInput.countOfUserExpressedInterest,
-    isUserInterested: projectInput.isUserInterested,
+    expressedAmount: projectInput.expressedAmount,
     expectedPledgedAmount: projectInput.expectedPledgedAmount,
   };
 

@@ -66,7 +66,6 @@ import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-para
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
 import { InvestService } from 'src/invest/invest.service';
-import { ExpressInterestTransactionParams } from 'src/invest/dto/express-interest-transaction-params.dto';
 import { GlobalThrottlerInterceptor } from 'src/interceptor/global-throttler-interceptor';
 import { Throttle } from '@nestjs/throttler';
 import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
@@ -83,26 +82,7 @@ export class TransactionController {
     private readonly investService: InvestService,
   ) {}
 
-  @UserAuth()
-  @Throttle(STRICT_THROTTLER_CONFIG)
-  @Get('/express-interest')
-  async constructExpressInterestTransaction(
-    @Query() query: ExpressInterestTransactionParams,
-    @UserEntity() user: UserPayload,
-  ) {
-    const splTokenAddress = query.splTokenAddress ?? SOL_ADDRESS;
-    const transaction =
-      await this.investService.createExpressInterestTransaction(
-        query.walletAddress,
-        query.projectSlug,
-        user.id,
-        splTokenAddress,
-      );
-    return transaction;
-  }
-
   /* For blink clients to make request for mint transaction */
-
   @Throttle(STRICT_THROTTLER_CONFIG)
   @Post('/blink/mint/:candyMachine')
   async constructBlinkMintTransaction(
