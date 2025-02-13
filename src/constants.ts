@@ -3,6 +3,7 @@ import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
 import { CONFIG } from './configs/config';
+import { INVEST_PROJECT } from './types/shared';
 
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
@@ -284,15 +285,15 @@ export const COLLECTION_MANAGER_MULTISIG =
     ? '5WXjY2qFMDg6hu2qgpHeQZwvKLLZsitXxtEYZeknA5Vu'
     : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';
 
-export const PROJECT_SLUGS = [
-  'the-recruits',
-  'inner-demons',
-  'mad-lads',
-  'bonk',
-  'galactic-geckos',
-  'enter-the-tensorverse',
-  'apt-323',
-  'dream-city',
-  'liberty-square-originz',
-  'the-lump-sum-saga',
+export const PROJECTS: INVEST_PROJECT[] = [
+  { slug: 'the-recruits', title: 'The Recruits' },
+  { slug: 'inner-demons', title: 'Inner Demons' },
+  { slug: 'mad-lads', title: 'Mad Lads' },
+  { slug: 'bonk', title: 'Bonk' },
+  { slug: 'galactic-geckos', title: 'Galactic Geckos' },
+  { slug: 'enter-the-tensorverse', title: 'Enter the Tensorverse' },
+  { slug: 'apt-323', title: 'Apt 323' },
+  { slug: 'dream-city', title: 'Dream City' },
+  { slug: 'liberty-square-originz', title: 'Liberty Square Originz' },
+  { slug: 'the-lump-sum-saga', title: 'The Lump Sum Saga' },
 ];

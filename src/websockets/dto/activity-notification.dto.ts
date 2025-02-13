@@ -14,6 +14,7 @@ export enum ActivityNotificationType {
   CollectibleComicMinted = 'CollectibleComicMinted',
   CreatorFollow = 'CreatorFollow',
   WheelSpun = 'WheelSpun',
+  ExpressedInterest = 'ExpressedInterest',
 }
 
 export class ActivityNotificationDto {
