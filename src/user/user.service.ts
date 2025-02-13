@@ -50,8 +50,9 @@ export class UserService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { name, email, password } = registerDto;
+    const { name: deprecatedName, username, email, password } = registerDto;
 
+    const name = username || deprecatedName;
     validateUserName(name);
     validateEmail(email);
 
