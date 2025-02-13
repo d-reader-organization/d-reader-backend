@@ -1,6 +1,7 @@
 import { User, UserInterestedReceipt } from '@prisma/client';
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import { IsDate, IsNumber, IsString } from 'class-validator';
+import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
 
 export class UserInterestedReceiptDto {
   @IsNumber()
@@ -12,8 +13,8 @@ export class UserInterestedReceiptDto {
   @IsDate()
   timestamp: Date;
 
-  @IsString()
-  username: string;
+  @Type(() => BasicUserDto)
+  user: BasicUserDto;
 
   @IsNumber()
   expressedAmount: number;
@@ -24,12 +25,11 @@ export type UserInterestedReceiptInput = UserInterestedReceipt & { user: User };
 export function toUserInterestedReceiptDto(
   receipt: UserInterestedReceiptInput,
 ) {
-  const user = receipt.user;
   const plainUserInterestedReceiptDto: UserInterestedReceiptDto = {
     id: receipt.id,
     projectSlug: receipt.projectSlug,
     timestamp: receipt.timestamp,
-    username: user.username,
+    user: toBasicUserDto(receipt.user),
     expressedAmount: receipt.expressedAmount,
   };
 
