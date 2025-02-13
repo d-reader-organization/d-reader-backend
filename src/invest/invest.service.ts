@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ProjectInput } from './dto/project.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { insensitive } from '../utils/lodash';
-import { PROJECTS } from '../constants';
+import { PROJECTS, REFERRAL_REWARDING_PROJECT } from '../constants';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
@@ -59,8 +59,13 @@ export class InvestService {
     }
   }
 
-  async redeemReferral(refereeId: number, referralCode?: string) {
+  async redeemReferral(
+    refereeId: number,
+    projectSlug: string,
+    referralCode?: string,
+  ) {
     if (!referralCode) return;
+    if (projectSlug !== REFERRAL_REWARDING_PROJECT) return;
 
     const referrer = await this.prisma.user.findFirst({
       where: { username: insensitive(referralCode) },

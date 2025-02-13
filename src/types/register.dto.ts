@@ -4,11 +4,12 @@ import { IsValidUsername } from '../decorators/IsValidUsername';
 import { IsStrongPassword } from '../decorators/IsStrongPassword';
 
 export class RegisterDto {
+  @IsOptional()
   @IsValidUsername()
   name?: string;
 
-  @IsValidUsername()
   @IsOptional()
+  @IsValidUsername()
   username?: string;
 
   @IsEmail()
