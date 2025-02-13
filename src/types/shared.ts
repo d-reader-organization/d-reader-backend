@@ -44,3 +44,5 @@ export enum ProgramSource {
   T_COMP = 'Tensor Compressed',
   UNKNOWN = 'UNKNOWN',
 }
+
+export type INVEST_PROJECT = { title: string; slug: string };

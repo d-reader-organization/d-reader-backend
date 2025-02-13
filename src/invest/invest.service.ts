@@ -2,12 +2,17 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { ProjectInput } from './dto/project.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
-import { insensitive } from 'src/utils/lodash';
-import { PROJECT_SLUGS } from 'src/constants';
+import { insensitive } from '../utils/lodash';
+import { PROJECTS } from '../constants';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 @Injectable()
 export class InvestService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly websocketGateway: WebSocketGateway,
+  ) {}
 
   async expressUserInterest(
     projectSlug: string,
@@ -15,16 +20,17 @@ export class InvestService {
     userId: number,
     referralCode?: string,
   ) {
-    const isExists = PROJECT_SLUGS.includes(projectSlug);
-    if (!isExists) {
+    const project = PROJECTS.find((project) => project.slug == projectSlug);
+    if (!project) {
       throw new BadRequestException(
         ERROR_MESSAGES.PROJECT_NOT_FOUND(projectSlug),
       );
     }
 
     try {
-      await this.prisma.userInterestedReceipt.upsert({
+      const { user } = await this.prisma.userInterestedReceipt.upsert({
         where: { projectSlug_userId: { projectSlug, userId } },
+        include: { user: true },
         update: {
           expressedAmount: Math.min(1000, expressedAmount),
         },
@@ -37,6 +43,14 @@ export class InvestService {
           },
         },
       });
+
+      this.websocketGateway.handleActivityNotification({
+        user,
+        type: ActivityNotificationType.ExpressedInterest,
+        targetId: projectSlug,
+        targetTitle: project.title,
+      });
+
       await this.redeemReferral(userId, referralCode);
     } catch (e) {
       throw new BadRequestException(
