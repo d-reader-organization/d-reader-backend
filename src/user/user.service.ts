@@ -31,9 +31,9 @@ import {
   GoogleUserPayload,
   UserPayload,
 } from '../auth/dto/authorization.dto';
-import { GetMeResult } from './types';
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
+import { UserInput } from './dto/user.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -176,14 +176,22 @@ export class UserService {
     return users;
   }
 
-  async findMe(id: number): Promise<GetMeResult> {
+  async findMe(id: number): Promise<UserInput> {
     const user = await this.prisma.user.update({
       where: { id },
       data: { lastActiveAt: new Date() },
       include: { devices: true },
     });
 
-    return user;
+    const referralUsed = await this.countReferralUsed(id);
+    return { ...user, referralUsed };
+  }
+
+  async countReferralUsed(userId: number) {
+    const referralUsed = await this.prisma.user.count({
+      where: { referrerId: userId },
+    });
+    return referralUsed;
   }
 
   async findOne(id: number) {

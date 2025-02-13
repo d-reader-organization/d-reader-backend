@@ -31,6 +31,10 @@ export class UserDto {
   @IsInt()
   referralsRemaining: number;
 
+  @IsOptional()
+  @IsInt()
+  referralUsed?: number;
+
   @IsString()
   username: string;
 
@@ -55,8 +59,9 @@ export class UserDto {
 }
 
 type WithDeviceIds = { devices?: Device[] };
+type WithReferralUsed = { referralUsed?: number };
 
-export type UserInput = With<[User, WithDeviceIds]>;
+export type UserInput = With<[User, WithDeviceIds, WithReferralUsed]>;
 
 export function toUserDto(user: UserInput) {
   const plainUserDto: UserDto = {
@@ -71,6 +76,7 @@ export function toUserDto(user: UserInput) {
     role: user.role,
     deviceTokens: user.devices?.map((device) => device.token) ?? [],
     hasPassword: user.password.length > 0,
+    referralUsed: user.referralUsed,
   };
 
   const userDto = plainToInstance(UserDto, plainUserDto);
