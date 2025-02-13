@@ -130,7 +130,7 @@ export class InvestService {
       slug: projectSlug,
       countOfUserExpressedInterest: data?._count?.id || 0,
       expectedPledgedAmount: data?._sum?.expressedAmount || 0,
-      expressedAmount: query.expressedAmount,
+      expressedAmount: query?.expressedAmount,
     };
   }
 
