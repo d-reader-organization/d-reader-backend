@@ -287,9 +287,12 @@ export const COLLECTION_MANAGER_MULTISIG =
 
 export const PROJECTS: INVEST_PROJECT[] = [
   { slug: 'the-recruits', title: 'The Recruits' },
+  {
+    slug: 'bonk-and-the-curse-of-the-bear-king',
+    title: 'BONK and the curse of the Bear King',
+  },
   { slug: 'inner-demons', title: 'Inner Demons' },
   { slug: 'mad-lads', title: 'Mad Lads' },
-  { slug: 'bonk', title: 'Bonk' },
   { slug: 'galactic-geckos', title: 'Galactic Geckos' },
   { slug: 'enter-the-tensorverse', title: 'Enter the Tensorverse' },
   { slug: 'apt-323', title: 'Apt 323' },
