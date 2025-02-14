@@ -8,6 +8,7 @@ import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 import { ProjectReferralCampaignReceiptInput } from './dto/project-referral-campaign-receipt.dto';
 import { ReferralCampaignReceiptParams } from './dto/referral-campaign-receipt-params.dto';
+import { UserInterestedReceipt } from '@prisma/client';
 
 @Injectable()
 export class InvestService {
@@ -29,31 +30,48 @@ export class InvestService {
       );
     }
 
+    let lastExpressedAmount = 0;
+    let updatedReceipt: UserInterestedReceipt;
     try {
-      const { user } = await this.prisma.userInterestedReceipt.upsert({
+      const receipt = await this.prisma.userInterestedReceipt.findUnique({
         where: { projectSlug_userId: { projectSlug, userId } },
-        include: { user: true },
-        update: {
-          expressedAmount: Math.min(1000, expressedAmount),
-        },
-        create: {
-          projectSlug,
-          timestamp: new Date(),
-          expressedAmount: Math.min(1000, expressedAmount),
-          user: {
-            connect: { id: userId },
+      });
+      if (receipt) {
+        lastExpressedAmount = receipt.expressedAmount;
+
+        updatedReceipt = await this.prisma.userInterestedReceipt.update({
+          where: { projectSlug_userId: { projectSlug, userId } },
+          data: {
+            expressedAmount: Math.min(1000, expressedAmount),
+            timestamp: new Date()
           },
-        },
-      });
+        });
+      } else {
+        updatedReceipt = await this.prisma.userInterestedReceipt.create({
+          data: {
+            projectSlug,
+            timestamp: new Date(),
+            expressedAmount: Math.min(1000, expressedAmount),
+            user: {
+              connect: { id: userId },
+            },
+          },
+        });
+      }
 
-      this.websocketGateway.handleActivityNotification({
-        user,
-        type: ActivityNotificationType.ExpressedInterest,
-        targetId: projectSlug,
-        targetTitle: project.title,
-      });
+      if (updatedReceipt.expressedAmount > lastExpressedAmount) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+        });
 
-      await this.redeemReferral(ref, userId, projectSlug);
+        this.websocketGateway.handleActivityNotification({
+          user,
+          type: ActivityNotificationType.ExpressedInterest,
+          targetId: projectSlug,
+          targetTitle: project.title,
+        });
+        await this.redeemReferral(ref, userId, projectSlug);
+      }
     } catch (e) {
       throw new BadRequestException(
         ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(projectSlug),
