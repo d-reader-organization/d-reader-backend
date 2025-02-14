@@ -37,6 +37,7 @@ import { UserInput } from './dto/user.dto';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 import { isNull } from 'lodash';
+import { Pagination } from '../types/pagination.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -317,6 +318,16 @@ export class UserService {
     });
 
     return wallets;
+  }
+
+  async findUserReferrals(query: Pagination, userId: number) {
+    const referrals = await this.prisma.user.findMany({
+      where: { referrerId: userId },
+      skip: query?.skip,
+      take: query?.take,
+    });
+
+    return referrals;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {

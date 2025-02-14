@@ -40,6 +40,8 @@ import {
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { memoizeThrottle } from '../utils/lodash';
+import { Pagination } from 'src/types/pagination.dto';
+import { ReferralDto, toReferralDtoArray } from './dto/referral.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -82,6 +84,16 @@ export class UserController {
   async getWallets(@Param('id') id: string): Promise<WalletDto[]> {
     const wallets = await this.userService.getWallets(+id);
     return toWalletDtoArray(wallets);
+  }
+
+  @UserAuth()
+  @Get('referrals/get')
+  async find(
+    @Query() query: Pagination,
+    @UserEntity() user: UserPayload,
+  ): Promise<ReferralDto[]> {
+    const referrals = await this.userService.findUserReferrals(query, user.id);
+    return toReferralDtoArray(referrals);
   }
 
   /* Update specific user */
