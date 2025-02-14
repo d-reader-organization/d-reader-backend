@@ -36,6 +36,7 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { UserInput } from './dto/user.dto';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { isNull } from 'lodash';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -466,9 +467,14 @@ export class UserService {
       throw new BadRequestException('Email already verified');
     }
 
+    const isReferred = !isNull(user.referredAt);
     const updatedUser = await this.prisma.user.update({
       where: { id: payload.id },
-      data: { email: payload.email, emailVerifiedAt: new Date() },
+      data: {
+        email: payload.email,
+        emailVerifiedAt: new Date(),
+        referCompeletedAt: isReferred ? new Date() : null,
+      },
     });
 
     if (isEmailUpdated) {
