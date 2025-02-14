@@ -43,4 +43,8 @@ export enum ProgramSource {
   UNKNOWN = 'UNKNOWN',
 }
 
-export type INVEST_PROJECT = { title: string; slug: string };
+export type INVEST_PROJECT = {
+  title: string;
+  slug: string;
+  isCampaignActive: boolean;
+};

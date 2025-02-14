@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Query,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -17,6 +18,8 @@ import { toProjectDto, toProjectDtoArray } from './dto/project.dto';
 import { toUserInterestedReceiptDtoArray } from './dto/userInterestedReceipt.dto';
 import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
+import { ReferralCampaignReceiptParams } from './dto/referral-campaign-receipt-params.dto';
+import { toProjectReferralCampaignReceiptDtoArray } from './dto/project-referral-campaign-receipt.dto';
 
 @ApiTags('Invest')
 @Controller('invest')
@@ -67,5 +70,18 @@ export class InvestController {
       projectSlug,
     );
     return toUserInterestedReceiptDtoArray(receipts);
+  }
+
+  @UserAuth()
+  @Get('/referral-campaign/receipt/get')
+  async findAllReferralCampaignReceipts(
+    @Query() query: ReferralCampaignReceiptParams,
+    @UserEntity() user: UserPayload,
+  ) {
+    const receipts = await this.investService.findAllReferralCampaignReceipts(
+      query,
+      user.id,
+    );
+    return toProjectReferralCampaignReceiptDtoArray(receipts);
   }
 }

@@ -286,17 +286,34 @@ export const COLLECTION_MANAGER_MULTISIG =
     : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';
 
 export const PROJECTS: INVEST_PROJECT[] = [
-  { slug: 'the-recruits', title: 'The Recruits' },
+  { slug: 'the-recruits', title: 'The Recruits', isCampaignActive: false },
   {
     slug: 'bonk-and-the-curse-of-the-bear-king',
     title: 'BONK and the curse of the Bear King',
+    isCampaignActive: true,
   },
-  { slug: 'inner-demons', title: 'Inner Demons' },
-  { slug: 'mad-lads', title: 'Mad Lads' },
-  { slug: 'galactic-geckos', title: 'Galactic Geckos' },
-  { slug: 'enter-the-tensorverse', title: 'Enter the Tensorverse' },
-  { slug: 'apt-323', title: 'Apt 323' },
-  { slug: 'dream-city', title: 'Dream City' },
-  { slug: 'liberty-square-originz', title: 'Liberty Square Originz' },
-  { slug: 'the-lump-sum-saga', title: 'The Lump Sum Saga' },
+  { slug: 'inner-demons', title: 'Inner Demons', isCampaignActive: false },
+  { slug: 'mad-lads', title: 'Mad Lads', isCampaignActive: false },
+  {
+    slug: 'galactic-geckos',
+    title: 'Galactic Geckos',
+    isCampaignActive: false,
+  },
+  {
+    slug: 'enter-the-tensorverse',
+    title: 'Enter the Tensorverse',
+    isCampaignActive: false,
+  },
+  { slug: 'apt-323', title: 'Apt 323', isCampaignActive: false },
+  { slug: 'dream-city', title: 'Dream City', isCampaignActive: false },
+  {
+    slug: 'liberty-square-originz',
+    title: 'Liberty Square Originz',
+    isCampaignActive: false,
+  },
+  {
+    slug: 'the-lump-sum-saga',
+    title: 'The Lump Sum Saga',
+    isCampaignActive: false,
+  },
 ];
