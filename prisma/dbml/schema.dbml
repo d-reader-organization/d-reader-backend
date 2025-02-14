@@ -34,8 +34,8 @@ Table User {
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
   creatorActivityFeeds CreatorActivityFeed [not null]
-  interestExpressed UserInterestedReceipt [not null]
-  referredProjects UserInterestedReceipt [not null]
+  interestedProjects UserInterestedReceipt [not null]
+  projectReferrals UserInterestedReceipt [not null]
 }
 
 Table Wallet {
