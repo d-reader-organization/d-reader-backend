@@ -34,6 +34,8 @@ import {
 import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { UserInput } from './dto/user.dto';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
 const getS3Folder = (id: number) => `users/${id}/`;
 type UserFileProperty = PickFields<User, 'avatar'>;
@@ -47,6 +49,7 @@ export class UserService {
     private readonly passwordService: PasswordService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
+    private readonly websocketGateway: WebSocketGateway,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -83,6 +86,13 @@ export class UserService {
     } catch (e) {
       console.info('Failed to generate random avatar: ', e);
     }
+
+    this.websocketGateway.handleActivityNotification({
+      user,
+      type: ActivityNotificationType.UserRegistered,
+      targetId: user.id.toString(),
+      targetTitle: user.username,
+    });
 
     this.mailService.userRegistered(user);
     return user;

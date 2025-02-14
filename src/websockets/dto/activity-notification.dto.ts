@@ -15,6 +15,7 @@ export enum ActivityNotificationType {
   CreatorFollow = 'CreatorFollow',
   WheelSpun = 'WheelSpun',
   ExpressedInterest = 'ExpressedInterest',
+  UserRegistered = 'UserRegistered',
 }
 
 export class ActivityNotificationDto {
