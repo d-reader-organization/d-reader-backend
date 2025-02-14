@@ -91,6 +91,7 @@ model CreatorChannel {
   tippingAddress String                @default("")
   s3BucketSlug   String                @unique
   comics         Comic[]
+  investProjects InvestProject[]
   followers      UserCreator[]
   user           User                  @relation(fields: [userId], references: [id])
   userId         Int                   @unique
@@ -164,6 +165,7 @@ model Genre {
   priority Int
   color    String
   comics   Comic[]
+  investProjects  InvestProject[]
 }
 
 model RoyaltyWallet {
@@ -942,6 +944,33 @@ model ComicIssueSnapshot {
   value        Int
   type         ComicIssueSnapshotType
   timestamp    DateTime
+}
+
+model InvestProject {
+  id      Int @id @default(autoincrement())
+  title   String
+  slug    String  @unique
+  description String
+  subtitle String
+  genres  Genre[]
+  banner  String
+  cover  String
+  logo  String
+  creator CreatorChannel  @relation(references: [id], fields: [creatorId])
+  creatorId Int
+  info    InvestProjectInfo[]
+  raiseGoal  Int
+  startDate   DateTime?
+  endDate     DateTime?
+}
+
+model InvestProjectInfo {
+  id      Int @id @default(autoincrement())
+  section String
+  description    String
+  image   String  @default("")
+  projectId Int 
+  project   InvestProject @relation(fields: [projectId], references: [id])
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)
