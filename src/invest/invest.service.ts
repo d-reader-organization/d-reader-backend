@@ -6,6 +6,8 @@ import { insensitive } from '../utils/lodash';
 import { PROJECTS } from '../constants';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ProjectReferralCampaignReceiptInput } from './dto/project-referral-campaign-receipt.dto';
+import { ReferralCampaignReceiptParams } from './dto/referral-campaign-receipt-params.dto';
 
 @Injectable()
 export class InvestService {
@@ -124,6 +126,40 @@ export class InvestService {
       expectedPledgedAmount: data?._sum?.expressedAmount || 0,
       expressedAmount: query?.expressedAmount,
     };
+  }
+
+  async findAllReferralCampaignReceipts(
+    query: ReferralCampaignReceiptParams,
+    userId: number,
+  ): Promise<ProjectReferralCampaignReceiptInput[]> {
+    const projectsWithActiveCampaign = PROJECTS.filter(
+      (project) => project.isCampaignActive,
+    );
+
+    const getProjectReferralReceipts = projectsWithActiveCampaign.map(
+      async (project) => {
+        const referralReceipts =
+          await this.prisma.userInterestedReceipt.findMany({
+            where: { referrerId: userId },
+            include: { user: true },
+            skip: query?.skip,
+            take: query?.take,
+          });
+
+        const totalReferred = await this.prisma.userInterestedReceipt.count({
+          where: { referrerId: userId },
+        });
+        return {
+          title: project.title,
+          slug: project.slug,
+          receipts: referralReceipts,
+          totalReferred,
+        };
+      },
+    );
+
+    const receipts = await Promise.all(getProjectReferralReceipts);
+    return receipts;
   }
 
   async findUserInterestedReceipts(projectSlug: string) {
