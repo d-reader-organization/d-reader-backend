@@ -45,7 +45,7 @@ export class AuthService {
   ) {
     await this.passwordService.validateWallet(userId, address, encoding, type);
     const publicKey = new PublicKey(address);
-    const wallet = await this.prisma.wallet.upsert({
+    await this.prisma.wallet.upsert({
       where: { address },
       create: {
         address,
@@ -56,11 +56,6 @@ export class AuthService {
       update: { userId: userId, connectedAt: new Date() },
       include: { user: true },
     });
-
-    await this.walletService.makeEligibleForReferralBonus(userId);
-    await this.walletService.makeEligibleForReferralBonus(
-      wallet.user.referrerId,
-    );
   }
 
   async disconnectWallet(address: string) {

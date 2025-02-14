@@ -31,10 +31,11 @@ Table User {
   devices Device [not null]
   consents UserPrivacyConsent [not null]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser [not null]
-  interestExpressed UserInterestedReceipt [not null]
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
   creatorActivityFeeds CreatorActivityFeed [not null]
+  interestExpressed UserInterestedReceipt [not null]
+  referredProjects UserInterestedReceipt [not null]
 }
 
 Table Wallet {
@@ -695,6 +696,8 @@ Table UserInterestedReceipt {
   timestamp DateTime [not null]
   userId Int [not null]
   user User [not null]
+  referrerId Int
+  referrer User
   expressedAmount Int [not null, default: 0]
 
   indexes {
@@ -1081,6 +1084,8 @@ Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
 Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 
 Ref: UserInterestedReceipt.userId > User.id
+
+Ref: UserInterestedReceipt.referrerId > User.id
 
 Ref: WheelReward.wheelId > Wheel.id
 

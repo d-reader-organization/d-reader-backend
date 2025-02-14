@@ -285,7 +285,6 @@ export const COLLECTION_MANAGER_MULTISIG =
     ? '5WXjY2qFMDg6hu2qgpHeQZwvKLLZsitXxtEYZeknA5Vu'
     : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';
 
-export const REFERRAL_REWARDING_PROJECT = 'bonk-and-the-curse-of-the-bear-king';
 export const PROJECTS: INVEST_PROJECT[] = [
   { slug: 'the-recruits', title: 'The Recruits' },
   {
