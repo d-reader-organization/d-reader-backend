@@ -2,7 +2,7 @@ import {
   DefaultCandyGuardSettings,
   MetaplexFile,
 } from '@metaplex-foundation/js';
-import { ComicRarity, User, Wallet } from '@prisma/client';
+import { ComicRarity } from '@prisma/client';
 
 export type PickByType<T, V> = {
   [P in keyof T as T[P] extends V | undefined ? P : never]: T[P];
@@ -35,8 +35,6 @@ export type Merge<T, U> = Omit<T, keyof U> & U;
 export type With<T extends any[]> = T extends [infer First, ...infer Rest]
   ? Merge<First, With<Rest>>
   : object;
-
-export type Referee = User & { wallets: Wallet[] };
 
 export enum ProgramSource {
   MAGIC_EDEN = 'Magic Eden',

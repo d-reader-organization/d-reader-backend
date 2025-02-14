@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { ProjectInput } from './dto/project.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { insensitive } from '../utils/lodash';
-import { PROJECTS, REFERRAL_REWARDING_PROJECT } from '../constants';
+import { PROJECTS } from '../constants';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
 
@@ -18,7 +18,7 @@ export class InvestService {
     projectSlug: string,
     expressedAmount: number,
     userId: number,
-    referralCode?: string,
+    ref?: string,
   ) {
     const project = PROJECTS.find((project) => project.slug == projectSlug);
     if (!project) {
@@ -51,7 +51,7 @@ export class InvestService {
         targetTitle: project.title,
       });
 
-      await this.redeemReferral(userId, referralCode);
+      await this.redeemReferral(ref, userId, projectSlug);
     } catch (e) {
       throw new BadRequestException(
         ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(projectSlug),
@@ -59,46 +59,30 @@ export class InvestService {
     }
   }
 
-  async redeemReferral(
-    refereeId: number,
-    projectSlug: string,
-    referralCode?: string,
-  ) {
-    if (!referralCode) return;
-    if (projectSlug !== REFERRAL_REWARDING_PROJECT) return;
+  async redeemReferral(ref: string, refereeId: number, projectSlug: string) {
+    if (!ref) {
+      console.error(ERROR_MESSAGES.REFERRER_NAME_UNDEFINED);
+    } else if (!refereeId) {
+      throw new BadRequestException(ERROR_MESSAGES.REFEREE_ID_MISSING);
+    } else {
+      // find the referrer
+      const referrer = await this.prisma.user.findFirst({
+        where: { username: insensitive(ref) },
+      });
 
-    const referrer = await this.prisma.user.findFirst({
-      where: { username: insensitive(referralCode) },
-    });
-
-    if (!referrer) {
-      console.log(`'${referralCode}' doesn't exist`);
-      return;
-    } else if (referrer.id === refereeId || referrer.referralsRemaining == 0) {
-      return;
+      if (!referrer) {
+        // handle bad cases
+        console.error(`User '${ref}' doesn't exist`);
+      } else if (referrer.id === refereeId) {
+        throw new BadRequestException('Cannot refer yourself');
+      } else {
+        // if it's all good so far, apply the referral
+        await this.prisma.userInterestedReceipt.update({
+          where: { id: refereeId, projectSlug },
+          data: { referrerId: referrer.id },
+        });
+      }
     }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: refereeId },
-      include: { wallets: true },
-    });
-
-    if (!!user.referredAt) {
-      return;
-    }
-
-    const updatedUser = await this.prisma.user.update({
-      where: { id: refereeId },
-      data: {
-        referredAt: new Date(),
-        referrer: {
-          connect: { id: referrer.id },
-          update: { referralsRemaining: { decrement: 1 } },
-        },
-      },
-    });
-
-    return updatedUser;
   }
 
   async findAllInvestProjects(): Promise<ProjectInput[]> {

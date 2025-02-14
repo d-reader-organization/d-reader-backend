@@ -8,5 +8,5 @@ export class ExpressInterestDto {
 
   @IsOptional()
   @IsString()
-  referralCode?: string;
+  ref?: string;
 }

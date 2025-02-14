@@ -30,12 +30,12 @@ export class InvestController {
     @Body() expressInterestDto: ExpressInterestDto,
     @UserEntity() user: UserPayload,
   ) {
-    const { referralCode, expressedAmount } = expressInterestDto;
+    const { ref, expressedAmount } = expressInterestDto;
     return await this.investService.expressUserInterest(
       slug,
       expressedAmount,
       user.id,
-      referralCode,
+      ref,
     );
   }
 

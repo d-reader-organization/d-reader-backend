@@ -63,16 +63,10 @@ export class PrivyService {
     if (existingUser.emailVerifiedAt) {
       throw new BadRequestException(ERROR_MESSAGES.EMAIL_ALREADY_VERIFIED);
     }
-    const updatedUser = await this.prisma.user.update({
-      where: {
-        email: account.address,
-      },
+    await this.prisma.user.update({
+      where: { email: account.address },
       data: { emailVerifiedAt: new Date() },
     });
-    await this.walletService.makeEligibleForReferralBonus(updatedUser.id);
-    await this.walletService.makeEligibleForReferralBonus(
-      updatedUser.referrerId,
-    );
   }
 
   async processUserWalletCreation(payload: VerifiedPayload) {

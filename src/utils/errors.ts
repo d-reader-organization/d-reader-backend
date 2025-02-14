@@ -99,7 +99,7 @@ export const ERROR_MESSAGES = {
     'This user is linked to a Google Account. Please use google sign in.',
   PASSWORD_MUST_BE_DIFFERENT:
     'New password must be different from the current password',
-  REFERRER_NAME_OR_ADDRESS_UNDEFINED: 'Referrer name, or address undefined',
+  REFERRER_NAME_UNDEFINED: 'Referrer name is undefined',
   REFEREE_ID_MISSING: 'Referee id missing',
   USER_ALREADY_REFERRED: (username: string) =>
     `User '${username}' already referred`,

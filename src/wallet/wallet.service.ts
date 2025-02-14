@@ -3,12 +3,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { Metaplex, WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { metaplex } from '../utils/metaplex';
 import { HeliusService } from '../webhooks/helius/helius.service';
-import { REFERRAL_REWARD_THRESHOLD } from '../constants';
 import { UpdateWalletDto } from './dto/update-wallet.dto';
 import { CouponType, Prisma, TransactionStatus } from '@prisma/client';
-import { CandyMachineService } from '../candy-machine/candy-machine.service';
 import { isEmpty } from 'lodash';
-import { hasCompletedSetup } from '../utils/user';
 import { DAS, Interface, Scope } from 'helius-sdk';
 import {
   doesWalletIndexCorrectly,
@@ -25,7 +22,6 @@ export class WalletService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly heliusService: HeliusService,
-    private readonly candyMachineService: CandyMachineService,
   ) {
     this.metaplex = metaplex;
   }
@@ -316,43 +312,6 @@ export class WalletService {
       }
     } catch (e) {
       console.error(e);
-    }
-  }
-
-  async makeEligibleForReferralBonus(userId: number) {
-    if (!userId) return;
-
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          wallets: true,
-          referrals: { include: { wallets: true } },
-          // rely on _count instead of wallets: true
-          // _count: { select: { wallets: true } },
-        },
-      });
-
-      const isUserReady = hasCompletedSetup(user);
-
-      const verifiedRefereesCount = user.referrals.filter(
-        (referee) => referee.emailVerifiedAt && referee.wallets.length,
-      ).length;
-
-      const hasUserReferredEnoughNewUsers =
-        verifiedRefereesCount >= REFERRAL_REWARD_THRESHOLD;
-
-      const isEligible =
-        isUserReady && hasUserReferredEnoughNewUsers && !user.referCompeletedAt;
-
-      if (isEligible) {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { referCompeletedAt: new Date() },
-        });
-      }
-    } catch (e) {
-      console.error(ERROR_MESSAGES.REFERRAL_BONUS_ERROR(e));
     }
   }
 

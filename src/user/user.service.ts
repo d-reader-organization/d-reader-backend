@@ -53,7 +53,13 @@ export class UserService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { name: deprecatedName, username, email, password } = registerDto;
+    const {
+      name: deprecatedName,
+      username,
+      email,
+      password,
+      ref,
+    } = registerDto;
 
     const name = username || deprecatedName;
     validateUserName(name);
@@ -76,6 +82,7 @@ export class UserService {
     });
 
     await this.updateAllUserConsents({ approve: true, userId: user.id });
+    this.redeemReferral(ref, user.id);
 
     try {
       const avatar = await this.generateAvatar(user.id);
@@ -96,6 +103,54 @@ export class UserService {
 
     this.mailService.userRegistered(user);
     return user;
+  }
+
+  async redeemReferral(ref: string, refereeId: number) {
+    if (!ref) {
+      // log the error, don't throw it (as to not stop the parent flow)
+      console.error(ERROR_MESSAGES.REFERRER_NAME_UNDEFINED);
+    } else if (!refereeId) {
+      console.error(ERROR_MESSAGES.REFEREE_ID_MISSING);
+    } else {
+      // find the referrer
+      const referrer = await this.prisma.user.findFirst({
+        where: { username: insensitive(ref) },
+        include: { referrals: true },
+      });
+
+      if (!referrer) {
+        // handle bad cases
+        console.error(`User '${ref}' doesn't exist`);
+      } else if (referrer.referralsRemaining == 0) {
+        console.error(`${referrer.username} has no referrals left`);
+      } else if (referrer.id === refereeId) {
+        throw new BadRequestException('Cannot refer yourself');
+      } else {
+        // if it's all good so far, find the referee and apply the referral
+        const referee = await this.prisma.user.findUnique({
+          where: { id: refereeId },
+        });
+
+        if (!!referee.referredAt) {
+          throw new BadRequestException(
+            ERROR_MESSAGES.USER_ALREADY_REFERRED(referee.username),
+          );
+        }
+
+        const updatedReferee = await this.prisma.user.update({
+          where: { id: refereeId },
+          data: {
+            referredAt: new Date(),
+            referrer: {
+              connect: { id: referrer.id },
+              update: { referralsRemaining: { decrement: 1 } },
+            },
+          },
+        });
+
+        return updatedReferee;
+      }
+    }
   }
 
   private async updateAllUserConsents({

@@ -42,10 +42,11 @@ model User {
   devices                        Device[]
   consents                       UserPrivacyConsent[]
   whitelistedCandyMachineCoupons CandyMachineCouponWhitelistedUser[]
-  interestExpressed              UserInterestedReceipt[]
   wheelRewardReceipt             WheelRewardReceipt[]
   channel                        CreatorChannel?
   creatorActivityFeeds           CreatorActivityFeed[]
+  interestedProjects             UserInterestedReceipt[]             @relation(name: "UserToProject")
+  projectReferrals               UserInterestedReceipt[]             @relation(name: "ProjectReferrerToReferee")
 }
 
 enum WalletProvider {
@@ -753,12 +754,14 @@ model DigitalAssetTrait {
 }
 
 model UserInterestedReceipt {
-  id                   Int      @id @default(autoincrement())
-  projectSlug          String
-  timestamp            DateTime
-  userId               Int
-  user                 User     @relation(fields: [userId], references: [id])
-  expressedAmount      Int      @default(0)
+  id              Int      @id @default(autoincrement())
+  projectSlug     String
+  timestamp       DateTime
+  userId          Int
+  user            User     @relation("UserToProject", fields: [userId], references: [id])
+  referrerId      Int?
+  referrer        User?    @relation("ProjectReferrerToReferee", fields: [referrerId], references: [id])
+  expressedAmount Int      @default(0)
 
   @@unique([projectSlug, userId])
 }
@@ -907,7 +910,7 @@ model CreatorSnapshot {
   creator   CreatorChannel      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   value     Int
   type      CreatorSnapshotType
-  timestamp    DateTime
+  timestamp DateTime
 }
 
 enum ComicSnapshotType {
@@ -923,7 +926,7 @@ model ComicSnapshot {
   comic     Comic             @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   value     Int
   type      ComicSnapshotType
-  timestamp    DateTime
+  timestamp DateTime
 }
 
 enum ComicIssueSnapshotType {
