@@ -1039,11 +1039,11 @@ export class DigitalAssetService {
 
   // TODO: sync other digital assets besides collectible comics
   @Cron(CronExpression.EVERY_WEEK)
-  protected async syncAllAssets() {
+  async syncAllAssets() {
     console.log('Starting Cron job to sync all the assets!');
 
     await this.syncCollectibleComicMintReceipts();
-    await this.findAndSyncAllCollectibleComicCollections();
+    this.findAndSyncAllCollectibleComicCollections();
 
     console.log('All assets are synced!');
   }
@@ -1056,8 +1056,10 @@ export class DigitalAssetService {
     });
 
     for await (const collection of collections) {
-      await this.fetchAssetsAndSync(collection.address);
+      this.fetchAssetsAndSync(collection.address);
     }
+
+    console.log('Sync compelete');
   }
 
   async fetchAssetsAndSync(collectionAddress: string) {
@@ -1120,6 +1122,7 @@ export class DigitalAssetService {
       if (!candyMachine) {
         throw Error(ERROR_MESSAGES.COLLECTION_DOES_NOT_EXIST);
       }
+      candyMachineAddress = candyMachine.address;
     }
     await this.helius.reIndexAsset(asset, candyMachineAddress);
   }
@@ -1143,7 +1146,7 @@ export class DigitalAssetService {
     });
 
     for await (const receipt of receipts) {
-      await this.fetchAndIndexFromReceiptTransaction(receipt);
+      this.fetchAndIndexFromReceiptTransaction(receipt);
     }
   }
 

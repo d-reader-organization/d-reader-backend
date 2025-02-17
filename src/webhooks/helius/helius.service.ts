@@ -1182,61 +1182,59 @@ export class HeliusService {
       }
     }
 
-    const digitalAsset = await this.prisma.collectibleComic.upsert({
+    const digitalAsset = await this.prisma.digitalAsset.upsert({
       where: { address: mintAddress.toString() },
-      include: {
-        digitalAsset: { include: { owner: { select: { userId: true } } } },
-      },
-      update: {
-        digitalAsset: {
-          update: {
-            ownerChangedAt: new Date(),
-            owner: {
+      include: { collectibleComic: true, owner: { select: { userId: true } } },
+      create: {
+        address: mintAddress.toString(),
+        ownerChangedAt: new Date(),
+        owner: {
+          connectOrCreate: {
+            where: { address: walletAddress },
+            create: { address: walletAddress },
+          },
+        },
+        collectibleComic: {
+          create: {
+            name: asset.content.metadata.name,
+            candyMachine: { connect: { address: candMachineAddress } },
+            metadata: {
               connectOrCreate: {
-                where: { address: walletAddress },
-                create: { address: walletAddress },
+                where: { uri },
+                create: {
+                  collectionName: collectionMetadata.collection.name,
+                  uri,
+                  isUsed: findUsedTrait(collectionMetadata),
+                  isSigned: findSignedTrait(collectionMetadata),
+                  rarity: findRarityTrait(collectionMetadata),
+                  collectionAddress: collection,
+                },
               },
             },
           },
         },
-        metadata: {
-          connectOrCreate: {
-            where: { uri },
-            create: {
-              collectionName: collectionMetadata.collection.name,
-              uri,
-              isUsed: findUsedTrait(collectionMetadata),
-              isSigned: findSignedTrait(collectionMetadata),
-              rarity: findRarityTrait(collectionMetadata),
-              collectionAddress: collection,
-            },
-          },
-        },
       },
-      create: {
-        name: asset.content.metadata.name,
-        candyMachine: { connect: { address: candMachineAddress } },
-        metadata: {
+      update: {
+        ownerChangedAt: new Date(),
+        owner: {
           connectOrCreate: {
-            where: { uri },
-            create: {
-              collectionName: collectionMetadata.collection.name,
-              uri,
-              isUsed: findUsedTrait(collectionMetadata),
-              isSigned: findSignedTrait(collectionMetadata),
-              rarity: findRarityTrait(collectionMetadata),
-              collectionAddress: collection,
-            },
+            where: { address: walletAddress },
+            create: { address: walletAddress },
           },
         },
-        digitalAsset: {
-          create: {
-            address: mintAddress.toString(),
-            ownerChangedAt: new Date(),
-            owner: {
+        collectibleComic: {
+          update: {
+            metadata: {
               connectOrCreate: {
-                where: { address: walletAddress },
-                create: { address: walletAddress },
+                where: { uri },
+                create: {
+                  collectionName: collectionMetadata.collection.name,
+                  uri,
+                  isUsed: findUsedTrait(collectionMetadata),
+                  isSigned: findSignedTrait(collectionMetadata),
+                  rarity: findRarityTrait(collectionMetadata),
+                  collectionAddress: collection,
+                },
               },
             },
           },
