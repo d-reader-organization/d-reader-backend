@@ -43,7 +43,7 @@ export class InvestService {
           where: { projectSlug_userId: { projectSlug, userId } },
           data: {
             expressedAmount: Math.min(1000, expressedAmount),
-            timestamp: new Date()
+            timestamp: new Date(),
           },
         });
       } else {
