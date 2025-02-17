@@ -18,6 +18,7 @@ import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
 import { BotGateway } from 'src/discord/bot.gateway';
 import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
+import { AdminGuard } from 'src/guards/roles.guard';
 
 @ApiTags('Assets')
 @Controller('asset')
@@ -98,5 +99,11 @@ export class DigitalAssetController {
   @Post('create/one-of-one-collection/:address')
   async createOneOfOneCollection(@Param('address') address: string) {
     await this.digitalAssetService.createOneOfOneCollection(address);
+  }
+
+  @AdminGuard()
+  @Post('sync')
+  async syncAllAssets() {
+    return await this.digitalAssetService.syncAllAssets();
   }
 }

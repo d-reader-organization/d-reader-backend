@@ -150,7 +150,7 @@ export class WalletService {
 
         if (!doesReceiptExists) {
           const UNKNOWN = 'UNKNOWN';
-          const { owner, ownerAddress } = indexedAsset.digitalAsset;
+          const { owner, ownerAddress } = indexedAsset;
           const userId: number = owner?.userId;
 
           const coupon = await this.prisma.candyMachineCoupon.findFirst({
@@ -276,7 +276,7 @@ export class WalletService {
 
         if (!doesReceiptExists) {
           const UNKNOWN = 'UNKNOWN';
-          const { owner, ownerAddress } = indexedAsset.digitalAsset;
+          const { owner, ownerAddress } = indexedAsset;
           const userId: number = owner?.userId;
 
           const receiptData: Prisma.CandyMachineReceiptCreateInput = {

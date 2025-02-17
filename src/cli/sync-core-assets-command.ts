@@ -96,7 +96,7 @@ export class SyncCoreAssetCommand extends CommandRunner {
     }
 
     const walletAddress = asset.ownership.owner;
-    const { digitalAsset } = await this.heliusService.reIndexAsset(
+    const digitalAsset = await this.heliusService.reIndexAsset(
       asset,
       candyMachineAddress,
     );
