@@ -98,11 +98,11 @@ import {
   GuardSetArgs,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import {
-  insertCoreItems,
   generatePropertyName,
   validateBalanceForMint,
   getCandyGuardAccount,
   uploadItemMetadata,
+  batchInsertCoreItems,
 } from '../utils/candy-machine';
 import {
   findAssociatedTokenPda,
@@ -285,14 +285,13 @@ export class CandyMachineService {
         });
       }
 
-      await insertCoreItems(
+      await batchInsertCoreItems(
         this.umi,
         candyMachine.publicKey,
         itemMetadatas,
         assetOnChainName,
         supply,
         currentSupply,
-        numberOfRarities,
       );
 
       const updatedCandyMachine = await fetchCandyMachine(

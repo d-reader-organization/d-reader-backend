@@ -256,55 +256,93 @@ export function toUmiGroups(
   return groups;
 }
 
-export async function insertCoreItems(
+export async function batchInsertCoreItems(
   umi: Umi,
   candyMachinePubkey: UmiPublicKey,
   itemMetadatas: ItemMetadata[],
   onChainName: string,
   comicIssueSupply: number,
   currentSupply: number,
-  numberOfRarities: number,
 ) {
-  const items: { uri: string; name: string }[] = [];
-  const rarityShares = getRarityShareTable(numberOfRarities);
-
   const unusedUnsignedMetadatas = itemMetadatas.filter(
     (item) => !item.isUsed && !item.isSigned,
   );
+  const numberOfRarities = unusedUnsignedMetadatas.length / 4;
+  const rarityShares = getRarityShareTable(numberOfRarities);
 
   let supplyLeft = comicIssueSupply;
-  let rarityIndex = 0,
-    nameIndex = currentSupply;
+  const rarityConfigs: { rarity: ComicRarity; supply: number; uri: string }[] =
+    rarityShares.map((share, i) => {
+      let supply: number;
+      const metadata = unusedUnsignedMetadatas.find(
+        (item) => item.rarity == share.rarity,
+      );
 
-  for (const data of unusedUnsignedMetadatas) {
-    let supply: number;
-    const { value } = rarityShares.find((share) => share.rarity == data.rarity);
-    if (rarityIndex == rarityShares.length - 1) {
-      supply = supplyLeft;
-    } else {
-      supply = Math.floor((comicIssueSupply * value) / 100);
-      supplyLeft -= supply;
-    }
-    const indexArray = Array.from(Array(supply).keys());
-    const itemsInserted = indexArray.map(() => {
-      nameIndex++;
-      return {
-        uri: data.uri,
-        name: `${onChainName} #${nameIndex}`,
-      };
+      if (i + 1 == rarityShares.length) {
+        supply = supplyLeft;
+      } else {
+        supply = Math.floor((comicIssueSupply * share.value) / 100);
+        supplyLeft -= supply;
+      }
+
+      return { rarity: share.rarity, supply, uri: metadata.uri };
     });
 
-    items.push(...itemsInserted);
-    rarityIndex++;
+  const batch = 300;
+  let index = 0;
+  for await (const config of rarityConfigs) {
+    while (config.supply) {
+      const supply = Math.min(batch, config.supply);
+      await insertCoreItems(
+        umi,
+        currentSupply,
+        index,
+        candyMachinePubkey,
+        config.uri,
+        onChainName,
+        supply,
+      );
+
+      config.supply -= supply;
+      index += supply;
+    }
   }
+}
+
+export async function insertCoreItems(
+  umi: Umi,
+  prefixIndex: number,
+  index: number,
+  candyMachinePubkey: UmiPublicKey,
+  uri: string,
+  onChainName: string,
+  supply: number,
+) {
+  const items: { uri: string; name: string }[] = [];
+  const indexArray = Array.from(Array(supply).keys());
+
+  let nameIndex = prefixIndex + index;
+  const itemsInserted = indexArray.map(() => {
+    nameIndex++;
+    return {
+      uri,
+      name: `${onChainName} #${nameIndex}`,
+    };
+  });
+
+  items.push(...itemsInserted);
 
   const INSERT_CHUNK_SIZE = 8;
   const itemChunks = chunk(items, INSERT_CHUNK_SIZE);
 
-  let index = 0;
+  let transitionIndex = index;
   const transactions: string[] = [];
   for (const itemsChunk of itemChunks) {
-    console.info(`Inserting items ${index}-${index + itemsChunk.length} `);
+    console.info(
+      `Inserting items ${transitionIndex}-${
+        transitionIndex + itemsChunk.length
+      } `,
+    );
 
     const defaultComputeBudget = 800_000;
     const transaction = await getTransactionWithPriorityFee(
@@ -312,10 +350,10 @@ export async function insertCoreItems(
       defaultComputeBudget,
       umi,
       candyMachinePubkey,
-      index,
+      transitionIndex,
       itemsChunk,
     );
-    index += itemsChunk.length;
+    transitionIndex += itemsChunk.length;
 
     transactions.push(transaction);
   }
