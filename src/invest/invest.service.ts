@@ -5,7 +5,7 @@ import { ERROR_MESSAGES } from '../utils/errors';
 import { insensitive } from '../utils/lodash';
 import { PROJECTS } from '../constants';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 import { ProjectReferralCampaignReceiptInput } from './dto/project-referral-campaign-receipt.dto';
 import { ReferralCampaignReceiptParams } from './dto/referral-campaign-receipt-params.dto';
 import { UserInterestedReceipt } from '@prisma/client';

@@ -16,7 +16,7 @@ import { CreatorInput } from './dto/creator.dto';
 import { isNull } from 'lodash';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { startOfDay, subDays } from 'date-fns';
 import { ChartParams } from './dto/chart-params.dto';

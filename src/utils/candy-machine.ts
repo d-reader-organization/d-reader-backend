@@ -267,7 +267,7 @@ export async function batchInsertCoreItems(
   const unusedUnsignedMetadatas = itemMetadatas.filter(
     (item) => !item.isUsed && !item.isSigned,
   );
-  const numberOfRarities = unusedUnsignedMetadatas.length / 4;
+  const numberOfRarities = unusedUnsignedMetadatas.length;
   const rarityShares = getRarityShareTable(numberOfRarities);
 
   let supplyLeft = comicIssueSupply;
@@ -288,7 +288,7 @@ export async function batchInsertCoreItems(
       return { rarity: share.rarity, supply, uri: metadata.uri };
     });
 
-  const batch = 300;
+  const batch = 200;
   let index = 0;
   for await (const config of rarityConfigs) {
     while (config.supply) {

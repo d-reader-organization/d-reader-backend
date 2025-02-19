@@ -8,8 +8,8 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
-import { ifDefined } from 'src/utils/lodash';
+import { BasicUserDto, toBasicUserDto } from '../../user/dto/basic-user-dto';
+import { ifDefined } from '../../utils/lodash';
 
 export enum SaleSource {
   Sale = 'Sale',
