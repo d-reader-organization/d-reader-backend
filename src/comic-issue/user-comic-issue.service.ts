@@ -12,7 +12,7 @@ import { ComicIssue } from '@prisma/client';
 import { LOCKED_COLLECTIONS } from '../constants';
 import { WRAPPED_SOL_MINT } from '@metaplex-foundation/js';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 import { ActivityService } from '../activity/activity.service';
 
 @Injectable()

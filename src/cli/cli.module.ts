@@ -82,6 +82,7 @@ import { CreateRemoveDelegateTransactionCommand } from './multisig/create-remove
 import { CreateRemoveDelegateTransactionQuestions } from './multisig/create-remove-delegate-transaction-questions';
 import { CreateTransferAuthorityTransactionCommand } from './multisig/create-transfer-authority-transaction-command';
 import { CreateTransferAuthorityTransactionQuestions } from './multisig/create-transfer-authority-transaction-questions';
+import { ActivityModule } from '../activity/activity.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { CreateTransferAuthorityTransactionQuestions } from './multisig/create-t
     WebSocketModule,
     CacheMangerModule.register({ isGlobal: true }),
     CacheModule,
+    ActivityModule,
   ],
   providers: [
     BundlrWithdrawCommand,

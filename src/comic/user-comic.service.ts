@@ -8,7 +8,7 @@ import {
 import { ComicStats } from './dto/types';
 import { PickByType } from '../types/shared';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 import { ActivityService } from '../activity/activity.service';
 
 @Injectable()

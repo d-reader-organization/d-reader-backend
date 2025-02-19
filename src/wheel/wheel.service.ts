@@ -60,7 +60,7 @@ import { WheelRewardHistoryInput } from './dto/wheel-reward-history.dto';
 import { UserPayload } from 'src/auth/dto/authorization.dto';
 import { WheelRewardHistoryParams } from './dto/wheel-history-params.dto';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 
 const getS3Folder = (slug: string) => `wheel/${slug}/`;
 

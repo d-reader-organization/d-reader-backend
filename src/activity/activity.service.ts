@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ActivityTargetType, CreatorActivityFeedType } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { ERROR_MESSAGES } from 'src/utils/errors';
+import { ERROR_MESSAGES } from '../utils/errors';
 
 @Injectable()
 export class ActivityService {

@@ -38,10 +38,10 @@ import { CachePath } from '../utils/cache';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { CreatorActivityFeedParams } from './dto/creator-activity-feed-params.dto';
 import { CreatorActivityFeedInput } from './dto/creator-activity-feed.dto';
-import { SortOrder } from 'src/types/sort-order';
+import { SortOrder } from '../types/sort-order';
 import { CreateCreatorChannelDto } from './dto/create-channel.dto';
-import { appendTimestamp } from 'src/utils/helpers';
-import { processCreatorIdString } from 'src/utils/creator';
+import { appendTimestamp } from '../utils/helpers';
+import { processCreatorIdString } from '../utils/creator';
 import { SaleTransactionParams } from './dto/sale-transaction-params.dto';
 import {
   SaleProductType,
@@ -50,7 +50,7 @@ import {
 } from './dto/sale-transaction-history.dto';
 import { ActivityService } from '../activity/activity.service';
 import { kebabCase, snakeCase } from 'lodash';
-import { USERNAME_MAX_SIZE } from 'src/constants';
+import { USERNAME_MAX_SIZE } from '../constants';
 
 const getS3Folder = (slug: string) => `creators/${slug}/`;
 

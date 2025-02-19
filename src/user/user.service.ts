@@ -35,7 +35,7 @@ import { CreateUserConsentDto } from './dto/create-user-consent.dto';
 import { ERROR_MESSAGES } from '../utils/errors';
 import { UserInput } from './dto/user.dto';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
-import { ActivityNotificationType } from 'src/websockets/dto/activity-notification.dto';
+import { ActivityNotificationType } from '../websockets/dto/activity-notification.dto';
 import { isNull } from 'lodash';
 import { Pagination } from '../types/pagination.dto';
 
