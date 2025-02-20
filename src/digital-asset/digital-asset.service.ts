@@ -66,7 +66,10 @@ import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-c
 import { ERROR_MESSAGES } from '../utils/errors';
 import { TraitDto } from './dto/trait.dto';
 import { CollectibleComicRarityStatsInput } from './dto/collectible-comic-rarity-stats.dto';
-import { CollectibleComicInput } from './dto/collectible-comic.dto';
+import {
+  CollectibleComicInput,
+  PaginatedCollectibleComicInput,
+} from './dto/collectible-comic.dto';
 import { PrintEditionInput } from './dto/print-edition.dto';
 import { OneOfOneInput } from './dto/one-of-one.dto';
 import { DigitalAssetInput } from './dto/digital-asset.dto';
@@ -377,7 +380,9 @@ export class DigitalAssetService {
     });
   }
 
-  async findAutographRequests(query: AutographRequestFilterParams) {
+  async findAutographRequests(
+    query: AutographRequestFilterParams,
+  ): Promise<PaginatedCollectibleComicInput> {
     const requests = await this.prisma.signatureRequest.findMany({
       where: {
         collectibleComic: {
@@ -420,15 +425,40 @@ export class DigitalAssetService {
       take: query.take,
     });
 
-    return requests.map(({ collectibleComic }) => {
-      const collection = collectibleComic.metadata.collection;
-      return {
-        ...collectibleComic,
-        collection,
-        statefulCovers: collection.comicIssue.statefulCovers,
-        comicIssueTitle: collection.comicIssue.title,
-      };
+    const totalItems = await this.prisma.signatureRequest.count({
+      where: {
+        collectibleComic: {
+          metadata: {
+            isUsed: query?.isUsed,
+            isSigned: query?.isSigned,
+            rarity: query?.rarity,
+            collection: {
+              comicIssue: {
+                ...(query?.comicIssueId
+                  ? { id: query?.comicIssueId }
+                  : { comicSlug: query?.comicSlug }),
+                comic: {
+                  creatorId: query?.creatorId,
+                },
+              },
+            },
+          },
+        },
+      },
     });
+
+    return {
+      totalItems,
+      collectibleComics: requests.map(({ collectibleComic }) => {
+        const collection = collectibleComic.metadata.collection;
+        return {
+          ...collectibleComic,
+          collection,
+          statefulCovers: collection.comicIssue.statefulCovers,
+          comicIssueTitle: collection.comicIssue.title,
+        };
+      }),
+    };
   }
 
   async createOneOfOneCollectionTransaction(
