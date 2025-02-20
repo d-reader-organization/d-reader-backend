@@ -55,6 +55,7 @@ import { DAS } from 'helius-sdk';
 import {
   CandyMachine,
   CandyMachineReceipt,
+  Prisma,
   TokenStandard,
 } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -71,7 +72,10 @@ import { PrintEditionInput } from './dto/print-edition.dto';
 import { OneOfOneInput } from './dto/one-of-one.dto';
 import { DigitalAssetInput } from './dto/digital-asset.dto';
 import { addHours } from 'date-fns';
-import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
+import {
+  AutographRequestFilterParams,
+  SignatureRequestTab,
+} from './dto/autograph-request-filter-params.dto';
 import { PaginatedAutographRequestInput } from './dto/autograph-request.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
@@ -381,26 +385,32 @@ export class DigitalAssetService {
   async findAutographRequests(
     query: AutographRequestFilterParams,
   ): Promise<PaginatedAutographRequestInput> {
-    const requests = await this.prisma.signatureRequest.findMany({
-      where: {
-        collectibleComic: {
-          metadata: {
-            isUsed: query?.isUsed,
-            isSigned: query?.isSigned,
-            rarity: query?.rarity,
-            collection: {
-              comicIssue: {
-                ...(query?.comicIssueId
-                  ? { id: query?.comicIssueId }
-                  : { comicSlug: query?.comicSlug }),
-                comic: {
-                  creatorId: query?.creatorId,
-                },
+    const where: Prisma.SignatureRequestWhereInput = {
+      status:
+        query.status == SignatureRequestTab.Pending
+          ? 'Pending'
+          : { not: 'Pending' },
+      collectibleComic: {
+        metadata: {
+          isUsed: query?.isUsed,
+          isSigned: query?.isSigned,
+          rarity: query?.rarity,
+          collection: {
+            comicIssue: {
+              ...(query?.comicIssueId
+                ? { id: query?.comicIssueId }
+                : { comicSlug: query?.comicSlug }),
+              comic: {
+                creatorId: query?.creatorId,
               },
             },
           },
         },
       },
+    };
+
+    const requests = await this.prisma.signatureRequest.findMany({
+      where,
       include: {
         collectibleComic: {
           include: {
@@ -423,28 +433,7 @@ export class DigitalAssetService {
       take: query.take,
     });
 
-    const totalItems = await this.prisma.signatureRequest.count({
-      where: {
-        collectibleComic: {
-          metadata: {
-            isUsed: query?.isUsed,
-            isSigned: query?.isSigned,
-            rarity: query?.rarity,
-            collection: {
-              comicIssue: {
-                ...(query?.comicIssueId
-                  ? { id: query?.comicIssueId }
-                  : { comicSlug: query?.comicSlug }),
-                comic: {
-                  creatorId: query?.creatorId,
-                },
-              },
-            },
-          },
-        },
-      },
-    });
-
+    const totalItems = await this.prisma.signatureRequest.count({ where });
     return {
       totalItems,
       requests: requests.map(({ collectibleComic, ...request }) => {

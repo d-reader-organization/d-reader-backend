@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ComicRarity, SignatureRequestStatus } from '@prisma/client';
+import { ComicRarity } from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -14,10 +14,15 @@ import {
   TransformStringToNumber,
 } from 'src/utils/transform';
 
+export enum SignatureRequestTab {
+  Resolved = 'Resolved',
+  Pending = 'Pending',
+}
+
 export class AutographRequestFilterParams extends Pagination {
-  @IsEnum(SignatureRequestStatus)
-  @ApiProperty({ enum: SignatureRequestStatus })
-  status: SignatureRequestStatus;
+  @IsEnum(SignatureRequestTab)
+  @ApiProperty({ enum: SignatureRequestTab })
+  status: SignatureRequestTab;
 
   @IsOptional()
   @TransformStringToNumber()
