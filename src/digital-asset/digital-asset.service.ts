@@ -66,15 +66,13 @@ import { MPL_CORE_CANDY_GUARD_PROGRAM_ID } from '@metaplex-foundation/mpl-core-c
 import { ERROR_MESSAGES } from '../utils/errors';
 import { TraitDto } from './dto/trait.dto';
 import { CollectibleComicRarityStatsInput } from './dto/collectible-comic-rarity-stats.dto';
-import {
-  CollectibleComicInput,
-  PaginatedCollectibleComicInput,
-} from './dto/collectible-comic.dto';
+import { CollectibleComicInput } from './dto/collectible-comic.dto';
 import { PrintEditionInput } from './dto/print-edition.dto';
 import { OneOfOneInput } from './dto/one-of-one.dto';
 import { DigitalAssetInput } from './dto/digital-asset.dto';
 import { addHours } from 'date-fns';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
+import { PaginatedAutographRequestInput } from './dto/autograph-request.dto';
 
 const getS3Folder = (address: string, assetType: AssetType) =>
   `${kebabCase(assetType)}/${address}/`;
@@ -382,7 +380,7 @@ export class DigitalAssetService {
 
   async findAutographRequests(
     query: AutographRequestFilterParams,
-  ): Promise<PaginatedCollectibleComicInput> {
+  ): Promise<PaginatedAutographRequestInput> {
     const requests = await this.prisma.signatureRequest.findMany({
       where: {
         collectibleComic: {
@@ -417,7 +415,7 @@ export class DigitalAssetService {
                 },
               },
             },
-            digitalAsset: true,
+            digitalAsset: { include: { owner: { include: { user: true } } } },
           },
         },
       },
@@ -449,13 +447,19 @@ export class DigitalAssetService {
 
     return {
       totalItems,
-      collectibleComics: requests.map(({ collectibleComic }) => {
+      requests: requests.map(({ collectibleComic, ...request }) => {
         const collection = collectibleComic.metadata.collection;
         return {
-          ...collectibleComic,
-          collection,
-          statefulCovers: collection.comicIssue.statefulCovers,
-          comicIssueTitle: collection.comicIssue.title,
+          user: collectibleComic.digitalAsset.owner.user,
+          requestedAt: request.createdAt,
+          resolvedAt: request.resolvedAt,
+          status: request.status,
+          collectibleComic: {
+            ...collectibleComic,
+            collection,
+            statefulCovers: collection.comicIssue.statefulCovers,
+            comicIssueTitle: collection.comicIssue.title,
+          },
         };
       }),
     };

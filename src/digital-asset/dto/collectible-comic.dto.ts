@@ -20,7 +20,6 @@ import {
   BaseDigitalAssetDto,
   DigitalAssetType,
 } from './base-digital-asset.dto';
-import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 
 export class CollectibleComicDto extends BaseDigitalAssetDto {
   @IsBoolean()
@@ -114,25 +113,4 @@ export function toCollectibleComicDto(
 
 export const toCollectibleComicDtoArray = (assets: CollectibleComicInput[]) => {
   return assets.map(toCollectibleComicDto);
-};
-
-export type PaginatedCollectibleComicInput = {
-  totalItems: number;
-  collectibleComics: CollectibleComicInput[];
-};
-
-export const toPaginatedCollectibleComicDto = (
-  input: PaginatedCollectibleComicInput,
-) => {
-  const plainPaginatedCollectibleComicDto: PaginatedResponseDto<CollectibleComicDto> =
-    {
-      totalItems: input.totalItems,
-      data: toCollectibleComicDtoArray(input.collectibleComics),
-    };
-
-  const paginatedCollectibleComicDto = plainToInstance(
-    PaginatedResponseDto<CollectibleComicDto>,
-    plainPaginatedCollectibleComicDto,
-  );
-  return paginatedCollectibleComicDto;
 };
