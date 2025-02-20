@@ -13,7 +13,6 @@ import { UserPayload } from '../auth/dto/authorization.dto';
 import {
   CollectibleComicDto,
   toCollectibleComicDtoArray,
-  toPaginatedCollectibleComicDto,
 } from './dto/collectible-comic.dto';
 import { AssetDto, toAssetDtoArray } from './dto/deprecated-digital-asset.dto';
 import { AutographRequestFilterParams } from './dto/autograph-request-filter-params.dto';
@@ -21,6 +20,10 @@ import { BotGateway } from 'src/discord/bot.gateway';
 import { AdminOrCreatorOwner } from 'src/guards/admin-or-creator-owner.guard';
 import { AdminGuard } from 'src/guards/roles.guard';
 import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
+import {
+  AutographRequestDto,
+  toPaginatedAutographRequestDto,
+} from './dto/autograph-request.dto';
 
 @ApiTags('Assets')
 @Controller('asset')
@@ -82,10 +85,11 @@ export class DigitalAssetController {
   @Get('autograph/get/request')
   async getAutographRequests(
     @Query() query: AutographRequestFilterParams,
-  ): Promise<PaginatedResponseDto<CollectibleComicDto>> {
-    const collectibleComics =
-      await this.digitalAssetService.findAutographRequests(query);
-    return toPaginatedCollectibleComicDto(collectibleComics);
+  ): Promise<PaginatedResponseDto<AutographRequestDto>> {
+    const requests = await this.digitalAssetService.findAutographRequests(
+      query,
+    );
+    return toPaginatedAutographRequestDto(requests);
   }
 
   @Post('create/print-edition-collection/:address')
