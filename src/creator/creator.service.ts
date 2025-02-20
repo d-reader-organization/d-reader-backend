@@ -99,6 +99,19 @@ export class CreatorService {
     return creator;
   }
 
+  async findMe(userId: number) {
+    const creator = await this.prisma.creatorChannel.findUnique({
+      where: { userId },
+    });
+
+    if (!creator) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.USER_ASSOCIATED_CREATOR_NOT_FOUND(userId),
+      );
+    }
+    return creator;
+  }
+
   // Switch to pool based unique handle generation or explicit username on register
   async createUniqueHandle(displayName: string) {
     let handle = snakeCase(displayName);

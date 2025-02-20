@@ -67,7 +67,7 @@ export class DigitalAssetController {
   }
 
   @UserAuth()
-  @Post('request-autograph/:address')
+  @Post('autograph/request/:address')
   async requestAutograph(
     @Param('address') address: string,
     @UserEntity() user: UserPayload,
@@ -77,7 +77,7 @@ export class DigitalAssetController {
   }
 
   @AdminOrCreatorOwner()
-  @Get('get/autograph-requests')
+  @Get('autograph/get/request')
   async getAutographRequests(
     params: AutographRequestFilterParams,
   ): Promise<CollectibleComicDto[]> {

@@ -84,6 +84,14 @@ export class CreatorController {
     return toCreatorDto(creator);
   }
 
+  /* Get creator data from auth token */
+  @UserAuth()
+  @Get('get/me')
+  async findMe(@UserEntity() user: UserPayload): Promise<CreatorChannelDto> {
+    const me = await this.creatorService.findMe(user.id);
+    return toCreatorDto(me);
+  }
+
   /* Get all creators */
   // @UseInterceptors(CacheInterceptor({ ttl: minutes(30) }))
   @OptionalUserAuth()
