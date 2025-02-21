@@ -34,8 +34,8 @@ Table User {
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
   creatorActivityFeeds CreatorActivityFeed [not null]
-  interestedProjects UserInterestedReceipt [not null]
-  projectReferrals UserInterestedReceipt [not null]
+  interestedCampaigns UserCampaignInterestReceipt [not null]
+  projectReferrals UserCampaignInterestReceipt [not null]
 }
 
 Table Wallet {
@@ -67,6 +67,7 @@ Table CreatorChannel {
   tippingAddress String [not null, default: '']
   s3BucketSlug String [unique, not null]
   comics Comic [not null]
+  investCampaigns InvestCampaign [not null]
   followers UserCreator [not null]
   user User [not null]
   userId Int [unique, not null]
@@ -135,6 +136,7 @@ Table Genre {
   priority Int [not null]
   color String [not null]
   comics Comic [not null]
+  investProjects InvestCampaign [not null]
 }
 
 Table RoyaltyWallet {
@@ -690,9 +692,10 @@ Table DigitalAssetTrait {
   digitalAsset DigitalAsset [not null]
 }
 
-Table UserInterestedReceipt {
+Table UserCampaignInterestReceipt {
   id Int [pk, increment]
-  projectSlug String [not null]
+  campaignSlug String [not null]
+  campaign InvestCampaign [not null]
   timestamp DateTime [not null]
   userId Int [not null]
   user User [not null]
@@ -701,7 +704,7 @@ Table UserInterestedReceipt {
   expressedAmount Int [not null, default: 0]
 
   indexes {
-    (projectSlug, userId) [unique]
+    (campaignSlug, userId) [unique]
   }
 }
 
@@ -818,6 +821,47 @@ Table ComicIssueSnapshot {
   value Int [not null]
   type ComicIssueSnapshotType [not null]
   timestamp DateTime [not null]
+}
+
+Table InvestCampaign {
+  id Int [pk, increment]
+  title String [not null]
+  slug String [unique, not null]
+  s3BucketSlug String [not null]
+  description String [not null, default: '']
+  subtitle String [not null, default: '']
+  banner String [not null, default: '']
+  cover String [not null, default: '']
+  logo String [not null, default: '']
+  raiseGoal Int [not null]
+  creator CreatorChannel [not null]
+  creatorId Int [not null]
+  genres Genre [not null]
+  info InvestCampaignInfo [not null]
+  rewards InvestCampaignReward [not null]
+  interests UserCampaignInterestReceipt [not null]
+  isActive Boolean [not null, default: true]
+  startDate DateTime
+  endDate DateTime
+}
+
+Table InvestCampaignReward {
+  id Int [pk, increment]
+  title String [not null]
+  image String [not null, default: '']
+  price Int [not null]
+  description String [not null]
+  campaignId Int [not null]
+  campaign InvestCampaign [not null]
+}
+
+Table InvestCampaignInfo {
+  id Int [pk, increment]
+  section InvestCampaignInfoSection [not null]
+  value String [not null]
+  image String [not null, default: '']
+  campaignId Int [not null]
+  campaign InvestCampaign [not null]
 }
 
 Enum WalletProvider {
@@ -971,6 +1015,13 @@ Enum ComicIssueSnapshotType {
   View
 }
 
+Enum InvestCampaignInfoSection {
+  Overview
+  Team
+  Offering
+  Roadmap
+}
+
 Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
@@ -1083,9 +1134,11 @@ Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
 
 Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 
-Ref: UserInterestedReceipt.userId > User.id
+Ref: UserCampaignInterestReceipt.campaignSlug > InvestCampaign.slug [delete: Cascade]
 
-Ref: UserInterestedReceipt.referrerId > User.id
+Ref: UserCampaignInterestReceipt.userId > User.id
+
+Ref: UserCampaignInterestReceipt.referrerId > User.id
 
 Ref: WheelReward.wheelId > Wheel.id
 
@@ -1110,3 +1163,9 @@ Ref: CreatorSnapshot.creatorId > CreatorChannel.id [delete: Cascade]
 Ref: ComicSnapshot.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: ComicIssueSnapshot.comicIssueId > ComicIssue.id [delete: Cascade]
+
+Ref: InvestCampaign.creatorId > CreatorChannel.id
+
+Ref: InvestCampaignReward.campaignId > InvestCampaign.id
+
+Ref: InvestCampaignInfo.campaignId > InvestCampaign.id
