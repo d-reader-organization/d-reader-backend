@@ -45,8 +45,8 @@ model User {
   wheelRewardReceipt             WheelRewardReceipt[]
   channel                        CreatorChannel?
   creatorActivityFeeds           CreatorActivityFeed[]
-  interestedProjects             UserInterestedReceipt[]             @relation(name: "UserToProject")
-  projectReferrals               UserInterestedReceipt[]             @relation(name: "ProjectReferrerToReferee")
+  interestedCampaigns            UserCampaignInterestReceipt[]       @relation(name: "UserToProject")
+  projectReferrals               UserCampaignInterestReceipt[]       @relation(name: "ProjectReferrerToReferee")
 }
 
 enum WalletProvider {
@@ -77,31 +77,31 @@ enum Role {
 }
 
 model CreatorChannel {
-  id             Int                   @id @default(autoincrement())
-  handle         String                @unique
-  displayName    String
-  banner         String                @default("")
-  avatar         String                @default("")
-  description    String                @default("")
-  website        String                @default("")
-  twitter        String                @default("")
-  instagram      String                @default("")
-  linktree       String                @default("")
-  discordId      String                @default("")
-  tippingAddress String                @default("")
-  s3BucketSlug   String                @unique
-  comics         Comic[]
-  investProjects InvestProject[]
-  followers      UserCreator[]
-  user           User                  @relation(fields: [userId], references: [id])
-  userId         Int                   @unique
-  createdAt      DateTime              @default(now())
-  featuredAt     DateTime?
-  verifiedAt     DateTime?
-  popularizedAt  DateTime?
-  deletedAt      DateTime?
-  activityFeed   CreatorActivityFeed[]
-  snapshots      CreatorSnapshot[]
+  id              Int                   @id @default(autoincrement())
+  handle          String                @unique
+  displayName     String
+  banner          String                @default("")
+  avatar          String                @default("")
+  description     String                @default("")
+  website         String                @default("")
+  twitter         String                @default("")
+  instagram       String                @default("")
+  linktree        String                @default("")
+  discordId       String                @default("")
+  tippingAddress  String                @default("")
+  s3BucketSlug    String                @unique
+  comics          Comic[]
+  investCampaigns InvestCampaign[]
+  followers       UserCreator[]
+  user            User                  @relation(fields: [userId], references: [id])
+  userId          Int                   @unique
+  createdAt       DateTime              @default(now())
+  featuredAt      DateTime?
+  verifiedAt      DateTime?
+  popularizedAt   DateTime?
+  deletedAt       DateTime?
+  activityFeed    CreatorActivityFeed[]
+  snapshots       CreatorSnapshot[]
 }
 
 enum AudienceType {
@@ -159,13 +159,13 @@ model UserComic {
 }
 
 model Genre {
-  name     String  @unique
-  slug     String  @id
-  icon     String  @default("")
-  priority Int
-  color    String
-  comics   Comic[]
-  investProjects  InvestProject[]
+  name           String           @unique
+  slug           String           @id
+  icon           String           @default("")
+  priority       Int
+  color          String
+  comics         Comic[]
+  investProjects InvestCampaign[]
 }
 
 model RoyaltyWallet {
@@ -755,17 +755,18 @@ model DigitalAssetTrait {
   digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
 
-model UserInterestedReceipt {
-  id              Int      @id @default(autoincrement())
-  projectSlug     String
+model UserCampaignInterestReceipt {
+  id              Int            @id @default(autoincrement())
+  campaignSlug    String
+  campaign        InvestCampaign @relation(fields: [campaignSlug], references: [slug], onUpdate: Cascade, onDelete: Cascade)
   timestamp       DateTime
   userId          Int
-  user            User     @relation("UserToProject", fields: [userId], references: [id])
+  user            User           @relation("UserToProject", fields: [userId], references: [id])
   referrerId      Int?
-  referrer        User?    @relation("ProjectReferrerToReferee", fields: [referrerId], references: [id])
-  expressedAmount Int      @default(0)
+  referrer        User?          @relation("ProjectReferrerToReferee", fields: [referrerId], references: [id])
+  expressedAmount Int            @default(0)
 
-  @@unique([projectSlug, userId])
+  @@unique([campaignSlug, userId])
 }
 
 enum WheelType {
@@ -946,31 +947,52 @@ model ComicIssueSnapshot {
   timestamp    DateTime
 }
 
-model InvestProject {
-  id      Int @id @default(autoincrement())
-  title   String
-  slug    String  @unique
-  description String
-  subtitle String
-  genres  Genre[]
-  banner  String
-  cover  String
-  logo  String
-  creator CreatorChannel  @relation(references: [id], fields: [creatorId])
-  creatorId Int
-  info    InvestProjectInfo[]
-  raiseGoal  Int
-  startDate   DateTime?
-  endDate     DateTime?
+model InvestCampaign {
+  id           Int                           @id @default(autoincrement())
+  title        String
+  slug         String                        @unique
+  s3BucketSlug String
+  description  String                        @default("")
+  subtitle     String                        @default("")
+  banner       String                        @default("")
+  cover        String                        @default("")
+  logo         String                        @default("")
+  raiseGoal    Int
+  creator      CreatorChannel                @relation(references: [id], fields: [creatorId])
+  creatorId    Int
+  genres       Genre[]
+  info         InvestCampaignInfo[]
+  rewards      InvestCampaignReward[]
+  interests    UserCampaignInterestReceipt[]
+  isActive     Boolean                       @default(true)
+  startDate    DateTime?
+  endDate      DateTime?
 }
 
-model InvestProjectInfo {
-  id      Int @id @default(autoincrement())
-  section String
-  description    String
-  image   String  @default("")
-  projectId Int 
-  project   InvestProject @relation(fields: [projectId], references: [id])
+model InvestCampaignReward {
+  id          Int            @id @default(autoincrement())
+  title       String
+  image       String         @default("")
+  price       Int
+  description String
+  campaignId  Int
+  campaign    InvestCampaign @relation(fields: [campaignId], references: [id])
+}
+
+enum InvestCampaignInfoSection {
+  Overview
+  Team
+  Offering
+  Roadmap
+}
+
+model InvestCampaignInfo {
+  id         Int                       @id @default(autoincrement())
+  section    InvestCampaignInfoSection
+  value      String
+  image      String                    @default("")
+  campaignId Int
+  campaign   InvestCampaign            @relation(fields: [campaignId], references: [id])
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)

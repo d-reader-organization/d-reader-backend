@@ -17,7 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from '../auth/password.service';
 import { WalletService } from '../wallet/wallet.service';
 import { MutexService } from '../mutex/mutex.service';
-import { InvestService } from '../invest/invest.service';
+import { InvestService } from '../invest/campaign.service';
 
 @Module({
   controllers: [TransactionController],

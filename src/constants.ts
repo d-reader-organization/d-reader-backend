@@ -3,7 +3,6 @@ import { RarityShare } from './comic-issue/dto/types';
 import { ComicRarity as PrismaComicRarity } from '@prisma/client';
 import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js';
 import { CONFIG } from './configs/config';
-import { INVEST_PROJECT } from './types/shared';
 
 export const MAX_NAME_LENGTH = 32;
 export const MAX_URI_LENGTH = 200;
@@ -284,36 +283,3 @@ export const COLLECTION_MANAGER_MULTISIG =
   process.env.SOLANA_CLUSTER === 'devnet'
     ? '5WXjY2qFMDg6hu2qgpHeQZwvKLLZsitXxtEYZeknA5Vu'
     : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';
-
-export const PROJECTS: INVEST_PROJECT[] = [
-  { slug: 'the-recruits', title: 'The Recruits', isCampaignActive: false },
-  {
-    slug: 'bonk-and-the-curse-of-the-bear-king',
-    title: 'BONK and the curse of the Bear King',
-    isCampaignActive: true,
-  },
-  { slug: 'inner-demons', title: 'Inner Demons', isCampaignActive: false },
-  { slug: 'mad-lads', title: 'Mad Lads', isCampaignActive: false },
-  {
-    slug: 'galactic-geckos',
-    title: 'Galactic Geckos',
-    isCampaignActive: false,
-  },
-  {
-    slug: 'enter-the-tensorverse',
-    title: 'Enter the Tensorverse',
-    isCampaignActive: false,
-  },
-  { slug: 'apt-323', title: 'Apt 323', isCampaignActive: false },
-  { slug: 'dream-city', title: 'Dream City', isCampaignActive: false },
-  {
-    slug: 'liberty-square-originz',
-    title: 'Liberty Square Originz',
-    isCampaignActive: false,
-  },
-  {
-    slug: 'the-lump-sum-saga',
-    title: 'The Lump Sum Saga',
-    isCampaignActive: false,
-  },
-];
