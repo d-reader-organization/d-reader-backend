@@ -7,12 +7,12 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Pagination } from 'src/types/pagination.dto';
-import { SortOrder } from 'src/types/sort-order';
+import { Pagination } from '../../types/pagination.dto';
+import { SortOrder } from '../../types/sort-order';
 import {
   TransformStringToBoolean,
   TransformStringToNumber,
-} from 'src/utils/transform';
+} from '../../utils/transform';
 
 export enum SignatureRequestTab {
   Resolved = 'Resolved',
