@@ -955,7 +955,6 @@ model Campaign {
   subtitle     String                 @default("")
   banner       String                 @default("")
   cover        String                 @default("")
-  video        String                 @default("")
   raiseGoal    Int
   creator      CreatorChannel         @relation(references: [id], fields: [creatorId])
   creatorId    Int
@@ -982,6 +981,7 @@ model CampaignReward {
   image       String   @default("")
   price       Int
   description String
+  supply      Int?
   campaignId  Int
   campaign    Campaign @relation(fields: [campaignId], references: [id])
 }

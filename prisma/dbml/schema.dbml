@@ -858,6 +858,7 @@ Table CampaignReward {
   image String [not null, default: '']
   price Int [not null]
   description String [not null]
+  supply Int
   campaignId Int [not null]
   campaign Campaign [not null]
 }
