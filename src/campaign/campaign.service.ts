@@ -15,9 +15,8 @@ import {
   UpdateCampaignFilesDto,
 } from './dto/update-campaign.dto';
 import { PickFields } from '../types/shared';
-import { Campaign, Prisma } from '@prisma/client';
+import { Campaign } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
-import { isEqual, isNil, sortBy } from 'lodash';
 import { CampaignInput } from './dto/campaign.dto';
 import { CampaignStatsInput } from './dto/campaign-stats.dto';
 import {
@@ -25,6 +24,7 @@ import {
   ReferredCampaignParams,
 } from './dto/campaign-referral-params.dto';
 import { PaginatedUserCampaignInterestInput } from './dto/user-campaign-interest.dto';
+import { processCampaignIdString } from 'src/utils/campaign';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<
@@ -44,7 +44,7 @@ export class CampaignService {
     creatorId: number,
     createCampaignDto: CreateCampaignDto,
   ) {
-    const { genres, title, slug } = createCampaignDto;
+    const { title, slug } = createCampaignDto;
 
     await Promise.all([
       this.throwIfTitleTaken(title),
@@ -59,7 +59,6 @@ export class CampaignService {
           slug,
           s3BucketSlug: appendTimestamp(slug),
           creator: { connect: { id: creatorId } },
-          genres: { connect: genres.map((slug) => ({ slug })) },
         },
       });
 
@@ -71,25 +70,10 @@ export class CampaignService {
   }
 
   async update(slug: string, updateCampaignDto: UpdateCampaignDto) {
-    const { genres, slug: newSlug, ...rest } = updateCampaignDto;
+    const { slug: newSlug, ...rest } = updateCampaignDto;
+
     if (newSlug && slug !== newSlug) {
       await this.throwIfSlugTaken(newSlug);
-    }
-
-    const campaign = await this.prisma.campaign.findUnique({
-      where: { slug },
-      include: { genres: true },
-    });
-
-    const sortedCurrentGenres = sortBy(campaign.genres.map((g) => g.slug));
-    const sortedNewGenres = sortBy(genres);
-    const areGenresEqual = isEqual(sortedCurrentGenres, sortedNewGenres);
-
-    const areGenresUpdated = !isNil(genres) && !areGenresEqual;
-
-    let genresData: Prisma.CampaignUpdateInput['genres'];
-    if (areGenresUpdated) {
-      genresData = { set: genres.map((slug) => ({ slug })) };
     }
 
     try {
@@ -98,7 +82,6 @@ export class CampaignService {
         data: {
           ...rest,
           ...(newSlug && { slug: newSlug }),
-          genres: genresData,
         },
       });
       return updatedCampaign;
@@ -212,54 +195,52 @@ export class CampaignService {
   }
 
   async expressUserInterest(
-    campaignSlug: string,
-    expressedAmount: number,
+    campaignId: string,
+    rewardId: number,
     userId: number,
     ref?: string,
   ) {
-    const campaign = await this.prisma.campaign.findUnique({
-      where: { slug: campaignSlug },
-    });
+    const where = processCampaignIdString(campaignId);
+
+    const campaign = await this.prisma.campaign.findUnique({ where });
 
     if (!campaign) {
       throw new BadRequestException(
-        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignSlug),
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
       );
     }
 
     try {
       const { user } = await this.prisma.userCampaignInterest.upsert({
-        where: { campaignSlug_userId: { campaignSlug, userId } },
+        where: { campaignId_userId: { campaignId: campaign.id, userId } },
         include: { user: true },
         update: {
-          expressedAmount: Math.min(1000, expressedAmount),
+          reward: { connect: { id: rewardId } },
         },
         create: {
-          campaign: { connect: { slug: campaignSlug } },
-          timestamp: new Date(),
-          expressedAmount: Math.min(1000, expressedAmount),
-          user: {
-            connect: { id: userId },
-          },
+          campaign: { connect: { id: campaign.id } },
+          expressedInterestAt: new Date(),
+          user: { connect: { id: userId } },
+          reward: { connect: { id: rewardId } },
         },
       });
 
       this.websocketGateway.handleActivityNotification({
         user,
         type: ActivityNotificationType.ExpressedInterest,
-        targetId: campaignSlug,
+        targetId: campaign.slug,
         targetTitle: campaign.title,
       });
 
-      await this.redeemReferral(ref, userId, campaignSlug);
+      await this.redeemReferral(ref, userId, campaign.id);
     } catch (e) {
       throw new BadRequestException(
-        ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(campaignSlug),
+        ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(campaignId),
       );
     }
   }
 
-  async redeemReferral(ref: string, refereeId: number, campaignSlug: string) {
+  async redeemReferral(ref: string, refereeId: number, campaignId: number) {
     if (!ref) {
       console.error(ERROR_MESSAGES.REFERRER_NAME_UNDEFINED);
     } else if (!refereeId) {
@@ -278,7 +259,7 @@ export class CampaignService {
       } else {
         // if it's all good so far, apply the referral
         await this.prisma.userCampaignInterest.update({
-          where: { id: refereeId, campaignSlug },
+          where: { id: refereeId, campaignId },
           data: { referrerId: referrer.id },
         });
       }
@@ -290,37 +271,48 @@ export class CampaignService {
     return campaigns;
   }
 
-  async findOne(slug: string, userId?: number): Promise<CampaignInput> {
+  async findOne(campaignId: string, userId?: number): Promise<CampaignInput> {
+    const where = processCampaignIdString(campaignId);
     const campaign = await this.prisma.campaign.findUnique({
-      where: { slug },
-      include: { genres: true, creator: true, rewards: true },
+      where,
+      include: { creator: true, rewards: true },
     });
 
     if (!campaign) {
-      throw new BadRequestException(ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(slug));
+      throw new BadRequestException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
+      );
     }
 
-    const stats = await this.findStats(slug, userId);
+    const stats = await this.findStats(campaign.id, userId);
     return { ...campaign, stats };
   }
 
-  async findStats(slug: string, userId?: number): Promise<CampaignStatsInput> {
+  async findStats(
+    campaignId: number,
+    userId?: number,
+  ): Promise<CampaignStatsInput> {
     const userReceipt = userId
       ? await this.prisma.userCampaignInterest.findUnique({
-          where: { campaignSlug_userId: { campaignSlug: slug, userId } },
+          where: { campaignId_userId: { campaignId, userId } },
+          select: { reward: { select: { price: true } } },
         })
       : undefined;
 
-    const data = await this.prisma.userCampaignInterest.aggregate({
-      where: { campaignSlug: slug },
-      _count: { id: true },
-      _sum: { expressedAmount: true },
-    });
+    const userCampaignInterests =
+      await this.prisma.userCampaignInterest.findMany({
+        where: { campaignId },
+        select: { reward: { select: { price: true } } },
+      });
+
+    const totalPrice = userCampaignInterests.reduce((sum, interest) => {
+      return sum + (interest.reward?.price || 0);
+    }, 0);
 
     return {
-      numberOfUsersPledged: data?._count?.id || 0,
-      expectedPledgedAmount: data?._sum?.expressedAmount || 0,
-      userExpressedAmount: userReceipt?.expressedAmount,
+      numberOfUsersPledged: userCampaignInterests.length,
+      expectedPledgedAmount: totalPrice,
+      userExpressedAmount: userReceipt?.reward?.price,
     };
   }
 
@@ -341,9 +333,9 @@ export class CampaignService {
     query: CampaignReferralParams,
     userId: number,
   ): Promise<PaginatedUserCampaignInterestInput> {
-    const receipts = await this.prisma.userCampaignInterest.findMany({
+    const referrals = await this.prisma.userCampaignInterest.findMany({
       where: { referrerId: userId },
-      include: { user: true },
+      include: { user: true, reward: { select: { price: true } } },
       skip: query?.skip,
       take: query?.take,
     });
@@ -352,16 +344,29 @@ export class CampaignService {
       where: { referrerId: userId },
     });
 
-    return { data: receipts, totalItems };
+    return { data: referrals, totalItems };
   }
 
-  async findUserCampaignInterestReceipts(campaignSlug: string) {
-    const receipts = await this.prisma.userCampaignInterest.findMany({
-      where: { campaignSlug },
-      include: { user: true },
-      orderBy: { timestamp: 'desc' },
+  async findCampaignBackers(campaignId: string) {
+    const where = processCampaignIdString(campaignId);
+    const campaign = await this.prisma.campaign.findUnique({
+      where,
+      include: { creator: true, rewards: true },
     });
-    return receipts;
+
+    if (!campaign) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
+      );
+    }
+
+    const backers = await this.prisma.userCampaignInterest.findMany({
+      where: { campaignId: campaign.id },
+      include: { user: true, reward: { select: { price: true } } },
+      orderBy: { expressedInterestAt: 'desc' },
+    });
+
+    return backers;
   }
 
   async throwIfTitleTaken(title: string) {

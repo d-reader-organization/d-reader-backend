@@ -4,11 +4,20 @@ ALTER TABLE "UserInterestedReceipt" DROP CONSTRAINT "UserInterestedReceipt_refer
 -- DropForeignKey
 ALTER TABLE "UserInterestedReceipt" DROP CONSTRAINT "UserInterestedReceipt_userId_fkey";
 
--- RenameTable
-ALTER TABLE "UserInterestedReceipt" RENAME TO "UserCampaignInterest";
+-- DropTable
+DROP TABLE "UserInterestedReceipt";
 
--- RenameColumn
-ALTER TABLE "UserCampaignInterest" RENAME COLUMN "projectSlug" TO "campaignSlug";
+-- CreateTable
+CREATE TABLE "UserCampaignInterest" (
+    "id" SERIAL NOT NULL,
+    "campaignId" INTEGER NOT NULL,
+    "rewardId" INTEGER NOT NULL,
+    "expressedInterestAt" TIMESTAMP(3) NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "referrerId" INTEGER,
+
+    CONSTRAINT "UserCampaignInterest_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Campaign" (
@@ -31,17 +40,6 @@ CREATE TABLE "Campaign" (
 );
 
 -- CreateTable
-CREATE TABLE "CampaginGenre" (
-    "name" TEXT NOT NULL,
-    "slug" TEXT NOT NULL,
-    "icon" TEXT NOT NULL DEFAULT '',
-    "priority" INTEGER NOT NULL,
-    "color" TEXT NOT NULL,
-
-    CONSTRAINT "CampaginGenre_pkey" PRIMARY KEY ("slug")
-);
-
--- CreateTable
 CREATE TABLE "CampaignReward" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
@@ -54,29 +52,17 @@ CREATE TABLE "CampaignReward" (
     CONSTRAINT "CampaignReward_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_CampaginGenreToCampaign" (
-    "A" TEXT NOT NULL,
-    "B" INTEGER NOT NULL
-);
-
 -- CreateIndex
-CREATE UNIQUE INDEX "UserCampaignInterest_campaignSlug_userId_key" ON "UserCampaignInterest"("campaignSlug", "userId");
+CREATE UNIQUE INDEX "UserCampaignInterest_campaignId_userId_key" ON "UserCampaignInterest"("campaignId", "userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Campaign_slug_key" ON "Campaign"("slug");
 
--- CreateIndex
-CREATE UNIQUE INDEX "CampaginGenre_name_key" ON "CampaginGenre"("name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "_CampaginGenreToCampaign_AB_unique" ON "_CampaginGenreToCampaign"("A", "B");
-
--- CreateIndex
-CREATE INDEX "_CampaginGenreToCampaign_B_index" ON "_CampaginGenreToCampaign"("B");
+-- AddForeignKey
+ALTER TABLE "UserCampaignInterest" ADD CONSTRAINT "UserCampaignInterest_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserCampaignInterest" ADD CONSTRAINT "UserCampaignInterest_campaignSlug_fkey" FOREIGN KEY ("campaignSlug") REFERENCES "Campaign"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserCampaignInterest" ADD CONSTRAINT "UserCampaignInterest_rewardId_fkey" FOREIGN KEY ("rewardId") REFERENCES "CampaignReward"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserCampaignInterest" ADD CONSTRAINT "UserCampaignInterest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -89,9 +75,3 @@ ALTER TABLE "Campaign" ADD CONSTRAINT "Campaign_creatorId_fkey" FOREIGN KEY ("cr
 
 -- AddForeignKey
 ALTER TABLE "CampaignReward" ADD CONSTRAINT "CampaignReward_campaignId_fkey" FOREIGN KEY ("campaignId") REFERENCES "Campaign"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_CampaginGenreToCampaign" ADD CONSTRAINT "_CampaginGenreToCampaign_A_fkey" FOREIGN KEY ("A") REFERENCES "CampaginGenre"("slug") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_CampaginGenreToCampaign" ADD CONSTRAINT "_CampaginGenreToCampaign_B_fkey" FOREIGN KEY ("B") REFERENCES "Campaign"("id") ON DELETE CASCADE ON UPDATE CASCADE;

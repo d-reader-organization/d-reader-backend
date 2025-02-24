@@ -1,6 +1,6 @@
-import { User, UserCampaignInterest } from '@prisma/client';
+import { CampaignReward, User, UserCampaignInterest } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
-import { IsDate, IsNumber, IsString } from 'class-validator';
+import { IsDate, IsNumber } from 'class-validator';
 import { PaginatedResponseDto } from 'src/types/paginated-response.dto';
 import { BasicUserDto, toBasicUserDto } from 'src/user/dto/basic-user-dto';
 
@@ -8,11 +8,8 @@ export class UserCampaignInteresttDto {
   @IsNumber()
   id: number;
 
-  @IsString()
-  campaignSlug: string;
-
   @IsDate()
-  timestamp: Date;
+  expressedInterestAt: Date;
 
   @Type(() => BasicUserDto)
   user: BasicUserDto;
@@ -23,15 +20,15 @@ export class UserCampaignInteresttDto {
 
 export type UserCampaignInterestInput = UserCampaignInterest & {
   user: User;
+  reward: Pick<CampaignReward, 'price'>;
 };
 
-export function toUserCampaignInteresttDto(receipt: UserCampaignInterestInput) {
+export function toUserCampaignInteresttDto(input: UserCampaignInterestInput) {
   const plainUserCampaignInterestDto: UserCampaignInteresttDto = {
-    id: receipt.id,
-    campaignSlug: receipt.campaignSlug,
-    timestamp: receipt.timestamp,
-    user: toBasicUserDto(receipt.user),
-    expressedAmount: receipt.expressedAmount,
+    id: input.id,
+    expressedInterestAt: input.expressedInterestAt,
+    user: toBasicUserDto(input.user),
+    expressedAmount: input.reward.price,
   };
 
   return plainToInstance(

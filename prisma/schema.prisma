@@ -755,17 +755,18 @@ model DigitalAssetTrait {
 }
 
 model UserCampaignInterest {
-  id              Int      @id @default(autoincrement())
-  campaignSlug    String
-  campaign        Campaign @relation(fields: [campaignSlug], references: [slug], onUpdate: Cascade, onDelete: Cascade)
-  timestamp       DateTime
-  userId          Int
-  user            User     @relation("UserToCampaign", fields: [userId], references: [id])
-  referrerId      Int?
-  referrer        User?    @relation("CampaignReferrerToReferee", fields: [referrerId], references: [id])
-  expressedAmount Int      @default(0)
+  id                  Int            @id @default(autoincrement())
+  campaignId          Int
+  campaign            Campaign       @relation(fields: [campaignId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  rewardId            Int
+  reward              CampaignReward @relation(fields: [rewardId], references: [id])
+  expressedInterestAt DateTime
+  userId              Int
+  user                User           @relation("UserToCampaign", fields: [userId], references: [id])
+  referrerId          Int?
+  referrer            User?          @relation("CampaignReferrerToReferee", fields: [referrerId], references: [id])
 
-  @@unique([campaignSlug, userId])
+  @@unique([campaignId, userId])
 }
 
 enum WheelType {
@@ -955,10 +956,10 @@ model Campaign {
   subtitle     String                 @default("")
   banner       String                 @default("")
   cover        String                 @default("")
+  video        String                 @default("")
   raiseGoal    Int
   creator      CreatorChannel         @relation(references: [id], fields: [creatorId])
   creatorId    Int
-  genres       CampaginGenre[]
   info         String                 @default("")
   rewards      CampaignReward[]
   backers      UserCampaignInterest[]
@@ -966,24 +967,16 @@ model Campaign {
   endDate      DateTime?
 }
 
-model CampaginGenre {
-  name      String     @unique
-  slug      String     @id
-  icon      String     @default("")
-  priority  Int
-  color     String
-  campagins Campaign[]
-}
-
 model CampaignReward {
-  id          Int      @id @default(autoincrement())
+  id          Int                    @id @default(autoincrement())
   name        String
-  image       String   @default("")
+  image       String                 @default("")
   price       Int
   description String
   supply      Int?
   campaignId  Int
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
+  campaign    Campaign               @relation(fields: [campaignId], references: [id])
+  backers     UserCampaignInterest[]
 }
 
 // TODO: potentially make the comicIssue.number non-unique (if one comic has multiple editions of the same episode)

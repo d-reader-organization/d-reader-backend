@@ -121,11 +121,10 @@ export class CampaignController {
     return toPaginatedUserCampaignInterestDto(campaigns);
   }
 
-  @Get('/get/:slug/interest-receipts')
+  @Get('/get/:slug/backers')
   async find(@Param('slug') slug: string) {
-    const receipts =
-      await this.campaignService.findUserCampaignInterestReceipts(slug);
-    return toUserCampaignInterestDtoArray(receipts);
+    const backers = await this.campaignService.findCampaignBackers(slug);
+    return toUserCampaignInterestDtoArray(backers);
   }
 
   /* Update specific campaign */
