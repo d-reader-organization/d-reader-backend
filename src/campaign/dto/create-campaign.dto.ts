@@ -50,20 +50,3 @@ export class CreateCampaignDto {
   @IsDate()
   endDate?: Date;
 }
-
-export class UploadCampaignFilesDto {
-  @IsOptional()
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  banner?: Express.Multer.File | null;
-
-  @IsOptional()
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  cover?: Express.Multer.File | null;
-
-  @IsOptional()
-  @ApiProperty({ type: 'string', format: 'binary' })
-  @Transform(({ value }) => value[0])
-  logo?: Express.Multer.File | null;
-}

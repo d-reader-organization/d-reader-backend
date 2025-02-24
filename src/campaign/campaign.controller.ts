@@ -18,9 +18,9 @@ import { UserPayload } from '../auth/dto/authorization.dto';
 import { UserAuth } from 'src/guards/user-auth.guard';
 import { OptionalUserAuth } from 'src/guards/optional-user-auth.guard';
 import {
-  toPaginatedUserCampaignInterestedReceiptDto,
-  toUserCampaignInterestedReceiptDtoArray,
-} from './dto/user-campaign-interested-receipt.dto';
+  toPaginatedUserCampaignInterestDto,
+  toUserCampaignInterestDtoArray,
+} from './dto/user-campaign-interest.dto';
 import { CacheInterceptor } from '../cache/cache.interceptor';
 import { minutes } from '@nestjs/throttler';
 import {
@@ -118,14 +118,14 @@ export class CampaignController {
       query,
       user.id,
     );
-    return toPaginatedUserCampaignInterestedReceiptDto(campaigns);
+    return toPaginatedUserCampaignInterestDto(campaigns);
   }
 
   @Get('/get/:slug/interest-receipts')
   async find(@Param('slug') slug: string) {
     const receipts =
       await this.campaignService.findUserCampaignInterestReceipts(slug);
-    return toUserCampaignInterestedReceiptDtoArray(receipts);
+    return toUserCampaignInterestDtoArray(receipts);
   }
 
   /* Update specific campaign */
@@ -200,20 +200,38 @@ export class CampaignController {
     return toCampaignDto(updatedCampaign);
   }
 
-  /* Update specific campaign logo file */
+  /* Update specific campaign info file */
   // @ComicOwnerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiFile('logo')
-  @UseInterceptors(FileInterceptor('logo'))
-  @Patch('update/:slug/logo')
+  @ApiFile('info')
+  @UseInterceptors(FileInterceptor('info'))
+  @Patch('update/:slug/info')
   async updateLogo(
     @Param('slug') slug: string,
-    @UploadedFile() logo: Express.Multer.File,
+    @UploadedFile() info: Express.Multer.File,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.updateFile(
       slug,
-      logo,
-      'logo',
+      info,
+      'info',
+    );
+    return toCampaignDto(updatedCampaign);
+  }
+
+  /* Update specific campaign video file */
+  // @ComicOwnerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiFile('video')
+  @UseInterceptors(FileInterceptor('video'))
+  @Patch('update/:slug/video')
+  async updateVideo(
+    @Param('slug') slug: string,
+    @UploadedFile() video: Express.Multer.File,
+  ): Promise<CampaignDto> {
+    const updatedCampaign = await this.campaignService.updateFile(
+      slug,
+      video,
+      'video',
     );
     return toCampaignDto(updatedCampaign);
   }

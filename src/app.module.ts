@@ -38,7 +38,7 @@ import { DraftComicIssueSalesDataModule } from './draft-comic-issue-sales-data/d
 import { TwitterModule } from './twitter/twitter.module';
 import { BlinkModule } from './blink/blink.module';
 import { MutexModule } from './mutex/mutex.module';
-import { CampaignModule } from './invest/campaign.module';
+import { CampaignModule } from './campaign/campaign.module';
 import { CacheModule as CacheMangerModule } from '@nestjs/cache-manager';
 import { CacheModule } from './cache/cache.module';
 import { WheelModule } from './wheel/wheel.module';

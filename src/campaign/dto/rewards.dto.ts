@@ -1,4 +1,4 @@
-import { InvestCampaignReward } from '@prisma/client';
+import { CampaignReward } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { IsInt, IsNumber, IsString } from 'class-validator';
 import { getPublicUrl } from 'src/aws/s3client';
@@ -8,7 +8,7 @@ export class CampaignRewardDto {
   id: number;
 
   @IsString()
-  title: string;
+  name: string;
 
   @IsString()
   description: string;
@@ -20,10 +20,10 @@ export class CampaignRewardDto {
   price: number;
 }
 
-export function toCampaignRewardDto(input: InvestCampaignReward) {
+export function toCampaignRewardDto(input: CampaignReward) {
   const plainCampaignRewardDto: CampaignRewardDto = {
     id: input.id,
-    title: input.title,
+    name: input.name,
     description: input.description,
     image: getPublicUrl(input.image),
     price: input.price,
@@ -33,6 +33,6 @@ export function toCampaignRewardDto(input: InvestCampaignReward) {
   return rewardDto;
 }
 
-export function toCampaignRewardDtoArray(rewards: InvestCampaignReward[]) {
+export function toCampaignRewardDtoArray(rewards: CampaignReward[]) {
   return rewards.map(toCampaignRewardDto);
 }
