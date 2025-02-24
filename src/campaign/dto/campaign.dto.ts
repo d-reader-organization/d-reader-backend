@@ -1,21 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
+  Campaign,
+  CampaignReward,
   CreatorChannel,
   Genre,
-  InvestCampaign,
-  InvestCampaignInfo,
-  InvestCampaignInfoSection,
-  InvestCampaignReward,
 } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsDate, IsInt, IsOptional, IsString } from 'class-validator';
 import {
   PartialCreatorDto,
   toPartialCreatorDto,
@@ -32,21 +22,6 @@ import {
   CampaignStatsInput,
   toCampaignStatsDto,
 } from './campaign-stats.dto';
-
-export class CampaignInfoDto {
-  @IsInt()
-  id: number;
-
-  @ApiProperty({ enum: InvestCampaignInfoSection })
-  @IsEnum({ InvestCampaignInfoSection })
-  section: InvestCampaignInfoSection;
-
-  @IsString()
-  value: string;
-
-  @IsString()
-  image: string;
-}
 
 export class CampaignDto {
   @IsInt()
@@ -71,7 +46,10 @@ export class CampaignDto {
   cover: string;
 
   @IsString()
-  logo: string;
+  info: string;
+
+  @IsString()
+  video: string;
 
   @IsInt()
   raiseGoal: number;
@@ -99,11 +77,6 @@ export class CampaignDto {
 
   @IsOptional()
   @IsArray()
-  @Type(() => CampaignInfoDto)
-  info?: CampaignInfoDto[];
-
-  @IsOptional()
-  @IsArray()
   @Type(() => CampaignRewardDto)
   rewards?: CampaignRewardDto[];
 }
@@ -111,12 +84,10 @@ export class CampaignDto {
 type WithStats = { stats?: CampaignStatsInput };
 type WithGenres = { genres?: Genre[] };
 type WithCreator = { creator?: CreatorChannel };
-type WithRewards = { rewards?: InvestCampaignReward[] };
-type WithInfo = { info?: InvestCampaignInfo[] };
+type WithRewards = { rewards?: CampaignReward[] };
 
-export type CampaignInput = InvestCampaign &
+export type CampaignInput = Campaign &
   WithRewards &
-  WithInfo &
   WithGenres &
   WithCreator &
   WithStats;
@@ -132,12 +103,12 @@ export function toCampaignDto(campaign: CampaignInput) {
     slug: campaign.slug,
     cover: ifDefined(campaign.cover, getPublicUrl),
     banner: ifDefined(campaign.banner, getPublicUrl),
-    logo: ifDefined(campaign.logo, getPublicUrl),
+    video: ifDefined(campaign.video, getPublicUrl),
+    info: ifDefined(campaign.info, getPublicUrl),
     description: campaign.description,
     genres: ifDefined(campaign.genres, toPartialGenreDtoArray),
     creator: ifDefined(campaign.creator, toPartialCreatorDto),
     rewards: ifDefined(campaign.rewards, toCampaignRewardDtoArray),
-    info: ifDefined(campaign.info, toCampaignInfoDtoArray),
     stats: ifDefined(campaign.stats, toCampaignStatsDto),
   };
 
@@ -148,22 +119,3 @@ export function toCampaignDto(campaign: CampaignInput) {
 export const toCampaignDtoArray = (inputs: CampaignInput[]) => {
   return inputs.map(toCampaignDto);
 };
-
-function toCampaignInfoDto(input: InvestCampaignInfo) {
-  const plainCampaignInfoDto: CampaignInfoDto = {
-    id: input.id,
-    section: input.section,
-    value: input.value,
-    image: ifDefined(input.image, getPublicUrl),
-  };
-
-  const campaignInfoDto = plainToInstance(
-    CampaignInfoDto,
-    plainCampaignInfoDto,
-  );
-  return campaignInfoDto;
-}
-
-function toCampaignInfoDtoArray(inputs: InvestCampaignInfo[]) {
-  return inputs.map(toCampaignInfoDto);
-}

@@ -15,7 +15,7 @@ import {
   UpdateCampaignFilesDto,
 } from './dto/update-campaign.dto';
 import { PickFields } from '../types/shared';
-import { InvestCampaign, Prisma } from '@prisma/client';
+import { Campaign, Prisma } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import { isEqual, isNil, sortBy } from 'lodash';
 import { CampaignInput } from './dto/campaign.dto';
@@ -24,12 +24,12 @@ import {
   CampaignReferralParams,
   ReferredCampaignParams,
 } from './dto/campaign-referral-params.dto';
-import { PaginatedUserCampaignInterestedReceiptInput } from './dto/user-campaign-interested-receipt.dto';
+import { PaginatedUserCampaignInterestInput } from './dto/user-campaign-interest.dto';
 
 const getS3Folder = (slug: string) => `comics/${slug}/`;
 type ComicFileProperty = PickFields<
-  InvestCampaign,
-  'cover' | 'banner' | 'logo'
+  Campaign,
+  'cover' | 'banner' | 'info' | 'video'
 >;
 
 @Injectable()
@@ -52,7 +52,7 @@ export class CampaignService {
     ]);
 
     try {
-      const campaign = await this.prisma.investCampaign.create({
+      const campaign = await this.prisma.campaign.create({
         data: {
           ...createCampaignDto,
           title,
@@ -76,7 +76,7 @@ export class CampaignService {
       await this.throwIfSlugTaken(newSlug);
     }
 
-    const campaign = await this.prisma.investCampaign.findUnique({
+    const campaign = await this.prisma.campaign.findUnique({
       where: { slug },
       include: { genres: true },
     });
@@ -87,13 +87,13 @@ export class CampaignService {
 
     const areGenresUpdated = !isNil(genres) && !areGenresEqual;
 
-    let genresData: Prisma.ComicUpdateInput['genres'];
+    let genresData: Prisma.CampaignUpdateInput['genres'];
     if (areGenresUpdated) {
       genresData = { set: genres.map((slug) => ({ slug })) };
     }
 
     try {
-      const updatedCampaign = await this.prisma.investCampaign.update({
+      const updatedCampaign = await this.prisma.campaign.update({
         where: { slug },
         data: {
           ...rest,
@@ -108,11 +108,9 @@ export class CampaignService {
   }
 
   async updateFiles(slug: string, campaignFilesDto: UpdateCampaignFilesDto) {
-    const { cover, banner, logo } = campaignFilesDto;
+    const { cover, banner, info, video } = campaignFilesDto;
 
-    let campaign = await this.prisma.investCampaign.findUnique({
-      where: { slug },
-    });
+    let campaign = await this.prisma.campaign.findUnique({ where: { slug } });
 
     if (!campaign) {
       throw new NotFoundException(ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(slug));
@@ -121,7 +119,7 @@ export class CampaignService {
     const newFileKeys: string[] = [];
     const oldFileKeys: string[] = [];
 
-    let coverKey: string, bannerKey: string, logoKey: string;
+    let coverKey: string, bannerKey: string, infoKey: string, videoKey;
     try {
       const s3Folder = getS3Folder(campaign.s3BucketSlug);
       if (cover) {
@@ -132,6 +130,7 @@ export class CampaignService {
         newFileKeys.push(coverKey);
         oldFileKeys.push(campaign.cover);
       }
+
       if (banner) {
         bannerKey = await this.s3.uploadFile(banner, {
           s3Folder,
@@ -140,25 +139,36 @@ export class CampaignService {
         newFileKeys.push(bannerKey);
         oldFileKeys.push(campaign.banner);
       }
-      if (logo) {
-        logoKey = await this.s3.uploadFile(logo, {
+
+      if (info) {
+        infoKey = await this.s3.uploadFile(info, {
           s3Folder,
-          fileName: 'logo',
+          fileName: 'info',
         });
-        newFileKeys.push(logoKey);
-        oldFileKeys.push(campaign.logo);
+        newFileKeys.push(infoKey);
+        oldFileKeys.push(campaign.info);
+      }
+
+      if (video) {
+        videoKey = await this.s3.uploadFile(video, {
+          s3Folder,
+          fileName: 'video',
+        });
+        newFileKeys.push(videoKey);
+        oldFileKeys.push(campaign.video);
       }
     } catch {
       await this.s3.garbageCollectNewFiles(newFileKeys, oldFileKeys);
       throw new BadRequestException(ERROR_MESSAGES.MALFORMED_FILE_UPLOAD);
     }
 
-    campaign = await this.prisma.investCampaign.update({
+    campaign = await this.prisma.campaign.update({
       where: { slug },
       data: {
         cover: coverKey,
         banner: bannerKey,
-        logo: logoKey,
+        info: infoKey,
+        video: videoKey,
       },
     });
 
@@ -171,9 +181,9 @@ export class CampaignService {
     file: Express.Multer.File,
     field: ComicFileProperty,
   ) {
-    let campaign: InvestCampaign;
+    let campaign: Campaign;
     try {
-      campaign = await this.prisma.investCampaign.findUnique({
+      campaign = await this.prisma.campaign.findUnique({
         where: { slug },
       });
     } catch {
@@ -188,7 +198,7 @@ export class CampaignService {
     });
 
     try {
-      campaign = await this.prisma.investCampaign.update({
+      campaign = await this.prisma.campaign.update({
         where: { slug },
         data: { [field]: newFileKey },
       });
@@ -207,7 +217,7 @@ export class CampaignService {
     userId: number,
     ref?: string,
   ) {
-    const campaign = await this.prisma.investCampaign.findUnique({
+    const campaign = await this.prisma.campaign.findUnique({
       where: { slug: campaignSlug },
     });
 
@@ -218,7 +228,7 @@ export class CampaignService {
     }
 
     try {
-      const { user } = await this.prisma.userCampaignInterestReceipt.upsert({
+      const { user } = await this.prisma.userCampaignInterest.upsert({
         where: { campaignSlug_userId: { campaignSlug, userId } },
         include: { user: true },
         update: {
@@ -267,7 +277,7 @@ export class CampaignService {
         throw new BadRequestException('Cannot refer yourself');
       } else {
         // if it's all good so far, apply the referral
-        await this.prisma.userCampaignInterestReceipt.update({
+        await this.prisma.userCampaignInterest.update({
           where: { id: refereeId, campaignSlug },
           data: { referrerId: referrer.id },
         });
@@ -276,14 +286,14 @@ export class CampaignService {
   }
 
   async findAll(): Promise<CampaignInput[]> {
-    const campaigns = await this.prisma.investCampaign.findMany({});
+    const campaigns = await this.prisma.campaign.findMany({});
     return campaigns;
   }
 
   async findOne(slug: string, userId?: number): Promise<CampaignInput> {
-    const campaign = await this.prisma.investCampaign.findUnique({
+    const campaign = await this.prisma.campaign.findUnique({
       where: { slug },
-      include: { genres: true, info: true, creator: true, rewards: true },
+      include: { genres: true, creator: true, rewards: true },
     });
 
     if (!campaign) {
@@ -296,12 +306,12 @@ export class CampaignService {
 
   async findStats(slug: string, userId?: number): Promise<CampaignStatsInput> {
     const userReceipt = userId
-      ? await this.prisma.userCampaignInterestReceipt.findUnique({
+      ? await this.prisma.userCampaignInterest.findUnique({
           where: { campaignSlug_userId: { campaignSlug: slug, userId } },
         })
       : undefined;
 
-    const data = await this.prisma.userCampaignInterestReceipt.aggregate({
+    const data = await this.prisma.userCampaignInterest.aggregate({
       where: { campaignSlug: slug },
       _count: { id: true },
       _sum: { expressedAmount: true },
@@ -318,8 +328,8 @@ export class CampaignService {
     query: ReferredCampaignParams,
     userId: number,
   ): Promise<CampaignInput[]> {
-    const campaigns = await this.prisma.investCampaign.findMany({
-      where: { interests: { some: { referrerId: userId } } },
+    const campaigns = await this.prisma.campaign.findMany({
+      where: { backers: { some: { referrerId: userId } } },
       skip: query?.skip,
       take: query?.take,
     });
@@ -330,15 +340,15 @@ export class CampaignService {
   async findCampaignReferrals(
     query: CampaignReferralParams,
     userId: number,
-  ): Promise<PaginatedUserCampaignInterestedReceiptInput> {
-    const receipts = await this.prisma.userCampaignInterestReceipt.findMany({
+  ): Promise<PaginatedUserCampaignInterestInput> {
+    const receipts = await this.prisma.userCampaignInterest.findMany({
       where: { referrerId: userId },
       include: { user: true },
       skip: query?.skip,
       take: query?.take,
     });
 
-    const totalItems = await this.prisma.userCampaignInterestReceipt.count({
+    const totalItems = await this.prisma.userCampaignInterest.count({
       where: { referrerId: userId },
     });
 
@@ -346,7 +356,7 @@ export class CampaignService {
   }
 
   async findUserCampaignInterestReceipts(campaignSlug: string) {
-    const receipts = await this.prisma.userCampaignInterestReceipt.findMany({
+    const receipts = await this.prisma.userCampaignInterest.findMany({
       where: { campaignSlug },
       include: { user: true },
       orderBy: { timestamp: 'desc' },
@@ -355,7 +365,7 @@ export class CampaignService {
   }
 
   async throwIfTitleTaken(title: string) {
-    const campaign = await this.prisma.investCampaign.findFirst({
+    const campaign = await this.prisma.campaign.findFirst({
       where: { title: insensitive(title) },
     });
 

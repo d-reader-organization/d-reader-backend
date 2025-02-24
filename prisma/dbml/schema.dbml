@@ -34,8 +34,8 @@ Table User {
   wheelRewardReceipt WheelRewardReceipt [not null]
   channel CreatorChannel
   creatorActivityFeeds CreatorActivityFeed [not null]
-  interestedCampaigns UserCampaignInterestReceipt [not null]
-  projectReferrals UserCampaignInterestReceipt [not null]
+  campaignInterests UserCampaignInterest [not null]
+  campaignReferrals UserCampaignInterest [not null]
 }
 
 Table Wallet {
@@ -67,7 +67,7 @@ Table CreatorChannel {
   tippingAddress String [not null, default: '']
   s3BucketSlug String [unique, not null]
   comics Comic [not null]
-  investCampaigns InvestCampaign [not null]
+  campaigns Campaign [not null]
   followers UserCreator [not null]
   user User [not null]
   userId Int [unique, not null]
@@ -136,7 +136,6 @@ Table Genre {
   priority Int [not null]
   color String [not null]
   comics Comic [not null]
-  investProjects InvestCampaign [not null]
 }
 
 Table RoyaltyWallet {
@@ -692,10 +691,10 @@ Table DigitalAssetTrait {
   digitalAsset DigitalAsset [not null]
 }
 
-Table UserCampaignInterestReceipt {
+Table UserCampaignInterest {
   id Int [pk, increment]
   campaignSlug String [not null]
-  campaign InvestCampaign [not null]
+  campaign Campaign [not null]
   timestamp DateTime [not null]
   userId Int [not null]
   user User [not null]
@@ -823,7 +822,7 @@ Table ComicIssueSnapshot {
   timestamp DateTime [not null]
 }
 
-Table InvestCampaign {
+Table Campaign {
   id Int [pk, increment]
   title String [not null]
   slug String [unique, not null]
@@ -832,36 +831,35 @@ Table InvestCampaign {
   subtitle String [not null, default: '']
   banner String [not null, default: '']
   cover String [not null, default: '']
-  logo String [not null, default: '']
+  video String [not null, default: '']
   raiseGoal Int [not null]
   creator CreatorChannel [not null]
   creatorId Int [not null]
-  genres Genre [not null]
-  info InvestCampaignInfo [not null]
-  rewards InvestCampaignReward [not null]
-  interests UserCampaignInterestReceipt [not null]
-  isActive Boolean [not null, default: true]
+  genres CampaginGenre [not null]
+  info String [not null, default: '']
+  rewards CampaignReward [not null]
+  backers UserCampaignInterest [not null]
   startDate DateTime
   endDate DateTime
 }
 
-Table InvestCampaignReward {
+Table CampaginGenre {
+  name String [unique, not null]
+  slug String [pk]
+  icon String [not null, default: '']
+  priority Int [not null]
+  color String [not null]
+  campagins Campaign [not null]
+}
+
+Table CampaignReward {
   id Int [pk, increment]
-  title String [not null]
+  name String [not null]
   image String [not null, default: '']
   price Int [not null]
   description String [not null]
   campaignId Int [not null]
-  campaign InvestCampaign [not null]
-}
-
-Table InvestCampaignInfo {
-  id Int [pk, increment]
-  section InvestCampaignInfoSection [not null]
-  value String [not null]
-  image String [not null, default: '']
-  campaignId Int [not null]
-  campaign InvestCampaign [not null]
+  campaign Campaign [not null]
 }
 
 Enum WalletProvider {
@@ -1015,13 +1013,6 @@ Enum ComicIssueSnapshotType {
   View
 }
 
-Enum InvestCampaignInfoSection {
-  Overview
-  Team
-  Offering
-  Roadmap
-}
-
 Ref: User.referrerId - User.id
 
 Ref: Wallet.userId > User.id
@@ -1134,11 +1125,11 @@ Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
 
 Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 
-Ref: UserCampaignInterestReceipt.campaignSlug > InvestCampaign.slug [delete: Cascade]
+Ref: UserCampaignInterest.campaignSlug > Campaign.slug [delete: Cascade]
 
-Ref: UserCampaignInterestReceipt.userId > User.id
+Ref: UserCampaignInterest.userId > User.id
 
-Ref: UserCampaignInterestReceipt.referrerId > User.id
+Ref: UserCampaignInterest.referrerId > User.id
 
 Ref: WheelReward.wheelId > Wheel.id
 
@@ -1164,8 +1155,6 @@ Ref: ComicSnapshot.comicSlug > Comic.slug [delete: Cascade]
 
 Ref: ComicIssueSnapshot.comicIssueId > ComicIssue.id [delete: Cascade]
 
-Ref: InvestCampaign.creatorId > CreatorChannel.id
+Ref: Campaign.creatorId > CreatorChannel.id
 
-Ref: InvestCampaignReward.campaignId > InvestCampaign.id
-
-Ref: InvestCampaignInfo.campaignId > InvestCampaign.id
+Ref: CampaignReward.campaignId > Campaign.id
