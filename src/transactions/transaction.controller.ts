@@ -65,7 +65,6 @@ import {
 import { RepriceListingParams } from 'src/auction-house/dto/reprice-listing-params.dto';
 import { InitializePrintEditionSaleParams } from 'src/auction-house/dto/initialize-edition-sale-params.dto';
 import { BuyPrintEditionParams } from 'src/auction-house/dto/buy-print-edition-params';
-import { InvestService } from 'src/campaign/campaign.service';
 import { GlobalThrottlerInterceptor } from 'src/interceptor/global-throttler-interceptor';
 import { Throttle } from '@nestjs/throttler';
 import { MutexInterceptor } from 'src/mutex/mutex.interceptor';
@@ -79,7 +78,6 @@ export class TransactionController {
     private readonly auctionHouseService: AuctionHouseService,
     private readonly transactionService: TransactionService,
     private readonly digitalAssetService: DigitalAssetService,
-    private readonly investService: InvestService,
   ) {}
 
   /* For blink clients to make request for mint transaction */
