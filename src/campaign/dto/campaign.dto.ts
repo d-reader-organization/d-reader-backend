@@ -10,10 +10,6 @@ import {
   PartialCreatorDto,
   toPartialCreatorDto,
 } from 'src/creator/dto/partial-creator.dto';
-import {
-  PartialGenreDto,
-  toPartialGenreDtoArray,
-} from 'src/genre/dto/partial-genre.dto';
 import { CampaignRewardDto, toCampaignRewardDtoArray } from './rewards.dto';
 import { getPublicUrl } from '../../aws/s3client';
 import { ifDefined } from '../../utils/lodash';
@@ -67,11 +63,6 @@ export class CampaignDto {
   stats?: CampaignStatsDto;
 
   @IsOptional()
-  @IsArray()
-  @Type(() => PartialGenreDto)
-  genres?: PartialGenreDto[];
-
-  @IsOptional()
   @Type(() => PartialCreatorDto)
   creator?: PartialCreatorDto;
 
@@ -106,7 +97,6 @@ export function toCampaignDto(campaign: CampaignInput) {
     video: ifDefined(campaign.video, getPublicUrl),
     info: ifDefined(campaign.info, getPublicUrl),
     description: campaign.description,
-    genres: ifDefined(campaign.genres, toPartialGenreDtoArray),
     creator: ifDefined(campaign.creator, toPartialCreatorDto),
     rewards: ifDefined(campaign.rewards, toCampaignRewardDtoArray),
     stats: ifDefined(campaign.stats, toCampaignStatsDto),

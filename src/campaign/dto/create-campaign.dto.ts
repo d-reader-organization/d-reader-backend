@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import {
-  IsArray,
   IsDate,
   IsNotEmpty,
   IsNumber,
@@ -34,11 +33,6 @@ export class CreateCampaignDto {
 
   @IsNumber()
   raiseGoal: number;
-
-  @IsArray()
-  @Type(() => String)
-  @ApiProperty({ type: [String] })
-  genres: string[];
 
   @IsOptional()
   @TransformDateStringToDate()

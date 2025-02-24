@@ -693,17 +693,18 @@ Table DigitalAssetTrait {
 
 Table UserCampaignInterest {
   id Int [pk, increment]
-  campaignSlug String [not null]
+  campaignId Int [not null]
   campaign Campaign [not null]
-  timestamp DateTime [not null]
+  rewardId Int [not null]
+  reward CampaignReward [not null]
+  expressedInterestAt DateTime [not null]
   userId Int [not null]
   user User [not null]
   referrerId Int
   referrer User
-  expressedAmount Int [not null, default: 0]
 
   indexes {
-    (campaignSlug, userId) [unique]
+    (campaignId, userId) [unique]
   }
 }
 
@@ -835,21 +836,11 @@ Table Campaign {
   raiseGoal Int [not null]
   creator CreatorChannel [not null]
   creatorId Int [not null]
-  genres CampaginGenre [not null]
   info String [not null, default: '']
   rewards CampaignReward [not null]
   backers UserCampaignInterest [not null]
   startDate DateTime
   endDate DateTime
-}
-
-Table CampaginGenre {
-  name String [unique, not null]
-  slug String [pk]
-  icon String [not null, default: '']
-  priority Int [not null]
-  color String [not null]
-  campagins Campaign [not null]
 }
 
 Table CampaignReward {
@@ -861,6 +852,7 @@ Table CampaignReward {
   supply Int
   campaignId Int [not null]
   campaign Campaign [not null]
+  backers UserCampaignInterest [not null]
 }
 
 Enum WalletProvider {
@@ -1126,7 +1118,9 @@ Ref: OneOfOne.collectionAddress > OneOfOneCollection.address
 
 Ref: DigitalAssetTrait.assetAddress > DigitalAsset.address
 
-Ref: UserCampaignInterest.campaignSlug > Campaign.slug [delete: Cascade]
+Ref: UserCampaignInterest.campaignId > Campaign.id [delete: Cascade]
+
+Ref: UserCampaignInterest.rewardId > CampaignReward.id
 
 Ref: UserCampaignInterest.userId > User.id
 
