@@ -339,11 +339,12 @@ export class CampaignService {
   }
 
   async findCampaignReferrals(
+    campaignId: number,
     query: CampaignReferralParams,
     userId: number,
   ): Promise<PaginatedUserCampaignInterestInput> {
     const referrals = await this.prisma.userCampaignInterest.findMany({
-      where: { referrerId: userId, campaignId: query.id },
+      where: { referrerId: userId, campaignId },
       include: { user: true, reward: { select: { price: true } } },
       skip: query?.skip,
       take: query?.take,
