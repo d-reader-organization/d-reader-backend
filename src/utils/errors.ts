@@ -145,10 +145,21 @@ export const ERROR_MESSAGES = {
     type: 'comicIssue' | 'comic' | 'creator',
     e: Error,
   ) => `failed to take snapshot for ${type} with id ${id} : ${e.toString()}`,
-  FAILED_TO_EXPRESS_INTEREST: (slug: string) =>
-    `Failed to express interest for campaign ${slug}, try again!`,
-  CAMPAIGN_NOT_FOUND: (slug: string) =>
-    `Campaign with slug ${slug} doesn't exists`,
+  FAILED_TO_EXPRESS_INTEREST: ({
+    key,
+    value,
+  }: {
+    key: 'id' | 'slug';
+    value: string | number;
+  }) =>
+    `Failed to express interest for campaign with ${key} ${value}, try again!`,
+  CAMPAIGN_NOT_FOUND: ({
+    key,
+    value,
+  }: {
+    key: 'id' | 'slug';
+    value: string | number;
+  }) => `Campaign with ${key} ${value} doesn't exists`,
   BAD_CAMPAIGN_DATA:
     'Campaign data is invalid. Please check the data and try again.',
 };

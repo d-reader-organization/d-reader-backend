@@ -44,6 +44,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { CreatorAuth } from '../guards/creator-auth.guard';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
+import { CampaignOwnerAuth } from 'src/guards/campaign-owner.guard';
 
 @ApiTags('Campaign')
 @Controller('campaign')
@@ -54,26 +55,26 @@ export class CampaignController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @UserEntity() creator: UserPayload,
+    @UserEntity() user: UserPayload,
     @Body() createCampaignDto: CreateCampaignDto,
   ): Promise<CampaignDto> {
     const campaign = await this.campaignService.createCampaign(
-      creator.id,
+      user.id,
       createCampaignDto,
     );
     return toCampaignDto(campaign);
   }
 
   @UserAuth()
-  @Patch('/express-interest/:slug')
+  @Patch('/express-interest/:id')
   async expressInterest(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @Body() expressInterestDto: ExpressInterestDto,
     @UserEntity() user: UserPayload,
   ) {
     const { ref, expressedAmount } = expressInterestDto;
     return await this.campaignService.expressUserInterest(
-      slug,
+      id,
       expressedAmount,
       user.id,
       ref,
@@ -88,15 +89,15 @@ export class CampaignController {
   }
 
   @OptionalUserAuth()
-  @Get('/get/:slug')
-  async findOne(@Param('slug') slug: string, @UserEntity() user?: UserPayload) {
+  @Get('/get/:id')
+  async findOne(@Param('id') id: string, @UserEntity() user?: UserPayload) {
     const userId = user ? user.id : null;
-    const campaign = await this.campaignService.findOne(slug, userId);
+    const campaign = await this.campaignService.findOne(id, userId);
     return toCampaignDto(campaign);
   }
 
   @UserAuth()
-  @Get('/get/referred')
+  @Get('referred/get')
   async findReferredCampaigns(
     @Query() query: ReferredCampaignParams,
     @UserEntity() user: UserPayload,
@@ -109,7 +110,7 @@ export class CampaignController {
   }
 
   @UserAuth()
-  @Get('/get/:slug/referrals')
+  @Get('referrals/get')
   async findCampaignReferrals(
     @Query() query: CampaignReferralParams,
     @UserEntity() user: UserPayload,
@@ -121,28 +122,28 @@ export class CampaignController {
     return toPaginatedUserCampaignInterestDto(campaigns);
   }
 
-  @Get('/get/:slug/backers')
-  async find(@Param('slug') slug: string) {
-    const backers = await this.campaignService.findCampaignBackers(slug);
+  @Get('/get/:id/backers')
+  async find(@Param('id') id: string) {
+    const backers = await this.campaignService.findCampaignBackers(id);
     return toUserCampaignInterestDtoArray(backers);
   }
 
   /* Update specific campaign */
-  // @ComicOwnerAuth()
-  @Patch('update/:slug')
+  @CampaignOwnerAuth()
+  @Patch('update/:id')
   async update(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @Body() updateCampaignDto: UpdateCampaignDto,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.update(
-      slug,
+      +id,
       updateCampaignDto,
     );
     return toCampaignDto(updatedCampaign);
   }
 
   /* Update specific campaign's files */
-  // @ComicOwnerAuth()
+  @CampaignOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -151,30 +152,30 @@ export class CampaignController {
       { name: 'logo', maxCount: 1 },
     ]),
   )
-  @Patch('update/:slug/files')
+  @Patch('update/:id/files')
   async updateFiles(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFiles({
       transform: (val) => plainToInstance(UpdateCampaignFilesDto, val),
     })
     files: UpdateCampaignFilesDto,
   ): Promise<CampaignDto> {
-    const campaign = await this.campaignService.updateFiles(slug, files);
+    const campaign = await this.campaignService.updateFiles(+id, files);
     return toCampaignDto(campaign);
   }
 
   /* Update specific campaigns cover file */
-  // @ComicOwnerAuth()
+  @CampaignOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('cover')
   @UseInterceptors(FileInterceptor('cover'))
   @Patch('update/:slug/cover')
   async updateCover(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() cover: Express.Multer.File,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.updateFile(
-      slug,
+      +id,
       cover,
       'cover',
     );
@@ -182,17 +183,17 @@ export class CampaignController {
   }
 
   /* Update specific campaign banner file */
-  // @ComicOwnerAuth()
+  @CampaignOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('banner')
   @UseInterceptors(FileInterceptor('banner'))
-  @Patch('update/:slug/banner')
+  @Patch('update/:id/banner')
   async updateBanner(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() banner: Express.Multer.File,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.updateFile(
-      slug,
+      +id,
       banner,
       'banner',
     );
@@ -200,17 +201,17 @@ export class CampaignController {
   }
 
   /* Update specific campaign info file */
-  // @ComicOwnerAuth()
+  @CampaignOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('info')
   @UseInterceptors(FileInterceptor('info'))
-  @Patch('update/:slug/info')
+  @Patch('update/:id/info')
   async updateLogo(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() info: Express.Multer.File,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.updateFile(
-      slug,
+      +id,
       info,
       'info',
     );
@@ -218,17 +219,17 @@ export class CampaignController {
   }
 
   /* Update specific campaign video file */
-  // @ComicOwnerAuth()
+  @CampaignOwnerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiFile('video')
   @UseInterceptors(FileInterceptor('video'))
-  @Patch('update/:slug/video')
+  @Patch('update/:id/video')
   async updateVideo(
-    @Param('slug') slug: string,
+    @Param('id') id: string,
     @UploadedFile() video: Express.Multer.File,
   ): Promise<CampaignDto> {
     const updatedCampaign = await this.campaignService.updateFile(
-      slug,
+      +id,
       video,
       'video',
     );

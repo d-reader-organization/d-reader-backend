@@ -37,7 +37,7 @@ import { MutexService } from '../mutex/mutex.service';
     JwtService,
     PasswordService,
     WalletService,
-    MutexService
+    MutexService,
   ],
 })
 export class TransactionModule {}

@@ -40,10 +40,7 @@ export class CampaignService {
     private readonly websocketGateway: WebSocketGateway,
   ) {}
 
-  async createCampaign(
-    creatorId: number,
-    createCampaignDto: CreateCampaignDto,
-  ) {
+  async createCampaign(userId: number, createCampaignDto: CreateCampaignDto) {
     const { title, slug } = createCampaignDto;
 
     await Promise.all([
@@ -58,7 +55,7 @@ export class CampaignService {
           title,
           slug,
           s3BucketSlug: appendTimestamp(slug),
-          creator: { connect: { id: creatorId } },
+          creator: { connect: { userId } },
         },
       });
 
@@ -69,16 +66,16 @@ export class CampaignService {
     }
   }
 
-  async update(slug: string, updateCampaignDto: UpdateCampaignDto) {
+  async update(id: number, updateCampaignDto: UpdateCampaignDto) {
     const { slug: newSlug, ...rest } = updateCampaignDto;
 
-    if (newSlug && slug !== newSlug) {
+    if (newSlug) {
       await this.throwIfSlugTaken(newSlug);
     }
 
     try {
       const updatedCampaign = await this.prisma.campaign.update({
-        where: { slug },
+        where: { id },
         data: {
           ...rest,
           ...(newSlug && { slug: newSlug }),
@@ -86,17 +83,21 @@ export class CampaignService {
       });
       return updatedCampaign;
     } catch {
-      throw new NotFoundException(ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(slug));
+      throw new NotFoundException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'id', value: id }),
+      );
     }
   }
 
-  async updateFiles(slug: string, campaignFilesDto: UpdateCampaignFilesDto) {
+  async updateFiles(id: number, campaignFilesDto: UpdateCampaignFilesDto) {
     const { cover, banner, info, video } = campaignFilesDto;
 
-    let campaign = await this.prisma.campaign.findUnique({ where: { slug } });
+    let campaign = await this.prisma.campaign.findUnique({ where: { id } });
 
     if (!campaign) {
-      throw new NotFoundException(ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(slug));
+      throw new NotFoundException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'id', value: id }),
+      );
     }
 
     const newFileKeys: string[] = [];
@@ -146,7 +147,7 @@ export class CampaignService {
     }
 
     campaign = await this.prisma.campaign.update({
-      where: { slug },
+      where: { id },
       data: {
         cover: coverKey,
         banner: bannerKey,
@@ -160,17 +161,19 @@ export class CampaignService {
   }
 
   async updateFile(
-    slug: string,
+    id: number,
     file: Express.Multer.File,
     field: ComicFileProperty,
   ) {
     let campaign: Campaign;
     try {
       campaign = await this.prisma.campaign.findUnique({
-        where: { slug },
+        where: { id },
       });
     } catch {
-      throw new NotFoundException(ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(slug));
+      throw new NotFoundException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'id', value: id }),
+      );
     }
 
     const s3Folder = getS3Folder(campaign.s3BucketSlug);
@@ -182,7 +185,7 @@ export class CampaignService {
 
     try {
       campaign = await this.prisma.campaign.update({
-        where: { slug },
+        where: { id },
         data: { [field]: newFileKey },
       });
     } catch {
@@ -206,7 +209,10 @@ export class CampaignService {
 
     if (!campaign) {
       throw new BadRequestException(
-        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({
+          key: 'slug',
+          value: campaign.slug,
+        }),
       );
     }
 
@@ -235,7 +241,10 @@ export class CampaignService {
       await this.redeemReferral(ref, userId, campaign.id);
     } catch (e) {
       throw new BadRequestException(
-        ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST(campaignId),
+        ERROR_MESSAGES.FAILED_TO_EXPRESS_INTEREST({
+          key: 'slug',
+          value: campaign.slug,
+        }),
       );
     }
   }
@@ -280,7 +289,7 @@ export class CampaignService {
 
     if (!campaign) {
       throw new BadRequestException(
-        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'slug', value: campaignId }),
       );
     }
 
@@ -334,7 +343,7 @@ export class CampaignService {
     userId: number,
   ): Promise<PaginatedUserCampaignInterestInput> {
     const referrals = await this.prisma.userCampaignInterest.findMany({
-      where: { referrerId: userId },
+      where: { referrerId: userId, campaignId: query.id },
       include: { user: true, reward: { select: { price: true } } },
       skip: query?.skip,
       take: query?.take,
@@ -356,7 +365,7 @@ export class CampaignService {
 
     if (!campaign) {
       throw new BadRequestException(
-        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND(campaignId),
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'id', value: campaignId }),
       );
     }
 
