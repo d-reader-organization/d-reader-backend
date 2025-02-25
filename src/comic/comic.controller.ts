@@ -59,10 +59,10 @@ export class ComicController {
   @CreatorAuth()
   @Post('create')
   async create(
-    @UserEntity() creator: UserPayload,
+    @UserEntity() user: UserPayload,
     @Body() createComicDto: CreateComicDto,
   ): Promise<ComicDto> {
-    const comic = await this.comicService.create(creator.id, createComicDto);
+    const comic = await this.comicService.create(user.id, createComicDto);
 
     return toComicDto(comic);
   }

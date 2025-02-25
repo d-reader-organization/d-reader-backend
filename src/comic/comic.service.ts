@@ -52,7 +52,7 @@ export class ComicService {
     private readonly activityService: ActivityService,
   ) {}
 
-  async create(creatorId: number, createComicDto: CreateComicDto) {
+  async create(userId: number, createComicDto: CreateComicDto) {
     const { title, slug, genres, isCompleted, ...rest } = createComicDto;
 
     await Promise.all([
@@ -67,7 +67,7 @@ export class ComicService {
           s3BucketSlug: appendTimestamp(slug),
           title,
           slug,
-          creatorId,
+          creator: { connect: { userId } },
           completedAt: isCompleted ? new Date() : null,
           genres: { connect: genres.map((slug) => ({ slug })) },
         },
