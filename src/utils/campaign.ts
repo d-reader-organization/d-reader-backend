@@ -1,4 +1,4 @@
-import { Campaign } from '@prisma/client';
+import { Campaign, CampaignReward } from '@prisma/client';
 
 export const processCampaignIdString = (
   uniqueIdentifier: string,
@@ -10,4 +10,11 @@ export const processCampaignIdString = (
   }
 
   return { slug: uniqueIdentifier };
+};
+
+export const selectReward = (rewards: CampaignReward[]) => {
+  const length = rewards.length;
+  const index = Math.floor(Math.random() * length);
+
+  return rewards[index];
 };

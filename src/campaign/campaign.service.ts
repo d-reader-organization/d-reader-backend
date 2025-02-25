@@ -15,7 +15,7 @@ import {
   UpdateCampaignFilesDto,
 } from './dto/update-campaign.dto';
 import { PickFields } from '../types/shared';
-import { Campaign } from '@prisma/client';
+import { Campaign, Prisma } from '@prisma/client';
 import { s3Service } from '../aws/s3.service';
 import { CampaignInput } from './dto/campaign.dto';
 import { CampaignStatsInput } from './dto/campaign-stats.dto';
@@ -24,9 +24,11 @@ import {
   ReferredCampaignParams,
 } from './dto/campaign-referral-params.dto';
 import { PaginatedUserCampaignInterestInput } from './dto/user-campaign-interest.dto';
-import { processCampaignIdString } from 'src/utils/campaign';
+import { processCampaignIdString, selectReward } from 'src/utils/campaign';
+import { GuestInterestParams } from './dto/guest-interest-params.dto';
+import { AddCampaignRewardDto } from './dto/add-reward.dto';
 
-const getS3Folder = (slug: string) => `comics/${slug}/`;
+const getS3Folder = (slug: string) => `campaign/${slug}/`;
 type ComicFileProperty = PickFields<
   Campaign,
   'cover' | 'banner' | 'info' | 'video'
@@ -64,6 +66,47 @@ export class CampaignService {
       console.error(e);
       throw new BadRequestException(ERROR_MESSAGES.BAD_CAMPAIGN_DATA);
     }
+  }
+
+  async addCampaignRewards(
+    campaignId: number,
+    addCampaignRewardDto: AddCampaignRewardDto[],
+  ) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id: campaignId },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'id', value: campaignId }),
+      );
+    }
+
+    const s3Folder = getS3Folder(campaign.s3BucketSlug);
+    const createManyRewardsData = await Promise.all(
+      addCampaignRewardDto.map(
+        async (reward): Promise<Prisma.CampaignRewardCreateManyInput> => {
+          let imageKey = '';
+          if (reward.image) {
+            const fileName = appendTimestamp(reward.name);
+            imageKey = await this.s3.uploadFile(reward.image, {
+              s3Folder,
+              fileName,
+            });
+          }
+
+          return {
+            ...reward,
+            campaignId,
+            image: imageKey,
+          };
+        },
+      ),
+    );
+
+    return await this.prisma.campaignReward.createMany({
+      data: createManyRewardsData,
+    });
   }
 
   async update(id: number, updateCampaignDto: UpdateCampaignDto) {
@@ -395,5 +438,27 @@ export class CampaignService {
 
     if (campaign)
       throw new BadRequestException(ERROR_MESSAGES.SLUG_TAKEN(slug));
+  }
+
+  async expressGuestInterest(query: GuestInterestParams) {
+    const { campaignId, rampUpPeriod } = query;
+
+    const guestUsers = await this.prisma.user.findMany({
+      where: { referrerId: 1 },
+    });
+    const rewards = await this.prisma.campaignReward.findMany({
+      where: { campaignId },
+    });
+
+    const reward = selectReward(rewards);
+
+    guestUsers.forEach((user, index) => {
+      setTimeout(
+        () => {
+          this.expressUserInterest(campaignId.toString(), reward.id, user.id);
+        },
+        index * rampUpPeriod * 60 * 1000,
+      );
+    });
   }
 }
