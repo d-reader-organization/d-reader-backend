@@ -110,12 +110,14 @@ export class CampaignController {
   }
 
   @UserAuth()
-  @Get('referrals/get')
+  @Get('get/:id/referral')
   async findCampaignReferrals(
+    @Param('id') id: number,
     @Query() query: CampaignReferralParams,
     @UserEntity() user: UserPayload,
   ) {
     const campaigns = await this.campaignService.findCampaignReferrals(
+      +id,
       query,
       user.id,
     );
