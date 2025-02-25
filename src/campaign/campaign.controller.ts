@@ -10,7 +10,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import { ExpressInterestDto } from './dto/express-interest.dto';
 import { CampaignService } from './campaign.service';
 import { UserEntity } from '../decorators/user.decorator';
@@ -29,6 +29,7 @@ import {
 } from './dto/campaign-referral-params.dto';
 import { ApiFile } from 'src/decorators/api-file.decorator';
 import {
+  AnyFilesInterceptor,
   FileFieldsInterceptor,
   FileInterceptor,
 } from '@nestjs/platform-express';
@@ -44,7 +45,15 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { CreatorAuth } from '../guards/creator-auth.guard';
 import { CreateCampaignDto } from './dto/create-campaign.dto';
-import { CampaignOwnerAuth } from 'src/guards/campaign-owner.guard';
+import { CampaignOwnerAuth } from '../guards/campaign-owner.guard';
+import { AdminGuard } from '../guards/roles.guard';
+import { GuestInterestParams } from './dto/guest-interest-params.dto';
+import { ApiFileArray } from 'src/decorators/api-file-array.decorator';
+import {
+  AddCampaignRewardBodyDto,
+  AddCampaignRewardDto,
+  AddCampaignRewardFileDto,
+} from './dto/add-reward.dto';
 
 @ApiTags('Campaign')
 @Controller('campaign')
@@ -128,6 +137,26 @@ export class CampaignController {
   async find(@Param('id') id: string) {
     const backers = await this.campaignService.findCampaignBackers(id);
     return toUserCampaignInterestDtoArray(backers);
+  }
+
+  @CampaignOwnerAuth()
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor({}))
+  @Post('add/:id/rewards')
+  async addRewards(
+    @Param('id') id: string,
+    @ApiFileArray({
+      bodyField: 'rewards',
+      fileField: 'image',
+      bodyType: AddCampaignRewardBodyDto,
+      fileType: AddCampaignRewardFileDto,
+    })
+    addCampaignRewardDto: AddCampaignRewardDto[],
+  ) {
+    return await this.campaignService.addCampaignRewards(
+      +id,
+      addCampaignRewardDto,
+    );
   }
 
   /* Update specific campaign */
@@ -236,5 +265,12 @@ export class CampaignController {
       'video',
     );
     return toCampaignDto(updatedCampaign);
+  }
+
+  @AdminGuard()
+  @ApiExcludeEndpoint()
+  @Patch('guest/interest')
+  async expressGuestInterest(@Query() query: GuestInterestParams) {
+    return await this.campaignService.expressGuestInterest(query);
   }
 }
