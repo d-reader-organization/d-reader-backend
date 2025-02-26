@@ -465,10 +465,11 @@ export class CampaignService {
   }
 
   async expressGuestInterest(query: GuestInterestParams) {
-    const { campaignId, rampUpPeriod } = query;
+    const { campaignId, rampUpPeriod, number } = query;
 
     const guestUsers = await this.prisma.user.findMany({
       where: { referrerId: 1 },
+      take: number,
     });
     const rewards = await this.prisma.campaignReward.findMany({
       where: { campaignId },
