@@ -27,6 +27,7 @@ import { PaginatedUserCampaignInterestInput } from './dto/user-campaign-interest
 import { processCampaignIdString, selectReward } from 'src/utils/campaign';
 import { GuestInterestParams } from './dto/guest-interest-params.dto';
 import { AddCampaignRewardDto } from './dto/add-reward.dto';
+import { CampaignFilterParamsDto } from './dto/campaign-filter-params.dto';
 
 const getS3Folder = (slug: string) => `campaign/${slug}/`;
 type ComicFileProperty = PickFields<
@@ -318,9 +319,19 @@ export class CampaignService {
     }
   }
 
-  async findAll(): Promise<CampaignInput[]> {
-    const campaigns = await this.prisma.campaign.findMany({});
-    return campaigns;
+  async findAll(query: CampaignFilterParamsDto): Promise<CampaignInput[]> {
+    const campaigns = await this.prisma.campaign.findMany({
+      skip: query.skip,
+      take: query.take,
+    });
+
+    const getCampaignWithStats = campaigns.map(async (campaign) => {
+      const stats = await this.findStats(campaign.id);
+      return { ...campaign, stats };
+    });
+
+    const campaignWithStats = await Promise.all(getCampaignWithStats);
+    return campaignWithStats;
   }
 
   async findOne(campaignId: string, userId?: number): Promise<CampaignInput> {
@@ -341,9 +352,11 @@ export class CampaignService {
   }
 
   async findStats(
-    campaignId: number,
+    id: string | number,
     userId?: number,
   ): Promise<CampaignStatsInput> {
+    const campaignId = await this.getCampaignIdFromIdentifier(id);
+
     const userReceipt = userId
       ? await this.prisma.userCampaignInterest.findUnique({
           where: { campaignId_userId: { campaignId, userId } },
@@ -438,6 +451,17 @@ export class CampaignService {
 
     if (campaign)
       throw new BadRequestException(ERROR_MESSAGES.SLUG_TAKEN(slug));
+  }
+
+  private async getCampaignIdFromIdentifier(id: string | number) {
+    if (typeof id == 'string') {
+      const where = processCampaignIdString(id);
+      const campaign = await this.prisma.campaign.findUnique({ where });
+
+      return campaign.id;
+    }
+
+    return id;
   }
 
   async expressGuestInterest(query: GuestInterestParams) {

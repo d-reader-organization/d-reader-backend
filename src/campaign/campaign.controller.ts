@@ -21,8 +21,6 @@ import {
   toPaginatedUserCampaignInterestDto,
   toUserCampaignInterestDtoArray,
 } from './dto/user-campaign-interest.dto';
-import { CacheInterceptor } from '../cache/cache.interceptor';
-import { minutes } from '@nestjs/throttler';
 import {
   CampaignReferralParams,
   ReferredCampaignParams,
@@ -54,6 +52,8 @@ import {
   AddCampaignRewardDto,
   AddCampaignRewardFileDto,
 } from './dto/add-reward.dto';
+import { CampaignFilterParamsDto } from './dto/campaign-filter-params.dto';
+import { toCampaignStatsDto } from './dto/campaign-stats.dto';
 
 @ApiTags('Campaign')
 @Controller('campaign')
@@ -90,10 +90,9 @@ export class CampaignController {
     );
   }
 
-  @UseInterceptors(CacheInterceptor({ ttl: minutes(10) }))
   @Get('/get')
-  async findAll() {
-    const campaigns = await this.campaignService.findAll();
+  async findAll(@Query() query: CampaignFilterParamsDto) {
+    const campaigns = await this.campaignService.findAll(query);
     return toCampaignDtoArray(campaigns);
   }
 
@@ -103,6 +102,14 @@ export class CampaignController {
     const userId = user ? user.id : null;
     const campaign = await this.campaignService.findOne(id, userId);
     return toCampaignDto(campaign);
+  }
+
+  @OptionalUserAuth()
+  @Get('/get/:id/stats')
+  async findStats(@Param('id') id: string, @UserEntity() user?: UserPayload) {
+    const userId = user ? user.id : null;
+    const stats = await this.campaignService.findStats(id, userId);
+    return toCampaignStatsDto(stats);
   }
 
   @UserAuth()
