@@ -432,7 +432,7 @@ export class CampaignService {
   }
 
   async throwIfSlugTaken(slug: string) {
-    const campaign = await this.prisma.comic.findFirst({
+    const campaign = await this.prisma.campaign.findFirst({
       where: { slug: insensitive(slug) },
     });
 
