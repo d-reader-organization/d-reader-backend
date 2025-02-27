@@ -5,7 +5,14 @@ import {
   Genre,
 } from '@prisma/client';
 import { plainToInstance, Type } from 'class-transformer';
-import { IsArray, IsDate, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsDate,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 import {
   PartialCreatorDto,
   toPartialCreatorDto,
@@ -44,8 +51,8 @@ export class CampaignDto {
   @IsString()
   info: string;
 
-  @IsString()
-  video: string;
+  @IsUrl()
+  videoUrl: string;
 
   @IsInt()
   raiseGoal: number;
@@ -94,7 +101,7 @@ export function toCampaignDto(campaign: CampaignInput) {
     slug: campaign.slug,
     cover: ifDefined(campaign.cover, getPublicUrl),
     banner: ifDefined(campaign.banner, getPublicUrl),
-    video: ifDefined(campaign.video, getPublicUrl),
+    videoUrl: campaign.video,
     info: ifDefined(campaign.info, getPublicUrl),
     description: campaign.description,
     creator: ifDefined(campaign.creator, toPartialCreatorDto),
