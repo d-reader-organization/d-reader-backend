@@ -162,4 +162,5 @@ export const ERROR_MESSAGES = {
   }) => `Campaign with ${key} ${value} doesn't exists`,
   BAD_CAMPAIGN_DATA:
     'Campaign data is invalid. Please check the data and try again.',
+  CAMPAIGN_REWARD_NOT_FOUND: (id: number) => `Reward with id ${id} not found`,
 };
