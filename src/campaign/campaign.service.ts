@@ -375,9 +375,9 @@ export class CampaignService {
     }, 0);
 
     return {
-      numberOfUsersPledged: userCampaignInterests.length,
-      expectedPledgedAmount: totalPrice,
-      userExpressedAmount: userReceipt?.reward?.price,
+      tentativeBackers: userCampaignInterests.length,
+      tentativeAmountPledged: totalPrice,
+      myTentativeAmount: userReceipt?.reward?.price,
     };
   }
 
