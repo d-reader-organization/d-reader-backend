@@ -7,10 +7,11 @@ import {
   fetchCandyMachine,
   GuardGroup,
   SolPayment,
+  ThirdPartySigner,
   TokenPayment,
 } from '@metaplex-foundation/mpl-core-candy-machine';
 import { lamports, publicKey, Umi } from '@metaplex-foundation/umi';
-import { umi } from '../utils/metaplex';
+import { getThirdPartySigner, umi } from '../utils/metaplex';
 import { FUNDS_DESTINATION_ADDRESS, SOL_ADDRESS } from '../constants';
 import { findAssociatedTokenPda } from '@metaplex-foundation/mpl-toolbox';
 import { some } from '@metaplex-foundation/umi';
@@ -82,11 +83,17 @@ export class UpdateCMGroupPriceCommand extends CommandRunner {
         };
       }
 
+      const thirdPartySigner = getThirdPartySigner();
+      const thirdPartySignerGuard: ThirdPartySigner = {
+        signerKey: publicKey(thirdPartySigner),
+      };
+
       const group: GuardGroup<DefaultGuardSet> = {
         label,
         guards: {
           ...candyGuard.guards,
           [paymentGuardName]: some(paymentGuard),
+          thirdPartySigner: some(thirdPartySignerGuard),
         },
       };
 
