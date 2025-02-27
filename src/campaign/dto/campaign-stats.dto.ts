@@ -3,27 +3,27 @@ import { IsNumber, IsOptional } from 'class-validator';
 
 export class CampaignStatsDto {
   @IsNumber()
-  numberOfUsersPledged: number;
+  tentativeBackers: number;
 
   @IsNumber()
-  expectedPledgedAmount: number;
+  tentativeAmountPledged: number;
 
   @IsOptional()
   @IsNumber()
-  userExpressedAmount?: number;
+  myTentativeAmount?: number;
 }
 
 export type CampaignStatsInput = {
-  numberOfUsersPledged: number;
-  expectedPledgedAmount: number;
-  userExpressedAmount?: number;
+  tentativeBackers: number;
+  tentativeAmountPledged: number;
+  myTentativeAmount?: number;
 };
 
 export function toCampaignStatsDto(input: CampaignStatsInput) {
   const plainCampaignStatsDto: CampaignStatsDto = {
-    numberOfUsersPledged: input.numberOfUsersPledged,
-    expectedPledgedAmount: input.expectedPledgedAmount,
-    userExpressedAmount: input.userExpressedAmount,
+    tentativeBackers: input.tentativeBackers,
+    tentativeAmountPledged: input.tentativeAmountPledged,
+    myTentativeAmount: input.myTentativeAmount,
   };
 
   const campaignStats = plainToInstance(
