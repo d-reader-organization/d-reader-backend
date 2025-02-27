@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiConsumes, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
-import { ExpressInterestDto } from './dto/express-interest.dto';
+import { ExpressInterestParams } from './dto/express-interest-params.dto';
 import { CampaignService } from './campaign.service';
 import { UserEntity } from '../decorators/user.decorator';
 import { UserPayload } from '../auth/dto/authorization.dto';
@@ -75,18 +75,16 @@ export class CampaignController {
   }
 
   @UserAuth()
-  @Patch('/express-interest/:id')
+  @Patch('/express-interest/:rewardId')
   async expressInterest(
-    @Param('id') id: string,
-    @Body() expressInterestDto: ExpressInterestDto,
+    @Param('rewardId') rewardId: string,
+    @Query() query: ExpressInterestParams,
     @UserEntity() user: UserPayload,
   ) {
-    const { ref, expressedAmount } = expressInterestDto;
     return await this.campaignService.expressUserInterest(
-      id,
-      expressedAmount,
+      +rewardId,
       user.id,
-      ref,
+      query.ref,
     );
   }
 

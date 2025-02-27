@@ -241,34 +241,30 @@ export class CampaignService {
     return campaign;
   }
 
-  async expressUserInterest(
-    campaignId: string,
-    rewardId: number,
-    userId: number,
-    ref?: string,
-  ) {
-    const where = processCampaignIdString(campaignId);
+  async expressUserInterest(rewardId: number, userId: number, ref?: string) {
+    const campaignReward = await this.prisma.campaignReward.findUnique({
+      where: { id: rewardId },
+      include: { campaign: true },
+    });
 
-    const campaign = await this.prisma.campaign.findUnique({ where });
-
-    if (!campaign) {
+    if (!campaignReward) {
       throw new BadRequestException(
-        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({
-          key: 'slug',
-          value: campaign.slug,
-        }),
+        ERROR_MESSAGES.CAMPAIGN_REWARD_NOT_FOUND(rewardId),
       );
     }
 
+    const { campaign } = campaignReward;
+
+    const campaignId = campaign.id;
     try {
       const { user } = await this.prisma.userCampaignInterest.upsert({
-        where: { campaignId_userId: { campaignId: campaign.id, userId } },
+        where: { campaignId_userId: { campaignId, userId } },
         include: { user: true },
         update: {
           reward: { connect: { id: rewardId } },
         },
         create: {
-          campaign: { connect: { id: campaign.id } },
+          campaign: { connect: { id: campaignId } },
           expressedInterestAt: new Date(),
           user: { connect: { id: userId } },
           reward: { connect: { id: rewardId } },
@@ -476,11 +472,10 @@ export class CampaignService {
     });
 
     const reward = selectReward(rewards);
-
     guestUsers.forEach((user, index) => {
       setTimeout(
         () => {
-          this.expressUserInterest(campaignId.toString(), reward.id, user.id);
+          this.expressUserInterest(reward.id, user.id);
         },
         index * rampUpPeriod * 60 * 1000,
       );
