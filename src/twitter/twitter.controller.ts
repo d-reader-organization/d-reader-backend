@@ -5,6 +5,9 @@ import {
   IntentComicMintedParams,
   UtmSource,
 } from './dto/intent-comic-minted-params.dto';
+import { UserAuth } from 'src/guards/user-auth.guard';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
+import { UserEntity } from 'src/decorators/user.decorator';
 
 @ApiTags('Twitter')
 @Controller('twitter')
@@ -27,5 +30,17 @@ export class TwitterController {
     @Param('id') id: string,
   ): Promise<string> {
     return await this.twitterService.getTwitterIntentIssueSpotlight(+id);
+  }
+
+  @UserAuth()
+  @Get('intent/expressed-interest/:slug')
+  async getTwitterIntentExpressedInterest(
+    @Param('slug') slug: string,
+    @UserEntity() user: UserPayload,
+  ): Promise<string> {
+    return await this.twitterService.getTwitterIntentExpressedInterest(
+      slug,
+      user,
+    );
   }
 }

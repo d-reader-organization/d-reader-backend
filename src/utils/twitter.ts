@@ -8,6 +8,7 @@ import { Comic, ComicIssue, CreatorChannel } from '@prisma/client';
 import { D_READER_LINKS } from './client-links';
 import { toOrdinal } from './lodash';
 import { D_READER_FRONTEND_URL } from '../constants';
+import { generateReferralLink } from './campaign';
 
 export const TWITTER_INTENT_PREFIX = encodeURI(
   'https://x.com/intent/tweet?text=',
@@ -116,6 +117,31 @@ export const TWITTER_INTENT = {
       `${twitterIntentPrefix}${titleLine}\n\n${shoutOutLine}\n${flavorText}\n\n${personalizedText}\n\n${endOfTweet}\n\n${comicLinkCallToActionLine}\n${comicLinkLine}`,
     );
 
+    return tweetText;
+  },
+
+  expressedInterest: (
+    campaignSlug: string,
+    creator: CreatorChannel,
+    username: string,
+  ) => {
+    const referralLink = generateReferralLink({ slug: campaignSlug, username });
+    const creatorTwitter = creator.twitter
+      ? `@${removeTwitter(creator.twitter)}`
+      : creator?.displayName;
+
+    const twitterIntentPrefix = 'https://x.com/intent/tweet?text=';
+
+    const headline = `Can't wait to see the new ${creatorTwitter} story come to life! 🔥`;
+    const content = 'Want to see more original stories?';
+
+    const shoutOutLine = '@GenesisDotApp is cooking 🍳';
+    const genesisLinkText =
+      '🔗👇 Express your interest and get exciting rewards';
+
+    const tweetText = encodeURI(
+      `${twitterIntentPrefix}${headline}\n\n${content}\n${shoutOutLine}\n\n${genesisLinkText}\n${referralLink}`,
+    );
     return tweetText;
   },
 };
