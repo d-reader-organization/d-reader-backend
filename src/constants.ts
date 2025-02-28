@@ -283,3 +283,5 @@ export const COLLECTION_MANAGER_MULTISIG =
   process.env.SOLANA_CLUSTER === 'devnet'
     ? '5WXjY2qFMDg6hu2qgpHeQZwvKLLZsitXxtEYZeknA5Vu'
     : '6hij786bQQXrqF5Qd2iNkKsZqxEsoMGEoA139P4vcUgQ';
+
+export const REFERRAL_CODE_KEY = 'ref';

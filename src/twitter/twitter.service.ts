@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { TWITTER_INTENT } from '../utils/twitter';
 import { UtmSource } from './dto/intent-comic-minted-params.dto';
 import { removeTwitter } from '../utils/helpers';
 import { isEmpty } from 'lodash';
+import { processCampaignIdString } from 'src/utils/campaign';
+import { ERROR_MESSAGES } from 'src/utils/errors';
+import { UserPayload } from 'src/auth/dto/authorization.dto';
 
 @Injectable()
 export class TwitterService {
@@ -90,5 +93,28 @@ export class TwitterService {
       creatorHandle: comic.creator.handle,
       previewPageCount,
     });
+  }
+
+  async getTwitterIntentExpressedInterest(
+    campaignId: string,
+    user: UserPayload,
+  ) {
+    const where = processCampaignIdString(campaignId);
+    const { creator, ...campaign } = await this.prisma.campaign.findUnique({
+      where,
+      include: { creator: true },
+    });
+
+    if (!campaign) {
+      throw new BadRequestException(
+        ERROR_MESSAGES.CAMPAIGN_NOT_FOUND({ key: 'slug', value: campaignId }),
+      );
+    }
+
+    return TWITTER_INTENT.expressedInterest(
+      campaign.slug,
+      creator,
+      user.username,
+    );
   }
 }
