@@ -17,11 +17,14 @@ model User {
   id                             Int                                 @id @default(autoincrement())
   email                          String                              @unique
   password                       String
+  // username OR displayName
   username                       String                              @unique
   displayName                    String
   avatar                         String                              @default("")
+  // remove nonce
   nonce                          String                              @unique @default(uuid())
   role                           Role                                @default(User)
+  // sanity check on referrer features
   referrerId                     Int?
   referralsRemaining             Int                                 @default(0)
   deletedAt                      DateTime?
@@ -31,6 +34,7 @@ model User {
   emailVerifiedAt                DateTime?
   createdAt                      DateTime                            @default(now())
   referCompeletedAt              DateTime?
+  // add ShippingDetails table (note: UserShippingDetails, PurchaseShippingDetails)
   mintReceipts                   CandyMachineReceipt[]
   comics                         UserComic[]
   comicIssues                    UserComicIssue[]
@@ -55,6 +59,7 @@ enum WalletProvider {
 }
 
 model Wallet {
+  // are we removing the Wallet table? user.walletAddress (since we only have Privy)
   address                        String                                @id
   label                          String                                @default("")
   userId                         Int?
@@ -77,6 +82,7 @@ enum Role {
 }
 
 model CreatorChannel {
+  // which data we keep? do we rename from CreatorChannel? do we remove it entirely?
   id             Int                   @id @default(autoincrement())
   handle         String                @unique
   displayName    String
@@ -104,6 +110,7 @@ model CreatorChannel {
   snapshots      CreatorSnapshot[]
 }
 
+// probably remove
 enum AudienceType {
   Everyone
   Teen
@@ -111,6 +118,7 @@ enum AudienceType {
   Mature
 }
 
+// remove
 model Comic {
   title         String
   slug          String              @id
@@ -144,6 +152,7 @@ model Comic {
   snapshots     ComicSnapshot[]
 }
 
+// remove
 model UserComic {
   comic        Comic     @relation(fields: [comicSlug], references: [slug], onDelete: Cascade)
   comicSlug    String
@@ -158,6 +167,7 @@ model UserComic {
   @@id([comicSlug, userId])
 }
 
+// relate to Campaign instead of Comic. Rename to category? add subcategories?
 model Genre {
   name     String  @unique
   slug     String  @id
@@ -167,6 +177,7 @@ model Genre {
   comics   Comic[]
 }
 
+// remove
 model RoyaltyWallet {
   address      String
   share        Int
@@ -176,6 +187,7 @@ model RoyaltyWallet {
   @@unique([assetAddress, address])
 }
 
+// remove
 model ComicIssue {
   id                         Int                         @id @default(autoincrement())
   number                     Int
@@ -209,6 +221,7 @@ model ComicIssue {
   @@unique([title, comicSlug])
 }
 
+// remove (see if it makes any sense to add anything similar to Campaigns?)
 enum CollaboratorRole {
   Advisor
   Artist
@@ -225,6 +238,7 @@ enum CollaboratorRole {
   Writer
 }
 
+// remove
 model ComicCollaborator {
   id        Int              @id @default(autoincrement())
   role      CollaboratorRole
@@ -235,6 +249,7 @@ model ComicCollaborator {
   @@unique([role, name, comicSlug])
 }
 
+// remove
 model ComicIssueCollaborator {
   id           Int              @id @default(autoincrement())
   role         CollaboratorRole
@@ -245,6 +260,7 @@ model ComicIssueCollaborator {
   @@unique([role, name, comicIssueId])
 }
 
+// remove
 model StatelessCover {
   id                  Int         @id @default(autoincrement())
   image               String
@@ -259,6 +275,7 @@ model StatelessCover {
   @@unique([comicIssueId, rarity])
 }
 
+// remove
 model StatefulCover {
   id           Int         @id @default(autoincrement())
   image        String      @default("")
@@ -272,6 +289,7 @@ model StatefulCover {
   @@unique([comicIssueId, isSigned, isUsed, rarity])
 }
 
+// remove (see if we'll keep collectibles and rarities)
 enum ComicRarity {
   None
   Common
@@ -281,6 +299,7 @@ enum ComicRarity {
   Legendary
 }
 
+// remove
 model CollectibleComic {
   address             String                   @id
   metadata            CollectibleComicMetadata @relation(fields: [uri], references: [uri])
@@ -294,6 +313,7 @@ model CollectibleComic {
   signatureRequest    SignatureRequest[]
 }
 
+// remove
 model CandyMachine {
   address              String                     @id
   mintAuthorityAddress String
@@ -315,12 +335,14 @@ model CandyMachine {
   isFeatured           Boolean                    @default(true)
 }
 
+// remove
 enum TokenStandard {
   Legacy
   Compression
   Core
 }
 
+// remove (see if we should make any purchase campaign coupons?)
 model CandyMachineCoupon {
   id                  Int                                   @id @default(autoincrement())
   name                String
@@ -338,6 +360,7 @@ model CandyMachineCoupon {
   isSponsored         Boolean                               @default(false)
 }
 
+// remove
 model CandyMachineCouponCurrencySetting {
   label               String
   mintPrice           BigInt
@@ -352,6 +375,7 @@ model CandyMachineCouponCurrencySetting {
   @@unique([splTokenAddress, couponId])
 }
 
+// remove (might need something similar for Campaigns)
 enum CouponType {
   WhitelistedWallet
   WhitelistedUser
@@ -359,6 +383,7 @@ enum CouponType {
   PublicUser
 }
 
+// remove
 model CandyMachineCouponWhitelistedWallet {
   wallet        Wallet             @relation(fields: [walletAddress], references: [address])
   walletAddress String
@@ -368,6 +393,7 @@ model CandyMachineCouponWhitelistedWallet {
   @@id([couponId, walletAddress])
 }
 
+// remove
 model CandyMachineCouponWhitelistedUser {
   user     User               @relation(fields: [userId], references: [id])
   userId   Int
@@ -383,6 +409,8 @@ enum TransactionStatus {
   Failed
 }
 
+// remove, but make PurchaseReceipt and PurchaseReceiptItem
+// TODO: deep research, reverse engineer Kickstarter
 model CandyMachineReceipt {
   id                   Int                @id @default(autoincrement())
   collectibleComics    CollectibleComic[]
@@ -403,6 +431,7 @@ model CandyMachineReceipt {
   numberOfItems        Int
 }
 
+// remove
 model CollectibleComicCollection {
   address               String                     @id
   name                  String
@@ -418,6 +447,7 @@ model CollectibleComicCollection {
   tensorCollectionID    String?
 }
 
+// remove
 model ComicPage {
   id            Int        @id @default(autoincrement())
   pageNumber    Int
@@ -431,6 +461,7 @@ model ComicPage {
   @@unique([pageNumber, comicIssueId])
 }
 
+// keep, but refactor
 model CarouselSlide {
   id            Int              @id @default(autoincrement())
   image         String
@@ -447,11 +478,13 @@ model CarouselSlide {
   location      CarouselLocation @default(HomePrimary)
 }
 
+// remove
 enum CarouselLocation {
   HomePrimary
   HomeSecondary
 }
 
+// remove, but make UserCampaign
 model UserComicIssue {
   comicIssue         ComicIssue @relation(fields: [comicIssueId], references: [id], onDelete: Cascade)
   comicIssueId       Int
@@ -467,6 +500,7 @@ model UserComicIssue {
   @@id([comicIssueId, userId])
 }
 
+// remove, but make UserCreator / UserCreatorChannel?
 model UserCreator {
   creator    CreatorChannel @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId  Int
@@ -477,6 +511,7 @@ model UserCreator {
   @@id([creatorId, userId])
 }
 
+// remove
 model CollectibleComicMetadata {
   uri               String                     @id
   collectibleComics CollectibleComic[]
@@ -490,6 +525,7 @@ model CollectibleComicMetadata {
   @@unique([isUsed, isSigned, rarity, collectionAddress])
 }
 
+// remove
 model Listing {
   id                  Int            @id @default(autoincrement())
   assetAddress        String
@@ -508,6 +544,7 @@ model Listing {
   @@unique([assetAddress, closedAt])
 }
 
+// remove
 model ListingConfig {
   listingId          Int      @unique
   listing            Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
@@ -519,6 +556,7 @@ model ListingConfig {
   highestBidId       Int?
 }
 
+// remove
 model SplToken {
   id       Int    @id @default(autoincrement())
   name     String
@@ -529,6 +567,7 @@ model SplToken {
   icon     String
 }
 
+// remove
 enum GlobalStatusType {
   Success
   Info
@@ -536,6 +575,7 @@ enum GlobalStatusType {
   Maintenance
 }
 
+// remove
 model GlobalStatus {
   id        Int              @id @default(autoincrement())
   type      GlobalStatusType
@@ -543,6 +583,7 @@ model GlobalStatus {
   expiresAt DateTime?
 }
 
+// keep, but refactor? or keep AND add a new UserNotification table
 model Notification {
   id        Int                @id @default(autoincrement())
   title     String
@@ -552,6 +593,7 @@ model Notification {
   users     UserNotification[]
 }
 
+// keep, but refactor?
 model UserNotification {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         Int
@@ -562,6 +604,7 @@ model UserNotification {
   @@id([userId, notificationId])
 }
 
+// remove
 model Device {
   id     Int    @id @default(autoincrement())
   token  String
@@ -571,11 +614,13 @@ model Device {
   @@unique([token, userId])
 }
 
+// remove
 enum DurableNonceStatus {
   Available
   InUse
 }
 
+// remove
 model DurableNonce {
   address       String             @id
   status        DurableNonceStatus @default(Available)
@@ -583,11 +628,13 @@ model DurableNonce {
   lastUpdatedAt DateTime           @default(now())
 }
 
+// keep
 enum ConsentType {
   Marketing
   DataAnalytics
 }
 
+// keep
 model UserPrivacyConsent {
   id             Int         @id @default(autoincrement())
   userId         Int
@@ -597,6 +644,7 @@ model UserPrivacyConsent {
   user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// remove
 model DraftComicIssueSalesData {
   id                Int       @id @default(autoincrement())
   comicIssueId      Int
@@ -611,12 +659,14 @@ model DraftComicIssueSalesData {
   verifiedAt        DateTime?
 }
 
+// remove
 model DigitalAssetGenre {
   name         String         @unique
   slug         String         @id
   digitalAsset DigitalAsset[]
 }
 
+// TODO: will we keep NFTs?
 model DigitalAsset {
   address                    String                      @id
   isBurned                   Boolean                     @default(false)
@@ -637,6 +687,7 @@ model DigitalAsset {
   bids                       Bid[]
 }
 
+// remove/keep?
 model OneOfOneCollection {
   address              String       @id()
   name                 String
@@ -650,6 +701,7 @@ model OneOfOneCollection {
   oneOfOnes            OneOfOne[]
 }
 
+// remove
 model AuctionHouse {
   address              String        @id
   treasuryMint         String        @unique
@@ -661,6 +713,7 @@ model AuctionHouse {
   sales                AuctionSale[]
 }
 
+// remove
 model AuctionSale {
   id                  Int          @id @default(autoincrement())
   signature           String
@@ -674,6 +727,7 @@ model AuctionSale {
   auctionHouseAddress String
 }
 
+// remove
 model Bid {
   id                  Int          @id @default(autoincrement())
   assetAddress        String
@@ -690,6 +744,7 @@ model Bid {
   @@unique([assetAddress, bidderAddress, closedAt])
 }
 
+// remove/keep?
 model PrintEditionCollection {
   address                String                  @id
   name                   String
@@ -704,6 +759,7 @@ model PrintEditionCollection {
   printEditionSaleConfig PrintEditionSaleConfig?
 }
 
+// remove
 model PrintEditionSaleConfig {
   id                Int                    @id @default(autoincrement())
   startDate         DateTime?
@@ -717,6 +773,7 @@ model PrintEditionSaleConfig {
   collection        PrintEditionCollection @relation(fields: [collectionAddress], references: [address])
 }
 
+// remove
 model DigitalAssetTag {
   id           Int          @id @default(autoincrement())
   value        String
@@ -724,6 +781,7 @@ model DigitalAssetTag {
   digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
 
+// remove/keep?
 model PrintEdition {
   address                String                 @id
   collectionAddress      String
@@ -732,6 +790,7 @@ model PrintEdition {
   digitalAsset           DigitalAsset           @relation(fields: [address], references: [address])
 }
 
+// remove/keep?
 model OneOfOne {
   address              String              @id
   name                 String
@@ -746,6 +805,7 @@ model OneOfOne {
   collection           OneOfOneCollection? @relation(fields: [collectionAddress], references: [address])
 }
 
+// remove/keep?
 model DigitalAssetTrait {
   id           Int          @id @default(autoincrement())
   name         String
@@ -754,6 +814,7 @@ model DigitalAssetTrait {
   digitalAsset DigitalAsset @relation(fields: [assetAddress], references: [address])
 }
 
+// rename to UserCampaign
 model UserCampaignInterest {
   id                  Int            @id @default(autoincrement())
   campaignId          Int
@@ -784,6 +845,7 @@ enum WheelRewardType {
   None
 }
 
+// remove/keep/refactor?
 model Wheel {
   id             Int                  @id @default(autoincrement())
   name           String
@@ -847,6 +909,7 @@ model PhysicalItem {
   image       String @default("")
 }
 
+// remove/keep?
 enum SignatureRequestStatus {
   Approved
   Pending
@@ -864,6 +927,7 @@ model SignatureRequest {
   @@unique([collectibleComicAddress, resolvedAt])
 }
 
+// refactor
 enum CreatorActivityFeedType {
   ComicRated
   ComicLiked
@@ -896,6 +960,7 @@ model CreatorActivityFeed {
   type       CreatorActivityFeedType
 }
 
+// keep
 enum CreatorSnapshotType {
   Follower
   Reader
@@ -907,6 +972,7 @@ enum CreatorSnapshotType {
   Other
 }
 
+// keep
 model CreatorSnapshot {
   id        Int                 @id @default(autoincrement())
   creatorId Int
@@ -947,6 +1013,7 @@ model ComicIssueSnapshot {
   timestamp    DateTime
 }
 
+// keep (update)
 model Campaign {
   id           Int                    @id @default(autoincrement())
   title        String
@@ -967,6 +1034,7 @@ model Campaign {
   endDate      DateTime?
 }
 
+// keep (update)
 model CampaignReward {
   id          Int                    @id @default(autoincrement())
   name        String
